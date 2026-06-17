@@ -6,7 +6,7 @@ ethical boundaries of its red-team tooling.
 
 ## Reporting a vulnerability
 
-Please report security issues privately via [GitHub Security Advisories](https://github.com/kitsune-lab/kitsune/security/advisories/new)
+Please report security issues privately via [GitHub Security Advisories](https://github.com/datascry/kitsune/security/advisories/new)
 rather than a public issue. We aim to acknowledge within 5 business days. Include reproduction steps
 and affected component(s) (`detector` / `edge` / `collector` / `harness`).
 

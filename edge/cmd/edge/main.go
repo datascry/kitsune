@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/kitsune-lab/kitsune/edge/internal/fingerprint"
-	"github.com/kitsune-lab/kitsune/edge/internal/proxy"
-	"github.com/kitsune-lab/kitsune/edge/internal/session"
+	"github.com/datascry/kitsune/edge/internal/fingerprint"
+	"github.com/datascry/kitsune/edge/internal/proxy"
+	"github.com/datascry/kitsune/edge/internal/session"
 )
 
 func main() {

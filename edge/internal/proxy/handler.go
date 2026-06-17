@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kitsune-lab/kitsune/edge/internal/fingerprint"
-	"github.com/kitsune-lab/kitsune/edge/internal/signal"
+	"github.com/datascry/kitsune/edge/internal/fingerprint"
+	"github.com/datascry/kitsune/edge/internal/signal"
 )
 
 // IDFunc mints a new correlation id.

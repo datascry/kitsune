@@ -1,3 +1,3 @@
-module github.com/kitsune-lab/kitsune/edge
+module github.com/datascry/kitsune/edge
 
 go 1.23

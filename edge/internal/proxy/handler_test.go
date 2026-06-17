@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kitsune-lab/kitsune/edge/internal/fingerprint"
+	"github.com/datascry/kitsune/edge/internal/fingerprint"
 )
 
 func fixedID() (string, error) { return "fixed-session", nil }

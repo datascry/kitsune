@@ -25,4 +25,4 @@ All notable changes to Kitsune are documented here. The format follows
   community templates, and conventional-commit linting.
 - **docs/catalog.md** — opinionated catalog of ~70 relevant projects across the arms race.
 
-[Unreleased]: https://github.com/kitsune-lab/kitsune/commits/main
+[Unreleased]: https://github.com/datascry/kitsune/commits/main

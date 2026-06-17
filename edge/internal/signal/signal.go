@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/kitsune-lab/kitsune/edge/internal/fingerprint"
+	"github.com/datascry/kitsune/edge/internal/fingerprint"
 )
 
 // SchemaVersion is the contracts version this edge emits.

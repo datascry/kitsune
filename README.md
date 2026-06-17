@@ -1,7 +1,7 @@
 # 🦊 Kitsune — a bot detection ⇄ evasion lab
 
-[![ci](https://github.com/kitsune-lab/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/kitsune-lab/kitsune/actions/workflows/ci.yml)
-[![security](https://github.com/kitsune-lab/kitsune/actions/workflows/security.yml/badge.svg)](https://github.com/kitsune-lab/kitsune/actions/workflows/security.yml)
+[![ci](https://github.com/datascry/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/ci.yml)
+[![security](https://github.com/datascry/kitsune/actions/workflows/security.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/security.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![conventional commits](https://img.shields.io/badge/commits-conventional-fe5196.svg)](https://www.conventionalcommits.org)
 

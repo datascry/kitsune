@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kitsune-lab/kitsune/edge/internal/fingerprint"
+	"github.com/datascry/kitsune/edge/internal/fingerprint"
 )
 
 var at = time.Date(2026, 6, 17, 12, 0, 0, 0, time.UTC)
