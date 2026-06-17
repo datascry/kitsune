@@ -1,0 +1,31 @@
+{
+  "schema_version": "0.1",
+  "session_id": "bot-001",
+  "remote_ip": "198.51.100.7",
+  "first_seen": "2026-06-17T13:00:00Z",
+  "last_seen": "2026-06-17T13:00:03Z",
+  "request_count": 3,
+  "signals": {
+    "network": [
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "ja4_os_hint", "value": "windows", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "tcp_os_hint", "value": "linux", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "ja4_browser_hint", "value": "chrome", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "h2_browser_hint", "value": "chrome", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" }
+    ],
+    "browser": [
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "browser", "kind": "ua_browser", "value": "firefox", "source": "collector", "observed_at": "2026-06-17T13:00:01Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "browser", "kind": "ua_platform", "value": "Windows", "source": "collector", "observed_at": "2026-06-17T13:00:01Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "browser", "kind": "ch_platform", "value": "Linux", "source": "collector", "observed_at": "2026-06-17T13:00:01Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "browser", "kind": "webdriver", "value": true, "source": "collector", "observed_at": "2026-06-17T13:00:01Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "browser", "kind": "cdp_runtime_enabled", "value": true, "source": "collector", "observed_at": "2026-06-17T13:00:01Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "browser", "kind": "canvas_lie", "value": true, "source": "collector", "observed_at": "2026-06-17T13:00:01Z" }
+    ],
+    "behavioral": [
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "behavioral", "kind": "mouse_entropy", "value": 0.03, "source": "collector", "observed_at": "2026-06-17T13:00:02Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "behavioral", "kind": "pointer_event_count", "value": 0, "source": "collector", "observed_at": "2026-06-17T13:00:02Z" }
+    ],
+    "reputation": [
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "reputation", "kind": "asn_is_datacenter", "value": true, "source": "detector", "observed_at": "2026-06-17T13:00:00Z" }
+    ]
+  }
+}

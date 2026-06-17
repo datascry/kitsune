@@ -1,0 +1,29 @@
+{
+  "schema_version": "0.1",
+  "session_id": "human-001",
+  "remote_ip": "203.0.113.10",
+  "first_seen": "2026-06-17T12:00:00Z",
+  "last_seen": "2026-06-17T12:00:42Z",
+  "request_count": 7,
+  "signals": {
+    "network": [
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "network", "kind": "ja4_os_hint", "value": "windows", "source": "edge", "observed_at": "2026-06-17T12:00:00Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "network", "kind": "tcp_os_hint", "value": "windows", "source": "edge", "observed_at": "2026-06-17T12:00:00Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "network", "kind": "ja4_browser_hint", "value": "chrome", "source": "edge", "observed_at": "2026-06-17T12:00:00Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "network", "kind": "h2_browser_hint", "value": "chrome", "source": "edge", "observed_at": "2026-06-17T12:00:00Z" }
+    ],
+    "browser": [
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "browser", "kind": "ua_browser", "value": "chrome", "source": "collector", "observed_at": "2026-06-17T12:00:01Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "browser", "kind": "ua_platform", "value": "Windows", "source": "collector", "observed_at": "2026-06-17T12:00:01Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "browser", "kind": "ch_platform", "value": "Windows", "source": "collector", "observed_at": "2026-06-17T12:00:01Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "browser", "kind": "webdriver", "value": false, "source": "collector", "observed_at": "2026-06-17T12:00:01Z" }
+    ],
+    "behavioral": [
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "behavioral", "kind": "mouse_entropy", "value": 0.62, "source": "collector", "observed_at": "2026-06-17T12:00:40Z" },
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "behavioral", "kind": "pointer_event_count", "value": 240, "source": "collector", "observed_at": "2026-06-17T12:00:40Z" }
+    ],
+    "reputation": [
+      { "schema_version": "0.1", "session_id": "human-001", "layer": "reputation", "kind": "asn_is_datacenter", "value": false, "source": "detector", "observed_at": "2026-06-17T12:00:00Z" }
+    ]
+  }
+}

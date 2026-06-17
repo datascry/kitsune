@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitsune.dev/contracts/signal.schema.json",
+  "title": "Signal",
+  "description": "One observation from one layer at one moment, tagged with the correlating session_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "session_id", "layer", "kind", "value", "source", "observed_at"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Contract version, MAJOR.MINOR."
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Correlation id minted by the edge; threads every hop."
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["network", "browser", "behavioral", "reputation"]
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z0-9_]+$",
+      "description": "Signal name within the layer, e.g. ja4, webdriver, mouse_entropy."
+    },
+    "value": {
+      "description": "Observed value. Any JSON type; interpreted per kind.",
+      "type": ["string", "number", "boolean", "object", "array", "null"]
+    },
+    "source": {
+      "type": "string",
+      "enum": ["edge", "collector", "detector"],
+      "description": "Which component emitted this signal."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp of observation."
+    }
+  }
+}

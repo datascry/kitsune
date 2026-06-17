@@ -1,0 +1,12 @@
+# .github/CODEOWNERS — default reviewers per area.
+# Update the @kitsune-lab/maintainers placeholder to real GitHub usernames/teams.
+
+*                       @kitsune-lab/maintainers
+/contracts/             @kitsune-lab/maintainers
+/detector/              @kitsune-lab/maintainers
+/edge/                  @kitsune-lab/maintainers
+/collector/             @kitsune-lab/maintainers
+/harness/               @kitsune-lab/maintainers
+/evaders/               @kitsune-lab/maintainers
+/.github/               @kitsune-lab/maintainers
+/docs/                  @kitsune-lab/maintainers

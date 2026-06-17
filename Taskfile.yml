@@ -1,0 +1,64 @@
+# Taskfile — one task runner across the polyglot repo (https://taskfile.dev).
+# `task` shows all tasks; per-component verify + an aggregate `task ci` mirroring the pipeline.
+
+version: "3"
+
+tasks:
+  default:
+    cmds: ["task --list"]
+
+  headers:
+    desc: Enforce the 2-line file-header convention
+    cmds: ["python3 scripts/check_headers.py"]
+
+  contracts:
+    desc: Validate JSON-Schema contracts + examples + the rule registry
+    dir: detector
+    cmds: ["uv run python -c 'from kitsune_detector.contracts import load_rule_registry; load_rule_registry(); print(\"contracts ok\")'"]
+
+  detector:
+    desc: Lint, type-check, and test the detector
+    dir: detector
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+      - uv run mypy
+      - uv run pytest
+
+  harness:
+    desc: Lint, type-check, and test the harness
+    dir: harness
+    cmds:
+      - uv run ruff check .
+      - uv run mypy
+      - uv run pytest
+
+  edge:
+    desc: Vet, build, and test the Go edge
+    dir: edge
+    cmds:
+      - gofmt -l .
+      - go vet ./...
+      - go test ./... -cover
+
+  collector:
+    desc: Type-check, lint, and test the TS collector
+    dir: collector
+    cmds:
+      - pnpm run typecheck
+      - pnpm run lint
+      - pnpm test
+
+  demo:
+    desc: Run the spine scoreboard demo
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness"]
+
+  ci:
+    desc: Run the full local pipeline
+    cmds:
+      - task: headers
+      - task: detector
+      - task: harness
+      - task: edge
+      - task: collector

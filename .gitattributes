@@ -1,0 +1,11 @@
+# .gitattributes — normalise line endings and mark generated/vendored files.
+# Keeps diffs clean across platforms and hides lockfiles from language stats.
+
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+
+pnpm-lock.yaml linguist-generated=true
+go.sum linguist-generated=true
+uv.lock linguist-generated=true
+contracts/examples/*.json linguist-generated=false

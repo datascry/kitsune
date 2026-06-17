@@ -1,0 +1,44 @@
+# .github/workflows/pages — publish the latest scoreboard to GitHub Pages.
+# Runs the spine demo, wraps the Markdown scoreboard + JSON into a static page, and deploys it.
+
+name: pages
+on:
+  push: { branches: [main] }
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with: { enable-cache: true }
+      - name: Render scoreboard
+        working-directory: harness
+        run: |
+          uv sync
+          mkdir -p ../site
+          uv run python -m kitsune_harness > ../site/scoreboard.md
+          uv run python -m kitsune_harness --json > ../site/scoreboard.json
+          {
+            echo '<!doctype html><meta charset="utf-8"><title>Kitsune scoreboard</title>'
+            echo '<body style="font-family:system-ui;max-width:60rem;margin:2rem auto">'
+            echo '<pre>'; cat ../site/scoreboard.md; echo '</pre>'
+            echo '<p><a href="scoreboard.json">scoreboard.json</a></p></body>'
+          } > ../site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+      - id: deploy
+        uses: actions/deploy-pages@v4

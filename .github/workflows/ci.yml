@@ -1,0 +1,94 @@
+# .github/workflows/ci — the per-language verification pipeline.
+# Header check, contracts, detector, harness, edge, collector, commit lint, and an e2e spine smoke.
+# NOTE: actions are version-pinned; SHA-pin (ratchet/Dependabot) before public launch — see SECURITY.md.
+
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  headers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python3 scripts/check_headers.py
+
+  detector:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: detector } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with: { enable-cache: true }
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy
+      - run: uv run pytest
+
+  harness:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: harness } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with: { enable-cache: true }
+      - run: uv sync
+      - run: uv run ruff check .
+      - run: uv run mypy
+      - run: uv run pytest
+
+  edge:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: edge } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.23" }
+      - run: gofmt -l . | tee /dev/stderr | (! read)
+      - run: go vet ./...
+      - run: go test ./... -cover
+
+  collector:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: collector } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: "9.12.0" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: pnpm, cache-dependency-path: collector/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm exec prettier --check .
+      - run: pnpm test
+
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: wagoid/commitlint-github-action@v6
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [detector, harness]
+    defaults: { run: { working-directory: harness } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with: { enable-cache: true }
+      - run: uv sync
+      - name: spine smoke — vanilla scores human, naive-bot scores bot
+        run: |
+          out="$(uv run python -m kitsune_harness)"
+          echo "$out"
+          echo "$out" | grep -q "naive-bot" && echo "$out" | grep -q "| bot |" || (echo "spine smoke failed" && exit 1)

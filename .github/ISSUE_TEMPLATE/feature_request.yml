@@ -1,0 +1,21 @@
+name: Feature request
+description: Propose a new signal, rule, evader, or capability
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What gap or detection/evasion capability is missing?
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+  - type: checkboxes
+    id: ethics
+    attributes:
+      label: Ethics
+      options:
+        - label: This does not involve targeting any system outside the ethics allow-list.
+          required: true

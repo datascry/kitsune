@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitsune.dev/contracts/coherence-rule.schema.json",
+  "title": "CoherenceRule",
+  "description": "A cross-layer incoherence rule, expressed as data. The engine is generic; knowledge lives here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "layers", "reads", "predicate", "weight", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z0-9_]+$",
+      "description": "Namespaced id, e.g. net.tls_os_vs_tcp_os."
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["network", "browser", "behavioral", "reputation"] }
+    },
+    "reads": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z]+\\.[a-z0-9_]+$" },
+      "description": "Signal references (layer.kind) the predicate consumes, in order."
+    },
+    "predicate": {
+      "type": "string",
+      "enum": ["equals", "not_equal", "present", "absent", "below_threshold", "above_threshold"],
+      "description": "Generic predicate evaluated by the engine over the resolved reads."
+    },
+    "threshold": {
+      "type": "number",
+      "description": "Required for below_threshold / above_threshold predicates."
+    },
+    "weight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+    "status": { "type": "string", "enum": ["active", "experimental", "retired"] },
+    "added": { "type": "string", "format": "date" },
+    "last_validated": { "type": "string", "format": "date" },
+    "source": { "type": "string", "description": "Provenance / citation for the signal." }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "predicate": { "enum": ["below_threshold", "above_threshold"] } } },
+      "then": { "required": ["threshold"] }
+    },
+    {
+      "if": { "properties": { "predicate": { "enum": ["equals", "not_equal"] } } },
+      "then": { "properties": { "reads": { "minItems": 2 } } }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitsune.dev/contracts/session.schema.json",
+  "title": "Session",
+  "description": "All signals sharing a session_id, grouped by layer. The unit coherence runs over.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "session_id", "first_seen", "last_seen", "request_count", "signals"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "session_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "remote_ip": {
+      "type": ["string", "null"],
+      "description": "Source IP as seen by the edge (may be null in unit fixtures)."
+    },
+    "first_seen": { "type": "string", "format": "date-time" },
+    "last_seen": { "type": "string", "format": "date-time" },
+    "request_count": { "type": "integer", "minimum": 0 },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["network", "browser", "behavioral", "reputation"],
+      "properties": {
+        "network": { "type": "array", "items": { "$ref": "signal.schema.json" } },
+        "browser": { "type": "array", "items": { "$ref": "signal.schema.json" } },
+        "behavioral": { "type": "array", "items": { "$ref": "signal.schema.json" } },
+        "reputation": { "type": "array", "items": { "$ref": "signal.schema.json" } }
+      }
+    }
+  }
+}

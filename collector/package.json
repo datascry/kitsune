@@ -1,0 +1,29 @@
+{
+  "name": "@kitsune/collector",
+  "version": "0.1.0",
+  "description": "Kitsune in-browser signal collector: fingerprint + behavioral telemetry as contract-valid signals.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.10.0",
+    "prettier": "^3.3.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.8.0",
+    "vitest": "^2.1.0"
+  },
+  "packageManager": "pnpm@9.12.0"
+}

@@ -1,0 +1,8 @@
+# .cz.toml — commitizen config for the local commit-msg hook.
+# Enforces Conventional Commits before a commit lands (mirrors commitlint in CI).
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "semver"
+version = "0.1.0"

@@ -1,0 +1,18 @@
+# .github/workflows/release — automated, versioned releases from Conventional Commits.
+# release-please opens/maintains a release PR and tags + writes the changelog on merge.
+
+name: release
+on:
+  push: { branches: [main] }
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          release-type: simple

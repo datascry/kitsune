@@ -1,0 +1,52 @@
+# detector/app — FastAPI HTTP boundary (the spine's /ingest).
+# Correlates posted signals, scores, persists, returns verdicts; injectable for tests.
+
+"""FastAPI app — the detector's HTTP boundary (the spine's ``/ingest``).
+
+The edge and collector POST contract-valid ``Signal`` envelopes here; the detector correlates,
+scores, persists, and returns verdicts. ``create_app`` takes injectable ``Detector``/``Store`` so
+the whole surface is testable in-memory with no network.
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI, HTTPException
+
+from .detector import Detector
+from .models import Signal, Verdict
+from .store import Store
+
+
+def create_app(detector: Detector | None = None, store: Store | None = None) -> FastAPI:
+    detector = detector or Detector()
+    store = store or Store(":memory:")
+    app = FastAPI(title="Kitsune Detector", version="0.1.0")
+
+    @app.get("/healthz")
+    def healthz() -> dict[str, str]:
+        return {"status": "ok", "ruleset_version": detector.ruleset_version}
+
+    @app.post("/ingest", response_model=list[Verdict])
+    def ingest(signals: list[Signal]) -> list[Verdict]:
+        from .ingest import group_signals
+
+        verdicts: list[Verdict] = []
+        for session in group_signals(signals):
+            store.save_session(session)
+            verdict = detector.score(session)
+            store.save_verdict(verdict)
+            verdicts.append(verdict)
+        return verdicts
+
+    @app.get("/verdict/{session_id}", response_model=Verdict)
+    def get_verdict(session_id: str) -> Verdict:
+        verdict = store.get_verdict(session_id)
+        if verdict is None:
+            raise HTTPException(status_code=404, detail="no verdict for session")
+        return verdict
+
+    @app.get("/scoreboard", response_model=list[Verdict])
+    def scoreboard() -> list[Verdict]:
+        return store.list_verdicts()
+
+    return app

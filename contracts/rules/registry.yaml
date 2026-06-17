@@ -1,0 +1,130 @@
+# Kitsune coherence-rule registry — knowledge as data.
+#
+# The detector's coherence engine is a small generic evaluator; the knowledge lives here.
+# A rule "fires" (emits a Contradiction) when its predicate holds over the resolved `reads`.
+#
+# Predicate firing semantics (see detector/.../coherence/predicates.py):
+#   present          fires if reads[0] resolves to a truthy value   (boolean tells)
+#   absent           fires if reads[0] is missing or falsy
+#   equals           fires if reads[0] == reads[1]
+#   not_equal        fires if reads[0] != reads[1] AND both are present (no fire on missing data)
+#   below_threshold  fires if numeric reads[0] < threshold
+#   above_threshold  fires if numeric reads[0] > threshold
+#
+# When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
+# last_validated — do not delete history. Composite/cross-conditional rules are future work.
+
+ruleset_version: "0.1.0"
+
+rules:
+  - id: net.tls_os_vs_tcp_os
+    title: JA4-implied OS contradicts TCP/IP-implied OS
+    layers: [network]
+    reads: [network.ja4_os_hint, network.tcp_os_hint]
+    predicate: not_equal
+    weight: 0.6
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "Kitsune; cf. Vastel FP-Inconsistent (IMC 2025)"
+
+  - id: net.tls_vs_ua_browser
+    title: JA4 browser family contradicts User-Agent browser
+    layers: [network, browser]
+    reads: [network.ja4_browser_hint, browser.ua_browser]
+    predicate: not_equal
+    weight: 0.7
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "Kitsune"
+
+  - id: net.h2_vs_ua_browser
+    title: HTTP/2 (Akamai) fingerprint contradicts User-Agent browser
+    layers: [network, browser]
+    reads: [network.h2_browser_hint, browser.ua_browser]
+    predicate: not_equal
+    weight: 0.6
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "Akamai h2 fingerprint (Black Hat EU 2017)"
+
+  - id: br.ua_platform_vs_ch_platform
+    title: navigator/UA platform contradicts Sec-CH-UA-Platform
+    layers: [browser]
+    reads: [browser.ua_platform, browser.ch_platform]
+    predicate: not_equal
+    weight: 0.7
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "SicuraNext: Sec-Fetch & Client-Hints inconsistencies"
+
+  - id: br.webdriver_present
+    title: navigator.webdriver is true
+    layers: [browser]
+    reads: [browser.webdriver]
+    predicate: present
+    weight: 0.9
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "W3C WebDriver spec; BotD"
+
+  - id: br.cdp_runtime_enabled
+    title: CDP Runtime.enable detected (prototype-chain Proxy ownKeys trap)
+    layers: [browser]
+    reads: [browser.cdp_runtime_enabled]
+    predicate: present
+    weight: 0.85
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "Sveba: How V8 Leaks Your Headless Browser's Identity (2024-25)"
+
+  - id: br.canvas_lie
+    title: Canvas/WebGL API tampering detected (getter override)
+    layers: [browser]
+    reads: [browser.canvas_lie]
+    predicate: present
+    weight: 0.7
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "CreepJS lie-detection"
+
+  - id: bh.input_entropy_floor
+    title: Mouse-movement entropy below the human floor
+    layers: [behavioral]
+    reads: [behavioral.mouse_entropy]
+    predicate: below_threshold
+    threshold: 0.15
+    weight: 0.6
+    status: experimental
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "Kitsune; cf. Balabit / SapiMouse datasets"
+
+  - id: bh.no_input_before_action
+    title: Action (submit/nav) with zero pointer events
+    layers: [behavioral]
+    reads: [behavioral.pointer_event_count]
+    predicate: below_threshold
+    threshold: 1
+    weight: 0.5
+    status: experimental
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "Kitsune"
+
+  - id: rep.datacenter_asn
+    title: Source IP belongs to a datacenter / hosting ASN
+    layers: [reputation]
+    reads: [reputation.asn_is_datacenter]
+    predicate: present
+    weight: 0.5
+    status: active
+    added: "2026-06-17"
+    last_validated: "2026-06-17"
+    source: "iptoasn.com / MaxMind GeoLite2-ASN"

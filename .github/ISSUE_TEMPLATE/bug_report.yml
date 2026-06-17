@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a defect in Kitsune
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options: [contracts, detector, edge, collector, harness, evaders, docs/ci]
+    validations: { required: true }
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the expected vs actual behaviour.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+    validations: { required: true }
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, language/toolchain versions, commit SHA.
