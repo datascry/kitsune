@@ -35,7 +35,7 @@ await page.goto(EDGE, { waitUntil: "load" });
 for (let i = 0; i < 24; i++) {
   await page.mouse.move(100 + i * 7, 120 + Math.sin(i / 2) * 50);
 }
-await page.waitForTimeout(3500); // let the in-page collector post its signals
+await page.waitForTimeout(2000); // let the in-page collector post its signals
 
 const ks = (await context.cookies()).find((c) => c.name === "ks_sid");
 if (!ks) {

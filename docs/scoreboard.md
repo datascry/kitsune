@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T02:11:32.592182+00:00`
+- generated: `2026-06-18T02:20:33.264387+00:00`
 - ruleset: `live`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |

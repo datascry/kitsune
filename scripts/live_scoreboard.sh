@@ -9,7 +9,9 @@ NET=kitsune_default
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.agent.yml)
 
 echo "[*] bringing up the live stack…"
-"${COMPOSE[@]}" up -d --build detector edge browser >/dev/null 2>&1
+BUILD=()
+[ "${KITSUNE_BUILD:-1}" = 1 ] && BUILD=(--build) # KITSUNE_BUILD=0 to reuse images (faster reruns)
+"${COMPOSE[@]}" up -d "${BUILD[@]}" detector edge browser >/dev/null 2>&1
 for _ in $(seq 1 40); do
   [ "$(docker inspect -f '{{.State.Health.Status}}' "$("${COMPOSE[@]}" ps -q detector)" 2>/dev/null)" = healthy ] && break
   sleep 3
@@ -21,14 +23,15 @@ echo "[*] vanilla…"
   vanilla 2>/dev/null >"$OUT/vanilla.json"
 
 echo "[*] stealth (naive + patched + spoof-ua)…"
-docker run --rm --network "$NET" \
-  -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
-  -v "$PWD/evaders/stealth":/work -v "$OUT":/out -w /work \
-  mcr.microsoft.com/playwright:v1.48.0-jammy \
-  bash -c 'npm i -s playwright@1.48.0 >/dev/null 2>&1;
-           node run.mjs >/out/stealth-naive.json 2>/dev/null;
-           STEALTH=1 node run.mjs >/out/stealth-patched.json 2>/dev/null;
-           SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0" node run.mjs >/out/spoof-ua.json 2>/dev/null'
+docker build -q -t kitsune-stealth ./evaders/stealth >/dev/null # Playwright baked in; cached
+run_stealth() { # $1 = output file; remaining args = extra `docker run` env flags
+  docker run --rm --network "$NET" \
+    -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
+    "${@:2}" kitsune-stealth 2>/dev/null >"$1"
+}
+run_stealth "$OUT/stealth-naive.json"
+run_stealth "$OUT/stealth-patched.json" -e STEALTH=1
+run_stealth "$OUT/spoof-ua.json" -e SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
 
 ARGS=(
   "vanilla=$OUT/vanilla.json"
@@ -56,5 +59,8 @@ for arg in "${ARGS[@]}"; do
   curl -s "http://localhost:8090/session/$sid" -o "corpus/sessions/$label.json"
 done
 
+echo "[*] rendering detection matrix…"
+( cd harness && uv run python -m kitsune_harness.report ../corpus/sessions ) >docs/matrix.md
+
 "${COMPOSE[@]}" --profile evaders down -v >/dev/null 2>&1
-echo "[*] done → docs/scoreboard.md + corpus/sessions/"
+echo "[*] done → docs/scoreboard.md + docs/matrix.md + corpus/sessions/"

@@ -133,7 +133,7 @@ DEMO_PAGE = """<!doctype html>
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function () { document.body.setAttribute("data-ks", "sent"); });
   }
-  setTimeout(function () { send(); }, 2500);
+  setTimeout(function () { send(); }, 1200);
 })();
 </script></body></html>
 """
