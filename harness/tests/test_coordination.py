@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from kitsune_detector.ingest import group_signals
 from kitsune_detector.models import Layer, Session, Signal, Source
 
@@ -15,14 +17,17 @@ from kitsune_harness.coordination import (
 from .conftest import FIXED
 
 
-def _sess(name: str, ja4: str | None, hw: int | None = None, plat: str | None = None) -> Session:
+def _sess(
+    name: str, ja4: str | None, hw: int | None = None, plat: str | None = None, *, offset_s: float = 0.0
+) -> Session:
+    when = FIXED + timedelta(seconds=offset_s)
     sigs: list[Signal] = []
     if ja4 is not None:
-        sigs.append(Signal(session_id=name, layer=Layer.network, kind="ja4", value=ja4, source=Source.edge, observed_at=FIXED))
+        sigs.append(Signal(session_id=name, layer=Layer.network, kind="ja4", value=ja4, source=Source.edge, observed_at=when))
     if hw is not None:
-        sigs.append(Signal(session_id=name, layer=Layer.browser, kind="hardware_concurrency", value=hw, source=Source.collector, observed_at=FIXED))
+        sigs.append(Signal(session_id=name, layer=Layer.browser, kind="hardware_concurrency", value=hw, source=Source.collector, observed_at=when))
     if plat is not None:
-        sigs.append(Signal(session_id=name, layer=Layer.browser, kind="nav_platform_os", value=plat, source=Source.collector, observed_at=FIXED))
+        sigs.append(Signal(session_id=name, layer=Layer.browser, kind="nav_platform_os", value=plat, source=Source.collector, observed_at=when))
     return group_signals(sigs)[0]
 
 
@@ -62,6 +67,23 @@ def test_score_corpus_clusters_and_sorts() -> None:
     assert len(verdicts) == 1
     assert verdicts[0].members == ["cf1", "cf2"]
     assert verdicts[0].label == "fleet"
+
+
+def test_timing_lockstep_adds_confidence() -> None:
+    # Same JA4 + same JS, but tight vs spread arrival → lockstep raises the score.
+    tight = score_cluster("X", [("a", _sess("a", "X", 8, offset_s=0)), ("b", _sess("b", "X", 8, offset_s=30))])
+    spread = score_cluster("X", [("a", _sess("a", "X", 8, offset_s=0)), ("b", _sess("b", "X", 8, offset_s=9999))])
+    assert tight.score > spread.score
+    assert tight.span_seconds == 30.0
+    assert any("lockstep" in e for e in tight.evidence)
+    assert any("no lockstep" in e for e in spread.evidence)
+
+
+def test_single_member_cluster_has_no_span() -> None:
+    # Defensive: score_cluster with one member yields no timing span and no lockstep evidence.
+    v = score_cluster("X", [("solo", _sess("solo", "X", 8))])
+    assert v.span_seconds is None
+    assert not any("lockstep" in e for e in v.evidence)
 
 
 def test_render_coordination() -> None:

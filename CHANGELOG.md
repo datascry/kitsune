@@ -10,9 +10,11 @@ All notable changes to Kitsune are documented here. The format follows
 ### Added
 
 - **Coordination scoring** (`harness/coordination.py`) — grades a JA4 cluster into a graded fleet
-  verdict (`fleet`/`candidate`/`benign`) on the **TLS-identical-but-JS-divergent paradox**: a real
-  same-build cohort shares its JS identity too, but an anti-detect fleet randomizes JS per instance
-  while sharing one TLS handshake. Live Camoufox fleet scores `fleet` 0.85. 100% covered.
+  verdict (`fleet`/`candidate`/`benign`) on three independent signals: the **TLS-identical-but-JS-
+  divergent paradox** (a real same-build cohort shares its JS identity too, but an anti-detect fleet
+  randomizes JS per instance while sharing one TLS handshake), **timing lockstep** (members arriving
+  within a 2-minute window are synchronized, unlike organic same-JA4 users), and **volume**. Live
+  Camoufox fleet scores `fleet` 1.00. 100% covered.
 - **Frontier runner** (`scripts/frontier.sh`) — fast, frontier-only loop that exercises *only* the
   evaders that still beat per-session detection (Camoufox single + a Camoufox fleet), instead of
   re-detecting the known-caught fleet every iteration. The full sweep (`live_scoreboard.sh`) becomes

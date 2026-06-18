@@ -38,6 +38,8 @@ _BASE_CANDIDATE = 0.30  # a shared-JA4 cluster, on its own (humans do this too)
 _PARADOX_BONUS = 0.55  # identical TLS + divergent JS — the spoofing-fleet shape
 _PER_MEMBER = 0.05  # each member beyond the second, capped
 _MAX_MEMBER_BONUS = 0.15
+_LOCKSTEP_WINDOW_S = 120.0  # sessions sharing a JA4 all arriving within this window are synchronized
+_LOCKSTEP_BONUS = 0.12  # tightens confidence; kept < the fleet threshold so the JS paradox stays primary
 
 
 @dataclass(frozen=True)
@@ -49,12 +51,21 @@ class FleetVerdict:
     diverged_traits: dict[str, int]  # trait kind -> distinct value count (only those > 1)
     score: float
     label: str  # "fleet" | "candidate" | "benign"
+    span_seconds: float | None = None  # first_seen spread across members (None if < 2 timestamps)
     evidence: list[str] = field(default_factory=list)
 
 
 def _ja4(session: Session) -> str | None:
     v = session.value(Layer.network, "ja4")
     return None if v is MISSING else str(v)
+
+
+def _first_seen_span(sessions: list[Session]) -> float | None:
+    """Seconds between the earliest and latest first_seen across the cluster (None if < 2)."""
+    stamps = sorted(s.first_seen for s in sessions)
+    if len(stamps) < 2:
+        return None
+    return (stamps[-1] - stamps[0]).total_seconds()
 
 
 def _diverged_traits(sessions: list[Session]) -> dict[str, int]:
@@ -85,11 +96,18 @@ def score_cluster(ja4: str, members: list[tuple[str, Session]]) -> FleetVerdict:
     else:
         evidence.append("JS traits homogeneous across members — consistent with a real cohort")
 
+    span = _first_seen_span(sessions)
+    if span is not None and span <= _LOCKSTEP_WINDOW_S:
+        score += _LOCKSTEP_BONUS
+        evidence.append(f"timing lockstep: all members arrived within {span:.0f}s")
+    elif span is not None:
+        evidence.append(f"arrivals spread over {span:.0f}s — no lockstep")
+
     score = max(0.0, min(1.0, score))
     label = "fleet" if score >= 0.60 else "candidate" if score >= 0.30 else "benign"
     return FleetVerdict(
         ja4=ja4, members=names, diverged_traits=diverged, score=round(score, 3),
-        label=label, evidence=evidence,
+        label=label, span_seconds=span, evidence=evidence,
     )
 
 

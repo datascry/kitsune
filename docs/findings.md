@@ -55,9 +55,17 @@ identity below the spoofing layer:
 - The instances deliberately **randomize their JS identity** (hardware, platform) to look like distinct
   users.
 
-`harness/coordination.py` grades a JA4 cluster on that exact paradox: **TLS-identical but JS-divergent**.
-A genuine same-build cohort that shares a JA4 also shares its JS identity; only a spoofing fleet shows
-one TLS fingerprint under many JS identities. The live Camoufox fleet scores **`fleet` 0.90**.
+`harness/coordination.py` grades a JA4 cluster on three independent coordination signals:
+
+1. **JS-divergence paradox** — TLS-identical but JS-divergent. A genuine same-build cohort that shares a
+   JA4 also shares its JS identity; only a spoofing fleet shows one TLS fingerprint under many JS
+   identities. This is the primary discriminator (a homogeneous JA4 cluster never reaches `fleet`).
+2. **Timing lockstep** — fleet instances launch together. Members sharing a JA4 that all arrive inside a
+   2-minute window are synchronized; organic same-JA4 users are spread over hours.
+3. **Volume** — more members in the cluster raises confidence.
+
+The live Camoufox fleet scores **`fleet` 1.00**: shared JA4, JS divergent across all three instances
+(hardware 8/12/32, platform Windows/macOS), and all three arriving within 20 seconds.
 
 This is the signal that matters for the bots/DDoS domain: an attacker fielding thousands of coherent
 anti-detect browsers still routes them through a shared engine/TLS stack, and the coordination is visible
