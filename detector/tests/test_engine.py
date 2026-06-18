@@ -76,6 +76,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
+        (
+            [(Layer.behavioral, "coalesced_events_absent", True, Source.collector)],
+            "bh.synthetic_no_coalesced",
+        ),
         ([(Layer.browser, "webdriver_spoofed", True, Source.collector)], "br.webdriver_spoofed"),
         ([(Layer.browser, "webgl_software", True, Source.collector)], "br.webgl_software"),
         ([(Layer.browser, "permissions_anomaly", True, Source.collector)], "br.permissions_anomaly"),

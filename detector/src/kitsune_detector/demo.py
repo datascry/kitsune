@@ -21,6 +21,20 @@ DEMO_PAGE = """<!doctype html>
   if (!id) { return; }
   var pts = [];
   addEventListener("mousemove", function (e) { pts.push({ x: e.clientX, y: e.clientY, t: e.timeStamp }); });
+  // Coalesced pointer events: real hardware movement is sampled faster than the browser dispatches
+  // events, so getCoalescedEvents() batches the intermediate samples (length > 1). Synthetic movement
+  // injected via CDP (Input.dispatchMouseEvent — how Playwright/Puppeteer/driverless tools fake a
+  // human-like curved path) arrives one discrete event at a time and never coalesces. A long pointer
+  // stream that never coalesces, on an engine that supports it, is an injected-input tell that survives
+  // even a bot which has defeated the path-straightness and velocity behavioral checks.
+  var ptrMoves = 0, coalescedMax = 0;
+  var coalescedSupported = typeof PointerEvent !== "undefined" && "getCoalescedEvents" in PointerEvent.prototype;
+  if (coalescedSupported) {
+    addEventListener("pointermove", function (e) {
+      ptrMoves++;
+      try { var c = e.getCoalescedEvents(); if (c && c.length > coalescedMax) coalescedMax = c.length; } catch (err) {}
+    });
+  }
   // Keystroke timing: a real typist has variable inter-key intervals (digraph latencies differ); a script
   // that types at a fixed delay has near-zero interval entropy — the keystroke-dynamics tell.
   var keys = [];
@@ -569,6 +583,10 @@ DEMO_PAGE = """<!doctype html>
         sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
       }
       if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
+      // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.
+      if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
+        sigs.push(S("behavioral", "coalesced_events_absent", true));
+      }
     }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function () { document.body.setAttribute("data-ks", "sent"); });

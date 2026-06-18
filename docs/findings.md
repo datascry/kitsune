@@ -76,6 +76,21 @@ The `human-mouse` evader fully zeroes the behavioral column — yet is still `bo
 it changes no verdict. This is why the durable signals are environment and coordination, not behaviour —
 behavioral biometrics needs sophisticated sequence/biomechanics models, not static thresholds, to matter.
 
+**The motion-*statistics* arms race has a structural exit: coalesced events.** Tightening straightness or
+velocity thresholds is a losing game — a bot can always shape its *path* to match human statistics. But
+`PointerEvent.getCoalescedEvents()` exposes something the path cannot fake: real pointer hardware is
+sampled faster than the browser dispatches `pointermove` (a 125 Hz+ mouse against a 60 Hz frame), so the
+browser batches the intermediate samples and a real stream coalesces (length > 1) within a few dozen
+moves. Synthetic movement injected through CDP `Input.dispatchMouseEvent` — the mechanism Playwright,
+Puppeteer-extra, and the driverless/CDP-stealth tools use to draw a human-like Bézier curve — arrives one
+discrete event at a time and *never* coalesces. `bh.synthetic_no_coalesced` fires when a pointer stream is
+long enough to expect coalescing (≥20 moves) on an engine that supports it, yet none ever occurred. This
+catches a bot that has already beaten every motion-statistics check, because the tell is in the *delivery*
+of the events, not their geometry. It is weighted as a corroborator (0.45, suspicious-not-convict): a real
+human on an unusual low-rate device might not coalesce, so it raises a flag rather than deciding alone —
+but stacked with the environment and automation layers it removes the "I simulated perfect human motion"
+escape hatch.
+
 **Keystroke dynamics is the one exception that bites.** `bh.keystroke_entropy_floor` (the inter-key
 interval entropy) is *not* as easily evaded as the mouse thresholds: a naive `page.keyboard.type` at a
 fixed delay collapses to ~0 interval entropy and **fires** (`stealth-naive`, `behavioral:1`), because
