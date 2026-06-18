@@ -233,6 +233,19 @@ def test_tracker_alerts_on_becoming_fleet() -> None:
     assert t.observe("c", _sess("c", "X", 16)) is None
 
 
+def test_tracker_alerts_on_cloned_profile_fleet() -> None:
+    # The streaming analog of the cloned-profile (BotBrowser) case: JS is homogeneous, so the JS-divergence
+    # paradox never fires — but an identical fp_hash arriving from a SECOND distinct IP is the collision.
+    # The online tracker must alert the moment that second clone arrives, not only in an offline snapshot.
+    t = FleetTracker()
+    first = _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef")
+    assert t.observe("a", first) is None  # singleton, no alert
+    second = _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="deadbeef")
+    v = t.observe("b", second)
+    assert v is not None and v.label == "fleet"
+    assert v.cloned_fingerprint == "deadbeef" and v.diverged_traits == {}  # convicted by collision, not paradox
+
+
 def test_tracker_ignores_no_ja4_and_singletons() -> None:
     t = FleetTracker()
     assert t.observe("x", _sess("x", None, 8)) is None  # no JA4 → ignored
