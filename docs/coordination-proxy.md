@@ -28,7 +28,7 @@ The trap this closes: JS is **homogeneous** (the scorer notes it "consistent wit
 JS-divergence paradox stays silent and the old scorer rated this only a `candidate`. The fingerprint
 collision across distinct IPs is what convicts it.
 
-### `fleet` — score **1.00** · 3 sessions
+### `fleet` — score **1.00** · 3 sessions (illustrative synthetic)
 - **severity: moderate** (6 requests, 8.2/min)
 - members: bb1, bb2, bb3
 - 3 sessions share JA4 cipher prefix `t13d1516h2_8daaf6152771`
@@ -36,4 +36,17 @@ collision across distinct IPs is what convicts it.
 - identical high-entropy fingerprint `7c3a9f12` across 3 distinct source IPs — cloned-profile reuse (one anti-detect profile shared fleet-wide)
 - timing lockstep: all members arrived within 22s
 - distributed across 3 distinct source IPs — residential-proxy fleet pattern (IP diversity masks one shared engine, defeating IP/ASN rules)
+
+### `fleet` — score **1.00** · 2 sessions (**live capture**, `corpus/sessions/chrome-clone-*.json`)
+
+Two stock **headless Chromium** instances are a cloned profile by construction (same build +
+deterministic SwiftShader rendering → byte-identical `fp_hash`). Captured concurrently so the edge sees
+distinct container IPs, each ran the in-browser collector and emitted the same hash — real scorer output:
+
+- members: chrome-clone-1, chrome-clone-2
+- 2 sessions share JA4 cipher prefix `t13d1516h2_8daaf6152771`
+- JS traits homogeneous across members — consistent with a real cohort
+- identical high-entropy fingerprint `28718b97` across 2 distinct source IPs — cloned-profile reuse (one anti-detect profile shared fleet-wide)
+- timing lockstep: all members arrived within 1s
+- distributed across 2 distinct source IPs — residential-proxy fleet pattern (IP diversity masks one shared engine, defeating IP/ASN rules)
 

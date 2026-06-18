@@ -558,9 +558,21 @@ Two layers it still cannot reach convict it anyway, and reading the source told 
   A fleet is now boxed in: randomize JS to fake diversity and the paradox fires; reuse one profile and the
   collision fires; it cannot do neither. A synthetic 3-node BotBrowser-style fleet (homogeneous JS,
   identical `fp_hash`, three residential IPs) now scores `fleet`, where before the rebuild it was a
-  `candidate`. As with the proxy signals, this is graded from a synthetic fleet — the lab has no BotBrowser
-  build to capture — and the residual false-positive (an identically-imaged VM farm behind distinct proxy
-  IPs) is narrow and noted; the JS-divergence paradox remains the primary discriminator.
+  `candidate`. The residual false-positive (an identically-imaged VM farm behind distinct proxy IPs) is
+  narrow and noted; the JS-divergence paradox remains the primary discriminator.
+
+  **Validated live (not just synthetically).** The lab has no BotBrowser build, but a *cloned profile* is
+  exactly what two stock headless Chromium instances are: same build + deterministic SwiftShader rendering
+  → byte-identical `fp_hash`. Two real headless Chromium sessions, captured concurrently so the edge sees
+  **distinct** container IPs (172.22.0.5 / .4), each ran the in-browser collector and emitted the identical
+  `fp_hash` `28718b97` over an identical JA4 prefix. Scored through the real coordination engine they reach
+  **`fleet` 1.00** on the fingerprint-collision signal with `diverged_traits={}` — i.e. the JS-divergence
+  paradox stayed silent (homogeneous JS, the old blind spot) and the collision alone convicted them
+  (`corpus/sessions/chrome-clone-1.json`, `chrome-clone-2.json`). This closes the loop end to end: the
+  collector computes the hash in a real browser, and two cloned identities across distinct IPs are caught.
+  (Stock headless Chromium is of course also caught per-session on a dozen environment tells; the collision
+  matters for an individually-*coherent* cloned fleet, where it is the only tell — and the mechanism is now
+  proven on real browser captures.)
 
 ## The scripted-flood tier — three HTTP-header tells before any JS runs
 
