@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Keystroke-dynamics capture — last dead rule closed.** A signal-emission audit found one rule whose
+  signal the collector never produced: `bh.keystroke_entropy_floor` (read `behavioral.keystroke_entropy`).
+  The collector now captures keydown timing and emits the normalized inter-key interval entropy, and the
+  stealth evader types a phrase to exercise it. **Result:** unlike the mouse thresholds, this one bites —
+  naive fixed-delay typing collapses to ~0 entropy and **fires** (`stealth-naive` `behavioral:1`), while
+  variable human-like timing (0.975 vs the 0.15 floor) evades. **Every rule's signal is now emittable —
+  zero dead rules.**
 - **Max-stealth chromium evader (`MAX_STEALTH=1`)** — the kitchen sink (patchright + a coherent
   Linux-Chrome UA + human-mouse motion), the chromium analog of `camoufox-hardened`. Every evasion layer
   works (UA removes `headless_ua`, human-mouse zeroes behavioral, patchright closes `Runtime.enable` +

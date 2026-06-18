@@ -14,7 +14,7 @@
 | `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.headless_ua` | browser | · | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | · | ✓ | · | · | 5 |
-| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | 1 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -66,7 +66,7 @@
 | `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webrtc_unavailable` | browser | · | ✓ | · | ✓ | · | · | · | · | · | · | · | · | · | · | 2 |
 | `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| **flagged** |  | **6/64** | **4/64** | **3/64** | **6/64** | **5/64** | **12/64** | **10/64** | **8/64** | **10/64** | **11/64** | **5/64** | **12/64** | **6/64** | **0/64** |  |
+| **flagged** |  | **6/64** | **4/64** | **3/64** | **6/64** | **5/64** | **12/64** | **10/64** | **8/64** | **10/64** | **11/64** | **5/64** | **13/64** | **6/64** | **0/64** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **human** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -84,11 +84,11 @@
 | `patchright` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
 | `spoof-ua` | bot | 1 | 0 | 2 | 2 | 0 | 0 |
-| `stealth-naive` | bot | 0 | 0 | 6 | 6 | 0 | 0 |
+| `stealth-naive` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `vanilla` | human | 0 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 37/64 engines catch nothing yet
+## Coverage gaps — 36/64 engines catch nothing yet
 
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`
@@ -96,7 +96,6 @@
 - `br.canvas_lie`
 - `rep.datacenter_asn`
 - `net.h2_vs_tls_browser`
-- `bh.keystroke_entropy_floor`
 - `rep.known_proxy_exit`
 - `bh.path_too_straight`
 - `bh.uniform_velocity`

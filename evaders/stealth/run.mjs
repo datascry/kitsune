@@ -97,8 +97,10 @@ if (FULL) {
 
 const page = await context.newPage();
 await page.goto(EDGE, { waitUntil: "load" });
-if (HUMAN_MOUSE || MAX_STEALTH) {
-  // A few realistic curved moves between random targets — the behavioral evasion frontier.
+const human = HUMAN_MOUSE || MAX_STEALTH;
+if (human) {
+  // Human-like curved moves between random targets — the behavioral evasion frontier (mouse only, to
+  // keep this a clean behavioral-evasion demo within the collector's capture window).
   let pos = { x: 120, y: 140 };
   for (let i = 0; i < 4; i++) {
     const to = { x: 80 + Math.random() * 600, y: 80 + Math.random() * 400 };
@@ -107,6 +109,13 @@ if (HUMAN_MOUSE || MAX_STEALTH) {
     await page.waitForTimeout(120 + Math.random() * 280); // human dwell between gestures
   }
 } else {
+  // Naive bot: fixed-delay typing first (within the capture window) — the uniform inter-key interval
+  // collapses keystroke entropy toward 0, tripping bh.keystroke_entropy_floor (humans vary digraph
+  // latencies) — then a simple mouse path.
+  for (const ch of "the quick brown fox") {
+    await page.keyboard.type(ch);
+    await page.waitForTimeout(95);
+  }
   for (let i = 0; i < 24; i++) {
     await page.mouse.move(100 + i * 7, 120 + Math.sin(i / 2) * 50);
   }

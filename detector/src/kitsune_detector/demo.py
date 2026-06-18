@@ -21,6 +21,10 @@ DEMO_PAGE = """<!doctype html>
   if (!id) { return; }
   var pts = [];
   addEventListener("mousemove", function (e) { pts.push({ x: e.clientX, y: e.clientY, t: e.timeStamp }); });
+  // Keystroke timing: a real typist has variable inter-key intervals (digraph latencies differ); a script
+  // that types at a fixed delay has near-zero interval entropy — the keystroke-dynamics tell.
+  var keys = [];
+  addEventListener("keydown", function (e) { keys.push(e.timeStamp); });
   // speechSynthesis voices load asynchronously — kick the load early so the list is populated by the
   // time send() runs. The installed TTS voices are OS-specific (Microsoft → Windows, Apple → macOS,
   // espeak/eSpeak → Linux) and a real desktop has them; a headless container has none or Linux-only.
@@ -148,6 +152,22 @@ DEMO_PAGE = """<!doctype html>
     var h = 0;
     for (var j = 0; j < 8; j++) { if (b[j] > 0) { var pr = b[j] / t; h -= pr * Math.log2(pr); } }
     return h / Math.log2(8);
+  }
+  // Normalized Shannon entropy of inter-keystroke intervals (log-bucketed). Human typing spreads across
+  // many latency buckets (~high); a fixed-delay script collapses to one bucket (~0).
+  function keyEntropy(ks) {
+    if (ks.length < 4) return 1; // too few keystrokes to judge — don't flag
+    var b = {}, t = 0;
+    for (var i = 1; i < ks.length; i++) {
+      var dt = ks[i] - ks[i - 1];
+      if (dt <= 0) continue;
+      var bucket = Math.round(Math.log2(dt) * 2); // ~half-octave buckets
+      b[bucket] = (b[bucket] || 0) + 1; t++;
+    }
+    if (t < 3) return 1;
+    var h = 0, n = 0;
+    for (var k in b) { if (b.hasOwnProperty(k)) { var pr = b[k] / t; h -= pr * Math.log2(pr); n++; } }
+    return n <= 1 ? 0 : h / Math.log2(n);
   }
   function d(a, c) { return Math.hypot(c.x - a.x, c.y - a.y); }
   function straightness(p) {
@@ -449,6 +469,7 @@ DEMO_PAGE = """<!doctype html>
         sigs.push(S("behavioral", "mouse_straightness", straightness(pts)));
         sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
       }
+      if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
     }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function () { document.body.setAttribute("data-ks", "sent"); });

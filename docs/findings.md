@@ -76,6 +76,14 @@ The `human-mouse` evader fully zeroes the behavioral column — yet is still `bo
 it changes no verdict. This is why the durable signals are environment and coordination, not behaviour —
 behavioral biometrics needs sophisticated sequence/biomechanics models, not static thresholds, to matter.
 
+**Keystroke dynamics is the one exception that bites.** `bh.keystroke_entropy_floor` (the inter-key
+interval entropy) is *not* as easily evaded as the mouse thresholds: a naive `page.keyboard.type` at a
+fixed delay collapses to ~0 interval entropy and **fires** (`stealth-naive`, `behavioral:1`), because
+fixed-delay typing is exactly what a form-filling bot does. Only genuinely *variable* digraph latencies
+(measured 0.975 vs the 0.15 floor) evade it. So keystroke timing is a meaningful tell against the common
+case (uniform automated typing) — where mouse-straightness is not (even a sine wave clears it). It still
+falls to a bot that bothers to randomize key timing, but it raises the bar more than the mouse rules do.
+
 ## The baseline control — separating spoofing from a stripped environment
 
 A detector that only fires on *headless-environment* tells is not detecting anti-detect spoofing — it is
