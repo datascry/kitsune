@@ -1,0 +1,28 @@
+# detector/data/datacenter_cidrs — seed list of well-known datacenter/hosting CIDR blocks.
+# NON-EXHAUSTIVE seed for the IP-reputation producer; refresh from official sources per
+# docs/ip-reputation-data.md (cloud providers publish their ranges; firehol/client9-ipcat aggregate them).
+# One CIDR per line; '#' comments and blanks ignored.
+
+# AWS
+52.0.0.0/11
+54.144.0.0/12
+# Microsoft Azure
+13.64.0.0/11
+20.33.0.0/16
+# Google Cloud
+34.64.0.0/10
+35.184.0.0/13
+# Cloudflare
+104.16.0.0/12
+# DigitalOcean
+138.197.0.0/16
+159.89.0.0/16
+# Linode / Akamai
+45.79.0.0/16
+# Vultr
+45.32.0.0/16
+# Hetzner
+5.9.0.0/16
+88.198.0.0/16
+# OVH
+51.38.0.0/16

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.47.0"
+ruleset_version: "0.48.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -187,8 +187,8 @@ rules:
     status: active
     category: reputation
     added: "2026-06-17"
-    last_validated: "2026-06-17"
-    source: "iptoasn.com / MaxMind GeoLite2-ASN"
+    last_validated: "2026-06-18"
+    source: "Producer: detector IP-CIDR classifier (ip_reputation.py) over curated cloud/hosting ranges; cf. iptoasn.com / MaxMind GeoLite2-ASN. See docs/ip-reputation-data.md"
 
   # --- v0.2.0: deepened coverage ---
 
@@ -343,14 +343,14 @@ rules:
     reads: [reputation.is_proxy_exit]
     predicate: present
     weight: 0.5
-    # experimental: no live producer yet — needs a proxy/VPN-exit reputation feed (X4BNet/MaxMind
-    # Anonymous-IP). The logic is sound and unit-tested; proxied clients are meanwhile caught code-only
-    # by net.webrtc_ip_vs_observed (WebRTC real-IP leak vs the observed proxy IP).
-    status: experimental
+    # Now live: the detector IP-CIDR classifier (ip_reputation.py) emits is_proxy_exit from a curated
+    # proxy/VPN/Tor-exit CIDR list (seeded; refresh per docs/ip-reputation-data.md). The seed is small, so
+    # in the local lab this fires only on a real listed exit IP — but the producer is wired and live.
+    status: active
     category: reputation
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "X4BNet/lists_vpn; MaxMind Anonymous-IP"
+    source: "Producer: detector IP-CIDR classifier; lists from Tor bulk exit list / X4BNet/lists_vpn / firehol anonymizers. See docs/ip-reputation-data.md"
 
   # --- v0.3.0: deeper behavioral shape features (the agent frontier) ---
 

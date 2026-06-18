@@ -16,7 +16,8 @@ from . import scoring
 from .coherence import CoherenceEngine, RuleSet, load_registry
 from .config import SCHEMA_VERSION
 from .ingest import group_signals
-from .models import Layer, Session, Signal, Source, Verdict
+from .ip_reputation import IPReputation
+from .models import MISSING, Layer, Session, Signal, Source, Verdict
 
 Clock = Callable[[], datetime]
 
@@ -26,33 +27,59 @@ def _utcnow() -> datetime:
 
 
 class Detector:
-    def __init__(self, ruleset: RuleSet | None = None, *, clock: Clock = _utcnow) -> None:
+    def __init__(
+        self,
+        ruleset: RuleSet | None = None,
+        *,
+        clock: Clock = _utcnow,
+        ip_reputation: IPReputation | None = None,
+    ) -> None:
         self._ruleset = ruleset or load_registry()
         self._engine = CoherenceEngine(self._ruleset)
         self._clock = clock
+        self._iprep = ip_reputation or IPReputation.from_seed()
 
     @property
     def ruleset_version(self) -> str:
         return self._ruleset.ruleset_version
 
     def _with_derived(self, session: Session) -> Session:
-        """Add score-time derived signals (not persisted). A session with a network fingerprint but an
-        empty browser layer loaded the challenge page yet never executed JS — a scripted/non-browser
-        client (e.g. an HTTP flood). Emitted as a cross-layer ``network.browser_absent`` so the registry
-        rule (and the incoherence amplifier) handle it like any other tell."""
-        if session.signals.network and not session.signals.browser:
-            marker = Signal(
+        """Add score-time derived signals (not persisted). Two enrichments: (1) a network fingerprint with
+        an empty browser layer loaded the challenge page yet never ran JS — a scripted/non-browser client,
+        emitted as ``network.browser_absent``; (2) IP reputation — the observed source IP classified against
+        curated datacenter/proxy CIDR lists, emitted as ``reputation.asn_is_datacenter`` / ``is_proxy_exit``
+        so the rep.* rules fire. Both feed the engine like any other tell."""
+
+        def mk(layer: Layer, kind: str, value: object) -> Signal:
+            return Signal(
                 schema_version=SCHEMA_VERSION,
                 session_id=session.session_id,
-                layer=Layer.network,
-                kind="browser_absent",
-                value=True,
+                layer=layer,
+                kind=kind,
+                value=value,
                 source=Source.detector,
                 observed_at=session.last_seen,
             )
-            groups = session.signals.model_copy(update={"network": [*session.signals.network, marker]})
-            return session.model_copy(update={"signals": groups})
-        return session
+
+        net_add: list[Signal] = []
+        rep_add: list[Signal] = []
+        if session.signals.network and not session.signals.browser:
+            net_add.append(mk(Layer.network, kind="browser_absent", value=True))
+        ip = session.value(Layer.network, "observed_ip")
+        if ip is not MISSING:
+            is_dc, is_px = self._iprep.classify(str(ip))
+            if is_dc:
+                rep_add.append(mk(Layer.reputation, kind="asn_is_datacenter", value=True))
+            if is_px:
+                rep_add.append(mk(Layer.reputation, kind="is_proxy_exit", value=True))
+        if not net_add and not rep_add:
+            return session
+        update: dict[str, list[Signal]] = {}
+        if net_add:
+            update["network"] = [*session.signals.network, *net_add]
+        if rep_add:
+            update["reputation"] = [*session.signals.reputation, *rep_add]
+        return session.model_copy(update={"signals": session.signals.model_copy(update=update)})
 
     def score(self, session: Session) -> Verdict:
         """Score one correlated session into an explainable verdict."""
