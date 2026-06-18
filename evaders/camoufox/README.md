@@ -13,6 +13,24 @@ plugins). Camoufox is a different engine (Firefox) with engine-level spoofing, s
 Chrome-specific tells should not apply — testing whether an engine-level browser slips the floor that
 catches every chromium-based tool.
 
+## Result (live)
+
+**Camoufox evades the entire ruleset — `0/27`, `human`.** The only browser evader to score human,
+alongside vanilla httpx. It wins because it is a different engine with engine-level spoofing:
+
+- Firefox UA → the Chrome-specific tells don't apply (`window.chrome`, ANGLE WebGL, the Chrome
+  permissions quirk), and there is no `navigator.userAgentData`, so the Client-Hints checks can't fire.
+- It exposes **no WebGL renderer** (Firefox `resistFingerprinting` blocks `WEBGL_debug_renderer_info`),
+  so `webgl_software` / `webgl_os_vs_ua` get no input.
+- `navigator.webdriver = false` at the engine level — no JS-tampering tells.
+- A coherent spoofed fingerprint (it claims `ua_platform = macOS` on a Linux host, with plausible
+  `hardwareConcurrency` and plugins).
+
+Two findings: (1) engine-level spoofing is the cutting edge — it defeats the JS-surface ruleset
+entirely; (2) **the ruleset is Chrome-biased**. Catching Camoufox needs engine-agnostic detectors —
+e.g. `navigator.platform` / `navigator.oscpu` vs `ua_platform` coherence (does its macOS claim leak
+Linux elsewhere?), or a JA4-vs-claimed-OS check. That is the next blue rung.
+
 ## Run
 
 ```sh
