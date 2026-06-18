@@ -54,9 +54,30 @@ produces exactly the signals the real `demo.py` collector emits for that browser
 environment tells (`webgl_software`, `media_devices_empty`, `mimetypes_empty`, `no_plugins`,
 `no_pdfviewer`), `ch_he_headless`, `webdriver_present`, and **zero spurious coherence** (webgl-OS /
 platform / CH-version all agree). So the FP rates measured here are a property of the *rules*, not of a
-broken fingerprint→signal mapping. A second independent **data source** (Tier-2: headful Chromium/Firefox/
-WebKit; Tier-3: real-device matrix) is still required before any rule is pruned/down-weighted on a
-single-source FP number — corroborate across sources first.
+broken fingerprint→signal mapping. ## Second data source (Tier-2 real engines) — and what it refuted
+
+`task calibrate` defaults to browserforge (Tier-1). A second, independent source lives in
+`corpus/calibration/engines/` — **real** Chromium/Firefox/WebKit fingerprints captured via Playwright —
+scored with `--from-dir`:
+
+```sh
+uv run python -m kitsune_harness.browserforge_corpus --from-dir ../corpus/calibration/engines
+```
+
+These engines are headless/automated (they correctly score `bot` — `webdriver_present`/`ch_he_headless`),
+so they are **not** a legitimate-FP source; their value is **coherence-rule portability**: do the
+coherence rules browserforge flagged as FP-prone fire on a *real* engine? The answer refuted two
+browserforge numbers:
+
+| rule | browserforge (Tier-1) FP | real engines (Tier-2) | verdict |
+|---|---|---|---|
+| `br.webgl_not_angle` | 3.2% | fires on **none** | **browserforge data artifact** — its renderer distribution includes non-ANGLE strings under Chrome UAs; real Chromium always ANGLE-wraps |
+| `br.navplatform_vs_ua` | 3.6% | only on WebKit (Mac UA + Linux container platform) | **artifact** — real Chromium/Firefox are coherent; the WebKit fire is a Playwright-on-Linux quirk, not real Safari |
+
+**Had we trusted the single source, we'd have wrongly down-weighted two sound rules.** This is the
+over-leverage guard working: never prune/down-weight on a single-source FP number. The environment-tell
+FP rates (media_devices_empty etc.) still need a Tier-3 real-*desktop* source — a container is not a
+desktop, so neither browserforge nor headless engines settle those.
 
 ## Honest scope
 
