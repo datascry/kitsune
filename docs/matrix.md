@@ -4,7 +4,7 @@
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `net.tls_os_vs_tcp_os` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.tls_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 1 |
-| `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 1 |
 | `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webdriver_present` | browser | ✓ | ✓ | · | · | · | · | ✓ | · | · | · | ✓ | · | ✓ | · | · | · | 5 |
 | `br.cdp_runtime_enabled` | browser | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | ✓ | · | · | · | 3 |
@@ -79,7 +79,7 @@
 | `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/77** | **10/77** | **4/77** | **3/77** | **6/77** | **13/77** | **12/77** | **10/77** | **8/77** | **10/77** | **11/77** | **14/77** | **13/77** | **6/77** | **8/77** | **1/77** |  |
+| **flagged** |  | **6/77** | **10/77** | **4/77** | **3/77** | **6/77** | **13/77** | **12/77** | **10/77** | **8/77** | **10/77** | **11/77** | **15/77** | **13/77** | **6/77** | **8/77** | **1/77** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -97,16 +97,19 @@
 | `nodriver` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `patchright` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
-| `spoof-ua` | bot | 5 | 0 | 3 | 5 | 1 | 0 |
+| `spoof-ua` | bot | 6 | 0 | 3 | 5 | 1 | 0 |
 | `stealth-naive` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `undetected` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 41/77 engines catch nothing yet
+## Coverage gaps — 40/77 engines catch nothing yet
 
-**Evaded** (7) — reads present in the corpus, but every sample passed:
+**Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
+- `net.h2_vs_tls_browser`
+- `net.ch_platform_header_vs_ua`
+- `net.h2_settings_vs_order`
 - `bh.path_too_straight`
 - `bh.uniform_velocity`
 - `br.low_hardware_concurrency`
@@ -114,16 +117,12 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (34) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (30) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
-- `net.h2_vs_ua_browser`
 - `br.csp_bypassed`
 - `br.canvas_lie`
 - `rep.datacenter_asn`
-- `net.h2_vs_tls_browser`
 - `net.accept_lang_vs_navigator`
-- `net.ch_platform_header_vs_ua`
-- `net.h2_settings_vs_order`
 - `rep.known_proxy_exit`
 - `bh.synthetic_no_coalesced`
 - `br.tostring_tampered`

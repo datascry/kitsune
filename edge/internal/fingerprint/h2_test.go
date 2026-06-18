@@ -42,13 +42,15 @@ func TestH2StringWithPriorities(t *testing.T) {
 
 func TestH2SettingsBrowser(t *testing.T) {
 	chrome := []H2Setting{{ID: 1}, {ID: 2}, {ID: 3}, {ID: 4}, {ID: 6}}
+	headlessChrome := []H2Setting{{ID: 1}, {ID: 2}, {ID: 4}, {ID: 6}} // omits MAX_CONCURRENT_STREAMS(3)
 	firefox := []H2Setting{{ID: 1}, {ID: 4}, {ID: 5}}
 	cases := []struct {
 		name     string
 		settings []H2Setting
 		want     string
 	}{
-		{"chrome profile {1,2,3,4,6}", chrome, "chrome"},
+		{"headful chrome {1,2,3,4,6}", chrome, "chrome"},
+		{"headless chrome {1,2,4,6} (live-captured)", headlessChrome, "chrome"},
 		{"firefox profile {1,4,5}", firefox, "firefox"},
 		{"go default {2,4}", []H2Setting{{ID: 2}, {ID: 4}}, "unknown"},
 		{"empty", nil, "unknown"},
