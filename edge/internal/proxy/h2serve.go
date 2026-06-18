@@ -51,6 +51,22 @@ func (c *prefaceConn) Read(p []byte) (int, error) {
 	return c.Conn.Read(p)
 }
 
+// countingConn tees every byte the HTTP/2 server reads into an H2FrameScanner. It returns the bytes
+// unchanged, so it only observes the frame stream (HEADERS/RST_STREAM counts) — a scanner bug cannot
+// corrupt what the server reads. This is how rapid-reset (CVE-2023-44487) is spotted on a live connection.
+type countingConn struct {
+	net.Conn
+	scanner *fingerprint.H2FrameScanner
+}
+
+func (c *countingConn) Read(p []byte) (int, error) {
+	n, err := c.Conn.Read(p)
+	if n > 0 {
+		c.scanner.Feed(p[:n])
+	}
+	return n, err
+}
+
 // serveH2 is the ALPN "h2" handler: it fingerprints the connection preface, then hands the connection
 // (preface replayed) to the x/net HTTP/2 server. Both the TLS ClientHello and the h2 fingerprint are
 // threaded through the base context so the per-request prepare() emits the JA3/JA4 and h2 signals.
@@ -63,5 +79,9 @@ func (p *ReverseProxy) serveH2(srv *http.Server, tc *tls.Conn, h http.Handler) {
 	if conn.ok {
 		ctx = context.WithValue(ctx, h2Key, &conn.fp)
 	}
-	(&http2.Server{}).ServeConn(conn, &http2.ServeConnOpts{Context: ctx, BaseConfig: srv, Handler: h})
+	// Count frames over the whole connection so a per-request handler can flag a rapid-reset flood.
+	scanner := &fingerprint.H2FrameScanner{}
+	ctx = context.WithValue(ctx, scannerKey, scanner)
+	counting := &countingConn{Conn: conn, scanner: scanner}
+	(&http2.Server{}).ServeConn(counting, &http2.ServeConnOpts{Context: ctx, BaseConfig: srv, Handler: h})
 }

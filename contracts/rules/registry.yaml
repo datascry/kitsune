@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.37.0"
+ruleset_version: "0.38.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -218,6 +218,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Akamai h2 SETTINGS profile vs pseudo-header order (half-spoofed h2 stack)"
+
+  - id: net.h2_rapid_reset
+    title: HTTP/2 rapid-reset flood (CVE-2023-44487) on this connection
+    layers: [network]
+    reads: [network.h2_rapid_reset]
+    predicate: present
+    weight: 0.9
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CVE-2023-44487; HEADERS+RST_STREAM flood — never a human, an unambiguous layer-7 DoS"
 
   - id: br.headless_ua
     title: User-Agent advertises a headless browser

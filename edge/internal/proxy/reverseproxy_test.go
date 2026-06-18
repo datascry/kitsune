@@ -144,6 +144,45 @@ func TestReverseProxyServeHTTP(t *testing.T) {
 	}
 }
 
+func TestServeHTTPEmitsRapidReset(t *testing.T) {
+	got := make(chan []byte, 1)
+	detector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		got <- body
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer detector.Close()
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200) }))
+	defer backend.Close()
+
+	rp, err := NewReverseProxy(backend.URL, detector.URL, fingerprint.HintTable{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rp.newID = fixedID
+	rp.now = fixedNow
+
+	// A connection whose frame scanner has seen a rapid-reset flood → the per-request handler flags it.
+	scanner := &fingerprint.H2FrameScanner{}
+	scanner.Feed(rapidResetStream(t, 120))
+	if !scanner.RapidReset() {
+		t.Fatal("precondition: scanner should report rapid-reset")
+	}
+	r := httptest.NewRequest(http.MethodGet, "http://localhost/", nil)
+	ctx := context.WithValue(r.Context(), helloKey, helloFixture(t))
+	ctx = context.WithValue(ctx, scannerKey, scanner)
+	rp.ServeHTTP(httptest.NewRecorder(), r.WithContext(ctx))
+
+	select {
+	case body := <-got:
+		if !strings.Contains(string(body), `"kind":"h2_rapid_reset"`) {
+			t.Errorf("expected an h2_rapid_reset signal, got: %s", body)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("detector never received signals")
+	}
+}
+
 func TestSelfSignedCert(t *testing.T) {
 	cert, err := selfSignedCert()
 	if err != nil {

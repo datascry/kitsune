@@ -613,11 +613,22 @@ counts HEADERS and RST_STREAM frames by walking the 9-byte frame headers, and `R
 signature — RST_STREAM at flood scale (≥100) that roughly tracks the HEADERS count, which no real browser
 ever produces. It is observe-only by construction: fed a copy, it cannot alter what the HTTP/2 server
 reads, so a counting bug can never affect serving. Like the other adversarial parsers it is unit-tested
-(including frames split across chunk boundaries) and fuzzed (~1.8M executions, no panic). The remaining
-step — teeing it onto the live connection and emitting an `h2_rapid_reset` signal — is a deliberate design
-point: Rapid Reset is *connection*-level abuse, not a *session* fingerprint, so wiring it cleanly means
-deciding how a connection-abuse signal joins a session-keyed detector (the scope here: flag it for the
-connections that do carry a session; leave anonymous pure floods to a rate limiter, which is their job).
+(including frames split across chunk boundaries) and fuzzed (~1.8M executions, no panic).
+
+It is now wired: `serveH2` puts a `countingConn` between the preface conn and `http2.Server.ServeConn`,
+teeing every byte the server reads into the scanner, and threads the scanner through the base context.
+A per-request `ServeHTTP` then emits `net.h2_rapid_reset` (weight 0.9 — never a human) when the connection's
+scanner crosses the flood threshold. The scoping is deliberate: Rapid Reset is *connection*-level abuse,
+not a *session* fingerprint, so the signal is attached to the session that connection carries; an
+anonymous pure flood with no completed request never reaches a handler and is left to a rate limiter,
+which is its job. Two properties make this clean rather than a layering violation. First, it is
+**complementary to mitigation, not a replacement**: the `x/net` HTTP/2 server already *defends* against
+Rapid Reset (Go's CVE-2023-44487 patch caps and closes abusive connections) — that protects availability;
+the detector's job is different, to *attribute* the abuse to a fingerprinted session so a repeat offender
+is known, not merely disconnected. Second, the detection rides entirely on the observe-only tee and the
+existing per-request signal path, so it adds a DoS-attribution signal without touching how connections are
+served or mitigated. The wiring is unit-tested (the tee feeds the scanner and passes bytes through
+unchanged; a rapid-reset-laden context makes `ServeHTTP` emit the signal); the rule fires in the engine.
 
 ### What live capture taught the SETTINGS classifier
 

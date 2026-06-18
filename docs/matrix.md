@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 82 engines
+# Kitsune detection matrix — 83 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | curl-impersonate | floor-spoof | full-stealth | human-mouse | max-stealth | nodriver | patchright | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -19,6 +19,7 @@
 | `net.ch_ua_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
 | `net.ch_ua_version_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_settings_vs_order` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.h2_rapid_reset` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.headless_ua` | browser | · | ✓ | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | · | 9 |
 | `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | ✓ | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 2 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -84,7 +85,7 @@
 | `net.accept_encoding_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/82** | **10/82** | **5/82** | **4/82** | **4/82** | **1/82** | **8/82** | **12/82** | **13/82** | **11/82** | **8/82** | **11/82** | **8/82** | **11/82** | **8/82** | **15/82** | **12/82** | **15/82** | **8/82** | **3/82** | **8/82** |  |
+| **flagged** |  | **6/83** | **10/83** | **5/83** | **4/83** | **4/83** | **1/83** | **8/83** | **12/83** | **13/83** | **11/83** | **8/83** | **11/83** | **8/83** | **11/83** | **8/83** | **15/83** | **12/83** | **15/83** | **8/83** | **3/83** | **8/83** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -113,7 +114,7 @@
 | `vanilla` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 1 | 1 | 1 | 3 | 2 | 0 |
 
-## Coverage gaps — 37/82 engines catch nothing yet
+## Coverage gaps — 38/83 engines catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
@@ -127,12 +128,13 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (27) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (28) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.csp_bypassed`
 - `br.canvas_lie`
 - `rep.datacenter_asn`
 - `net.ch_ua_version_vs_ua`
+- `net.h2_rapid_reset`
 - `rep.known_proxy_exit`
 - `br.worker_divergence`
 - `br.languages_empty`

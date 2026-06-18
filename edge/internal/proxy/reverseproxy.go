@@ -31,6 +31,7 @@ type ctxKey int
 const (
 	helloKey ctxKey = iota
 	h2Key
+	scannerKey
 )
 
 // prepared is the per-request fingerprint decoration the proxy applies.
@@ -283,6 +284,11 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		r.AddCookie(prep.setCookie)
 	}
 	r.Header.Set("X-KS-Session", prep.sessionID)
+	// A rapid-reset flood (CVE-2023-44487) is connection-level abuse; flag it for the session this
+	// connection carries (anonymous pure floods, with no completed request, are a rate limiter's job).
+	if sc, ok := r.Context().Value(scannerKey).(*fingerprint.H2FrameScanner); ok && sc.RapidReset() {
+		prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_rapid_reset", true, p.now()))
+	}
 	p.forward(prep.signals)
 	p.backend.ServeHTTP(w, r)
 }

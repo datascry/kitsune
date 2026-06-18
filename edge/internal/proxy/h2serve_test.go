@@ -11,7 +11,43 @@ import (
 
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/hpack"
+
+	"github.com/datascry/kitsune/edge/internal/fingerprint"
 )
+
+// rapidResetStream builds a client preface followed by n HEADERS+RST_STREAM pairs — a rapid-reset flood.
+func rapidResetStream(t *testing.T, n int) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	buf.WriteString(http2.ClientPreface)
+	fr := http2.NewFramer(&buf, nil)
+	for i := 0; i < n; i++ {
+		sid := uint32(2*i + 1)
+		if err := fr.WriteHeaders(http2.HeadersFrameParam{StreamID: sid, BlockFragment: []byte{0x88}, EndHeaders: true}); err != nil {
+			t.Fatal(err)
+		}
+		if err := fr.WriteRSTStream(sid, http2.ErrCodeCancel); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return buf.Bytes()
+}
+
+func TestCountingConnFeedsScanner(t *testing.T) {
+	raw := rapidResetStream(t, 120)
+	s := &fingerprint.H2FrameScanner{}
+	cc := &countingConn{Conn: fakeConn{r: bytes.NewReader(raw)}, scanner: s}
+	got, err := io.ReadAll(cc)
+	if err != nil {
+		t.Fatalf("readall: %v", err)
+	}
+	if !bytes.Equal(got, raw) {
+		t.Error("countingConn must pass bytes through unchanged")
+	}
+	if !s.RapidReset() {
+		t.Errorf("scanner should flag rapid-reset: headers=%d rst=%d", s.Headers, s.RSTStreams)
+	}
+}
 
 // fakeConn is a net.Conn whose Read is backed by an in-memory reader; other methods are unused here.
 type fakeConn struct {
