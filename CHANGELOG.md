@@ -9,6 +9,14 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **undetected-chromedriver evaluated** — the most popular anti-detect tool (only its successor nodriver
+  had been tested). **Finding:** UC has evolved to defeat the SOTA `Runtime.enable` leak
+  (`cdp_runtime_enabled` does not fire) and patches `navigator.webdriver` — so the *entire* popular tool
+  ecosystem (UC, nodriver, patchright, rebrowser) has converged on closing the CDP-automation tells; only
+  naive plain Playwright still trips `Runtime.enable` (3 corpus evaders). UC's profile mirrors nodriver
+  exactly (`automation:2`, `environment:3`) and it stays `bot` 0.999 on the headless-environment floor
+  (`webgl_software`, `voices_empty`, `media_devices_empty`, `headless_ua`, `chrome_runtime_missing`).
+  New `undetected` evader + corpus session.
 - **HTTP-layer Sec-Fetch coherence** (ruleset 0.24.0) — `net.sec_fetch_vs_ua`: every modern browser sends
   `Sec-Fetch-Site`/`Sec-Fetch-Mode` on requests, but a scripted HTTP client faking a browser UA over
   httpx/curl (the volumetric-DDoS case) omits them. The edge emits `network.sec_fetch_missing` when a
