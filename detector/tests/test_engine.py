@@ -94,6 +94,40 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.navplatform_vs_ua",
         ),
         ([(Layer.browser, "worker_divergence", True, Source.collector)], "br.worker_divergence"),
+        (
+            [
+                (Layer.browser, "vendor_engine", "chromium", Source.collector),
+                (Layer.browser, "ua_engine", "firefox", Source.collector),
+            ],
+            "br.vendor_vs_ua",
+        ),
+        (
+            [
+                (Layer.browser, "oscpu_os", "Linux", Source.collector),
+                (Layer.browser, "ua_platform", "macOS", Source.collector),
+            ],
+            "br.oscpu_vs_ua",
+        ),
+        ([(Layer.browser, "languages_empty", True, Source.collector)], "br.languages_empty"),
+        ([(Layer.browser, "screen_zero", True, Source.collector)], "br.screen_zero"),
+        ([(Layer.browser, "chrome_no_connection", True, Source.collector)], "br.no_connection"),
+        ([(Layer.browser, "chrome_no_pdfviewer", True, Source.collector)], "br.no_pdfviewer"),
+        ([(Layer.browser, "chrome_runtime_missing", True, Source.collector)], "br.chrome_runtime_missing"),
+        ([(Layer.browser, "maxtouch_desktop", True, Source.collector)], "br.maxtouch_desktop"),
+        ([(Layer.browser, "mimetypes_empty", True, Source.collector)], "br.mimetypes_empty"),
+        ([(Layer.browser, "chrome_no_devicememory", True, Source.collector)], "br.no_devicememory"),
+        ([(Layer.browser, "notification_denied", True, Source.collector)], "br.notification_denied"),
+        ([(Layer.browser, "platform_empty", True, Source.collector)], "br.platform_empty"),
+        (
+            [
+                (Layer.browser, "productsub_render", "webkit", Source.collector),
+                (Layer.browser, "ua_render", "gecko", Source.collector),
+            ],
+            "br.productsub_vs_ua",
+        ),
+        ([(Layer.browser, "cdc_artifacts", True, Source.collector)], "br.cdc_artifacts"),
+        ([(Layer.browser, "webgl2_missing", True, Source.collector)], "br.webgl2_missing"),
+        ([(Layer.browser, "iframe_divergence", True, Source.collector)], "br.iframe_divergence"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

@@ -161,6 +161,48 @@ DEMO_PAGE = """<!doctype html>
     sigs.push(S("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0));
     sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
     if (await permAnomaly()) sigs.push(S("browser", "permissions_anomaly", true));
+    // --- v0.9.0 bulk fingerprint + coherence checks (CreepJS / Sannysoft / fpscanner) ---
+    var uaEngine = /Firefox\\//.test(ua) ? "firefox"
+                 : /Edg\\/|Chrome\\//.test(ua) ? "chromium"
+                 : /Safari\\//.test(ua) ? "safari" : "other";
+    sigs.push(S("browser", "ua_engine", uaEngine));
+    var ven = navigator.vendor;
+    var venEngine = /Google/i.test(ven) ? "chromium" : ven === "" ? "firefox"
+                  : /Apple/i.test(ven) ? "safari" : "other";
+    sigs.push(S("browser", "vendor_engine", venEngine));
+    if (navigator.oscpu) {
+      var oc = /Mac/i.test(navigator.oscpu) ? "macOS" : /Win/i.test(navigator.oscpu) ? "Windows"
+             : /Linux/i.test(navigator.oscpu) ? "Linux" : "";
+      if (oc) sigs.push(S("browser", "oscpu_os", oc));
+    }
+    var isChromium = uaEngine === "chromium";
+    if (!navigator.languages || navigator.languages.length === 0) sigs.push(S("browser", "languages_empty", true));
+    if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) sigs.push(S("browser", "screen_zero", true));
+    if (isChromium && !navigator.connection) sigs.push(S("browser", "chrome_no_connection", true));
+    if (isChromium && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));
+    if (window.chrome && !window.chrome.runtime) sigs.push(S("browser", "chrome_runtime_missing", true));
+    if (navigator.maxTouchPoints > 0 && !/Mobile|Android|iPhone|iPad/i.test(ua)) sigs.push(S("browser", "maxtouch_desktop", true));
+    if (navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
+    if (isChromium && typeof navigator.deviceMemory === "undefined") sigs.push(S("browser", "chrome_no_devicememory", true));
+    try { if (window.Notification && Notification.permission === "denied") sigs.push(S("browser", "notification_denied", true)); } catch (e) {}
+    // --- v0.10.0 wave: more lie-detection (CreepJS / Sannysoft / fpscanner) ---
+    if (navigator.platform === "") sigs.push(S("browser", "platform_empty", true));
+    var uaRender = uaEngine === "firefox" ? "gecko" : "webkit";
+    sigs.push(S("browser", "ua_render", uaRender));
+    var ps = navigator.productSub === "20030107" ? "webkit"
+           : navigator.productSub === "20100101" ? "gecko" : "";
+    if (ps) sigs.push(S("browser", "productsub_render", ps));
+    var cdcKeys = ["$cdc_asdjflasutopfhvcZLmcfl_", "__webdriver_evaluate", "__selenium_evaluate",
+      "__webdriver_script_fn", "_Selenium_IDE_Recorder", "_phantom", "callPhantom", "__nightmare",
+      "domAutomation", "__driver_evaluate"];
+    if (cdcKeys.some(function (k) { return k in window || k in document; })) sigs.push(S("browser", "cdc_artifacts", true));
+    try { if (!document.createElement("canvas").getContext("webgl2")) sigs.push(S("browser", "webgl2_missing", true)); } catch (e) {}
+    try {
+      var ifr = document.createElement("iframe");
+      ifr.style.display = "none"; document.body.appendChild(ifr);
+      if (ifr.contentWindow.navigator.userAgent !== navigator.userAgent) sigs.push(S("browser", "iframe_divergence", true));
+      document.body.removeChild(ifr);
+    } catch (e) {}
     var wn = await workerNav();
     if (wn && (wn.ua !== navigator.userAgent || wn.hw !== navigator.hardwareConcurrency ||
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {

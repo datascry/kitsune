@@ -20,14 +20,16 @@ done
 echo "[*] vanilla…"
 "${COMPOSE[@]}" run --rm -T --no-deps \
   -e KITSUNE_EDGE=https://edge:8443/healthz -e KITSUNE_DETECTOR=http://detector:8080 \
-  vanilla 2>/dev/null >"$OUT/vanilla.json"
+  vanilla 2>/dev/null >"$OUT/vanilla.json" || true
 
 echo "[*] stealth (naive + patched + spoof-ua)…"
 docker build -q -t kitsune-stealth ./evaders/stealth >/dev/null # Playwright baked in; cached
 run_stealth() { # $1 = output file; remaining args = extra `docker run` env flags
+  # A failing evader must NOT abort the run (set -e + pipefail) — it just yields an empty file.
   docker run --rm --network "$NET" \
     -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
-    "${@:2}" kitsune-stealth 2>/dev/null | sed -n 's/^__KS__//p' | tail -1 >"$1"
+    "${@:2}" kitsune-stealth 2>/dev/null | sed -n 's/^__KS__//p' | tail -1 >"$1" || true
+  return 0
 }
 run_stealth "$OUT/stealth-naive.json"
 run_stealth "$OUT/stealth-patched.json" -e STEALTH=1

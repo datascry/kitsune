@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.8.0"
+ruleset_version: "0.10.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -356,3 +356,183 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS / rebrowser: main-thread spoofs and some engine-level browsers leak in workers"
+
+  # --- v0.9.0 bulk ramp: coherence + headless tells (CreepJS / Sannysoft / fpscanner / BotD) ---
+
+  - id: br.vendor_vs_ua
+    title: navigator.vendor implies an engine that contradicts the UA
+    layers: [browser]
+    reads: [browser.vendor_engine, browser.ua_engine]
+    predicate: not_equal
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: navigator.vendor (Google Inc./empty/Apple) must match the UA engine"
+
+  - id: br.oscpu_vs_ua
+    title: navigator.oscpu implies an OS that contradicts the UA platform
+    layers: [browser]
+    reads: [browser.oscpu_os, browser.ua_platform]
+    predicate: not_equal
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Firefox navigator.oscpu OS vs UA platform (engine-agnostic)"
+
+  - id: br.languages_empty
+    title: navigator.languages is empty
+    layers: [browser]
+    reads: [browser.languages_empty]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "bot.sannysoft.com / fpscanner: headless reports empty languages"
+
+  - id: br.screen_zero
+    title: Screen or outer window dimensions are zero
+    layers: [browser]
+    reads: [browser.screen_zero]
+    predicate: present
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Headless tell: outerWidth/outerHeight or screen size 0"
+
+  - id: br.no_connection
+    title: Chromium UA but navigator.connection is absent
+    layers: [browser]
+    reads: [browser.chrome_no_connection]
+    predicate: present
+    weight: 0.5
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "fpscanner: Chrome exposes navigator.connection"
+
+  - id: br.no_pdfviewer
+    title: Chromium UA but pdfViewerEnabled is false
+    layers: [browser]
+    reads: [browser.chrome_no_pdfviewer]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Chrome ships a PDF viewer; headless can lack it"
+
+  - id: br.chrome_runtime_missing
+    title: window.chrome present but chrome.runtime missing
+    layers: [browser]
+    reads: [browser.chrome_runtime_missing]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "puppeteer-extra-stealth gap; headless chrome.runtime absence"
+
+  - id: br.maxtouch_desktop
+    title: maxTouchPoints > 0 on a desktop User-Agent
+    layers: [browser]
+    reads: [browser.maxtouch_desktop]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Touch-vs-UA incoherence"
+
+  - id: br.mimetypes_empty
+    title: navigator.mimeTypes is empty
+    layers: [browser]
+    reads: [browser.mimetypes_empty]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Sannysoft: headless reports zero mimeTypes"
+
+  - id: br.no_devicememory
+    title: Chromium UA but navigator.deviceMemory is undefined
+    layers: [browser]
+    reads: [browser.chrome_no_devicememory]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "FingerprintJS: Chrome exposes deviceMemory"
+
+  - id: br.notification_denied
+    title: Notification.permission is denied by default (headless Chrome)
+    layers: [browser]
+    reads: [browser.notification_denied]
+    predicate: present
+    weight: 0.4
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Headless Chrome defaults Notification.permission to denied"
+
+  # --- v0.10.0 wave: more lie-detection ---
+
+  - id: br.platform_empty
+    title: navigator.platform is empty
+    layers: [browser]
+    reads: [browser.platform_empty]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Headless Chromium reports an empty navigator.platform"
+
+  - id: br.productsub_vs_ua
+    title: navigator.productSub render engine contradicts the UA
+    layers: [browser]
+    reads: [browser.productsub_render, browser.ua_render]
+    predicate: not_equal
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: productSub 20030107=WebKit/Blink, 20100101=Gecko must match the UA"
+
+  - id: br.cdc_artifacts
+    title: Selenium / chromedriver automation artifacts in window/document
+    layers: [browser]
+    reads: [browser.cdc_artifacts]
+    predicate: present
+    weight: 0.85
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "fpscanner / Sannysoft: $cdc_, __webdriver, _phantom, __nightmare keys"
+
+  - id: br.webgl2_missing
+    title: WebGL2 unsupported (headless software rendering)
+    layers: [browser]
+    reads: [browser.webgl2_missing]
+    predicate: present
+    weight: 0.4
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Headless software GL can lack WebGL2"
+
+  - id: br.iframe_divergence
+    title: navigator differs between the main document and an iframe
+    layers: [browser]
+    reads: [browser.iframe_divergence]
+    predicate: present
+    weight: 0.8
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: main-thread-only spoofs leak in a fresh iframe context"
