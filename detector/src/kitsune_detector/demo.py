@@ -228,6 +228,8 @@ DEMO_PAGE = """<!doctype html>
       // media devices to beat voices_empty/media_devices_empty) is caught by the override's non-native
       // toString — a real browser never replaces these. See the FLOOR_SPOOF evader.
       var fns = [Function.prototype.toString, HTMLCanvasElement.prototype.toDataURL,
+                 HTMLCanvasElement.prototype.toBlob,
+                 CanvasRenderingContext2D.prototype.getImageData,
                  navigator.permissions && navigator.permissions.query,
                  window.speechSynthesis && speechSynthesis.getVoices,
                  navigator.mediaDevices && navigator.mediaDevices.enumerateDevices];
@@ -416,6 +418,9 @@ DEMO_PAGE = """<!doctype html>
     var _nl = (navigator.languages && navigator.languages[0]) || navigator.language || "";
     if (_nl) sigs.push(S("browser", "nav_language_primary", String(_nl).split("-")[0].toLowerCase()));
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) sigs.push(S("browser", "screen_zero", true));
+    // CreepJS/sannysoft: the available screen can never exceed the physical screen — avail > total is an
+    // impossible value only a spoofed/sloppily-randomised screen produces (no zoom/dpr confound; both logical px).
+    if (screen.availWidth > screen.width || screen.availHeight > screen.height) sigs.push(S("browser", "screen_impossible", true));
     if (isChromium && !navigator.connection) sigs.push(S("browser", "chrome_no_connection", true));
     if (isChromium && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));
     if (window.chrome && !window.chrome.runtime) sigs.push(S("browser", "chrome_runtime_missing", true));
@@ -450,25 +455,7 @@ DEMO_PAGE = """<!doctype html>
       "__webdriver_script_fn", "_Selenium_IDE_Recorder", "_phantom", "callPhantom", "__nightmare",
       "domAutomation", "__driver_evaluate"];
     if (cdcKeys.some(function (k) { return k in window || k in document; })) sigs.push(S("browser", "cdc_artifacts", true));
-    // --- v0.46.0: detections mined from the survey (docs/landscape.md). ---
-    // CreepJS-style native-function tamper check: stealth tools override sensitive native APIs in JS, whose
-    // source no longer stringifies to "[native code]". Covers functions beyond canvas_lie's toDataURL.
-    var nativeTampered = (function () {
-      var ts = Function.prototype.toString;
-      var fns = [];
-      try { fns.push(navigator.permissions && navigator.permissions.query); } catch (e) {}
-      try { fns.push(WebGLRenderingContext.prototype.getParameter); } catch (e) {}
-      try { fns.push(CanvasRenderingContext2D.prototype.getImageData); } catch (e) {}
-      try { fns.push(HTMLCanvasElement.prototype.toBlob); } catch (e) {}
-      try { fns.push(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices); } catch (e) {}
-      for (var i = 0; i < fns.length; i++) {
-        if (typeof fns[i] === "function") {
-          try { if (ts.call(fns[i]).indexOf("[native code]") < 0) return true; } catch (e) { return true; }
-        }
-      }
-      return false;
-    })();
-    if (nativeTampered) sigs.push(S("browser", "native_function_tampered", true));
+    // --- v0.47.0: detections mined from the survey (docs/landscape.md). ---
     // FingerprintJS BotD / bot.sannysoft.com: Electron/Node globals, Playwright/Puppeteer hooks, and
     // webdriver attributes on documentElement — none of which a real browser on this (own) page exposes.
     var autoGlobals = ["Buffer", "process", "global", "require", "__playwright__", "__pw_manual",
