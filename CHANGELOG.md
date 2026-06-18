@@ -9,6 +9,15 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Canvas-farbling detection + Brave evaluated** (ruleset 0.26.0) — `br.canvas_noise` covers the last
+  anti-fingerprinting *philosophy* (farbling: per-session canvas/audio noise). It is **reference-free**:
+  fill a canvas with a solid colour and read it back — a real browser returns the exact colour, a
+  farbling browser perturbs pixels. Validated live by building a **Brave** evader (the last major
+  browser): Brave trips `canvas_noise` (its canvas farbling), while stealth/camoufox read the fill back
+  exactly (no false positive). `audio_noise` does not fire on Brave — its audio farbling is per-session
+  *deterministic*, so the canvas invariant is what exposes it. Weight 0.5 (`suspicious`): a human on Brave
+  is a privacy-tool signal (elevated risk), not a bot conviction. **All five evasion philosophies are now
+  covered with validated detections** (coherent-spoof, CDP-stealth, scripted/no-JS, RFP, farbling).
 - **resistFingerprinting (Tor/Mullvad) detection** (ruleset 0.25.0) — `br.rfp_browser`, covering the last
   anti-fingerprinting *philosophy* (RFP evades by making all users identical, the opposite of Camoufox's
   coherent uniqueness). From the Tor design doc: RFP forces UTC, letterboxes the window to 200×100

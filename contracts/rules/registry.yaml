@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.25.0"
+ruleset_version: "0.26.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -920,3 +920,17 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Tor design: RFP forces UTC, letterboxes to 200x100, clamps hardwareConcurrency to 2 (conjunction required — each alone is common). Identifies a privacy browser = elevated risk, NOT a bot conviction (Tor users are often human); weight 0.4 corroborates rather than convicting alone"
+
+  # --- v0.26.0: canvas farbling (Brave-style per-session readback noise) ---
+
+  - id: br.canvas_noise
+    title: Solid-fill canvas reads back perturbed (engine-level farbling, e.g. Brave)
+    layers: [browser]
+    reads: [browser.canvas_noise]
+    predicate: present
+    weight: 0.5
+    status: active
+    category: artifact
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Brave farbling adds per-session canvas noise; a solid fill read back exactly proves no farbling, any deviation proves it (reference-free). Privacy-tool tell = elevated risk; weight corroborates"

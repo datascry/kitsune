@@ -367,6 +367,22 @@ DEMO_PAGE = """<!doctype html>
     if (navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
     if (isChromium && typeof navigator.deviceMemory === "undefined") sigs.push(S("browser", "chrome_no_devicememory", true));
     try { if (window.Notification && Notification.permission === "denied") sigs.push(S("browser", "notification_denied", true)); } catch (e) {}
+    // --- v0.26.0: canvas farbling (Brave) — reference-free. A farbling browser adds per-session noise to
+    // canvas readback; a solid fill is the probe: a real browser reads back the EXACT colour, a farbling
+    // one perturbs some pixels. (canvas_lie catches a JS getImageData override; this catches engine-level
+    // farbling, where getImageData is still native.) Read the interior only to avoid any edge AA.
+    try {
+      var fc = document.createElement("canvas"); fc.width = 64; fc.height = 64;
+      var fctx = fc.getContext("2d");
+      fctx.fillStyle = "rgb(123, 77, 211)"; fctx.fillRect(0, 0, 64, 64);
+      var fdata = fctx.getImageData(16, 16, 32, 32).data;
+      for (var fi = 0; fi < fdata.length; fi += 4) {
+        if (fdata[fi] !== 123 || fdata[fi + 1] !== 77 || fdata[fi + 2] !== 211 || fdata[fi + 3] !== 255) {
+          sigs.push(S("browser", "canvas_noise", true));
+          break;
+        }
+      }
+    } catch (e) {}
     // --- v0.10.0 wave: more lie-detection (CreepJS / Sannysoft / fpscanner) ---
     if (navigator.platform === "") sigs.push(S("browser", "platform_empty", true));
     var uaRender = uaEngine === "firefox" ? "gecko" : "webkit";
