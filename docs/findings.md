@@ -316,6 +316,27 @@ This is the signal that matters for the bots/DDoS domain: an attacker fielding t
 anti-detect browsers still routes them through a shared engine/TLS stack, and the coordination is visible
 in aggregate even when every instance is individually perfect.
 
+### Residential-proxy fleets — turning IP diversity into a tell
+
+The modern botnet defeats IP-based defenses (rate limits, datacenter-ASN rules) by exiting each bot
+through a *different residential proxy* — so the source IPs look like distinct, ordinary users. The
+coordination scorer adds two IP-topology signals that make that diversity self-incriminating
+(`docs/coordination-proxy.md`, scored from a synthetic fleet since the lab has no proxies to capture):
+
+- **Residential-proxy pattern** — a *confirmed* spoofing fleet (JS paradox or JA4_c divergence) that is
+  *also* spread across many distinct `network.observed_ip` values. IP diversity alone is the null
+  hypothesis (many real users share a JA4 prefix), so it only escalates once a spoofing tell is already
+  present — at which point the spread reveals a distributed botnet rather than one misconfigured client.
+- **Same-origin behind proxies** — diverse observed (proxy) IPs but a single shared
+  `browser.webrtc_public_ip`: the proxies are fronting *one* real origin, leaked by WebRTC. Very hard to
+  explain innocently (it cross-links the cross-layer WebRTC signal with the fleet view).
+
+A synthetic residential-proxy Camoufox fleet (3 nodes, distinct residential exit IPs, one real datacenter
+origin) scores **`fleet` 1.00** on *all six* signals at once — JS paradox, JA4_c divergence, timing
+lockstep, volume, residential-proxy spread, and same-origin WebRTC IP. The lesson for the DDoS frontier:
+distributing a botnet across residential proxies hides it from per-IP defenses but not from coordination
+analysis — the shared engine identity and the converging real origin betray the fleet regardless.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

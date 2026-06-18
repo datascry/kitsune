@@ -44,6 +44,15 @@ _LOCKSTEP_BONUS = 0.12  # tightens confidence; kept < the fleet threshold so the
 # extensions specifically to be robust to Chrome's order shuffling, so a varying JA4_c means the actual
 # extension/sig-alg set is being manipulated per launch — an anti-detect TLS tell (Camoufox does this).
 _JA4C_BONUS = 0.30
+# A *confirmed* spoofing fleet (paradox or JA4_c) that is also spread across many distinct source IPs is
+# the residential-proxy botnet pattern: the IP diversity is there to look like distinct users and defeat
+# IP rate-limiting / datacenter-ASN rules, but the shared engine identity binds them. A modest escalation
+# (IP diversity alone is the null hypothesis — many real users share a JA4 prefix — so it only adds once a
+# spoofing tell is already present).
+_PROXY_FLEET_BONUS = 0.10
+# Diverse observed (proxy) IPs but ONE shared WebRTC-leaked real IP: proxies fronting a single origin.
+# Very hard to explain innocently — a strong same-origin signal.
+_SHARED_ORIGIN_BONUS = 0.30
 
 
 @dataclass(frozen=True)
@@ -57,6 +66,8 @@ class FleetVerdict:
     label: str  # "fleet" | "candidate" | "benign"
     span_seconds: float | None = None  # first_seen spread across members (None if < 2 timestamps)
     ja4c_divergent: bool = False  # members share the cipher prefix but differ in extensions/sig-algs
+    distinct_observed_ips: int = 0  # distinct source IPs across the cluster (proxy spread)
+    shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     evidence: list[str] = field(default_factory=list)
 
 
@@ -89,6 +100,13 @@ def _diverged_traits(sessions: list[Session]) -> dict[str, int]:
         if len(values) > 1:
             out[kind] = len(values)
     return out
+
+
+def _distinct_values(sessions: list[Session], layer: Layer, kind: str) -> set[object]:
+    """The set of distinct non-missing values for one signal across the cluster."""
+    vals = {session.value(layer, kind) for session in sessions}
+    vals.discard(MISSING)
+    return vals
 
 
 def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdict:
@@ -125,6 +143,24 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     elif span is not None:
         evidence.append(f"arrivals spread over {span:.0f}s — no lockstep")
 
+    # IP topology: residential-proxy spread + same-origin-behind-proxies (the bots/DDoS frontier).
+    observed = _distinct_values(sessions, Layer.network, "observed_ip")
+    webrtc = _distinct_values(sessions, Layer.browser, "webrtc_public_ip")
+    distinct_observed = len(observed)
+    shared_real_ip: str | None = None
+    if (diverged or ja4c_divergent) and distinct_observed > 1:
+        score += _PROXY_FLEET_BONUS
+        evidence.append(
+            f"distributed across {distinct_observed} distinct source IPs — residential-proxy fleet "
+            f"pattern (IP diversity masks one shared engine, defeating IP/ASN rules)"
+        )
+    if distinct_observed > 1 and len(webrtc) == 1:
+        shared_real_ip = str(next(iter(webrtc)))
+        score += _SHARED_ORIGIN_BONUS
+        evidence.append(
+            f"{distinct_observed} proxy IPs front one real IP `{shared_real_ip}` (WebRTC) — same-origin fleet"
+        )
+
     score = max(0.0, min(1.0, score))
     label = "fleet" if score >= 0.60 else "candidate" if score >= 0.30 else "benign"
     return FleetVerdict(
@@ -135,6 +171,8 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         label=label,
         span_seconds=span,
         ja4c_divergent=ja4c_divergent,
+        distinct_observed_ips=distinct_observed,
+        shared_real_ip=shared_real_ip,
         evidence=evidence,
     )
 

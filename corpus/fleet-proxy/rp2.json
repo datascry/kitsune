@@ -1,0 +1,70 @@
+{
+ "schema_version": "0.1",
+ "session_id": "rp2",
+ "remote_ip": "98.45.201.7",
+ "first_seen": "2026-06-18T12:00:11Z",
+ "last_seen": "2026-06-18T12:00:11Z",
+ "request_count": 4,
+ "signals": {
+  "network": [
+   {
+    "schema_version": "0.1",
+    "session_id": "rp2",
+    "layer": "network",
+    "kind": "ja4",
+    "value": "t13d1717h2_5b57614c22b0_e6dcd7ae0a9e",
+    "source": "edge",
+    "observed_at": "2026-06-18T12:00:11Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp2",
+    "layer": "network",
+    "kind": "observed_ip",
+    "value": "98.45.201.7",
+    "source": "edge",
+    "observed_at": "2026-06-18T12:00:11Z"
+   }
+  ],
+  "browser": [
+   {
+    "schema_version": "0.1",
+    "session_id": "rp2",
+    "layer": "browser",
+    "kind": "hardware_concurrency",
+    "value": 16,
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:11Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp2",
+    "layer": "browser",
+    "kind": "nav_platform_os",
+    "value": "macOS",
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:11Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp2",
+    "layer": "browser",
+    "kind": "ua_platform",
+    "value": "macOS",
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:11Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp2",
+    "layer": "browser",
+    "kind": "webrtc_public_ip",
+    "value": "45.137.0.42",
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:11Z"
+   }
+  ],
+  "behavioral": [],
+  "reputation": []
+ }
+}

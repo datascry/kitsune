@@ -1,0 +1,70 @@
+{
+ "schema_version": "0.1",
+ "session_id": "rp3",
+ "remote_ip": "24.119.6.150",
+ "first_seen": "2026-06-18T12:00:23Z",
+ "last_seen": "2026-06-18T12:00:23Z",
+ "request_count": 4,
+ "signals": {
+  "network": [
+   {
+    "schema_version": "0.1",
+    "session_id": "rp3",
+    "layer": "network",
+    "kind": "ja4",
+    "value": "t13d1717h2_5b57614c22b0_a1b2c3d4e5f6",
+    "source": "edge",
+    "observed_at": "2026-06-18T12:00:23Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp3",
+    "layer": "network",
+    "kind": "observed_ip",
+    "value": "24.119.6.150",
+    "source": "edge",
+    "observed_at": "2026-06-18T12:00:23Z"
+   }
+  ],
+  "browser": [
+   {
+    "schema_version": "0.1",
+    "session_id": "rp3",
+    "layer": "browser",
+    "kind": "hardware_concurrency",
+    "value": 32,
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:23Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp3",
+    "layer": "browser",
+    "kind": "nav_platform_os",
+    "value": "Windows",
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:23Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp3",
+    "layer": "browser",
+    "kind": "ua_platform",
+    "value": "Windows",
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:23Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "rp3",
+    "layer": "browser",
+    "kind": "webrtc_public_ip",
+    "value": "45.137.0.42",
+    "source": "collector",
+    "observed_at": "2026-06-18T12:00:23Z"
+   }
+  ],
+  "behavioral": [],
+  "reputation": []
+ }
+}

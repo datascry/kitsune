@@ -18,7 +18,14 @@ from .conftest import FIXED
 
 
 def _sess(
-    name: str, ja4: str | None, hw: int | None = None, plat: str | None = None, *, offset_s: float = 0.0
+    name: str,
+    ja4: str | None,
+    hw: int | None = None,
+    plat: str | None = None,
+    *,
+    offset_s: float = 0.0,
+    observed_ip: str | None = None,
+    webrtc_ip: str | None = None,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -32,6 +39,10 @@ def _sess(
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
         sigs.append(mk(Layer.browser, "nav_platform_os", plat, Source.collector))
+    if observed_ip is not None:
+        sigs.append(mk(Layer.network, "observed_ip", observed_ip, Source.edge))
+    if webrtc_ip is not None:
+        sigs.append(mk(Layer.browser, "webrtc_public_ip", webrtc_ip, Source.collector))
     return group_signals(sigs)[0]
 
 
@@ -103,6 +114,38 @@ def test_shared_full_ja4_not_divergent() -> None:
     # Members sharing the *full* JA4 (real same-build cohort) → no JA4_c divergence flag.
     v = score_cluster("p", [("a", _sess("a", "p_q_r", 8, "Windows")), ("b", _sess("b", "p_q_r", 8, "Windows"))])
     assert v.ja4c_divergent is False
+
+
+def test_residential_proxy_fleet_escalates() -> None:
+    # A confirmed spoofing fleet (here JA4_c-divergent, homogeneous JS, spread timing so the base is
+    # mid-range — not clamped) spread across distinct source IPs = residential-proxy botnet: the IP
+    # diversity masks the shared engine. Should score higher than the same fleet on one IP.
+    diverse = [
+        ("a", _sess("a", "p_q_1", 8, offset_s=0, observed_ip="11.0.0.1")),
+        ("b", _sess("b", "p_q_2", 8, offset_s=9999, observed_ip="22.0.0.2")),
+    ]
+    same_ip = [
+        ("a", _sess("a", "p_q_1", 8, offset_s=0, observed_ip="11.0.0.1")),
+        ("b", _sess("b", "p_q_2", 8, offset_s=9999, observed_ip="11.0.0.1")),
+    ]
+    vd = score_cluster("p_q", diverse)
+    vs = score_cluster("p_q", same_ip)
+    assert vd.distinct_observed_ips == 2
+    assert vd.ja4c_divergent and not vd.diverged_traits  # confirmed fleet via TLS, JS homogeneous
+    assert vd.score > vs.score
+    assert any("residential-proxy" in e for e in vd.evidence)
+
+
+def test_same_origin_behind_proxies() -> None:
+    # Diverse proxy IPs but one shared WebRTC-leaked real IP → proxies fronting a single origin.
+    members = [
+        ("a", _sess("a", "X", 8, observed_ip="11.0.0.1", webrtc_ip="203.0.113.9")),
+        ("b", _sess("b", "X", 32, observed_ip="22.0.0.2", webrtc_ip="203.0.113.9")),
+    ]
+    v = score_cluster("X", members)
+    assert v.shared_real_ip == "203.0.113.9"
+    assert v.label == "fleet"
+    assert any("same-origin" in e for e in v.evidence)
 
 
 def test_single_member_cluster_has_no_span() -> None:

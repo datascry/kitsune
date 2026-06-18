@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Residential-proxy fleet detection (coordination, the bots/DDoS frontier).** Two IP-topology signals
+  in `harness/coordination.py`: (1) *residential-proxy pattern* — a confirmed spoofing fleet (JS paradox
+  or JA4_c divergence) also spread across many distinct `observed_ip` values, so the IP diversity that
+  defeats per-IP/ASN rules instead reveals a distributed botnet; (2) *same-origin behind proxies* —
+  diverse proxy IPs but one shared `webrtc_public_ip`, cross-linking the WebRTC signal with the fleet
+  view. A synthetic residential-proxy Camoufox fleet (distinct exit IPs, one real origin) scores `fleet`
+  1.00 on all six coordination signals (`docs/coordination-proxy.md`). 100% covered.
 - **Keystroke-dynamics capture — last dead rule closed.** A signal-emission audit found one rule whose
   signal the collector never produced: `bh.keystroke_entropy_floor` (read `behavioral.keystroke_entropy`).
   The collector now captures keydown timing and emits the normalized inter-key interval entropy, and the
