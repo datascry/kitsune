@@ -18,6 +18,28 @@ func TestDefaultHints(t *testing.T) {
 	}
 }
 
+func TestPrefixFallbackClassifiesFirefox(t *testing.T) {
+	table := DefaultHints()
+	// The live-captured Camoufox JA4 (its JA4_c randomises per launch) classifies via the a+b prefix.
+	if h, ok := table.Lookup("t13d1717h2_5b57614c22b0_3cbfd9057e0d"); !ok || h.Browser != "firefox" {
+		t.Errorf("camoufox JA4 should classify firefox via prefix: %+v ok=%v", h, ok)
+	}
+	// A different JA4_c on the same cipher prefix resolves the same way (the point of prefix matching).
+	if h, ok := table.Lookup("t13d1717h2_5b57614c22b0_ffffffffffff"); !ok || h.Browser != "firefox" {
+		t.Errorf("prefix fallback should be JA4_c-independent: %+v ok=%v", h, ok)
+	}
+}
+
+func TestLookupRejectsNonMatches(t *testing.T) {
+	table := DefaultHints()
+	if _, ok := table.Lookup("t13d9999h2_deadbeefcafe_0123456789ab"); ok {
+		t.Error("an unrelated JA4 must not match")
+	}
+	if _, ok := table.Lookup("nounderscores"); ok {
+		t.Error("a malformed JA4 (no underscores) must not match")
+	}
+}
+
 func TestLoadHintsFromFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "h.json")
 	if err := os.WriteFile(path, []byte(`{"abc":{"browser":"safari","os":"macOS"}}`), 0o600); err != nil {

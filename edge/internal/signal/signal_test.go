@@ -59,6 +59,24 @@ func TestFromClientHelloWithHint(t *testing.T) {
 	}
 }
 
+func TestFromClientHelloBrowserHintOnlyNoOS(t *testing.T) {
+	ch := &fingerprint.ClientHello{Transport: "t", Version: 0x0304, CipherSuites: []uint16{0x1301}}
+	// A prefix entry that classifies the TLS engine but pins no OS (the JA4 cipher prefix cannot).
+	table := fingerprint.HintTable{ch.JA4(): {Browser: "firefox", OS: ""}}
+	sigs := FromClientHello("sess", ch, table, at)
+	if len(sigs) != 3 {
+		t.Fatalf("want 3 signals (ja3, ja4, ja4_browser_hint), got %d", len(sigs))
+	}
+	for _, s := range sigs {
+		if s.Kind == "ja4_os_hint" {
+			t.Fatal("must not emit ja4_os_hint when the hint carries no OS")
+		}
+	}
+	if sigs[2].Kind != "ja4_browser_hint" || sigs[2].Value != "firefox" {
+		t.Errorf("browser hint: %+v", sigs[2])
+	}
+}
+
 func TestFromH2(t *testing.T) {
 	fp := fingerprint.H2Fingerprint{
 		Settings:          []fingerprint.H2Setting{{ID: 1, Value: 65536}},

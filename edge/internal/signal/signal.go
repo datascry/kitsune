@@ -51,10 +51,15 @@ func FromClientHello(
 		Network(sessionID, "ja4", ja4, at),
 	}
 	if hint, ok := hints.Lookup(ja4); ok {
-		out = append(out,
-			Network(sessionID, "ja4_browser_hint", hint.Browser, at),
-			Network(sessionID, "ja4_os_hint", hint.OS, at),
-		)
+		// Emit each hint only when it carries a real label. A JA4_a+JA4_b prefix entry can classify the
+		// TLS engine (browser) without pinning an OS, and emitting a blank/"unknown" os here would
+		// falsely feed net.tls_os_vs_tcp_os; guard each independently.
+		if hint.Browser != "" && hint.Browser != "unknown" {
+			out = append(out, Network(sessionID, "ja4_browser_hint", hint.Browser, at))
+		}
+		if hint.OS != "" && hint.OS != "unknown" {
+			out = append(out, Network(sessionID, "ja4_os_hint", hint.OS, at))
+		}
 	}
 	return out
 }

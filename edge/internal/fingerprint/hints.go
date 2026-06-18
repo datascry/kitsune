@@ -3,6 +3,8 @@
 
 package fingerprint
 
+import "strings"
+
 // Hint is a coarse browser/OS label derived from a fingerprint.
 type Hint struct {
 	Browser string `json:"browser"`
@@ -12,14 +14,36 @@ type Hint struct {
 // Unknown is returned when a fingerprint is not in the table.
 var Unknown = Hint{Browser: "unknown", OS: "unknown"}
 
-// HintTable maps a full JA4 string to a Hint. Swap in a real DB (FoxIO JA4 db) behind this type.
+// HintTable maps a JA4 to a Hint. A key may be a full JA4 (`a_b_c`) or just the JA4_a+JA4_b prefix
+// (`a_b`). Swap in a real DB (FoxIO JA4 db) behind this type.
 type HintTable map[string]Hint
 
-// Lookup returns the hint for a JA4, and whether it was found.
+// Lookup returns the hint for a JA4, and whether it was found. It tries an exact full-JA4 match first,
+// then falls back to the JA4_a+JA4_b prefix (dropping JA4_c, the extension hash). JA4_c changes when a
+// browser randomises its extension *set* per launch — Camoufox does this — so the cipher-level prefix is
+// the stable per-family key; matching it still classifies the TLS engine when the full JA4 drifts.
 func (t HintTable) Lookup(ja4 string) (Hint, bool) {
-	h, ok := t[ja4]
-	if !ok {
-		return Unknown, false
+	if h, ok := t[ja4]; ok {
+		return h, true
 	}
-	return h, true
+	if prefix, ok := ja4abPrefix(ja4); ok {
+		if h, ok := t[prefix]; ok {
+			return h, true
+		}
+	}
+	return Unknown, false
+}
+
+// ja4abPrefix returns the `JA4_a_JA4_b` prefix (the substring up to the second underscore) of a JA4,
+// or false when the string has fewer than two underscores.
+func ja4abPrefix(ja4 string) (string, bool) {
+	first := strings.IndexByte(ja4, '_')
+	if first < 0 {
+		return "", false
+	}
+	rest := strings.IndexByte(ja4[first+1:], '_')
+	if rest < 0 {
+		return "", false
+	}
+	return ja4[:first+1+rest], true
 }

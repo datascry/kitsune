@@ -482,6 +482,21 @@ Firefox networking (Necko), so the HTTP/2 layer cannot distinguish it from a rea
 the TLS layer can. Camoufox is beaten by capability/environment tells and by coordination, never by
 network-stack incoherence — and the live h2 capture confirms that boundary rather than assuming it.
 
+### JA4 must be matched on the cipher prefix, not the full string
+
+The same capture exposed why the TLS-engine hint was blank for Camoufox: the JA4 hint table keyed on the
+*full* JA4, but Camoufox randomises its TLS extension *set* per launch, so JA4_c (the extension hash)
+changes every run while JA4_a (version/cipher/extension counts) and JA4_b (the cipher hash) stay fixed.
+JA4 deliberately sorts ciphers and extensions before hashing — robust against Chrome's extension-*order*
+shuffling — but sorting cannot survive a changing extension *set*, which is exactly the lever Camoufox
+pulls. The fix is to fall back to the `JA4_a+JA4_b` prefix: it pins the TLS stack (cipher list) without
+depending on the volatile extension set. Seeded with the live Camoufox prefix
+(`t13d1717h2_5b57614c22b0`), the edge now classifies the Firefox TLS family, so `net.tls_vs_ua_browser`
+and `net.h2_vs_tls_browser` can cross-check the TLS engine for Firefox-based tools — they stay quiet on
+Camoufox itself (coherent Firefox) but would fire on a tool wearing a non-Firefox UA over a Firefox TLS
+stack. A cipher prefix pins the engine but not the OS, so the OS hint is emitted only when present —
+otherwise a blank OS would have falsely fed `net.tls_os_vs_tcp_os`.
+
 ## Locale coherence across the HTTP/JS boundary
 
 The same value is often visible at two layers, set from one source of truth — and a spoof that rewrites
