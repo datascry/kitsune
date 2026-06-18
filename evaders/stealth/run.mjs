@@ -12,7 +12,9 @@ const STEALTH = process.env.STEALTH === "1";
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
-const browser = await chromium.launch({ args: ["--no-sandbox"] });
+// --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
+// navigation layer) so the fingerprinting handshake completes and network signals are captured.
+const browser = await chromium.launch({ args: ["--no-sandbox", "--ignore-certificate-errors"] });
 const context = await browser.newContext({
   ignoreHTTPSErrors: true,
   ...(STEALTH ? { userAgent: CHROME_UA } : {}),

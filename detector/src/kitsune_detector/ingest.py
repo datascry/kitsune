@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .config import SCHEMA_VERSION
-from .models import Session, Signal, SignalGroups, Source
+from .models import Layer, Session, Signal, SignalGroups, Source
 
 
 def group_signals(signals: list[Signal]) -> list[Session]:
@@ -41,5 +41,33 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
         first_seen=min(timestamps),
         last_seen=max(timestamps),
         request_count=request_count,
+        signals=groups,
+    )
+
+
+def merge_sessions(existing: Session, new: Session) -> Session:
+    """Accumulate ``new`` into ``existing`` (same session).
+
+    Signals arrive across multiple ingests — the edge posts network signals, the collector posts
+    browser/behavioral ones. We must *merge*, not replace: combine per layer, keeping the latest
+    signal for each ``kind`` so a session grows across requests instead of clobbering itself.
+    """
+    groups = SignalGroups()
+    for layer in Layer:
+        latest: dict[str, Signal] = {}
+        for sig in [*existing.signals.of(layer), *new.signals.of(layer)]:
+            current = latest.get(sig.kind)
+            if current is None or sig.observed_at >= current.observed_at:
+                latest[sig.kind] = sig
+        ordered = sorted(latest.values(), key=lambda s: (s.observed_at, s.kind))
+        groups.of(layer).extend(ordered)
+
+    return Session(
+        schema_version=SCHEMA_VERSION,
+        session_id=existing.session_id,
+        remote_ip=existing.remote_ip or new.remote_ip,
+        first_seen=min(existing.first_seen, new.first_seen),
+        last_seen=max(existing.last_seen, new.last_seen),
+        request_count=existing.request_count + new.request_count,
         signals=groups,
     )

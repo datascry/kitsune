@@ -37,13 +37,15 @@ KITSUNE_DETECTOR=http://127.0.0.1:8080 go run ./cmd/edge
   clients via the detector's `GET /session/{id}`. (Nice property observed: JA3 varies with GREASE
   between runs; JA4 is stable — which is why JA4 is the better signal.)
 
-### Known limitation
+### Browser capture (resolved)
 
-Network capture works for non-browser clients (httpx, uTLS/go-tls handshake cleanly through the
-peek-proxy). Real **Chromium** currently sends a `certificate_unknown` TLS alert to the self-signed
-edge (the page still loads via Playwright's `ignoreHTTPSErrors`, so browser/behavioral signals are
-captured, but the **network** signals for browser sessions are not). Fixing the edge cert/handshake
-for browsers is a tracked follow-up; it does not affect the non-browser network path.
+Real Chromium now captures **all three layers** end-to-end. Two fixes were needed: (1) Chromium is
+launched with `--ignore-certificate-errors` so it accepts the self-signed edge at the TLS layer (not
+just the navigation layer), and (2) — the real bug — the detector's `/ingest` now **merges** signals
+into an existing session instead of overwriting it (the edge posts network signals first, the
+collector posts browser/behavioral ones later; the old INSERT-OR-REPLACE clobbered the network ones).
+HTTP/2 is disabled on the edge so the per-connection ClientHello propagates to request contexts;
+HTTP/2 fingerprinting is a separate, deferred signal.
 
 This is **tier-2** coverage per the testing strategy (network IO), gated lower than the core logic;
 the fingerprint engine itself is held to the core ≥95% bar.

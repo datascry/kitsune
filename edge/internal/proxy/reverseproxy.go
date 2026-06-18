@@ -135,6 +135,10 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 	srv := &http.Server{
 		Handler:     p,
 		ReadTimeout: 15 * time.Second,
+		// Disable HTTP/2 so the ClientHello captured per-connection in ConnContext propagates to
+		// request contexts (the bundled h2 server does not carry ConnContext values to streams).
+		// HTTP/2 fingerprinting is a separate, deferred signal; HTTP/1.1 is fine for the edge.
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
 			if tc, ok := c.(*tls.Conn); ok {
 				if pc, ok := tc.NetConn().(*peek.Conn); ok {

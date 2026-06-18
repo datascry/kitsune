@@ -72,3 +72,33 @@ def test_session_endpoint(client: TestClient) -> None:
     assert resp.status_code == 200
     assert resp.json()["session_id"] == "bot-001"
     assert client.get("/session/nope").status_code == 404
+
+
+def test_ingest_accumulates_across_calls(client: TestClient) -> None:
+    net = [
+        {
+            "schema_version": "0.1",
+            "session_id": "acc",
+            "layer": "network",
+            "kind": "ja4",
+            "value": "t13d",
+            "source": "edge",
+            "observed_at": "2026-06-18T00:00:00Z",
+        }
+    ]
+    web = [
+        {
+            "schema_version": "0.1",
+            "session_id": "acc",
+            "layer": "browser",
+            "kind": "webdriver",
+            "value": True,
+            "source": "collector",
+            "observed_at": "2026-06-18T00:00:01Z",
+        }
+    ]
+    client.post("/ingest", json=net)
+    client.post("/ingest", json=web)  # must NOT clobber the network signal
+    sig = client.get("/session/acc").json()["signals"]
+    assert len(sig["network"]) == 1
+    assert len(sig["browser"]) == 1

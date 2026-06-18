@@ -35,12 +35,14 @@ def create_app(detector: Detector | None = None, store: Store | None = None) -> 
 
     @app.post("/ingest", response_model=list[Verdict])
     def ingest(signals: list[Signal]) -> list[Verdict]:
-        from .ingest import group_signals
+        from .ingest import group_signals, merge_sessions
 
         verdicts: list[Verdict] = []
         for session in group_signals(signals):
-            store.save_session(session)
-            verdict = detector.score(session)
+            existing = store.get_session(session.session_id)
+            merged = merge_sessions(existing, session) if existing else session
+            store.save_session(merged)
+            verdict = detector.score(merged)
             store.save_verdict(verdict)
             verdicts.append(verdict)
         return verdicts
