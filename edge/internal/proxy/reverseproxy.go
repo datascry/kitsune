@@ -334,7 +334,9 @@ type ReverseProxy struct {
 	newID       IDFunc
 	now         func() time.Time
 	client      *http.Client
-	synStore    *tcpfp.Store // source-IP -> TCP/IP kernel family; nil when capture is unavailable
+	synStore    *tcpfp.Store  // source-IP -> TCP/IP kernel family; nil when capture is unavailable
+	quic        *QUICCapturer // source-IP -> QUIC ClientHello; nil when QUIC is not enabled
+	altSvc      string        // Alt-Svc header advertising h3, so browsers attempt QUIC; "" when disabled
 }
 
 // NewReverseProxy builds a reverse proxy forwarding to backendURL and reporting to detectorURL.
@@ -377,6 +379,17 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if k, ok := p.synStore.Get(clientIP(r)); ok {
 			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "tcp_kernel", k, p.now()))
 		}
+	}
+	// QUIC/HTTP-3 coherence: if the client also attempted QUIC here (drawn by the Alt-Svc advert), the
+	// captured QUIC ClientHello is fingerprinted by source IP. A browser GREASEs its QUIC hello; a
+	// non-browser QUIC stack under a browser UA does not — quic_no_grease, the QUIC analog of tls_no_grease.
+	if p.quic != nil {
+		if ch, err := p.quic.FingerprintByIP(clientIP(r)); err == nil && ch != nil {
+			prep.signals = append(prep.signals, quicTells(prep.sessionID, ch, r.Header.Get("User-Agent"), p.now())...)
+		}
+	}
+	if p.altSvc != "" {
+		w.Header().Set("Alt-Svc", p.altSvc)
 	}
 	if sc, ok := r.Context().Value(scannerKey).(*fingerprint.H2FrameScanner); ok {
 		if sc.RapidReset() {
@@ -421,6 +434,16 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 			log.Printf("tcp/ip fingerprinting disabled: %v", err)
 		}
 	}()
+	// Start the QUIC capturer on the same port (UDP) and advertise h3 via Alt-Svc, best-effort: it draws
+	// and fingerprints client QUIC Initials. If it can't bind, the edge serves h2 without QUIC signals.
+	if q, qerr := NewQUICCapturer(addr, cert); qerr == nil {
+		p.quic = q
+		if _, port, perr := net.SplitHostPort(addr); perr == nil {
+			p.altSvc = `h3=":` + port + `"; ma=86400`
+		}
+	} else {
+		log.Printf("quic fingerprinting disabled: %v", qerr)
+	}
 	inner, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err

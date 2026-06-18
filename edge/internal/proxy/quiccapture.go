@@ -8,10 +8,12 @@ import (
 	"crypto/tls"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/quic-go/quic-go"
 
 	"github.com/datascry/kitsune/edge/internal/fingerprint"
+	"github.com/datascry/kitsune/edge/internal/signal"
 )
 
 // quicInitialTee wraps a UDP PacketConn and stashes the QUIC v1 Initial datagrams (long header, type 00)
@@ -87,6 +89,36 @@ func (c *QUICCapturer) Addr() net.Addr { return c.tee.LocalAddr() }
 // Fingerprint returns the QUIC ClientHello captured from source address addr (e.g. "ip:port"), or error.
 func (c *QUICCapturer) Fingerprint(addr string) (*fingerprint.ClientHello, error) {
 	return c.tee.fingerprint(addr)
+}
+
+// FingerprintByIP returns the QUIC ClientHello captured from any port at source IP ip — the request
+// arrives over TCP from the same IP on a different port than the client's QUIC socket, so we match on IP.
+func (c *QUICCapturer) FingerprintByIP(ip string) (*fingerprint.ClientHello, error) {
+	c.tee.mu.Lock()
+	var pkts [][]byte
+	for addr, ps := range c.tee.initials {
+		if host, _, err := net.SplitHostPort(addr); err == nil && host == ip {
+			pkts = ps
+			break
+		}
+	}
+	c.tee.mu.Unlock()
+	if pkts == nil {
+		return nil, fingerprint.ErrNotQUICInitial
+	}
+	return fingerprint.ParseQUICInitials(pkts)
+}
+
+// quicTells builds the QUIC-layer signals for a captured QUIC ClientHello under the given UA: an
+// observational marker plus, for a modern-browser UA whose QUIC hello lacks GREASE, the quic_no_grease
+// tell — the QUIC analog of net.tls_grease_vs_ua (every browser GREASEs its QUIC hello; a non-browser
+// QUIC stack such as quic-go/Go crypto-tls does not).
+func quicTells(sessionID string, ch *fingerprint.ClientHello, ua string, now time.Time) []signal.Signal {
+	out := []signal.Signal{signal.Network(sessionID, "quic_observed", true, now)}
+	if isModernBrowserUA(ua) && !ch.HasGREASE() {
+		out = append(out, signal.Network(sessionID, "quic_no_grease", true, now))
+	}
+	return out
 }
 
 // Close stops the listener and releases the UDP socket.
