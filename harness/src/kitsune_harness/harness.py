@@ -31,9 +31,7 @@ class Harness:
         signals = scenario.collect()
         sessions = group_signals(signals)
         if len(sessions) != 1:
-            raise ValueError(
-                f"scenario {scenario.name!r} produced {len(sessions)} sessions; expected exactly 1"
-            )
+            raise ValueError(f"scenario {scenario.name!r} produced {len(sessions)} sessions; expected exactly 1")
         verdict: Verdict = self._detector.score(sessions[0])
         return ScenarioResult(scenario=scenario.name, version=scenario.version, verdict=verdict)
 

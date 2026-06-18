@@ -18,19 +18,15 @@ from collections import defaultdict
 
 from kitsune_detector.models import MISSING, Layer, Session
 
+
 # JA4 only: the TLS engine identity, below the JS layer the anti-detect tools randomize.
-_SIGNATURE = [
-    (Layer.network, "ja4"),
-]
-
-
 def fleet_signature(session: Session) -> str:
-    """A stable cross-session identity: JA4 + hardware profile."""
-    parts = []
-    for layer, kind in _SIGNATURE:
-        value = session.value(layer, kind)
-        parts.append(f"{kind}={'?' if value is MISSING else value}")
-    return " | ".join(parts)
+    """A stable cross-session identity: the JA4 cipher-suite prefix (JA4_a + JA4_b). Anti-detect
+    browsers (Camoufox) randomize JA4_c (extensions/sig-algs) per launch, so the full JA4 is not
+    fleet-stable — but the cipher suites are the engine's and do not randomize."""
+    value = session.value(Layer.network, "ja4")
+    prefix = "?" if value is MISSING else "_".join(str(value).split("_")[:2])
+    return f"ja4={prefix}"
 
 
 def detect_fleets(corpus: list[tuple[str, Session]]) -> dict[str, list[str]]:
@@ -45,7 +41,7 @@ def render_fleets(corpus: list[tuple[str, Session]]) -> str:
     fleets = detect_fleets(corpus)
     lines = [f"## Fleets — {len(fleets)} coordinated cluster(s) across {len(corpus)} sessions", ""]
     if not fleets:
-        return "\n".join(lines + ["- (no shared signatures — all sessions are distinct)"]) + "\n"
+        return "\n".join([*lines, "- (no shared signatures — all sessions are distinct)"]) + "\n"
     for sig, members in sorted(fleets.items(), key=lambda kv: -len(kv[1])):
         lines.append(f"- **{len(members)} sessions share** `{sig}`: {', '.join(members)}")
     return "\n".join(lines) + "\n"

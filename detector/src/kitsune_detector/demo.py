@@ -229,6 +229,30 @@ DEMO_PAGE = """<!doctype html>
     // --- v0.11.0 wave: installed-font OS fingerprint (the engine-level OS-lie counter) ---
     var fo = fontOSHint();
     if (fo) sigs.push(S("browser", "font_os_hint", fo));
+    // --- v0.12.0 wave: cross-API device/media coherence (CreepJS / fingerprintjs) ---
+    // The CSS view of the device (matchMedia) and the JS-API view (navigator/screen) must agree; a
+    // spoof that patches one surface but not the other is incoherent across them.
+    try {
+      // availWidth/Height can never exceed the physical screen — a spoofed screen object often slips.
+      if (screen.availWidth > screen.width || screen.availHeight > screen.height)
+        sigs.push(S("browser", "screen_avail_invalid", true));
+      // Real displays report 24/30/32-bit colour; 0/16 is a headless/software artifact.
+      if (screen.colorDepth && [24, 30, 32].indexOf(screen.colorDepth) < 0)
+        sigs.push(S("browser", "color_depth_anomaly", true));
+      // devicePixelRatio must be a positive finite number; <= 0 / NaN is a spoof/headless tell.
+      if (!(window.devicePixelRatio > 0)) sigs.push(S("browser", "devicepixelratio_anomaly", true));
+      // A non-mobile UA that reports no hover capability contradicts a real desktop pointer.
+      var isMobile = /Mobile|Android|iPhone|iPad/i.test(ua);
+      if (!isMobile && window.matchMedia && matchMedia("(hover: none)").matches)
+        sigs.push(S("browser", "hover_none_desktop", true));
+      // CSS coarse-pointer (touch) and navigator.maxTouchPoints describe the same capability; if the
+      // CSS surface says touch but the JS surface says none (or vice-versa) the device is incoherent.
+      if (window.matchMedia) {
+        var cssTouch = matchMedia("(any-pointer: coarse)").matches;
+        var jsTouch = (navigator.maxTouchPoints || 0) > 0;
+        if (cssTouch !== jsTouch) sigs.push(S("browser", "pointer_touch_incoherent", true));
+      }
+    } catch (e) {}
     try {
       var ifr = document.createElement("iframe");
       ifr.style.display = "none"; document.body.appendChild(ifr);
@@ -240,16 +264,24 @@ DEMO_PAGE = """<!doctype html>
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {
       sigs.push(S("browser", "worker_divergence", true));
     }
-    sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
-    sigs.push(S("behavioral", "pointer_event_count", pts.length));
-    if (pts.length >= 3) {
-      sigs.push(S("behavioral", "mouse_straightness", straightness(pts)));
-      sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
+    // In `?fast` (detection-only) captures we don't simulate input, so emitting empty behavioral
+    // signals would make the *absence* of input score as bot-like and mask the fingerprint result.
+    // Omit the behavioral layer entirely in fast mode; a full capture still scores behaviour.
+    if (!/(?:\\?|&)fast\\b/.test(location.search)) {
+      sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
+      sigs.push(S("behavioral", "pointer_event_count", pts.length));
+      if (pts.length >= 3) {
+        sigs.push(S("behavioral", "mouse_straightness", straightness(pts)));
+        sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
+      }
     }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function () { document.body.setAttribute("data-ks", "sent"); });
   }
-  setTimeout(function () { send(); }, 1200);
+  // Default 1200ms lets behavioral (mouse) signals accumulate. `?fast` cuts the wait for
+  // detection-only captures that need the browser-layer fingerprint, not behaviour (e.g. the
+  // single-Camoufox frontier test); body[data-ks=sent] lets a harness wait on completion.
+  setTimeout(function () { send(); }, /(?:\\?|&)fast\\b/.test(location.search) ? 200 : 1200);
 })();
 </script></body></html>
 """

@@ -11,10 +11,14 @@ from kitsune_harness.fleet import detect_fleets, fleet_signature, render_fleets
 from .conftest import FIXED
 
 
+def _mk(name: str, layer: Layer, kind: str, value: object, src: Source) -> Signal:
+    return Signal(session_id=name, layer=layer, kind=kind, value=value, source=src, observed_at=FIXED)
+
+
 def _sess(name: str, ja4: str, hw: int) -> Session:
     sigs = [
-        Signal(session_id=name, layer=Layer.network, kind="ja4", value=ja4, source=Source.edge, observed_at=FIXED),
-        Signal(session_id=name, layer=Layer.browser, kind="hardware_concurrency", value=hw, source=Source.collector, observed_at=FIXED),
+        _mk(name, Layer.network, "ja4", ja4, Source.edge),
+        _mk(name, Layer.browser, "hardware_concurrency", hw, Source.collector),
     ]
     return group_signals(sigs)[0]
 
@@ -23,6 +27,16 @@ def test_signature_ignores_randomized_js_traits() -> None:
     # Same JA4, DIFFERENT hardware (the Camoufox case) must still share a signature.
     assert fleet_signature(_sess("a", "X", 8)) == fleet_signature(_sess("b", "X", 32))
     assert fleet_signature(_sess("a", "X", 8)) != fleet_signature(_sess("c", "Y", 4))
+
+
+def test_signature_keys_on_cipher_prefix_not_randomized_ja4c() -> None:
+    # Same cipher-suite prefix, DIFFERENT JA4_c (Camoufox per-launch TLS randomization) → same sig.
+    assert fleet_signature(_sess("a", "t13d_aaaa_1111", 8)) == fleet_signature(_sess("b", "t13d_aaaa_2222", 8))
+
+
+def test_signature_missing_ja4() -> None:
+    sess = group_signals([_mk("x", Layer.browser, "hardware_concurrency", 8, Source.collector)])[0]
+    assert fleet_signature(sess) == "ja4=?"
 
 
 def test_detect_fleets() -> None:

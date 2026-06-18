@@ -40,8 +40,7 @@ def score_corpus(
 ) -> Scoreboard:
     """Score every recorded session with the current ruleset into one Scoreboard."""
     results = [
-        ScenarioResult(scenario=name, version="corpus", verdict=detector.score(session))
-        for name, session in corpus
+        ScenarioResult(scenario=name, version="corpus", verdict=detector.score(session)) for name, session in corpus
     ]
     return Scoreboard(generated_at=generated_at, ruleset_version=ruleset_version, results=results)
 

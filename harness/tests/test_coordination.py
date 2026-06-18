@@ -21,13 +21,17 @@ def _sess(
     name: str, ja4: str | None, hw: int | None = None, plat: str | None = None, *, offset_s: float = 0.0
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
+
+    def mk(layer: Layer, kind: str, value: object, src: Source) -> Signal:
+        return Signal(session_id=name, layer=layer, kind=kind, value=value, source=src, observed_at=when)
+
     sigs: list[Signal] = []
     if ja4 is not None:
-        sigs.append(Signal(session_id=name, layer=Layer.network, kind="ja4", value=ja4, source=Source.edge, observed_at=when))
+        sigs.append(mk(Layer.network, "ja4", ja4, Source.edge))
     if hw is not None:
-        sigs.append(Signal(session_id=name, layer=Layer.browser, kind="hardware_concurrency", value=hw, source=Source.collector, observed_at=when))
+        sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
-        sigs.append(Signal(session_id=name, layer=Layer.browser, kind="nav_platform_os", value=plat, source=Source.collector, observed_at=when))
+        sigs.append(mk(Layer.browser, "nav_platform_os", plat, Source.collector))
     return group_signals(sigs)[0]
 
 
@@ -77,6 +81,28 @@ def test_timing_lockstep_adds_confidence() -> None:
     assert tight.span_seconds == 30.0
     assert any("lockstep" in e for e in tight.evidence)
     assert any("no lockstep" in e for e in spread.evidence)
+
+
+def test_ja4c_randomization_is_a_fleet() -> None:
+    # Shared cipher-suite prefix, homogeneous JS, but DIFFERENT JA4_c (extensions) per launch — the
+    # Camoufox TLS-randomization shape. Clusters by prefix and the JA4_c divergence makes it a fleet.
+    members = [
+        ("a", _sess("a", "t13d_aaaa_1111", 8, "Windows")),
+        ("b", _sess("b", "t13d_aaaa_2222", 8, "Windows")),
+        ("c", _sess("c", "t13d_aaaa_3333", 8, "Windows")),
+    ]
+    v = score_corpus([(n, s) for n, s in members])[0]
+    assert v.ja4 == "t13d_aaaa"  # keyed on the stable prefix, not the randomized full JA4
+    assert v.ja4c_divergent is True
+    assert v.diverged_traits == {}  # JS is homogeneous — the catch is purely the TLS randomization
+    assert v.label == "fleet"
+    assert any("extensions/sig-algs divergent" in e for e in v.evidence)
+
+
+def test_shared_full_ja4_not_divergent() -> None:
+    # Members sharing the *full* JA4 (real same-build cohort) → no JA4_c divergence flag.
+    v = score_cluster("p", [("a", _sess("a", "p_q_r", 8, "Windows")), ("b", _sess("b", "p_q_r", 8, "Windows"))])
+    assert v.ja4c_divergent is False
 
 
 def test_single_member_cluster_has_no_span() -> None:

@@ -39,6 +39,10 @@ ways patched-Chromium tools cannot match:
   match its claimed OS. An instance claiming macOS returns macOS-signature font widths (Helvetica Neue,
   Menlo, …) despite running on a Linux container, so the classic CreepJS/fingerprintjs **font-OS probe
   (`br.font_os_vs_ua`) is defeated** — the measured font OS coherently matches the claimed platform.
+- **Device/media coherence (confirmed 2026-06-18)** — Camoufox keeps the CSS `matchMedia` view of the
+  device consistent with the JS-API view: the v0.12.0 cross-API battery (`screen_avail_invalid`,
+  `color_depth_anomaly`, `devicepixelratio_anomaly`, `hover_none_desktop`, `pointer_touch_incoherent`)
+  finds nothing on Camoufox. These rules still catch chromium tools that patch one surface but not both.
 
 The single per-session leak that remains: **`br.webgl2_missing`** — headless Camoufox exposes no WebGL2
 context, where a real desktop browser does. A determined adversary running headful (or spoofing a WebGL2
@@ -50,10 +54,22 @@ losing game.
 A *single* Camoufox session can be made arbitrarily coherent. A *fleet* cannot hide that it shares an
 identity below the spoofing layer:
 
-- All instances of a fleet share one **JA4** — the TLS handshake is the engine's, and anti-detect tools
-  spoof JS, not the TLS stack. (JA3 is not stable across the GREASE randomization; JA4 is.)
+- All instances of a fleet share one **JA4 cipher-suite prefix** (JA4_a + JA4_b) — the TLS handshake is
+  the engine's, and anti-detect tools spoof JS, not the cipher suites. (JA3 is not stable across GREASE.)
 - The instances deliberately **randomize their JS identity** (hardware, platform) to look like distinct
   users.
+- **Camoufox also randomizes JA4_c (confirmed 2026-06-18)** — the extensions + signature-algorithms
+  component of JA4 varies per launch (e.g. `…_3cbfd9057e0d` vs `…_e6dcd7ae0a9e` under an identical
+  `t13d1717h2_5b57614c22b0` prefix). So the *full* JA4 is not fleet-stable; the fleet key must be the
+  prefix. And because JA4 deliberately **sorts** extensions to defeat Chrome's order-shuffling, a varying
+  JA4_c means the actual extension/sig-alg *set* is being manipulated — itself an anti-detect TLS tell.
+
+The coordination scorer keys on the JA4 prefix and grades on three signals, any of which is enough to
+reach `fleet`: the **JS-divergence paradox**, **JA4_c divergence** (shared cipher prefix but per-launch
+extension randomization), and **timing lockstep**, scaled by volume. This is robust to *both* of
+Camoufox's randomizations — randomizing JS feeds the JS paradox, randomizing JA4_c feeds the TLS tell.
+Even when a run's JS traits collide by chance (all instances draw the same hardware/platform), the JA4_c
+divergence alone catches the fleet.
 
 `harness/coordination.py` grades a JA4 cluster on three independent coordination signals:
 
@@ -79,3 +95,18 @@ Re-running the seven known-caught evaders every iteration teaches nothing. Testi
   per-session detection: Camoufox single + a Camoufox fleet. Fast; this is where detection still loses.
 - **Regression tier** (`scripts/live_scoreboard.sh`, sparse) — the full known-caught fleet, run
   occasionally to confirm no regression.
+
+### Cutting single-Camoufox iteration time
+
+A live Camoufox capture costs ~10-13s, **dominated by browser cold-start** (the fixed collector/runner
+waits are ~3s and lost in launch variance). Three levers, in order of impact:
+
+1. **Don't recapture for rule-only changes.** A live capture is only needed when the *collector*
+   (emitted signals) changes. For *rule* edits (`registry.yaml`), `python -m kitsune_harness.corpus
+   corpus/sessions` re-scores the recorded session with the current ruleset in **~0.3s, no browser**.
+2. **Amortize the cold-start** for repeated single captures: `KS_REPEAT=N` captures N sessions from one
+   browser launch (~5.5s/capture vs ~12s). *Not* for fleets — Camoufox randomizes per *launch*, so
+   contexts of one launch share a fingerprint and show no cross-instance divergence.
+3. **Skip the fixed waits** with `KS_FAST=1`: an event-driven, detection-only capture (waits on
+   `body[data-ks=sent]`, no mouse simulation). In fast mode the collector omits the behavioral layer so
+   the *absence* of simulated input is not mis-scored as bot-like — the verdict reflects the fingerprint.

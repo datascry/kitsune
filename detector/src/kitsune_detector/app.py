@@ -13,8 +13,8 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
-from .detector import Detector
 from .demo import DEMO_PAGE
+from .detector import Detector
 from .models import Session, Signal, Verdict
 from .store import Store
 

@@ -25,9 +25,7 @@ def make_signal(
     source: Source = Source.collector,
     at: datetime = FIXED,
 ) -> Signal:
-    return Signal(
-        session_id=session_id, layer=layer, kind=kind, value=value, source=source, observed_at=at
-    )
+    return Signal(session_id=session_id, layer=layer, kind=kind, value=value, source=source, observed_at=at)
 
 
 def load_example(name: str) -> dict[str, object]:

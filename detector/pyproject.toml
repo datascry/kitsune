@@ -48,12 +48,17 @@ omit = ["*/__main__.py"]
 exclude_also = ["if __name__ == .__main__.:", "@(abc\\.)?abstractmethod", "raise NotImplementedError"]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# demo.py is a Python file holding one large embedded HTML/JS collector template; Python
+# line-length does not meaningfully apply to the embedded JavaScript lines.
+"src/kitsune_detector/demo.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

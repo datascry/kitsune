@@ -135,13 +135,15 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "br.font_os_vs_ua",
         ),
+        ([(Layer.browser, "screen_avail_invalid", True, Source.collector)], "br.screen_avail_invalid"),
+        ([(Layer.browser, "color_depth_anomaly", True, Source.collector)], "br.color_depth_anomaly"),
+        ([(Layer.browser, "devicepixelratio_anomaly", True, Source.collector)], "br.devicepixelratio_anomaly"),
+        ([(Layer.browser, "hover_none_desktop", True, Source.collector)], "br.hover_none_desktop"),
+        ([(Layer.browser, "pointer_touch_incoherent", True, Source.collector)], "br.pointer_touch_incoherent"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
-    sigs = [
-        make_signal("s", layer, kind, value, source=src)
-        for (layer, kind, value, src) in signals_spec
-    ]
+    sigs = [make_signal("s", layer, kind, value, source=src) for (layer, kind, value, src) in signals_spec]
     session = group_signals(sigs)[0]
     engine = CoherenceEngine(load_registry())
     fired = {c.rule_id for c in engine.evaluate(session)}

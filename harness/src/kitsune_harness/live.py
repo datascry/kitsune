@@ -15,7 +15,7 @@ from typing import Any
 
 from kitsune_detector.models import Verdict
 
-from .models import Scoreboard, ScenarioResult
+from .models import ScenarioResult, Scoreboard
 
 
 def result_from_verdict(label: str, version: str, verdict_json: dict[str, Any]) -> ScenarioResult:

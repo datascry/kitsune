@@ -26,9 +26,7 @@ def test_render_markdown_has_table_and_why(
     assert "br.webdriver_present" in md
 
 
-def test_render_markdown_no_why_when_clean(
-    detector, fixed_clock, human_scenario: ReplayScenario
-) -> None:
+def test_render_markdown_no_why_when_clean(detector, fixed_clock, human_scenario: ReplayScenario) -> None:
     board = Harness(detector, clock=fixed_clock).run([human_scenario])
     assert "## Why" not in render_markdown(board)
 

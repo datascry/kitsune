@@ -9,6 +9,30 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Cross-API device/media coherence** (ruleset 0.12.0) — five CreepJS/fingerprintjs rules comparing the
+  CSS `matchMedia` view of the device against the JS-API view: `br.screen_avail_invalid`,
+  `br.color_depth_anomaly`, `br.devicepixelratio_anomaly`, `br.hover_none_desktop`,
+  `br.pointer_touch_incoherent`. Catch tools that patch one surface but not both. **Finding:** Camoufox
+  keeps both views coherent, so it is not caught by these (documented in `docs/findings.md`).
+- **JA4_c coordination signal** — the fleet detector now keys on the JA4 *cipher-suite prefix* (JA4_a +
+  JA4_b) and grades **JA4_c (extensions/sig-alg) divergence** as a coordination tell. **Finding:**
+  Camoufox randomizes JA4_c per launch, so the full JA4 is not fleet-stable — but since JA4 sorts
+  extensions to defeat order-shuffling, a varying JA4_c betrays per-launch TLS manipulation. The live
+  Camoufox fleet is now caught (`fleet`) via JA4_c divergence even when its JS traits collide by chance.
+- **Faster single-Camoufox capture** — `KS_FAST=1` (event-driven, behavioral layer omitted so skipped
+  input isn't mis-scored) and `KS_REPEAT=N` (N captures from one browser launch, amortizing the ~10s
+  cold-start). The corpus fast-rescore (~0.3s, no browser) remains the path for rule-only changes.
+
+### Fixed
+
+- **CI lint enforcement** — the `harness` CI job was missing `ruff format --check` (the `detector` job
+  had it), so harness format drift went uncaught; added it. Bumped both Python components' ruff
+  `line-length` to 120 (matching the established style, incl. the mandated 2-line headers) and brought
+  detector + harness fully green on `ruff check`, `ruff format`, and `mypy`. demo.py (embedded JS/HTML
+  template) carries a scoped `E501` per-file-ignore.
+
+### Added (continued)
+
 - **Coordination scoring** (`harness/coordination.py`) — grades a JA4 cluster into a graded fleet
   verdict (`fleet`/`candidate`/`benign`) on three independent signals: the **TLS-identical-but-JS-
   divergent paradox** (a real same-build cohort shares its JS identity too, but an anti-detect fleet

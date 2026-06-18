@@ -11,23 +11,44 @@ from camoufox.sync_api import Camoufox
 
 EDGE = os.environ.get("KITSUNE_EDGE", "https://edge:8443/")
 DETECTOR = os.environ.get("KITSUNE_DETECTOR", "http://detector:8080")
+# KS_FAST=1: detection-only capture — skip the mouse simulation + fixed 2s wait and instead drive the
+# collector's `?fast` path, completing the moment signals are POSTed (body[data-ks=sent]). Trades the
+# behavioral layer (not needed for the single-Camoufox fingerprint test) for ~3s less per capture.
+FAST = os.environ.get("KS_FAST") == "1"
+# KS_REPEAT=N: capture N sessions from ONE browser launch (a fresh context each), amortizing the
+# ~10s Camoufox cold-start — the dominant cost — across captures. Use for fast single-instance
+# iteration. NOT for the fleet: Camoufox randomizes its JS fingerprint per *launch*, so contexts of
+# one launch share a fingerprint and would not exhibit the cross-instance divergence a fleet shows.
+REPEAT = max(1, int(os.environ.get("KS_REPEAT", "1")))
+
+
+def _capture(browser: object) -> dict[str, object]:
+    context = browser.new_context(ignore_https_errors=True)  # type: ignore[attr-defined]
+    try:
+        page = context.new_page()
+        if FAST:
+            page.goto(EDGE + ("&fast" if "?" in EDGE else "?fast"), wait_until="load")
+            page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+        else:
+            page.goto(EDGE, wait_until="load")
+            for i in range(24):
+                page.mouse.move(100 + i * 7, 120 + (i % 5) * 12)
+            page.wait_for_timeout(2000)
+        cookie = next((c for c in context.cookies() if c["name"] == "ks_sid"), None)
+    finally:
+        context.close()
+    if cookie is None:
+        raise SystemExit("no ks_sid cookie")
+    with urllib.request.urlopen(f"{DETECTOR}/verdict/{cookie['value']}") as resp:
+        verdict: dict[str, object] = json.load(resp)
+    return verdict
 
 
 def main() -> None:
     with Camoufox(headless=True) as browser:
-        context = browser.new_context(ignore_https_errors=True)
-        page = context.new_page()
-        page.goto(EDGE, wait_until="load")
-        for i in range(24):
-            page.mouse.move(100 + i * 7, 120 + (i % 5) * 12)
-        page.wait_for_timeout(2000)
-        cookie = next((c for c in context.cookies() if c["name"] == "ks_sid"), None)
-
-    if cookie is None:
-        raise SystemExit("no ks_sid cookie")
-    with urllib.request.urlopen(f"{DETECTOR}/verdict/{cookie['value']}") as resp:
-        verdict = json.load(resp)
-    print("__KS__" + json.dumps({"mode": "camoufox", **verdict}))
+        for _ in range(REPEAT):
+            verdict = _capture(browser)
+            print("__KS__" + json.dumps({"mode": "camoufox", **verdict}), flush=True)
 
 
 if __name__ == "__main__":

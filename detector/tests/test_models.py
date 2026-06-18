@@ -48,9 +48,7 @@ def test_session_value_resolves_or_missing(human_session: Session) -> None:
 
 def test_contradiction_is_cross_layer() -> None:
     single = Contradiction(rule_id="r", layers=[Layer.browser], detail="d", weight=0.5)
-    cross = Contradiction(
-        rule_id="r", layers=[Layer.network, Layer.browser], detail="d", weight=0.5
-    )
+    cross = Contradiction(rule_id="r", layers=[Layer.network, Layer.browser], detail="d", weight=0.5)
     assert single.is_cross_layer is False
     assert cross.is_cross_layer is True
 

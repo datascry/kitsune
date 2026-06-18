@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.11.0"
+ruleset_version: "0.12.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -549,3 +549,60 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS / fingerprintjs: OS-specific font stacks betray a spoofed UA platform"
+
+  # --- v0.12.0: cross-API device/media coherence (CSS matchMedia vs JS APIs) ---
+
+  - id: br.screen_avail_invalid
+    title: screen.availWidth/Height exceeds the physical screen size
+    layers: [browser]
+    reads: [browser.screen_avail_invalid]
+    predicate: present
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "fingerprintjs: a spoofed screen object whose avail dims exceed the physical screen"
+
+  - id: br.color_depth_anomaly
+    title: screen.colorDepth is not a real-display value (24/30/32)
+    layers: [browser]
+    reads: [browser.color_depth_anomaly]
+    predicate: present
+    weight: 0.5
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: headless/software rendering reports 0/16-bit colour depth"
+
+  - id: br.devicepixelratio_anomaly
+    title: window.devicePixelRatio is not a positive finite number
+    layers: [browser]
+    reads: [browser.devicepixelratio_anomaly]
+    predicate: present
+    weight: 0.5
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: a zero/NaN devicePixelRatio is a headless/spoof artifact"
+
+  - id: br.hover_none_desktop
+    title: Non-mobile UA reports no hover capability (CSS hover:none)
+    layers: [browser]
+    reads: [browser.hover_none_desktop]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: a desktop UA whose CSS media features report no hover/fine pointer"
+
+  - id: br.pointer_touch_incoherent
+    title: CSS coarse-pointer and navigator.maxTouchPoints disagree on touch
+    layers: [browser]
+    reads: [browser.pointer_touch_incoherent]
+    predicate: present
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: touch capability spoofed on one surface (CSS vs JS) but not the other"

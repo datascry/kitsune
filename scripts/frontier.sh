@@ -24,9 +24,12 @@ for _ in $(seq 1 40); do
 done
 
 run_camoufox() { # $1 = output session-json path; captures one Camoufox session from the detector
+  # KS_FAST=1 (default): detection-only capture — event-driven, ~3s faster, drops the behavioral layer
+  # the frontier test does not score. KS_FAST=0 for a full capture (mouse simulation + behavioral).
   local out="$1" line sid
   line="$(docker run --rm --network "$NET" \
     -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
+    -e KS_FAST="${KS_FAST:-1}" \
     kitsune-camoufox 2>/dev/null | sed -n 's/^__KS__//p' | tail -1 || true)"
   sid="$(printf '%s' "$line" | python3 -c "import json,sys;print(json.load(sys.stdin)['session_id'])" 2>/dev/null || true)"
   [ -n "$sid" ] || { echo "[!] camoufox produced no session" >&2; return 1; }

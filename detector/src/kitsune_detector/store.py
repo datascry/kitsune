@@ -79,9 +79,7 @@ class Store:
 
     def get_session(self, session_id: str) -> Session | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT body FROM sessions WHERE session_id = ?", (session_id,)
-            ).fetchone()
+            row = self._conn.execute("SELECT body FROM sessions WHERE session_id = ?", (session_id,)).fetchone()
         return Session.model_validate_json(row["body"]) if row else None
 
     # -- verdicts --------------------------------------------------------
@@ -103,14 +101,10 @@ class Store:
 
     def get_verdict(self, session_id: str) -> Verdict | None:
         with self._lock:
-            row = self._conn.execute(
-                "SELECT body FROM verdicts WHERE session_id = ?", (session_id,)
-            ).fetchone()
+            row = self._conn.execute("SELECT body FROM verdicts WHERE session_id = ?", (session_id,)).fetchone()
         return Verdict.model_validate_json(row["body"]) if row else None
 
     def list_verdicts(self) -> list[Verdict]:
         with self._lock:
-            rows = self._conn.execute(
-                "SELECT body FROM verdicts ORDER BY scored_at, session_id"
-            ).fetchall()
+            rows = self._conn.execute("SELECT body FROM verdicts ORDER BY scored_at, session_id").fetchall()
         return [Verdict.model_validate_json(row["body"]) for row in rows]
