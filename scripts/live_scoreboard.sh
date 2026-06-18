@@ -35,6 +35,14 @@ run_stealth "$OUT/spoof-ua.json" -e SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv
 run_stealth "$OUT/full-stealth.json" -e FULL=1
 run_stealth "$OUT/patchright.json" -e PATCHRIGHT=1 || true # evaluate a real anti-detect tool
 
+# Camoufox (engine-level Firefox) — uses the prebuilt kitsune-camoufox image if present.
+if docker image inspect kitsune-camoufox >/dev/null 2>&1; then
+  echo "[*] camoufox (engine-level)…"
+  docker run --rm --network "$NET" \
+    -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
+    kitsune-camoufox 2>/dev/null | sed -n 's/^__KS__//p' | tail -1 >"$OUT/camoufox.json" || true
+fi
+
 ARGS=(
   "vanilla=$OUT/vanilla.json"
   "stealth-naive=$OUT/stealth-naive.json"
@@ -43,6 +51,7 @@ ARGS=(
   "full-stealth=$OUT/full-stealth.json"
 )
 [ -s "$OUT/patchright.json" ] && ARGS+=("patchright=$OUT/patchright.json")
+[ -s "$OUT/camoufox.json" ] && ARGS+=("camoufox=$OUT/camoufox.json")
 
 if [ "${RUN_AGENT:-0}" = 1 ]; then
   echo "[*] agent (claude -p — spends Claude usage)…"
