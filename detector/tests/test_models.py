@@ -56,3 +56,18 @@ def test_contradiction_is_cross_layer() -> None:
 def test_signal_round_trips_through_schema() -> None:
     sig = make_signal("s", Layer.network, "ja4", "t13d1516h2", source=Source.edge)
     validate(sig.model_dump(mode="json"), "signal.schema.json")
+
+
+def test_session_round_trips_through_schema(human_session: Session) -> None:
+    # The pydantic model is the detector's view; the JSON Schema is the cross-language contract the
+    # edge/collector must match. A model instance must validate against its own schema, or they have drifted.
+    validate(human_session.model_dump(mode="json"), "session.schema.json")
+
+
+def test_verdict_round_trips_through_schema(bot_session: Session) -> None:
+    from kitsune_detector.detector import Detector
+
+    # Guards the Contradiction.category field (added with the detection-class taxonomy) against drifting
+    # from verdict.schema.json — a real risk the Signal-only roundtrip did not cover.
+    verdict = Detector().score(bot_session)
+    validate(verdict.model_dump(mode="json"), "verdict.schema.json")
