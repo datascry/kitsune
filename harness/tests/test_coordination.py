@@ -210,6 +210,30 @@ def test_replay_stream_orders_by_arrival_and_alerts() -> None:
     assert "no fleet" in render_stream([("solo", _sess("solo", "Q", 4))])
 
 
+def test_windowed_tracker_alerts_on_burst_within_window() -> None:
+    # Two paradox members within a 60s window → fleet alert.
+    t = FleetTracker(window_seconds=60)
+    assert t.observe("a", _sess("a", "X", 8, offset_s=0)) is None
+    assert t.observe("b", _sess("b", "X", 32, offset_s=10)) is not None  # within window → alert
+
+
+def test_windowed_tracker_ignores_slow_trickle() -> None:
+    # The same two members spread beyond the window never coexist → no fleet.
+    t = FleetTracker(window_seconds=60)
+    assert t.observe("a", _sess("a", "X", 8, offset_s=0)) is None
+    assert t.observe("b", _sess("b", "X", 32, offset_s=600)) is None  # 'a' aged out → singleton again
+
+
+def test_windowed_tracker_re_alerts_after_burst_ages_out() -> None:
+    # A burst alerts, ages out, then a fresh burst re-alerts (state reset on expiry).
+    t = FleetTracker(window_seconds=60)
+    t.observe("a", _sess("a", "X", 8, offset_s=0))
+    assert t.observe("b", _sess("b", "X", 32, offset_s=10)) is not None  # first burst alerts
+    # Far-future fresh burst: old members aged out, then a new paradox pair re-alerts.
+    assert t.observe("c", _sess("c", "X", 8, offset_s=1000)) is None  # singleton in new window
+    assert t.observe("d", _sess("d", "X", 32, offset_s=1005)) is not None  # new burst → re-alert
+
+
 def test_single_member_cluster_has_no_span() -> None:
     # Defensive: score_cluster with one member yields no timing span and no lockstep evidence.
     v = score_cluster("X", [("solo", _sess("solo", "X", 8))])

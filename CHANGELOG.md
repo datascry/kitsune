@@ -15,7 +15,11 @@ All notable changes to Kitsune are documented here. The format follows
   edge-triggered, alerting once rather than on every confirming member. This is how a production bots/DDoS
   detector works (incremental clustering + threshold alerting) versus the offline `score_corpus` snapshot.
   `replay_stream` / `render_stream` (and `--stream`) replay a corpus in `first_seen` order; on the
-  residential-proxy fleet it alerts on the second arrival — the instant the paradox is observable. 100% covered.
+  residential-proxy fleet it alerts on the second arrival — the instant the paradox is observable.
+- **Sliding-window aging** (`FleetTracker(window_seconds=W)`) — count only cluster members within `W`
+  seconds of the latest arrival, ageing out the rest: detect a *burst*, not slow accumulation of unrelated
+  same-browser users into a false fleet. Two paradox nodes 10s apart alert; the same two 10 minutes apart
+  never coexist and do not. State resets when a burst ages out, so a fresh burst re-alerts. 100% covered.
 - **Fleet threat-severity (DDoS triage).** The coordination verdict now reports `request_volume`,
   `arrival_rate_per_min`, and a `severity` tier (`moderate`/`high`/`critical`) derived from scale and
   rate — *separate* from the confidence `score` (a confirmed fleet maxes the score whether it is 3 nodes

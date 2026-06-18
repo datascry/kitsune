@@ -210,7 +210,10 @@ class FleetTracker:
     offline ``score_corpus`` snapshot. Each ``observe`` re-scores only the affected cluster.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, window_seconds: float | None = None) -> None:
+        # window_seconds: only cluster members within this many seconds of the latest arrival count — a
+        # burst over a sliding window, not slow all-time accumulation. None = unbounded (accumulate all).
+        self._window = window_seconds
         self._clusters: dict[str, list[tuple[str, Session]]] = {}
         self._label: dict[str, str] = {}
         self._severity: dict[str, str] = {}
@@ -224,6 +227,13 @@ class FleetTracker:
         prefix = _ja4_prefix(ja4)
         members = self._clusters.setdefault(prefix, [])
         members.append((name, session))
+        if self._window is not None:
+            # Age out members older than the window relative to this arrival (the stream's clock).
+            cutoff = session.first_seen.timestamp() - self._window
+            members[:] = [(n, s) for (n, s) in members if s.first_seen.timestamp() >= cutoff]
+            if self._label.get(prefix) == "fleet" and len(members) < 2:
+                self._label[prefix] = "benign"  # the burst aged out — reset so a new burst re-alerts
+                self._severity[prefix] = "n/a"
         if len(members) < 2:
             return None
         verdict = score_cluster(prefix, members)
@@ -266,11 +276,13 @@ def render_coordination(corpus: list[tuple[str, Session]]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def replay_stream(corpus: list[tuple[str, Session]]) -> list[tuple[str, FleetVerdict]]:
+def replay_stream(
+    corpus: list[tuple[str, Session]], window_seconds: float | None = None
+) -> list[tuple[str, FleetVerdict]]:
     """Feed the corpus through a FleetTracker in arrival (first_seen) order; return (trigger_session,
     alert_verdict) for each arrival that raised the alert state — the online detector's alert log."""
     ordered = sorted(corpus, key=lambda nv: nv[1].first_seen)
-    tracker = FleetTracker()
+    tracker = FleetTracker(window_seconds=window_seconds)
     alerts: list[tuple[str, FleetVerdict]] = []
     for name, session in ordered:
         verdict = tracker.observe(name, session)

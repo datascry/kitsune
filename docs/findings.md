@@ -353,6 +353,14 @@ confirming member). Replayed over the residential-proxy fleet in arrival order, 
 arrival** — the instant the paradox becomes observable — rather than waiting for the third. That early,
 edge-triggered alert is what lets a real defense act mid-attack instead of in post-mortem.
 
+A production detector also **windows**: `FleetTracker(window_seconds=W)` only counts cluster members
+within `W` seconds of the latest arrival, ageing out the rest. This is the difference between detecting a
+*burst* and slowly accumulating unrelated same-browser users into a false fleet over hours — two paradox
+nodes 10s apart alert; the same two 10 minutes apart never coexist in the window and do not. When a burst
+ages out, the cluster's alert state resets, so a *fresh* burst on the same JA4 prefix re-alerts rather
+than staying silent. Windowing is also what makes the `arrival_rate_per_min` severity meaningful: a true
+current rate, not an all-time average diluted by history.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:
