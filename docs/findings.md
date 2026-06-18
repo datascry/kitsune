@@ -666,6 +666,17 @@ JA4 TLS engine), `net.h2_vs_ua_browser` (the HTTP/2 stack), and `net.ch_ua_vs_ua
 brand) — each reading the true engine from a different layer the UA string cannot reach. That triple is
 the thesis in miniature: the spoof only had to rewrite one string, and three lower layers disagree with it.
 
+A fourth client-hint coherence closes the *version* dimension. The UA string and the `Sec-CH-UA` brand
+list both carry the Chromium major version, and a real browser keeps them identical. Scrapers, though,
+routinely assemble a header set by hand — a `User-Agent` copied from one Chrome release and a `Sec-CH-UA`
+copied from another — and the two versions drift apart. `net.ch_ua_version_vs_ua` compares the UA-string
+`Chrome/<major>` against the real Chromium-family brand version in `Sec-CH-UA` (skipping the GREASE
+`"Not.A/Brand"` entry, comparing major-only so Chrome's reduced UA never false-positives) and fires on a
+mismatch. Live-checked with a crafted request — `Chrome/126` UA, `Sec-CH-UA` v=124 — it fires; against a
+real browser, which never disagrees with itself here, it stays silent. With browser, OS, locale, and now
+version, every low-entropy client hint a request carries is cross-checked against the layer it should
+agree with.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

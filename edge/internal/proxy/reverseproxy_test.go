@@ -234,6 +234,34 @@ func TestSecCHUABrowser(t *testing.T) {
 	}
 }
 
+func TestCHUAVersionMismatch(t *testing.T) {
+	chrome126 := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+	v126 := `"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="99"`
+	v124 := `"Chromium";v="124", "Google Chrome";v="124", "Not.A/Brand";v="99"`
+	cases := []struct {
+		name   string
+		ua     string
+		chua   string
+		expect bool
+	}{
+		{"coherent versions", chrome126, v126, false},
+		{"mismatched versions (scraper headers)", chrome126, v124, true},
+		{"no Sec-CH-UA (Firefox/Safari/scripted)", chrome126, "", false},
+		{"non-Chrome UA", "Mozilla/5.0 (X11; Linux) Gecko/20100101 Firefox/127.0", v126, false},
+		{"GREASE brand only is ignored", chrome126, `"Not.A/Brand";v="99"`, false},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		r.Header.Set("User-Agent", c.ua)
+		if c.chua != "" {
+			r.Header.Set("Sec-CH-UA", c.chua)
+		}
+		if got := chUAVersionMismatch(r); got != c.expect {
+			t.Errorf("%s: chUAVersionMismatch=%v want %v", c.name, got, c.expect)
+		}
+	}
+}
+
 func TestPrepareEmitsCHUABrowser(t *testing.T) {
 	r := req(t, "abc")
 	r.Header.Set("Sec-CH-UA", `"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="99"`)

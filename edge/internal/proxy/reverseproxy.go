@@ -102,6 +102,9 @@ func prepare(
 	if b := secCHUABrowser(r); b != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_browser", b, now))
 	}
+	if chUAVersionMismatch(r) {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_version_mismatch", true, now))
+	}
 	return out, nil
 }
 
@@ -122,6 +125,50 @@ func secCHUABrowser(r *http.Request) string {
 	default:
 		return ""
 	}
+}
+
+// secCHUAMajorVersion returns the major version of the *real* Chromium-family brand in the Sec-CH-UA
+// list (skipping the deliberately-fake "Not.A/Brand" GREASE entry), e.g. `"Chromium";v="126"` -> "126".
+// The low-entropy Sec-CH-UA carries only the major version, which is what we compare against the UA.
+func secCHUAMajorVersion(secCHUA string) string {
+	for _, brand := range []string{"Google Chrome", "Microsoft Edge", "Chromium"} {
+		i := strings.Index(secCHUA, `"`+brand+`"`)
+		if i < 0 {
+			continue
+		}
+		j := strings.Index(secCHUA[i:], `v="`)
+		if j < 0 {
+			continue
+		}
+		ver := secCHUA[i+j+3:]
+		if k := strings.IndexByte(ver, '"'); k >= 0 {
+			return ver[:k]
+		}
+	}
+	return ""
+}
+
+// uaChromeMajorVersion returns the major version from a `Chrome/<n>` token in the User-Agent, or "".
+func uaChromeMajorVersion(ua string) string {
+	i := strings.Index(ua, "Chrome/")
+	if i < 0 {
+		return ""
+	}
+	ver := ua[i+len("Chrome/"):]
+	end := strings.IndexAny(ver, ". ")
+	if end < 0 {
+		end = len(ver)
+	}
+	return ver[:end]
+}
+
+// chUAVersionMismatch reports a request whose UA-string Chrome version disagrees with the Sec-CH-UA brand
+// version. A real Chromium keeps the two identical; a scraper that assembles a header set from mismatched
+// sources (a UA from one Chrome version, a copied Sec-CH-UA from another) splits them — a common tell.
+func chUAVersionMismatch(r *http.Request) bool {
+	chv := secCHUAMajorVersion(r.Header.Get("Sec-CH-UA"))
+	uav := uaChromeMajorVersion(r.Header.Get("User-Agent"))
+	return chv != "" && uav != "" && chv != uav
 }
 
 // secCHUAPlatform returns the Sec-CH-UA-Platform client-hint value normalised to the same OS vocabulary
