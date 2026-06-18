@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T02:20:33.264387+00:00`
+- generated: `2026-06-18T02:27:13.345749+00:00`
 - ruleset: `live`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -9,9 +9,11 @@
 | stealth-naive | live | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | stealth-patched | live | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | spoof-ua | live | 0.70 | 1.00 | 0.00 | 0.00 | 0.70 | 1.00 | bot |
+| full-stealth | live | 0.00 | 0.70 | 0.00 | 0.00 | 0.00 | 0.70 | bot |
 
 ## Why
 
 - **stealth-naive** (bot): `br.webdriver_present`, `br.headless_ua`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`
 - **stealth-patched** (bot): `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`
 - **spoof-ua** (bot): `net.tls_vs_ua_browser`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_plugins`
+- **full-stealth** (bot): `br.permissions_anomaly`

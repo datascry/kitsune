@@ -32,12 +32,14 @@ run_stealth() { # $1 = output file; remaining args = extra `docker run` env flag
 run_stealth "$OUT/stealth-naive.json"
 run_stealth "$OUT/stealth-patched.json" -e STEALTH=1
 run_stealth "$OUT/spoof-ua.json" -e SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
+run_stealth "$OUT/full-stealth.json" -e FULL=1
 
 ARGS=(
   "vanilla=$OUT/vanilla.json"
   "stealth-naive=$OUT/stealth-naive.json"
   "stealth-patched=$OUT/stealth-patched.json"
   "spoof-ua=$OUT/spoof-ua.json"
+  "full-stealth=$OUT/full-stealth.json"
 )
 
 if [ "${RUN_AGENT:-0}" = 1 ]; then
