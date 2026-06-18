@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.3.0"
+ruleset_version: "0.4.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -201,3 +201,84 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Kitsune; cf. BeCAPTCHA-Mouse"
+
+  # --- v0.4.0: lie-detection (catches how an evasion was applied) ---
+
+  - id: br.webdriver_spoofed
+    title: navigator.webdriver is an own property (patched via defineProperty)
+    layers: [browser]
+    reads: [browser.webdriver_spoofed]
+    predicate: present
+    weight: 0.8
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS lie-detection: native webdriver lives on Navigator.prototype, not the instance"
+
+  - id: br.webgl_software
+    title: WebGL renderer is software (SwiftShader / llvmpipe / Mesa) — headless tell
+    layers: [browser]
+    reads: [browser.webgl_software]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Headless Chrome falls back to SwiftShader; cf. CreepJS / browserleaks WebGL"
+
+  - id: br.permissions_anomaly
+    title: Notification.permission contradicts the Permissions API state
+    layers: [browser]
+    reads: [browser.permissions_anomaly]
+    predicate: present
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "bot.sannysoft.com permissions test"
+
+  - id: br.no_chrome_object
+    title: Chrome User-Agent but window.chrome is absent
+    layers: [browser]
+    reads: [browser.chrome_object_missing]
+    predicate: present
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Classic headless-Chrome tell (missing window.chrome)"
+
+  - id: br.tostring_tampered
+    title: A native function's toString no longer reads [native code]
+    layers: [browser]
+    reads: [browser.function_tostring_tampered]
+    predicate: present
+    weight: 0.8
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "DataDome: puppeteer-extra-stealth toString side-effects"
+
+  - id: br.low_hardware_concurrency
+    title: navigator.hardwareConcurrency implausibly low
+    layers: [browser]
+    reads: [browser.hardware_concurrency]
+    predicate: below_threshold
+    threshold: 1
+    weight: 0.5
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "FingerprintJS hardware signals"
+
+  - id: br.no_plugins
+    title: Desktop browser reports zero plugins
+    layers: [browser]
+    reads: [browser.plugins_count]
+    predicate: below_threshold
+    threshold: 1
+    weight: 0.4
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "fpscanner / Sannysoft plugins length"

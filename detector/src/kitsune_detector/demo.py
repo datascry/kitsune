@@ -70,7 +70,35 @@ DEMO_PAGE = """<!doctype html>
     var v = s.reduce(function (a, x) { return a + (x - mean) * (x - mean); }, 0) / s.length;
     return Math.sqrt(v) / mean;
   }
-  function send() {
+  function webglInfo() {
+    try {
+      var gl = document.createElement("canvas").getContext("webgl");
+      if (!gl) return { vendor: "", renderer: "" };
+      var ext = gl.getExtension("WEBGL_debug_renderer_info");
+      return {
+        vendor: ext ? String(gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) || "") : "",
+        renderer: ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "") : "",
+      };
+    } catch (e) { return { vendor: "", renderer: "" }; }
+  }
+  function toStringTampered() {
+    try {
+      var fns = [Function.prototype.toString, HTMLCanvasElement.prototype.toDataURL,
+                 navigator.permissions && navigator.permissions.query];
+      for (var i = 0; i < fns.length; i++) {
+        if (fns[i] && fns[i].toString().indexOf("[native code]") < 0) return true;
+      }
+      return false;
+    } catch (e) { return true; }
+  }
+  async function permAnomaly() {
+    try {
+      if (!navigator.permissions || !window.Notification) return false;
+      var st = (await navigator.permissions.query({ name: "notifications" })).state;
+      return Notification.permission === "denied" && st !== "denied";
+    } catch (e) { return false; }
+  }
+  async function send() {
     var ua = navigator.userAgent, now = new Date().toISOString();
     function S(layer, kind, value) {
       return { schema_version: "0.1", session_id: id, layer: layer, kind: kind, value: value, source: "collector", observed_at: now };
@@ -84,6 +112,18 @@ DEMO_PAGE = """<!doctype html>
     if (uad && uad.platform) sigs.push(S("browser", "ch_platform", uad.platform));
     if (canvasLie()) sigs.push(S("browser", "canvas_lie", true));
     if (/Headless/i.test(ua)) sigs.push(S("browser", "ua_is_headless", true));
+    // A genuine navigator.webdriver is inherited from Navigator.prototype; an own property means
+    // it was patched via Object.defineProperty(navigator, ...).
+    if (Object.getOwnPropertyDescriptor(navigator, "webdriver")) sigs.push(S("browser", "webdriver_spoofed", true));
+    var wg = webglInfo();
+    if (wg.renderer) sigs.push(S("browser", "webgl_renderer", wg.renderer));
+    if (wg.vendor) sigs.push(S("browser", "webgl_vendor", wg.vendor));
+    if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
+    if (/Chrome|Edg/.test(ua) && !window.chrome) sigs.push(S("browser", "chrome_object_missing", true));
+    if (toStringTampered()) sigs.push(S("browser", "function_tostring_tampered", true));
+    sigs.push(S("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0));
+    sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
+    if (await permAnomaly()) sigs.push(S("browser", "permissions_anomaly", true));
     sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
     sigs.push(S("behavioral", "pointer_event_count", pts.length));
     if (pts.length >= 3) {
@@ -93,7 +133,7 @@ DEMO_PAGE = """<!doctype html>
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function () { document.body.setAttribute("data-ks", "sent"); });
   }
-  setTimeout(send, 2500);
+  setTimeout(function () { send(); }, 2500);
 })();
 </script></body></html>
 """

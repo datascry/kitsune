@@ -69,6 +69,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
+        ([(Layer.browser, "webdriver_spoofed", True, Source.collector)], "br.webdriver_spoofed"),
+        ([(Layer.browser, "webgl_software", True, Source.collector)], "br.webgl_software"),
+        ([(Layer.browser, "permissions_anomaly", True, Source.collector)], "br.permissions_anomaly"),
+        ([(Layer.browser, "chrome_object_missing", True, Source.collector)], "br.no_chrome_object"),
+        ([(Layer.browser, "function_tostring_tampered", True, Source.collector)], "br.tostring_tampered"),
+        ([(Layer.browser, "hardware_concurrency", 0, Source.collector)], "br.low_hardware_concurrency"),
+        ([(Layer.browser, "plugins_count", 0, Source.collector)], "br.no_plugins"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

@@ -27,6 +27,8 @@ export interface PointerSample {
 /** The browser globals the collector reads, abstracted so logic is testable without a browser. */
 export interface BrowserEnv {
   webdriver: boolean;
+  /** True if navigator.webdriver is an own property (patched via defineProperty). */
+  webdriverSpoofed: boolean;
   userAgent: string;
   uaDataPlatform: string | null;
   canvasTampered: boolean;
