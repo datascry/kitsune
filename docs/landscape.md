@@ -1,7 +1,7 @@
 # landscape — Kitsune vs. the bot-detection field
 
 A survey of well-known bot-detection projects, test sites, and libraries, and an honest comparison of
-Kitsune's current detections (v0.47.0, 93 rules) against what they do. Grounded in current sources
+Kitsune's current detections (v0.53.0, 96 rules) against what they do. Grounded in current sources
 (2025–2026), not just the codebase.
 
 ## Who's out there
@@ -44,13 +44,13 @@ Legend: ✅ covered · 🟢 ahead of most public tools · ⚠️ partial / no da
 | WebRTC IP leak | browserleaks, HUMAN | ✅ `webrtc_public_ip`, cross-linked to proxy IP |
 | Cross-layer **coherence** ("lies") | CreepJS (JS-only) | 🟢 the whole engine — and across TLS↔H2↔TCP↔JS, not just JS |
 | **Coordination / fleet** detection | HUMAN (collective); most: none | 🟢 JA4-cluster + JS-divergence paradox + **fp-collision** + proxy topology |
-| Mouse / keystroke dynamics | DataDome, Kasada, HUMAN (ML) | ⚠️ thresholds + new **biomechanics** features (power law, sub-movements); no ML yet |
+| Mouse / keystroke dynamics | DataDome, Kasada, HUMAN (ML) | ✅ thresholds + **biomechanics** calibrated on Balabit (`bh.power_law_violation`); no ML model |
 | CDP-injection mechanism tell (coalesced events) | rare | 🟢 `bh.synthetic_no_coalesced` |
-| IP reputation / ASN / datacenter / proxy-exit | **all commercial** (backbone) | ⚠️ rules exist (`rep.datacenter_asn`, `rep.known_proxy_exit`) but **no data feed** |
+| IP reputation / ASN / datacenter / proxy-exit | **all commercial** (backbone) | ✅ live CIDR classifier (`ip_reputation.py`): `rep.datacenter_asn` + `rep.known_proxy_exit` now active |
+| QUIC / HTTP-3 fingerprint | emerging (Akamai) | 🟢 RFC 9001 Initial decrypt + capture; `net.quic_grease_vs_ua` live (few public tools do QUIC) |
 | Scroll / touch / intent sequences | DataDome 2025, Kasada | ❌ collector doesn't capture scroll/intent |
 | ML trust-score / per-customer models | all commercial | ❌ Kitsune is rules-as-data (by design — explainable), no ML model |
 | Active challenge (CAPTCHA / **proof-of-work**) | reCAPTCHA, hCaptcha, Turnstile, Kasada | ❌ Kitsune is **passive** — no challenge-response |
-| QUIC / HTTP-3 fingerprint | emerging (Akamai) | ❌ edge is HTTP/2-only |
 | Known-fingerprint DB (match vs known bots) | commercial scale | ❌ no large reference corpus |
 | Mobile app / SDK attestation | HUMAN, DataDome SDKs | ❌ web-only |
 
@@ -63,26 +63,33 @@ Legend: ✅ covered · 🟢 ahead of most public tools · ⚠️ partial / no da
    (JS-divergence paradox) fleet by its shared TLS identity is something most commercial tools — which score
    each session in isolation — do not do explicitly. This is the durable bots/DDoS signal.
 3. **Cutting-edge network tells** almost no public tool has: TLS **post-quantum** key-share lag, GREASE
-   coherence, HTTP/2 **unknown-engine**, HTTP/2 **DoS attribution**, p0f-style TCP/IP OS coherence.
+   coherence, HTTP/2 **unknown-engine**, HTTP/2 **DoS attribution**, p0f-style TCP/IP OS coherence, and
+   **QUIC/HTTP-3 ClientHello** fingerprinting (RFC 9001 Initial decrypt) with a QUIC-GREASE tell.
 4. **Explainability.** Every verdict cites the exact rules + evidence; no black-box score.
 
-## Honest gaps (prioritized)
+## Gaps closed since the first survey
 
-1. **IP reputation / ASN / proxy-exit data** — the commercial backbone. Kitsune has the *rules* but no data
-   feed (needs a GeoIP/ASN DB + a datacenter/proxy-exit list). Highest-leverage gap; bounded by data access,
-   not research.
-2. **Behavioral ML + scroll/intent.** Kitsune just gained real biomechanics *features* (the power law,
-   sub-movements — see `docs/behavioral-data.md`); the field uses trained ML over richer signals (scroll,
-   click cadence, intent sequences). Next: calibrate the biomech features on real human data, add scroll
-   capture.
-3. **QUIC / HTTP-3 fingerprinting** — a genuinely new transport layer the edge doesn't speak yet.
-4. **Active proof-of-work challenge** — Kitsune is passive by design; a Kasada-style PoW gate is an option
+- **IP reputation** — now live: a stdlib CIDR classifier (`ip_reputation.py`) feeds `rep.datacenter_asn`
+  and `rep.known_proxy_exit` (active) from curated cloud/Tor/VPN lists (`docs/ip-reputation-data.md`).
+- **Behavioral biomechanics** — calibrated on 10 Balabit users; `bh.power_law_violation` is the FP-safe
+  motion rule (`docs/behavioral-data.md`). Honest scope: a well-crafted humanizer still passes (caught by
+  the mechanism tell), so this raises the floor, not the ceiling.
+- **QUIC / HTTP-3** — built across three validated cores (decrypt → capture → coherence);
+  `net.quic_grease_vs_ua` validated live (`docs/findings.md`, "QUIC / HTTP-3 fingerprinting").
+
+## Honest gaps that remain (prioritized)
+
+1. **ML trust-score + scroll/intent sequences** — the field trains per-customer ML over richer behavioral
+   signals; Kitsune is rules-as-data by design (explainable) and doesn't capture scroll/intent yet.
+2. **Active proof-of-work challenge** — Kitsune is passive by design; a Kasada-style PoW gate is an option
    for the volumetric tier, but a different posture (challenge vs observe).
-5. **Scale / known-fingerprint corpus** — commercial tools match against millions of known bot fingerprints;
+3. **Scale / known-fingerprint corpus** — commercial tools match against millions of known bot fingerprints;
    Kitsune relies on coherence + coordination instead of a reference DB (a deliberate, but real, trade-off).
+4. **Mobile app / SDK attestation** — Kitsune is web-only.
 
 **Summary.** Against the *public* detection field, Kitsune matches or exceeds the per-session fingerprint and
-TLS/H2 stack, leads on cross-layer coherence + coordination + several cutting-edge network tells, and is
-behind the *commercial* field mainly where they have proprietary assets Kitsune lacks by nature: IP-reputation
-data, trained behavioral ML, and active challenges. The lab's thesis — incoherence across layers + coordination
-— is genuinely differentiated; the gaps are data/infra, not detection ideas.
+TLS/H2/QUIC stack, and leads on cross-layer coherence + coordination + several cutting-edge network tells.
+The IP-reputation, behavioral-biomechanics, and QUIC gaps from the first survey are now closed; what remains
+versus the *commercial* field is proprietary by nature — trained behavioral ML over scroll/intent, active
+proof-of-work challenges, and a million-fingerprint reference corpus. The lab's thesis — incoherence across
+layers + coordination — is genuinely differentiated; the remaining gaps are posture/scale, not detection ideas.

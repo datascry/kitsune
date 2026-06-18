@@ -26,11 +26,11 @@ and a datacenter ASN. So the architecture is a **session-correlation pipeline**,
 | Component | Lang | What it is | Tests |
 |---|---|---|---|
 | [`contracts/`](contracts) | JSON Schema | The stable core — the only coupling between components | validated in CI |
-| [`detector/`](detector) | Python | Session correlation + data-driven coherence engine + scoring | **100%** |
-| [`harness/`](harness) | Python | Scenario runner + reproducible scoreboard (ethics enforced) | **100%** |
-| [`edge/`](edge) | Go | Multi-layer network fingerprinting + session minting: TLS ClientHello → JA3/JA4, HTTP/2 preface (Akamai h2), TCP/IP-stack OS (p0f-style SYN capture), and HTTP/2 DoS attribution (rapid-reset, CONTINUATION flood) | fingerprint **97%** |
-| [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection | **100%** (logic) |
-| [`evaders/`](evaders) | Py/TS/Go | Red-team fleet — every open-source family: scripted/TLS-mimicry (httpx, curl-impersonate), Playwright-stealth, CDP-leak patches (patchright, rebrowser), CDP-native (nodriver, zendriver, pydoll), isolated-world Selenium (undetected, selenium-driverless), engine-level (Camoufox), farbling (Brave), and HTTP/2 DoS (rapid-reset, CONTINUATION flood) | 23 evaluated, all `bot` |
+| [`detector/`](detector) | Python | Session correlation + data-driven coherence engine + IP-reputation enrichment + scoring | **100%** |
+| [`harness/`](harness) | Python | Scenario runner + reproducible scoreboard + fleet/coordination scorer + biomechanics calibration (ethics enforced) | **100%** |
+| [`edge/`](edge) | Go | Multi-layer network fingerprinting + session minting: TLS ClientHello → JA3/JA4 (+ GREASE, post-quantum key-share), HTTP/2 preface (Akamai h2 + unknown-engine), TCP/IP-stack OS (p0f-style SYN capture), **QUIC/HTTP-3 ClientHello (RFC 9001 Initial decrypt)**, and HTTP/2 DoS attribution (rapid-reset, CONTINUATION flood) | fingerprint **97%** |
+| [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection (incl. movement biomechanics: 2/3 power law, sub-movements, fp-hash) | **100%** (logic) |
+| [`evaders/`](evaders) | Py/TS/Go | Red-team fleet — every open-source family: scripted/TLS-mimicry (httpx, curl-impersonate, **primp**, **go-tls/uTLS**), Playwright-stealth, CDP-leak patches (patchright, rebrowser), CDP-native (nodriver, zendriver, pydoll), isolated-world Selenium (undetected, selenium-driverless), engine-level (Camoufox), farbling (Brave), and HTTP/2 DoS | all scored `bot` ([matrix](docs/matrix.md)) |
 
 ## Quickstart
 

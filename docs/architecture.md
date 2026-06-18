@@ -29,7 +29,7 @@ The signals that betray a bot live at radically different altitudes:
 
 | Layer | Lives at | Captured by |
 |---|---|---|
-| Network (JA3/JA4, HTTP/2, TCP/IP, ASN) | the socket / connection | the **edge** (TLS terminator) |
+| Network (JA3/JA4, HTTP/2, **QUIC/HTTP-3**, TCP/IP, ASN) | the socket / connection | the **edge** (TLS terminator) |
 | Browser fingerprint (Canvas/WebGL/Audio, webdriver, CDP) | inside the page (JS) | the **collector** |
 | Behavioral (mouse/keystroke/dwell/scroll) | inside the page (JS, over time) | the **collector** |
 | Reputation (request-graph, IP/ASN, PoW) | across many requests | the **detector** |
@@ -167,7 +167,8 @@ A rule (see `contracts/rules/registry.yaml` for the live set):
   source: "Kitsune; cf. Vastel FP-Inconsistent (IMC 2025)"
 ```
 
-Initial registry (10 rules) spans the cross-layer seams that matter most:
+The registry has since grown to **96 rules** across network/browser/behavioral/reputation (see
+[`docs/matrix.md`](matrix.md)); the initial 10 below spanned the cross-layer seams that matter most:
 
 | id | contradiction | layers | weight |
 |---|---|---|---|
