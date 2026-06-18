@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 79 engines
+# Kitsune detection matrix — 80 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | floor-spoof | full-stealth | human-mouse | max-stealth | nodriver | patchright | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -26,7 +26,7 @@
 | `bh.synthetic_no_coalesced` | behavioral | · | · | · | · | · | ✓ | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | 3 |
 | `br.webdriver_spoofed` | browser | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | · | · | 3 |
 | `br.webgl_software` | browser | · | ✓ | · | · | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 14 |
-| `br.permissions_anomaly` | browser | · | · | · | · | · | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
+| `br.permissions_anomaly` | browser | · | · | · | · | · | · | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 8 |
 | `br.no_chrome_object` | browser | · | · | · | · | · | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | · | ✓ | ✓ | · | · | · | 6 |
 | `br.tostring_tampered` | browser | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.low_hardware_concurrency` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -35,6 +35,7 @@
 | `br.plugins_spoofed` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.nav_property_spoofed` | browser | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.webdriver_getter_tampered` | browser | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | 2 |
+| `br.notification_getter_tampered` | browser | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.webgl_os_vs_ua` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 2 |
 | `br.navplatform_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
 | `br.worker_divergence` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -47,7 +48,7 @@
 | `br.chrome_runtime_missing` | browser | · | ✓ | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
 | `br.mimetypes_empty` | browser | ✓ | · | · | · | · | · | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
 | `br.no_devicememory` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.notification_denied` | browser | · | · | · | · | · | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
+| `br.notification_denied` | browser | · | · | · | · | · | · | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 8 |
 | `br.platform_empty` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.productsub_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
 | `br.cdc_artifacts` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -81,7 +82,7 @@
 | `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/79** | **10/79** | **5/79** | **4/79** | **4/79** | **9/79** | **12/79** | **13/79** | **11/79** | **8/79** | **11/79** | **8/79** | **11/79** | **8/79** | **15/79** | **12/79** | **15/79** | **8/79** | **1/79** | **8/79** |  |
+| **flagged** |  | **6/80** | **10/80** | **5/80** | **4/80** | **4/80** | **8/80** | **12/80** | **13/80** | **11/80** | **8/80** | **11/80** | **8/80** | **11/80** | **8/80** | **15/80** | **12/80** | **15/80** | **8/80** | **1/80** | **8/80** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -93,7 +94,7 @@
 | `camoufox-hardened` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
 | `camoufox-headful` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
 | `camoufox` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
-| `floor-spoof` | bot | 0 | 0 | 5 | 2 | 2 | 0 |
+| `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
 | `full-stealth` | bot | 2 | 0 | 6 | 4 | 0 | 0 |
 | `human-mouse` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `max-stealth` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
@@ -109,7 +110,7 @@
 | `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 1 | 1 | 1 | 3 | 2 | 0 |
 
-## Coverage gaps — 37/79 engines catch nothing yet
+## Coverage gaps — 37/80 engines catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`

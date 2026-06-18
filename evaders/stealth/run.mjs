@@ -112,6 +112,12 @@ if (FLOOR_SPOOF) {
       get: () => [{ type: "application/pdf", suffixes: "pdf", description: "Portable Document Format" }],
       configurable: true,
     });
+    // Fake the notification floor: headless Chrome defaults Notification.permission to "denied"; claim
+    // "default" instead to beat br.notification_denied. The catch is that the Permissions API still
+    // reports the real state, so permission and query must stay coherent — see the bidirectional permAnomaly.
+    try {
+      Object.defineProperty(Notification, "permission", { get: () => "default", configurable: true });
+    } catch (e) {}
   });
 } else if (FULL) {
   // The full battery: every patch a JS-injection anti-detect would apply. Note webdriver is patched

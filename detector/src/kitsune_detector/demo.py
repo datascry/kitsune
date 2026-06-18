@@ -360,6 +360,16 @@ DEMO_PAGE = """<!doctype html>
       if (wd && wd.get && wd.get.toString().indexOf("[native code]") < 0)
         sigs.push(S("browser", "webdriver_getter_tampered", true));
     } catch (e) {}
+    // Notification.permission is a native static getter. A tool that fakes it (e.g. claiming "default" to
+    // beat notification_denied — and so coincidentally matching the headless Permissions API "prompt"
+    // state, defeating permissions_anomaly too) leaves a non-native getter: the override is the only tell.
+    try {
+      if (window.Notification) {
+        var npd = Object.getOwnPropertyDescriptor(Notification, "permission");
+        if (npd && npd.get && npd.get.toString().indexOf("[native code]") < 0)
+          sigs.push(S("browser", "notification_getter_tampered", true));
+      }
+    } catch (e) {}
     sigs.push(S("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0));
     sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
     if (await permAnomaly()) sigs.push(S("browser", "permissions_anomaly", true));

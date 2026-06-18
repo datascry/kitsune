@@ -140,6 +140,19 @@ object. Two rounds, two mechanisms — non-native `toString` for replaced *metho
 for replaced *properties* — and the same conclusion holds: every way to manufacture a missing capability
 leaves a structural fingerprint of the manufacturing.
 
+Round three is the sharpest, because the obvious coherence fix would have *failed*. `FLOOR_SPOOF` next
+faked `Notification.permission`, claiming `"default"` to beat `br.notification_denied`. That also silenced
+`br.permissions_anomaly` — and not by luck the detector could punish: headless Chrome reports
+`Notification.permission === "denied"` while the Permissions API query returns `"prompt"` (that mismatch
+*is* the original anomaly), so faking `"default"` (which maps to `"prompt"`) makes the two views
+*coherent*. A bidirectional permission-vs-query check would see agreement and stay silent; the spoof wins
+on coherence. The only thing it cannot hide is that `Notification.permission` is a native static getter
+and it replaced it — so `br.notification_getter_tampered` reads the getter's `toString` and fires on the
+non-native function, exactly as `webdriver_getter_tampered` does for the prototype webdriver patch. The
+lesson sharpens: it is not that spoofs create incoherence (this one removed it) — it is that the *act of
+overriding a native member is itself observable*, whether the member is a method, a property, or a getter,
+and no amount of making the faked value coherent erases the fingerprint of having faked it.
+
 ### CSP bypass — a tell the patches themselves admit they can't fix
 
 Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every

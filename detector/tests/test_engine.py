@@ -113,6 +113,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "nav_property_spoofed", True, Source.collector)], "br.nav_property_spoofed"),
         ([(Layer.browser, "webdriver_getter_tampered", True, Source.collector)], "br.webdriver_getter_tampered"),
         (
+            [(Layer.browser, "notification_getter_tampered", True, Source.collector)],
+            "br.notification_getter_tampered",
+        ),
+        (
             [
                 (Layer.browser, "webgl_os_hint", "Windows", Source.collector),
                 (Layer.browser, "ua_platform", "Linux", Source.collector),
