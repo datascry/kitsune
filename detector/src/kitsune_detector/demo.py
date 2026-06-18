@@ -480,6 +480,11 @@ DEMO_PAGE = """<!doctype html>
       if (oc) sigs.push(S("browser", "oscpu_os", oc));
     }
     var isChromium = uaEngine === "chromium";
+    // Chrome wraps its (unmasked) WebGL renderer in "ANGLE (...)" on every desktop backend — D3D11, Metal,
+    // Vulkan, and even SwiftShader. A Chromium UA whose renderer is a BARE GPU string (no "ANGLE (" prefix)
+    // is the common renderer spoof: the anti-detect tool replaced the ANGLE wrapper with a hardware GPU
+    // name. Verified real headless Chrome reports "ANGLE (Google, Vulkan ... SwiftShader ...)" → no fire.
+    if (isChromium && wg.renderer && !/^ANGLE \\(/.test(wg.renderer)) sigs.push(S("browser", "webgl_not_angle", true));
     // The Runtime.enable leak is CDP-specific (Chromium). Guarded to Chromium to avoid odd Firefox cases.
     if (isChromium && cdpRuntimeEnabled()) sigs.push(S("browser", "cdp_runtime_enabled", true));
     if (!navigator.languages || navigator.languages.length === 0) sigs.push(S("browser", "languages_empty", true));

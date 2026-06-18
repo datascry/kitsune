@@ -543,6 +543,11 @@ export function armCollector(): LiveCollector {
       if (oc) put("browser", "oscpu_os", oc);
     }
     const isChromium = uaEngine === "chromium";
+    // Chrome wraps its WebGL renderer in "ANGLE (...)" on every desktop backend; a bare GPU string under a
+    // Chromium UA is the common renderer spoof (real headless Chrome reports "ANGLE (Google, Vulkan ...)").
+    if (isChromium && wg.renderer && !/^ANGLE \(/.test(wg.renderer)) {
+      put("browser", "webgl_not_angle", true);
+    }
     if (isChromium && cdpRuntimeEnabled()) put("browser", "cdp_runtime_enabled", true);
     if (navigator.languages.length === 0) put("browser", "languages_empty", true);
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) {

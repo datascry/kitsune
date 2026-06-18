@@ -106,6 +106,19 @@ high-entropy Client-Hints API — a deeper tell than the UA token. The same call
 (`br.ch_he_version_vs_ua`, experimental); both are FP-safe — a real Chrome reports neither a headless
 brand nor a version that disagrees with its own UA. (v0.55.0)
 
+### The ANGLE wrapper — catching a renderer spoof by its shape, not its content
+
+Anti-detect tools spoof the WebGL `UNMASKED_RENDERER` to a hardware GPU name, defeating
+`webgl_software` (which keys on `swiftshader|llvmpipe|mesa`). But modern desktop Chrome reports its
+renderer **ANGLE-wrapped** — `ANGLE (vendor, renderer, backend)` — on every backend (D3D11, Metal,
+Vulkan, even SwiftShader: verified real HeadlessChrome 136 returns
+`ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device …), SwiftShader driver)`). The common spoof emits a
+**bare** string like `NVIDIA GeForce RTX 3080` with no `ANGLE (` prefix, so `br.webgl_not_angle`
+(experimental) catches the spoof by its *shape* regardless of which GPU it names — and a real Chrome
+never trips it (validated: real renderer → no fire, spoofed bare renderer → fire). Held experimental
+pending broad real-browser validation across GPU/OS, since legacy/non-ANGLE Chrome configs could differ.
+(v0.56.0)
+
 ### Survey coverage — every open-source family, one conclusion
 
 The evaluated fleet now spans every open-source anti-detect family: scripted HTTP (vanilla/httpx),

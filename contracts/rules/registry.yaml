@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.55.0"
+ruleset_version: "0.56.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -968,6 +968,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Kitsune: headful Camoufox reports 'Intel(R) HD Graphics 400, or similar' — no real driver does"
+
+  - id: br.webgl_not_angle
+    title: Chromium UA but the WebGL renderer is not ANGLE-wrapped — renderer spoof
+    layers: [browser]
+    reads: [browser.webgl_not_angle]
+    predicate: present
+    weight: 0.55
+    status: experimental
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Modern desktop Chrome always reports 'ANGLE (vendor, renderer, backend)'; a bare GPU string under a Chromium UA is the common renderer spoof. Experimental — residual FP risk on legacy/non-ANGLE Chrome configs; needs broad real-browser validation across GPU/OS."
 
   # --- v0.15.0: AudioContext fingerprint (absence = headless; per-render noise = farbling) ---
 
