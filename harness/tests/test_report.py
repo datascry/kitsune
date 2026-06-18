@@ -1,0 +1,39 @@
+# tests/test_report — tests for the VirusTotal-style detection aggregator.
+# Asserts the coverage map (which engines fire per sample) and the rendered matrix.
+
+from __future__ import annotations
+
+from kitsune_detector.contracts import contracts_dir
+from kitsune_detector.detector import Detector
+from kitsune_detector.models import Session
+
+from kitsune_harness.report import coverage, evaluable_detectors, render_matrix
+
+
+def _examples() -> list[tuple[str, Session]]:
+    ex = contracts_dir() / "examples"
+    return [
+        ("human", Session.model_validate_json((ex / "session_human.json").read_text())),
+        ("bot", Session.model_validate_json((ex / "session_bot.json").read_text())),
+    ]
+
+
+def test_evaluable_detectors_nonempty() -> None:
+    assert len(evaluable_detectors()) >= 10
+
+
+def test_coverage_flags_bot_not_human(detector: Detector) -> None:
+    _detectors, fired, verdicts = coverage(detector, _examples())
+    assert fired["human"] == set()
+    assert "br.webdriver_present" in fired["bot"]
+    assert verdicts["bot"].label.value == "bot"
+    assert verdicts["human"].label.value == "human"
+
+
+def test_render_matrix(detector: Detector) -> None:
+    detectors, fired, verdicts = coverage(detector, _examples())
+    md = render_matrix(detectors, fired, verdicts)
+    assert "| Detector | layer | human | bot | catches |" in md
+    assert "br.webdriver_present" in md
+    assert "**flagged**" in md and "**verdict**" in md
+    assert "✓" in md and "·" in md
