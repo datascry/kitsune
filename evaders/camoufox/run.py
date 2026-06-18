@@ -28,7 +28,23 @@ HEADFUL = os.environ.get("KS_HEADFUL") == "1"
 # same pipeline — the control group. Rules that fire on the baseline too are environment/headless tells;
 # rules that fire only on Camoufox are genuine anti-detect-spoofing tells. Keeps the detector honest.
 BASELINE = os.environ.get("KS_BASELINE") == "1"
-MODE = "baseline-firefox" if BASELINE else "camoufox-headful" if HEADFUL else "camoufox"
+# KS_HARDENED=1: red-team the detector's own findings — apply Camoufox config to fix the spoof-specific
+# tells Kitsune discovered (pin OS to Windows to avoid the macOS-only dPR/font tells, re-enable WebRTC to
+# avoid webrtc_unavailable, set a clean WebGL renderer with no ", or similar" artifact). Measures what the
+# detector still catches once an adversary closes every per-session tell it knows about.
+HARDENED = os.environ.get("KS_HARDENED") == "1"
+MODE = (
+    "camoufox-hardened" if HARDENED
+    else "baseline-firefox" if BASELINE
+    else "camoufox-headful" if HEADFUL
+    else "camoufox"
+)
+HARDENED_KW: dict[str, object] = {
+    "os": "windows",  # avoid macOS-draw tells (macos_dpr1, font_mac_internal)
+    "block_webrtc": False,  # re-enable WebRTC → avoid webrtc_unavailable
+    # Note: webgl_config can only PICK from Camoufox's webgl_data.db, and every renderer in it carries the
+    # ", or similar" suffix — so webgl_renderer_artifact is unavoidable via config (a fundamental tell).
+}
 
 
 def _capture(browser: object) -> dict[str, object]:
@@ -71,7 +87,10 @@ def main() -> None:
     if BASELINE:
         _run_baseline()
         return
-    with Camoufox(headless="virtual" if HEADFUL else True) as browser:
+    kwargs: dict[str, object] = {"headless": "virtual" if HEADFUL else True}
+    if HARDENED:
+        kwargs.update(HARDENED_KW)
+    with Camoufox(**kwargs) as browser:  # type: ignore[arg-type]
         for _ in range(REPEAT):
             verdict = _capture(browser)
             print("__KS__" + json.dumps({"mode": MODE, **verdict}), flush=True)

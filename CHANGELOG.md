@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Hardened-Camoufox evader (`KS_HARDENED=1`)** — red-teams the detector with its own findings: applies
+  Camoufox config (`os="windows"` to drop the macOS-only tells, `block_webrtc=False`) to fix the
+  spoof-specific tells Kitsune discovered, and measures what survives. Result: hardening cuts Camoufox's
+  spoof-specific catches from three to one (Windows pin removes `macos_dpr1` + `font_mac_internal`), but
+  it stays `bot` 0.93. Two tells are **not config-fixable**: `webgl_renderer_artifact` (every renderer in
+  Camoufox's `webgl_data.db` carries the `", or similar"` suffix — baked into the shipped data) and
+  `webrtc_unavailable` (`block_webrtc=False` did not restore it). New `camoufox-hardened` corpus session.
 - **WebRTC ICE probe** (ruleset 0.19.0) — the missing network-identity vector (central to bots/DDoS).
   `br.webrtc_unavailable` (artifact): a real browser always gathers ICE candidates; **Camoufox disables
   WebRTC** to prevent the IP leak — confirmed live, it fires on Camoufox but NOT on stock headless Firefox

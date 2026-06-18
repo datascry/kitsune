@@ -144,6 +144,30 @@ complete environment — but the anti-detect tool's own spoofing leaves implemen
 (`, or similar`) that betray it regardless. And a determined adversary closing every per-session tell
 still cannot escape **coordination** (below), which is the backstop.
 
+### Red-teaming the detector — a hardened Camoufox (`KS_HARDENED=1`)
+
+The arms race in action: use Kitsune's own findings to harden the evader, via Camoufox's config, then
+measure what survives. Levers applied: `os="windows"` (avoid the macOS-only tells), `block_webrtc=False`
+(re-enable WebRTC), and an attempt at a clean `webgl_config`.
+
+| Camoufox | coherence | artifact | environment | verdict |
+| --- | --- | --- | --- | --- |
+| default (macOS draw) | 1 (`macos_dpr1`) | 2 (`font_mac_internal`, `webrtc_unavailable`) | 3 | `bot` 0.92 |
+| **hardened** (Windows-pinned) | **0** | **1** (`webrtc_unavailable`) | 3 | `bot` 0.93 |
+
+Hardening **worked** for the OS-specific tells — pinning Windows removed `macos_dpr1` and
+`font_mac_internal` (they are macOS-draw artifacts). But two tells proved **not config-fixable**:
+
+- **`webgl_renderer_artifact`** — `webgl_config` can only *pick from* Camoufox's `webgl_data.db`, and
+  **every renderer row in it carries the `", or similar"` suffix**. The artifact is baked into the data;
+  a user cannot supply a clean renderer. (Headful-only, since headless exposes no WebGL2 context.)
+- **`webrtc_unavailable`** — `block_webrtc=False` did not restore candidate gathering in our run, so the
+  WebRTC tell persisted.
+
+So even a maximally config-hardened Camoufox is still `bot` per-session — reduced from three
+spoof-specific catches to one, but not zero — on top of the environment floor. The irreducible tell is
+the renderer artifact: it is in Camoufox's shipped data, fixable only by patching the tool itself.
+
 ### White-box analysis — reading Camoufox's source
 
 Camoufox is open source, so we do not have to probe it as a black box. Reading the installed `camoufox`
