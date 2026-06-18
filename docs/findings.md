@@ -55,6 +55,27 @@ floor none of them escape. (Setup yak-shave: the unpinned `rebrowser-playwright`
 each pull a different Playwright-core/Chromium revision; pin `rebrowser-playwright@1.48.2` to the base
 image's Chromium-1140.)
 
+## Behavioral biometrics is the weakest layer (`HUMAN_MOUSE=1`)
+
+The behavioral motion rules (`bh.path_too_straight` >0.97, `bh.uniform_velocity` <0.08,
+`bh.input_entropy_floor` <0.15) only catch *degenerate* input — a perfectly straight, constant-speed
+move, or none at all. Measured against two evader mouse generators:
+
+| Mouse | entropy | straightness | velocity CV | behavioral tells |
+| --- | --- | --- | --- | --- |
+| naive (sine wave) | 0.58 | 0.42 | 0.41 | none |
+| human (`HUMAN_MOUSE=1`: Bézier + ease-in-out + jitter + variable timing) | 0.87 | 0.29 | 1.01 | none |
+
+Even the *naive* path clears every threshold; the human generator clears them by a wider margin with
+more human-like statistics. So behavioral motion thresholds are **trivially evaded** by any non-degenerate
+motion — they catch a lazy `mouse.move(x, y)` straight line, nothing more. And tightening them is unsafe:
+real human motion varies so widely that tighter thresholds would false-positive on people.
+
+The `human-mouse` evader fully zeroes the behavioral column — yet is still `bot` on `automation:6` +
+`environment:6` (it is naive Playwright Chromium). **Behavioral is the first layer to fall**, and defeating
+it changes no verdict. This is why the durable signals are environment and coordination, not behaviour —
+behavioral biometrics needs sophisticated sequence/biomechanics models, not static thresholds, to matter.
+
 ## The baseline control — separating spoofing from a stripped environment
 
 A detector that only fires on *headless-environment* tells is not detecting anti-detect spoofing — it is

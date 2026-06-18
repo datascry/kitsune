@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Human-mouse behavioral evader (`HUMAN_MOUSE=1`)** — synthesizes realistic motion (Bézier curve,
+  ease-in-out velocity, micro-jitter, variable inter-event timing) to red-team the behavioral layer.
+  Finding: the motion thresholds (`path_too_straight`, `uniform_velocity`, `input_entropy_floor`) catch
+  only *degenerate* input — even the naive sine-wave path already clears them; the human generator clears
+  them wider (entropy 0.87, straightness 0.29, velocity CV 1.01). Behavioral is trivially evaded and is
+  the first layer to fall — the `human-mouse` evader zeroes the behavioral column yet is still `bot` on
+  automation + environment. Reinforces that the durable signals are environment and coordination.
 - **nodriver re-evaluated against the full ruleset** — its "minimal CDP footprint" claim **holds against
   the SOTA detection**: it trips neither `cdp_runtime_enabled` (`Runtime.enable`) nor `webdriver`
   (`automation:2`, the lowest of all CDP tools), yet is still `bot` on the environment floor plus a
