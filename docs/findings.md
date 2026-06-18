@@ -395,6 +395,33 @@ ages out, the cluster's alert state resets, so a *fresh* burst on the same JA4 p
 than staying silent. Windowing is also what makes the `arrival_rate_per_min` severity meaningful: a true
 current rate, not an all-time average diluted by history.
 
+## The HTTP/2 preface — a UA-spoof tell below the application layer
+
+The TLS ClientHello (JA3/JA4) and the in-page JS fingerprint are the two layers an evader works hardest
+to make coherent. Between them sits a third the application code never touches: the **HTTP/2 connection
+preface**. Before the first request, an h2 client sends a SETTINGS frame, a connection-level
+WINDOW_UPDATE, optionally PRIORITY frames, and then a HEADERS frame whose **pseudo-header order**
+(`:method`/`:authority`/`:scheme`/`:path`) is fixed by the client stack. These are engine choices, not
+content: Chromium emits the pseudo-headers `m,a,s,p`, Firefox `m,p,a,s`, Safari `m,s,p,a`, and the
+SETTINGS values differ too (the Akamai *h2 fingerprint*, Black Hat EU 2017). A scripted client that
+forges a `Chrome/…` User-Agent over a Go or Python h2 stack contradicts itself here — Chrome UA, non-Chrome
+h2 — and the contradiction is invisible at the layers it spent effort spoofing.
+
+The edge now captures this **live**. The bundled Go h2 server hides the preface and drops per-connection
+context on its streams, so the edge serves ALPN `h2` through its own handler (`serveH2`): it tees the
+decrypted preface through a frame parser (`fingerprint.ParsePreface`, built on `x/net/http2` + `hpack` to
+recover pseudo-header order), threads both the ClientHello and the resulting h2 fingerprint into the
+connection's base context, then replays the consumed bytes to `http2.Server.ServeConn` so the request is
+served unharmed. Two rules consume the result: `net.h2_vs_ua_browser` (cross-layer — h2 engine vs UA
+browser, so the incoherence weight applies) and `net.h2_vs_tls_browser` (within-network — h2 engine vs the
+JA4 TLS engine). This closes the last *layer* gap: the edge now fingerprints the client at TLS, HTTP/2,
+and JS simultaneously, and any two disagreeing is a tell no single-layer spoof can avoid.
+
+The capture-and-replay trick is the same one the edge already uses for the ClientHello (`peek.Conn`): read
+the bytes you need to fingerprint, buffer them, and replay on `Read` so the wrapping server still sees a
+complete connection. Parsing is best-effort — a malformed or truncated preface leaves the connection
+served and simply carries no h2 signal, never breaking traffic to fingerprint it.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

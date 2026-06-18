@@ -35,7 +35,7 @@ func req(t *testing.T, cookie string) *http.Request {
 }
 
 func TestPrepareMintsSession(t *testing.T) {
-	prep, err := prepare(req(t, ""), helloFixture(t), fingerprint.HintTable{}, fixedID, time.Now())
+	prep, err := prepare(req(t, ""), helloFixture(t), nil, fingerprint.HintTable{}, fixedID, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestPrepareMintsSession(t *testing.T) {
 }
 
 func TestPrepareReusesCookie(t *testing.T) {
-	prep, err := prepare(req(t, "abc"), helloFixture(t), fingerprint.HintTable{}, fixedID, time.Now())
+	prep, err := prepare(req(t, "abc"), helloFixture(t), nil, fingerprint.HintTable{}, fixedID, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestPrepareReusesCookie(t *testing.T) {
 }
 
 func TestPrepareNilHello(t *testing.T) {
-	prep, err := prepare(req(t, "abc"), nil, fingerprint.HintTable{}, fixedID, time.Now())
+	prep, err := prepare(req(t, "abc"), nil, nil, fingerprint.HintTable{}, fixedID, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,8 +71,28 @@ func TestPrepareNilHello(t *testing.T) {
 	}
 }
 
+func TestPrepareEmitsH2Signals(t *testing.T) {
+	h2fp := &fingerprint.H2Fingerprint{
+		Settings:          []fingerprint.H2Setting{{ID: 1, Value: 65536}},
+		WindowUpdate:      15663105,
+		PseudoHeaderOrder: "m,a,s,p",
+	}
+	prep, err := prepare(req(t, "abc"), nil, h2fp, fingerprint.HintTable{}, fixedID, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := map[string]bool{}
+	for _, s := range prep.signals {
+		kinds[s.Kind] = true
+	}
+	// The h2 fingerprint (and the engine hint it implies) ride alongside the observed IP.
+	if !kinds["h2"] || !kinds["h2_browser_hint"] {
+		t.Errorf("expected h2 + h2_browser_hint signals, got %+v", kinds)
+	}
+}
+
 func TestPrepareIDFailure(t *testing.T) {
-	if _, err := prepare(req(t, ""), nil, fingerprint.HintTable{}, failID, time.Now()); err == nil {
+	if _, err := prepare(req(t, ""), nil, nil, fingerprint.HintTable{}, failID, time.Now()); err == nil {
 		t.Error("expected error when id minting fails")
 	}
 }

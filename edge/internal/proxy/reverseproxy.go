@@ -28,7 +28,10 @@ import (
 
 type ctxKey int
 
-const helloKey ctxKey = 0
+const (
+	helloKey ctxKey = iota
+	h2Key
+)
 
 // prepared is the per-request fingerprint decoration the proxy applies.
 type prepared struct {
@@ -42,6 +45,7 @@ type prepared struct {
 func prepare(
 	r *http.Request,
 	hello *fingerprint.ClientHello,
+	h2fp *fingerprint.H2Fingerprint,
 	hints fingerprint.HintTable,
 	newID IDFunc,
 	now time.Time,
@@ -60,6 +64,12 @@ func prepare(
 	}
 	if hello != nil {
 		out.signals = signal.FromClientHello(out.sessionID, hello, hints, now)
+	}
+	// The HTTP/2 connection preface (SETTINGS / WINDOW_UPDATE / PRIORITY / pseudo-header order) is a
+	// client-stack fingerprint below the application layer: a UA-spoofer that runs a Chrome HTTP/2
+	// stack while claiming Firefox (or vice-versa) contradicts itself here, independent of TLS and JS.
+	if h2fp != nil {
+		out.signals = append(out.signals, signal.FromH2(out.sessionID, *h2fp, now)...)
 	}
 	// The observed source IP is the network-layer identity: the address the connection actually came
 	// from. A bot proxying its HTTP through a residential exit shows the proxy IP here, while WebRTC
@@ -123,7 +133,8 @@ func NewReverseProxy(backendURL, detectorURL string, hints fingerprint.HintTable
 
 func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hello, _ := r.Context().Value(helloKey).(*fingerprint.ClientHello)
-	prep, err := prepare(r, hello, p.hints, p.newID, p.now())
+	h2fp, _ := r.Context().Value(h2Key).(*fingerprint.H2Fingerprint)
+	prep, err := prepare(r, hello, h2fp, p.hints, p.newID, p.now())
 	if err != nil {
 		http.Error(w, "could not mint session id", http.StatusInternalServerError)
 		return
@@ -161,16 +172,21 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 	if err != nil {
 		return err
 	}
-	cfg := &tls.Config{Certificates: []tls.Certificate{*cert}, MinVersion: tls.VersionTLS12}
+	cfg := &tls.Config{
+		Certificates: []tls.Certificate{*cert},
+		MinVersion:   tls.VersionTLS12,
+		NextProtos:   []string{"h2", "http/1.1"},
+	}
 	ln := tls.NewListener(peek.NewListener(inner), cfg)
 
 	srv := &http.Server{
 		Handler:     p,
 		ReadTimeout: 15 * time.Second,
-		// Disable HTTP/2 so the ClientHello captured per-connection in ConnContext propagates to
-		// request contexts (the bundled h2 server does not carry ConnContext values to streams).
-		// HTTP/2 fingerprinting is a separate, deferred signal; HTTP/1.1 is fine for the edge.
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+		// HTTP/2 is served by our own ALPN handler (serveH2) rather than the bundled h2 server: it
+		// fingerprints the connection preface and threads both the ClientHello and the h2 fingerprint
+		// through the base context, so per-request signals survive (the stdlib h2 server drops the
+		// ConnContext value on its streams). HTTP/1.1 keeps the ConnContext path below.
+		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){"h2": p.serveH2},
 		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
 			if tc, ok := c.(*tls.Conn); ok {
 				if pc, ok := tc.NetConn().(*peek.Conn); ok {
