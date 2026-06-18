@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T17:54:48.625082+00:00`
+- generated: `2026-06-18T18:48:44.465138+00:00`
 - ruleset: `live`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -10,9 +10,9 @@
 | stealth-patched | live | 0.88 | 1.00 | 0.00 | 0.00 | 0.60 | 1.00 | bot |
 | spoof-ua | live | 0.95 | 1.00 | 0.00 | 0.00 | 0.95 | 1.00 | bot |
 | full-stealth | live | 0.60 | 1.00 | 0.00 | 0.00 | 0.60 | 1.00 | bot |
-| patchright | live | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
+| patchright | live | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | camoufox | live | 0.95 | 1.00 | 0.75 | 0.00 | 0.84 | 1.00 | bot |
-| nodriver | live | 0.84 | 0.84 | 0.00 | 0.00 | 0.84 | 0.99 | bot |
+| nodriver | live | 0.60 | 1.00 | 0.80 | 0.00 | 0.60 | 1.00 | bot |
 
 ## Why
 
@@ -21,6 +21,6 @@
 - **stealth-patched** (bot): `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.font_linux_leak`, `br.codec_os_incoherent`
 - **spoof-ua** (bot): `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_plugins`, `br.vendor_vs_ua`, `br.mimetypes_empty`, `br.notification_denied`, `br.productsub_vs_ua`, `br.voices_empty`, `br.media_devices_empty`, `br.engine_stack_vs_ua`, `br.error_engine_vs_ua`, `br.math_engine_vs_ua`
 - **full-stealth** (bot): `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.permissions_anomaly`, `br.webgl_getparameter_tampered`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.webgpu_webgl_vs`
-- **patchright** (bot): `br.headless_ua`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.math_engine_vs_ua`
+- **patchright** (bot): `br.headless_ua`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.math_engine_vs_ua`
 - **camoufox** (bot): `net.quic_grease_vs_ua`, `bh.power_law_violation`, `net.tcp_os_vs_ua`, `bh.synthetic_no_coalesced`, `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.macos_dpr1`, `br.font_mac_internal`, `br.webrtc_unavailable`, `net.tls_grease_vs_ua`
-- **nodriver** (bot): `net.quic_grease_vs_ua`, `net.no_js_execution`
+- **nodriver** (bot): `net.quic_grease_vs_ua`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.webgl_software`, `br.chrome_runtime_missing`, `br.hover_none_desktop`, `br.voices_empty`, `br.media_devices_empty`

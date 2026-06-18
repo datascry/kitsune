@@ -33,5 +33,9 @@ kitsune.db
 sbom*.json
 /site/
 
+# Compiled Go evader binaries (produced by `go build` run outside Docker)
+/evaders/h2-rapid-reset/h2rapidreset
+/evaders/go-tls/go-tls
+
 # pnpm content-addressable store (created when running pnpm in-tree)
 .pnpm-store/
