@@ -30,7 +30,7 @@ and a datacenter ASN. So the architecture is a **session-correlation pipeline**,
 | [`harness/`](harness) | Python | Scenario runner + reproducible scoreboard (ethics enforced) | **100%** |
 | [`edge/`](edge) | Go | Raw ClientHello → JA3/JA4, session minting, signal forwarding | fingerprint **97%** |
 | [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection | **100%** (logic) |
-| [`evaders/`](evaders) | Py/TS/Go | Red-team ladder: vanilla → stealth → agent → go-tls | _stubs (phase 3)_ |
+| [`evaders/`](evaders) | Py/TS/Go | Red-team fleet — every open-source family: scripted/TLS-mimicry (httpx, curl-impersonate), Playwright-stealth, CDP-leak patches (patchright, rebrowser), CDP-native (nodriver, zendriver, pydoll), isolated-world Selenium (undetected, selenium-driverless), engine-level (Camoufox), farbling (Brave), and HTTP/2 DoS (rapid-reset, CONTINUATION flood) | 23 evaluated, all `bot` |
 
 ## Quickstart
 
@@ -53,6 +53,9 @@ Example scoreboard (vanilla vs a naive bot, replayed through the live detector):
 ## Docs
 
 - [Architecture](docs/architecture.md) — the design, contracts, coherence engine, phasing, risks.
+- [Findings](docs/findings.md) — the arms-race narrative: each evasion, the layer that caught it, and why
+  (the engine-level Camoufox frontier, the environment-floor red-team, the HTTP/2 DoS family, …).
+- [Coverage matrix](docs/matrix.md) — detector rule × evader, with the detection-class breakdown.
 - [Decision records](docs/adr) — MADR ADRs for the load-bearing decisions.
 - [Catalog](docs/catalog.md) — ~70 relevant projects across the arms race, with M0 picks.
 - [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
