@@ -768,6 +768,26 @@ export function armCollector(): LiveCollector {
     const af = await audioFP();
     if (af.missing) put("browser", "audio_missing", true);
     else if (af.noise) put("browser", "audio_noise", true);
+    // Audio readback consistency: getChannelData and copyFromChannel read the same buffer, so on a real
+    // engine they are bit-identical (verified diff=0 on Chrome). A farbling shim that perturbs one path
+    // diverges — corroborating (fires on Brave/Camoufox privacy farbling too).
+    try {
+      const OAC = (win()["OfflineAudioContext"] ?? win()["webkitOfflineAudioContext"]) as
+        | OfflineAudioCtor
+        | undefined;
+      if (OAC) {
+        const buf = new OAC(1, 2048, 44100).createBuffer(1, 2048, 44100);
+        const chan = buf.getChannelData(0);
+        for (let i = 0; i < 2048; i++) chan[i] = Math.sin(i / 10);
+        const copy = new Float32Array(2048);
+        buf.copyFromChannel(copy, 0);
+        let diff = 0;
+        for (let i = 0; i < 2048; i++) if (chan[i] !== copy[i]) diff++;
+        if (diff > 0) put("browser", "audio_readback_noise", true);
+      }
+    } catch {
+      /* ignore */
+    }
     const rtc = await webrtcProbe();
     if (rtc.unavailable || !rtc.any) put("browser", "webrtc_unavailable", true);
     try {

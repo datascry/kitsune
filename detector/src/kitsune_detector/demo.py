@@ -667,6 +667,25 @@ DEMO_PAGE = """<!doctype html>
     var af = await audioFP();
     if (af.missing) sigs.push(S("browser", "audio_missing", true));
     else if (af.noise) sigs.push(S("browser", "audio_noise", true));
+    // Audio readback consistency: getChannelData and copyFromChannel read the SAME buffer, so on a real
+    // engine they are bit-identical (verified diff=0 on Chrome). A farbling browser that perturbs the
+    // fingerprint-readable getChannelData path but not copyFromChannel (or vice-versa) diverges — a deeper
+    // audio-noise tell than audio_noise (render determinism). Fires on privacy browsers (Brave/Camoufox)
+    // too, so it corroborates rather than convicts. Unlike canvas putImageData round-trips (lossy by
+    // premultiplied alpha on every real browser), the same-buffer audio readback is exact.
+    try {
+      var OAC2 = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (OAC2) {
+        var rbCtx = new OAC2(1, 2048, 44100), rbBuf = rbCtx.createBuffer(1, 2048, 44100);
+        var rbCh = rbBuf.getChannelData(0);
+        for (var rbi = 0; rbi < 2048; rbi++) rbCh[rbi] = Math.sin(rbi / 10);
+        var rbCopy = new Float32Array(2048);
+        rbBuf.copyFromChannel(rbCopy, 0);
+        var rbDiff = 0;
+        for (var rbj = 0; rbj < 2048; rbj++) if (rbCh[rbj] !== rbCopy[rbj]) rbDiff++;
+        if (rbDiff > 0) sigs.push(S("browser", "audio_readback_noise", true));
+      }
+    } catch (e) {}
     // --- v0.44.0: high-entropy fingerprint hash (the profile-reuse / cloned-identity tell). A canvas-text
     // render + the audio sum + the WebGL renderer/vendor combine into one stable hash that varies per
     // GPU/driver/OS/font-stack — so two *real* machines, even on the same browser build, hash differently.
