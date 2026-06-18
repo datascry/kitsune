@@ -9,6 +9,14 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **White-box, source-driven detection** (ruleset 0.15.0) — read the open-source `camoufox` package to
+  drive detections precisely instead of black-box probing. From `browserforge.yml` (its spoof cast map):
+  `multimediaDevices` is unsupported → `br.media_devices_empty` (enumerateDevices() empty in a container;
+  a real desktop always has a default audio endpoint) — **fires on both headless and headful Camoufox**,
+  raising them to `bot` 0.86 / 0.955. From the same source: Camoufox does not farble audio, so
+  `br.audio_noise` (per-render AudioContext perturbation) is reserved for farbling browsers; `br.audio_missing`
+  flags a stripped audio stack. Confirmed `webgl_data.db` stores every renderer with a `", or similar"`
+  suffix, so `br.webgl_renderer_artifact` catches every Camoufox WebGL fingerprint by construction.
 - **Headful Camoufox evaluation + renderer-artifact counter** (ruleset 0.14.0) — added a headful mode to
   the Camoufox evader (`KS_HEADFUL=1` → virtual Xvfb display) to test whether the per-session capability
   tells are real spoofing flaws or headless-container artifacts. **Finding:** headful Camoufox gains a

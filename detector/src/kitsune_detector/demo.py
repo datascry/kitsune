@@ -50,6 +50,35 @@ DEMO_PAGE = """<!doctype html>
     try { return !HTMLCanvasElement.prototype.toDataURL.toString().includes("[native code]"); }
     catch (e) { return true; }
   }
+  // AudioContext fingerprint via OfflineAudioContext (pure computation — works headless). A real engine
+  // is deterministic: rendering the same graph twice yields the identical sum. Anti-detect / farbling
+  // browsers inject per-render noise to defeat fingerprinting, so the two renders differ — itself a tell.
+  function audioFP() {
+    return new Promise(function (resolve) {
+      try {
+        var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!OAC) { resolve({ missing: true }); return; }
+        function render(cb) {
+          var ctx = new OAC(1, 4410, 44100);
+          var osc = ctx.createOscillator();
+          osc.type = "triangle"; osc.frequency.value = 10000;
+          var comp = ctx.createDynamicsCompressor();
+          comp.threshold.value = -50; comp.knee.value = 40; comp.ratio.value = 12;
+          comp.attack.value = 0; comp.release.value = 0.25;
+          osc.connect(comp); comp.connect(ctx.destination); osc.start(0);
+          ctx.startRendering().then(function (buf) {
+            var data = buf.getChannelData(0), sum = 0;
+            for (var i = 0; i < data.length; i++) sum += Math.abs(data[i]);
+            cb(sum);
+          }).catch(function () { cb(null); });
+        }
+        render(function (a) {
+          if (a === null) { resolve({ missing: true }); return; }
+          render(function (b) { resolve({ missing: false, noise: a !== b }); });
+        });
+      } catch (e) { resolve({ missing: true }); }
+    });
+  }
   function entropy(p) {
     if (p.length < 3) return 0;
     var b = [0,0,0,0,0,0,0,0], t = 0;
@@ -279,6 +308,18 @@ DEMO_PAGE = """<!doctype html>
                       : /espeak|eSpeak|Linux/i.test(names) ? "Linux" : "";
           if (voiceOS) sigs.push(S("browser", "voice_os_hint", voiceOS));
         }
+      }
+    } catch (e) {}
+    // --- v0.15.0 wave: media-capability gaps (audio fingerprint + media-device enumeration) ---
+    var af = await audioFP();
+    if (af.missing) sigs.push(S("browser", "audio_missing", true));
+    else if (af.noise) sigs.push(S("browser", "audio_noise", true));
+    // Camoufox does NOT spoof multimediaDevices (per its browserforge cast map), so enumerateDevices()
+    // reflects the real container, which has no audio/video hardware — a real desktop is never empty.
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        var devs = await navigator.mediaDevices.enumerateDevices();
+        if (!devs || devs.length === 0) sigs.push(S("browser", "media_devices_empty", true));
       }
     } catch (e) {}
     try {

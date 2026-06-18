@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.14.0"
+ruleset_version: "0.15.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -643,3 +643,38 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Kitsune: headful Camoufox reports 'Intel(R) HD Graphics 400, or similar' — no real driver does"
+
+  # --- v0.15.0: AudioContext fingerprint (absence = headless; per-render noise = farbling) ---
+
+  - id: br.audio_missing
+    title: No OfflineAudioContext (audio stack absent)
+    layers: [browser]
+    reads: [browser.audio_missing]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "OfflineAudioContext is pure computation; its absence is a stripped/headless tell"
+
+  - id: br.audio_noise
+    title: AudioContext fingerprint differs across identical renders (per-render perturbation)
+    layers: [browser]
+    reads: [browser.audio_noise]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: a real engine is deterministic; per-render noise is farbling/anti-detect injection"
+
+  - id: br.media_devices_empty
+    title: navigator.mediaDevices.enumerateDevices() is empty (no audio/video hardware)
+    layers: [browser]
+    reads: [browser.media_devices_empty]
+    predicate: present
+    weight: 0.55
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Camoufox source: multimediaDevices is unsupported — a headless container enumerates none"

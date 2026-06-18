@@ -149,6 +149,9 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.voice_os_vs_ua",
         ),
         ([(Layer.browser, "webgl_renderer_artifact", True, Source.collector)], "br.webgl_renderer_artifact"),
+        ([(Layer.browser, "audio_missing", True, Source.collector)], "br.audio_missing"),
+        ([(Layer.browser, "audio_noise", True, Source.collector)], "br.audio_noise"),
+        ([(Layer.browser, "media_devices_empty", True, Source.collector)], "br.media_devices_empty"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

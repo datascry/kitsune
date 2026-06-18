@@ -18,8 +18,8 @@ Each rung defeats the rung below; the detector answers each with a new cross-lay
 | `spoof-ua` | UA forgery on Chromium | `bot` | Firefox UA on a Chromium engine — `vendor`/`productSub`/render contradict the UA |
 | `patchright` | CDP-patched Playwright | `bot` | removes the *automation* surface, but the headless **environment** fingerprint remains |
 | `nodriver` | undetected-chromedriver heir | `bot` (0.94) | same: no webdriver flag, but headless-container environment betrays it |
-| **`camoufox`** (headless) | **engine-level (C++) spoof** | **`bot` (0.70)** | **coherent JS layer — leaks via absent OS capabilities (no WebGL2, no TTS voices)** |
-| **`camoufox-headful`** (Xvfb) | **engine-level, headful** | **`bot` (0.90)** | **gains WebGL2, but its spoofed renderer string is a placeholder; still no TTS voices** |
+| **`camoufox`** (headless) | **engine-level (C++) spoof** | **`bot` (0.86)** | **coherent JS layer — leaks via absent OS capabilities (WebGL2, TTS voices, media devices)** |
+| **`camoufox-headful`** (Xvfb) | **engine-level, headful** | **`bot` (0.955)** | **gains WebGL2, but its renderer string is a placeholder; no TTS voices; no media devices** |
 
 **Takeaway for the chromium tools:** removing the automation/webdriver surface does nothing for the
 durable signal. Every Chromium-based tool runs headless Chromium in a container, and the *environment*
@@ -79,6 +79,34 @@ Lesson: each capability tell (`webgl2_missing`) can be a deployment artifact, fa
 complete environment — but the anti-detect tool's own spoofing leaves implementation fingerprints
 (`, or similar`) that betray it regardless. And a determined adversary closing every per-session tell
 still cannot escape **coordination** (below), which is the backstop.
+
+### White-box analysis — reading Camoufox's source
+
+Camoufox is open source, so we do not have to probe it as a black box. Reading the installed `camoufox`
+package (it generates the fingerprint config the patched Firefox consumes) turns guesswork into precise,
+provable detection:
+
+- **`webgl/webgl_data.db`** — every renderer in the table is stored with a `", or similar"` suffix
+  (`'Apple M1, or similar'`, `'ANGLE (NVIDIA, … Direct3D11 vs_5_0 ps_5_0), or similar'`). So
+  `br.webgl_renderer_artifact` is not catching one observed string — it catches **every** Camoufox WebGL
+  fingerprint *by construction*. The source proves the detection is comprehensive, not anecdotal.
+- **`browserforge.yml`** (the cast map from Browserforge fingerprints → Camoufox config) documents what
+  Camoufox **cannot** spoof, in its own comments:
+  - `# Unsupported: videoCodecs, audioCodecs, pluginsData, multimediaDevices` — media-device enumeration
+    is not spoofed. `br.media_devices_empty` exploits this directly: a headless container enumerates no
+    devices, where a real desktop always has at least a default audio endpoint. **Confirmed live** — it
+    fires on both headless and headful Camoufox (pushing them to `bot` 0.86 / 0.955).
+  - `# devicePixelRatio … Any value other than 1.0 is suspicious` — Camoufox is pinned to dPR 1.0, so it
+    cannot present a coherent Retina/high-DPI profile (a future coherence rule: macOS UA + dPR 1.0).
+  - `# Never override productSub`, `pdfViewerEnabled … kept to True` — further fixed values.
+- **No audio handling in the package** — Camoufox does *not* farble the AudioContext. So `br.audio_noise`
+  (per-render perturbation) correctly does **not** fire on Camoufox; it is reserved for farbling browsers
+  (Brave) and tools that randomize audio per read. Reading the source told us this *before* testing,
+  saving a blind-probing cycle.
+
+The method generalizes: for any open-source anti-detect tool, read its spoof map, detect the documented
+**gaps** (capabilities it leaves real) and its **construction artifacts** (placeholder strings, fixed
+values) — far stronger than black-box probing.
 
 ## The durable signal: coordination, not the instance
 
