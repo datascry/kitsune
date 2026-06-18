@@ -337,6 +337,36 @@ func TestPrepareEmitsCHPlatform(t *testing.T) {
 	}
 }
 
+func TestCHUAMobileMismatch(t *testing.T) {
+	chUA := `"Chromium";v="126", "Google Chrome";v="126"`
+	desktopUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0 Safari/537.36"
+	mobileUA := "Mozilla/5.0 (Linux; Android 14) Chrome/126.0.0.0 Mobile Safari/537.36"
+	cases := []struct {
+		name, ua, chUA, mobile string
+		want                   bool
+	}{
+		{"desktop coherent", desktopUA, chUA, "?0", false},
+		{"mobile coherent", mobileUA, chUA, "?1", false},
+		{"mobile UA but ?0 (desktop stack)", mobileUA, chUA, "?0", true},
+		{"desktop UA but ?1", desktopUA, chUA, "?1", true},
+		{"no Sec-CH-UA (Firefox/scripted)", desktopUA, "", "?0", false},
+		{"no mobile hint", desktopUA, chUA, "", false},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		r.Header.Set("User-Agent", c.ua)
+		if c.chUA != "" {
+			r.Header.Set("Sec-CH-UA", c.chUA)
+		}
+		if c.mobile != "" {
+			r.Header.Set("Sec-CH-UA-Mobile", c.mobile)
+		}
+		if got := chUAMobileMismatch(r); got != c.want {
+			t.Errorf("%s: chUAMobileMismatch=%v want %v", c.name, got, c.want)
+		}
+	}
+}
+
 func TestUAKernel(t *testing.T) {
 	cases := map[string]string{
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125":          "windows",

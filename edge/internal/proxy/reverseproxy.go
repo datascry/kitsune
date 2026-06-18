@@ -114,7 +114,22 @@ func prepare(
 	if chUAVersionMismatch(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_version_mismatch", true, now))
 	}
+	if chUAMobileMismatch(r) {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_mobile_mismatch", true, now))
+	}
 	return out, nil
+}
+
+// chUAMobileMismatch reports a request whose Sec-CH-UA-Mobile flag disagrees with the form factor its
+// User-Agent claims. Chromium sets this hint from the real device, so a scraper faking a mobile UA on a
+// desktop stack (Sec-CH-UA-Mobile "?0" under a "...Mobile..." UA) — or the reverse — splits them. Only
+// Chromium sends Sec-CH-UA(-Mobile), so the check is scoped to that header's presence.
+func chUAMobileMismatch(r *http.Request) bool {
+	mobile := r.Header.Get("Sec-CH-UA-Mobile")
+	if r.Header.Get("Sec-CH-UA") == "" || mobile == "" {
+		return false
+	}
+	return (mobile == "?1") != strings.Contains(r.Header.Get("User-Agent"), "Mobile")
 }
 
 // secCHUABrowser maps the Sec-CH-UA brand list to the same browser vocabulary the collector reports for

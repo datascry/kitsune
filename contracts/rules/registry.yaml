@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.41.0"
+ruleset_version: "0.42.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1107,6 +1107,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "RFC 8701; every current browser GREASEs its ClientHello, scripted OpenSSL/Go TLS stacks do not"
+
+  - id: net.ch_ua_mobile_vs_ua
+    title: Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness
+    layers: [network, browser]
+    reads: [network.ch_ua_mobile_mismatch]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Client-hint form-factor coherence; a mobile-UA scraper on a desktop stack sends Sec-CH-UA-Mobile ?0"
     source: "Every modern browser sends Sec-Fetch-Site/Mode on requests; a scripted HTTP client (httpx/curl) faking a browser UA omits them — an HTTP-layer tell independent of TLS/JS"
 
   # --- v0.25.0: resistFingerprinting (Tor/Mullvad) uniformity signature ---
