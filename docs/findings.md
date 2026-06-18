@@ -523,6 +523,18 @@ collector could not classify `ua_platform` either — so the two only ever compa
 and Safari never send the header, so the rule is naturally scoped to the Chromium UA-spoof case it targets
 and cannot false-positive on a non-Chromium browser.
 
+The **browser brand** completes the set. Chromium sends `Sec-CH-UA` (the brand list, e.g.
+`"Chromium";v="126", "Google Chrome";v="126"`) built from its *real* brand, and a JS-level UA override
+does not touch it — confirmed live: a Chromium driven with a Firefox `User-Agent` still sends
+`Sec-CH-UA: chrome` while `navigator.userAgent` reads Firefox. `net.ch_ua_vs_ua_browser` (cross-layer,
+0.6) maps the brand list to the collector's browser vocabulary (Edge if "Microsoft Edge" is present, else
+any Chromium brand → chrome; Firefox/Safari send no header so it never fires on them) and compares it to
+the JS `ua_browser`. The pay-off is visible on the refreshed `spoof-ua` recording: a single Firefox-UA-on-
+Chromium spoof now trips **three independent cross-layer rules at once** — `net.tls_vs_ua_browser` (the
+JA4 TLS engine), `net.h2_vs_ua_browser` (the HTTP/2 stack), and `net.ch_ua_vs_ua_browser` (the client-hint
+brand) — each reading the true engine from a different layer the UA string cannot reach. That triple is
+the thesis in miniature: the spoof only had to rewrite one string, and three lower layers disagree with it.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

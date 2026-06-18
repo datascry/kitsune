@@ -92,7 +92,33 @@ func prepare(
 	if plat := secCHUAPlatform(r); plat != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_platform_header", plat, now))
 	}
+	// The browser the HTTP stack advertises via the Sec-CH-UA brand list. Chromium sets it from its real
+	// brand, so a Chromium browser presenting a non-Chrome User-Agent (CDP setUserAgent without
+	// userAgentMetadata) sends Sec-CH-UA "Chromium"/"Google Chrome" under, say, a Firefox UA — caught by
+	// the detector cross-checking this against the JS ua_browser.
+	if b := secCHUABrowser(r); b != "" {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_browser", b, now))
+	}
 	return out, nil
+}
+
+// secCHUABrowser maps the Sec-CH-UA brand list to the same browser vocabulary the collector reports for
+// browser.ua_browser. Only Chromium-family browsers send this header at all; "Microsoft Edge" in the
+// brand list means Edge, any other Chromium brand (Google Chrome, Chromium, Brave, …) maps to chrome.
+// An empty or unrecognised header yields "" so it is not emitted (Firefox/Safari never send it, and a
+// blank value must not be compared).
+func secCHUABrowser(r *http.Request) string {
+	v := r.Header.Get("Sec-CH-UA")
+	switch {
+	case v == "":
+		return ""
+	case strings.Contains(v, "Microsoft Edge"):
+		return "edge"
+	case strings.Contains(v, "Chromium") || strings.Contains(v, "Google Chrome"):
+		return "chrome"
+	default:
+		return ""
+	}
 }
 
 // secCHUAPlatform returns the Sec-CH-UA-Platform client-hint value normalised to the same OS vocabulary

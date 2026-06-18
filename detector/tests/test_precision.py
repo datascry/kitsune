@@ -39,6 +39,8 @@ def _human(session_id: str, browser: dict[str, object]) -> Session:
         sigs.append(
             make_signal(session_id, Layer.network, "ch_platform_header", browser["ua_platform"], source=Source.edge)
         )
+        # A Chromium browser also sends Sec-CH-UA matching its real brand → agrees with the JS UA browser.
+        sigs.append(make_signal(session_id, Layer.network, "ch_ua_browser", ua_browser, source=Source.edge))
     for kind, value in browser.items():
         if kind in ("ja4_browser", "ja4_os"):
             continue

@@ -215,6 +215,43 @@ func TestSecCHUAPlatform(t *testing.T) {
 	}
 }
 
+func TestSecCHUABrowser(t *testing.T) {
+	cases := map[string]string{
+		`"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="99"`:  "chrome",
+		`"Microsoft Edge";v="126", "Chromium";v="126", "Not.A/Brand";v="24"`: "edge",
+		`"Chromium";v="126", "Not;A=Brand";v="99", "Brave";v="126"`:          "chrome",
+		`"Weird Brand";v="1"`: "", // present but unrecognised → no signal
+		"":                    "",
+	}
+	for header, want := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		if header != "" {
+			r.Header.Set("Sec-CH-UA", header)
+		}
+		if got := secCHUABrowser(r); got != want {
+			t.Errorf("Sec-CH-UA %q: got %q want %q", header, got, want)
+		}
+	}
+}
+
+func TestPrepareEmitsCHUABrowser(t *testing.T) {
+	r := req(t, "abc")
+	r.Header.Set("Sec-CH-UA", `"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="99"`)
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, s := range prep.signals {
+		if s.Kind == "ch_ua_browser" && s.Value == "chrome" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected ch_ua_browser=chrome signal, got %+v", prep.signals)
+	}
+}
+
 func TestPrepareEmitsCHPlatform(t *testing.T) {
 	r := req(t, "abc")
 	r.Header.Set("Sec-CH-UA-Platform", `"macOS"`)

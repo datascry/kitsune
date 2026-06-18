@@ -82,6 +82,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "net.ch_platform_header_vs_ua",
         ),
+        (
+            [
+                (Layer.network, "ch_ua_browser", "chrome", Source.edge),
+                (Layer.browser, "ua_browser", "firefox", Source.collector),
+            ],
+            "net.ch_ua_vs_ua_browser",
+        ),
         ([(Layer.browser, "ua_is_headless", True, Source.collector)], "br.headless_ua"),
         (
             [(Layer.behavioral, "keystroke_entropy", 0.05, Source.collector)],

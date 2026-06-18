@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 77 engines
+# Kitsune detection matrix — 78 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | full-stealth | human-mouse | max-stealth | nodriver | patchright | rebrowser | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -16,9 +16,10 @@
 | `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.accept_lang_vs_navigator` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.ch_platform_header_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.ch_ua_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 1 |
 | `net.h2_settings_vs_order` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.headless_ua` | browser | · | ✓ | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | 7 |
-| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | ✓ | · | · | · | 3 |
+| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | ✓ | · | · | · | · | · | · | ✓ | · | · | · | 2 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -79,7 +80,7 @@
 | `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/77** | **10/77** | **4/77** | **3/77** | **4/77** | **13/77** | **12/77** | **10/77** | **8/77** | **10/77** | **11/77** | **15/77** | **13/77** | **6/77** | **8/77** | **1/77** |  |
+| **flagged** |  | **6/78** | **10/78** | **4/78** | **3/78** | **4/78** | **13/78** | **12/78** | **10/78** | **8/78** | **10/78** | **11/78** | **15/78** | **13/78** | **6/78** | **8/78** | **1/78** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -97,13 +98,13 @@
 | `nodriver` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `patchright` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
-| `spoof-ua` | bot | 6 | 0 | 3 | 5 | 1 | 0 |
+| `spoof-ua` | bot | 7 | 0 | 3 | 5 | 0 | 0 |
 | `stealth-naive` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `undetected` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 42/77 engines catch nothing yet
+## Coverage gaps — 42/78 engines catch nothing yet
 
 **Evaded** (11) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
