@@ -14,6 +14,35 @@ from kitsune_detector.models import Layer, Session, Source
 from .conftest import make_signal
 
 
+def test_registry_rules_are_well_formed() -> None:
+    # Registry invariants that keep the generic engine safe. The arity check matters most: a not_equal
+    # or equals rule with the wrong number of reads would index a missing value at evaluation time
+    # (a runtime crash on live traffic), so it must be impossible to commit one.
+    import yaml
+
+    from kitsune_detector.contracts import contracts_dir
+
+    arity = {"present": 1, "absent": 1, "equals": 2, "not_equal": 2, "below_threshold": 1, "above_threshold": 1}
+    needs_threshold = {"below_threshold", "above_threshold"}
+    raw = yaml.safe_load((contracts_dir() / "rules" / "registry.yaml").read_text())
+    problems: list[str] = []
+    for r in raw["rules"]:
+        if r.get("status") == "retired":
+            continue
+        rid, pred, reads = r.get("id"), r.get("predicate"), r.get("reads", [])
+        for field in ("id", "title", "layers", "reads", "predicate", "weight", "status"):
+            if field not in r:
+                problems.append(f"{rid}: missing required field {field}")
+        if pred not in arity:
+            problems.append(f"{rid}: unknown predicate {pred!r}")
+            continue
+        if len(reads) != arity[pred]:
+            problems.append(f"{rid}: predicate {pred} needs {arity[pred]} reads, has {len(reads)}")
+        if (pred in needs_threshold) != ("threshold" in r):
+            problems.append(f"{rid}: threshold presence must match predicate {pred}")
+    assert not problems, "registry invariant violations:\n" + "\n".join(problems)
+
+
 def test_every_active_rule_declares_a_category() -> None:
     # The detection-class taxonomy (coherence/artifact = spoofing caught; environment/automation =
     # headless too) is only meaningful if every rule states its class explicitly. Relying on the model
