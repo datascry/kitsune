@@ -59,6 +59,7 @@ jobs:
       # malformed client bytes panic the edge — a DoS — is caught in CI, not in production.
       - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseClientHello' -fuzztime 20s
       - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParsePreface' -fuzztime 20s
+      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzH2FrameScanner' -fuzztime 20s
 
   collector:
     runs-on: ubuntu-latest

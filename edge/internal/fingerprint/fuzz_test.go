@@ -41,6 +41,18 @@ func FuzzParsePreface(f *testing.F) {
 	})
 }
 
+func FuzzH2FrameScanner(f *testing.F) {
+	f.Add(validPreface())
+	f.Add([]byte(http2.ClientPreface))
+	f.Add([]byte{})
+	f.Fuzz(func(t *testing.T, data []byte) {
+		// The scanner is fed copies of raw connection bytes; arbitrary input must never panic.
+		var s H2FrameScanner
+		s.Feed(data)
+		_ = s.RapidReset()
+	})
+}
+
 func FuzzParseClientHello(f *testing.F) {
 	f.Add(buildClientHello())
 	f.Add([]byte{0x16, 0x03, 0x01, 0x00, 0x00})

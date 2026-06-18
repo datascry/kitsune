@@ -601,6 +601,24 @@ malformed inputs; ~2.4M and ~4M executions respectively turned up no panic. The 
 tested: on any byte string the parsers return an error, never crash — junk traffic costs the edge a failed
 parse, not availability.
 
+### Toward HTTP/2 Rapid Reset (CVE-2023-44487) — the DDoS frontier at the frame layer
+
+The h2 preface fingerprint identifies *who* a client is; the frame *stream* reveals what it is *doing*.
+The headline HTTP/2 DDoS technique — Rapid Reset — opens a stream with HEADERS and immediately cancels it
+with RST_STREAM, over and over, doing per-request server work while never holding open streams against the
+concurrency limit. It is the single most significant recent layer-7 DoS, and squarely in this lab's
+bots-and-DDoS remit. The foundation lands here: `H2FrameScanner` consumes a *copy* of a connection's bytes
+incrementally (across arbitrary Read boundaries — frame headers and payloads straddle TCP segments),
+counts HEADERS and RST_STREAM frames by walking the 9-byte frame headers, and `RapidReset()` flags the
+signature — RST_STREAM at flood scale (≥100) that roughly tracks the HEADERS count, which no real browser
+ever produces. It is observe-only by construction: fed a copy, it cannot alter what the HTTP/2 server
+reads, so a counting bug can never affect serving. Like the other adversarial parsers it is unit-tested
+(including frames split across chunk boundaries) and fuzzed (~1.8M executions, no panic). The remaining
+step — teeing it onto the live connection and emitting an `h2_rapid_reset` signal — is a deliberate design
+point: Rapid Reset is *connection*-level abuse, not a *session* fingerprint, so wiring it cleanly means
+deciding how a connection-abuse signal joins a session-keyed detector (the scope here: flag it for the
+connections that do carry a session; leave anonymous pure floods to a rate limiter, which is their job).
+
 ### What live capture taught the SETTINGS classifier
 
 Driving real browsers through the edge corrected the SETTINGS-profile classifier twice — a reminder that
