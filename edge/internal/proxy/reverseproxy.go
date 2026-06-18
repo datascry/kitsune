@@ -454,8 +454,11 @@ func selfSignedCert() (*tls.Certificate, error) { // pragma: integration
 		Subject:      pkix.Name{CommonName: "kitsune-edge"},
 		NotBefore:    time.Now().Add(-time.Hour),
 		NotAfter:     time.Now().Add(365 * 24 * time.Hour),
-		DNSNames:     []string{"localhost"},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1)},
+		// "edge" is the compose service name the lab reaches the proxy by; covering it lets a
+		// hostname-verifying TLS client (a real browser, or impersonators like primp that ignore
+		// verify=false) connect without disabling verification, alongside localhost for host runs.
+		DNSNames:    []string{"localhost", "edge"},
+		IPAddresses: []net.IP{net.IPv4(127, 0, 0, 1)},
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {

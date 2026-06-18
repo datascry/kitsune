@@ -191,8 +191,16 @@ func TestSelfSignedCert(t *testing.T) {
 	if len(cert.Certificate) == 0 {
 		t.Fatal("empty certificate")
 	}
-	if _, err := x509.ParseCertificate(cert.Certificate[0]); err != nil {
-		t.Errorf("cert does not parse: %v", err)
+	parsed, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		t.Fatalf("cert does not parse: %v", err)
+	}
+	// The SAN must cover both the compose service name (edge) and localhost, so a hostname-verifying
+	// client can reach the proxy by either without disabling TLS verification.
+	for _, want := range []string{"edge", "localhost"} {
+		if err := parsed.VerifyHostname(want); err != nil {
+			t.Errorf("cert is not valid for %q: %v", want, err)
+		}
 	}
 }
 
