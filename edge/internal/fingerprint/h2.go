@@ -24,6 +24,7 @@ type H2Fingerprint struct {
 	WindowUpdate      uint32
 	Priorities        []string // each "streamID:exclusive:dependsOn:weight"
 	PseudoHeaderOrder string   // request pseudo-header order, e.g. "m,a,s,p"
+	HeaderOrder       string   // regular (non-pseudo) request header name order, lowercase comma-joined (JA4H)
 }
 
 // String renders the Akamai-format fingerprint: "<settings>|<window_update>|<priority>|<header_order>".
@@ -52,6 +53,36 @@ func (f H2Fingerprint) Browser() string {
 	default:
 		return "unknown"
 	}
+}
+
+// HeaderOrderBrowser positively identifies a Chromium client from its regular (non-pseudo) header order:
+// Chrome/Edge/Brave emit the Sec-CH-UA client-hint group BEFORE user-agent on a secure origin (the edge
+// is HTTPS), an order no other engine or scripting HTTP client reproduces by default. It deliberately
+// returns "chrome" or "unknown" only — Firefox and Safari both omit Sec-CH-UA and lead with user-agent,
+// so they are indistinguishable from a non-browser stack by header order alone and stay "unknown" (never
+// a false contradiction). The tell is asymmetric: a Chromium UA whose header order is NOT chromium-shaped
+// is a non-browser h2 stack wearing a Chrome UA (the JA4H analog of h2_engine_unknown).
+func (f H2Fingerprint) HeaderOrderBrowser() string {
+	if f.HeaderOrder == "" {
+		return "unknown"
+	}
+	posSecCHUA, posUA := -1, -1
+	for i, h := range strings.Split(f.HeaderOrder, ",") {
+		switch h {
+		case "sec-ch-ua":
+			if posSecCHUA < 0 {
+				posSecCHUA = i
+			}
+		case "user-agent":
+			if posUA < 0 {
+				posUA = i
+			}
+		}
+	}
+	if posSecCHUA >= 0 && posUA >= 0 && posSecCHUA < posUA {
+		return "chrome"
+	}
+	return "unknown"
 }
 
 // SettingsBrowser classifies the client engine from the *set of SETTINGS identifiers* in the preface —

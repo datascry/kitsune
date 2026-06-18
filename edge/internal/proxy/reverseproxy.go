@@ -105,6 +105,12 @@ func prepare(
 		if h2fp.Browser() == "unknown" && isModernBrowserUA(r.Header.Get("User-Agent")) {
 			out.signals = append(out.signals, signal.Network(out.sessionID, "h2_engine_unknown", true, now))
 		}
+		// JA4H header-order tell: a UA claiming Chromium whose regular header order is not chromium-shaped
+		// (Sec-CH-UA before user-agent) is a non-browser h2 stack wearing a Chrome UA. Gated to Chromium
+		// because Firefox/Safari legitimately have a different (here "unknown") header order.
+		if ua := r.Header.Get("User-Agent"); uaClaimsChromium(ua) && h2fp.HeaderOrderBrowser() != "chrome" {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "h2_header_order_non_chromium", true, now))
+		}
 	}
 	// The observed source IP is the network-layer identity: the address the connection actually came
 	// from. A bot proxying its HTTP through a residential exit shows the proxy IP here, while WebRTC
@@ -288,6 +294,13 @@ func clientIP(r *http.Request) string {
 func isModernBrowserUA(ua string) bool {
 	return strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Firefox/") ||
 		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
+}
+
+// uaClaimsChromium reports a User-Agent that claims a Chromium engine (Chrome/Edge/Brave) — the only
+// family that emits the Sec-CH-UA client-hint group, so it is the only one whose header order can be
+// positively classified. Firefox UAs are excluded (Firefox embeds "like Gecko" but never "Firefox/").
+func uaClaimsChromium(ua string) bool {
+	return (strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Edg/")) && !strings.Contains(ua, "Firefox/")
 }
 
 // secFetchMissing reports a request whose User-Agent claims a modern browser but which omits the

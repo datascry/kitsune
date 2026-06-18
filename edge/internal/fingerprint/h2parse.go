@@ -63,14 +63,18 @@ func ParsePreface(r io.Reader) (H2Fingerprint, error) {
 			fp.Priorities = append(fp.Priorities, fmt.Sprintf(
 				"%d:%d:%d:%d", v.StreamID, ex, v.PriorityParam.StreamDep, v.PriorityParam.Weight))
 		case *http2.MetaHeadersFrame:
-			// The first HEADERS frame ends the preface: record pseudo-header order and stop.
+			// The first HEADERS frame ends the preface: record pseudo-header order + regular header order.
 			order := make([]string, 0, 4)
+			hdrs := make([]string, 0, len(v.Fields))
 			for _, hf := range v.Fields {
 				if code, ok := pseudoCode[hf.Name]; ok {
 					order = append(order, code)
+				} else {
+					hdrs = append(hdrs, hf.Name) // already lowercase in HTTP/2
 				}
 			}
 			fp.PseudoHeaderOrder = strings.Join(order, ",")
+			fp.HeaderOrder = strings.Join(hdrs, ",")
 			return fp, nil
 		}
 	}

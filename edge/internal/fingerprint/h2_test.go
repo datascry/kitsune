@@ -92,3 +92,24 @@ func TestH2BrowserClassifier(t *testing.T) {
 		}
 	}
 }
+
+func TestH2HeaderOrderBrowser(t *testing.T) {
+	cases := map[string]string{
+		// Chromium emits the Sec-CH-UA group before user-agent.
+		"sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,upgrade-insecure-requests,user-agent,accept": "chrome",
+		"sec-ch-ua,user-agent": "chrome",
+		// Firefox/Safari lead with user-agent and omit Sec-CH-UA — indistinguishable from a non-browser
+		// stack by header order alone, so deliberately "unknown" (never a false contradiction).
+		"user-agent,accept,accept-language,accept-encoding": "unknown",
+		// A non-browser client faking Chrome that does NOT reproduce the order → unknown (the tell).
+		"user-agent,accept,sec-ch-ua": "unknown",
+		"accept,accept-encoding":      "unknown",
+		"":                            "unknown",
+	}
+	for order, want := range cases {
+		fp := H2Fingerprint{HeaderOrder: order}
+		if got := fp.HeaderOrderBrowser(); got != want {
+			t.Errorf("header order %q: got=%s want=%s", order, got, want)
+		}
+	}
+}
