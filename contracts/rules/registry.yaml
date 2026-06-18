@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.52.0"
+ruleset_version: "0.53.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -86,11 +86,11 @@ rules:
     reads: [network.quic_no_grease]
     predicate: present
     weight: 0.6
-    # experimental: live-producible (the edge QUIC capturer emits it) but the producer fires only when the
-    # client actually attempts QUIC at the edge (Alt-Svc advert + UDP reachable) — not yet browser-validated
-    # end to end in the lab. The decryptor + capturer are validated against quic-go; activate once a real
-    # browser's QUIC capture is confirmed.
-    status: experimental
+    # Validated live end to end (corpus/sessions/quic-no-grease.json): a quic-go client attempts QUIC at
+    # the edge, its Initial is captured + decrypted, and on the same IP's HTTP request the edge emits
+    # quic_no_grease under a Chrome UA -> this rule fires. Real browsers GREASE their QUIC hello (same
+    # HasGREASE logic as the active net.tls_grease_vs_ua), so it stays quiet on them.
+    status: active
     category: coherence
     added: "2026-06-18"
     last_validated: "2026-06-18"

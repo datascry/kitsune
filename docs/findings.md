@@ -726,6 +726,31 @@ a Windows-claiming UA on the Linux container) and the page execution (`no_js_exe
 network impersonator available wins the entire fingerprint arms race and is still caught on the two axes
 below and above it that are not part of that race.
 
+## QUIC / HTTP-3 fingerprinting — the transport the application never sees
+
+Chrome increasingly speaks **HTTP/3 over QUIC**, and QUIC carries its TLS ClientHello *encrypted* inside
+the Initial packet — so the edge can't peek it the way it peeks a TCP ClientHello. The lab now fingerprints
+it anyway, built as three validated cores:
+
+1. **Decrypt** (`fingerprint.ParseQUICInitials`, RFC 9001) — derive the Initial keys from the packet's own
+   DCID (the Initial secrets are public), strip header protection (AES-ECB sample mask), AES-128-GCM-open,
+   and reassemble the CRYPTO frames **across multiple Initials** (a hello with post-quantum key shares
+   exceeds one packet) into the TLS handshake, which feeds the same JA3/JA4 parser as the TCP path
+   (transport `q`). Validated against a real **quic-go**-generated Initial and fuzz-hardened (a malformed
+   header found an out-of-bounds; now guarded).
+2. **Capture** (`proxy.QUICCapturer`) — a `quic.Listen` accept loop on a tee'd UDP conn stashes each
+   source's Initials; the edge advertises `Alt-Svc: h3` so browsers attempt QUIC here.
+3. **Coherence** (`net.quic_grease_vs_ua`) — on the HTTP request the edge looks up the captured QUIC hello
+   by source IP and, for a modern-browser UA whose QUIC hello lacks **GREASE**, fires the tell. Every
+   browser GREASEs its QUIC ClientHello (RFC 8701); a non-browser QUIC stack (quic-go / Go `crypto/tls`,
+   verified) does not — the QUIC analog of `net.tls_grease_vs_ua`.
+
+**Validated live end to end** (`corpus/sessions/quic-no-grease.json`): a quic-go client attempts QUIC at
+the running edge, its Initial is captured + decrypted, and on the same IP's HTTP request the rule fires
+`bot`. So the spoofer must now keep its story straight on a *fourth* transport — QUIC — in addition to TLS,
+HTTP/2, and the TCP/IP kernel. Natural follow-ons: `quic_ja4 vs ua_browser` and the QUIC transport-parameter
+fingerprint.
+
 ## TCP/IP-stack fingerprinting — the OS tell beneath TLS
 
 The deepest layer a session exposes is the one the application never touches: the **TCP/IP stack of the
