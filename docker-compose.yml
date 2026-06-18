@@ -42,3 +42,14 @@ services:
       KITSUNE_DETECTOR: "http://detector:8080"
     depends_on: [edge]
     profiles: ["evaders"]
+
+  # High-fidelity network impersonator (Chrome TLS+H2 via primp/BoringSSL, no JS).
+  primp:
+    build:
+      context: .
+      dockerfile: evaders/primp/Dockerfile
+    environment:
+      KITSUNE_EDGE: "https://edge:8443/healthz"
+      KITSUNE_DETECTOR: "http://detector:8080"
+    depends_on: [edge]
+    profiles: ["evaders"]
