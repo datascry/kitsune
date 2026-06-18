@@ -15,6 +15,7 @@ from .conftest import make_signal
 def _human(session_id: str, browser: dict[str, object]) -> Session:
     """A coherent human session: real values, present capabilities, and crucially NONE of the boolean
     tell-signals (no webgl2_missing, voices_empty, webdriver=true, …). Behaviour is human-like."""
+    ua_browser = browser["ua_browser"]
     sigs = [
         make_signal(session_id, Layer.network, "ja4_browser_hint", browser["ja4_browser"], source=Source.edge),
         make_signal(session_id, Layer.network, "ja4_os_hint", browser["ja4_os"], source=Source.edge),
@@ -24,7 +25,20 @@ def _human(session_id: str, browser: dict[str, object]) -> Session:
         make_signal(session_id, Layer.behavioral, "pointer_event_count", 180),
         make_signal(session_id, Layer.behavioral, "keystroke_entropy", 0.74),
         make_signal(session_id, Layer.reputation, "asn_is_datacenter", False),
+        # Cross-layer facts a real browser keeps coherent across the HTTP and JS boundaries: the HTTP
+        # stack and the JS layer agree on locale, on the HTTP/2 engine, and (Chromium) on the OS. These
+        # exercise the v0.27-0.32 cross-layer rules' no-fire path, proving they do not false-positive.
+        make_signal(session_id, Layer.network, "accept_language_primary", "en", source=Source.edge),
+        make_signal(session_id, Layer.browser, "nav_language_primary", "en"),
+        make_signal(session_id, Layer.network, "h2_browser_hint", ua_browser, source=Source.edge),
+        make_signal(session_id, Layer.network, "h2_settings_hint", ua_browser, source=Source.edge),
     ]
+    # Sec-CH-UA-Platform is a Chromium client hint; a real Chromium sends it matching its UA platform.
+    # Firefox never sends it, so its absence (not a mismatch) is the coherent case there.
+    if "ch_platform" in browser:
+        sigs.append(
+            make_signal(session_id, Layer.network, "ch_platform_header", browser["ua_platform"], source=Source.edge)
+        )
     for kind, value in browser.items():
         if kind in ("ja4_browser", "ja4_os"):
             continue

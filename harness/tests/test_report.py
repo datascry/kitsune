@@ -62,3 +62,17 @@ def test_zero_catch_and_gaps(detector: Detector) -> None:
     assert "br.webdriver_present" not in gaps  # the bot example triggers it
     assert isinstance(gaps, list) and len(gaps) > 5
     assert "Coverage gaps" in render_gaps(detectors, fired)
+
+
+def test_classify_gaps_separates_unexercised(detector: Detector) -> None:
+    from kitsune_harness.report import classify_gaps, corpus_signal_kinds, render_gaps
+
+    detectors, fired, _ = coverage(detector, _examples())
+    present = corpus_signal_kinds(_examples())
+    evaded, unexercised = classify_gaps(detectors, fired, present)
+    # A rule reading a signal kind absent from both example sessions must land in "unexercised",
+    # not be conflated with rules the examples genuinely exercise but evade.
+    assert "br.csp_bypassed" in unexercised  # the examples carry no csp_bypassed signal
+    assert set(evaded).isdisjoint(unexercised)
+    md = render_gaps(detectors, fired, present)
+    assert "Evaded" in md and "Unexercised" in md

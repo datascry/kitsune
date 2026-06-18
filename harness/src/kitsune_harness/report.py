@@ -14,7 +14,7 @@ from __future__ import annotations
 from kitsune_detector.coherence import load_registry
 from kitsune_detector.coherence.rules import CoherenceRule
 from kitsune_detector.detector import Detector
-from kitsune_detector.models import Session, Verdict
+from kitsune_detector.models import Layer, Session, Verdict
 
 
 def evaluable_detectors() -> list[CoherenceRule]:
@@ -42,11 +42,61 @@ def zero_catch(detectors: list[CoherenceRule], fired: dict[str, set[str]]) -> li
     return [rule.id for rule in detectors if all(rule.id not in s for s in fired.values())]
 
 
-def render_gaps(detectors: list[CoherenceRule], fired: dict[str, set[str]]) -> str:
-    """Render the coverage backlog: detectors with no triggering sample yet."""
+def corpus_signal_kinds(corpus: list[tuple[str, Session]]) -> set[str]:
+    """Every ``layer.kind`` signal present anywhere in the corpus — what the recordings can exercise."""
+    present: set[str] = set()
+    for _name, session in corpus:
+        for layer in Layer:
+            for sig in session.signals.of(layer):
+                present.add(f"{layer.value}.{sig.kind}")
+    return present
+
+
+def classify_gaps(
+    detectors: list[CoherenceRule],
+    fired: dict[str, set[str]],
+    present_kinds: set[str],
+) -> tuple[list[str], list[str]]:
+    """Split the zero-catch rules into (evaded, unexercised).
+
+    A rule is *unexercised* when one of its ``reads`` is absent from the whole corpus, so no recording
+    could ever trip it (the common case for a freshly added signal the recordings predate). It is
+    *evaded* when its reads are present somewhere but every sample passed the check — a real coverage
+    gap. Conflating the two makes a validated-but-uncaptured rule look like dead weight.
+    """
+    by_id = {rule.id: rule for rule in detectors}
+    evaded: list[str] = []
+    unexercised: list[str] = []
+    for rid in zero_catch(detectors, fired):
+        if any(read not in present_kinds for read in by_id[rid].reads):
+            unexercised.append(rid)
+        else:
+            evaded.append(rid)
+    return evaded, unexercised
+
+
+def render_gaps(
+    detectors: list[CoherenceRule],
+    fired: dict[str, set[str]],
+    present_kinds: set[str] | None = None,
+) -> str:
+    """Render the coverage backlog. When ``present_kinds`` is given, separate genuinely evaded rules
+    from those the corpus cannot exercise (so the latter are not misread as dead weight)."""
     gaps = zero_catch(detectors, fired)
     lines = [f"## Coverage gaps — {len(gaps)}/{len(detectors)} engines catch nothing yet", ""]
-    lines += [f"- `{rid}`" for rid in gaps] or ["- (none — every engine catches something)"]
+    if present_kinds is None:
+        lines += [f"- `{rid}`" for rid in gaps] or ["- (none — every engine catches something)"]
+        return "\n".join(lines) + "\n"
+    evaded, unexercised = classify_gaps(detectors, fired, present_kinds)
+    lines.append(f"**Evaded** ({len(evaded)}) — reads present in the corpus, but every sample passed:")
+    lines += [f"- `{rid}`" for rid in evaded] or ["- (none — every exercised engine catches something)"]
+    lines += [
+        "",
+        f"**Unexercised** ({len(unexercised)}) — a read signal is absent from every recording, so the "
+        "corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the "
+        "detector unit + precision tests, and need a corpus refresh to appear here:",
+    ]
+    lines += [f"- `{rid}`" for rid in unexercised] or ["- (none)"]
     return "\n".join(lines) + "\n"
 
 
@@ -109,11 +159,12 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     argv = sys.argv[1:] if argv is None else argv
     directory = argv[0] if argv else DEFAULT_CORPUS
     detector = Detector()
-    detectors, fired, verdicts = coverage(detector, load_corpus(directory))
+    corpus = load_corpus(directory)
+    detectors, fired, verdicts = coverage(detector, corpus)
     print(f"# Kitsune detection matrix — {len(detectors)} engines\n")
     print(render_matrix(detectors, fired, verdicts))
     print(render_categories(verdicts))
-    print(render_gaps(detectors, fired), end="")
+    print(render_gaps(detectors, fired, corpus_signal_kinds(corpus)), end="")
 
 
 if __name__ == "__main__":  # pragma: no cover

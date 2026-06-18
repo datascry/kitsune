@@ -209,6 +209,30 @@ def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
     assert rule_id in fired
 
 
+def test_matching_ch_platform_does_not_fire() -> None:
+    # The HTTP client hint and the JS UA platform agree → no cross-layer OS contradiction.
+    sigs = [
+        make_signal("s", Layer.network, "ch_platform_header", "Windows", source=Source.edge),
+        make_signal("s", Layer.browser, "ua_platform", "Windows", source=Source.collector),
+    ]
+    session = group_signals(sigs)[0]
+    fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}
+    assert "net.ch_platform_header_vs_ua" not in fired
+
+
+def test_matching_h2_engine_does_not_fire() -> None:
+    # A real browser's h2 stack agrees with its UA, its TLS engine, and its own SETTINGS profile.
+    sigs = [
+        make_signal("s", Layer.network, "h2_browser_hint", "chrome", source=Source.edge),
+        make_signal("s", Layer.network, "h2_settings_hint", "chrome", source=Source.edge),
+        make_signal("s", Layer.network, "ja4_browser_hint", "chrome", source=Source.edge),
+        make_signal("s", Layer.browser, "ua_browser", "chrome", source=Source.collector),
+    ]
+    session = group_signals(sigs)[0]
+    fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}
+    assert not ({"net.h2_vs_ua_browser", "net.h2_vs_tls_browser", "net.h2_settings_vs_order"} & fired)
+
+
 def test_matching_accept_language_does_not_fire() -> None:
     # Same primary language across the HTTP and JS layers (region nuance ignored) → no contradiction.
     sigs = [

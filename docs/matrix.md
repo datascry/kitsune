@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 72 engines
+# Kitsune detection matrix — 77 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | full-stealth | human-mouse | max-stealth | nodriver | patchright | rebrowser | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -8,16 +8,21 @@
 | `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webdriver_present` | browser | ✓ | ✓ | · | · | · | · | ✓ | · | · | · | ✓ | · | ✓ | · | · | · | 5 |
 | `br.cdp_runtime_enabled` | browser | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | ✓ | · | · | · | 3 |
+| `br.csp_bypassed` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_lie` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.input_entropy_floor` | behavioral | · | ✓ | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | · | 3 |
 | `bh.no_input_before_action` | behavioral | · | ✓ | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | · | 3 |
 | `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.accept_lang_vs_navigator` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.ch_platform_header_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.h2_settings_vs_order` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.headless_ua` | browser | · | ✓ | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | 7 |
 | `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | ✓ | · | · | · | 3 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `bh.synthetic_no_coalesced` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webdriver_spoofed` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | ✓ | · | ✓ | · | · | 3 |
 | `br.webgl_software` | browser | · | ✓ | · | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | 10 |
 | `br.permissions_anomaly` | browser | · | · | · | · | · | ✓ | ✓ | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | · | 8 |
@@ -74,7 +79,7 @@
 | `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/72** | **10/72** | **4/72** | **3/72** | **6/72** | **13/72** | **12/72** | **10/72** | **8/72** | **10/72** | **11/72** | **14/72** | **13/72** | **6/72** | **8/72** | **1/72** |  |
+| **flagged** |  | **6/77** | **10/77** | **4/77** | **3/77** | **6/77** | **13/77** | **12/77** | **10/77** | **8/77** | **10/77** | **11/77** | **14/77** | **13/77** | **6/77** | **8/77** | **1/77** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -98,29 +103,37 @@
 | `undetected` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 36/72 engines catch nothing yet
+## Coverage gaps — 41/77 engines catch nothing yet
 
+**Evaded** (7) — reads present in the corpus, but every sample passed:
+- `br.ua_platform_vs_ch_platform`
+- `bh.path_too_straight`
+- `bh.uniform_velocity`
+- `br.low_hardware_concurrency`
+- `br.navplatform_vs_ua`
+- `br.oscpu_vs_ua`
+- `br.font_os_vs_ua`
+
+**Unexercised** (34) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`
-- `br.ua_platform_vs_ch_platform`
+- `br.csp_bypassed`
 - `br.canvas_lie`
 - `rep.datacenter_asn`
 - `net.h2_vs_tls_browser`
+- `net.accept_lang_vs_navigator`
+- `net.ch_platform_header_vs_ua`
+- `net.h2_settings_vs_order`
 - `rep.known_proxy_exit`
-- `bh.path_too_straight`
-- `bh.uniform_velocity`
+- `bh.synthetic_no_coalesced`
 - `br.tostring_tampered`
-- `br.low_hardware_concurrency`
-- `br.navplatform_vs_ua`
 - `br.worker_divergence`
-- `br.oscpu_vs_ua`
 - `br.languages_empty`
 - `br.screen_zero`
 - `br.no_devicememory`
 - `br.platform_empty`
 - `br.cdc_artifacts`
 - `br.iframe_divergence`
-- `br.font_os_vs_ua`
 - `br.screen_avail_invalid`
 - `br.color_depth_anomaly`
 - `br.devicepixelratio_anomaly`
