@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Scripted / non-browser client detection** (ruleset 0.22.0) — `net.no_js_execution`: a session with a
+  network/TLS fingerprint but an *empty browser layer* loaded the challenge page yet never executed the JS
+  collector — a scripted HTTP client (httpx/curl), the volumetric-DDoS majority. Emitted as a score-time
+  derived cross-layer signal (`network.browser_absent`, not persisted), so the registry rule and the
+  incoherence amplifier handle it like any other tell. **Closes the last recall gap:** `vanilla` (httpx),
+  which previously scored `human`, now scores `bot` 0.90. Humans are unaffected (they have a browser
+  layer) — every evader is now `bot`, every human `human`.
 - **Deep engine-API coherence** (ruleset 0.21.0) — `br.engine_stack_vs_ua`: `Error.captureStackTrace` is
   a V8 (Chromium) API absent in Firefox/Safari, so a UA claiming Chrome without it — or Firefox *with* it
   — is an engine spoof deeper than `navigator.vendor` (which JS-stealth patches, while the `Error` API it

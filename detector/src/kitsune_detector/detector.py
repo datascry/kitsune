@@ -16,7 +16,7 @@ from . import scoring
 from .coherence import CoherenceEngine, RuleSet, load_registry
 from .config import SCHEMA_VERSION
 from .ingest import group_signals
-from .models import Session, Signal, Verdict
+from .models import Layer, Session, Signal, Source, Verdict
 
 Clock = Callable[[], datetime]
 
@@ -35,8 +35,28 @@ class Detector:
     def ruleset_version(self) -> str:
         return self._ruleset.ruleset_version
 
+    def _with_derived(self, session: Session) -> Session:
+        """Add score-time derived signals (not persisted). A session with a network fingerprint but an
+        empty browser layer loaded the challenge page yet never executed JS — a scripted/non-browser
+        client (e.g. an HTTP flood). Emitted as a cross-layer ``network.browser_absent`` so the registry
+        rule (and the incoherence amplifier) handle it like any other tell."""
+        if session.signals.network and not session.signals.browser:
+            marker = Signal(
+                schema_version=SCHEMA_VERSION,
+                session_id=session.session_id,
+                layer=Layer.network,
+                kind="browser_absent",
+                value=True,
+                source=Source.detector,
+                observed_at=session.last_seen,
+            )
+            groups = session.signals.model_copy(update={"network": [*session.signals.network, marker]})
+            return session.model_copy(update={"signals": groups})
+        return session
+
     def score(self, session: Session) -> Verdict:
         """Score one correlated session into an explainable verdict."""
+        session = self._with_derived(session)
         contradictions = self._engine.evaluate(session)
         score = scoring.final_score(contradictions)
         return Verdict(

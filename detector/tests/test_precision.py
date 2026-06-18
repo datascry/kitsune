@@ -117,3 +117,17 @@ def test_legitimate_human_not_flagged(detector: Detector, name: str) -> None:
         f"{name} false-positived as {verdict.label.value} ({verdict.score:.2f}): "
         f"{sorted(c.rule_id for c in verdict.contradictions)}"
     )
+
+
+def test_scripted_client_no_js_is_flagged(detector: Detector) -> None:
+    # A network fingerprint (edge saw the TLS connection) but no browser layer — the collector never ran.
+    # A scripted HTTP client (httpx/curl — the volumetric-DDoS case) that a coherence ruleset must catch.
+    scripted = group_signals(
+        [
+            make_signal("s", Layer.network, "ja3", "abc", source=Source.edge),
+            make_signal("s", Layer.network, "ja4", "t13d_x_y", source=Source.edge),
+        ]
+    )[0]
+    verdict = detector.score(scripted)
+    assert verdict.label is Label.bot
+    assert "net.no_js_execution" in {c.rule_id for c in verdict.contradictions}
