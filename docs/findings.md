@@ -866,10 +866,12 @@ source of that substring. A scraper that hand-assembles the header from a static
 fires when a request presents a Chromium-family `Sec-CH-UA` (so the header is claimed at all) whose value
 carries no "brand" token — a hardcoded, non-browser-generated header. It is an `artifact`-class tell, not
 a cross-layer one: it needs nothing but the header itself, which is why it survives even a single-request
-probe. This is live-producible at the edge (unit-tested both ways) and awaits a hardcoded-header evader
-in the recorded corpus to light up the matrix; like other artifact rules it reads 0 there until one is
-captured. With this, the low-entropy client-hint surface — browser, OS, locale, form factor, version, and
-GREASE integrity — is saturated; further client-hint work would be redundant rather than additive.
+probe. **Validated live** by driving two Chrome/131-UA requests through the stack: a hardcoded
+`Sec-CH-UA: "Google Chrome";v="131", "Chromium";v="131"` (no GREASE brand) **fires** the rule and scores
+`bot` (captured as `corpus/sessions/ch-ua-hardcoded.json`), while a real Chromium hint carrying
+`"Not.A/Brand"` leaves it **silent** — precise in both directions. With this, the low-entropy client-hint
+surface — browser, OS, locale, form factor, version, and GREASE integrity — is saturated; further
+client-hint work would be redundant rather than additive.
 
 ## Testing strategy (efficiency)
 
