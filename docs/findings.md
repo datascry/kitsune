@@ -524,6 +524,44 @@ ages out, the cluster's alert state resets, so a *fresh* burst on the same JA4 p
 than staying silent. Windowing is also what makes the `arrival_rate_per_min` severity meaningful: a true
 current rate, not an all-time average diluted by history.
 
+### White-box analysis — BotBrowser and the profile-reuse blind spot
+
+Camoufox is the open-source anti-detect *browser* we white-boxed first; `BotBrowser` is the other end of
+that family and a sharper test of the thesis. Per its published source it is a Chromium core patched at
+the **native/C++ level** (not JS injection like the stealth-plugin family), applying a fingerprint
+*profile* that spoofs canvas/WebGL/WebGPU with "deterministic noise", calibrates AudioContext noise,
+swaps in cross-platform font engines, and rewrites navigator/client-hint/device-metric APIs. Patching
+below the JS layer means the per-session JS-coherence rules that catch a stealth.js patch (`window.chrome`
+absence, `navigator.vendor` mismatch, override-stringification) largely do **not** fire — the spoof is
+applied by the engine, so the JS surface is internally consistent.
+
+Two layers it still cannot reach convict it anyway, and reading the source told us which before testing:
+
+- **The host kernel.** BotBrowser's headline feature is *profile portability* — "the same identity on
+  Windows, macOS, and Linux." But the patched Chromium does not replace the OS TCP/IP stack. A profile
+  drawing a macOS or Windows identity while running on a Linux host emits a Linux SYN, so `net.tcp_os_vs_ua`
+  fires a layer below everything the browser patch controls. The portability that is its selling point is
+  the precise thing the kernel-layer tell turns into a contradiction.
+- **The fleet.** A *single* BotBrowser instance can be internally perfect. A fleet cannot — and here it
+  exposed a real **blind spot in our coordination scorer**, which keyed only on the JS-divergence paradox
+  (shared TLS, *divergent* JS — the randomizing-fleet shape). BotBrowser does the opposite: it clones one
+  profile across every instance, so the JS is *homogeneous* and the cluster read as a benign same-build
+  cohort — scoring at most `candidate`, never `fleet`. It evaded.
+
+  The fix is the paradox's **complement**. The collector now emits `browser.fp_hash`: an FNV-1a hash of a
+  canvas-text render folded with the AudioContext sum and the WebGL renderer/vendor — a high-entropy
+  identity that varies per GPU/driver/OS/font-stack, so two *real* machines, even on one browser build,
+  hash differently. The coordination scorer's new **fingerprint-collision** signal fires when one `fp_hash`
+  arrives from **distinct source IPs**: a byte-identical high-entropy fingerprint across different origins
+  cannot be organic — it is one cloned profile fronted by proxies. The same-IP case (one machine, many
+  sessions) is explicitly excluded, so the discriminator is the collision *across* IPs, not the hash alone.
+  A fleet is now boxed in: randomize JS to fake diversity and the paradox fires; reuse one profile and the
+  collision fires; it cannot do neither. A synthetic 3-node BotBrowser-style fleet (homogeneous JS,
+  identical `fp_hash`, three residential IPs) now scores `fleet`, where before the rebuild it was a
+  `candidate`. As with the proxy signals, this is graded from a synthetic fleet — the lab has no BotBrowser
+  build to capture — and the residual false-positive (an identically-imaged VM farm behind distinct proxy
+  IPs) is narrow and noted; the JS-divergence paradox remains the primary discriminator.
+
 ## The scripted-flood tier — three HTTP-header tells before any JS runs
 
 The cheapest attack is also the most common at volume: a script (httpx/requests/curl/Go) that forges a

@@ -14,6 +14,7 @@ const cleanEnv: BrowserEnv = {
   uaDataPlatform: null,
   canvasTampered: false,
   cdpRuntimeEnabled: false,
+  fpHash: null,
   pointerEvents: [],
   keyEvents: [],
 };
@@ -25,6 +26,7 @@ const botEnv: BrowserEnv = {
   uaDataPlatform: "Linux",
   canvasTampered: true,
   cdpRuntimeEnabled: true,
+  fpHash: "deadbeef",
   pointerEvents: [],
   keyEvents: [],
 };
@@ -52,6 +54,11 @@ describe("collectSignals", () => {
     expect(k).toContain("canvas_lie");
     expect(k).toContain("cdp_runtime_enabled");
     expect(k).toContain("ua_is_headless");
+    expect(k).toContain("fp_hash");
+  });
+
+  it("omits fp_hash when it could not be computed (null)", () => {
+    expect(kinds(cleanEnv)).not.toContain("fp_hash");
   });
 
   it("stamps session id and collector source", () => {

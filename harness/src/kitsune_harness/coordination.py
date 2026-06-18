@@ -16,6 +16,13 @@ So **identical TLS + divergent JS within one cluster** is the signal: it is the 
 spoofing fleet produces. Real diversity comes with diverse JA4; real JA4-sharing comes with shared
 JS. The two diverging at once is the tell. This is the durable bots/DDoS signal — it survives any
 per-session fingerprint spoof because it is a property of the *cluster*, not the instance.
+
+A native anti-detect browser (BotBrowser) can dodge the paradox by going the *other* way: clone one
+fingerprint profile across the fleet, so the JS is homogeneous and the cluster reads as a real cohort.
+The complement closes it — a high-entropy ``fp_hash`` (canvas+audio+WebGL) that is byte-identical across
+*distinct* source IPs cannot be organic (real machines each hash differently), so it convicts the
+cloned-profile fleet on the same cluster-property logic. A fleet must either randomize JS (paradox) or
+reuse one identity (collision); it cannot do neither.
 """
 
 from __future__ import annotations
@@ -44,6 +51,13 @@ _LOCKSTEP_BONUS = 0.12  # tightens confidence; kept < the fleet threshold so the
 # extensions specifically to be robust to Chrome's order shuffling, so a varying JA4_c means the actual
 # extension/sig-alg set is being manipulated per launch — an anti-detect TLS tell (Camoufox does this).
 _JA4C_BONUS = 0.30
+# The *complement* of the JS-divergence paradox. A randomizing fleet (Camoufox) varies its JS to fake
+# distinct users; a native anti-detect browser (BotBrowser) does the opposite — it clones ONE fingerprint
+# profile across every instance, so the high-entropy fp_hash (canvas+audio+WebGL) is byte-identical fleet-
+# wide. Real machines, even on one browser build, each hash differently (GPU/driver/OS/font variance), so
+# an identical fp_hash across *distinct* source IPs cannot be organic — it is one cloned profile behind
+# proxies. Strong on its own: a homogeneous cluster this catches would otherwise read as a real cohort.
+_FP_COLLISION_BONUS = 0.55
 # A *confirmed* spoofing fleet (paradox or JA4_c) that is also spread across many distinct source IPs is
 # the residential-proxy botnet pattern: the IP diversity is there to look like distinct users and defeat
 # IP rate-limiting / datacenter-ASN rules, but the shared engine identity binds them. A modest escalation
@@ -67,6 +81,7 @@ class FleetVerdict:
     span_seconds: float | None = None  # first_seen spread across members (None if < 2 timestamps)
     ja4c_divergent: bool = False  # members share the cipher prefix but differ in extensions/sig-algs
     distinct_observed_ips: int = 0  # distinct source IPs across the cluster (proxy spread)
+    cloned_fingerprint: str | None = None  # one high-entropy fp_hash shared across distinct IPs (reuse)
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
     arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
@@ -124,6 +139,25 @@ def _distinct_values(sessions: list[Session], layer: Layer, kind: str) -> set[ob
     return vals
 
 
+def _fp_collision(sessions: list[Session]) -> tuple[str, int] | None:
+    """A high-entropy ``fp_hash`` shared by members spanning >= 2 *distinct* observed IPs — the cloned-
+    profile-reuse tell. Identical fp_hash from one IP is one machine over many sessions (benign), so the
+    discriminator is the same hash arriving from different sources. Returns ``(hash, distinct_ip_count)``
+    for the widest such collision, else ``None``."""
+    by_hash: dict[str, set[str]] = {}
+    for session in sessions:
+        fp = session.value(Layer.browser, "fp_hash")
+        ip = session.value(Layer.network, "observed_ip")
+        if fp is MISSING or ip is MISSING:
+            continue
+        by_hash.setdefault(str(fp), set()).add(str(ip))
+    best: tuple[str, int] | None = None
+    for fp, ips in by_hash.items():
+        if len(ips) >= 2 and (best is None or len(ips) > best[1]):
+            best = (fp, len(ips))
+    return best
+
+
 def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdict:
     """Grade one JA4-prefix cluster (>= 2 sessions sharing the cipher-suite ``prefix``)."""
     names = sorted(n for n, _ in members)
@@ -151,6 +185,18 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
             f"({len(full_ja4s)} variants) — per-launch TLS randomization"
         )
 
+    # Fingerprint-collision: the complement of the paradox. Identical high-entropy fp_hash across distinct
+    # source IPs is one cloned anti-detect profile behind proxies — a homogeneous cluster that would
+    # otherwise read as a benign same-build cohort.
+    collision = _fp_collision(sessions)
+    cloned_fingerprint = collision[0] if collision else None
+    if collision is not None:
+        score += _FP_COLLISION_BONUS
+        evidence.append(
+            f"identical high-entropy fingerprint `{collision[0]}` across {collision[1]} distinct "
+            f"source IPs — cloned-profile reuse (one anti-detect profile shared fleet-wide)"
+        )
+
     span = _first_seen_span(sessions)
     if span is not None and span <= _LOCKSTEP_WINDOW_S:
         score += _LOCKSTEP_BONUS
@@ -163,7 +209,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     webrtc = _distinct_values(sessions, Layer.browser, "webrtc_public_ip")
     distinct_observed = len(observed)
     shared_real_ip: str | None = None
-    if (diverged or ja4c_divergent) and distinct_observed > 1:
+    if (diverged or ja4c_divergent or collision is not None) and distinct_observed > 1:
         score += _PROXY_FLEET_BONUS
         evidence.append(
             f"distributed across {distinct_observed} distinct source IPs — residential-proxy fleet "
@@ -193,6 +239,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         span_seconds=span,
         ja4c_divergent=ja4c_divergent,
         distinct_observed_ips=distinct_observed,
+        cloned_fingerprint=cloned_fingerprint,
         shared_real_ip=shared_real_ip,
         request_volume=request_volume,
         arrival_rate_per_min=arrival_rate,

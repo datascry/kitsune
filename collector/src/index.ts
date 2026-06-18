@@ -20,6 +20,48 @@ function detectCanvasLie(): boolean {
   }
 }
 
+function computeFpHash(): string | null {
+  try {
+    // FNV-1a/32 over a canvas-text render folded with the WebGL renderer/vendor — varies per GPU/driver/
+    // OS/font-stack, so two real machines hash differently. A reused anti-detect profile hashes identically.
+    const c = document.createElement("canvas");
+    c.width = 240;
+    c.height = 60;
+    const x = c.getContext("2d");
+    if (x === null) return null;
+    x.textBaseline = "alphabetic";
+    x.fillStyle = "#f60";
+    x.fillRect(125, 1, 62, 20);
+    x.fillStyle = "#069";
+    x.font = "11pt no-real-font-123";
+    x.fillText("Kitsune 🦊 fp ⒶⒷ", 2, 15);
+    x.fillStyle = "rgba(102, 204, 0, 0.7)";
+    x.font = "18pt Arial";
+    x.fillText("Kitsune 🦊 fp ⒶⒷ", 4, 45);
+    const px = x.getImageData(0, 0, 240, 60).data;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < px.length; i += 4) {
+      h = (Math.imul(h ^ (px[i] ?? 0), 0x01000193) >>> 0);
+    }
+    const gl = c.getContext("webgl") as WebGLRenderingContext | null;
+    let tail = "";
+    if (gl !== null) {
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      if (dbg !== null) {
+        tail =
+          `${String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL))}|` +
+          `${String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL))}`;
+      }
+    }
+    for (let i = 0; i < tail.length; i += 1) {
+      h = (Math.imul(h ^ tail.charCodeAt(i), 0x01000193) >>> 0);
+    }
+    return `0000000${h.toString(16)}`.slice(-8);
+  } catch {
+    return null;
+  }
+}
+
 function detectWebdriverSpoofed(): boolean {
   try {
     // Real browsers expose navigator.webdriver via Navigator.prototype; an own property on the instance
@@ -39,6 +81,7 @@ function buildEnv(pointerEvents: PointerSample[], keyEvents: number[], cdp: CdpP
     uaDataPlatform: uaData?.platform ?? null,
     canvasTampered: detectCanvasLie(),
     cdpRuntimeEnabled: cdp.triggered(),
+    fpHash: computeFpHash(),
     pointerEvents,
     keyEvents,
   };

@@ -29,6 +29,7 @@ def _sess(
     offset_s: float = 0.0,
     observed_ip: str | None = None,
     webrtc_ip: str | None = None,
+    fp_hash: str | None = None,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -46,6 +47,8 @@ def _sess(
         sigs.append(mk(Layer.network, "observed_ip", observed_ip, Source.edge))
     if webrtc_ip is not None:
         sigs.append(mk(Layer.browser, "webrtc_public_ip", webrtc_ip, Source.collector))
+    if fp_hash is not None:
+        sigs.append(mk(Layer.browser, "fp_hash", fp_hash, Source.collector))
     return group_signals(sigs)[0]
 
 
@@ -66,6 +69,46 @@ def test_homogeneous_cluster_is_only_a_candidate() -> None:
     assert v.label == "candidate"
     assert v.diverged_traits == {}
     assert any("homogeneous" in e for e in v.evidence)
+
+
+def test_profile_reuse_fleet_is_caught() -> None:
+    # The BotBrowser shape: homogeneous JS (one cloned profile, so it would otherwise read as a benign
+    # same-build cohort) but the SAME high-entropy fp_hash arriving from DISTINCT source IPs — one
+    # anti-detect profile fronted by proxies. The fp-collision signal must lift this to "fleet" where the
+    # JS-divergence paradox cannot (JS is identical, not divergent).
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef")),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="deadbeef")),
+        ("c", _sess("c", "X", 8, "Windows", observed_ip="3.3.3.3", fp_hash="deadbeef")),
+    ]
+    v = score_cluster("X", members)
+    assert v.label == "fleet"
+    assert v.diverged_traits == {}  # JS homogeneous — the paradox did NOT fire
+    assert v.cloned_fingerprint == "deadbeef"
+    assert any("cloned-profile reuse" in e for e in v.evidence)
+
+
+def test_fp_collision_same_ip_is_benign() -> None:
+    # Identical fp_hash from ONE source IP is one machine over many sessions — not a fleet. The collision
+    # signal requires distinct IPs, so this stays a candidate (homogeneous, single origin).
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef")),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef")),
+    ]
+    v = score_cluster("X", members)
+    assert v.cloned_fingerprint is None
+    assert v.label == "candidate"
+
+
+def test_distinct_fingerprints_are_not_a_collision() -> None:
+    # Real machines on one browser build each hash differently — distinct fp_hash, no collision tell.
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="aaaa1111")),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="bbbb2222")),
+    ]
+    v = score_cluster("X", members)
+    assert v.cloned_fingerprint is None
+    assert v.label == "candidate"
 
 
 def test_larger_fleet_scores_higher() -> None:

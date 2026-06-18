@@ -130,7 +130,7 @@ DEMO_PAGE = """<!doctype html>
         }
         render(function (a) {
           if (a === null) { resolve({ missing: true }); return; }
-          render(function (b) { resolve({ missing: false, noise: a !== b }); });
+          render(function (b) { resolve({ missing: false, noise: a !== b, value: a }); });
         });
       } catch (e) { resolve({ missing: true }); }
     });
@@ -569,6 +569,31 @@ DEMO_PAGE = """<!doctype html>
     var af = await audioFP();
     if (af.missing) sigs.push(S("browser", "audio_missing", true));
     else if (af.noise) sigs.push(S("browser", "audio_noise", true));
+    // --- v0.44.0: high-entropy fingerprint hash (the profile-reuse / cloned-identity tell). A canvas-text
+    // render + the audio sum + the WebGL renderer/vendor combine into one stable hash that varies per
+    // GPU/driver/OS/font-stack — so two *real* machines, even on the same browser build, hash differently.
+    // A native anti-detect browser (e.g. BotBrowser) that reuses one fingerprint profile across a fleet
+    // emits the *identical* hash from every instance; the coordination scorer keys on that collision across
+    // distinct IPs (the complement of the JS-divergence paradox). Deterministic + reference-free + headless.
+    try {
+      var hc = document.createElement("canvas"); hc.width = 240; hc.height = 60;
+      var hx = hc.getContext("2d");
+      hx.textBaseline = "alphabetic"; hx.fillStyle = "#f60"; hx.fillRect(125, 1, 62, 20);
+      hx.fillStyle = "#069"; hx.font = "11pt no-real-font-123";
+      hx.fillText("Kitsune 🦊 fp ⒶⒷ", 2, 15);
+      hx.fillStyle = "rgba(102, 204, 0, 0.7)"; hx.font = "18pt Arial";
+      hx.fillText("Kitsune 🦊 fp ⒶⒷ", 4, 45);
+      var hd = hx.getImageData(0, 0, 240, 60).data;
+      var h = 0x811c9dc5;  // FNV-1a/32 over canvas pixels, then folded with audio + WebGL identity
+      for (var hi = 0; hi < hd.length; hi += 4) {
+        h ^= hd[hi]; h = (h * 0x01000193) >>> 0;
+      }
+      var tail = (af.missing ? "" : String(af.value)) + "|" + (wg.renderer || "") + "|" + (wg.vendor || "");
+      for (var ti = 0; ti < tail.length; ti++) {
+        h ^= tail.charCodeAt(ti); h = (h * 0x01000193) >>> 0;
+      }
+      sigs.push(S("browser", "fp_hash", ("0000000" + h.toString(16)).slice(-8)));
+    } catch (e) {}
     // --- v0.19.0 wave: WebRTC ICE probe (real network identity / the bots-DDoS frontier) ---
     var rtc = await webrtcProbe();
     if (rtc.unavailable || !rtc.any) sigs.push(S("browser", "webrtc_unavailable", true));

@@ -38,6 +38,11 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
   if (isHeadlessUA(env.userAgent)) {
     out.push(sig("browser", "ua_is_headless", true));
   }
+  // High-entropy identity. Real machines each hash differently; an identical fp_hash across distinct IPs
+  // is one cloned anti-detect profile (the coordination scorer's profile-reuse tell). Absent if uncomputed.
+  if (env.fpHash !== null) {
+    out.push(sig("browser", "fp_hash", env.fpHash));
+  }
 
   out.push(sig("behavioral", "mouse_entropy", mouseEntropy(env.pointerEvents)));
   out.push(sig("behavioral", "pointer_event_count", pointerEventCount(env.pointerEvents)));

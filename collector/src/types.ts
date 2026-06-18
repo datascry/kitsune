@@ -33,6 +33,9 @@ export interface BrowserEnv {
   uaDataPlatform: string | null;
   canvasTampered: boolean;
   cdpRuntimeEnabled: boolean;
+  /** Stable high-entropy fingerprint hash (canvas+WebGL); null if it could not be computed. Identical
+   * across a fleet means one cloned anti-detect profile — the coordination scorer keys on the collision. */
+  fpHash: string | null;
   pointerEvents: PointerSample[];
   /** Timestamps (ms) of keydown events, for keystroke-dynamics. */
   keyEvents: number[];
