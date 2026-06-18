@@ -18,6 +18,14 @@ All notable changes to Kitsune are documented here. The format follows
   re-detecting the known-caught fleet every iteration. The full sweep (`live_scoreboard.sh`) becomes
   the sparse regression tier.
 
+- **Font-OS fingerprint** (`br.font_os_vs_ua`, ruleset 0.11.0) — the collector classifies the host OS
+  from OS-signature font availability (Segoe UI/Calibri → Windows, Menlo → macOS, DejaVu → Linux) and
+  flags it against the claimed UA platform. Catches chromium tools that spoof the UA but not the host
+  font stack. **Finding:** Camoufox spoofs Canvas font metrics at the engine level, so it defeats this
+  probe (the measured font OS coherently matches its claimed OS) — documented in `docs/findings.md`.
+- **`docs/findings.md`** — empirical arms-race ladder: what each anti-detect tool leaks, why Camoufox is
+  the per-session frontier, and why coordination is the durable bots/DDoS signal.
+
 ### Changed
 
 - **Frontier crack** — `br.webgl2_missing` (v0.10.0) now flags live single-instance Camoufox

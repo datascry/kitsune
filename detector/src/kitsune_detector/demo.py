@@ -113,6 +113,35 @@ DEMO_PAGE = """<!doctype html>
       } catch (err) { resolve(null); }
     });
   }
+  // Installed fonts betray the real OS: a box's font stack is OS-specific (Windows ships Segoe UI /
+  // Calibri, macOS ships Lucida Grande / Menlo, Linux ships DejaVu / Liberation). An anti-detect
+  // browser can spoof the UA platform but not cheaply re-skin the host's installed fonts — so the
+  // detected font OS contradicting the claimed UA platform is a strong engine-agnostic OS-lie tell.
+  function fontOSHint() {
+    try {
+      var bases = ["monospace", "sans-serif", "serif"], probe = "mmmmmmmmmmlli72px";
+      var ctx = document.createElement("canvas").getContext("2d");
+      function w(font) { ctx.font = "72px " + font; return ctx.measureText(probe).width; }
+      var baseW = {}; bases.forEach(function (b) { baseW[b] = w(b); });
+      function has(f) {
+        for (var i = 0; i < bases.length; i++) {
+          if (w("'" + f + "'," + bases[i]) !== baseW[bases[i]]) return true;
+        }
+        return false;
+      }
+      var groups = {
+        Windows: ["Segoe UI", "Calibri", "Cambria", "Consolas", "Tahoma"],
+        macOS: ["Helvetica Neue", "Lucida Grande", "Geneva", "Menlo", "Monaco"],
+        Linux: ["DejaVu Sans", "Liberation Sans", "Ubuntu", "Cantarell", "Noto Sans"]
+      };
+      var best = "", bestN = 1; // require >= 2 signature fonts before classifying an OS
+      Object.keys(groups).forEach(function (os) {
+        var n = groups[os].filter(has).length;
+        if (n > bestN) { bestN = n; best = os; }
+      });
+      return best;
+    } catch (e) { return ""; }
+  }
   async function send() {
     var ua = navigator.userAgent, now = new Date().toISOString();
     function S(layer, kind, value) {
@@ -197,6 +226,9 @@ DEMO_PAGE = """<!doctype html>
       "domAutomation", "__driver_evaluate"];
     if (cdcKeys.some(function (k) { return k in window || k in document; })) sigs.push(S("browser", "cdc_artifacts", true));
     try { if (!document.createElement("canvas").getContext("webgl2")) sigs.push(S("browser", "webgl2_missing", true)); } catch (e) {}
+    // --- v0.11.0 wave: installed-font OS fingerprint (the engine-level OS-lie counter) ---
+    var fo = fontOSHint();
+    if (fo) sigs.push(S("browser", "font_os_hint", fo));
     try {
       var ifr = document.createElement("iframe");
       ifr.style.display = "none"; document.body.appendChild(ifr);

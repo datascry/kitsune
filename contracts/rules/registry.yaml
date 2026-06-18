@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.10.0"
+ruleset_version: "0.11.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -536,3 +536,16 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS: main-thread-only spoofs leak in a fresh iframe context"
+
+  # --- v0.11.0: installed-font OS fingerprint (the engine-level OS-lie counter) ---
+
+  - id: br.font_os_vs_ua
+    title: Installed fonts imply an OS that contradicts the UA platform
+    layers: [browser]
+    reads: [browser.font_os_hint, browser.ua_platform]
+    predicate: not_equal
+    weight: 0.75
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS / fingerprintjs: OS-specific font stacks betray a spoofed UA platform"
