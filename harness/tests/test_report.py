@@ -1,5 +1,5 @@
 # tests/test_report — tests for the VirusTotal-style detection aggregator.
-# Asserts the coverage map (which engines fire per sample) and the rendered matrix.
+# Asserts the coverage map (which rules fire per sample) and the rendered matrix.
 
 from __future__ import annotations
 

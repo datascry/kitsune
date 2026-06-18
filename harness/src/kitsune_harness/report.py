@@ -1,12 +1,12 @@
 # harness/report — VirusTotal-style detection aggregator over the recorded corpus.
-# Samples = evader recordings, engines = detection rules; renders a detector x evader coverage matrix.
+# Samples = evader recordings, columns = detection rules; renders a rule x evader coverage matrix.
 
 """Detection aggregator.
 
-Treats each detection rule as an "engine" and each recorded session as a "sample": score the corpus
-and report, per sample, how many of the N detectors flagged it (``X/N``), plus a coverage matrix
-(detector rows x evader columns) that reveals what catches what — and the gaps. Runs in-process in
-well under a second, so it is the rapid tester for both adding detectors and adding evasions.
+Treats each recorded session as a "sample" and scores it against every detection rule: report, per
+sample, how many of the N rules flagged it (``X/N``), plus a coverage matrix (rule rows x evader
+columns) that reveals what catches what — and the gaps. Runs in-process in well under a second, so it
+is the rapid tester for both adding rules and adding evasions.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from kitsune_detector.models import Layer, Session, Verdict
 
 
 def evaluable_detectors() -> list[CoherenceRule]:
-    """The active "engines": every non-retired rule in the registry."""
+    """The active detection rules: every non-retired rule in the registry."""
     return load_registry().evaluable_rules
 
 
@@ -83,13 +83,13 @@ def render_gaps(
     """Render the coverage backlog. When ``present_kinds`` is given, separate genuinely evaded rules
     from those the corpus cannot exercise (so the latter are not misread as dead weight)."""
     gaps = zero_catch(detectors, fired)
-    lines = [f"## Coverage gaps — {len(gaps)}/{len(detectors)} engines catch nothing yet", ""]
+    lines = [f"## Coverage gaps — {len(gaps)}/{len(detectors)} rules catch nothing yet", ""]
     if present_kinds is None:
-        lines += [f"- `{rid}`" for rid in gaps] or ["- (none — every engine catches something)"]
+        lines += [f"- `{rid}`" for rid in gaps] or ["- (none — every rule catches something)"]
         return "\n".join(lines) + "\n"
     evaded, unexercised = classify_gaps(detectors, fired, present_kinds)
     lines.append(f"**Evaded** ({len(evaded)}) — reads present in the corpus, but every sample passed:")
-    lines += [f"- `{rid}`" for rid in evaded] or ["- (none — every exercised engine catches something)"]
+    lines += [f"- `{rid}`" for rid in evaded] or ["- (none — every exercised rule catches something)"]
     lines += [
         "",
         f"**Unexercised** ({len(unexercised)}) — a read signal is absent from every recording, so the "
@@ -161,7 +161,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     detector = Detector()
     corpus = load_corpus(directory)
     detectors, fired, verdicts = coverage(detector, corpus)
-    print(f"# Kitsune detection matrix — {len(detectors)} engines\n")
+    print(f"# Kitsune detection matrix — {len(detectors)} rules\n")
     print(render_matrix(detectors, fired, verdicts))
     print(render_categories(verdicts))
     print(render_gaps(detectors, fired, corpus_signal_kinds(corpus)), end="")
