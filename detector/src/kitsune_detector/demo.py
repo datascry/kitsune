@@ -106,6 +106,33 @@ DEMO_PAGE = """<!doctype html>
       } catch (e) { resolve({ missing: true }); }
     });
   }
+  // WebRTC ICE-candidate probe. A real browser gathers candidates (host/mDNS, and a STUN srflx = its
+  // public IP). The public IP that leaks here is the *true* network identity — for a proxied bot it
+  // contradicts the request IP (a cross-layer tell). Total unavailability is itself anomalous: some
+  // anti-detect tools disable WebRTC to avoid the IP leak, which a normal browser never does.
+  function webrtcProbe() {
+    return new Promise(function (resolve) {
+      var host = {}, pub = null, any = false, done = false;
+      function finish(unavailable) {
+        if (done) return; done = true;
+        resolve({ hostCount: Object.keys(host).length, pub: pub, any: any, unavailable: !!unavailable });
+      }
+      try {
+        var RPC = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+        if (!RPC) { finish(true); return; }
+        var pc = new RPC({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
+        pc.createDataChannel("ks");
+        pc.onicecandidate = function (e) {
+          if (!e || !e.candidate) { try { pc.close(); } catch (x) {} finish(false); return; }
+          any = true;
+          var c = e.candidate.candidate, m = c.match(/([0-9]{1,3}(?:\\.[0-9]{1,3}){3})/);
+          if (m) { if (/ typ srflx /.test(c)) pub = m[1]; else if (/ typ host /.test(c)) host[m[1]] = 1; }
+        };
+        pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).catch(function () {});
+        setTimeout(function () { try { pc.close(); } catch (x) {} finish(false); }, 1500);
+      } catch (e) { finish(true); }
+    });
+  }
   function entropy(p) {
     if (p.length < 3) return 0;
     var b = [0,0,0,0,0,0,0,0], t = 0;
@@ -365,6 +392,10 @@ DEMO_PAGE = """<!doctype html>
     var af = await audioFP();
     if (af.missing) sigs.push(S("browser", "audio_missing", true));
     else if (af.noise) sigs.push(S("browser", "audio_noise", true));
+    // --- v0.19.0 wave: WebRTC ICE probe (real network identity / the bots-DDoS frontier) ---
+    var rtc = await webrtcProbe();
+    if (rtc.unavailable || !rtc.any) sigs.push(S("browser", "webrtc_unavailable", true));
+    if (rtc.pub) sigs.push(S("browser", "webrtc_public_ip", rtc.pub));  // for cross-layer IP correlation
     // Camoufox does NOT spoof multimediaDevices (per its browserforge cast map), so enumerateDevices()
     // reflects the real container, which has no audio/video hardware — a real desktop is never empty.
     try {

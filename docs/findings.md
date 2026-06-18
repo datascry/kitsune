@@ -110,6 +110,18 @@ Together these push a single coherent Camoufox instance to **`bot` 0.70** — th
 once evaded every per-session rule is now caught per-session. The pattern: stop chasing spoofable
 *values* and probe *capabilities the deployment environment lacks* (GPU, TTS).
 
+**Spoof-specific tells that survive a headful, real-hardware deployment** (these do *not* fire on the
+no-spoof baseline, so they are not headless artifacts — a macOS-draw Camoufox trips all three):
+
+- `macos_dpr1` (coherence) — devicePixelRatio pinned to 1.0 on a Retina-implying macOS UA.
+- `font_mac_internal` (artifact) — bundled dot-prefixed macOS system fonts are web-measurable.
+- `webrtc_unavailable` (artifact) — **Camoufox disables WebRTC entirely** (no ICE candidates) to prevent
+  the real-IP leak. Confirmed live: it fires on Camoufox but *not* on stock headless Firefox, which
+  gathers candidates in the same container — so WebRTC absence is a deliberate anti-detect choice, itself
+  the tell. WebRTC is the bots/DDoS network-identity frontier: a proxied bot that *keeps* WebRTC leaks its
+  real public IP via STUN (`webrtc_public_ip` is collected for that future cross-layer correlation), and
+  one that *disables* WebRTC to hide it trips this rule instead — a no-win for the evader.
+
 ### The headful experiment — keeping the capability-probe honest
 
 `webgl2_missing` could be just an artifact of running Camoufox **headless in a minimal container**, not a

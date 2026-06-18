@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 62 engines
+# Kitsune detection matrix — 63 engines
 
 | Detector | layer | baseline-firefox | camoufox-headful | camoufox | full-stealth | patchright | rebrowser | spoof-ua | stealth-naive | stealth-patched | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -64,7 +64,8 @@
 | `br.font_linux_leak` | browser | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.font_mac_internal` | browser | · | · | ✓ | · | · | · | · | · | · | · | 1 |
 | `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | 0 |
-| **flagged** |  | **6/62** | **3/62** | **5/62** | **5/62** | **10/62** | **11/62** | **5/62** | **12/62** | **6/62** | **0/62** |  |
+| `br.webrtc_unavailable` | browser | · | · | ✓ | · | · | · | · | · | · | · | 1 |
+| **flagged** |  | **6/63** | **3/63** | **6/63** | **5/63** | **10/63** | **11/63** | **5/63** | **12/63** | **6/63** | **0/63** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **human** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -73,7 +74,7 @@
 |---|---|---|---|---|---|---|---|
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
 | `camoufox-headful` | bot | 0 | 1 | 0 | 2 | 0 | 0 |
-| `camoufox` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
+| `camoufox` | bot | 1 | 2 | 0 | 3 | 0 | 0 |
 | `full-stealth` | bot | 1 | 0 | 4 | 0 | 0 | 0 |
 | `patchright` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
@@ -82,7 +83,7 @@
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `vanilla` | human | 0 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 40/62 engines catch nothing yet
+## Coverage gaps — 40/63 engines catch nothing yet
 
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`

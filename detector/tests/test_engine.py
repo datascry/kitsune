@@ -158,6 +158,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "font_mac_internal", True, Source.collector)], "br.font_mac_internal"),
         ([(Layer.browser, "codec_os_incoherent", True, Source.collector)], "br.codec_os_incoherent"),
         ([(Layer.browser, "cdp_runtime_enabled", True, Source.collector)], "br.cdp_runtime_enabled"),
+        ([(Layer.browser, "webrtc_unavailable", True, Source.collector)], "br.webrtc_unavailable"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

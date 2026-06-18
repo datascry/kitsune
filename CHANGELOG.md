@@ -9,6 +9,15 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **WebRTC ICE probe** (ruleset 0.19.0) — the missing network-identity vector (central to bots/DDoS).
+  `br.webrtc_unavailable` (artifact): a real browser always gathers ICE candidates; **Camoufox disables
+  WebRTC** to prevent the IP leak — confirmed live, it fires on Camoufox but NOT on stock headless Firefox
+  (which keeps WebRTC in the same container), so it is a spoof tell, not a headless one, and it survives a
+  headful deployment. A macOS-draw Camoufox now has three spoof-specific catches (`macos_dpr1` +
+  `font_mac_internal` + `webrtc_unavailable`) independent of the environment floor. The STUN-reflexive
+  public IP (`webrtc_public_ip`) is also collected, for future cross-layer correlation against the request
+  IP (the proxied-bot tell) — leaving the evader a no-win: keep WebRTC and leak the real IP, or disable it
+  and trip this rule.
 - **`rebrowser-patches` evaluated** — added a `REBROWSER=1` mode to the stealth evader
   (`rebrowser-playwright@1.48.2`). Result: it closes exactly the `Runtime.enable` leak (so
   `br.cdp_runtime_enabled` correctly does not fire — validating both the rule and rebrowser's claim) but
