@@ -33,9 +33,7 @@ def parse_balabit(text: str) -> list[Sample]:
     return out
 
 
-def movement_segments(
-    samples: list[Sample], *, max_gap: float = 0.5, min_len: int = 8
-) -> list[list[Sample]]:
+def movement_segments(samples: list[Sample], *, max_gap: float = 0.5, min_len: int = 8) -> list[list[Sample]]:
     """Split a sample stream into aimed-movement segments: cut on a time gap > ``max_gap`` (a pause ends a
     movement) and keep only segments with at least ``min_len`` points (enough for the biomech features)."""
     segments: list[list[Sample]] = []

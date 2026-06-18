@@ -10,15 +10,15 @@ The browser globals are abstracted behind a `BrowserEnv` interface, so all colle
 **pure and testable without a real browser** (100% coverage). Only `index.ts` touches live
 globals — it's the thin glue, excluded from the coverage gate (tier-2).
 
-| Module | Role |
-|---|---|
-| `signal.ts` | Build contract-valid `Signal` envelopes. |
-| `detect.ts` | UA → browser/platform; normalise Client-Hints platform (feeds UA↔CH coherence). |
-| `behavioral.ts` | Pointer event count + normalised movement-direction entropy (the human floor). |
-| `session.ts` | Read the `ks_sid` correlation cookie. |
-| `collect.ts` | Assemble a session's signals from a `BrowserEnv` snapshot. |
-| `transport.ts` | POST signals to the detector's `/ingest` (injected `fetch`). |
-| `index.ts` | Browser entrypoint: wire live DOM/navigator probes, collect, send. |
+| Module          | Role                                                                            |
+| --------------- | ------------------------------------------------------------------------------- |
+| `signal.ts`     | Build contract-valid `Signal` envelopes.                                        |
+| `detect.ts`     | UA → browser/platform; normalise Client-Hints platform (feeds UA↔CH coherence). |
+| `behavioral.ts` | Pointer event count + normalised movement-direction entropy (the human floor).  |
+| `session.ts`    | Read the `ks_sid` correlation cookie.                                           |
+| `collect.ts`    | Assemble a session's signals from a `BrowserEnv` snapshot.                      |
+| `transport.ts`  | POST signals to the detector's `/ingest` (injected `fetch`).                    |
+| `index.ts`      | Browser entrypoint: wire live DOM/navigator probes, collect, send.              |
 
 ## Develop
 

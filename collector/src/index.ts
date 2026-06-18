@@ -41,7 +41,7 @@ function computeFpHash(): string | null {
     const px = x.getImageData(0, 0, 240, 60).data;
     let h = 0x811c9dc5;
     for (let i = 0; i < px.length; i += 4) {
-      h = (Math.imul(h ^ (px[i] ?? 0), 0x01000193) >>> 0);
+      h = Math.imul(h ^ (px[i] ?? 0), 0x01000193) >>> 0;
     }
     const gl = c.getContext("webgl") as WebGLRenderingContext | null;
     let tail = "";
@@ -54,7 +54,7 @@ function computeFpHash(): string | null {
       }
     }
     for (let i = 0; i < tail.length; i += 1) {
-      h = (Math.imul(h ^ tail.charCodeAt(i), 0x01000193) >>> 0);
+      h = Math.imul(h ^ tail.charCodeAt(i), 0x01000193) >>> 0;
     }
     return `0000000${h.toString(16)}`.slice(-8);
   } catch {
