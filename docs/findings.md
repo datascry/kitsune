@@ -544,6 +544,17 @@ are pure properties of the forged request, so the volumetric tier is convicted a
 detector has. The UA can be forged; the *shape of the HTTP request a real browser makes* cannot, not
 without becoming a real browser.
 
+Two lower-layer tells now join them, so the scripted tier is caught across **five independent layers**.
+`net.tls_grease_vs_ua` (RFC 8701): every current browser injects GREASE values into its TLS ClientHello,
+but a scripted stack on OpenSSL (Python) or Go's `crypto/tls` does not — a browser UA over a GREASE-less
+handshake is a TLS-layer tell, and crucially the *first* one for a scripted client whose JA4 is otherwise
+unrecognised. And `net.tcp_os_vs_ua` catches the same client a layer lower still: its real Linux kernel
+stack contradicts the Windows UA it forged. Validated live — an `httpx` client wearing a Windows Chrome UA
+trips all five at once (`no_js_execution`, `sec_fetch_vs_ua`, `accept_encoding_vs_ua`, `tcp_os_vs_ua`,
+`tls_grease_vs_ua`), while a real Chromium trips none of them. A forged User-Agent has to lie consistently
+at the JS, HTTP-header, TLS, and kernel layers simultaneously — and a tool that isn't a browser on the OS
+it claims cannot.
+
 …unless you make the shape perfectly. `curl-impersonate` (via `curl_cffi`) is the other end of the
 scripted spectrum: it reproduces a real Chrome ClientHello (JA3/JA4), the Chrome HTTP/2 SETTINGS and
 pseudo-header order, and the *full* browser header set — `Sec-Fetch-*`, `Sec-CH-UA(-Platform)`,

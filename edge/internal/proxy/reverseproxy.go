@@ -67,6 +67,12 @@ func prepare(
 	}
 	if hello != nil {
 		out.signals = signal.FromClientHello(out.sessionID, hello, hints, now)
+		// A modern-browser UA over a handshake with no TLS GREASE: every current browser injects GREASE
+		// (RFC 8701), but a scripted TLS stack (OpenSSL/Go) does not — a TLS-layer tell for a UA-faking
+		// client whose JA4 is otherwise unrecognised.
+		if isModernBrowserUA(r.Header.Get("User-Agent")) && !hello.HasGREASE() {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "tls_no_grease", true, now))
+		}
 	}
 	// The HTTP/2 connection preface (SETTINGS / WINDOW_UPDATE / PRIORITY / pseudo-header order) is a
 	// client-stack fingerprint below the application layer: a UA-spoofer that runs a Chrome HTTP/2

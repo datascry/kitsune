@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 86 engines
+# Kitsune detection matrix — 87 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | curl-impersonate | floor-spoof | full-stealth | h2-continuation-flood | h2-rapid-reset | human-mouse | max-stealth | nodriver | os-spoof | patchright | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -18,7 +18,7 @@
 | `net.ch_platform_header_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.ch_ua_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
 | `net.ch_ua_version_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | 1 |
-| `net.tcp_os_vs_ua` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | 1 |
+| `net.tcp_os_vs_ua` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | ✓ | · | 2 |
 | `net.h2_settings_vs_order` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_rapid_reset` | network | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `net.h2_continuation_flood` | network | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
@@ -86,9 +86,10 @@
 | `br.error_engine_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
 | `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
 | `net.accept_encoding_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
+| `net.tls_grease_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/86** | **10/86** | **5/86** | **4/86** | **4/86** | **1/86** | **8/86** | **12/86** | **2/86** | **2/86** | **13/86** | **11/86** | **8/86** | **17/86** | **11/86** | **8/86** | **11/86** | **8/86** | **15/86** | **12/86** | **15/86** | **8/86** | **3/86** | **8/86** |  |
+| **flagged** |  | **6/87** | **10/87** | **5/87** | **4/87** | **4/87** | **1/87** | **8/87** | **12/87** | **2/87** | **2/87** | **13/87** | **11/87** | **8/87** | **17/87** | **11/87** | **8/87** | **11/87** | **8/87** | **15/87** | **12/87** | **15/87** | **8/87** | **5/87** | **8/87** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -117,10 +118,10 @@
 | `stealth-naive` | bot | 0 | 0 | 6 | 6 | 0 | 0 |
 | `stealth-patched` | bot | 4 | 0 | 5 | 6 | 0 | 0 |
 | `undetected` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
-| `vanilla` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
+| `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
-## Coverage gaps — 37/86 engines catch nothing yet
+## Coverage gaps — 37/87 engines catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`

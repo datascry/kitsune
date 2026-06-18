@@ -60,6 +60,22 @@ func buildClientHello() []byte {
 
 // -- parser ------------------------------------------------------------
 
+func TestHasGREASE(t *testing.T) {
+	c, err := ParseClientHello(buildClientHello())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !c.HasGREASE() {
+		t.Error("buildClientHello advertises a GREASE cipher (0x0a0a) — HasGREASE should be true")
+	}
+	if (&ClientHello{CipherSuites: []uint16{0x1301, 0xc02b}}).HasGREASE() {
+		t.Error("no GREASE values present — HasGREASE should be false")
+	}
+	if !(&ClientHello{Extensions: []uint16{0x1a1a}}).HasGREASE() {
+		t.Error("0x1a1a is a GREASE extension — HasGREASE should be true")
+	}
+}
+
 func TestParseClientHello(t *testing.T) {
 	c, err := ParseClientHello(buildClientHello())
 	if err != nil {
