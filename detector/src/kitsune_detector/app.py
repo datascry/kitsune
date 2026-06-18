@@ -25,9 +25,18 @@ def create_app(detector: Detector | None = None, store: Store | None = None) -> 
     app = FastAPI(title="Kitsune Detector", version="0.1.0")
 
     @app.get("/", response_class=HTMLResponse)
-    def index() -> str:
+    def index() -> HTMLResponse:
         # Served (via the edge) to a real browser; the inline collector posts signals to /ingest.
-        return DEMO_PAGE
+        # The CSP is permissive for everything the collector uses (default-src *) but forbids images
+        # (no signal uses <img>), so the collector can probe whether CSP is actually enforced. A real
+        # browser fires a securitypolicyviolation on the forbidden image; an automation context that
+        # called setBypassCSP(true) to inject scripts silently disables enforcement — a tell that
+        # rebrowser-patches explicitly does not fix. See br.csp_bypassed.
+        resp = HTMLResponse(DEMO_PAGE)
+        resp.headers["Content-Security-Policy"] = (
+            "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'none'"
+        )
+        return resp
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:

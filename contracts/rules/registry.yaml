@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.29.0"
+ruleset_version: "0.30.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -84,6 +84,18 @@ rules:
     added: "2026-06-17"
     last_validated: "2026-06-17"
     source: "Sveba: How V8 Leaks Your Headless Browser's Identity (2024-25)"
+
+  - id: br.csp_bypassed
+    title: Page CSP not enforced (setBypassCSP — an automation context, never a real browser)
+    layers: [browser]
+    reads: [browser.csp_bypassed]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "rebrowser-bot-detector bypassCsp; Playwright/Puppeteer setBypassCSP(true), unfixable by patches"
 
   - id: br.canvas_lie
     title: Canvas/WebGL API tampering detected (getter override)

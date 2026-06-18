@@ -168,6 +168,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "font_mac_internal", True, Source.collector)], "br.font_mac_internal"),
         ([(Layer.browser, "codec_os_incoherent", True, Source.collector)], "br.codec_os_incoherent"),
         ([(Layer.browser, "cdp_runtime_enabled", True, Source.collector)], "br.cdp_runtime_enabled"),
+        ([(Layer.browser, "csp_bypassed", True, Source.collector)], "br.csp_bypassed"),
         ([(Layer.browser, "webrtc_unavailable", True, Source.collector)], "br.webrtc_unavailable"),
         ([(Layer.browser, "timezone_inconsistent", True, Source.collector)], "br.timezone_inconsistent"),
         ([(Layer.browser, "engine_stack_mismatch", True, Source.collector)], "br.engine_stack_vs_ua"),

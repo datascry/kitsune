@@ -55,6 +55,22 @@ floor none of them escape. (Setup yak-shave: the unpinned `rebrowser-playwright`
 each pull a different Playwright-core/Chromium revision; pin `rebrowser-playwright@1.48.2` to the base
 image's Chromium-1140.)
 
+### CSP bypass — a tell the patches themselves admit they can't fix
+
+Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every
+vector it enumerates was already caught — `runtimeEnableLeak`, `navigatorWebdriver`, the `HeadlessChrome`
+UA — *except one*: **`bypassCsp`**. Playwright and Puppeteer scrapers routinely call `setBypassCSP(true)`
+so their injected scripts run on CSP-protected pages; doing so silently disables CSP enforcement for the
+whole context. A real browser *never* does this. The detector now serves its page with a deliberately
+strict `img-src 'none'` (permissive `default-src *` for everything the collector actually uses, so no
+other signal is perturbed) and the collector loads a tiny data-URI image: a real browser fires
+`securitypolicyviolation` and the probe stays quiet, while a context that bypassed CSP loads it silently —
+`br.csp_bypassed` (automation, 0.6). The listener is attached before the probe triggers, so there is no
+ordering race. What makes this the cutting edge: rebrowser's own documentation lists `bypassCsp` as **not
+addressed by the patches** ("restructure your code to comply with CSP") — so unlike `Runtime.enable`,
+there is no stealth drop-in that closes it. A scraper that needs script injection on a CSP page must
+choose between bypassing CSP (and tripping this) or not injecting at all.
+
 ## Behavioral biometrics is the weakest layer (`HUMAN_MOUSE=1`)
 
 The behavioral motion rules (`bh.path_too_straight` >0.97, `bh.uniform_velocity` <0.08,

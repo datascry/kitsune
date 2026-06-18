@@ -66,6 +66,16 @@ def test_index_serves_collector(client: TestClient) -> None:
     assert "/ingest" in resp.text
 
 
+def test_index_ships_csp_probe(client: TestClient) -> None:
+    # The page must carry a CSP that forbids images, so the collector can detect a bypassed CSP
+    # (an automation context that called setBypassCSP). The policy stays permissive for everything else.
+    resp = client.get("/")
+    csp = resp.headers.get("content-security-policy", "")
+    assert "img-src 'none'" in csp
+    assert "default-src *" in csp
+    assert "securitypolicyviolation" in resp.text
+
+
 def test_session_endpoint(client: TestClient) -> None:
     client.post("/ingest", json=_signals_from("session_bot.json"))
     resp = client.get("/session/bot-001")

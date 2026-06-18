@@ -39,6 +39,17 @@ DEMO_PAGE = """<!doctype html>
   // that types at a fixed delay has near-zero interval entropy — the keystroke-dynamics tell.
   var keys = [];
   addEventListener("keydown", function (e) { keys.push(e.timeStamp); });
+  // CSP-bypass probe: the page is served with `img-src 'none'`, so loading any image violates the
+  // policy and fires securitypolicyviolation in a real browser. Playwright/Puppeteer scrapers that call
+  // setBypassCSP(true) to inject their scripts silently disable enforcement, so the violation never
+  // fires — an automation tell rebrowser-patches explicitly cannot fix. The listener is attached before
+  // the probe is triggered, so there is no ordering race (a violation can only occur after this point).
+  var cspEnforced = false;
+  addEventListener("securitypolicyviolation", function () { cspEnforced = true; });
+  try {
+    var _csp = new Image();
+    _csp.src = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+  } catch (e) {}
   // speechSynthesis voices load asynchronously — kick the load early so the list is populated by the
   // time send() runs. The installed TTS voices are OS-specific (Microsoft → Windows, Apple → macOS,
   // espeak/eSpeak → Linux) and a real desktop has them; a headless container has none or Linux-only.
@@ -572,6 +583,9 @@ DEMO_PAGE = """<!doctype html>
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {
       sigs.push(S("browser", "worker_divergence", true));
     }
+    // CSP was not enforced on a page that ships a strict img-src — the context bypassed CSP (only an
+    // automation framework does this). Emitted in every mode: it is an automation tell, not behavioural.
+    if (!cspEnforced) sigs.push(S("browser", "csp_bypassed", true));
     // In `?fast` (detection-only) captures we don't simulate input, so emitting empty behavioral
     // signals would make the *absence* of input score as bot-like and mask the fingerprint result.
     // Omit the behavioral layer entirely in fast mode; a full capture still scores behaviour.
