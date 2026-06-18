@@ -365,6 +365,30 @@ DEMO_PAGE = """<!doctype html>
       "domAutomation", "__driver_evaluate"];
     if (cdcKeys.some(function (k) { return k in window || k in document; })) sigs.push(S("browser", "cdc_artifacts", true));
     try { if (!document.createElement("canvas").getContext("webgl2")) sigs.push(S("browser", "webgl2_missing", true)); } catch (e) {}
+    // --- v0.23.0 wave: WebGPU (the emerging GPU fingerprint vector). Explore what the engine exposes;
+    // a spoof that fixes the WebGL renderer may leave the WebGPU adapter (vendor/architecture/fallback)
+    // betraying the real/software GPU — a fresh coherence surface below the WebGL spoof.
+    try {
+      if (navigator.gpu && navigator.gpu.requestAdapter) {
+        var gpuAdapter = await navigator.gpu.requestAdapter();
+        var gpuNoHw = false;
+        if (!gpuAdapter) {
+          sigs.push(S("browser", "webgpu_no_adapter", true));
+          gpuNoHw = true;
+        } else {
+          if (gpuAdapter.isFallbackAdapter) { sigs.push(S("browser", "webgpu_fallback", true)); gpuNoHw = true; }
+          var ginfo = gpuAdapter.info || (gpuAdapter.requestAdapterInfo ? await gpuAdapter.requestAdapterInfo() : null);
+          if (ginfo && ginfo.vendor) sigs.push(S("browser", "webgpu_vendor", ginfo.vendor));
+        }
+        // Coherence: WebGL renderer claims a *hardware* GPU, but WebGPU exposes no real adapter. A genuine
+        // hardware GPU drives both, so this means the WebGL renderer was spoofed — caught below the spoof.
+        // (A VM/VDI with honest software WebGL does NOT trip this: its renderer is SwiftShader, not "hardware".)
+        var webglHw = wg.renderer && !/swiftshader|llvmpipe|software|mesa|angle \\(google/i.test(wg.renderer);
+        if (gpuNoHw && webglHw) sigs.push(S("browser", "webgpu_webgl_mismatch", true));
+      } else {
+        sigs.push(S("browser", "webgpu_absent", true));
+      }
+    } catch (e) {}
     // --- v0.11.0 wave: installed-font OS fingerprint (the engine-level OS-lie counter) ---
     var fo = fontOSHint();
     if (fo) sigs.push(S("browser", "font_os_hint", fo));

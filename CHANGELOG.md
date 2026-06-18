@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **WebGPU coherence** (ruleset 0.23.0) — `br.webgpu_webgl_vs`, the emerging GPU fingerprint vector
+  (2024-25). Explored reality-first: headless Chromium has `navigator.gpu` but no adapter; Firefox/Camoufox
+  lack WebGPU entirely — both too common to flag alone. The clean tell is cross-vector: a WebGL renderer
+  claiming a *hardware* GPU while WebGPU exposes *no real adapter* means the renderer was spoofed (a real
+  GPU drives both). **Validated:** fires on `full-stealth` (fakes its WebGL renderer to "NVIDIA RTX 3060"
+  while headless) but not on `stealth-naive` (honest SwiftShader) or VM/VDI (honest software WebGL) — it
+  catches the spoof below the WebGL layer with no false positive.
 - **Scripted / non-browser client detection** (ruleset 0.22.0) — `net.no_js_execution`: a session with a
   network/TLS fingerprint but an *empty browser layer* loaded the challenge page yet never executed the JS
   collector — a scripted HTTP client (httpx/curl), the volumetric-DDoS majority. Emitted as a score-time
