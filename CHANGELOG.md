@@ -9,6 +9,11 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Timezone-consistency detection** (ruleset 0.21.0) — `br.timezone_inconsistent` (CreepJS "timezone
+  lie"): a real browser derives both the IANA `timeZone` and the numeric `getTimezoneOffset()` from the
+  OS, so they always agree; a spoof that sets one but not the other (or forces UTC over a real offset) is
+  self-inconsistent. A coherence tell with near-zero false-positive surface — confirmed live that real
+  browser engines (Camoufox, Playwright Chromium) do not trip it. Catches naive timezone spoofers.
 - **Precision suite — legitimate humans must not be flagged** (`tests/test_precision.py`). A panel of
   fully-coherent human profiles (Win/Mac/Linux × Chrome/Firefox, plus a touch laptop and an
   external-monitor Mac) must all score `human`. It surfaced two real false positives that recall testing

@@ -410,6 +410,22 @@ DEMO_PAGE = """<!doctype html>
         }
       }
     } catch (e) {}
+    // --- v0.21.0: timezone consistency (CreepJS "timezone lie"). The IANA timeZone and the numeric
+    // getTimezoneOffset() must agree — a real browser derives both from the OS. A spoof that sets one but
+    // not the other (or forces UTC over a real offset) is self-inconsistent. Near-zero false positives.
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        var dnow = new Date();
+        var off = dnow.toLocaleString("en-US", { timeZone: tz, timeZoneName: "longOffset" });
+        var m = off.match(/GMT([+-]\\d{1,2})(?::(\\d{2}))?/);
+        if (m) {
+          var implied = -(parseInt(m[1], 10) * 60 + (m[1][0] === "-" ? -1 : 1) * (m[2] ? parseInt(m[2], 10) : 0));
+          if (Math.abs(implied - dnow.getTimezoneOffset()) > 1)
+            sigs.push(S("browser", "timezone_inconsistent", true));
+        }
+      }
+    } catch (e) {}
     // --- v0.15.0 wave: media-capability gaps (audio fingerprint + media-device enumeration) ---
     var af = await audioFP();
     if (af.missing) sigs.push(S("browser", "audio_missing", true));
