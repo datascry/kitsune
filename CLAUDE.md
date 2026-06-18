@@ -42,9 +42,9 @@ allow-list.
 | `contracts/` | JSON Schema | Stable wire contracts + coherence-rule registry (the core). |
 | `detector/` | Python | Session correlation, coherence engine, scoring, store, `/ingest`. |
 | `harness/` | Python | Scenario runner + reproducible scoreboard; ethics allow-list. |
-| `edge/` | Go | Raw ClientHello → JA3/JA4, session minting, signal forwarding. |
+| `edge/` | Go | Raw ClientHello → JA3/JA4, HTTP/2 + QUIC/HTTP-3 + TCP/IP fingerprints, session minting, signal forwarding. |
 | `collector/` | TypeScript | In-browser fingerprint + behavioral signal collection. |
-| `evaders/` | Py/TS/Go | Red-team ladder (stubs: vanilla, stealth, agent, go-tls). |
+| `evaders/` | Py/TS/Go | Red-team ladder of real anti-detect tools/browsers (camoufox, nodriver, zendriver, pydoll, selenium-driverless, undetected, primp, curl-impersonate, go-tls, brave, stealth, h2-rapid-reset, vanilla, agent). |
 | `docs/adr/` | — | MADR architecture decision records. |
 
 ## Verify before committing
