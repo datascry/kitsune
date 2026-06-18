@@ -544,6 +544,19 @@ are pure properties of the forged request, so the volumetric tier is convicted a
 detector has. The UA can be forged; the *shape of the HTTP request a real browser makes* cannot, not
 without becoming a real browser.
 
+…unless you make the shape perfectly. `curl-impersonate` (via `curl_cffi`) is the other end of the
+scripted spectrum: it reproduces a real Chrome ClientHello (JA3/JA4), the Chrome HTTP/2 SETTINGS and
+pseudo-header order, and the *full* browser header set — `Sec-Fetch-*`, `Sec-CH-UA(-Platform)`,
+`Accept-Encoding: …br, zstd`. Captured live it does exactly what its design promises: **every HTTP-header
+and cross-layer tell stays silent** — `sec_fetch_vs_ua`, `accept_encoding_vs_ua`, `ch_ua_vs_ua_browser`,
+the h2 rules — because nothing it sends is incoherent. This is the useful negative result: it confirms
+those rules are *precise*, firing on naive forgery (httpx) and not on a sophisticated client that sends a
+correct request. And yet curl-impersonate is still `bot` (0.9) on a single rule: `net.no_js_execution`.
+Perfect network mimicry buys a coherent network layer and nothing above it — there is no JS layer at all,
+because there is no browser. It is the network-layer twin of the selenium-driverless result: a tool that
+wins its own arms race completely is convicted on the axis it never entered. TLS/HTTP can be impersonated;
+*executing the page* cannot be, by a thing that is not a browser.
+
 ## The HTTP/2 preface — a UA-spoof tell below the application layer
 
 The TLS ClientHello (JA3/JA4) and the in-page JS fingerprint are the two layers an evader works hardest
