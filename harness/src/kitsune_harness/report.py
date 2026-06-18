@@ -37,6 +37,19 @@ def coverage(
     return detectors, fired, verdicts
 
 
+def zero_catch(detectors: list[CoherenceRule], fired: dict[str, set[str]]) -> list[str]:
+    """Detectors that flagged nothing in the corpus — the iteration backlog."""
+    return [rule.id for rule in detectors if all(rule.id not in s for s in fired.values())]
+
+
+def render_gaps(detectors: list[CoherenceRule], fired: dict[str, set[str]]) -> str:
+    """Render the coverage backlog: detectors with no triggering sample yet."""
+    gaps = zero_catch(detectors, fired)
+    lines = [f"## Coverage gaps — {len(gaps)}/{len(detectors)} engines catch nothing yet", ""]
+    lines += [f"- `{rid}`" for rid in gaps] or ["- (none — every engine catches something)"]
+    return "\n".join(lines) + "\n"
+
+
 def render_matrix(
     detectors: list[CoherenceRule],
     fired: dict[str, set[str]],
@@ -71,7 +84,8 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     detector = Detector()
     detectors, fired, verdicts = coverage(detector, load_corpus(directory))
     print(f"# Kitsune detection matrix — {len(detectors)} engines\n")
-    print(render_matrix(detectors, fired, verdicts), end="")
+    print(render_matrix(detectors, fired, verdicts))
+    print(render_gaps(detectors, fired), end="")
 
 
 if __name__ == "__main__":  # pragma: no cover

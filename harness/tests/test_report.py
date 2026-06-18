@@ -37,3 +37,14 @@ def test_render_matrix(detector: Detector) -> None:
     assert "br.webdriver_present" in md
     assert "**flagged**" in md and "**verdict**" in md
     assert "✓" in md and "·" in md
+
+
+def test_zero_catch_and_gaps(detector: Detector) -> None:
+    from kitsune_harness.report import render_gaps, zero_catch
+
+    detectors, fired, _ = coverage(detector, _examples())
+    # Only a handful of rules fire on the human/bot examples; most are "gaps".
+    gaps = zero_catch(detectors, fired)
+    assert "br.webdriver_present" not in gaps  # the bot example triggers it
+    assert isinstance(gaps, list) and len(gaps) > 5
+    assert "Coverage gaps" in render_gaps(detectors, fired)
