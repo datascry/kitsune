@@ -18,10 +18,11 @@ All notable changes to Kitsune are documented here. The format follows
 
 - **False-positive mitigations** (from the precision suite). Retired `br.maxtouch_desktop` — it flagged
   ordinary Windows 2-in-1 touch laptops, and the sound `br.pointer_touch_incoherent` (CSS-vs-JS touch
-  disagreement) supersedes it. Cut `br.macos_dpr1` weight 0.4 → 0.3, below the suspicious threshold, so a
-  desktop Mac on a 1080p external monitor is not flagged on its own — it now only corroborates inside a
-  cluster of tells (Camoufox still trips it and stays `bot` 0.99). Recall unaffected: every evader still
-  scores `bot`.
+  disagreement) supersedes it. Cut `br.macos_dpr1` 0.4 → 0.3 (desktop Mac on a 1080p external monitor) and
+  `br.webgl_software` 0.6 → 0.3 (corporate VM/VDI software rendering) below the suspicious threshold, so
+  neither flags a human alone — both now only corroborate inside a cluster of tells. The emergent rule:
+  *environment tells must corroborate, not convict* (each has an innocent lone explanation; the combination
+  is decisive). Recall unaffected — every evader still scores `bot` (Camoufox 0.99, all chromium 1.00).
 
 ### Added (continued)
 

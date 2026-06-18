@@ -232,12 +232,12 @@ rules:
     layers: [browser]
     reads: [browser.webgl_software]
     predicate: present
-    weight: 0.6
+    weight: 0.3
     status: active
     category: environment
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "Headless Chrome falls back to SwiftShader; cf. CreepJS / browserleaks WebGL"
+    source: "Headless Chrome falls back to SwiftShader. Weight 0.3 (< suspicious): corporate VM/VDI users also have software WebGL, so it must corroborate (with other headless tells) rather than convict alone"
 
   - id: br.permissions_anomaly
     title: Notification.permission contradicts the Permissions API state

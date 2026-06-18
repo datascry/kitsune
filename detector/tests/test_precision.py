@@ -94,6 +94,19 @@ HUMANS = {
         # a Mac mini / desktop Mac on a 1080p external display → dPR 1.0.
         "macos_dpr1": True,
     },
+    "corporate-vdi": {
+        "ja4_browser": "chrome",
+        "ja4_os": "windows",
+        "ua_browser": "chrome",
+        "ua_platform": "Windows",
+        "ch_platform": "Windows",
+        "vendor_engine": "chromium",
+        "ua_engine": "chromium",
+        "hardware_concurrency": 4,
+        "plugins_count": 5,
+        # a real corporate VDI / VM session: no passthrough GPU → llvmpipe/SwiftShader software WebGL.
+        "webgl_software": True,
+    },
 }
 
 

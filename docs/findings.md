@@ -102,11 +102,21 @@ Building it **surfaced two real false-positive surfaces** that recall testing ne
   corroborates inside a cluster of tells (Camoufox still trips it alongside `font_mac_internal`,
   `webrtc_unavailable`, etc. and stays `bot` 0.99).
 
+A second pass added a **corporate VM/VDI** profile and caught a third: **`br.webgl_software`** (software
+WebGL — SwiftShader/llvmpipe) flagged it `suspicious` 0.60 on its own. VM/VDI sessions have no passthrough
+GPU and fall back to software rendering — a *large* enterprise population — yet software WebGL is also a
+headless tell. Same fix: weight cut 0.6 → 0.3 (below threshold), so it corroborates with the *other*
+headless tells a real VDI user does not have (no `voices_empty`, no `media_devices_empty`, …) but never
+convicts a VM user alone. Recall intact: every chromium evader trips it *alongside* `webdriver`/`headless_ua`
+and stays `bot`.
+
 The lesson: a tell calibrated only against bots will fire on the long tail of unusual-but-legitimate human
-configurations (touch laptops, external monitors, old displays). Precision testing is the only thing that
-catches it, and the fix is either a *coherence* reformulation (touch) or a weight below the action
-threshold so the signal corroborates without convicting alone (dPR). Recall was unaffected — every evader
-still scores `bot`.
+configurations (touch laptops, external monitors, old displays, **VMs/VDI**). Precision testing is the only
+thing that catches it, and the fix is either a *coherence* reformulation (touch) or a weight below the
+action threshold so the signal corroborates without convicting alone (dPR, software WebGL). The pattern
+that emerges: **environment tells must corroborate, not convict** — each has an innocent lone explanation,
+but a real human almost never trips several at once, and noisy-or makes the combination decisive. Recall
+was unaffected throughout — every evader still scores `bot`.
 
 ## The baseline control — separating spoofing from a stripped environment
 
