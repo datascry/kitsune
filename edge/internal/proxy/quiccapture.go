@@ -118,6 +118,12 @@ func quicTells(sessionID string, ch *fingerprint.ClientHello, ua string, now tim
 	if isModernBrowserUA(ua) && !ch.HasGREASE() {
 		out = append(out, signal.Network(sessionID, "quic_no_grease", true, now))
 	}
+	// QUIC carries a TLS 1.3 ClientHello, so the post-quantum key-share tell applies here too: a UA
+	// claiming current Chrome whose QUIC hello omits X25519MLKEM768 is a stale template (the QUIC analog
+	// of net.tls_pq_keyshare_vs_ua). Reuses the same gate + check as the TCP path.
+	if chromeUAExpectsPQ(ua) && !ch.HasPostQuantumKeyShare() {
+		out = append(out, signal.Network(sessionID, "quic_no_pq_keyshare", true, now))
+	}
 	return out
 }
 

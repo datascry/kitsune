@@ -104,4 +104,15 @@ func TestQUICTells(t *testing.T) {
 	if kinds(quicTells("s", plain, "curl/8.0", time.Now()))["quic_no_grease"] {
 		t.Error("non-browser UA must not fire quic_no_grease")
 	}
+
+	// QUIC PQ key-share tell: a Chrome >=131 UA whose QUIC hello lacks the MLKEM group fires it.
+	const chrome131 = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+	noPQ := &fingerprint.ClientHello{CipherSuites: []uint16{0x1301}, SupportedGroups: []uint16{0x001d, 0x0017}}
+	withPQ := &fingerprint.ClientHello{CipherSuites: []uint16{0x1301}, SupportedGroups: []uint16{0x11ec, 0x001d}}
+	if !kinds(quicTells("s", noPQ, chrome131, time.Now()))["quic_no_pq_keyshare"] {
+		t.Error("Chrome/131 + QUIC hello without MLKEM should fire quic_no_pq_keyshare")
+	}
+	if kinds(quicTells("s", withPQ, chrome131, time.Now()))["quic_no_pq_keyshare"] {
+		t.Error("a QUIC hello with X25519MLKEM768 must not fire quic_no_pq_keyshare")
+	}
 }
