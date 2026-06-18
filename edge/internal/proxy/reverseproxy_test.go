@@ -42,8 +42,11 @@ func TestPrepareMintsSession(t *testing.T) {
 	if prep.sessionID != "fixed-session" || prep.setCookie == nil {
 		t.Errorf("session=%s setCookie=%v", prep.sessionID, prep.setCookie)
 	}
-	if len(prep.signals) != 2 {
-		t.Errorf("want ja3+ja4 signals, got %d", len(prep.signals))
+	if len(prep.signals) != 3 {
+		t.Errorf("want ja3+ja4+observed_ip signals, got %d", len(prep.signals))
+	}
+	if last := prep.signals[len(prep.signals)-1]; last.Kind != "observed_ip" {
+		t.Errorf("expected a trailing observed_ip signal, got kind=%s", last.Kind)
 	}
 }
 
@@ -62,8 +65,9 @@ func TestPrepareNilHello(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prep.signals) != 0 {
-		t.Errorf("expected no signals without a ClientHello, got %d", len(prep.signals))
+	// No ClientHello → no ja3/ja4, but the observed source IP is still captured (network identity).
+	if len(prep.signals) != 1 || prep.signals[0].Kind != "observed_ip" {
+		t.Errorf("expected only an observed_ip signal without a ClientHello, got %d signals", len(prep.signals))
 	}
 }
 

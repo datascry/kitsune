@@ -60,7 +60,21 @@ func prepare(
 	if hello != nil {
 		out.signals = signal.FromClientHello(out.sessionID, hello, hints, now)
 	}
+	// The observed source IP is the network-layer identity: the address the connection actually came
+	// from. A bot proxying its HTTP through a residential exit shows the proxy IP here, while WebRTC
+	// can leak its real IP in the browser layer — the detector cross-checks the two (a proxied-bot tell).
+	if ip := clientIP(r); ip != "" {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "observed_ip", ip, now))
+	}
 	return out, nil
+}
+
+// clientIP extracts the source IP (without port) from the request's remote address.
+func clientIP(r *http.Request) string {
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }
 
 // ReverseProxy is a transparent TLS edge in front of a backend app.

@@ -159,6 +159,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "codec_os_incoherent", True, Source.collector)], "br.codec_os_incoherent"),
         ([(Layer.browser, "cdp_runtime_enabled", True, Source.collector)], "br.cdp_runtime_enabled"),
         ([(Layer.browser, "webrtc_unavailable", True, Source.collector)], "br.webrtc_unavailable"),
+        (
+            [
+                (Layer.browser, "webrtc_public_ip", "203.0.113.7", Source.collector),
+                (Layer.network, "observed_ip", "198.51.100.2", Source.edge),
+            ],
+            "net.webrtc_ip_vs_observed",
+        ),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
@@ -167,3 +174,14 @@ def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
     engine = CoherenceEngine(load_registry())
     fired = {c.rule_id for c in engine.evaluate(session)}
     assert rule_id in fired
+
+
+def test_webrtc_ip_matches_observed_does_not_fire() -> None:
+    # A direct (un-proxied) client: the WebRTC IP equals the observed connection IP → no contradiction.
+    sigs = [
+        make_signal("s", Layer.browser, "webrtc_public_ip", "203.0.113.7", source=Source.collector),
+        make_signal("s", Layer.network, "observed_ip", "203.0.113.7", source=Source.edge),
+    ]
+    session = group_signals(sigs)[0]
+    fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}
+    assert "net.webrtc_ip_vs_observed" not in fired

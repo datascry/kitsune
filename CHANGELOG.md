@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Cross-layer network-identity rule** (ruleset 0.20.0) — `net.webrtc_ip_vs_observed`: the edge now emits
+  the observed connection IP (`network.observed_ip`), and the rule fires when it disagrees with the
+  WebRTC STUN public IP the collector reported (`browser.webrtc_public_ip`) — the canonical proxied-bot
+  tell (HTTP via a residential proxy, real IP leaked over WebRTC), central to bots/DDoS. This is the first
+  rule correlating a signal the *edge* observed at the network layer with one the *browser* reported — the
+  cross-layer thesis in its purest form. Needs a real proxy scenario to trigger live; unit-tested both
+  ways (fires on mismatch, not on a direct connection). Edge change covered by Go tests.
 - **Hardened-Camoufox evader (`KS_HARDENED=1`)** — red-teams the detector with its own findings: applies
   Camoufox config (`os="windows"` to drop the macOS-only tells, `block_webrtc=False`) to fix the
   spoof-specific tells Kitsune discovered, and measures what survives. Result: hardening cuts Camoufox's

@@ -118,9 +118,18 @@ no-spoof baseline, so they are not headless artifacts — a macOS-draw Camoufox 
 - `webrtc_unavailable` (artifact) — **Camoufox disables WebRTC entirely** (no ICE candidates) to prevent
   the real-IP leak. Confirmed live: it fires on Camoufox but *not* on stock headless Firefox, which
   gathers candidates in the same container — so WebRTC absence is a deliberate anti-detect choice, itself
-  the tell. WebRTC is the bots/DDoS network-identity frontier: a proxied bot that *keeps* WebRTC leaks its
-  real public IP via STUN (`webrtc_public_ip` is collected for that future cross-layer correlation), and
-  one that *disables* WebRTC to hide it trips this rule instead — a no-win for the evader.
+  the tell.
+
+The no-win is now closed on both sides by a genuine **cross-layer** rule, `net.webrtc_ip_vs_observed`:
+the edge emits the **observed connection IP** (`network.observed_ip`, the address the TLS connection came
+from) and the collector reports the **WebRTC STUN public IP** (`browser.webrtc_public_ip`). When they
+disagree — HTTP routed through a residential proxy while WebRTC leaks the real datacenter IP — the rule
+fires (the canonical proxied-bot/residential-proxy tell, central to bots/DDoS). So an evader that *keeps*
+WebRTC risks the cross-layer IP mismatch, and one that *disables* it trips `webrtc_unavailable`. This is
+the first rule that correlates a signal the **edge** observed at the network layer with one the
+**browser** reported — the cross-layer thesis in its purest form. (It needs a real proxy scenario to
+trigger live; validated by unit tests, and it correctly does not fire on a direct connection where the
+two IPs match.)
 
 ### The headful experiment — keeping the capability-probe honest
 
