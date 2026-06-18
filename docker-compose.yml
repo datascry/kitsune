@@ -13,6 +13,9 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      # `uv run` re-syncs the env on first start (~25-30s); give it room before counting failures so the
+      # edge's depends_on:healthy gate doesn't trip on a cold start.
+      start_period: 45s
 
   edge:
     build:
