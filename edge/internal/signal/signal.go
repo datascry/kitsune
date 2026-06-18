@@ -59,6 +59,16 @@ func FromClientHello(
 	return out
 }
 
+// FromH2 produces the network signals for an HTTP/2 connection: the raw Akamai h2 fingerprint plus the
+// engine it implies, so the detector can flag an h2 fingerprint that contradicts the UA (or the JA4).
+func FromH2(sessionID string, fp fingerprint.H2Fingerprint, at time.Time) []Signal {
+	out := []Signal{Network(sessionID, "h2", fp.String(), at)}
+	if b := fp.Browser(); b != "unknown" {
+		out = append(out, Network(sessionID, "h2_browser_hint", b, at))
+	}
+	return out
+}
+
 // Marshal serialises a batch of signals to the JSON array /ingest expects.
 func Marshal(signals []Signal) ([]byte, error) {
 	return json.Marshal(signals)

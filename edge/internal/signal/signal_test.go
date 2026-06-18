@@ -59,6 +59,29 @@ func TestFromClientHelloWithHint(t *testing.T) {
 	}
 }
 
+func TestFromH2(t *testing.T) {
+	fp := fingerprint.H2Fingerprint{
+		Settings:          []fingerprint.H2Setting{{ID: 1, Value: 65536}},
+		WindowUpdate:      15663105,
+		PseudoHeaderOrder: "m,a,s,p",
+	}
+	sigs := FromH2("sess", fp, at)
+	if len(sigs) != 2 || sigs[0].Kind != "h2" || sigs[1].Kind != "h2_browser_hint" {
+		t.Fatalf("want h2 + h2_browser_hint, got %+v", sigs)
+	}
+	if sigs[1].Value != "chrome" {
+		t.Errorf("h2_browser_hint = %v, want chrome", sigs[1].Value)
+	}
+}
+
+func TestFromH2UnknownEngineOmitsHint(t *testing.T) {
+	fp := fingerprint.H2Fingerprint{PseudoHeaderOrder: "weird"}
+	sigs := FromH2("sess", fp, at)
+	if len(sigs) != 1 || sigs[0].Kind != "h2" {
+		t.Errorf("want only the raw h2 signal for an unknown engine, got %+v", sigs)
+	}
+}
+
 func TestMarshalBatch(t *testing.T) {
 	sigs := []Signal{Network("s", "ja3", "x", at)}
 	b, err := Marshal(sigs)

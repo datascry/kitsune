@@ -9,6 +9,14 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **HTTP/2 fingerprint core** (`edge/internal/fingerprint/h2.go`) — the Akamai-style h2 fingerprint
+  (`SETTINGS | WINDOW_UPDATE | PRIORITY | pseudo-header-order`) plus an engine classifier keyed on the
+  version-stable pseudo-header order (Chromium `m,a,s,p`, Firefox `m,p,a,s`, Safari `m,s,p,a`), and a
+  `signal.FromH2` emitter for `h2` + `h2_browser_hint`. Go unit-tested with documented real-browser
+  fingerprints. The detector's `net.h2_vs_ua_browser` / `net.h2_vs_tls_browser` coherence rules already
+  consume `h2_browser_hint`, so the detection is ready; live capture needs the edge to sniff H2 frames
+  post-TLS (a multi-turn change — H2 is currently disabled on the edge so the ClientHello ConnContext
+  reaches handlers). This lands the tested fingerprint core ahead of that wiring.
 - **Human-mouse behavioral evader (`HUMAN_MOUSE=1`)** — synthesizes realistic motion (Bézier curve,
   ease-in-out velocity, micro-jitter, variable inter-event timing) to red-team the behavioral layer.
   Finding: the motion thresholds (`path_too_straight`, `uniform_velocity`, `input_entropy_floor`) catch
