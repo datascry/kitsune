@@ -384,6 +384,10 @@ DEMO_PAGE = """<!doctype html>
     // The Runtime.enable leak is CDP-specific (Chromium). Guarded to Chromium to avoid odd Firefox cases.
     if (isChromium && cdpRuntimeEnabled()) sigs.push(S("browser", "cdp_runtime_enabled", true));
     if (!navigator.languages || navigator.languages.length === 0) sigs.push(S("browser", "languages_empty", true));
+    // Primary language subtag the JS layer reports — cross-checked against the HTTP Accept-Language at
+    // the edge (net.accept_lang_vs_navigator). A locale spoofed in JS but not in the HTTP stack mismatches.
+    var _nl = (navigator.languages && navigator.languages[0]) || navigator.language || "";
+    if (_nl) sigs.push(S("browser", "nav_language_primary", String(_nl).split("-")[0].toLowerCase()));
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) sigs.push(S("browser", "screen_zero", true));
     if (isChromium && !navigator.connection) sigs.push(S("browser", "chrome_no_connection", true));
     if (isChromium && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));

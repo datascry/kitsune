@@ -80,7 +80,28 @@ func prepare(
 	if secFetchMissing(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "sec_fetch_missing", true, now))
 	}
+	// The primary language the HTTP stack advertises (Accept-Language). The detector cross-checks it
+	// against the JS-layer navigator.languages: a bot that spoofs its locale in the browser but lets its
+	// HTTP client send a default Accept-Language contradicts itself across the network/browser boundary.
+	if lang := acceptLanguagePrimary(r); lang != "" {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "accept_language_primary", lang, now))
+	}
 	return out, nil
+}
+
+// acceptLanguagePrimary returns the lower-cased primary language subtag of the Accept-Language header
+// (e.g. "en-US,en;q=0.9" -> "en"), or "" when absent. Comparing only the subtag (not the region) keeps
+// the cross-layer check robust: it flags a different language entirely, not an en-US vs en-GB nuance.
+func acceptLanguagePrimary(r *http.Request) string {
+	al := r.Header.Get("Accept-Language")
+	if al == "" {
+		return ""
+	}
+	// First tag, before any q-value list; then the language subtag, before any region.
+	first, _, _ := strings.Cut(al, ",")
+	first, _, _ = strings.Cut(strings.TrimSpace(first), ";")
+	subtag, _, _ := strings.Cut(strings.TrimSpace(first), "-")
+	return strings.ToLower(subtag)
 }
 
 // clientIP extracts the source IP (without port) from the request's remote address.

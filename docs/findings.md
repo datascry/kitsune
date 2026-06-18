@@ -462,6 +462,20 @@ the bytes you need to fingerprint, buffer them, and replay on `Read` so the wrap
 complete connection. Parsing is best-effort — a malformed or truncated preface leaves the connection
 served and simply carries no h2 signal, never breaking traffic to fingerprint it.
 
+## Locale coherence across the HTTP/JS boundary
+
+The same value is often visible at two layers, set from one source of truth — and a spoof that rewrites
+one layer but not the other splits them apart. The browser's UI locale is exactly such a value: a real
+browser derives both the HTTP `Accept-Language` request header *and* the JS `navigator.languages` from one
+setting, so they always agree on the primary language. A bot that overrides `navigator.languages` in JS
+(to look German, say) but runs its HTTP client with a default `Accept-Language: en-US` contradicts itself
+across the network/browser boundary. The edge emits the primary language subtag of `Accept-Language`, the
+collector emits the subtag of `navigator.languages[0]`, and `net.accept_lang_vs_navigator` (cross-layer,
+so the incoherence weight applies) fires when they differ. The comparison is on the language *subtag*
+only (`en`, not `en-US`) so an `en-US` vs `en-GB` region nuance never false-positives — it flags a wholly
+different language, the shape an actual locale spoof takes. This is the cheapest possible instance of the
+core thesis: no new capture machinery, just two layers reporting the same fact and a check that they match.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

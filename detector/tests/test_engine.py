@@ -68,6 +68,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "net.h2_settings_vs_order",
         ),
+        (
+            [
+                (Layer.network, "accept_language_primary", "en", Source.edge),
+                (Layer.browser, "nav_language_primary", "de", Source.collector),
+            ],
+            "net.accept_lang_vs_navigator",
+        ),
         ([(Layer.browser, "ua_is_headless", True, Source.collector)], "br.headless_ua"),
         (
             [(Layer.behavioral, "keystroke_entropy", 0.05, Source.collector)],
@@ -193,6 +200,17 @@ def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
     engine = CoherenceEngine(load_registry())
     fired = {c.rule_id for c in engine.evaluate(session)}
     assert rule_id in fired
+
+
+def test_matching_accept_language_does_not_fire() -> None:
+    # Same primary language across the HTTP and JS layers (region nuance ignored) → no contradiction.
+    sigs = [
+        make_signal("s", Layer.network, "accept_language_primary", "en", source=Source.edge),
+        make_signal("s", Layer.browser, "nav_language_primary", "en", source=Source.collector),
+    ]
+    session = group_signals(sigs)[0]
+    fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}
+    assert "net.accept_lang_vs_navigator" not in fired
 
 
 def test_webrtc_ip_matches_observed_does_not_fire() -> None:

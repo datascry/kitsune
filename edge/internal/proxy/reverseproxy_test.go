@@ -157,6 +157,43 @@ func TestSelfSignedCert(t *testing.T) {
 	}
 }
 
+func TestAcceptLanguagePrimary(t *testing.T) {
+	cases := map[string]string{
+		"en-US,en;q=0.9": "en",
+		"de-DE,de;q=0.8": "de",
+		"fr":             "fr",
+		"  EN-GB ":       "en",
+		"":               "",
+	}
+	for header, want := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		if header != "" {
+			r.Header.Set("Accept-Language", header)
+		}
+		if got := acceptLanguagePrimary(r); got != want {
+			t.Errorf("Accept-Language %q: got %q want %q", header, got, want)
+		}
+	}
+}
+
+func TestPrepareEmitsAcceptLanguage(t *testing.T) {
+	r := req(t, "abc")
+	r.Header.Set("Accept-Language", "de-DE,de;q=0.9")
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, s := range prep.signals {
+		if s.Kind == "accept_language_primary" && s.Value == "de" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected accept_language_primary=de signal, got %+v", prep.signals)
+	}
+}
+
 func TestSecFetchMissing(t *testing.T) {
 	chromeUA := "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	cases := []struct {
