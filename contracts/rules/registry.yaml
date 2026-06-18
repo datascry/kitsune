@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.60.0"
+ruleset_version: "0.61.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1066,6 +1066,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "getChannelData and copyFromChannel read the same AudioBuffer, so a real engine returns bit-identical bytes (verified diff=0 on Chrome 136); a farbling shim perturbing one path diverges. Deeper than audio_noise (render determinism). Corroborating, not convicting — fires on legitimate privacy browsers (Brave/Camoufox farbling), so experimental + low weight per the calibration precision discipline. (Canvas putImageData round-trips are NOT used: premultiplied alpha makes them lossy on every real browser.)"
+
+  - id: br.domrect_invariant
+    title: getBoundingClientRect is non-deterministic or disagrees with getClientRects — geometry shim
+    layers: [browser]
+    reads: [browser.domrect_invariant_violated]
+    predicate: present
+    weight: 0.55
+    status: active
+    category: artifact
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "On a real engine getBoundingClientRect is deterministic (two reads of an unchanged element are identical — pages depend on it) and a single-rect element's getClientRects()[0] equals it (verified on Chrome 136). A per-call DOMRect-noise shim breaks determinism; a tool hooking one geometry path but not the other breaks consistency. FP-safe: determinism is a hard invariant no real browser (incl. farblers, which use stable per-session offsets) violates. Ref CreepJS domrect."
 
 
   - id: br.media_devices_empty

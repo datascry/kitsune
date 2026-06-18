@@ -423,6 +423,24 @@ DEMO_PAGE = """<!doctype html>
           ((process.versions && process.versions.electron) || process.type === "renderer"))
         sigs.push(S("browser", "electron_process", true));
     } catch (e) {}
+    // DOMRect invariants: on a real engine getBoundingClientRect is deterministic (two reads of an
+    // unchanged element are identical) and a single-rect element's getClientRects()[0] equals it. A
+    // per-call DOMRect-noise shim breaks determinism; a tool that hooks one geometry path but not the
+    // other breaks consistency. Verified deterministic + consistent on real Chrome.
+    try {
+      var dre = document.createElement("div");
+      dre.style.cssText = "position:absolute;left:-9999px;top:0;width:123.45px;height:67.8px;transform:rotate(7deg) scale(1.3)";
+      dre.textContent = "x";
+      document.documentElement.appendChild(dre);
+      var dra = dre.getBoundingClientRect(), drc = dre.getBoundingClientRect();
+      var drDet = dra.x === drc.x && dra.y === drc.y && dra.width === drc.width && dra.height === drc.height;
+      var drRects = dre.getClientRects(), dr0 = drRects[0];
+      var drCons = drRects.length === 1 && dr0 &&
+        Math.abs(dr0.width - dra.width) < 1e-6 && Math.abs(dr0.height - dra.height) < 1e-6 &&
+        Math.abs(dr0.x - dra.x) < 1e-6 && Math.abs(dr0.y - dra.y) < 1e-6;
+      document.documentElement.removeChild(dre);
+      if (!drDet || !drCons) sigs.push(S("browser", "domrect_invariant_violated", true));
+    } catch (e) {}
     try {
       if (WebGLRenderingContext.prototype.getParameter.toString().indexOf("[native code]") < 0)
         sigs.push(S("browser", "webgl_getparameter_tampered", true));

@@ -477,6 +477,32 @@ export function armCollector(): LiveCollector {
     if (proc && (proc.versions?.electron || proc.type === "renderer")) {
       put("browser", "electron_process", true);
     }
+    // DOMRect invariants: real getBoundingClientRect is deterministic (two reads identical) and a
+    // single-rect element's getClientRects()[0] equals it; a noise shim or a one-sided geometry hook breaks
+    // these. Verified deterministic + consistent on real Chrome.
+    try {
+      const dre = document.createElement("div");
+      dre.style.cssText =
+        "position:absolute;left:-9999px;top:0;width:123.45px;height:67.8px;transform:rotate(7deg) scale(1.3)";
+      dre.textContent = "x";
+      document.documentElement.appendChild(dre);
+      const a = dre.getBoundingClientRect();
+      const c = dre.getBoundingClientRect();
+      const det = a.x === c.x && a.y === c.y && a.width === c.width && a.height === c.height;
+      const rects = dre.getClientRects();
+      const r0 = rects[0];
+      const cons =
+        rects.length === 1 &&
+        !!r0 &&
+        Math.abs(r0.width - a.width) < 1e-6 &&
+        Math.abs(r0.height - a.height) < 1e-6 &&
+        Math.abs(r0.x - a.x) < 1e-6 &&
+        Math.abs(r0.y - a.y) < 1e-6;
+      document.documentElement.removeChild(dre);
+      if (!det || !cons) put("browser", "domrect_invariant_violated", true);
+    } catch {
+      /* ignore */
+    }
     try {
       if (!WebGLRenderingContext.prototype.getParameter.toString().includes("[native code]")) {
         put("browser", "webgl_getparameter_tampered", true);
