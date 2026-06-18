@@ -1,6 +1,6 @@
 module github.com/datascry/kitsune/edge
 
-go 1.23
+go 1.26
 
 require (
 	github.com/quic-go/quic-go v0.48.2

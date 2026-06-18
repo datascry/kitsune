@@ -53,9 +53,9 @@ allow-list.
 task ci          # headers · detector · harness · edge · collector
 # or per component:
 cd detector && uv run ruff check . && uv run mypy && uv run pytest
-cd edge && go vet ./... && go test ./... -cover     # needs Go (or docker golang:1.23-alpine)
+cd edge && go vet ./... && go test ./... -cover     # needs Go (or docker golang:1.26-alpine)
 cd collector && pnpm run typecheck && pnpm run lint && pnpm test
 ```
 
-Go and Node are not installed in some environments — use Docker (`golang:1.23-alpine`,
+Go and Node are not installed in some environments — use Docker (`golang:1.26-alpine`,
 `node:22-alpine`) to build/test those components.

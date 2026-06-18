@@ -1,6 +1,6 @@
 module github.com/datascry/kitsune/evaders/go-tls
 
-go 1.23
+go 1.26
 
 require (
 	github.com/refraction-networking/utls v1.6.7
