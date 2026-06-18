@@ -644,8 +644,17 @@ faithful enough to silence every other TLS/HTTP tell, land on opposite sides:
   silent. It tracks current Chrome and is caught only on `no_js_execution` + `tcp_os_vs_ua`.
 - **`go-tls`** (Go + `uTLS` v1.6.7, `HelloChrome_Auto`, now driven over HTTP/2 with a full Chrome header
   set) **omits** the PQ group → `tls_pq_keyshare_vs_ua` **fires** (`corpus/sessions/go-tls.json`, `bot`).
-  uTLS's pinned Chrome profile predates the MLKEM rollout, so the most popular Go impersonation library is
-  a stale template by exactly this measure.
+  uTLS v1.6.7's `HelloChrome_Auto` profile predates the MLKEM rollout, so the most popular Go impersonation
+  library *of that era* is a stale template by exactly this measure.
+
+**The arms race, measured.** Re-running `go-tls` against the current uTLS **v1.8.2** — same code, bumped
+dependency — flips the result: v1.8.2's `HelloChrome_Auto` *does* send `X25519MLKEM768`, so
+`tls_pq_keyshare_vs_ua` goes **silent** and only `no_js_execution` convicts it. So the PQ tell catches a
+real, bounded **lag window** (uTLS ≤ ~1.6.x), which closes as the library tracks Chrome — the honest scope
+of an experimental rule, not a permanent catch. The lab deliberately pins `go-tls` to v1.6.7: a scraper
+running months-old pinned deps is a real, common configuration, and it keeps a live demonstration of the
+tell catching a genuine library. The rule's version-independent corpus evidence is the classical-only
+`tls-stale-template.json`; `go-tls.json` is the "real popular library, lagging version" instance.
 
 The sharp part: `go-tls`'s **JA4 is byte-identical to real Chrome's and to primp's** (`t13d1516h2_8daaf6152771_…`).
 JA4 hashes the extension *types* and signature algorithms, not the `supported_groups` *contents* — so the

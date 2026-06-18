@@ -25,3 +25,9 @@ KITSUNE_EDGE=https://localhost:8443/healthz go run ./cmd/go-tls
 uTLS parrots only the **ClientHello** — it does not by itself align the HTTP/2 or TCP/IP layers.
 That residual is exactly the cross-layer incoherence the detector is built to flag (see
 `docs/architecture.md` §2, `docs/catalog.md` §9). Tier-2 coverage (network IO).
+
+**uTLS is pinned to v1.6.7 on purpose.** Its `HelloChrome_Auto` profile predates Chrome's post-quantum
+key share, so this evader represents a real, common case — a scraper on months-old pinned deps — and keeps
+a live demonstration of `net.tls_pq_keyshare_vs_ua` catching a genuine library. Current uTLS (v1.8.2) sends
+`X25519MLKEM768` and evades that tell; the rule catches the lag window, not uTLS in perpetuity (see
+`docs/findings.md`, "The arms race, measured").
