@@ -336,6 +336,20 @@ DEMO_PAGE = """<!doctype html>
     var hasV8Stack = typeof Error.captureStackTrace === "function";
     if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack))
       sigs.push(S("browser", "engine_stack_mismatch", true));
+    // Engine error-message format — deeper than navigator.vendor or Error.captureStackTrace, because it
+    // is the engine's own message generator (which JS-stealth tools do not rewrite). The same error reads
+    // differently per engine: V8 "Cannot read properties of…", SpiderMonkey "can't access property…",
+    // JSC "… is not an object". A message format that contradicts the claimed UA engine is a spoof.
+    try {
+      var _u; _u.x;  // throws TypeError
+    } catch (errProbe) {
+      var em = errProbe.message || "";
+      var errEngine = /Cannot read propert/.test(em) ? "chromium"
+                    : /can't access propert|has no propert/i.test(em) ? "firefox"
+                    : /is not an object/.test(em) ? "safari" : "";
+      if (errEngine && uaEngine !== "other" && errEngine !== uaEngine)
+        sigs.push(S("browser", "error_engine_mismatch", true));
+    }
     if (navigator.oscpu) {
       var oc = /Mac/i.test(navigator.oscpu) ? "macOS" : /Win/i.test(navigator.oscpu) ? "Windows"
              : /Linux/i.test(navigator.oscpu) ? "Linux" : "";

@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 67 engines
+# Kitsune detection matrix — 69 engines
 
 | Detector | layer | baseline-firefox | camoufox-hardened | camoufox-headful | camoufox | full-stealth | human-mouse | max-stealth | nodriver | patchright | rebrowser | spoof-ua | stealth-naive | stealth-patched | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,7 +14,7 @@
 | `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.headless_ua` | browser | · | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | · | ✓ | · | · | 5 |
-| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | ✓ | · | · | · | · | · | · | ✓ | · | · | 2 |
+| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | ✓ | · | · | · | · | · | ✓ | ✓ | · | · | 3 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -69,7 +69,9 @@
 | `br.engine_stack_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
 | `net.no_js_execution` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | 1 |
 | `br.webgpu_webgl_vs` | browser | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/67** | **4/67** | **3/67** | **6/67** | **13/67** | **12/67** | **10/67** | **8/67** | **10/67** | **11/67** | **12/67** | **13/67** | **6/67** | **1/67** |  |
+| `br.webgpu_vendor_vs_webgl` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.error_engine_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
+| **flagged** |  | **6/69** | **4/69** | **3/69** | **6/69** | **13/69** | **12/69** | **10/69** | **8/69** | **10/69** | **11/69** | **14/69** | **13/69** | **6/69** | **1/69** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -86,12 +88,12 @@
 | `nodriver` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `patchright` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
-| `spoof-ua` | bot | 4 | 0 | 3 | 5 | 0 | 0 |
+| `spoof-ua` | bot | 5 | 0 | 3 | 5 | 1 | 0 |
 | `stealth-naive` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 34/67 engines catch nothing yet
+## Coverage gaps — 35/69 engines catch nothing yet
 
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`
@@ -127,3 +129,4 @@
 - `br.codec_os_incoherent`
 - `net.webrtc_ip_vs_observed`
 - `br.timezone_inconsistent`
+- `br.webgpu_vendor_vs_webgl`

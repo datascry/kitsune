@@ -9,6 +9,12 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Engine error-message coherence** (ruleset 0.24.0) — `br.error_engine_vs_ua`, the deepest engine tell.
+  V8/SpiderMonkey/JSC produce distinct `TypeError` messages for the same fault (V8 "Cannot read
+  properties of…", SpiderMonkey "can't access property…", JSC "… is not an object"). The engine's *own
+  message generator* is far harder to spoof than `navigator.vendor` or `Error.captureStackTrace`.
+  **Validated:** fires on `spoof-ua` (V8 engine + Firefox UA) but not on `stealth-naive` (V8 + Chrome UA)
+  or `camoufox` (real SpiderMonkey + Firefox UA) — engine-spoofers caught, real browsers cleared.
 - **WebGPU coherence** (ruleset 0.23.0) — `br.webgpu_webgl_vs`, the emerging GPU fingerprint vector
   (2024-25). Explored reality-first: headless Chromium has `navigator.gpu` but no adapter; Firefox/Camoufox
   lack WebGPU entirely — both too common to flag alone. The clean tell is cross-vector: a WebGL renderer
