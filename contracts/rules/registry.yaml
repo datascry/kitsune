@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.4.0"
+ruleset_version: "0.5.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -282,3 +282,38 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "fpscanner / Sannysoft plugins length"
+
+  # --- v0.5.0: catch JS-injection anti-detect tampering (the full-stealth tells) ---
+
+  - id: br.webgl_getparameter_tampered
+    title: WebGLRenderingContext.getParameter is overridden (non-native toString)
+    layers: [browser]
+    reads: [browser.webgl_getparameter_tampered]
+    predicate: present
+    weight: 0.8
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: a spoofed WebGL renderer means getParameter was patched"
+
+  - id: br.plugins_spoofed
+    title: navigator.plugins is an own property (patched via defineProperty)
+    layers: [browser]
+    reads: [browser.plugins_spoofed]
+    predicate: present
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS lie-detection: native plugins is inherited from Navigator.prototype"
+
+  - id: br.webdriver_getter_tampered
+    title: Navigator.prototype.webdriver getter is non-native (prototype patch)
+    layers: [browser]
+    reads: [browser.webdriver_getter_tampered]
+    predicate: present
+    weight: 0.85
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Catches the prototype-level webdriver patch the own-property check misses"

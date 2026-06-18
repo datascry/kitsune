@@ -121,6 +121,16 @@ DEMO_PAGE = """<!doctype html>
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
     if (/Chrome|Edg/.test(ua) && !window.chrome) sigs.push(S("browser", "chrome_object_missing", true));
     if (toStringTampered()) sigs.push(S("browser", "function_tostring_tampered", true));
+    try {
+      if (WebGLRenderingContext.prototype.getParameter.toString().indexOf("[native code]") < 0)
+        sigs.push(S("browser", "webgl_getparameter_tampered", true));
+    } catch (e) {}
+    if (Object.getOwnPropertyDescriptor(navigator, "plugins")) sigs.push(S("browser", "plugins_spoofed", true));
+    try {
+      var wd = Object.getOwnPropertyDescriptor(Navigator.prototype, "webdriver");
+      if (wd && wd.get && wd.get.toString().indexOf("[native code]") < 0)
+        sigs.push(S("browser", "webdriver_getter_tampered", true));
+    } catch (e) {}
     sigs.push(S("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0));
     sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
     if (await permAnomaly()) sigs.push(S("browser", "permissions_anomaly", true));

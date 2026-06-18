@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 23 engines
+# Kitsune detection matrix — 26 engines
 
 | Detector | layer | full-stealth | spoof-ua | stealth-naive | stealth-patched | vanilla | catches |
 |---|---|---|---|---|---|---|---|
@@ -25,5 +25,8 @@
 | `br.tostring_tampered` | browser | · | · | · | · | · | 0 |
 | `br.low_hardware_concurrency` | browser | · | · | · | · | · | 0 |
 | `br.no_plugins` | browser | · | ✓ | ✓ | ✓ | · | 3 |
-| **flagged** |  | **1/23** | **5/23** | **6/23** | **5/23** | **0/23** |  |
+| `br.webgl_getparameter_tampered` | browser | ✓ | · | · | · | · | 1 |
+| `br.plugins_spoofed` | browser | ✓ | · | · | · | · | 1 |
+| `br.webdriver_getter_tampered` | browser | ✓ | · | · | · | · | 1 |
+| **flagged** |  | **4/26** | **5/26** | **6/26** | **5/26** | **0/26** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **human** |  |

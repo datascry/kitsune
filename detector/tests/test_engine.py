@@ -76,6 +76,9 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "function_tostring_tampered", True, Source.collector)], "br.tostring_tampered"),
         ([(Layer.browser, "hardware_concurrency", 0, Source.collector)], "br.low_hardware_concurrency"),
         ([(Layer.browser, "plugins_count", 0, Source.collector)], "br.no_plugins"),
+        ([(Layer.browser, "webgl_getparameter_tampered", True, Source.collector)], "br.webgl_getparameter_tampered"),
+        ([(Layer.browser, "plugins_spoofed", True, Source.collector)], "br.plugins_spoofed"),
+        ([(Layer.browser, "webdriver_getter_tampered", True, Source.collector)], "br.webdriver_getter_tampered"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
