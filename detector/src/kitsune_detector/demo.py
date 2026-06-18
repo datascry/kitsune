@@ -355,6 +355,17 @@ DEMO_PAGE = """<!doctype html>
         if (!devs || devs.length === 0) sigs.push(S("browser", "media_devices_empty", true));
       }
     } catch (e) {}
+    // Camoufox does NOT spoof audio/video codec support (per its browserforge cast map). Real Firefox on
+    // Windows/macOS plays proprietary H.264/AAC via OS codecs; a minimal Linux container often cannot — so
+    // a non-Linux UA that cannot play H.264 is the real container OS leaking through the spoof.
+    try {
+      var vEl = document.createElement("video"), aEl = document.createElement("audio");
+      var h264 = vEl.canPlayType('video/mp4; codecs="avc1.42E01E"');
+      var aac = aEl.canPlayType('audio/mp4; codecs="mp4a.40.2"');
+      var plat2 = uaPlatform(ua);
+      if (plat2 && plat2 !== "Linux" && h264 === "" && aac === "")
+        sigs.push(S("browser", "codec_os_incoherent", true));
+    } catch (e) {}
     // Read the adblock bait: a content blocker (Camoufox ships uBlock Origin by default) hides it.
     try {
       if (_bait && _bait.parentNode) {

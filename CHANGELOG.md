@@ -9,6 +9,11 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Codec-support coherence** (ruleset 0.18.0, experimental) — `br.codec_os_incoherent`: from the
+  Camoufox cast map, `audioCodecs`/`videoCodecs` are unspoofed, so a non-Linux UA that cannot play
+  proprietary H.264/AAC (codecs a real Windows/macOS has via the OS) would betray the real container.
+  **Did not fire** on this Camoufox — the Playwright base image bundles the codecs, so its support is
+  coherent. Kept as coverage of a known detection class (catches a codec-less Linux deployment).
 - **Font construction-artifact detection** (ruleset 0.17.0) — from Camoufox's `fonts.json` (its fixed
   per-OS font lists). `br.font_mac_internal` (artifact): Camoufox bundles 49 dot-prefixed macOS system
   fonts (`.Aqua Kana`, …) and exposes them to `measureText`, which a real Mac never does — **confirmed

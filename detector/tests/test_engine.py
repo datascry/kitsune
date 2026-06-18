@@ -156,6 +156,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "macos_dpr1", True, Source.collector)], "br.macos_dpr1"),
         ([(Layer.browser, "font_linux_leak", True, Source.collector)], "br.font_linux_leak"),
         ([(Layer.browser, "font_mac_internal", True, Source.collector)], "br.font_mac_internal"),
+        ([(Layer.browser, "codec_os_incoherent", True, Source.collector)], "br.codec_os_incoherent"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
