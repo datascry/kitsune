@@ -9,6 +9,12 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **HTTP-layer Sec-Fetch coherence** (ruleset 0.24.0) — `net.sec_fetch_vs_ua`: every modern browser sends
+  `Sec-Fetch-Site`/`Sec-Fetch-Mode` on requests, but a scripted HTTP client faking a browser UA over
+  httpx/curl (the volumetric-DDoS case) omits them. The edge emits `network.sec_fetch_missing` when a
+  browser-claiming UA lacks the headers — a tell on the *HTTP* layer, independent of TLS and JS. Added a
+  `KS_UA` mode to the vanilla evader to validate: vanilla faking a Chrome UA now scores `bot` on *both*
+  `net.no_js_execution` and `net.sec_fetch_vs_ua`; real Chromium (which sends Sec-Fetch) does not trip it.
 - **Engine error-message coherence** (ruleset 0.24.0) — `br.error_engine_vs_ua`, the deepest engine tell.
   V8/SpiderMonkey/JSC produce distinct `TypeError` messages for the same fault (V8 "Cannot read
   properties of…", SpiderMonkey "can't access property…", JSC "… is not an object"). The engine's *own

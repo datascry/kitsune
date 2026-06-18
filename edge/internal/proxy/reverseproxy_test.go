@@ -136,3 +136,28 @@ func TestSelfSignedCert(t *testing.T) {
 		t.Errorf("cert does not parse: %v", err)
 	}
 }
+
+func TestSecFetchMissing(t *testing.T) {
+	chromeUA := "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+	cases := []struct {
+		name   string
+		ua     string
+		secHdr bool
+		want   bool
+	}{
+		{"browser UA, no sec-fetch (scripted)", chromeUA, false, true},
+		{"browser UA, with sec-fetch (real)", chromeUA, true, false},
+		{"non-browser UA (httpx default)", "python-httpx/0.27", false, false},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		r.Header.Set("User-Agent", c.ua)
+		if c.secHdr {
+			r.Header.Set("Sec-Fetch-Mode", "navigate")
+			r.Header.Set("Sec-Fetch-Site", "none")
+		}
+		if got := secFetchMissing(r); got != c.want {
+			t.Errorf("%s: secFetchMissing=%v want %v", c.name, got, c.want)
+		}
+	}
+}

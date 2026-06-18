@@ -6,7 +6,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from kitsune_vanilla.runner import VanillaError, run_once
+from kitsune_vanilla.runner import VanillaError, build_client, run_once
 
 
 def _client(handler) -> httpx.Client:
@@ -33,3 +33,15 @@ def test_run_once_without_cookie_raises() -> None:
 
     with _client(handler) as client, pytest.raises(VanillaError, match="ks_sid"):
         run_once("http://edge/", "http://detector", client=client)
+
+
+def test_build_client_default_has_no_faked_ua(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("KS_UA", raising=False)
+    with build_client() as client:
+        assert "User-Agent" not in client.headers or "httpx" in client.headers["user-agent"]
+
+
+def test_build_client_ks_ua_fakes_browser(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KS_UA", "Mozilla/5.0 Chrome/125.0.0.0")
+    with build_client() as client:
+        assert client.headers["user-agent"] == "Mozilla/5.0 Chrome/125.0.0.0"

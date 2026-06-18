@@ -10,6 +10,7 @@ forwards network signals to the detector), then reads the verdict back from the 
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import httpx
@@ -38,5 +39,12 @@ def run_once(edge_url: str, detector_url: str, *, client: httpx.Client) -> dict[
 
 
 def build_client() -> httpx.Client:
-    """An httpx client that accepts the edge's self-signed cert (lab-only)."""
-    return httpx.Client(verify=False, timeout=10.0, follow_redirects=True)
+    """An httpx client that accepts the edge's self-signed cert (lab-only).
+
+    ``KS_UA`` fakes a browser User-Agent over plain httpx (no Sec-Fetch headers) — the classic
+    UA-spoofing scripted client that the edge's ``net.sec_fetch_vs_ua`` HTTP-layer tell catches.
+    """
+    headers = {}
+    if ua := os.environ.get("KS_UA"):
+        headers["User-Agent"] = ua
+    return httpx.Client(verify=False, timeout=10.0, follow_redirects=True, headers=headers)

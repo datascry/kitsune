@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/datascry/kitsune/edge/internal/fingerprint"
@@ -66,6 +67,9 @@ func prepare(
 	if ip := clientIP(r); ip != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "observed_ip", ip, now))
 	}
+	if secFetchMissing(r) {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "sec_fetch_missing", true, now))
+	}
 	return out, nil
 }
 
@@ -75,6 +79,20 @@ func clientIP(r *http.Request) string {
 		return host
 	}
 	return r.RemoteAddr
+}
+
+// secFetchMissing reports a request whose User-Agent claims a modern browser but which omits the
+// Sec-Fetch metadata headers every such browser sends on real requests. A scripted HTTP client (the
+// volumetric-DDoS case) that fakes a browser UA over plain httpx/curl gives itself away here — an
+// HTTP-layer tell, independent of the TLS and JS layers.
+func secFetchMissing(r *http.Request) bool {
+	ua := r.Header.Get("User-Agent")
+	modernBrowser := strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Firefox/") ||
+		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
+	if !modernBrowser {
+		return false // a non-browser UA is a different (and weaker) signal; this rule targets fakery
+	}
+	return r.Header.Get("Sec-Fetch-Mode") == "" && r.Header.Get("Sec-Fetch-Site") == ""
 }
 
 // ReverseProxy is a transparent TLS edge in front of a backend app.
