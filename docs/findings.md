@@ -476,6 +476,18 @@ only (`en`, not `en-US`) so an `en-US` vs `en-GB` region nuance never false-posi
 different language, the shape an actual locale spoof takes. This is the cheapest possible instance of the
 core thesis: no new capture machinery, just two layers reporting the same fact and a check that they match.
 
+The **OS** is the same kind of value, and it splits even more cleanly. Chrome sets the
+`Sec-CH-UA-Platform` client-hint header from the *real* operating system at the network layer, when the
+request is sent. The common UA spoof — CDP `setUserAgent` (or a JS override) without the matching
+`userAgentMetadata` — rewrites `navigator.platform`/the UA string but **not** the header Chrome already
+emitted, so a bot running real Chrome on Linux while presenting as Windows sends `Sec-CH-UA-Platform:
+"Linux"` alongside a Windows `navigator` platform. `net.ch_platform_header_vs_ua` (cross-layer, 0.6) fires
+on that split. The edge normalises the header to the collector's exact OS vocabulary
+(Windows/macOS/Linux/Android) and emits nothing for values outside it (Chrome OS, iOS) — where the
+collector could not classify `ua_platform` either — so the two only ever compare like with like. Firefox
+and Safari never send the header, so the rule is naturally scoped to the Chromium UA-spoof case it targets
+and cannot false-positive on a non-Chromium browser.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

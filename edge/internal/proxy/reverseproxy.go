@@ -86,7 +86,27 @@ func prepare(
 	if lang := acceptLanguagePrimary(r); lang != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "accept_language_primary", lang, now))
 	}
+	// The OS the HTTP stack advertises via the Sec-CH-UA-Platform client hint. Chrome sets this from the
+	// real OS at the network layer, so a JS-only UA/platform spoof (CDP setUserAgent without
+	// userAgentMetadata) leaves it disagreeing with the spoofed navigator platform — a cross-layer tell.
+	if plat := secCHUAPlatform(r); plat != "" {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_platform_header", plat, now))
+	}
 	return out, nil
+}
+
+// secCHUAPlatform returns the Sec-CH-UA-Platform client-hint value normalised to the same OS vocabulary
+// the collector reports for browser.ua_platform (Windows/macOS/Linux/Android), or "" when the header is
+// absent or names an OS outside that vocabulary (Chrome OS, iOS) — emitting nothing there avoids a
+// spurious mismatch against a ua_platform the collector could not classify either.
+func secCHUAPlatform(r *http.Request) string {
+	v := strings.Trim(strings.TrimSpace(r.Header.Get("Sec-CH-UA-Platform")), `"`)
+	switch v {
+	case "Windows", "macOS", "Linux", "Android":
+		return v
+	default:
+		return ""
+	}
 }
 
 // acceptLanguagePrimary returns the lower-cased primary language subtag of the Accept-Language header

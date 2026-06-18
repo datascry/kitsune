@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.31.0"
+ruleset_version: "0.32.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -171,6 +171,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Cross-layer locale coherence; bot spoofs JS locale but not the HTTP stack"
+
+  - id: net.ch_platform_header_vs_ua
+    title: HTTP Sec-CH-UA-Platform contradicts the JS UA platform
+    layers: [network, browser]
+    reads: [network.ch_platform_header, browser.ua_platform]
+    predicate: not_equal
+    weight: 0.6
+    status: active
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Cross-layer OS coherence; JS-only UA spoof leaves Chrome's network client hint intact"
 
   - id: net.h2_settings_vs_order
     title: HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine

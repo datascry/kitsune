@@ -194,6 +194,45 @@ func TestPrepareEmitsAcceptLanguage(t *testing.T) {
 	}
 }
 
+func TestSecCHUAPlatform(t *testing.T) {
+	cases := map[string]string{
+		`"Windows"`:   "Windows",
+		`"macOS"`:     "macOS",
+		`"Linux"`:     "Linux",
+		`"Android"`:   "Android",
+		`"Chrome OS"`: "", // outside the ua_platform vocabulary → emit nothing rather than mismatch
+		`"iOS"`:       "",
+		"":            "",
+	}
+	for header, want := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		if header != "" {
+			r.Header.Set("Sec-CH-UA-Platform", header)
+		}
+		if got := secCHUAPlatform(r); got != want {
+			t.Errorf("Sec-CH-UA-Platform %q: got %q want %q", header, got, want)
+		}
+	}
+}
+
+func TestPrepareEmitsCHPlatform(t *testing.T) {
+	r := req(t, "abc")
+	r.Header.Set("Sec-CH-UA-Platform", `"macOS"`)
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, s := range prep.signals {
+		if s.Kind == "ch_platform_header" && s.Value == "macOS" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected ch_platform_header=macOS signal, got %+v", prep.signals)
+	}
+}
+
 func TestSecFetchMissing(t *testing.T) {
 	chromeUA := "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	cases := []struct {
