@@ -399,6 +399,30 @@ DEMO_PAGE = """<!doctype html>
     if (wo) sigs.push(S("browser", "webgl_os_hint", wo));
     if (/Chrome|Edg/.test(ua) && !window.chrome) sigs.push(S("browser", "chrome_object_missing", true));
     if (toStringTampered()) sigs.push(S("browser", "function_tostring_tampered", true));
+    // Native-function invariant check (deeper than function_tostring_tampered): a real built-in method is
+    // NOT a constructor (`new fn()` throws) and has no own `prototype` property. A Proxy/wrapper spoof can
+    // fake the "[native code]" toString yet violate these invariants. Only flag methods that CLAIM native.
+    try {
+      var natives = [navigator.permissions && navigator.permissions.query,
+                     HTMLCanvasElement.prototype.toDataURL,
+                     navigator.mediaDevices && navigator.mediaDevices.enumerateDevices,
+                     WebGLRenderingContext.prototype.getParameter, Function.prototype.bind];
+      for (var ni = 0; ni < natives.length; ni++) {
+        var fn = natives[ni];
+        if (typeof fn !== "function" || fn.toString().indexOf("[native code]") < 0) continue;
+        if (Object.prototype.hasOwnProperty.call(fn, "prototype")) { sigs.push(S("browser", "native_invariant_violated", true)); break; }
+        var ctor = false; try { new fn(); ctor = true; } catch (e) {}
+        if (ctor) { sigs.push(S("browser", "native_invariant_violated", true)); break; }
+      }
+    } catch (e) {}
+    // Electron process leak: a renderer exposing a Node `process` (type=renderer or versions.electron) is
+    // an Electron/automation runtime, never a real browser. Guarded to the Electron-specific markers so a
+    // webpack `process.env` shim does not trip it.
+    try {
+      if (typeof process !== "undefined" && process &&
+          ((process.versions && process.versions.electron) || process.type === "renderer"))
+        sigs.push(S("browser", "electron_process", true));
+    } catch (e) {}
     try {
       if (WebGLRenderingContext.prototype.getParameter.toString().indexOf("[native code]") < 0)
         sigs.push(S("browser", "webgl_getparameter_tampered", true));

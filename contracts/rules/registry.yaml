@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.59.0"
+ruleset_version: "0.60.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -67,6 +67,30 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "FingerprintJS BotD / bot.sannysoft.com: Electron/Node globals (Buffer/process/require/global), Playwright/Puppeteer hooks, and documentElement webdriver/selenium/driver attributes a real browser never exposes"
+
+  - id: br.electron_process
+    title: Renderer exposes a Node process object — Electron / automation runtime
+    layers: [browser]
+    reads: [browser.electron_process]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "FingerprintJS BotD process detector: a renderer with process.versions.electron or process.type==='renderer' is an Electron/automation runtime; a real browser has no Node process. Gated to Electron-specific markers so a webpack process.env shim does not trip it. Verified absent on real Chrome 136."
+
+  - id: br.native_invariant_violated
+    title: A built-in method claims native but violates native-function invariants
+    layers: [browser]
+    reads: [browser.native_invariant_violated]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: artifact
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "A real built-in method is not a constructor (new throws) and has no own 'prototype' (verified on Chrome 136). A Proxy/wrapper spoof can fake the '[native code]' toString yet violate these, so it catches tampering that function_tostring_tampered misses. Only methods claiming native are checked. Ref CreepJS lies/native suite."
 
   - id: br.screen_impossible
     title: Available screen area exceeds the physical screen (impossible geometry)

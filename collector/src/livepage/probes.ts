@@ -439,6 +439,44 @@ export function armCollector(): LiveCollector {
     if (wo) put("browser", "webgl_os_hint", wo);
     if (/Chrome|Edg/.test(ua) && !win()["chrome"]) put("browser", "chrome_object_missing", true);
     if (toStringTampered()) put("browser", "function_tostring_tampered", true);
+    // Native-function invariants: a real built-in is not a constructor and has no own `prototype`; a Proxy
+    // spoof faking the "[native code]" string can violate these. Only flag methods that claim native.
+    try {
+      const natives: unknown[] = [
+        navigator.permissions.query,
+        HTMLCanvasElement.prototype.toDataURL,
+        navigator.mediaDevices.enumerateDevices,
+        WebGLRenderingContext.prototype.getParameter,
+        Function.prototype.bind,
+      ];
+      for (const fn of natives) {
+        if (typeof fn !== "function" || !fn.toString().includes("[native code]")) continue;
+        if (Object.prototype.hasOwnProperty.call(fn, "prototype")) {
+          put("browser", "native_invariant_violated", true);
+          break;
+        }
+        let ctor = false;
+        try {
+          new (fn as new () => unknown)();
+          ctor = true;
+        } catch {
+          /* native methods correctly throw */
+        }
+        if (ctor) {
+          put("browser", "native_invariant_violated", true);
+          break;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    // Electron process leak: a renderer exposing a Node `process` is an Electron/automation runtime.
+    const proc = (win()["process"] ?? undefined) as
+      | { versions?: { electron?: string }; type?: string }
+      | undefined;
+    if (proc && (proc.versions?.electron || proc.type === "renderer")) {
+      put("browser", "electron_process", true);
+    }
     try {
       if (!WebGLRenderingContext.prototype.getParameter.toString().includes("[native code]")) {
         put("browser", "webgl_getparameter_tampered", true);
