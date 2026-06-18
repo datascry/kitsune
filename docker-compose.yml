@@ -1,0 +1,38 @@
+# docker-compose — run the live spine: detector + transparent edge proxy.
+# `docker compose up` starts blue; `docker compose --profile evaders run vanilla` fires the control.
+
+services:
+  detector:
+    build:
+      context: .
+      dockerfile: detector/Dockerfile
+    # No host port publish by default (services talk over the compose network); add
+    # `ports: ["8080:8080"]` to reach the detector from the host.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  edge:
+    build:
+      context: ./edge
+    environment:
+      KITSUNE_EDGE_ADDR: "0.0.0.0:8443"
+      KITSUNE_BACKEND: "http://detector:8080"
+      KITSUNE_DETECTOR: "http://detector:8080"
+    # Add `ports: ["8443:8443"]` to drive the edge from the host.
+    depends_on:
+      detector:
+        condition: service_healthy
+
+  # Red side — one-shot, only with `--profile evaders`.
+  vanilla:
+    build:
+      context: .
+      dockerfile: evaders/vanilla/Dockerfile
+    environment:
+      KITSUNE_EDGE: "https://edge:8443/healthz"
+      KITSUNE_DETECTOR: "http://detector:8080"
+    depends_on: [edge]
+    profiles: ["evaders"]

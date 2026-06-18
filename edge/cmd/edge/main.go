@@ -16,10 +16,23 @@ import (
 
 func main() {
 	addr := getenv("KITSUNE_EDGE_ADDR", "127.0.0.1:8081")
-	detectorURL := os.Getenv("KITSUNE_DETECTOR") // e.g. http://127.0.0.1:8080
+	detectorURL := os.Getenv("KITSUNE_DETECTOR") // e.g. http://detector:8080
+	backendURL := os.Getenv("KITSUNE_BACKEND")   // e.g. http://detector:8080
 
-	h := proxy.New(detectorURL, fingerprint.HintTable{}, session.NewID, time.Now)
-	log.Printf("kitsune edge listening on %s (detector=%q)", addr, detectorURL)
+	hints := fingerprint.HintTable{}
+
+	// Transparent TLS reverse-proxy mode when a backend is set; else the fingerprint HTTP service.
+	if backendURL != "" {
+		rp, err := proxy.NewReverseProxy(backendURL, detectorURL, hints)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("kitsune edge (https proxy) on %s -> %s (detector=%q)", addr, backendURL, detectorURL)
+		log.Fatal(rp.ListenAndServe(addr))
+	}
+
+	h := proxy.New(detectorURL, hints, session.NewID, time.Now)
+	log.Printf("kitsune edge (fingerprint api) on %s (detector=%q)", addr, detectorURL)
 	if err := http.ListenAndServe(addr, h); err != nil {
 		log.Fatal(err)
 	}

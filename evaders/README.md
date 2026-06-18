@@ -6,7 +6,7 @@ that maps directly onto the cross-layer incoherence thesis:
 
 | Evader | Lang | Status | Defeats | Seeds from (catalog) |
 |---|---|---|---|---|
-| `vanilla` | Python | stub | nothing (the control / detection floor) | httpx |
+| `vanilla` | Python | **live** | nothing (the control / detection floor) | httpx |
 | `stealth` | TypeScript | stub | browser-FP + CDP layers | Camoufox, patchright, fingerprint-suite |
 | `agent` | Python | stub | the **behavioral** layer (headline experiment) | browser-use, Claude Computer Use |
 | `go-tls` | Go | stub | the **network** (JA3/JA4) layer | uTLS, tls-client |
