@@ -24,7 +24,10 @@ rules:
     predicate: not_equal
     category: coherence
     weight: 0.6
-    status: active
+    # experimental: no live producer for tcp_os_hint yet — TCP/IP-stack fingerprinting needs raw-packet
+    # capture (CAP_NET_RAW / AF_PACKET) the userspace edge does not have. The rule + logic are validated;
+    # it activates once a packet-capture sidecar emits tcp_os_hint.
+    status: experimental
     added: "2026-06-17"
     last_validated: "2026-06-17"
     source: "Kitsune; cf. Vastel FP-Inconsistent (IMC 2025)"
@@ -292,7 +295,10 @@ rules:
     reads: [reputation.is_proxy_exit]
     predicate: present
     weight: 0.5
-    status: active
+    # experimental: no live producer yet — needs a proxy/VPN-exit reputation feed (X4BNet/MaxMind
+    # Anonymous-IP). The logic is sound and unit-tested; proxied clients are meanwhile caught code-only
+    # by net.webrtc_ip_vs_observed (WebRTC real-IP leak vs the observed proxy IP).
+    status: experimental
     category: reputation
     added: "2026-06-18"
     last_validated: "2026-06-18"
