@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/kitsune.jpg" alt="Kitsune — a nine-tailed fox spirit on a mountain ridge" width="320" />
+</p>
+
 # 🦊 Kitsune — a bot detection ⇄ evasion lab
 
 [![ci](https://github.com/datascry/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/ci.yml)
