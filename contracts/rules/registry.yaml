@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.45.0"
+ruleset_version: "0.46.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -55,6 +55,30 @@ rules:
     added: "2026-06-17"
     last_validated: "2026-06-18"
     source: "Akamai h2 fingerprint (Black Hat EU 2017)"
+
+  - id: br.native_function_tampered
+    title: A sensitive native API was overridden in JS (stealth patch beyond canvas)
+    layers: [browser]
+    reads: [browser.native_function_tampered]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS lie detection: a real browser's permissions.query / WebGL getParameter / getImageData / toBlob stringify to [native code]; a JS stealth override does not — generalises canvas_lie's toDataURL check"
+
+  - id: br.automation_globals
+    title: Automation-framework global or webdriver DOM attribute present
+    layers: [browser]
+    reads: [browser.automation_globals]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "FingerprintJS BotD / bot.sannysoft.com: Electron/Node globals (Buffer/process/require/global), Playwright/Puppeteer hooks, and documentElement webdriver/selenium/driver attributes a real browser never exposes"
 
   - id: net.h2_unknown_vs_ua
     title: Modern-browser UA but the HTTP/2 stack matches no known browser engine

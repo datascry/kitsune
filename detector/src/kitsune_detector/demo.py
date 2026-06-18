@@ -450,6 +450,35 @@ DEMO_PAGE = """<!doctype html>
       "__webdriver_script_fn", "_Selenium_IDE_Recorder", "_phantom", "callPhantom", "__nightmare",
       "domAutomation", "__driver_evaluate"];
     if (cdcKeys.some(function (k) { return k in window || k in document; })) sigs.push(S("browser", "cdc_artifacts", true));
+    // --- v0.46.0: detections mined from the survey (docs/landscape.md). ---
+    // CreepJS-style native-function tamper check: stealth tools override sensitive native APIs in JS, whose
+    // source no longer stringifies to "[native code]". Covers functions beyond canvas_lie's toDataURL.
+    var nativeTampered = (function () {
+      var ts = Function.prototype.toString;
+      var fns = [];
+      try { fns.push(navigator.permissions && navigator.permissions.query); } catch (e) {}
+      try { fns.push(WebGLRenderingContext.prototype.getParameter); } catch (e) {}
+      try { fns.push(CanvasRenderingContext2D.prototype.getImageData); } catch (e) {}
+      try { fns.push(HTMLCanvasElement.prototype.toBlob); } catch (e) {}
+      try { fns.push(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices); } catch (e) {}
+      for (var i = 0; i < fns.length; i++) {
+        if (typeof fns[i] === "function") {
+          try { if (ts.call(fns[i]).indexOf("[native code]") < 0) return true; } catch (e) { return true; }
+        }
+      }
+      return false;
+    })();
+    if (nativeTampered) sigs.push(S("browser", "native_function_tampered", true));
+    // FingerprintJS BotD / bot.sannysoft.com: Electron/Node globals, Playwright/Puppeteer hooks, and
+    // webdriver attributes on documentElement — none of which a real browser on this (own) page exposes.
+    var autoGlobals = ["Buffer", "process", "global", "require", "__playwright__", "__pw_manual",
+      "__puppeteer_evaluation_script__", "__puppeteer__", "_playwright", "fmget_targets"];
+    var autoHit = autoGlobals.some(function (k) { return k in window; });
+    try {
+      var de = document.documentElement;
+      autoHit = autoHit || ["webdriver", "selenium", "driver"].some(function (a) { return de.getAttribute(a) !== null; });
+    } catch (e) {}
+    if (autoHit) sigs.push(S("browser", "automation_globals", true));
     try { if (!document.createElement("canvas").getContext("webgl2")) sigs.push(S("browser", "webgl2_missing", true)); } catch (e) {}
     // --- v0.23.0 wave: WebGPU (the emerging GPU fingerprint vector). Explore what the engine exposes;
     // a spoof that fixes the WebGL renderer may leave the WebGPU adapter (vendor/architecture/fallback)

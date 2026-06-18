@@ -283,6 +283,8 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.network, "tls_no_grease", True, Source.edge)], "net.tls_grease_vs_ua"),
         ([(Layer.network, "tls_no_pq_keyshare", True, Source.edge)], "net.tls_pq_keyshare_vs_ua"),
         ([(Layer.network, "h2_engine_unknown", True, Source.edge)], "net.h2_unknown_vs_ua"),
+        ([(Layer.browser, "native_function_tampered", True, Source.collector)], "br.native_function_tampered"),
+        ([(Layer.browser, "automation_globals", True, Source.collector)], "br.automation_globals"),
         ([(Layer.network, "ch_ua_mobile_mismatch", True, Source.edge)], "net.ch_ua_mobile_vs_ua"),
         (
             [(Layer.network, "ch_ua_no_grease_brand", True, Source.edge)],
