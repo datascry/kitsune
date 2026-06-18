@@ -503,6 +503,27 @@ export function armCollector(): LiveCollector {
     } catch {
       /* ignore */
     }
+    // measureText main-vs-OffscreenCanvas coherence: same engine, so identical on a real browser (verified
+    // on Chrome). A tool hooking main-thread measureText to spoof fonts but not OffscreenCanvas diverges.
+    try {
+      if (typeof OffscreenCanvas !== "undefined") {
+        const probe = "mmMwWLil10Oo gjpqy 文字";
+        const f = "16px sans-serif";
+        const main = document.createElement("canvas").getContext("2d");
+        const off = new OffscreenCanvas(300, 80).getContext("2d");
+        if (main && off) {
+          main.font = f;
+          off.font = f;
+          const m1 = main.measureText(probe);
+          const m2 = off.measureText(probe);
+          if (m1.width !== m2.width || m1.actualBoundingBoxAscent !== m2.actualBoundingBoxAscent) {
+            put("browser", "measuretext_offscreen_divergence", true);
+          }
+        }
+      }
+    } catch {
+      /* ignore */
+    }
     try {
       if (!WebGLRenderingContext.prototype.getParameter.toString().includes("[native code]")) {
         put("browser", "webgl_getparameter_tampered", true);

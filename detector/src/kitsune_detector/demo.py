@@ -441,6 +441,20 @@ DEMO_PAGE = """<!doctype html>
       document.documentElement.removeChild(dre);
       if (!drDet || !drCons) sigs.push(S("browser", "domrect_invariant_violated", true));
     } catch (e) {}
+    // measureText main-vs-OffscreenCanvas coherence: both use the same engine font metrics, so on a real
+    // browser they are identical (verified width 390.34375 == on Chrome). A tool that hooks main-thread
+    // CanvasRenderingContext2D.measureText to spoof fonts (e.g. Camoufox) but not the OffscreenCanvas path
+    // diverges — an incomplete-spoof tell a real browser never trips.
+    try {
+      if (typeof OffscreenCanvas !== "undefined") {
+        var mtProbe = "mmMwWLil10Oo gjpqy 文字", mtFont = "16px sans-serif";
+        var mtMain = document.createElement("canvas").getContext("2d"); mtMain.font = mtFont;
+        var mtOff = new OffscreenCanvas(300, 80).getContext("2d"); mtOff.font = mtFont;
+        var m1 = mtMain.measureText(mtProbe), m2 = mtOff.measureText(mtProbe);
+        if (m1.width !== m2.width || m1.actualBoundingBoxAscent !== m2.actualBoundingBoxAscent)
+          sigs.push(S("browser", "measuretext_offscreen_divergence", true));
+      }
+    } catch (e) {}
     try {
       if (WebGLRenderingContext.prototype.getParameter.toString().indexOf("[native code]") < 0)
         sigs.push(S("browser", "webgl_getparameter_tampered", true));

@@ -61,5 +61,6 @@ valuable but need careful calibration against the real-browser corpus before shi
 - ✅ `br.electron_process`
 - ✅ `br.native_invariant_violated`
 - ✅ `br.domrect_invariant`
+- ✅ `br.measuretext_offscreen_vs (measuretext gap)`
 
 _Skipped: `br.stack_tool_marker` — the collector runs as the page's own inline script, so its Error().stack is clean regardless of automation (can't fire here)._

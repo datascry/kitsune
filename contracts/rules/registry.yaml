@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.61.0"
+ruleset_version: "0.62.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1078,6 +1078,18 @@ rules:
     added: "2026-06-19"
     last_validated: "2026-06-19"
     source: "On a real engine getBoundingClientRect is deterministic (two reads of an unchanged element are identical — pages depend on it) and a single-rect element's getClientRects()[0] equals it (verified on Chrome 136). A per-call DOMRect-noise shim breaks determinism; a tool hooking one geometry path but not the other breaks consistency. FP-safe: determinism is a hard invariant no real browser (incl. farblers, which use stable per-session offsets) violates. Ref CreepJS domrect."
+
+  - id: br.measuretext_offscreen_vs
+    title: Canvas measureText differs between main and OffscreenCanvas — main-thread font hook
+    layers: [browser]
+    reads: [browser.measuretext_offscreen_divergence]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: artifact
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "Main CanvasRenderingContext2D.measureText and OffscreenCanvas measureText use the same engine font metrics, so they are identical on a real browser (verified width 390.34375 == on Chrome 136). A tool that hooks the main-thread path to spoof fonts (e.g. Camoufox) but not OffscreenCanvas diverges — the incomplete-spoof tell from the catalog's measureText gap. FP-safe (a real browser never diverges); gated on OffscreenCanvas support."
 
 
   - id: br.media_devices_empty
