@@ -5,6 +5,13 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.0.2](https://github.com/datascry/kitsune/compare/v1.0.1...v1.0.2) (2026-06-18)
+
+
+### Bug Fixes
+
+* **security:** bump h2-rapid-reset x/net 0.38 -&gt; 0.56 — clears 9 x/net CVEs ([9eb0b94](https://github.com/datascry/kitsune/commit/9eb0b94c62df82821b86a9b02ec377bd5f52d99d))
+
 ## [1.0.1](https://github.com/datascry/kitsune/compare/v1.0.0...v1.0.1) (2026-06-18)
 
 
