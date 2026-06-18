@@ -483,6 +483,14 @@ DEMO_PAGE = """<!doctype html>
           if (Math.abs(implied - dnow.getTimezoneOffset()) > 1)
             sigs.push(S("browser", "timezone_inconsistent", true));
         }
+        // resistFingerprinting (Tor Browser / Mullvad / RFP-Firefox) evades by making every user look
+        // IDENTICAL: it forces the timezone to UTC, letterboxes the content window to 200x100 multiples,
+        // and clamps hardwareConcurrency to 2. Each trait alone is common (a UK user, a round window, a
+        // 2-core VM); all three together is the RFP signature — so require the conjunction, not any one.
+        var rfpUTC = tz === "UTC";
+        var rfpBox = window.innerWidth > 0 && window.innerWidth % 200 === 0 && window.innerHeight % 100 === 0;
+        var rfpCores = (navigator.hardwareConcurrency || 99) <= 2;
+        if (rfpUTC && rfpBox && rfpCores) sigs.push(S("browser", "rfp_browser", true));
       }
     } catch (e) {}
     // --- v0.15.0 wave: media-capability gaps (audio fingerprint + media-device enumeration) ---

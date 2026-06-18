@@ -9,6 +9,14 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **resistFingerprinting (Tor/Mullvad) detection** (ruleset 0.25.0) — `br.rfp_browser`, covering the last
+  anti-fingerprinting *philosophy* (RFP evades by making all users identical, the opposite of Camoufox's
+  coherent uniqueness). From the Tor design doc: RFP forces UTC, letterboxes the window to 200×100
+  multiples, and clamps `hardwareConcurrency` to 2. Each trait alone is common (a UK user, a round window,
+  a 2-core VM), so the collector requires the **conjunction** — confirmed no false positive on real
+  evaders (their windows aren't letterboxed). Calibrated as `suspicious` (weight 0.4), *not* a `bot`
+  conviction: RFP identifies a privacy browser = elevated risk, and Tor users are often human — it
+  corroborates with automation/coordination rather than convicting alone.
 - **undetected-chromedriver evaluated** — the most popular anti-detect tool (only its successor nodriver
   had been tested). **Finding:** UC has evolved to defeat the SOTA `Runtime.enable` leak
   (`cdp_runtime_enabled` does not fire) and patches `navigator.webdriver` — so the *entire* popular tool
