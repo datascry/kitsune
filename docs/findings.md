@@ -82,6 +82,29 @@ nothing, because the conviction never depended on that rule. Stacking automation
 the environment floor is the wall. (Container note: like undetected-chromedriver it needs
 `--disable-dev-shm-usage` and an explicit `--headless=new` or Chrome never connects.)
 
+**pydoll closes the survey — the third independent evasion of `Runtime.enable`, same wall.** `pydoll` is
+the last distinct family: async, CDP-native, no webdriver, marketed for Turnstile/Cloudflare bypass.
+Captured live it is the *third* tool — after selenium-driverless and the patched-Playwright drop-ins — to
+defeat `br.cdp_runtime_enabled` (does not fire) and ship no `webdriver` tell, and it scores `bot` at 0.999
+on the identical environment floor. Three unrelated codebases independently beating the SOTA automation
+signal while none escapes the floor is the strongest evidence the lab can offer that the conclusion is
+*structural*, not an artifact of one tool: page automation can be made invisible, but a headless browser
+on no real GPU, with no OS speech voices and no enumerable media devices, cannot be made to look like a
+person's machine without *being* one. That is the finding the whole survey converges on, and pydoll is
+where it stops being a claim about specific tools and becomes a claim about the category.
+
+### Survey coverage — every open-source family, one conclusion
+
+The evaluated fleet now spans every open-source anti-detect family: scripted HTTP (vanilla/httpx),
+Playwright stealth (naive → max-stealth, spoof-ua, human-mouse), CDP-leak patch drop-ins (patchright,
+rebrowser), CDP-native automation (nodriver, zendriver, pydoll), isolated-world Selenium (undetected,
+selenium-driverless), engine-level coherent spoof (Camoufox ×3 modes), and privacy/farbling browsers
+(Brave; Tor/Mullvad RFP). Every one is `bot`. The tools differ enormously on the *automation surface* —
+some leak `webdriver` and `Runtime.enable`, the best leak neither — but the verdict is decided below that
+surface, on the environment floor and (for coordinated fleets) on cross-instance incoherence. Tool
+breadth has reached the point of diminishing returns: new captures now confirm the structural conclusion
+rather than testing it.
+
 ### CSP bypass — a tell the patches themselves admit they can't fix
 
 Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every

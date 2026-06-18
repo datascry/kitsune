@@ -49,6 +49,7 @@ run_tool kitsune-camoufox camoufox
 run_tool kitsune-nodriver nodriver
 run_tool kitsune-zendriver zendriver
 run_tool kitsune-selenium-driverless selenium-driverless
+run_tool kitsune-pydoll pydoll
 
 ARGS=(
   "vanilla=$OUT/vanilla.json"
