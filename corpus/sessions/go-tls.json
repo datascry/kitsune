@@ -1,0 +1,123 @@
+{
+  "schema_version": "0.1",
+  "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+  "remote_ip": null,
+  "first_seen": "2026-06-18T15:04:35Z",
+  "last_seen": "2026-06-18T15:04:35Z",
+  "request_count": 12,
+  "signals": {
+    "network": [
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ja3",
+        "value": "ac6fe9b9fd9d69439ceb77680c6d1e13",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ja4",
+        "value": "t13d1516h2_8daaf6152771_02713d6af862",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ja4_browser_hint",
+        "value": "chrome",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ja4_os_hint",
+        "value": "windows",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "tls_no_pq_keyshare",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "h2",
+        "value": "2:0;4:4194304;6:10485760|1073741824|0|a,m,p,s",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "observed_ip",
+        "value": "172.22.0.4",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "accept_language_primary",
+        "value": "en",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ch_platform_header",
+        "value": "Linux",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ch_ua_browser",
+        "value": "chrome",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "ua_kernel",
+        "value": "linux",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "f6db19e1b15a1c9f9ab61f72c65eea30",
+        "layer": "network",
+        "kind": "tcp_kernel",
+        "value": "linux",
+        "source": "edge",
+        "observed_at": "2026-06-18T15:04:35Z"
+      }
+    ],
+    "browser": [],
+    "behavioral": [],
+    "reputation": []
+  }
+}

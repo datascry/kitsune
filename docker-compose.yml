@@ -53,3 +53,13 @@ services:
       KITSUNE_DETECTOR: "http://detector:8080"
     depends_on: [edge]
     profiles: ["evaders"]
+
+  # Go/uTLS forged-ClientHello impersonator over HTTP/2 (Chrome JA3/JA4, no JS).
+  go-tls:
+    build:
+      context: .
+      dockerfile: evaders/go-tls/Dockerfile
+    environment:
+      KITSUNE_EDGE: "https://edge:8443/healthz"
+    depends_on: [edge]
+    profiles: ["evaders"]

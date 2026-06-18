@@ -637,6 +637,23 @@ disables the group — is why it is kept **experimental**, not active (GREASE, u
 neither limitation). Scoping to `≥131` also means a genuinely older Chrome, which legitimately sends no PQ
 group, is never flagged.
 
+**The dedicated impersonation libraries split on exactly this axis — confirmed live.** Two of them, both
+faithful enough to silence every other TLS/HTTP tell, land on opposite sides:
+
+- **`primp`** (`chrome_146`, Rust/BoringSSL) **sends** `X25519MLKEM768` → `tls_pq_keyshare_vs_ua` stays
+  silent. It tracks current Chrome and is caught only on `no_js_execution` + `tcp_os_vs_ua`.
+- **`go-tls`** (Go + `uTLS` v1.6.7, `HelloChrome_Auto`, now driven over HTTP/2 with a full Chrome header
+  set) **omits** the PQ group → `tls_pq_keyshare_vs_ua` **fires** (`corpus/sessions/go-tls.json`, `bot`).
+  uTLS's pinned Chrome profile predates the MLKEM rollout, so the most popular Go impersonation library is
+  a stale template by exactly this measure.
+
+The sharp part: `go-tls`'s **JA4 is byte-identical to real Chrome's and to primp's** (`t13d1516h2_8daaf6152771_…`).
+JA4 hashes the extension *types* and signature algorithms, not the `supported_groups` *contents* — so the
+missing MLKEM group is invisible to JA4 yet caught by the PQ check. This is precisely the "robust to JA4
+drift" value the rule was built for: it sees a sub-JA4 difference that the fingerprint hash cannot. (The
+forged HTTP/2 layer is Go's, not Chrome's, but that residual did not surface as its own tell here — uTLS
+forges the ClientHello, not the h2 stack.)
+
 …unless you make the shape perfectly. `curl-impersonate` (via `curl_cffi`) is the other end of the
 scripted spectrum: it reproduces a real Chrome ClientHello (JA3/JA4), the Chrome HTTP/2 SETTINGS and
 pseudo-header order, and the *full* browser header set — `Sec-Fetch-*`, `Sec-CH-UA(-Platform)`,
