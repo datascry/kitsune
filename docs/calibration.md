@@ -46,6 +46,18 @@ a convicting coherence/automation/artifact signal; cap the environment contribut
 or pruning the offenders above — and then this calibration becomes a **regression gate**: no future rule
 (including anything the enumeration fleet surfaces) may push the legitimate-browser flag rate back up.
 
+## Methodology validation (not just browserforge)
+
+browserforge is one generated distribution, not ground truth — so the mapper itself is validated against a
+**real browser**: a live headless Chromium's actual fingerprint, run through `signals_from_fingerprint`,
+produces exactly the signals the real `demo.py` collector emits for that browser — the container's
+environment tells (`webgl_software`, `media_devices_empty`, `mimetypes_empty`, `no_plugins`,
+`no_pdfviewer`), `ch_he_headless`, `webdriver_present`, and **zero spurious coherence** (webgl-OS /
+platform / CH-version all agree). So the FP rates measured here are a property of the *rules*, not of a
+broken fingerprint→signal mapping. A second independent **data source** (Tier-2: headful Chromium/Firefox/
+WebKit; Tier-3: real-device matrix) is still required before any rule is pruned/down-weighted on a
+single-source FP number — corroborate across sources first.
+
 ## Honest scope
 
 browserforge lacks a few signals (speech-synthesis voices, `getHighEntropyValues` runtime, WebRTC), so
