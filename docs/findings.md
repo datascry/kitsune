@@ -204,6 +204,28 @@ So even a maximally config-hardened Camoufox is still `bot` per-session — redu
 spoof-specific catches to one, but not zero — on top of the environment floor. The irreducible tell is
 the renderer artifact: it is in Camoufox's shipped data, fixable only by patching the tool itself.
 
+### The capstone — maximal stealth on both engines hits the same floor
+
+Running the most-evasive build of each engine through the detector (`MAX_STEALTH=1` is patchright + a
+coherent Linux-Chrome UA + human-mouse motion; `camoufox-hardened` is the Camoufox config red-team):
+
+| Evader | coherence | artifact | automation | environment | verdict |
+| --- | --- | --- | --- | --- |
+| `baseline-firefox` (no spoof) | 0 | 0 | 1 | 5 | `bot` |
+| `camoufox-hardened` (max Firefox stealth) | 0 | 1 | 0 | 3 | `bot` |
+| `max-stealth` (max chromium stealth) | 0 | 0 | 4 | 6 | `bot` |
+
+`max-stealth` shows every layer of evasion *working*: the Linux-Chrome UA removes `headless_ua`, the
+human-mouse motion zeroes the behavioral column, and patchright closes `Runtime.enable` + `webdriver`.
+Yet it is still `bot` — caught by the **environment floor** (`webgl_software`, `no_plugins`,
+`media_devices_empty`, `voices_empty`, `mimetypes_empty`, `no_pdfviewer`) plus the residual automation
+surface Chromium cannot fully hide. Camoufox-hardened closes *more* of the environment (engine-level
+spoofing, fewer Chrome-specific strip tells) but cannot shed its one artifact.
+
+**Both engines, maximally stealthed, converge on the same conclusion:** per-session evasion is a game of
+attrition the evader loses — the headless *environment* is the irreducible floor, and beneath even that,
+**coordination** is the backstop a single perfect instance cannot escape. That is the thesis, end to end.
+
 ### White-box analysis — reading Camoufox's source
 
 Camoufox is open source, so we do not have to probe it as a black box. Reading the installed `camoufox`

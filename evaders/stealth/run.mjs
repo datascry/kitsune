@@ -9,6 +9,9 @@ const SPOOF_UA = process.env.SPOOF_UA; // e.g. a Firefox UA, while the real TLS 
 const PATCHRIGHT = process.env.PATCHRIGHT === "1"; // CDP-patched anti-detect drop-in for Playwright
 const REBROWSER = process.env.REBROWSER === "1"; // rebrowser-patches: another Runtime.enable-leak fix
 const HUMAN_MOUSE = process.env.HUMAN_MOUSE === "1"; // synthesize human-like motion vs the naive path
+// MAX_STEALTH: the kitchen sink — patchright (best CDP stealth) + a coherent Linux-Chrome UA (no headless
+// token) + human-like motion. The chromium analog of hardened-Camoufox: what survives maximal stealth.
+const MAX_STEALTH = process.env.MAX_STEALTH === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -35,7 +38,7 @@ async function humanMove(page, from, to) {
 }
 
 // patchright / rebrowser-playwright are API-compatible playwright drop-ins; swap the engine at runtime.
-const engine = PATCHRIGHT ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
+const engine = PATCHRIGHT || MAX_STEALTH ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
 const { chromium } = await import(engine);
 
 const CHROME_UA =
@@ -44,10 +47,13 @@ const CHROME_UA =
 const LINUX_CHROME_UA =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
-const userAgent = SPOOF_UA || (FULL ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
-const evading = STEALTH || FULL || Boolean(SPOOF_UA);
-const mode = HUMAN_MOUSE
-  ? "human-mouse"
+const userAgent =
+  SPOOF_UA || (MAX_STEALTH || FULL ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
+const evading = STEALTH || FULL || MAX_STEALTH || Boolean(SPOOF_UA);
+const mode = MAX_STEALTH
+  ? "max-stealth"
+  : HUMAN_MOUSE
+    ? "human-mouse"
   : PATCHRIGHT
     ? "patchright"
     : REBROWSER
@@ -91,7 +97,7 @@ if (FULL) {
 
 const page = await context.newPage();
 await page.goto(EDGE, { waitUntil: "load" });
-if (HUMAN_MOUSE) {
+if (HUMAN_MOUSE || MAX_STEALTH) {
   // A few realistic curved moves between random targets — the behavioral evasion frontier.
   let pos = { x: 120, y: 140 };
   for (let i = 0; i < 4; i++) {

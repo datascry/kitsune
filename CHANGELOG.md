@@ -9,6 +9,12 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Max-stealth chromium evader (`MAX_STEALTH=1`)** — the kitchen sink (patchright + a coherent
+  Linux-Chrome UA + human-mouse motion), the chromium analog of `camoufox-hardened`. Every evasion layer
+  works (UA removes `headless_ua`, human-mouse zeroes behavioral, patchright closes `Runtime.enable` +
+  `webdriver`), yet it is still `bot` on the environment floor (`automation:4` + `environment:6`). The
+  capstone: maximal stealth on *both* engines converges on the headless environment as the irreducible
+  floor, with coordination beneath it — documented in `docs/findings.md`.
 - **HTTP/2 fingerprint core** (`edge/internal/fingerprint/h2.go`) — the Akamai-style h2 fingerprint
   (`SETTINGS | WINDOW_UPDATE | PRIORITY | pseudo-header-order`) plus an engine classifier keyed on the
   version-stable pseudo-header order (Chromium `m,a,s,p`, Firefox `m,p,a,s`, Safari `m,s,p,a`), and a
