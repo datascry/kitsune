@@ -37,6 +37,9 @@ All notable changes to Kitsune are documented here. The format follows
   (`bot`, 0.80) — the thesis, demonstrated.
 - **Coherence registry v0.2.0** — added HTTP/2-vs-TLS, headless-UA, keystroke-entropy, and
   proxy/Tor-exit rules.
+- **Unified live scoreboard** — `harness.live`/`liveboard` fold every evader's live verdict into one
+  dated board; `scripts/live_scoreboard.sh` runs the whole fleet against the running stack and writes
+  `docs/scoreboard.md` (vanilla → stealth → agent in one table).
 - **docs/catalog.md** — opinionated catalog of ~70 relevant projects across the arms race.
 
 [Unreleased]: https://github.com/datascry/kitsune/commits/main
