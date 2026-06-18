@@ -1,0 +1,12 @@
+{
+  "name": "@kitsune/stealth",
+  "version": "0.1.0",
+  "description": "Stealth evader: drives a real browser through the edge (run in the Playwright image).",
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  }
+}

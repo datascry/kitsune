@@ -54,7 +54,8 @@ func prepare(
 			return out, err
 		}
 		out.sessionID = id
-		out.setCookie = &http.Cookie{Name: session.CookieName, Value: id, Path: "/", HttpOnly: true}
+		// Not HttpOnly: the in-page collector reads ks_sid to tag its telemetry with the session.
+		out.setCookie = &http.Cookie{Name: session.CookieName, Value: id, Path: "/"}
 	}
 	if hello != nil {
 		out.signals = signal.FromClientHello(out.sessionID, hello, hints, now)

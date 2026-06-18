@@ -57,3 +57,10 @@ def test_create_app_defaults() -> None:
     # exercise the default Detector()/Store() construction branch
     client = TestClient(create_app())
     assert client.get("/healthz").status_code == 200
+
+
+def test_index_serves_collector(client: TestClient) -> None:
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "navigator.webdriver" in resp.text
+    assert "/ingest" in resp.text

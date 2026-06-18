@@ -11,8 +11,10 @@ the whole surface is testable in-memory with no network.
 from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 
 from .detector import Detector
+from .demo import DEMO_PAGE
 from .models import Signal, Verdict
 from .store import Store
 
@@ -21,6 +23,11 @@ def create_app(detector: Detector | None = None, store: Store | None = None) -> 
     detector = detector or Detector()
     store = store or Store(":memory:")
     app = FastAPI(title="Kitsune Detector", version="0.1.0")
+
+    @app.get("/", response_class=HTMLResponse)
+    def index() -> str:
+        # Served (via the edge) to a real browser; the inline collector posts signals to /ingest.
+        return DEMO_PAGE
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:

@@ -1,31 +1,40 @@
-# evaders/stealth — anti-detect browser evader (Camoufox / Playwright)
+# evaders/stealth — anti-detect browser evader (Playwright, real)
 
-Status: **design stub.** The structure and integration are specified here; the implementation needs a
-real browser runtime (Camoufox binary + Playwright), which is why it is not yet wired or tested in CI.
+Status: **live** ✅ — drives a real Chromium through the edge and is scored by the detector. Runs in
+the official Playwright Docker image (no local browser needed).
 
-## Design
+## What it does
 
-Drive a hardened browser through the edge so the detector sees a *coherent* fingerprint that beats
-the browser-FP and CDP layers, while the collector still runs in-page:
+Launches Chromium, navigates the edge (which fingerprints the TLS handshake + serves the collector
+page), moves the pointer, lets the in-page collector post browser+behavioral signals, then reads the
+verdict back by `ks_sid`. Two modes:
 
+- **naive** — plain automation; leaks `navigator.webdriver` and a HeadlessChrome UA.
+- **stealth** (`STEALTH=1`) — patches `navigator.webdriver` and presents a real Chrome UA.
+
+## Measured result (real browser, live stack)
+
+| mode | browser score | label | contradictions |
+|---|---|---|---|
+| naive | **0.985** | bot | `br.webdriver_present`, `br.headless_ua` |
+| stealth | **0.00** | human | none |
+
+The detector catches naive automation; the stealth evader defeats the browser layer. This is the
+`vanilla → naive → stealth` arms-race story, end-to-end.
+
+## Run
+
+```sh
+docker compose up -d --build detector edge
+docker run --rm --network kitsune_default \
+  -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
+  -v "$PWD/evaders/stealth":/work -w /work \
+  mcr.microsoft.com/playwright:v1.48.0-jammy \
+  bash -c "npm i -s playwright@1.48.0; node run.mjs; STEALTH=1 node run.mjs"
 ```
-stealth (Camoufox) ──HTTPS──▶ edge (JA3/JA4 + ks_sid) ──▶ detector app (serves collector.js)
-        │                                                          │
-        └── in-page collector posts browser+behavioral signals ────┘  (same ks_sid)
-```
 
-It implements the harness `Scenario` surface: launch the browser, navigate to the edge, let the
-page's collector report, then read the verdict back by `ks_sid`.
+## Next (phase 3)
 
-## Seeds (from `docs/catalog.md` §7)
-
-- **Camoufox** — C++-level fingerprint spoofing (defeats JS-probe detection). Primary engine.
-- **patchright** — isolated ExecutionContexts to neutralise the `Runtime.enable` CDP leak.
-- **fingerprint-suite / BrowserForge** — coherent fingerprint + header generation.
-- **ghost-cursor** + human-typing — behavioral input so the behavioral layer doesn't trip.
-
-## Why it beats the lower rungs
-
-It produces a coherent fingerprint *and* (with human-input sim) plausible behavior — so unlike
-`vanilla`/`go-tls` it can push the browser layer scores down. The expected scoreboard story is
-`vanilla → stealth` showing the browser/CDP layers drop. Building this is phase 3.
+Swap Chromium for **Camoufox** (C++-level fingerprint spoofing) + **patchright** (CDP-leak patching)
++ **ghost-cursor**/human-typing, per `docs/catalog.md` §7 — to also beat deeper fingerprint and CDP
+checks, not just the `webdriver`/UA tells.
