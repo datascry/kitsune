@@ -602,13 +602,28 @@ recent enough that an older template still carries GREASE and a plausible JA3 ye
 `net.tls_pq_keyshare_vs_ua` fires when a UA claiming **Chrome ≥131** rides a handshake with no PQ group:
 the edge already parses `supported_groups` for JA3, so the check is `HasPostQuantumKeyShare()` against the
 UA's claimed version. It is the rare tell that *forces the impersonator to track Chrome's release cadence*
-— a stale template is caught even though every classical field is perfect. It is kept **experimental**,
-not active, for an honest reason: a corporate TLS-inspection proxy re-originates the handshake (so the
-edge sees the proxy's PQ-less ClientHello under a real Chrome UA), and `PostQuantumKeyAgreementEnabled=false`
-enterprise policy disables it — both genuine, if narrow, false-positive sources that GREASE (universal
-since Chrome 55) does not share. Scoping to `≥131` also means a genuinely older Chrome, which legitimately
-sends no PQ group, is never flagged. The corpus carries no PQ-less capture yet, so it reads 0 there until
-a stale-template client (an outdated `curl-impersonate`/`utls` profile) is recorded.
+— a stale template is caught even though every classical field is perfect.
+
+**Live validation sharpened the claim — and narrowed it.** Running the stack against two real clients with
+a Chrome/131 UA showed the tell catches only stacks pinned to a **pre-2025 template**, not scripted clients
+in general:
+
+- A plain `httpx` client over its base image's **OpenSSL 3.5.6** (the current `python:3.12-slim`) sends
+  `X25519MLKEM768` *by default*, so `HasPostQuantumKeyShare()` is true and the rule correctly **stays
+  silent** — even though every HTTP-layer tell (`sec_fetch`, `accept_encoding`, `no_js_execution`) still
+  convicts it. OpenSSL 3.5+ and Go 1.24+ ship the PQ group, so a *current* generic TLS stack is no longer
+  distinguishable from Chrome here. This is the opposite of what an earlier draft of this section assumed.
+- Forcing a **classical-only** handshake (`curl --curves X25519`, the shape an outdated `curl-impersonate`/
+  `utls`/BoringSSL profile or a Go ≤1.23 client produces) under the same Chrome/131 UA **fires**
+  `tls_pq_keyshare_vs_ua` and scores `bot` — captured live as `corpus/sessions/tls-stale-template.json`.
+
+So the rule is precise but **scoped to template lag**: it convicts a TLS stack pinned to Chrome <124-era
+groups, and says nothing about a stack that tracks current OpenSSL/Go. That, plus the false-positive sources
+it *does* share — a corporate TLS-inspection proxy re-originates the handshake (the edge sees the proxy's
+PQ-less ClientHello under a real Chrome UA), and `PostQuantumKeyAgreementEnabled=false` enterprise policy
+disables the group — is why it is kept **experimental**, not active (GREASE, universal since Chrome 55, has
+neither limitation). Scoping to `≥131` also means a genuinely older Chrome, which legitimately sends no PQ
+group, is never flagged.
 
 …unless you make the shape perfectly. `curl-impersonate` (via `curl_cffi`) is the other end of the
 scripted spectrum: it reproduces a real Chrome ClientHello (JA3/JA4), the Chrome HTTP/2 SETTINGS and

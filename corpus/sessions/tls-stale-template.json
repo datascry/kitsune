@@ -1,0 +1,105 @@
+{
+  "schema_version": "0.1",
+  "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+  "remote_ip": null,
+  "first_seen": "2026-06-18T14:15:08Z",
+  "last_seen": "2026-06-18T14:15:08Z",
+  "request_count": 10,
+  "signals": {
+    "network": [
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "ja3",
+        "value": "42ad05524f3d7c6742fafc454fc185b0",
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "ja4",
+        "value": "t13d3013h2_1d37bd780c83_ca8c3d3b341e",
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "tls_no_grease",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "tls_no_pq_keyshare",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "h2",
+        "value": "3:100;4:65536;2:0|1048510465|0|m,s,a,p",
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "observed_ip",
+        "value": "172.22.0.4",
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "sec_fetch_missing",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "accept_encoding_no_brotli",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "ua_kernel",
+        "value": "windows",
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "45e4fffcbdd466685e80adffe1e611d8",
+        "layer": "network",
+        "kind": "tcp_kernel",
+        "value": "linux",
+        "source": "edge",
+        "observed_at": "2026-06-18T14:15:08Z"
+      }
+    ],
+    "browser": [],
+    "behavioral": [],
+    "reputation": []
+  }
+}

@@ -1118,7 +1118,7 @@ rules:
     category: coherence
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "Chrome 131+ sends X25519MLKEM768 (124-130 the Kyber768 draft) in supported_groups by default; a static impersonation template (curl-impersonate/utls/crypto-tls) pinned to an older Chrome lags it. Experimental: a corporate TLS-inspection proxy or PostQuantumKeyAgreementEnabled=false also strips the group."
+    source: "Chrome 131+ sends X25519MLKEM768 (124-130 the Kyber768 draft) in supported_groups by default; a TLS template pinned to a pre-2025 Chrome profile (older curl-impersonate/utls/BoringSSL, Go <=1.23) lags it. Catches template lag only — modern OpenSSL 3.5+/Go 1.24+ also ship the group (validated live), so it is silent on a current generic stack. Experimental: a corporate TLS-inspection proxy or PostQuantumKeyAgreementEnabled=false also strips it."
 
   - id: net.ch_ua_mobile_vs_ua
     title: Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness
