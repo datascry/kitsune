@@ -9,6 +9,7 @@ const NOW = new Date("2026-06-17T12:00:00Z");
 
 const cleanEnv: BrowserEnv = {
   webdriver: false,
+  webdriverSpoofed: false,
   userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/125.0 Safari/537.36",
   uaDataPlatform: null,
   canvasTampered: false,
@@ -19,6 +20,7 @@ const cleanEnv: BrowserEnv = {
 
 const botEnv: BrowserEnv = {
   webdriver: true,
+  webdriverSpoofed: true,
   userAgent: "Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/125.0 Safari/537.36",
   uaDataPlatform: "Linux",
   canvasTampered: true,
@@ -46,6 +48,7 @@ describe("collectSignals", () => {
   it("emits the tell signals for a bot env", () => {
     const k = kinds(botEnv);
     expect(k).toContain("ch_platform");
+    expect(k).toContain("webdriver_spoofed");
     expect(k).toContain("canvas_lie");
     expect(k).toContain("cdp_runtime_enabled");
     expect(k).toContain("ua_is_headless");

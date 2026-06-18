@@ -26,6 +26,9 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
     out.push(sig("browser", "ch_platform", normalizePlatform(env.uaDataPlatform)));
   }
   // Boolean "tell" signals are only emitted when present, so absence is genuinely absent.
+  if (env.webdriverSpoofed) {
+    out.push(sig("browser", "webdriver_spoofed", true));
+  }
   if (env.canvasTampered) {
     out.push(sig("browser", "canvas_lie", true));
   }

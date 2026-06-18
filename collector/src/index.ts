@@ -20,10 +20,21 @@ function detectCanvasLie(): boolean {
   }
 }
 
+function detectWebdriverSpoofed(): boolean {
+  try {
+    // Real browsers expose navigator.webdriver via Navigator.prototype; an own property on the instance
+    // is a defineProperty patch — the naive way a stealth tool forces navigator.webdriver to false.
+    return Object.getOwnPropertyDescriptor(navigator, "webdriver") !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 function buildEnv(pointerEvents: PointerSample[], keyEvents: number[], cdp: CdpProbe): BrowserEnv {
   const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
   return {
     webdriver: navigator.webdriver === true,
+    webdriverSpoofed: detectWebdriverSpoofed(),
     userAgent: navigator.userAgent,
     uaDataPlatform: uaData?.platform ?? null,
     canvasTampered: detectCanvasLie(),
