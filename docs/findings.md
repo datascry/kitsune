@@ -593,6 +593,14 @@ the bytes you need to fingerprint, buffer them, and replay on `Read` so the wrap
 complete connection. Parsing is best-effort — a malformed or truncated preface leaves the connection
 served and simply carries no h2 signal, never breaking traffic to fingerprint it.
 
+**Best-effort is not enough; the parsers are fuzz-hardened.** The edge fingerprints *adversarial* input —
+`ParseClientHello` and `ParsePreface` run on raw bytes from arbitrary, possibly hostile clients, so a
+panic in either is a denial-of-service on the detector edge, which matters doubly in a bots/DDoS context.
+Both carry Go native fuzz targets (`FuzzParseClientHello`, `FuzzParsePreface`) seeded with valid and
+malformed inputs; ~2.4M and ~4M executions respectively turned up no panic. The contract is explicit and
+tested: on any byte string the parsers return an error, never crash — junk traffic costs the edge a failed
+parse, not availability.
+
 ### What live capture taught the SETTINGS classifier
 
 Driving real browsers through the edge corrected the SETTINGS-profile classifier twice — a reminder that
