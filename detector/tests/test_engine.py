@@ -14,6 +14,41 @@ from kitsune_detector.models import Layer, Session, Source
 from .conftest import make_signal
 
 
+def test_active_rules_are_live_producible() -> None:
+    # Drift guard: every *active* rule must read a signal that some component (collector TS, the inline
+    # demo collector, the edge, or the detector) actually emits. An active rule reading an unemitted
+    # signal is silently dead — exactly the class of bug the webdriverSpoofed collector drift created.
+    # Rules awaiting a producer must be `experimental` (e.g. tcp_os_hint, is_proxy_exit), not `active`.
+    import re
+
+    import yaml
+
+    from kitsune_detector.contracts import contracts_dir
+
+    root = contracts_dir().parent
+    emitted: set[str] = set()
+    for py in (root / "detector" / "src").rglob("*.py"):
+        text = py.read_text()
+        emitted.update(re.findall(r'kind\s*=\s*["\'](\w+)["\']', text))  # detector/reputation/derived
+        emitted.update(k for _, k in re.findall(r'S\(\s*"(\w+)"\s*,\s*"(\w+)"', text))  # inline demo collector
+    for ts in (root / "collector" / "src").rglob("*.ts"):
+        emitted.update(k for _, k in re.findall(r'sig\(\s*"(\w+)"\s*,\s*"(\w+)"', ts.read_text()))
+    for go in (root / "edge").rglob("*.go"):
+        if go.name.endswith("_test.go"):
+            continue
+        emitted.update(re.findall(r'(?:Network|Browser|Behavioral|Reputation)\([^,]+,\s*"(\w+)"', go.read_text()))
+
+    raw = yaml.safe_load((contracts_dir() / "rules" / "registry.yaml").read_text())
+    dead = [
+        f"{r['id']} reads {rd} but no component emits '{rd.split('.', 1)[1]}'"
+        for r in raw["rules"]
+        if r.get("status") == "active"
+        for rd in r.get("reads", [])
+        if rd.split(".", 1)[1] not in emitted
+    ]
+    assert not dead, "active rules with no live producer (mark experimental or wire a producer):\n" + "\n".join(dead)
+
+
 def test_registry_rules_are_well_formed() -> None:
     # Registry invariants that keep the generic engine safe. The arity check matters most: a not_equal
     # or equals rule with the wrong number of reads would index a missing value at evaluation time
