@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.1.0"
+ruleset_version: "0.2.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -128,3 +128,50 @@ rules:
     added: "2026-06-17"
     last_validated: "2026-06-17"
     source: "iptoasn.com / MaxMind GeoLite2-ASN"
+
+  # --- v0.2.0: deepened coverage ---
+
+  - id: net.h2_vs_tls_browser
+    title: HTTP/2 fingerprint browser contradicts the TLS (JA4) browser
+    layers: [network]
+    reads: [network.h2_browser_hint, network.ja4_browser_hint]
+    predicate: not_equal
+    weight: 0.55
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Akamai h2 fingerprint vs FoxIO JA4 (within-network incoherence)"
+
+  - id: br.headless_ua
+    title: User-Agent advertises a headless browser
+    layers: [browser]
+    reads: [browser.ua_is_headless]
+    predicate: present
+    weight: 0.85
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "HeadlessChrome UA token"
+
+  - id: bh.keystroke_entropy_floor
+    title: Keystroke timing entropy below the human floor
+    layers: [behavioral]
+    reads: [behavioral.keystroke_entropy]
+    predicate: below_threshold
+    threshold: 0.15
+    weight: 0.55
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Kitsune; cf. CMU keystroke-dynamics benchmark"
+
+  - id: rep.known_proxy_exit
+    title: Source IP is a known VPN / proxy / Tor exit
+    layers: [reputation]
+    reads: [reputation.is_proxy_exit]
+    predicate: present
+    weight: 0.5
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "X4BNet/lists_vpn; MaxMind Anonymous-IP"

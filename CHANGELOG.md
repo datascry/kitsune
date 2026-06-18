@@ -23,6 +23,12 @@ All notable changes to Kitsune are documented here. The format follows
 - **Repo standards** — 2-line machine-scannable file headers (enforced), MADR ADRs, security
   posture (SECURITY.md, gitleaks, pinned actions, SBOM), supply-chain (Dependabot, license gate),
   community templates, and conventional-commit linting.
+- **Live pipeline** — transparent TLS peek-proxy in the edge (captures the raw ClientHello, mints
+  `ks_sid`, forwards JA3/JA4 signals), a real `vanilla` evader, and `docker-compose` wiring
+  detector + edge + vanilla. Verified end-to-end (`session_id` threads socket → verdict).
+- **`go-tls` evader** — uTLS-based Chrome/Firefox TLS fingerprint forging.
+- **Coherence registry v0.2.0** — added HTTP/2-vs-TLS, headless-UA, keystroke-entropy, and
+  proxy/Tor-exit rules.
 - **docs/catalog.md** — opinionated catalog of ~70 relevant projects across the arms race.
 
 [Unreleased]: https://github.com/datascry/kitsune/commits/main

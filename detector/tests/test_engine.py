@@ -3,10 +3,15 @@
 
 from __future__ import annotations
 
+import pytest
+
 from kitsune_detector.coherence import load_registry
 from kitsune_detector.coherence.engine import CoherenceEngine
 from kitsune_detector.coherence.rules import CoherenceRule, RuleSet
-from kitsune_detector.models import Layer, Session
+from kitsune_detector.ingest import group_signals
+from kitsune_detector.models import Layer, Session, Source
+
+from .conftest import make_signal
 
 
 def test_engine_flags_bot_incoherence(bot_session: Session) -> None:
@@ -44,3 +49,32 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
     )
     engine = CoherenceEngine(RuleSet(ruleset_version="0", rules=[retired]))
     assert engine.evaluate(bot_session) == []
+
+
+@pytest.mark.parametrize(
+    ("signals_spec", "rule_id"),
+    [
+        (
+            [
+                (Layer.network, "h2_browser_hint", "firefox", Source.edge),
+                (Layer.network, "ja4_browser_hint", "chrome", Source.edge),
+            ],
+            "net.h2_vs_tls_browser",
+        ),
+        ([(Layer.browser, "ua_is_headless", True, Source.collector)], "br.headless_ua"),
+        (
+            [(Layer.behavioral, "keystroke_entropy", 0.05, Source.collector)],
+            "bh.keystroke_entropy_floor",
+        ),
+        ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
+    ],
+)
+def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
+    sigs = [
+        make_signal("s", layer, kind, value, source=src)
+        for (layer, kind, value, src) in signals_spec
+    ]
+    session = group_signals(sigs)[0]
+    engine = CoherenceEngine(load_registry())
+    fired = {c.rule_id for c in engine.evaluate(session)}
+    assert rule_id in fired
