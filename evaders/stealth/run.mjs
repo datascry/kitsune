@@ -1,13 +1,15 @@
 // evaders/stealth/run — drive a real Chromium through the edge and read the detector's verdict.
 // Modes: naive (automation tells) · STEALTH=1 (patched) · SPOOF_UA=<ua> (Chrome TLS, lying UA).
 
-import { chromium } from "playwright";
-
 const EDGE = process.env.KITSUNE_EDGE || "https://edge:8443/";
 const DETECTOR = process.env.KITSUNE_DETECTOR || "http://detector:8080";
 const STEALTH = process.env.STEALTH === "1";
 const FULL = process.env.FULL === "1"; // contest the whole v0.4.0 browser battery
 const SPOOF_UA = process.env.SPOOF_UA; // e.g. a Firefox UA, while the real TLS stays Chrome
+const PATCHRIGHT = process.env.PATCHRIGHT === "1"; // CDP-patched anti-detect drop-in for Playwright
+
+// patchright is API-compatible with playwright; swap the engine at runtime.
+const { chromium } = await import(PATCHRIGHT ? "patchright" : "playwright");
 
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
@@ -17,7 +19,15 @@ const LINUX_CHROME_UA =
 
 const userAgent = SPOOF_UA || (FULL ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
 const evading = STEALTH || FULL || Boolean(SPOOF_UA);
-const mode = FULL ? "full-stealth" : SPOOF_UA ? "spoof-ua" : STEALTH ? "stealth" : "naive";
+const mode = PATCHRIGHT
+  ? "patchright"
+  : FULL
+    ? "full-stealth"
+    : SPOOF_UA
+      ? "spoof-ua"
+      : STEALTH
+        ? "stealth"
+        : "naive";
 
 // --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.
@@ -61,5 +71,7 @@ if (!ks) {
   process.exit(2);
 }
 const verdict = await (await fetch(`${DETECTOR}/verdict/${ks.value}`)).json();
-console.log(JSON.stringify({ mode, ...verdict }, null, 2));
+// Sentinel-prefixed compact line so the orchestrator can extract it even if the engine (e.g.
+// patchright) writes other noise to stdout.
+console.log("__KS__" + JSON.stringify({ mode, ...verdict }));
 await browser.close();

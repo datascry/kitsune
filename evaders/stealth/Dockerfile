@@ -4,6 +4,8 @@
 FROM mcr.microsoft.com/playwright:v1.48.0-jammy
 WORKDIR /app
 COPY package.json ./
-RUN npm install --silent --no-audit --no-fund playwright@1.48.0
+# playwright (baseline) + patchright (CDP-patched anti-detect drop-in) and its browser.
+RUN npm install --silent --no-audit --no-fund playwright@1.48.0 patchright \
+    && (npx patchright install chromium || true)
 COPY run.mjs ./
 ENTRYPOINT ["node", "run.mjs"]
