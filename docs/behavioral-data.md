@@ -67,3 +67,24 @@ produces one smooth sub-movement, no pause, and a flat/negative power-law fit �
 This attacks the OS-level-replay / humanizer gap *above* the mechanism tell (`bh.synthetic_no_coalesced`,
 which still backstops CDP injection): a tool can humanize the path all it wants, but reproducing the power
 law, sub-movement structure, and pausing of a real hand is a much higher bar — and now a measured one.
+
+## Live evaluation — what the biomech rules catch, and what they don't
+
+Run against the lab's own humanizer (`evaders/stealth` `HUMAN_MOUSE=1`: Bézier + ease-in-out + micro-jitter
++ variable timing — a GhostCursor-class mover), the captured biomech values land **inside** the human
+envelope on every axis:
+
+| Feature | human envelope | stealth humanizer | rule |
+|---|---|---|---|
+| `submovement_count` | median 4, p90 9 | **9** | `bh.no_submovements` — no fire |
+| `pause_ratio` | median 0.41 | **0.357** | `bh.no_pause` — no fire |
+| `power_law_exponent` | median 0.55, p10 0.35 | **0.448** | `bh.power_law_violation` — no fire |
+
+So a **well-crafted** humanizer reproduces real-hand biomechanics and passes all three rules — and that is
+the honest scope: the biomech rules catch the **naive** tier (a single smooth ease / constant-velocity /
+no-dwell path — e.g. a straight-line bot trips `bh.no_pause`, validated live), not a humanizer that adds
+jitter, ease, and timing. The well-crafted humanizer is still convicted — by the **mechanism** tell
+(`bh.synthetic_no_coalesced`, the CDP-injection artifact) plus the environment floor — exactly the thesis:
+motion *statistics* are evadable; the *injection mechanism* and the *environment* are not. The biomech
+rules raise the floor (the naive humanizer tier now has a behavioral tell) and stay `experimental` because
+a good humanizer clears them — they add coverage without over-claiming.
