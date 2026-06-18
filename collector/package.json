@@ -26,5 +26,11 @@
     "typescript-eslint": "^8.8.0",
     "vitest": "^3.2.6"
   },
+  "pnpm": {
+    "overrides": {
+      "esbuild": ">=0.28.1",
+      "vite": "^6.4.3"
+    }
+  },
   "packageManager": "pnpm@9.12.0"
 }
