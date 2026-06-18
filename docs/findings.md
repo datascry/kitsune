@@ -337,6 +337,13 @@ lockstep, volume, residential-proxy spread, and same-origin WebRTC IP. The lesso
 distributing a botnet across residential proxies hides it from per-IP defenses but not from coordination
 analysis — the shared engine identity and the converging real origin betray the fleet regardless.
 
+**Confidence vs severity.** The fleet `score` answers *is this coordinated?* — and a confirmed fleet
+maxes it whether it is 3 nodes or 3,000. For operational triage the verdict also reports a **severity**
+derived from scale and rate, independent of the score: aggregate `request_volume` and the session
+`arrival_rate_per_min` (burst rate) tier the fleet `moderate` / `high` / `critical`. A 3-node demo fleet
+is `moderate`; a paradox fleet of dozens arriving in a tight window is `critical` — the difference between
+a curiosity and an active attack, which the binary fleet label alone cannot convey.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

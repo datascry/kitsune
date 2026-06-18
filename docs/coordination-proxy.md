@@ -1,6 +1,7 @@
 ## Coordination — 1 graded cluster(s) across 3 sessions
 
 ### `fleet` — score **1.00** · 3 sessions
+- **severity: moderate** (12 requests, 7.8/min)
 - members: rp1, rp2, rp3
 - 3 sessions share JA4 cipher prefix `t13d1717h2_5b57614c22b0`
 - cipher suites identical but JS divergent across members: hardware_concurrency x3, nav_platform_os x2, ua_platform x2

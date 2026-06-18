@@ -148,6 +148,35 @@ def test_same_origin_behind_proxies() -> None:
     assert any("same-origin" in e for e in v.evidence)
 
 
+def test_severity_critical_on_burst() -> None:
+    # A paradox fleet of 5 arriving within ~4s → high arrival rate → critical severity (separate from
+    # the fleet-confidence score, which a 3-node fleet already maxes).
+    members = [(f"n{i}", _sess(f"n{i}", "X", 8 + i * 4, offset_s=i)) for i in range(5)]
+    v = score_cluster("X", members)
+    assert v.label == "fleet"
+    assert v.arrival_rate_per_min is not None and v.arrival_rate_per_min >= 60
+    assert v.severity == "critical"
+
+
+def test_severity_high_on_volume() -> None:
+    # 12-node paradox fleet spread over minutes → low arrival rate, but the member count alone is "high".
+    members = [(f"n{i}", _sess(f"n{i}", "X", 8 + i, offset_s=i * 60)) for i in range(12)]
+    v = score_cluster("X", members)
+    assert v.label == "fleet"
+    assert (v.arrival_rate_per_min or 0) < 15  # not a burst
+    assert v.severity == "high"
+
+
+def test_severity_na_for_candidate() -> None:
+    # A homogeneous JA4 cluster is only a candidate — severity is not applicable, and render omits it.
+    members = [("a", _sess("a", "X", 8, plat="Windows")), ("b", _sess("b", "X", 8, plat="Windows"))]
+    v = score_cluster("X", members)
+    assert v.label == "candidate"
+    assert v.severity == "n/a"
+    md = render_coordination([("a", members[0][1]), ("b", members[1][1])])
+    assert "candidate" in md and "severity" not in md  # non-fleet clusters omit the severity line
+
+
 def test_single_member_cluster_has_no_span() -> None:
     # Defensive: score_cluster with one member yields no timing span and no lockstep evidence.
     v = score_cluster("X", [("solo", _sess("solo", "X", 8))])

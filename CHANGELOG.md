@@ -9,6 +9,10 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Fleet threat-severity (DDoS triage).** The coordination verdict now reports `request_volume`,
+  `arrival_rate_per_min`, and a `severity` tier (`moderate`/`high`/`critical`) derived from scale and
+  rate — *separate* from the confidence `score` (a confirmed fleet maxes the score whether it is 3 nodes
+  or 3,000; severity distinguishes a curiosity from an active attack). Surfaced in the rendered report.
 - **Residential-proxy fleet detection (coordination, the bots/DDoS frontier).** Two IP-topology signals
   in `harness/coordination.py`: (1) *residential-proxy pattern* — a confirmed spoofing fleet (JS paradox
   or JA4_c divergence) also spread across many distinct `observed_ip` values, so the IP diversity that

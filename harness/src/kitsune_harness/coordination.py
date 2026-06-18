@@ -68,7 +68,22 @@ class FleetVerdict:
     ja4c_divergent: bool = False  # members share the cipher prefix but differ in extensions/sig-algs
     distinct_observed_ips: int = 0  # distinct source IPs across the cluster (proxy spread)
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
+    request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
+    arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
     evidence: list[str] = field(default_factory=list)
+
+    @property
+    def severity(self) -> str:
+        """Operational threat level from scale + arrival rate — distinct from the fleet *confidence*
+        ``score``. A confirmed fleet maxes the score whether it is 3 nodes or 3000; severity triages it."""
+        if self.label != "fleet":
+            return "n/a"
+        rate = self.arrival_rate_per_min or 0.0
+        if len(self.members) >= 50 or self.request_volume >= 500 or rate >= 60:
+            return "critical"
+        if len(self.members) >= 10 or self.request_volume >= 100 or rate >= 15:
+            return "high"
+        return "moderate"
 
 
 def _ja4(session: Session) -> str | None:
@@ -161,6 +176,12 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
             f"{distinct_observed} proxy IPs front one real IP `{shared_real_ip}` (WebRTC) — same-origin fleet"
         )
 
+    # Threat severity (scale + rate) — operational triage, separate from the fleet-confidence score.
+    request_volume = sum(s.request_count for s in sessions)
+    arrival_rate: float | None = None
+    if span is not None and span > 0:
+        arrival_rate = round(len(names) / (span / 60.0), 1)
+
     score = max(0.0, min(1.0, score))
     label = "fleet" if score >= 0.60 else "candidate" if score >= 0.30 else "benign"
     return FleetVerdict(
@@ -173,6 +194,8 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         ja4c_divergent=ja4c_divergent,
         distinct_observed_ips=distinct_observed,
         shared_real_ip=shared_real_ip,
+        request_volume=request_volume,
+        arrival_rate_per_min=arrival_rate,
         evidence=evidence,
     )
 
@@ -197,6 +220,9 @@ def render_coordination(corpus: list[tuple[str, Session]]) -> str:
         return "\n".join([*lines, "- (no JA4 cluster of size > 1)"]) + "\n"
     for v in verdicts:
         lines.append(f"### `{v.label}` — score **{v.score:.2f}** · {len(v.members)} sessions")
+        if v.label == "fleet":
+            rate = f", {v.arrival_rate_per_min}/min" if v.arrival_rate_per_min is not None else ""
+            lines.append(f"- **severity: {v.severity}** ({v.request_volume} requests{rate})")
         lines.append(f"- members: {', '.join(v.members)}")
         for e in v.evidence:
             lines.append(f"- {e}")
