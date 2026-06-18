@@ -110,6 +110,12 @@ DEMO_PAGE = """<!doctype html>
     ];
     var uad = navigator.userAgentData;
     if (uad && uad.platform) sigs.push(S("browser", "ch_platform", uad.platform));
+    // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for
+    // Firefox-based anti-detect too, where there is no Client-Hints platform).
+    var np = navigator.platform || "";
+    var npo = /Mac/i.test(np) ? "macOS" : /Win/i.test(np) ? "Windows"
+            : /Linux|X11/i.test(np) ? "Linux" : /Android/i.test(np) ? "Android" : "";
+    if (npo) sigs.push(S("browser", "nav_platform_os", npo));
     if (canvasLie()) sigs.push(S("browser", "canvas_lie", true));
     if (/Headless/i.test(ua)) sigs.push(S("browser", "ua_is_headless", true));
     // A genuine navigator.webdriver is inherited from Navigator.prototype; an own property means

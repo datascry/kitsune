@@ -27,9 +27,16 @@ alongside vanilla httpx. It wins because it is a different engine with engine-le
   `hardwareConcurrency` and plugins).
 
 Two findings: (1) engine-level spoofing is the cutting edge — it defeats the JS-surface ruleset
-entirely; (2) **the ruleset is Chrome-biased**. Catching Camoufox needs engine-agnostic detectors —
-e.g. `navigator.platform` / `navigator.oscpu` vs `ua_platform` coherence (does its macOS claim leak
-Linux elsewhere?), or a JA4-vs-claimed-OS check. That is the next blue rung.
+entirely; (2) **the ruleset is Chrome-biased**.
+
+**Follow-up (v0.7.0):** added `br.navplatform_vs_ua` (engine-agnostic — `navigator.platform` vs the UA
+platform, no Client-Hints needed). Camoufox **also** evades it: it spoofs `navigator.platform` to
+`MacIntel` (macOS), coherent with its macOS UA. So engine-level spoofing buys not just surface
+plausibility but **cross-vector coherence** — defeating the coherence detectors that catch the
+chromium tools' partial spoofs. The realistic counters left are a Camoufox-specific inconsistency (an
+arms race against its updates) or **behavioral / coordination** signals, which no fingerprint spoof
+addresses. The `navplatform_vs_ua` rule still catches *incoherent* platform spoofs (e.g. a Windows UA
+on a real Linux `navigator.platform`).
 
 ## Run
 

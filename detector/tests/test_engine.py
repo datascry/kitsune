@@ -86,6 +86,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "br.webgl_os_vs_ua",
         ),
+        (
+            [
+                (Layer.browser, "nav_platform_os", "Linux", Source.collector),
+                (Layer.browser, "ua_platform", "macOS", Source.collector),
+            ],
+            "br.navplatform_vs_ua",
+        ),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

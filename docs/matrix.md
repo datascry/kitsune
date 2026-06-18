@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 27 engines
+# Kitsune detection matrix — 28 engines
 
 | Detector | layer | camoufox | full-stealth | patchright | spoof-ua | stealth-naive | stealth-patched | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|
@@ -29,10 +29,11 @@
 | `br.plugins_spoofed` | browser | · | ✓ | · | · | · | · | · | 1 |
 | `br.webdriver_getter_tampered` | browser | · | ✓ | · | · | · | · | · | 1 |
 | `br.webgl_os_vs_ua` | browser | · | ✓ | · | · | · | ✓ | · | 2 |
-| **flagged** |  | **0/27** | **5/27** | **5/27** | **5/27** | **6/27** | **6/27** | **0/27** |  |
+| `br.navplatform_vs_ua` | browser | · | · | · | · | · | · | · | 0 |
+| **flagged** |  | **0/28** | **5/28** | **5/28** | **5/28** | **6/28** | **6/28** | **0/28** |  |
 | **verdict** |  | **human** | **bot** | **bot** | **bot** | **bot** | **bot** | **human** |  |
 
-## Coverage gaps — 15/27 engines catch nothing yet
+## Coverage gaps — 16/28 engines catch nothing yet
 
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`
@@ -49,3 +50,4 @@
 - `bh.uniform_velocity`
 - `br.tostring_tampered`
 - `br.low_hardware_concurrency`
+- `br.navplatform_vs_ua`

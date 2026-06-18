@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.6.0"
+ruleset_version: "0.7.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -330,3 +330,16 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Kitsune: a spoofed GPU string (e.g. Direct3D on Linux) is self-inconsistent"
+
+  # --- v0.7.0: engine-agnostic OS coherence (the Camoufox counter) ---
+
+  - id: br.navplatform_vs_ua
+    title: navigator.platform implies an OS that contradicts the UA platform
+    layers: [browser]
+    reads: [browser.nav_platform_os, browser.ua_platform]
+    predicate: not_equal
+    weight: 0.7
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Engine-agnostic: works for Firefox-based anti-detect (no Client-Hints needed)"
