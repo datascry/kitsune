@@ -48,6 +48,7 @@ run_tool() { # $1 image, $2 label
 run_tool kitsune-camoufox camoufox
 run_tool kitsune-nodriver nodriver
 run_tool kitsune-zendriver zendriver
+run_tool kitsune-selenium-driverless selenium-driverless
 
 ARGS=(
   "vanilla=$OUT/vanilla.json"

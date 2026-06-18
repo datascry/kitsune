@@ -67,6 +67,21 @@ media devices, missing `window.chrome.runtime`) and scores `bot` at 0.998. The n
 moves the automation needle by one and changes no verdict: the floor, not the automation surface, is what
 convicts — and it is exactly where these tools cannot follow without real hardware.
 
+**selenium-driverless — the adversarial test of the `Runtime.enable` rule, and an honest result.**
+`selenium-driverless` is a different family (a Selenium-style API with no chromedriver) whose headline
+claim is that it runs page interaction in *isolated worlds* specifically to avoid the `Runtime.enable`
+leak. That makes it the sharpest available test of `br.cdp_runtime_enabled`, the SOTA detection — so the
+honest question is whether the rule survives a tool built to defeat it. It does not: captured live,
+`br.cdp_runtime_enabled` **does not fire**, and neither does any `webdriver` tell. The claim holds; the
+strongest single automation signal is genuinely evaded, across a second tool family beyond the patched-
+Playwright drop-ins. And yet the verdict is `bot` at 0.999 — selenium-driverless still ships a
+`HeadlessChrome` UA and lands on the same `environment` floor (software WebGL, no voices, empty media
+devices, no `window.chrome.runtime`) as everything else. This is the most important confirmation in the
+lab: a tool that *wins* the automation-surface arms race against our best CDP rule changes the score by
+nothing, because the conviction never depended on that rule. Stacking automation tells is a treadmill;
+the environment floor is the wall. (Container note: like undetected-chromedriver it needs
+`--disable-dev-shm-usage` and an explicit `--headless=new` or Chrome never connects.)
+
 ### CSP bypass — a tell the patches themselves admit they can't fix
 
 Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every
