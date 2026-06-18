@@ -1,7 +1,7 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T11:28:59.070055+00:00`
-- ruleset: `0.38.0`
+- generated: `2026-06-18T11:37:27.283296+00:00`
+- ruleset: `0.39.0`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|---|---|
@@ -13,6 +13,7 @@
 | curl-impersonate | corpus | 0.60 | 0.60 | 0.00 | 0.00 | 0.60 | 0.90 | bot |
 | floor-spoof | corpus | 0.00 | 1.00 | 0.75 | 0.00 | 0.00 | 1.00 | bot |
 | full-stealth | corpus | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
+| h2-continuation-flood | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
 | h2-rapid-reset | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
 | human-mouse | corpus | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
 | max-stealth | corpus | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
@@ -38,6 +39,7 @@
 - **curl-impersonate** (bot): `net.no_js_execution`
 - **floor-spoof** (bot): `bh.keystroke_entropy_floor`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.tostring_tampered`, `br.no_plugins`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered`, `br.notification_getter_tampered`
 - **full-stealth** (bot): `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.webgl_getparameter_tampered`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.webgpu_webgl_vs`
+- **h2-continuation-flood** (bot): `net.h2_continuation_flood`, `net.no_js_execution`
 - **h2-rapid-reset** (bot): `net.h2_rapid_reset`, `net.no_js_execution`
 - **human-mouse** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **max-stealth** (bot): `bh.synthetic_no_coalesced`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`

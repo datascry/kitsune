@@ -54,6 +54,10 @@ run_tool kitsune-selenium-driverless selenium-driverless
 run_tool kitsune-pydoll pydoll
 run_tool kitsune-curl-impersonate curl-impersonate
 run_tool kitsune-h2-rapid-reset h2-rapid-reset
+# Same image, CONTINUATION-flood mode (CVE-2024-27316).
+docker image inspect kitsune-h2-rapid-reset >/dev/null 2>&1 && docker run --rm --network "$NET" \
+  -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 -e KS_MODE=continuation \
+  kitsune-h2-rapid-reset 2>/dev/null | sed -n 's/^__KS__//p' | tail -1 >"$OUT/h2-continuation-flood.json" || true
 
 ARGS=(
   "vanilla=$OUT/vanilla.json"

@@ -1,92 +1,94 @@
-# Kitsune detection matrix — 83 engines
+# Kitsune detection matrix — 85 engines
 
-| Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | curl-impersonate | floor-spoof | full-stealth | h2-rapid-reset | human-mouse | max-stealth | nodriver | patchright | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | zendriver | catches |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `net.tls_os_vs_tcp_os` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.tls_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.webdriver_present` | browser | ✓ | ✓ | · | · | · | · | · | · | · | ✓ | · | · | · | · | ✓ | · | · | ✓ | · | · | · | · | 5 |
-| `br.cdp_runtime_enabled` | browser | · | · | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | · | · | · | ✓ | ✓ | · | · | · | 4 |
-| `br.csp_bypassed` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.canvas_lie` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `bh.input_entropy_floor` | behavioral | · | ✓ | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
-| `bh.no_input_before_action` | behavioral | · | ✓ | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
-| `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.accept_lang_vs_navigator` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.ch_platform_header_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.ch_ua_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `net.ch_ua_version_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.h2_settings_vs_order` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.h2_rapid_reset` | network | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.headless_ua` | browser | · | ✓ | · | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | · | 9 |
-| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 2 |
-| `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `bh.synthetic_no_coalesced` | behavioral | · | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | 3 |
-| `br.webdriver_spoofed` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | · | · | 3 |
-| `br.webgl_software` | browser | · | ✓ | · | · | · | · | ✓ | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 14 |
-| `br.permissions_anomaly` | browser | · | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 8 |
-| `br.no_chrome_object` | browser | · | · | · | · | · | · | · | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | · | ✓ | ✓ | · | · | · | 6 |
-| `br.tostring_tampered` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.low_hardware_concurrency` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.no_plugins` | browser | ✓ | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
-| `br.webgl_getparameter_tampered` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.plugins_spoofed` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.nav_property_spoofed` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.webdriver_getter_tampered` | browser | · | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 2 |
-| `br.notification_getter_tampered` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.webgl_os_vs_ua` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 2 |
-| `br.navplatform_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
-| `br.worker_divergence` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.vendor_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `br.oscpu_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.languages_empty` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.screen_zero` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.no_connection` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.no_pdfviewer` | browser | · | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | · | ✓ | · | ✓ | · | · | ✓ | ✓ | · | · | · | 7 |
-| `br.chrome_runtime_missing` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
-| `br.mimetypes_empty` | browser | ✓ | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
-| `br.no_devicememory` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.notification_denied` | browser | · | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 8 |
-| `br.platform_empty` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.productsub_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `br.cdc_artifacts` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.webgl2_missing` | browser | ✓ | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 4 |
-| `br.iframe_divergence` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.font_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.screen_avail_invalid` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.color_depth_anomaly` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.devicepixelratio_anomaly` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.hover_none_desktop` | browser | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 5 |
-| `br.pointer_touch_incoherent` | browser | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.voices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | · | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 18 |
-| `br.voice_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.webgl_renderer_artifact` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.audio_missing` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.audio_noise` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | · | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 18 |
-| `br.adblock_present` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.macos_dpr1` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.font_linux_leak` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
-| `br.font_mac_internal` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
-| `br.webrtc_unavailable` | browser | · | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | 4 |
-| `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.timezone_inconsistent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.engine_stack_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `net.no_js_execution` | network,browser | · | · | · | · | · | ✓ | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 3 |
-| `br.webgpu_webgl_vs` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.webgpu_vendor_vs_webgl` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.error_engine_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
-| `net.accept_encoding_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
-| `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/83** | **10/83** | **5/83** | **4/83** | **4/83** | **1/83** | **8/83** | **12/83** | **2/83** | **13/83** | **11/83** | **8/83** | **11/83** | **8/83** | **11/83** | **8/83** | **15/83** | **12/83** | **15/83** | **8/83** | **3/83** | **8/83** |  |
-| **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
+| Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | curl-impersonate | floor-spoof | full-stealth | h2-continuation-flood | h2-rapid-reset | human-mouse | max-stealth | nodriver | patchright | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | zendriver | catches |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| `net.tls_os_vs_tcp_os` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.tls_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.webdriver_present` | browser | ✓ | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | ✓ | · | · | ✓ | · | · | · | · | 5 |
+| `br.cdp_runtime_enabled` | browser | · | · | · | · | · | · | · | ✓ | · | · | ✓ | · | · | · | · | · | · | · | ✓ | ✓ | · | · | · | 4 |
+| `br.csp_bypassed` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.canvas_lie` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `bh.input_entropy_floor` | behavioral | · | ✓ | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
+| `bh.no_input_before_action` | behavioral | · | ✓ | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
+| `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.accept_lang_vs_navigator` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.ch_platform_header_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.ch_ua_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `net.ch_ua_version_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.h2_settings_vs_order` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.h2_rapid_reset` | network | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `net.h2_continuation_flood` | network | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `net.h2_control_flood` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.headless_ua` | browser | · | ✓ | · | · | · | · | · | · | · | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | · | 9 |
+| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 2 |
+| `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `bh.synthetic_no_coalesced` | behavioral | · | · | · | · | · | · | ✓ | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | 3 |
+| `br.webdriver_spoofed` | browser | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | · | · | 3 |
+| `br.webgl_software` | browser | · | ✓ | · | · | · | · | ✓ | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 14 |
+| `br.permissions_anomaly` | browser | · | · | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 8 |
+| `br.no_chrome_object` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | · | ✓ | ✓ | · | · | · | 6 |
+| `br.tostring_tampered` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.low_hardware_concurrency` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.no_plugins` | browser | ✓ | · | · | · | · | · | ✓ | · | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
+| `br.webgl_getparameter_tampered` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.plugins_spoofed` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.nav_property_spoofed` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.webdriver_getter_tampered` | browser | · | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 2 |
+| `br.notification_getter_tampered` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.webgl_os_vs_ua` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 2 |
+| `br.navplatform_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
+| `br.worker_divergence` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.vendor_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `br.oscpu_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.languages_empty` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.screen_zero` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.no_connection` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.no_pdfviewer` | browser | · | · | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | · | ✓ | ✓ | · | · | · | 7 |
+| `br.chrome_runtime_missing` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 6 |
+| `br.mimetypes_empty` | browser | ✓ | · | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 9 |
+| `br.no_devicememory` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.notification_denied` | browser | · | · | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | 8 |
+| `br.platform_empty` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.productsub_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `br.cdc_artifacts` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.webgl2_missing` | browser | ✓ | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 4 |
+| `br.iframe_divergence` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.font_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.screen_avail_invalid` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.color_depth_anomaly` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.devicepixelratio_anomaly` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.hover_none_desktop` | browser | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | · | · | ✓ | · | ✓ | 5 |
+| `br.pointer_touch_incoherent` | browser | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.voices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | · | · | ✓ | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 18 |
+| `br.voice_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.webgl_renderer_artifact` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.audio_missing` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.audio_noise` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | · | · | ✓ | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | 18 |
+| `br.adblock_present` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.macos_dpr1` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.font_linux_leak` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
+| `br.font_mac_internal` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | 1 |
+| `br.webrtc_unavailable` | browser | · | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | 4 |
+| `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.timezone_inconsistent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.engine_stack_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `net.no_js_execution` | network,browser | · | · | · | · | · | ✓ | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 4 |
+| `br.webgpu_webgl_vs` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.webgpu_vendor_vs_webgl` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.error_engine_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
+| `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
+| `net.accept_encoding_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
+| `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| **flagged** |  | **6/85** | **10/85** | **5/85** | **4/85** | **4/85** | **1/85** | **8/85** | **12/85** | **2/85** | **2/85** | **13/85** | **11/85** | **8/85** | **11/85** | **8/85** | **11/85** | **8/85** | **15/85** | **12/85** | **15/85** | **8/85** | **3/85** | **8/85** |  |
+| **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
 
@@ -100,6 +102,7 @@
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 | `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
 | `full-stealth` | bot | 2 | 0 | 6 | 4 | 0 | 0 |
+| `h2-continuation-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `human-mouse` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `max-stealth` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
@@ -115,7 +118,7 @@
 | `vanilla` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 1 | 1 | 1 | 3 | 2 | 0 |
 
-## Coverage gaps — 37/83 engines catch nothing yet
+## Coverage gaps — 38/85 engines catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
@@ -129,12 +132,13 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (27) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (28) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.csp_bypassed`
 - `br.canvas_lie`
 - `rep.datacenter_asn`
 - `net.ch_ua_version_vs_ua`
+- `net.h2_control_flood`
 - `rep.known_proxy_exit`
 - `br.worker_divergence`
 - `br.languages_empty`

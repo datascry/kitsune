@@ -286,8 +286,16 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Header.Set("X-KS-Session", prep.sessionID)
 	// A rapid-reset flood (CVE-2023-44487) is connection-level abuse; flag it for the session this
 	// connection carries (anonymous pure floods, with no completed request, are a rate limiter's job).
-	if sc, ok := r.Context().Value(scannerKey).(*fingerprint.H2FrameScanner); ok && sc.RapidReset() {
-		prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_rapid_reset", true, p.now()))
+	if sc, ok := r.Context().Value(scannerKey).(*fingerprint.H2FrameScanner); ok {
+		if sc.RapidReset() {
+			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_rapid_reset", true, p.now()))
+		}
+		if sc.ContinuationFlood() {
+			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_continuation_flood", true, p.now()))
+		}
+		if sc.ControlFrameFlood() {
+			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_control_flood", true, p.now()))
+		}
 	}
 	p.forward(prep.signals)
 	p.backend.ServeHTTP(w, r)

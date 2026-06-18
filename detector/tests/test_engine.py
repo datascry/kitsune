@@ -205,6 +205,8 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.network, "accept_encoding_no_brotli", True, Source.edge)], "net.accept_encoding_vs_ua"),
         ([(Layer.network, "ch_ua_version_mismatch", True, Source.edge)], "net.ch_ua_version_vs_ua"),
         ([(Layer.network, "h2_rapid_reset", True, Source.edge)], "net.h2_rapid_reset"),
+        ([(Layer.network, "h2_continuation_flood", True, Source.edge)], "net.h2_continuation_flood"),
+        ([(Layer.network, "h2_control_flood", True, Source.edge)], "net.h2_control_flood"),
         ([(Layer.browser, "rfp_browser", True, Source.collector)], "br.rfp_browser"),
         ([(Layer.browser, "canvas_noise", True, Source.collector)], "br.canvas_noise"),
         (

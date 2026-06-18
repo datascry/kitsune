@@ -1,30 +1,37 @@
-// edge/fingerprint/h2frames — count HTTP/2 frame types over a live connection to spot rapid-reset DoS.
-// CVE-2023-44487: a flood of HEADERS each immediately cancelled by RST_STREAM, bypassing stream limits.
+// edge/fingerprint/h2frames — count HTTP/2 frame types over a live connection to spot frame-level DoS.
+// Covers the HTTP/2 DoS family: rapid reset (CVE-2023-44487), CONTINUATION flood (CVE-2024-27316), and
+// the 2019 control-frame floods (SETTINGS/PING — CVE-2019-9515/9512).
 
 package fingerprint
 
-// H2 frame type codes (RFC 7540 §6). Only the two the rapid-reset signature needs are named.
+// H2 frame type codes (RFC 7540 §6 / RFC 9113).
 const (
-	frameHeaders   = 0x1
-	frameRSTStream = 0x3
-	frameHeaderLen = 9 // length(3) + type(1) + flags(1) + R|streamID(4)
+	frameRSTStream    = 0x3
+	frameSettings     = 0x4
+	framePing         = 0x6
+	frameHeaders      = 0x1
+	frameContinuation = 0x9
+	frameHeaderLen    = 9 // length(3) + type(1) + flags(1) + R|streamID(4)
 )
 
 // clientPrefaceLen is the byte length of the HTTP/2 client connection preface magic ("PRI * HTTP/2.0…").
 const clientPrefaceLen = 24
 
 // H2FrameScanner consumes the raw bytes of an HTTP/2 connection incrementally (across arbitrary Read
-// boundaries) and counts HEADERS and RST_STREAM frames. It is fed a *copy* of the connection bytes, so
-// it only observes — it never alters what the HTTP/2 server reads. Counting is best-effort: a malformed
-// stream simply yields whatever counts were parsed up to the malformation, never a panic.
+// boundaries) and counts the frame types the DoS-family signatures need. It is fed a *copy* of the
+// connection bytes, so it only observes — it never alters what the HTTP/2 server reads. Counting is
+// best-effort: a malformed stream simply yields whatever counts were parsed up to the malformation,
+// never a panic.
 type H2FrameScanner struct {
-	prefaceSkipped int    // bytes of the 24-byte client preface magic still to consume
+	prefaceSkipped int     // bytes of the 24-byte client preface magic still to consume
 	hdr            [9]byte // partial frame header buffer
 	hdrFilled      int     // bytes of hdr currently filled
 	payloadLeft    int     // bytes of the current frame's payload still to skip
-	pendingType    byte    // type of the frame whose payload we are skipping
 	Headers        uint64
 	RSTStreams     uint64
+	Continuations  uint64
+	Settings       uint64
+	Pings          uint64
 }
 
 // Feed advances the scanner over the next chunk of connection bytes.
@@ -69,6 +76,12 @@ func (s *H2FrameScanner) Feed(b []byte) {
 			s.Headers++
 		case frameRSTStream:
 			s.RSTStreams++
+		case frameContinuation:
+			s.Continuations++
+		case frameSettings:
+			s.Settings++
+		case framePing:
+			s.Pings++
 		}
 		s.payloadLeft = length
 		s.hdrFilled = 0
@@ -82,4 +95,21 @@ func (s *H2FrameScanner) Feed(b []byte) {
 func (s *H2FrameScanner) RapidReset() bool {
 	const floor = 100
 	return s.RSTStreams >= floor && s.RSTStreams*2 >= s.Headers
+}
+
+// ContinuationFlood reports the CVE-2024-27316 signature: a flood of CONTINUATION frames (the attack
+// follows a HEADERS frame with an endless CONTINUATION stream that never sets END_HEADERS, so the server
+// buffers headers until it exhausts memory). A real client emits CONTINUATION only for an unusually large
+// header block, and then just a handful — never at this scale.
+func (s *H2FrameScanner) ContinuationFlood() bool {
+	const floor = 50
+	return s.Continuations >= floor
+}
+
+// ControlFrameFlood reports the 2019 control-frame floods (CVE-2019-9515 SETTINGS flood, CVE-2019-9512
+// PING flood): a client spams SETTINGS or PING to force the server to expend work on ACKs. A real client
+// sends its one preface SETTINGS and rarely a PING — never hundreds.
+func (s *H2FrameScanner) ControlFrameFlood() bool {
+	const floor = 100
+	return s.Settings+s.Pings >= floor
 }

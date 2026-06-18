@@ -77,6 +77,65 @@ func TestH2FrameScannerManyHeadersFewResets(t *testing.T) {
 	}
 }
 
+func TestH2FrameScannerContinuationFlood(t *testing.T) {
+	var buf bytes.Buffer
+	buf.WriteString(http2.ClientPreface)
+	fr := http2.NewFramer(&buf, nil)
+	// One HEADERS that never ends, then a flood of CONTINUATION frames (CVE-2024-27316).
+	if err := fr.WriteHeaders(http2.HeadersFrameParam{StreamID: 1, BlockFragment: []byte{0x88}}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 80; i++ {
+		if err := fr.WriteContinuation(1, false, []byte{0x88}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var s H2FrameScanner
+	s.Feed(buf.Bytes())
+	if s.Continuations != 80 {
+		t.Fatalf("continuations=%d, want 80", s.Continuations)
+	}
+	if !s.ContinuationFlood() {
+		t.Error("80 CONTINUATION frames should match the flood signature")
+	}
+	if s.ControlFrameFlood() || s.RapidReset() {
+		t.Error("a CONTINUATION flood must not be misclassified as a control-frame or rapid-reset flood")
+	}
+}
+
+func TestH2FrameScannerControlFrameFlood(t *testing.T) {
+	var buf bytes.Buffer
+	buf.WriteString(http2.ClientPreface)
+	fr := http2.NewFramer(&buf, nil)
+	for i := 0; i < 60; i++ {
+		if err := fr.WriteSettings(); err != nil {
+			t.Fatal(err)
+		}
+		if err := fr.WritePing(false, [8]byte{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var s H2FrameScanner
+	s.Feed(buf.Bytes())
+	if !s.ControlFrameFlood() {
+		t.Errorf("60 SETTINGS + 60 PING should match the control-frame flood: settings=%d pings=%d", s.Settings, s.Pings)
+	}
+}
+
+func TestH2FrameScannerLegitControlFramesQuiet(t *testing.T) {
+	// A normal connection: the one preface SETTINGS and a keepalive PING — not a flood.
+	var buf bytes.Buffer
+	buf.WriteString(http2.ClientPreface)
+	fr := http2.NewFramer(&buf, nil)
+	_ = fr.WriteSettings()
+	_ = fr.WritePing(false, [8]byte{})
+	var s H2FrameScanner
+	s.Feed(buf.Bytes())
+	if s.ControlFrameFlood() || s.ContinuationFlood() {
+		t.Error("a normal SETTINGS + PING must not trip any flood heuristic")
+	}
+}
+
 func TestH2FrameScannerEmptyAndPartial(t *testing.T) {
 	var s H2FrameScanner
 	s.Feed(nil)

