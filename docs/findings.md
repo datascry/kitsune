@@ -659,9 +659,18 @@ tell catching a genuine library. The rule's version-independent corpus evidence 
 The sharp part: `go-tls`'s **JA4 is byte-identical to real Chrome's and to primp's** (`t13d1516h2_8daaf6152771_…`).
 JA4 hashes the extension *types* and signature algorithms, not the `supported_groups` *contents* — so the
 missing MLKEM group is invisible to JA4 yet caught by the PQ check. This is precisely the "robust to JA4
-drift" value the rule was built for: it sees a sub-JA4 difference that the fingerprint hash cannot. (The
-forged HTTP/2 layer is Go's, not Chrome's, but that residual did not surface as its own tell here — uTLS
-forges the ClientHello, not the h2 stack.)
+drift" value the rule was built for: it sees a sub-JA4 difference that the fingerprint hash cannot.
+
+That live run also exposed — and closed — a real **h2-layer gap**. `go-tls` speaks Go's `http2`, not
+Chrome's (pseudo-header order `a,m,p,s` vs Chrome's `m,a,s,p`), yet `net.h2_vs_ua_browser` stayed silent:
+the edge only emitted `h2_browser_hint` for *recognised* engines (Chrome/Firefox/Safari), so an
+*unrecognised* h2 stack produced no hint and nothing to contradict. A modern-browser UA over an h2 stack
+that matches no known browser is itself a tell — the h2 analog of `tls_no_grease`. The edge now emits
+`network.h2_engine_unknown` when `H2Fingerprint.Browser()` is unknown under a modern-browser UA, and
+`net.h2_unknown_vs_ua` (v0.45.0) fires on it. Re-run live, `go-tls` is now convicted on **three**
+independent network-layer tells — `h2_unknown_vs_ua`, `no_js_execution`, `tls_pq_keyshare_vs_ua` — where
+before it slipped the h2 layer entirely. Real browsers, with recognised pseudo-header orders, never emit
+it; the rule is gated on a browser UA so a non-browser client without one is left to the other tells.
 
 …unless you make the shape perfectly. `curl-impersonate` (via `curl_cffi`) is the other end of the
 scripted spectrum: it reproduces a real Chrome ClientHello (JA3/JA4), the Chrome HTTP/2 SETTINGS and

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.44.0"
+ruleset_version: "0.45.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -55,6 +55,18 @@ rules:
     added: "2026-06-17"
     last_validated: "2026-06-18"
     source: "Akamai h2 fingerprint (Black Hat EU 2017)"
+
+  - id: net.h2_unknown_vs_ua
+    title: Modern-browser UA but the HTTP/2 stack matches no known browser engine
+    layers: [network]
+    reads: [network.h2_engine_unknown]
+    predicate: present
+    category: coherence
+    weight: 0.6
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Every real browser sends a recognised h2 pseudo-header order (Chrome m,a,s,p; Firefox m,p,a,s; Safari m,s,p,a); a Go/Python http2 client — or a browser fronted by a non-browser h2 proxy — under a browser UA does not. The h2 analog of tls_no_grease, and a second network-layer tell beyond no_js_execution. Closes the gap where net.h2_vs_ua_browser stays silent on an *unrecognised* (not merely mismatched) h2 engine."
 
   - id: br.ua_platform_vs_ch_platform
     title: navigator/UA platform contradicts Sec-CH-UA-Platform

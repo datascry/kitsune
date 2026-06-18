@@ -89,6 +89,14 @@ func prepare(
 	// stack while claiming Firefox (or vice-versa) contradicts itself here, independent of TLS and JS.
 	if h2fp != nil {
 		out.signals = append(out.signals, signal.FromH2(out.sessionID, *h2fp, now)...)
+		// A modern-browser UA whose HTTP/2 stack matches no known browser engine (pseudo-header order
+		// outside Chrome/Firefox/Safari's). Every real browser has a recognised h2 order; a Go/Python
+		// http2 client — or a browser fronted by a non-browser h2 proxy — does not. This is the h2 analog
+		// of tls_no_grease: a browser UA over a non-browser stack, and a second network-layer tell beyond
+		// no_js_execution (which only fires when no JS ran at all).
+		if h2fp.Browser() == "unknown" && isModernBrowserUA(r.Header.Get("User-Agent")) {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "h2_engine_unknown", true, now))
+		}
 	}
 	// The observed source IP is the network-layer identity: the address the connection actually came
 	// from. A bot proxying its HTTP through a residential exit shows the proxy IP here, while WebRTC

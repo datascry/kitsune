@@ -1,10 +1,11 @@
-# Kitsune detection matrix — 90 engines
+# Kitsune detection matrix — 91 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | ch-ua-hardcoded | chrome-clone-1 | chrome-clone-2 | curl-impersonate | floor-spoof | full-stealth | go-tls | h2-continuation-flood | h2-rapid-reset | human-mouse | max-stealth | nodriver | os-spoof | patchright | primp | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | tls-stale-template | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | `net.tls_os_vs_tcp_os` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.tls_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
 | `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
+| `net.h2_unknown_vs_ua` | network | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webdriver_present` | browser | ✓ | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | ✓ | · | · | ✓ | · | · | · | · | · | 7 |
 | `br.cdp_runtime_enabled` | browser | · | · | · | · | · | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | · | · | ✓ | · | · | · | · | · | · | ✓ | ✓ | · | · | · | · | 7 |
@@ -92,7 +93,7 @@
 | `net.ch_ua_no_grease_brand` | network | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/90** | **10/90** | **5/90** | **4/90** | **4/90** | **6/90** | **14/90** | **14/90** | **1/90** | **8/90** | **12/90** | **2/90** | **2/90** | **2/90** | **13/90** | **11/90** | **8/90** | **17/90** | **11/90** | **2/90** | **8/90** | **11/90** | **8/90** | **15/90** | **12/90** | **15/90** | **6/90** | **8/90** | **5/90** | **8/90** |  |
+| **flagged** |  | **6/91** | **10/91** | **5/91** | **4/91** | **4/91** | **6/91** | **14/91** | **14/91** | **1/91** | **8/91** | **12/91** | **3/91** | **2/91** | **2/91** | **13/91** | **11/91** | **8/91** | **17/91** | **11/91** | **2/91** | **8/91** | **11/91** | **8/91** | **15/91** | **12/91** | **15/91** | **6/91** | **8/91** | **5/91** | **8/91** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -110,7 +111,7 @@
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 | `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
 | `full-stealth` | bot | 2 | 0 | 6 | 4 | 0 | 0 |
-| `go-tls` | bot | 2 | 0 | 0 | 0 | 0 | 0 |
+| `go-tls` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `h2-continuation-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `human-mouse` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
@@ -130,7 +131,7 @@
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
-## Coverage gaps — 38/90 engines catch nothing yet
+## Coverage gaps — 38/91 engines catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`

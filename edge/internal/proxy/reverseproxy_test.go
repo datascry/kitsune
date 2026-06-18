@@ -91,6 +91,37 @@ func TestPrepareEmitsH2Signals(t *testing.T) {
 	}
 }
 
+func TestPrepareEmitsH2EngineUnknown(t *testing.T) {
+	const chromeUA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+	unknownH2 := &fingerprint.H2Fingerprint{PseudoHeaderOrder: "a,m,p,s"} // Go's http2 order
+	chromeH2 := &fingerprint.H2Fingerprint{PseudoHeaderOrder: "m,a,s,p"}  // a real Chromium
+	emits := func(ua string, fp *fingerprint.H2Fingerprint) bool {
+		r := req(t, "abc")
+		if ua != "" {
+			r.Header.Set("User-Agent", ua)
+		}
+		prep, err := prepare(r, nil, fp, fingerprint.HintTable{}, fixedID, time.Now())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, s := range prep.signals {
+			if s.Kind == "h2_engine_unknown" {
+				return true
+			}
+		}
+		return false
+	}
+	if !emits(chromeUA, unknownH2) {
+		t.Error("chrome UA + unknown h2 order should emit h2_engine_unknown")
+	}
+	if emits(chromeUA, chromeH2) {
+		t.Error("chrome UA + chrome h2 order must not emit h2_engine_unknown")
+	}
+	if emits("", unknownH2) {
+		t.Error("non-browser UA must not emit h2_engine_unknown (gated on a browser UA)")
+	}
+}
+
 func TestPrepareIDFailure(t *testing.T) {
 	if _, err := prepare(req(t, ""), nil, nil, fingerprint.HintTable{}, failID, time.Now()); err == nil {
 		t.Error("expected error when id minting fails")
