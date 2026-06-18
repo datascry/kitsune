@@ -53,6 +53,23 @@ DEMO_PAGE = """<!doctype html>
     for (var j = 0; j < 8; j++) { if (b[j] > 0) { var pr = b[j] / t; h -= pr * Math.log2(pr); } }
     return h / Math.log2(8);
   }
+  function d(a, c) { return Math.hypot(c.x - a.x, c.y - a.y); }
+  function straightness(p) {
+    if (p.length < 3) return 0;
+    var tot = 0;
+    for (var i = 1; i < p.length; i++) tot += d(p[i-1], p[i]);
+    if (tot === 0) return 0;
+    return d(p[0], p[p.length-1]) / tot;
+  }
+  function velcv(p) {
+    var s = [];
+    for (var i = 1; i < p.length; i++) { var dt = p[i].t - p[i-1].t; if (dt > 0) s.push(d(p[i-1], p[i]) / dt); }
+    if (s.length < 2) return 1;
+    var mean = s.reduce(function (a, b) { return a + b; }, 0) / s.length;
+    if (mean === 0) return 1;
+    var v = s.reduce(function (a, x) { return a + (x - mean) * (x - mean); }, 0) / s.length;
+    return Math.sqrt(v) / mean;
+  }
   function send() {
     var ua = navigator.userAgent, now = new Date().toISOString();
     function S(layer, kind, value) {
@@ -69,6 +86,10 @@ DEMO_PAGE = """<!doctype html>
     if (/Headless/i.test(ua)) sigs.push(S("browser", "ua_is_headless", true));
     sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
     sigs.push(S("behavioral", "pointer_event_count", pts.length));
+    if (pts.length >= 3) {
+      sigs.push(S("behavioral", "mouse_straightness", straightness(pts)));
+      sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
+    }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function () { document.body.setAttribute("data-ks", "sent"); });
   }

@@ -2,7 +2,13 @@
 // Asserts the human-entropy floor: straight/absent motion ~0, varied motion high.
 
 import { describe, expect, it } from "vitest";
-import { keystrokeEntropy, mouseEntropy, pointerEventCount } from "../src/behavioral.js";
+import {
+  keystrokeEntropy,
+  mouseEntropy,
+  pathStraightness,
+  pointerEventCount,
+  velocityCV,
+} from "../src/behavioral.js";
 import type { PointerSample } from "../src/types.js";
 
 const p = (x: number, y: number, t: number): PointerSample => ({ x, y, t });
@@ -60,5 +66,31 @@ describe("keystrokeEntropy", () => {
 
   it("is positive for varied human cadence", () => {
     expect(keystrokeEntropy([0, 90, 320, 410, 700, 760, 1300])).toBeGreaterThan(0);
+  });
+});
+
+describe("pathStraightness", () => {
+  it("is ~1 for a straight line", () => {
+    expect(pathStraightness([p(0, 0, 0), p(5, 0, 1), p(10, 0, 2)])).toBeCloseTo(1, 5);
+  });
+  it("is < 1 for a curved path", () => {
+    expect(pathStraightness([p(0, 0, 0), p(5, 5, 1), p(10, 0, 2)])).toBeLessThan(0.95);
+  });
+  it("is 0 for too few samples or zero-length path", () => {
+    expect(pathStraightness([p(0, 0, 0), p(1, 1, 1)])).toBe(0);
+    expect(pathStraightness([p(2, 2, 0), p(2, 2, 1), p(2, 2, 2)])).toBe(0);
+  });
+});
+
+describe("velocityCV", () => {
+  it("is ~0 for constant speed", () => {
+    expect(velocityCV([p(0, 0, 0), p(10, 0, 1), p(20, 0, 2), p(30, 0, 3)])).toBeLessThan(0.01);
+  });
+  it("is high for variable speed", () => {
+    expect(velocityCV([p(0, 0, 0), p(1, 0, 1), p(50, 0, 2), p(52, 0, 3)])).toBeGreaterThan(0.1);
+  });
+  it("returns 1 when undeterminable", () => {
+    expect(velocityCV([p(0, 0, 0)])).toBe(1); // < 2 speeds
+    expect(velocityCV([p(5, 5, 0), p(5, 5, 1), p(5, 5, 2)])).toBe(1); // zero mean speed
   });
 });

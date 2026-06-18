@@ -35,8 +35,10 @@ All notable changes to Kitsune are documented here. The format follows
   (brain on host, Chromium in the Playwright container over CDP). Verified result: the agent beats
   the network + browser/fingerprint layers but is caught by the **behavioral** layer
   (`bot`, 0.80) — the thesis, demonstrated.
-- **Coherence registry v0.2.0** — added HTTP/2-vs-TLS, headless-UA, keystroke-entropy, and
-  proxy/Tor-exit rules.
+- **Coherence registry v0.2.0 → v0.3.0** — added HTTP/2-vs-TLS, headless-UA, keystroke-entropy, and
+  proxy/Tor-exit rules (v0.2.0); then **deeper behavioral shape features** — mouse-path straightness
+  and velocity coefficient-of-variation (collector + live demo page) with `bh.path_too_straight` and
+  `bh.uniform_velocity` rules (v0.3.0), the start of the real behavioral frontier.
 - **Unified live scoreboard** — `harness.live`/`liveboard` fold every evader's live verdict into one
   dated board; `scripts/live_scoreboard.sh` runs the whole fleet against the running stack and writes
   `docs/scoreboard.md` (vanilla → stealth → agent in one table).

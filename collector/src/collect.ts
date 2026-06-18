@@ -1,7 +1,13 @@
 // collector/collect — assemble a session's browser + behavioral signals.
 // Pure: takes a BrowserEnv snapshot and emits contract-valid signals (no globals touched).
 
-import { keystrokeEntropy, mouseEntropy, pointerEventCount } from "./behavioral.js";
+import {
+  keystrokeEntropy,
+  mouseEntropy,
+  pathStraightness,
+  pointerEventCount,
+  velocityCV,
+} from "./behavioral.js";
 import { isHeadlessUA, normalizePlatform, uaBrowser, uaPlatform } from "./detect.js";
 import { makeSignal } from "./signal.js";
 import type { BrowserEnv, Layer, Signal, SignalValue } from "./types.js";
@@ -33,5 +39,10 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
   out.push(sig("behavioral", "mouse_entropy", mouseEntropy(env.pointerEvents)));
   out.push(sig("behavioral", "pointer_event_count", pointerEventCount(env.pointerEvents)));
   out.push(sig("behavioral", "keystroke_entropy", keystrokeEntropy(env.keyEvents)));
+  // Shape features need a real path; emit only with enough samples (else genuinely absent).
+  if (env.pointerEvents.length >= 3) {
+    out.push(sig("behavioral", "mouse_straightness", pathStraightness(env.pointerEvents)));
+    out.push(sig("behavioral", "mouse_velocity_cv", velocityCV(env.pointerEvents)));
+  }
   return out;
 }

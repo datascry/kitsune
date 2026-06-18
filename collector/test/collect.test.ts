@@ -56,3 +56,23 @@ describe("collectSignals", () => {
     expect(sigs.every((s) => s.session_id === "sess-1" && s.source === "collector")).toBe(true);
   });
 });
+
+describe("collectSignals shape features", () => {
+  it("emits straightness + velocity only when a path exists", () => {
+    const env: BrowserEnv = {
+      ...cleanEnv,
+      pointerEvents: [
+        { x: 0, y: 0, t: 0 },
+        { x: 5, y: 5, t: 1 },
+        { x: 10, y: 0, t: 2 },
+      ],
+    };
+    const k = collectSignals("s", env, NOW).map((s) => s.kind);
+    expect(k).toContain("mouse_straightness");
+    expect(k).toContain("mouse_velocity_cv");
+    // the no-path clean env must NOT emit them
+    expect(collectSignals("s", cleanEnv, NOW).map((s) => s.kind)).not.toContain(
+      "mouse_straightness",
+    );
+  });
+});

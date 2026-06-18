@@ -40,6 +40,41 @@ export function mouseEntropy(samples: PointerSample[]): number {
   return h / Math.log2(BINS);
 }
 
+function dist(a: PointerSample, b: PointerSample): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+/**
+ * Path straightness: straight-line distance / total path length, in [0, 1].
+ * A perfectly straight drag -> ~1 (scripted); a curving human path -> lower. 0 if < 3 samples.
+ */
+export function pathStraightness(samples: PointerSample[]): number {
+  if (samples.length < 3) return 0;
+  let total = 0;
+  for (let i = 1; i < samples.length; i++) {
+    total += dist(samples[i - 1]!, samples[i]!);
+  }
+  if (total === 0) return 0;
+  return dist(samples[0]!, samples[samples.length - 1]!) / total;
+}
+
+/**
+ * Coefficient of variation (std/mean) of segment speeds.
+ * Constant-speed automation -> ~0; variable human motion -> high. Returns 1 when undeterminable.
+ */
+export function velocityCV(samples: PointerSample[]): number {
+  const speeds: number[] = [];
+  for (let i = 1; i < samples.length; i++) {
+    const dt = samples[i]!.t - samples[i - 1]!.t;
+    if (dt > 0) speeds.push(dist(samples[i - 1]!, samples[i]!) / dt);
+  }
+  if (speeds.length < 2) return 1;
+  const mean = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+  if (mean === 0) return 1;
+  const variance = speeds.reduce((a, s) => a + (s - mean) ** 2, 0) / speeds.length;
+  return Math.sqrt(variance) / mean;
+}
+
 /**
  * Normalised Shannon entropy of inter-keystroke intervals, in [0, 1].
  * Constant cadence (scripted typing) -> ~0; varied human cadence -> high.

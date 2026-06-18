@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.2.0"
+ruleset_version: "0.3.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -175,3 +175,29 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "X4BNet/lists_vpn; MaxMind Anonymous-IP"
+
+  # --- v0.3.0: deeper behavioral shape features (the agent frontier) ---
+
+  - id: bh.path_too_straight
+    title: Mouse path is unnaturally straight (start->end ~= total length)
+    layers: [behavioral]
+    reads: [behavioral.mouse_straightness]
+    predicate: above_threshold
+    threshold: 0.97
+    weight: 0.55
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Kitsune; cf. Balabit / SapiMouse mouse-dynamics"
+
+  - id: bh.uniform_velocity
+    title: Mouse moves at near-constant speed (low velocity CV)
+    layers: [behavioral]
+    reads: [behavioral.mouse_velocity_cv]
+    predicate: below_threshold
+    threshold: 0.08
+    weight: 0.55
+    status: active
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Kitsune; cf. BeCAPTCHA-Mouse"

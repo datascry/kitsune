@@ -67,6 +67,8 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "bh.keystroke_entropy_floor",
         ),
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
+        ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
+        ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
