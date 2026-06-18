@@ -19,13 +19,15 @@ def _sess(name: str, ja4: str, hw: int) -> Session:
     return group_signals(sigs)[0]
 
 
-def test_signature_stable_across_fleet() -> None:
-    assert fleet_signature(_sess("a", "X", 8)) == fleet_signature(_sess("b", "X", 8))
+def test_signature_ignores_randomized_js_traits() -> None:
+    # Same JA4, DIFFERENT hardware (the Camoufox case) must still share a signature.
+    assert fleet_signature(_sess("a", "X", 8)) == fleet_signature(_sess("b", "X", 32))
     assert fleet_signature(_sess("a", "X", 8)) != fleet_signature(_sess("c", "Y", 4))
 
 
 def test_detect_fleets() -> None:
-    corpus = [("a", _sess("a", "X", 8)), ("b", _sess("b", "X", 8)), ("c", _sess("c", "Y", 4))]
+    # a, b: same JA4, randomized hardware → one fleet. c: different JA4 → alone.
+    corpus = [("a", _sess("a", "X", 8)), ("b", _sess("b", "X", 32)), ("c", _sess("c", "Y", 4))]
     fleets = detect_fleets(corpus)
     assert len(fleets) == 1
     assert next(iter(fleets.values())) == ["a", "b"]

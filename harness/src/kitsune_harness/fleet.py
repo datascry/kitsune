@@ -4,9 +4,12 @@
 """Fleet / coordination detection.
 
 A single session can spoof its fingerprint perfectly (Camoufox proves it). But a *fleet* of bots
-shares a signature below the spoofing layer — the same TLS (JA4) and hardware profile across many
-"users". Real humans are diverse; a coordinated fleet is homogeneous. This clusters the corpus by a
-stable signature and flags groups of size > 1 — the bots/DDoS frontier no fingerprint spoof addresses.
+shares a signature **below the spoofing layer**. Empirically: 3 Camoufox instances randomize their
+JS-visible fingerprint per launch (hardware 8/32/8, platform Windows/macOS) — yet their **TLS JA4 is
+identical**, because the handshake is the engine's and anti-detect tools spoof JS, not the TLS stack.
+So the fleet key must be JA4 alone; JS traits like hardwareConcurrency are exactly what the tool
+randomizes to look diverse. Real same-browser users share JA4 too, so a JA4 cluster is a fleet
+*candidate* — combined with volume/timing/IP it is the bots/DDoS signal no fingerprint spoof escapes.
 """
 
 from __future__ import annotations
@@ -15,11 +18,9 @@ from collections import defaultdict
 
 from kitsune_detector.models import MISSING, Layer, Session
 
-# Signals chosen because they sit *below* the JS/engine spoofing layer (JA4 = TLS handshake) or are
-# stable hardware traits a fleet shares.
+# JA4 only: the TLS engine identity, below the JS layer the anti-detect tools randomize.
 _SIGNATURE = [
     (Layer.network, "ja4"),
-    (Layer.browser, "hardware_concurrency"),
 ]
 
 
