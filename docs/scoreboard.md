@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T09:52:11.864366+00:00`
+- generated: `2026-06-18T09:56:48.080480+00:00`
 - ruleset: `0.33.0`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -21,6 +21,7 @@
 | stealth-patched | corpus | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | undetected | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 | vanilla | corpus | 0.60 | 0.60 | 0.00 | 0.00 | 0.60 | 0.90 | bot |
+| zendriver | corpus | 0.00 | 0.99 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 
 ## Why
 
@@ -40,3 +41,4 @@
 - **stealth-patched** (bot): `br.cdp_runtime_enabled`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.font_linux_leak`, `br.codec_os_incoherent`
 - **undetected** (bot): `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.webgl_software`, `br.chrome_runtime_missing`, `br.hover_none_desktop`, `br.voices_empty`, `br.media_devices_empty`
 - **vanilla** (bot): `net.no_js_execution`
+- **zendriver** (bot): `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.webgl_software`, `br.chrome_runtime_missing`, `br.hover_none_desktop`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`

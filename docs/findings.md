@@ -55,6 +55,18 @@ floor none of them escape. (Setup yak-shave: the unpinned `rebrowser-playwright`
 each pull a different Playwright-core/Chromium revision; pin `rebrowser-playwright@1.48.2` to the base
 image's Chromium-1140.)
 
+**zendriver — the maintained successor — closes one more automation tell, same floor.** nodriver is now
+effectively unmaintained; `zendriver` forked it and is the tool the community currently reaches for, so it
+is the right frontier sample. Evaluated head-to-head against nodriver on the refreshed corpus, the diff is
+exactly one tell each way: zendriver no longer leaks `br.headless_ua` (it strips the `HeadlessChrome` UA
+token nodriver still ships), while it trips `br.webrtc_unavailable` where nodriver did not. The other
+seven environment tells are shared. So zendriver is marginally stealthier on the *automation surface* — it
+closes the UA token, on top of already avoiding `navigator.webdriver` and the `Runtime.enable` leak like
+its predecessor — yet it lands on the identical `environment` floor (software WebGL, no TTS voices, empty
+media devices, missing `window.chrome.runtime`) and scores `bot` at 0.998. The newest recommended CDP tool
+moves the automation needle by one and changes no verdict: the floor, not the automation surface, is what
+convicts — and it is exactly where these tools cannot follow without real hardware.
+
 ### CSP bypass — a tell the patches themselves admit they can't fix
 
 Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every
