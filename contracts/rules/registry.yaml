@@ -866,3 +866,15 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "WebGPU (2024-25): a real hardware GPU drives both WebGL and WebGPU; a spoofed WebGL renderer with no WebGPU adapter is exposed below the spoof"
+
+  - id: br.webgpu_vendor_vs_webgl
+    title: WebGPU adapter GPU family contradicts the WebGL renderer (spoofed renderer on real hardware)
+    layers: [browser]
+    reads: [browser.webgpu_vendor_mismatch]
+    predicate: present
+    weight: 0.75
+    status: active
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "WebGPU headful counterpart: a real GPU's WebGPU adapter family must match the WebGL renderer; a faked WebGL renderer on real hardware is exposed by WebGPU (needs a GPU-equipped target to fire)"

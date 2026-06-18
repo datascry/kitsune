@@ -161,6 +161,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "timezone_inconsistent", True, Source.collector)], "br.timezone_inconsistent"),
         ([(Layer.browser, "engine_stack_mismatch", True, Source.collector)], "br.engine_stack_vs_ua"),
         ([(Layer.browser, "webgpu_webgl_mismatch", True, Source.collector)], "br.webgpu_webgl_vs"),
+        ([(Layer.browser, "webgpu_vendor_mismatch", True, Source.collector)], "br.webgpu_vendor_vs_webgl"),
         (
             [
                 (Layer.browser, "webrtc_public_ip", "203.0.113.7", Source.collector),

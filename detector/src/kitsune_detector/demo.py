@@ -378,7 +378,22 @@ DEMO_PAGE = """<!doctype html>
         } else {
           if (gpuAdapter.isFallbackAdapter) { sigs.push(S("browser", "webgpu_fallback", true)); gpuNoHw = true; }
           var ginfo = gpuAdapter.info || (gpuAdapter.requestAdapterInfo ? await gpuAdapter.requestAdapterInfo() : null);
-          if (ginfo && ginfo.vendor) sigs.push(S("browser", "webgpu_vendor", ginfo.vendor));
+          if (ginfo && ginfo.vendor) {
+            sigs.push(S("browser", "webgpu_vendor", ginfo.vendor));
+            // Headful counterpart of webgpu_webgl_vs: a *real* GPU drives a real WebGPU adapter, so the
+            // adapter's GPU family must match the WebGL renderer's. A spoofer that fakes the WebGL
+            // renderer to a different GPU family (while its real GPU shows through WebGPU) is exposed.
+            function gpuFam(s) {
+              s = (s || "").toLowerCase();
+              return /nvidia|geforce|rtx|gtx/.test(s) ? "nvidia"
+                   : /intel|hd graphics|\\biris\\b|uhd/.test(s) ? "intel"
+                   : /\\bamd\\b|radeon|\\bati\\b/.test(s) ? "amd"
+                   : /apple|\\bm1\\b|\\bm2\\b|\\bm3\\b/.test(s) ? "apple"
+                   : /adreno|\\bmali\\b|powervr/.test(s) ? "mobile" : "";
+            }
+            var famGL = gpuFam(wg.renderer), famGPU = gpuFam(ginfo.vendor + " " + (ginfo.architecture || ""));
+            if (famGL && famGPU && famGL !== famGPU) sigs.push(S("browser", "webgpu_vendor_mismatch", true));
+          }
         }
         // Coherence: WebGL renderer claims a *hardware* GPU, but WebGPU exposes no real adapter. A genuine
         // hardware GPU drives both, so this means the WebGL renderer was spoofed — caught below the spoof.
