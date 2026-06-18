@@ -2,7 +2,7 @@
 // Covers browser/platform classification and Client-Hints platform normalisation.
 
 import { describe, expect, it } from "vitest";
-import { normalizePlatform, uaBrowser, uaPlatform } from "../src/detect.js";
+import { isHeadlessUA, normalizePlatform, uaBrowser, uaPlatform } from "../src/detect.js";
 
 const CHROME =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML) Chrome/125.0 Safari/537.36";
@@ -41,5 +41,12 @@ describe("normalizePlatform", () => {
     expect(normalizePlatform("Mac OS X")).toBe("macOS");
     expect(normalizePlatform("Windows")).toBe("Windows");
     expect(normalizePlatform("Chrome OS")).toBe("Chrome OS");
+  });
+});
+
+describe("isHeadlessUA", () => {
+  it("flags headless user-agents", () => {
+    expect(isHeadlessUA("Mozilla/5.0 HeadlessChrome/125.0")).toBe(true);
+    expect(isHeadlessUA(CHROME)).toBe(false);
   });
 });

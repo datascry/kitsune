@@ -1,8 +1,8 @@
 // collector/collect — assemble a session's browser + behavioral signals.
 // Pure: takes a BrowserEnv snapshot and emits contract-valid signals (no globals touched).
 
-import { mouseEntropy, pointerEventCount } from "./behavioral.js";
-import { normalizePlatform, uaBrowser, uaPlatform } from "./detect.js";
+import { keystrokeEntropy, mouseEntropy, pointerEventCount } from "./behavioral.js";
+import { isHeadlessUA, normalizePlatform, uaBrowser, uaPlatform } from "./detect.js";
 import { makeSignal } from "./signal.js";
 import type { BrowserEnv, Layer, Signal, SignalValue } from "./types.js";
 
@@ -26,8 +26,12 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
   if (env.cdpRuntimeEnabled) {
     out.push(sig("browser", "cdp_runtime_enabled", true));
   }
+  if (isHeadlessUA(env.userAgent)) {
+    out.push(sig("browser", "ua_is_headless", true));
+  }
 
   out.push(sig("behavioral", "mouse_entropy", mouseEntropy(env.pointerEvents)));
   out.push(sig("behavioral", "pointer_event_count", pointerEventCount(env.pointerEvents)));
+  out.push(sig("behavioral", "keystroke_entropy", keystrokeEntropy(env.keyEvents)));
   return out;
 }

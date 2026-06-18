@@ -2,7 +2,7 @@
 // Asserts the human-entropy floor: straight/absent motion ~0, varied motion high.
 
 import { describe, expect, it } from "vitest";
-import { mouseEntropy, pointerEventCount } from "../src/behavioral.js";
+import { keystrokeEntropy, mouseEntropy, pointerEventCount } from "../src/behavioral.js";
 import type { PointerSample } from "../src/types.js";
 
 const p = (x: number, y: number, t: number): PointerSample => ({ x, y, t });
@@ -46,5 +46,19 @@ describe("mouseEntropy", () => {
       );
     }
     expect(mouseEntropy(circle)).toBeGreaterThan(0.5);
+  });
+});
+
+describe("keystrokeEntropy", () => {
+  it("is 0 for too few keys", () => {
+    expect(keystrokeEntropy([100, 200])).toBe(0);
+  });
+
+  it("is 0 for perfectly constant cadence (scripted)", () => {
+    expect(keystrokeEntropy([0, 100, 200, 300, 400])).toBe(0);
+  });
+
+  it("is positive for varied human cadence", () => {
+    expect(keystrokeEntropy([0, 90, 320, 410, 700, 760, 1300])).toBeGreaterThan(0);
   });
 });

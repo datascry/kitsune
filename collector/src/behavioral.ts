@@ -39,3 +39,33 @@ export function mouseEntropy(samples: PointerSample[]): number {
   }
   return h / Math.log2(BINS);
 }
+
+/**
+ * Normalised Shannon entropy of inter-keystroke intervals, in [0, 1].
+ * Constant cadence (scripted typing) -> ~0; varied human cadence -> high.
+ */
+export function keystrokeEntropy(times: number[]): number {
+  if (times.length < 3) return 0;
+  const intervals: number[] = [];
+  for (let i = 1; i < times.length; i++) {
+    intervals.push(times[i]! - times[i - 1]!);
+  }
+  const min = Math.min(...intervals);
+  const max = Math.max(...intervals);
+  if (max === min) return 0;
+
+  const bins = new Array<number>(BINS).fill(0);
+  for (const v of intervals) {
+    let idx = Math.floor(((v - min) / (max - min)) * BINS);
+    if (idx >= BINS) idx = BINS - 1;
+    bins[idx]! += 1;
+  }
+  let h = 0;
+  for (const count of bins) {
+    if (count > 0) {
+      const p = count / intervals.length;
+      h -= p * Math.log2(p);
+    }
+  }
+  return h / Math.log2(BINS);
+}

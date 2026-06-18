@@ -30,9 +30,10 @@ KITSUNE_DETECTOR=http://127.0.0.1:8080 go run ./cmd/edge
 - **Deferred (M1):** the transparent **TCP peek-and-proxy** that captures the ClientHello off a live
   socket and reverse-proxies to the app (the [`read-tls-client-hello`](https://github.com/httptoolkit/read-tls-client-hello)
   / [`utls`](https://github.com/refraction-networking/utls) technique), plus the **HTTP/2 (Akamai)**
-  fingerprint. The JA4→browser/OS **hint table** ships empty; production loads a JA4 fingerprint DB.
-  Until then, coherence rules that read hints simply don't fire (no data ≠ contradiction) — see
-  `docs/architecture.md` §6.
+  fingerprint. The JA4→browser/OS **hint table** is loaded by `hintdb.go` (embedded seed +
+  `KITSUNE_JA4_HINTS` file override); ship a real JA4 fingerprint DB to populate it. The seed holds
+  example entries only, so live rules that read hints don't fire until a real DB is supplied (no data
+  ≠ contradiction) — see `docs/architecture.md` §6.
 
 This is **tier-2** coverage per the testing strategy (network IO), gated lower than the core logic;
 the fingerprint engine itself is held to the core ≥95% bar.

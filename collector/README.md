@@ -30,6 +30,7 @@ pnpm run lint && pnpm exec prettier --check .
 pnpm run build     # tsup → dist/ (ESM + d.ts)
 ```
 
-> The CDP `Runtime.enable` probe (prototype-chain Proxy `ownKeys` trap) is stubbed `false` in
-> `index.ts` pending the authoritative implementation — see `docs/catalog.md` §4. The canvas-lie
-> probe (native `toString` check) is live.
+> The CDP `Runtime.enable` probe (`cdp.ts`, prototype-chain Proxy `ownKeys` trap) is implemented and
+> tested — it stays `false` in a clean page and trips when a CDP preview enumerates the marker (the
+> live replacement for the dead `Error.stack` trick; see `docs/catalog.md` §4). The canvas-lie probe
+> (native `toString` check) is also live.

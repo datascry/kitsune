@@ -1,5 +1,5 @@
 // collector/test/collect — tests for assembling a session's signals from a BrowserEnv.
-// Covers conditional emission of ch_platform / canvas_lie / cdp tells (clean vs bot env).
+// Covers conditional emission of ch_platform / canvas_lie / cdp / headless tells (clean vs bot env).
 
 import { describe, expect, it } from "vitest";
 import { collectSignals } from "../src/collect.js";
@@ -14,15 +14,17 @@ const cleanEnv: BrowserEnv = {
   canvasTampered: false,
   cdpRuntimeEnabled: false,
   pointerEvents: [],
+  keyEvents: [],
 };
 
 const botEnv: BrowserEnv = {
   webdriver: true,
-  userAgent: "Mozilla/5.0 (X11; Linux x86_64) Firefox/127.0",
+  userAgent: "Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/125.0 Safari/537.36",
   uaDataPlatform: "Linux",
   canvasTampered: true,
   cdpRuntimeEnabled: true,
   pointerEvents: [],
+  keyEvents: [],
 };
 
 function kinds(env: BrowserEnv): string[] {
@@ -31,13 +33,13 @@ function kinds(env: BrowserEnv): string[] {
 
 describe("collectSignals", () => {
   it("emits only the always-on signals for a clean env", () => {
-    const k = kinds(cleanEnv);
-    expect(k).toEqual([
+    expect(kinds(cleanEnv)).toEqual([
       "webdriver",
       "ua_browser",
       "ua_platform",
       "mouse_entropy",
       "pointer_event_count",
+      "keystroke_entropy",
     ]);
   });
 
@@ -46,6 +48,7 @@ describe("collectSignals", () => {
     expect(k).toContain("ch_platform");
     expect(k).toContain("canvas_lie");
     expect(k).toContain("cdp_runtime_enabled");
+    expect(k).toContain("ua_is_headless");
   });
 
   it("stamps session id and collector source", () => {

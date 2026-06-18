@@ -32,4 +32,6 @@ export interface BrowserEnv {
   canvasTampered: boolean;
   cdpRuntimeEnabled: boolean;
   pointerEvents: PointerSample[];
+  /** Timestamps (ms) of keydown events, for keystroke-dynamics. */
+  keyEvents: number[];
 }

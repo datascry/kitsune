@@ -5,8 +5,8 @@ package fingerprint
 
 // Hint is a coarse browser/OS label derived from a fingerprint.
 type Hint struct {
-	Browser string
-	OS      string
+	Browser string `json:"browser"`
+	OS      string `json:"os"`
 }
 
 // Unknown is returned when a fingerprint is not in the table.

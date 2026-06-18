@@ -19,7 +19,14 @@ func main() {
 	detectorURL := os.Getenv("KITSUNE_DETECTOR") // e.g. http://detector:8080
 	backendURL := os.Getenv("KITSUNE_BACKEND")   // e.g. http://detector:8080
 
-	hints := fingerprint.HintTable{}
+	hints := fingerprint.DefaultHints()
+	if p := os.Getenv("KITSUNE_JA4_HINTS"); p != "" {
+		if h, err := fingerprint.LoadHints(p); err != nil {
+			log.Printf("warning: could not load JA4 hints from %s: %v", p, err)
+		} else {
+			hints = h
+		}
+	}
 
 	// Transparent TLS reverse-proxy mode when a backend is set; else the fingerprint HTTP service.
 	if backendURL != "" {

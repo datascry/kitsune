@@ -19,6 +19,11 @@ export function uaPlatform(ua: string): string {
   return "unknown";
 }
 
+/** True if the User-Agent advertises a headless browser (a strong automation tell). */
+export function isHeadlessUA(ua: string): boolean {
+  return /Headless/i.test(ua);
+}
+
 /** Normalise a Sec-CH-UA-Platform / userAgentData.platform value to the ua_platform vocabulary. */
 export function normalizePlatform(platform: string): string {
   const map: Record<string, string> = {
