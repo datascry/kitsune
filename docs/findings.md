@@ -574,6 +574,21 @@ Two layers it still cannot reach convict it anyway, and reading the source told 
   matters for an individually-*coherent* cloned fleet, where it is the only tell — and the mechanism is now
   proven on real browser captures.)
 
+  **The complement, also live — a real Camoufox fleet.** chrome-clone proves the *collision* side (cloned
+  profile, fp_hash identical); Camoufox proves the *paradox* side. Two concurrent Camoufox v135 launches
+  randomise per launch, so their `fp_hash` **diverges** (`7983f340` vs `e43375ec`) and `hardware_concurrency`
+  splits (12 vs 8) under one shared JA4 cipher prefix. Scored live they reach **`fleet` 1.00** with
+  `cloned_fingerprint=None` — the fingerprint-collision correctly **stays silent** (the hashes differ, as
+  they must for distinct real renders) and the JS-divergence paradox convicts them instead. So the two
+  signals are confirmed complementary on *real* tools, both sides: deterministic reuse → collision;
+  per-launch randomisation → paradox. A fleet cannot escape both.
+
+  A **baseline control kept this honest.** Camoufox also tripped `net.tls_grease_vs_ua` — tempting to log as
+  a Camoufox TLS flaw — but stock Playwright Firefox (same run, no Camoufox spoofing) trips it *too*. So it
+  is a Playwright/Camoufox **Firefox-build** artifact (their bundled Firefox omits the GREASE a real Mozilla
+  Firefox sends), not Camoufox-specific spoofing. It is a true tell against that automation-Firefox family,
+  but attributing it to Camoufox's anti-detect layer would have been wrong; the control caught it.
+
 ## The scripted-flood tier — three HTTP-header tells before any JS runs
 
 The cheapest attack is also the most common at volume: a script (httpx/requests/curl/Go) that forges a
