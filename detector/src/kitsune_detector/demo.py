@@ -446,6 +446,17 @@ DEMO_PAGE = """<!doctype html>
       if (errEngine && uaEngine !== "other" && errEngine !== uaEngine)
         sigs.push(S("browser", "error_engine_mismatch", true));
     }
+    // Engine float-precision tell (CreepJS Math fingerprint): Math.pow(PI,-100) differs by the last ULP
+    // between V8 (...204e-50) and SpiderMonkey (...206e-50) — the engine's own pow implementation, stable
+    // across OS/version (verified V8 vs Firefox). A hard-to-spoof channel: a UA-spoofer that patches the
+    // obvious engine tells rarely also matches the right engine's float precision.
+    try {
+      var mp = Math.pow(Math.PI, -100).toString();
+      var mathEngine = mp === "1.9275814160560204e-50" ? "chromium"
+                     : mp === "1.9275814160560206e-50" ? "firefox" : "";
+      if (mathEngine && uaEngine !== "other" && mathEngine !== uaEngine)
+        sigs.push(S("browser", "math_engine_mismatch", true));
+    } catch (e) {}
     if (navigator.oscpu) {
       var oc = /Mac/i.test(navigator.oscpu) ? "macOS" : /Win/i.test(navigator.oscpu) ? "Windows"
              : /Linux/i.test(navigator.oscpu) ? "Linux" : "";

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.49.0"
+ruleset_version: "0.50.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1145,6 +1145,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS: V8/SpiderMonkey/JSC produce distinct TypeError messages; the engine's own message generator is far harder to spoof than navigator.vendor"
+
+  - id: br.math_engine_vs_ua
+    title: JS Math float precision implies an engine that contradicts the UA
+    layers: [browser]
+    reads: [browser.math_engine_mismatch]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS Math fingerprint: Math.pow(PI,-100) is ...204e-50 on V8 vs ...206e-50 on SpiderMonkey (engine-own pow impl, platform-stable; verified V8 vs Firefox) — a hard-to-spoof engine-coherence channel beyond Error.captureStackTrace and the error-message format"
 
   # --- v0.24.0: HTTP-layer Sec-Fetch coherence (scripted client faking a browser UA) ---
 
