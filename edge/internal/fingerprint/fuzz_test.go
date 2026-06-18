@@ -61,3 +61,15 @@ func FuzzParseClientHello(f *testing.F) {
 		_, _ = ParseClientHello(data)
 	})
 }
+
+// FuzzParseQUICInitial — the decryptor parses untrusted UDP bytes (a QUIC packet sniffer would feed it
+// arbitrary datagrams); it must never panic, only error.
+func FuzzParseQUICInitial(f *testing.F) {
+	f.Add([]byte{0xc0, 0x00, 0x00, 0x00, 0x01, 0x08}) // long header, v1, dcid len 8, truncated
+	f.Add([]byte{0x16, 0x03, 0x01, 0x00, 0x00})       // a TLS record, not QUIC
+	f.Add(make([]byte, 1280))                         // all-zero datagram
+	f.Add([]byte{})
+	f.Fuzz(func(t *testing.T, data []byte) {
+		_, _ = ParseQUICInitial(data)
+	})
+}

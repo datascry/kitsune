@@ -103,7 +103,7 @@ func (r *reader) u16list() []uint16 {
 	return out
 }
 
-// ParseClientHello parses a full TLS record containing a ClientHello.
+// ParseClientHello parses a full TLS record containing a ClientHello (TCP transport).
 func ParseClientHello(record []byte) (*ClientHello, error) {
 	r := &reader{b: record}
 	if r.u8() != 0x16 { // handshake record
@@ -115,8 +115,13 @@ func ParseClientHello(record []byte) (*ClientHello, error) {
 	if r.err != nil {
 		return nil, r.err
 	}
+	return ParseClientHelloHandshake(body, "t")
+}
 
-	h := &reader{b: body}
+// ParseClientHelloHandshake parses a raw TLS handshake message (no record layer) — the form QUIC carries
+// in its CRYPTO frames. transport is the JA4 transport marker ("t" for TCP, "q" for QUIC).
+func ParseClientHelloHandshake(handshake []byte, transport string) (*ClientHello, error) {
+	h := &reader{b: handshake}
 	if h.u8() != 0x01 { // client_hello
 		return nil, ErrMalformed
 	}
@@ -126,7 +131,7 @@ func ParseClientHello(record []byte) (*ClientHello, error) {
 		return nil, h.err
 	}
 
-	out := &ClientHello{Transport: "t"}
+	out := &ClientHello{Transport: transport}
 	out.LegacyVersion = ch.u16()
 	out.Version = out.LegacyVersion
 	_ = ch.take(32)           // random
