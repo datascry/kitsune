@@ -119,6 +119,12 @@ DEMO_PAGE = """<!doctype html>
     if (wg.renderer) sigs.push(S("browser", "webgl_renderer", wg.renderer));
     if (wg.vendor) sigs.push(S("browser", "webgl_vendor", wg.vendor));
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
+    // The GPU API in the renderer string implies an OS (Direct3D=Windows, Metal=macOS) — a spoofed
+    // renderer often contradicts the platform (e.g. a Direct3D GPU on Linux).
+    var wo = /Direct3D|D3D[0-9]/i.test(wg.renderer) ? "Windows"
+           : /Metal|Apple/i.test(wg.renderer) ? "macOS"
+           : /Vulkan|OpenGL|GLX|Mesa|SwiftShader|llvmpipe/i.test(wg.renderer) ? "Linux" : "";
+    if (wo) sigs.push(S("browser", "webgl_os_hint", wo));
     if (/Chrome|Edg/.test(ua) && !window.chrome) sigs.push(S("browser", "chrome_object_missing", true));
     if (toStringTampered()) sigs.push(S("browser", "function_tostring_tampered", true));
     try {

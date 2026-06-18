@@ -79,6 +79,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "webgl_getparameter_tampered", True, Source.collector)], "br.webgl_getparameter_tampered"),
         ([(Layer.browser, "plugins_spoofed", True, Source.collector)], "br.plugins_spoofed"),
         ([(Layer.browser, "webdriver_getter_tampered", True, Source.collector)], "br.webdriver_getter_tampered"),
+        (
+            [
+                (Layer.browser, "webgl_os_hint", "Windows", Source.collector),
+                (Layer.browser, "ua_platform", "Linux", Source.collector),
+            ],
+            "br.webgl_os_vs_ua",
+        ),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
