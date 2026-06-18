@@ -630,6 +630,18 @@ existing per-request signal path, so it adds a DoS-attribution signal without to
 served or mitigated. The wiring is unit-tested (the tee feeds the scanner and passes bytes through
 unchanged; a rapid-reset-laden context makes `ServeHTTP` emit the signal); the rule fires in the engine.
 
+**Validated live, against the actual attack.** `evaders/h2-rapid-reset` is a raw-framer CVE-2023-44487
+client: it mints a session, floods 150 `HEADERS`+`RST_STREAM` pairs, then sends one final completing
+request so a handler runs. The open question the unit tests could not answer was timing — does the
+detection threshold fire *before* the `x/net` server's own mitigation closes the connection? The live run
+settles it: all 150 resets land, the final request completes, and the session is scored `bot` (0.99) with
+`net.h2_rapid_reset` *and* `net.no_js_execution` (a raw framer has no browser layer either). So the
+conservative threshold (100) fires comfortably inside the server's tolerance window — detection and
+mitigation compose rather than race. The flood session now lives in the corpus, so the rule is exercised
+on recall, not only in unit tests. (Aside, and a lesson re-learned: the first cut of the raw-framer client
+hung on a blocking `ReadFrame` with no deadline — adversarial *clients* need timeouts as much as
+adversarial *servers* do.)
+
 ### What live capture taught the SETTINGS classifier
 
 Driving real browsers through the edge corrected the SETTINGS-profile classifier twice — a reminder that

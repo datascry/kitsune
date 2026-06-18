@@ -53,6 +53,7 @@ run_tool kitsune-zendriver zendriver
 run_tool kitsune-selenium-driverless selenium-driverless
 run_tool kitsune-pydoll pydoll
 run_tool kitsune-curl-impersonate curl-impersonate
+run_tool kitsune-h2-rapid-reset h2-rapid-reset
 
 ARGS=(
   "vanilla=$OUT/vanilla.json"
