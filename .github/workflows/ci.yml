@@ -55,6 +55,10 @@ jobs:
       - run: gofmt -l . | tee /dev/stderr | (! read)
       - run: go vet ./...
       - run: go test ./... -cover
+      # Smoke-fuzz the adversarial-input parsers (ClientHello + h2 preface) so a regression that lets
+      # malformed client bytes panic the edge — a DoS — is caught in CI, not in production.
+      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseClientHello' -fuzztime 20s
+      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParsePreface' -fuzztime 20s
 
   collector:
     runs-on: ubuntu-latest
