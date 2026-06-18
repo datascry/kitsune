@@ -6,10 +6,14 @@ that maps directly onto the cross-layer incoherence thesis:
 
 | Evader | Lang | Status | Defeats | Seeds from (catalog) |
 |---|---|---|---|---|
-| `vanilla` | Python | **live** | nothing (the control / detection floor) | httpx |
-| `stealth` | TypeScript | stub | browser-FP + CDP layers | Camoufox, patchright, fingerprint-suite |
-| `agent` | Python | stub | the **behavioral** layer (headline experiment) | browser-use, Claude Computer Use |
-| `go-tls` | Go | stub | the **network** (JA3/JA4) layer | uTLS, tls-client |
+| `vanilla` | Python | **live** ✅ | nothing (the control / detection floor) | httpx |
+| `go-tls` | Go | **built** ✅ | the **network** (JA3/JA4) layer | uTLS, tls-client |
+| `stealth` | TypeScript | design stub | browser-FP + CDP layers | Camoufox, patchright, fingerprint-suite |
+| `agent` | Python | design stub | the **behavioral** layer (headline experiment) | browser-use, Claude Computer Use |
+
+`vanilla` runs end-to-end against the live stack; `go-tls` forges real Chrome/Firefox TLS (tested).
+`stealth` and `agent` are design-complete stubs — they need a browser/LLM runtime (see each dir's
+README) and are phase-3 work.
 
 > **Spine-first:** these are stubs. They are built out in phase 3 (`docs/architecture.md` §8). The
 > detector, edge, collector, and harness are complete and the scoreboard already runs on replayed
