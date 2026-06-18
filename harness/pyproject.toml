@@ -33,7 +33,7 @@ filterwarnings = ["error", "ignore::DeprecationWarning", "ignore::PendingDepreca
 
 [tool.coverage.run]
 branch = true
-omit = ["*/__main__.py"]
+omit = ["*/__main__.py", "*/browserforge_corpus.py"]  # external-data glue (browserforge); run via `task calibrate`
 
 [tool.ruff]
 line-length = 120
@@ -48,3 +48,7 @@ python_version = "3.11"
 strict = true
 files = ["src"]
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "browserforge.*"
+ignore_missing_imports = true

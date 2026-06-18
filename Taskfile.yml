@@ -56,6 +56,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness"]
 
+  calibrate:
+    desc: "Measure rule false positives against real browserforge fingerprints (FP report)"
+    dir: harness
+    cmds: ["uv run --with browserforge python -m kitsune_harness.browserforge_corpus --n {{.N | default 500}}"]
+
   ci:
     desc: Run the full local pipeline
     cmds:
