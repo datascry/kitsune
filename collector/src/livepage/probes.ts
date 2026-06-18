@@ -772,17 +772,23 @@ export function armCollector(): LiveCollector {
     }
     if (!cspEnforced) put("browser", "csp_bypassed", true);
 
-    // Behavioural layer — mirrors collect.ts; emitted only with enough samples to judge.
-    put("behavioral", "mouse_entropy", mouseEntropy(pts));
-    put("behavioral", "pointer_event_count", pointerEventCount(pts));
-    if (keys.length >= 3) put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
-    if (pts.length >= 3) {
+    // Behavioural layer — only judge once there is enough GENUINE interaction. The behavioural rules
+    // are floors (low entropy / no input / too-straight) that a real visitor who simply hasn't moved
+    // the mouse yet would trip — scoring the *absence* of input as bot-like is a false positive (the
+    // detector demo omits this layer in ?fast for the same reason). Below the floor, emit nothing so
+    // those rules resolve MISSING (do not fire). The page asks the visitor to move/type to populate it.
+    const BEHAVIOR_MIN_POINTERS = 15;
+    if (pts.length >= BEHAVIOR_MIN_POINTERS) {
+      put("behavioral", "mouse_entropy", mouseEntropy(pts));
+      put("behavioral", "pointer_event_count", pointerEventCount(pts));
       put("behavioral", "mouse_straightness", pathStraightness(pts));
       put("behavioral", "mouse_velocity_cv", velocityCV(pts));
+      if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
+        put("behavioral", "coalesced_events_absent", true);
+      }
     }
-    if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
-      put("behavioral", "coalesced_events_absent", true);
-    }
+    // Keystroke cadence only judged with enough keys to be meaningful (else genuinely absent, not a floor).
+    if (keys.length >= 4) put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
     return out;
   }
 

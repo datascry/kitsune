@@ -5,6 +5,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Strict img-src so the csp_bypassed probe works on static hosting: a real browser blocks the
+         probe image and fires securitypolicyviolation (→ not flagged); a setBypassCSP automation tool
+         silently disables enforcement, so the violation never fires and the tell stands. Only img-src
+         is restricted (no default-src), so scripts/styles/fetch/WebRTC are unaffected. -->
+    <meta http-equiv="Content-Security-Policy" content="img-src 'none'" />
     <title>Kitsune — live browser detection</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -22,7 +27,8 @@
 
     <main>
       <p id="status">
-        Collecting signals from your browser — move your mouse and type for a few seconds…
+        Collecting signals from your browser — <strong>move your mouse around and type</strong> for
+        a few seconds so the behavioral layer can be assessed…
       </p>
       <div id="app"></div>
     </main>
