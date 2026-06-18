@@ -568,6 +568,21 @@ because there is no browser. It is the network-layer twin of the selenium-driver
 wins its own arms race completely is convicted on the axis it never entered. TLS/HTTP can be impersonated;
 *executing the page* cannot be, by a thing that is not a browser.
 
+The newest generation of this tooling does not change the conclusion — it sharpens it. `primp` (Python
+bindings over a Rust `rquest`/BoringSSL core) and its async sibling `rnet` are the 2026 successors to
+`curl-impersonate`, and their published source confirms the same architecture: a **network-only HTTP
+client that does not run a JS engine**, shipping per-build impersonation profiles for current releases
+(`chrome_144`–`chrome_148`, `safari_26`, `firefox_148`, `edge_148`, plus per-OS variants). Because the
+profiles track real shipping browsers, the per-layer fingerprint is correct *by construction* — JA3/JA4,
+the HTTP/2 SETTINGS and pseudo-header order, and the full `Sec-*`/`Accept-Encoding` header set all match,
+so every per-layer and network-coherence rule stays silent exactly as it does for `curl-impersonate`. The
+profile churn (a new Chrome major every few weeks) is an arms race on the *fingerprint* axis the detector
+deliberately does not try to win. It convicts on the axis these tools cannot enter at all:
+`net.no_js_execution` fires because the served challenge page's collector never runs. White-boxing the
+current state of the art therefore adds no rule — it confirms the existing cross-layer absence already
+covers the whole network-impersonation family, present and future, on the one property that does not
+update with the next browser release: a non-browser cannot execute the page.
+
 ## TCP/IP-stack fingerprinting — the OS tell beneath TLS
 
 The deepest layer a session exposes is the one the application never touches: the **TCP/IP stack of the
