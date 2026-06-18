@@ -12,6 +12,11 @@ const HUMAN_MOUSE = process.env.HUMAN_MOUSE === "1"; // synthesize human-like mo
 // MAX_STEALTH: the kitchen sink — patchright (best CDP stealth) + a coherent Linux-Chrome UA (no headless
 // token) + human-like motion. The chromium analog of hardened-Camoufox: what survives maximal stealth.
 const MAX_STEALTH = process.env.MAX_STEALTH === "1";
+// FLOOR_SPOOF: the red-team frontier — attack the *environment floor* every tool hits. Patchright (clean
+// CDP stealth) + a coherent Linux-Chrome UA, then fake the two tells nothing else spoofs: speechSynthesis
+// voices and enumerateDevices. Tests whether voices_empty/media_devices_empty are a real wall or just
+// catch the lazy (absent) case — and whether the detector catches the *spoof* via coherence instead.
+const FLOOR_SPOOF = process.env.FLOOR_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -38,7 +43,8 @@ async function humanMove(page, from, to) {
 }
 
 // patchright / rebrowser-playwright are API-compatible playwright drop-ins; swap the engine at runtime.
-const engine = PATCHRIGHT || MAX_STEALTH ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
+const engine =
+  PATCHRIGHT || MAX_STEALTH || FLOOR_SPOOF ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
 const { chromium } = await import(engine);
 
 const CHROME_UA =
@@ -48,23 +54,25 @@ const LINUX_CHROME_UA =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
 const userAgent =
-  SPOOF_UA || (MAX_STEALTH || FULL ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
-const evading = STEALTH || FULL || MAX_STEALTH || Boolean(SPOOF_UA);
-const mode = MAX_STEALTH
-  ? "max-stealth"
-  : HUMAN_MOUSE
-    ? "human-mouse"
-  : PATCHRIGHT
-    ? "patchright"
-    : REBROWSER
-      ? "rebrowser"
-      : FULL
-        ? "full-stealth"
-        : SPOOF_UA
-          ? "spoof-ua"
-          : STEALTH
-            ? "stealth"
-            : "naive";
+  SPOOF_UA || (MAX_STEALTH || FULL || FLOOR_SPOOF ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
+const evading = STEALTH || FULL || MAX_STEALTH || FLOOR_SPOOF || Boolean(SPOOF_UA);
+const mode = FLOOR_SPOOF
+  ? "floor-spoof"
+  : MAX_STEALTH
+    ? "max-stealth"
+    : HUMAN_MOUSE
+      ? "human-mouse"
+      : PATCHRIGHT
+        ? "patchright"
+        : REBROWSER
+          ? "rebrowser"
+          : FULL
+            ? "full-stealth"
+            : SPOOF_UA
+              ? "spoof-ua"
+              : STEALTH
+                ? "stealth"
+                : "naive";
 
 // --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.
@@ -73,7 +81,31 @@ const context = await browser.newContext({
   ignoreHTTPSErrors: true,
   ...(userAgent ? { userAgent } : {}),
 });
-if (FULL) {
+if (FLOOR_SPOOF) {
+  // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are
+  // given Linux-desktop (espeak-style) names so they are coherent with the Linux UA — no Microsoft/Apple
+  // markers that would trip br.voice_os_vs_ua. Devices mimic a real pre-permission enumeration (present
+  // kinds, empty labels). webdriver/chrome are patched too; WebGL is left real to avoid the tampering tell.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    if (!window.chrome) Object.defineProperty(window, "chrome", { value: { runtime: {} } });
+    const fakeVoices = [
+      { name: "English (America)", lang: "en-US", default: true, localService: true, voiceURI: "english-us" },
+      { name: "English (Great Britain)", lang: "en-GB", default: false, localService: true, voiceURI: "english-gb" },
+      { name: "español", lang: "es-ES", default: false, localService: true, voiceURI: "spanish" },
+    ];
+    if (window.speechSynthesis) window.speechSynthesis.getVoices = () => fakeVoices;
+    const fakeDevices = [
+      { deviceId: "default", kind: "audioinput", label: "", groupId: "g1" },
+      { deviceId: "default", kind: "audiooutput", label: "", groupId: "g1" },
+      { deviceId: "cam0", kind: "videoinput", label: "", groupId: "g2" },
+    ];
+    if (navigator.mediaDevices) {
+      navigator.mediaDevices.enumerateDevices = () =>
+        Promise.resolve(fakeDevices.map((d) => ({ ...d, toJSON: () => d })));
+    }
+  });
+} else if (FULL) {
   // The full battery: every patch a JS-injection anti-detect would apply. Note webdriver is patched
   // on Navigator.prototype (no own-property tell), and WebGL is given a real GPU string.
   await context.addInitScript(() => {

@@ -35,6 +35,7 @@ run_stealth "$OUT/stealth-naive.json"
 run_stealth "$OUT/stealth-patched.json" -e STEALTH=1
 run_stealth "$OUT/spoof-ua.json" -e SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
 run_stealth "$OUT/full-stealth.json" -e FULL=1
+run_stealth "$OUT/floor-spoof.json" -e FLOOR_SPOOF=1 # red-team: fake the environment floor (voices/devices)
 run_stealth "$OUT/patchright.json" -e PATCHRIGHT=1 || true # evaluate a real anti-detect tool
 
 # Engine/tool evaders — use the prebuilt images if present (graceful skip otherwise).

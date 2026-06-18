@@ -105,6 +105,28 @@ surface, on the environment floor and (for coordinated fleets) on cross-instance
 breadth has reached the point of diminishing returns: new captures now confirm the structural conclusion
 rather than testing it.
 
+### Red-teaming the floor — `FLOOR_SPOOF`, and why presence can't be faked for free
+
+A fair objection: if every tool is convicted on the *environment floor*, are those checks a real wall or
+just absence-detectors that fold the moment someone fakes presence? `FLOOR_SPOOF` tests it directly. It is
+patchright (clean CDP stealth) on a coherent Linux-Chrome UA, plus an init script that overrides
+`speechSynthesis.getVoices` (returning Linux-coherent espeak-style voices, so `br.voice_os_vs_ua` stays
+quiet) and `navigator.mediaDevices.enumerateDevices` (returning present-but-unlabelled devices). The first
+result was instructive: **both `br.voices_empty` and `br.media_devices_empty` stopped firing** — the
+floor's *presence* checks are indeed defeated by faking presence, and no coherence rule caught the fake
+data. So the absence-detectors alone are not a wall.
+
+But faking presence is not free: you can only do it by *replacing* the native method, and the replacement
+betrays itself. The fix added `getVoices` and `enumerateDevices` to the `toString`-tamper probe (the same
+mechanism that already catches WebGL/`webdriver` overrides — a real browser's methods always report
+`[native code]`). Re-run, `br.tostring_tampered` **fires**, and the spoof is caught — not for the absent
+floor, but for the tampering required to fake it. This is the coherence thesis in a single exchange: the
+naive bot is caught for what it *lacks*; the sophisticated bot that supplies what it lacks is caught for
+the *act of supplying it*. The evader stays `bot` either way (still leaking `mimetypes_empty`,
+`no_plugins`, `permissions_anomaly`, software WebGL, plus the behavioral and webdriver-patch tells), but
+the lesson is the durable one: there is no free lunch in faking environment presence from a headless
+browser — absence is a tell, and the only cure for absence is tampering, which is also a tell.
+
 ### CSP bypass — a tell the patches themselves admit they can't fix
 
 Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every

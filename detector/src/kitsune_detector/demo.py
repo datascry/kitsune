@@ -224,8 +224,13 @@ DEMO_PAGE = """<!doctype html>
   }
   function toStringTampered() {
     try {
+      // getVoices/enumerateDevices included so a tool faking the environment floor (spoofing voices or
+      // media devices to beat voices_empty/media_devices_empty) is caught by the override's non-native
+      // toString — a real browser never replaces these. See the FLOOR_SPOOF evader.
       var fns = [Function.prototype.toString, HTMLCanvasElement.prototype.toDataURL,
-                 navigator.permissions && navigator.permissions.query];
+                 navigator.permissions && navigator.permissions.query,
+                 window.speechSynthesis && speechSynthesis.getVoices,
+                 navigator.mediaDevices && navigator.mediaDevices.enumerateDevices];
       for (var i = 0; i < fns.length; i++) {
         if (fns[i] && fns[i].toString().indexOf("[native code]") < 0) return true;
       }

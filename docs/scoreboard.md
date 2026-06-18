@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T10:06:07.921128+00:00`
+- generated: `2026-06-18T10:14:09.483689+00:00`
 - ruleset: `0.33.0`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -10,6 +10,7 @@
 | camoufox-hardened | corpus | 0.00 | 0.98 | 0.00 | 0.00 | 0.00 | 0.98 | bot |
 | camoufox-headful | corpus | 0.00 | 0.95 | 0.00 | 0.00 | 0.00 | 0.95 | bot |
 | camoufox | corpus | 0.00 | 0.95 | 0.00 | 0.00 | 0.00 | 0.95 | bot |
+| floor-spoof | corpus | 0.00 | 1.00 | 0.75 | 0.00 | 0.00 | 1.00 | bot |
 | full-stealth | corpus | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | human-mouse | corpus | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
 | max-stealth | corpus | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
@@ -32,6 +33,7 @@
 - **camoufox-hardened** (bot): `br.webgl2_missing`, `br.pointer_touch_incoherent`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **camoufox-headful** (bot): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **camoufox** (bot): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
+- **floor-spoof** (bot): `bh.keystroke_entropy_floor`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`
 - **full-stealth** (bot): `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.webgl_getparameter_tampered`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.webgpu_webgl_vs`
 - **human-mouse** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **max-stealth** (bot): `bh.synthetic_no_coalesced`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
