@@ -11,6 +11,7 @@ depends on a known-copyleft package.
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -34,14 +35,35 @@ SCAN_SUFFIXES = {".py", ".go", ".ts", ".tsx", ".js", ".mjs", ".toml"}
 SKIP_DIRS = {".git", ".venv", "node_modules", "dist", "coverage", "__pycache__"}
 
 
+# An actual import of the evaders tree — Python `from/import evaders…`, or a JS/TS `from`/`require`/
+# `import(...)` whose module path contains an `evaders/` segment. Matches imports, not prose: the old
+# check flagged any line with both "evaders" and the English word "from" (e.g. a docstring), a false
+# positive. A copyleft marker likewise only matters as a real dependency — an import/require or a
+# manifest dependency key (pyproject/package.json) — not as a scoreboard label or comment.
+_EVADER_IMPORT = re.compile(
+    r"^\s*(?:from|import)\s+evaders\b"
+    r"|(?:from\s+|require\s*\(\s*|import\s*\(\s*)['\"][^'\"]*\bevaders/",
+)
+
+
+def _imports_marker(line: str, marker: str) -> bool:
+    m = re.escape(marker)
+    return bool(
+        re.search(rf"^\s*(?:from|import)\s+{m}\b", line)  # python import
+        or re.search(rf"(?:from\s+|require\s*\(\s*|import\s*\(\s*)['\"]{m}\b", line)  # js/ts import
+        or re.search(rf"^\s*['\"]?{m}['\"]?\s*[:=]", line)  # pyproject / package.json dependency key
+    )
+
+
 def offending_lines(path: Path) -> list[str]:
     hits: list[str] = []
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if _EVADER_IMPORT.search(line):
+            hits.append(f"{path}:{lineno}: core imports evaders ({line.strip()})")
         low = line.lower()
-        if "evaders" in low and ("import" in low or "from" in low or "require" in low):
-            hits.append(f"{path}:{lineno}: core references evaders ({line.strip()})")
-        if any(marker in low for marker in COPYLEFT_MARKERS):
-            hits.append(f"{path}:{lineno}: copyleft dependency ({line.strip()})")
+        for marker in COPYLEFT_MARKERS:
+            if marker in low and _imports_marker(low, marker):
+                hits.append(f"{path}:{lineno}: copyleft dependency ({line.strip()})")
     return hits
 
 
