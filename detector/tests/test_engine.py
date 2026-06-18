@@ -202,6 +202,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "webgpu_vendor_mismatch", True, Source.collector)], "br.webgpu_vendor_vs_webgl"),
         ([(Layer.browser, "error_engine_mismatch", True, Source.collector)], "br.error_engine_vs_ua"),
         ([(Layer.network, "sec_fetch_missing", True, Source.edge)], "net.sec_fetch_vs_ua"),
+        ([(Layer.network, "accept_encoding_no_brotli", True, Source.edge)], "net.accept_encoding_vs_ua"),
         ([(Layer.browser, "rfp_browser", True, Source.collector)], "br.rfp_browser"),
         ([(Layer.browser, "canvas_noise", True, Source.collector)], "br.canvas_noise"),
         (

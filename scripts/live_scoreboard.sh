@@ -17,9 +17,10 @@ for _ in $(seq 1 40); do
   sleep 3
 done
 
-echo "[*] vanilla…"
+echo "[*] vanilla (httpx faking a browser UA — the scripted-flood case)…"
+CHROME_UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 "${COMPOSE[@]}" run --rm -T --no-deps \
-  -e KITSUNE_EDGE=https://edge:8443/healthz -e KITSUNE_DETECTOR=http://detector:8080 \
+  -e KITSUNE_EDGE=https://edge:8443/healthz -e KITSUNE_DETECTOR=http://detector:8080 -e KS_UA="$CHROME_UA" \
   vanilla 2>/dev/null >"$OUT/vanilla.json" || true
 
 echo "[*] stealth (naive + patched + spoof-ua)…"

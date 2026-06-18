@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 80 engines
+# Kitsune detection matrix — 81 engines
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | floor-spoof | full-stealth | human-mouse | max-stealth | nodriver | patchright | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -79,10 +79,11 @@
 | `br.webgpu_webgl_vs` | browser | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.webgpu_vendor_vs_webgl` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.error_engine_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 1 |
-| `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
+| `net.accept_encoding_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/80** | **10/80** | **5/80** | **4/80** | **4/80** | **8/80** | **12/80** | **13/80** | **11/80** | **8/80** | **11/80** | **8/80** | **11/80** | **8/80** | **15/80** | **12/80** | **15/80** | **8/80** | **1/80** | **8/80** |  |
+| **flagged** |  | **6/81** | **10/81** | **5/81** | **4/81** | **4/81** | **8/81** | **12/81** | **13/81** | **11/81** | **8/81** | **11/81** | **8/81** | **11/81** | **8/81** | **15/81** | **12/81** | **15/81** | **8/81** | **3/81** | **8/81** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -107,10 +108,10 @@
 | `stealth-naive` | bot | 0 | 0 | 6 | 6 | 0 | 0 |
 | `stealth-patched` | bot | 4 | 0 | 5 | 6 | 0 | 0 |
 | `undetected` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
-| `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
+| `vanilla` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 1 | 1 | 1 | 3 | 2 | 0 |
 
-## Coverage gaps — 37/80 engines catch nothing yet
+## Coverage gaps — 36/81 engines catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
@@ -124,7 +125,7 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (27) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (26) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.csp_bypassed`
 - `br.canvas_lie`
@@ -150,5 +151,4 @@
 - `net.webrtc_ip_vs_observed`
 - `br.timezone_inconsistent`
 - `br.webgpu_vendor_vs_webgl`
-- `net.sec_fetch_vs_ua`
 - `br.rfp_browser`

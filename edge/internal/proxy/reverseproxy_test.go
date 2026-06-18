@@ -270,6 +270,33 @@ func TestPrepareEmitsCHPlatform(t *testing.T) {
 	}
 }
 
+func TestAcceptEncodingNoBrotli(t *testing.T) {
+	chromeUA := "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+	cases := []struct {
+		name string
+		ua   string
+		enc  string
+		want bool
+	}{
+		{"browser, full browser encodings", chromeUA, "gzip, deflate, br, zstd", false},
+		{"browser, br with q-value", chromeUA, "gzip, deflate, br;q=1.0", false},
+		{"browser, no brotli (scripted)", chromeUA, "gzip, deflate", true},
+		{"browser, identity only (scripted)", chromeUA, "identity", true},
+		{"browser, empty header (scripted)", chromeUA, "", true},
+		{"non-browser UA is out of scope", "python-httpx/0.27", "gzip, deflate", false},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		r.Header.Set("User-Agent", c.ua)
+		if c.enc != "" {
+			r.Header.Set("Accept-Encoding", c.enc)
+		}
+		if got := acceptEncodingNoBrotli(r); got != c.want {
+			t.Errorf("%s: acceptEncodingNoBrotli=%v want %v", c.name, got, c.want)
+		}
+	}
+}
+
 func TestSecFetchMissing(t *testing.T) {
 	chromeUA := "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	cases := []struct {

@@ -80,6 +80,9 @@ func prepare(
 	if secFetchMissing(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "sec_fetch_missing", true, now))
 	}
+	if acceptEncodingNoBrotli(r) {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "accept_encoding_no_brotli", true, now))
+	}
 	// The primary language the HTTP stack advertises (Accept-Language). The detector cross-checks it
 	// against the JS-layer navigator.languages: a bot that spoofs its locale in the browser but lets its
 	// HTTP client send a default Accept-Language contradicts itself across the network/browser boundary.
@@ -158,18 +161,40 @@ func clientIP(r *http.Request) string {
 	return r.RemoteAddr
 }
 
+// isModernBrowserUA reports whether the User-Agent claims a current Chrome/Firefox/Edge/Safari. The
+// HTTP-layer coherence rules target *fakery* — a scripted client wearing a browser UA — so a non-browser
+// UA (which makes no such claim) is out of scope for them.
+func isModernBrowserUA(ua string) bool {
+	return strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Firefox/") ||
+		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
+}
+
 // secFetchMissing reports a request whose User-Agent claims a modern browser but which omits the
 // Sec-Fetch metadata headers every such browser sends on real requests. A scripted HTTP client (the
 // volumetric-DDoS case) that fakes a browser UA over plain httpx/curl gives itself away here — an
 // HTTP-layer tell, independent of the TLS and JS layers.
 func secFetchMissing(r *http.Request) bool {
-	ua := r.Header.Get("User-Agent")
-	modernBrowser := strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Firefox/") ||
-		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
-	if !modernBrowser {
+	if !isModernBrowserUA(r.Header.Get("User-Agent")) {
 		return false // a non-browser UA is a different (and weaker) signal; this rule targets fakery
 	}
 	return r.Header.Get("Sec-Fetch-Mode") == "" && r.Header.Get("Sec-Fetch-Site") == ""
+}
+
+// acceptEncodingNoBrotli reports a request whose UA claims a modern browser but whose Accept-Encoding
+// omits Brotli (`br`). Every current browser advertises `br` (and now `zstd`) over HTTPS; a scripted
+// client faking a browser UA over httpx/requests/curl typically sends only `gzip, deflate` — an
+// HTTP-compression fingerprint tell, independent of the Sec-Fetch and TLS signals.
+func acceptEncodingNoBrotli(r *http.Request) bool {
+	if !isModernBrowserUA(r.Header.Get("User-Agent")) {
+		return false
+	}
+	for _, tok := range strings.Split(r.Header.Get("Accept-Encoding"), ",") {
+		enc, _, _ := strings.Cut(strings.TrimSpace(tok), ";") // drop any q-value
+		if strings.EqualFold(enc, "br") {
+			return false
+		}
+	}
+	return true
 }
 
 // ReverseProxy is a transparent TLS edge in front of a backend app.

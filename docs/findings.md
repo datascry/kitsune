@@ -524,6 +524,26 @@ ages out, the cluster's alert state resets, so a *fresh* burst on the same JA4 p
 than staying silent. Windowing is also what makes the `arrival_rate_per_min` severity meaningful: a true
 current rate, not an all-time average diluted by history.
 
+## The scripted-flood tier — three HTTP-header tells before any JS runs
+
+The cheapest attack is also the most common at volume: a script (httpx/requests/curl/Go) that forges a
+browser `User-Agent` and never runs a line of JavaScript. It is caught at the HTTP layer, before the
+collector is even served, by three independent tells the edge reads off the request — and a real
+volumetric flood trips all three at once (validated live against the `vanilla` httpx client wearing a
+Chrome UA):
+
+- **`net.no_js_execution`** — a network fingerprint with no browser layer at all: the collector never ran.
+- **`net.sec_fetch_vs_ua`** — a modern-browser UA with no `Sec-Fetch-*` metadata headers, which every real
+  browser sends on navigation.
+- **`net.accept_encoding_vs_ua`** — a modern-browser UA whose `Accept-Encoding` omits Brotli. Every current
+  browser advertises `br` (and now `zstd`) over HTTPS; httpx/requests default to `gzip, deflate`. It is an
+  HTTP *compression* fingerprint, independent of the Sec-Fetch and TLS signals.
+
+None of these requires JavaScript, a reference database, or even a complete TLS handshake to parse — they
+are pure properties of the forged request, so the volumetric tier is convicted at the lowest cost the
+detector has. The UA can be forged; the *shape of the HTTP request a real browser makes* cannot, not
+without becoming a real browser.
+
 ## The HTTP/2 preface — a UA-spoof tell below the application layer
 
 The TLS ClientHello (JA3/JA4) and the in-page JS fingerprint are the two layers an evader works hardest
