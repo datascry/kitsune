@@ -24,7 +24,11 @@ REPEAT = max(1, int(os.environ.get("KS_REPEAT", "1")))
 # whether the per-session "capability" tells (no WebGL2, no TTS voices) are real spoofing flaws or
 # just artifacts of a minimal headless container — a determined adversary runs headful with a stack.
 HEADFUL = os.environ.get("KS_HEADFUL") == "1"
-MODE = "camoufox-headful" if HEADFUL else "camoufox"
+# KS_BASELINE=1: run *stock* Playwright Firefox (Camoufox's engine, but with NO spoofing) through the
+# same pipeline — the control group. Rules that fire on the baseline too are environment/headless tells;
+# rules that fire only on Camoufox are genuine anti-detect-spoofing tells. Keeps the detector honest.
+BASELINE = os.environ.get("KS_BASELINE") == "1"
+MODE = "baseline-firefox" if BASELINE else "camoufox-headful" if HEADFUL else "camoufox"
 
 
 def _capture(browser: object) -> dict[str, object]:
@@ -49,7 +53,24 @@ def _capture(browser: object) -> dict[str, object]:
     return verdict
 
 
+def _run_baseline() -> None:
+    """Control group: stock Playwright Firefox (same engine as Camoufox, no spoofing)."""
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.firefox.launch(headless=not HEADFUL)
+        try:
+            for _ in range(REPEAT):
+                verdict = _capture(browser)
+                print("__KS__" + json.dumps({"mode": MODE, **verdict}), flush=True)
+        finally:
+            browser.close()
+
+
 def main() -> None:
+    if BASELINE:
+        _run_baseline()
+        return
     with Camoufox(headless="virtual" if HEADFUL else True) as browser:
         for _ in range(REPEAT):
             verdict = _capture(browser)

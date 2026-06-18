@@ -74,6 +74,33 @@ def render_matrix(
     return "\n".join(rows) + "\n"
 
 
+_CATEGORIES = ["coherence", "artifact", "automation", "environment", "behavioral", "reputation"]
+
+
+def render_categories(verdicts: dict[str, Verdict]) -> str:
+    """Per-evader fired-rule counts by detection class — separates spoofing from a stripped environment.
+
+    The thesis made measurable: ``coherence``/``artifact`` counts are genuine anti-detect catches,
+    while ``environment``/``automation`` also fire on a stock headless browser (the no-spoof baseline).
+    """
+    names = list(verdicts)
+    header = "| Evader | verdict | " + " | ".join(_CATEGORIES) + " |"
+    divider = "|" + "---|" * (len(_CATEGORIES) + 2)
+    rows = [
+        "## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too",
+        "",
+        header,
+        divider,
+    ]
+    for name in names:
+        counts = {cat: 0 for cat in _CATEGORIES}
+        for c in verdicts[name].contradictions:
+            counts[c.category.value] = counts.get(c.category.value, 0) + 1
+        cells = " | ".join(str(counts[cat]) or "·" for cat in _CATEGORIES)
+        rows.append(f"| `{name}` | {verdicts[name].label.value} | {cells} |")
+    return "\n".join(rows) + "\n"
+
+
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     import sys
 
@@ -85,6 +112,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     detectors, fired, verdicts = coverage(detector, load_corpus(directory))
     print(f"# Kitsune detection matrix — {len(detectors)} engines\n")
     print(render_matrix(detectors, fired, verdicts))
+    print(render_categories(verdicts))
     print(render_gaps(detectors, fired), end="")
 
 

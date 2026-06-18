@@ -7,7 +7,12 @@ from kitsune_detector.contracts import contracts_dir
 from kitsune_detector.detector import Detector
 from kitsune_detector.models import Session
 
-from kitsune_harness.report import coverage, evaluable_detectors, render_matrix
+from kitsune_harness.report import (
+    coverage,
+    evaluable_detectors,
+    render_categories,
+    render_matrix,
+)
 
 
 def _examples() -> list[tuple[str, Session]]:
@@ -37,6 +42,15 @@ def test_render_matrix(detector: Detector) -> None:
     assert "br.webdriver_present" in md
     assert "**flagged**" in md and "**verdict**" in md
     assert "✓" in md and "·" in md
+
+
+def test_render_categories(detector: Detector) -> None:
+    _detectors, _fired, verdicts = coverage(detector, _examples())
+    md = render_categories(verdicts)
+    # The bot fixture trips automation (webdriver) and environment tells; the header lists every class.
+    assert "Detection class" in md
+    assert "coherence" in md and "environment" in md and "automation" in md
+    assert "`bot`" in md and "`human`" in md
 
 
 def test_zero_catch_and_gaps(detector: Detector) -> None:

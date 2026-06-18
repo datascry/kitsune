@@ -45,6 +45,7 @@ class CoherenceEngine:
                         layers=rule.layers,
                         detail=rule.title,
                         weight=rule.weight,
+                        category=rule.category,
                         evidence=list(rule.reads),
                     )
                 )

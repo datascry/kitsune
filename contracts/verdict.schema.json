@@ -24,6 +24,11 @@
         },
         "detail": { "type": "string" },
         "weight": { "$ref": "#/$defs/unit_interval" },
+        "category": {
+          "type": "string",
+          "description": "Detection class of the fired rule.",
+          "enum": ["coherence", "environment", "automation", "artifact", "behavioral", "reputation"]
+        },
         "evidence": {
           "type": "array",
           "description": "Signal references (layer.kind) that triggered this contradiction.",

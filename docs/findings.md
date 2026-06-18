@@ -26,6 +26,35 @@ durable signal. Every Chromium-based tool runs headless Chromium in a container,
 fingerprint (software WebGL, missing GPU, absent `window.chrome` surface) gives it away regardless of
 how thoroughly the webdriver flag is hidden.
 
+## The baseline control — separating spoofing from a stripped environment
+
+A detector that only fires on *headless-environment* tells is not detecting anti-detect spoofing — it is
+detecting headless. To keep ourselves honest we run a **control group**: stock Playwright Firefox
+(`KS_BASELINE=1` — Camoufox's exact engine, with **no** spoofing) through the same pipeline, and classify
+every rule by what *kind* of tell it is (`category` in the registry; carried on each verdict
+contradiction). Scoring the corpus by class (`docs/matrix.md`):
+
+| Evader | coherence | artifact | automation | environment |
+| --- | --- | --- | --- | --- |
+| `baseline-firefox` (stock, no spoof) | 0 | 0 | 1 | 5 |
+| `camoufox` (headless) | 1 | 0 | 0 | 3 |
+| `camoufox-headful` | 0 | 1 | 0 | 2 |
+| `spoof-ua` / `stealth-patched` | 1 | 0 | 2–3 | 2 |
+
+- **`environment`** (no WebGL2, no TTS voices, no media devices, empty mimeTypes/plugins) and
+  **`automation`** (`navigator.webdriver`) tells fire on the **stock baseline too** — they flag a
+  stripped/automated environment, not spoofing. They are valid bot signals (bots run headless) but are
+  *not* the thesis.
+- **`coherence`** (cross-vector contradiction, e.g. `macos_dpr1`) and **`artifact`** (anti-detect
+  implementation flaw, e.g. `webgl_renderer_artifact`) tells fire **only on a spoofing tool**, never on
+  the baseline. These are the genuine anti-detect catches.
+
+So Camoufox's whole achievement is visible in one row: it zeroes out the `automation` column (engine-level
+`webdriver=false`) that catches stock Firefox — but it cannot avoid leaving a `coherence`/`artifact` tell.
+And the honest frontier is also visible: most of Camoufox's current catch is still `environment`; a
+headful deployment on real hardware would zero those out, leaving only the one or two coherence/artifact
+tells. That residue is exactly what the white-box, source-driven detections target.
+
 ## Camoufox is the frontier
 
 Camoufox spoofs at the engine level (C++), not via injected JS, so its lies are internally coherent in

@@ -9,6 +9,14 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Detection-class taxonomy + no-spoof baseline control.** Added a `category` to every rule (and to each
+  verdict `Contradiction`): `coherence` / `artifact` (genuine anti-detect catches) vs `environment` /
+  `automation` / `behavioral` / `reputation`. Validated it against a **control group** — stock Playwright
+  Firefox (`KS_BASELINE=1`, Camoufox's engine with no spoofing) through the same pipeline: it fires only
+  `automation` + `environment` tells (zero coherence), proving those are headless-environment signals, not
+  spoofing detection. Camoufox additionally trips `coherence`/`artifact` tells — the real catches. New
+  `report.render_categories` view (in `docs/matrix.md`), `camoufox`/`baseline-firefox` corpus sessions,
+  and a `docs/findings.md` section. Contracts (`coherence-rule`, `verdict`) gain the optional `category`.
 - **More white-box, source-driven detection** (ruleset 0.16.0) — continuing to read the `camoufox`
   source. `br.macos_dpr1`: Camoufox pins `devicePixelRatio` to 1.0 (its cast map: "any value other than
   1.0 is suspicious") but a modern Mac is Retina (dPR 2) — **confirmed live**, fires on exactly the

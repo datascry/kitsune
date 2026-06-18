@@ -41,6 +41,22 @@ class Label(StrEnum):
     bot = "bot"
 
 
+class RuleCategory(StrEnum):
+    """What *kind* of tell a rule is — the detection class, validated against a no-spoof baseline.
+
+    The core thesis is ``coherence`` (cross-vector contradictions). The others are honest about
+    rules that are not coherence checks: ``environment`` and ``automation`` tells also fire on a
+    stock headless browser, so they flag a stripped/automated environment rather than spoofing.
+    """
+
+    coherence = "coherence"  # cross-vector contradiction — the thesis core
+    environment = "environment"  # capability absent (stripped/headless) — fires on stock headless too
+    automation = "automation"  # automation-framework surface (webdriver, CDP artifacts)
+    artifact = "artifact"  # anti-detect implementation flaw (spoofing placeholder, injected addon)
+    behavioral = "behavioral"  # behavioral / input signals
+    reputation = "reputation"  # network reputation (datacenter ASN, proxy exit)
+
+
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -93,6 +109,7 @@ class Contradiction(_Strict):
     layers: list[Layer]
     detail: str
     weight: float = Field(ge=0.0, le=1.0)
+    category: RuleCategory = RuleCategory.coherence
     evidence: list[str] = Field(default_factory=list)
 
     @property

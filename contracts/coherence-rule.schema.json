@@ -35,6 +35,11 @@
     },
     "weight": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
     "status": { "type": "string", "enum": ["active", "experimental", "retired"] },
+    "category": {
+      "type": "string",
+      "description": "Detection class: what kind of tell this rule is.",
+      "enum": ["coherence", "environment", "automation", "artifact", "behavioral", "reputation"]
+    },
     "added": { "type": "string", "format": "date" },
     "last_validated": { "type": "string", "format": "date" },
     "source": { "type": "string", "description": "Provenance / citation for the signal." }

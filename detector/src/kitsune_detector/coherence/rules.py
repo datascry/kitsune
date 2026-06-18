@@ -10,7 +10,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..contracts import load_rule_registry
-from ..models import Layer
+from ..models import Layer, RuleCategory
 
 
 class RuleStatus(StrEnum):
@@ -30,6 +30,7 @@ class CoherenceRule(BaseModel):
     threshold: float | None = None
     weight: float = Field(ge=0.0, le=1.0)
     status: RuleStatus
+    category: RuleCategory = RuleCategory.coherence
     added: str | None = None
     last_validated: str | None = None
     source: str | None = None
