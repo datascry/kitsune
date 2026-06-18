@@ -9,6 +9,22 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Precision suite — legitimate humans must not be flagged** (`tests/test_precision.py`). A panel of
+  fully-coherent human profiles (Win/Mac/Linux × Chrome/Firefox, plus a touch laptop and an
+  external-monitor Mac) must all score `human`. It surfaced two real false positives that recall testing
+  never would.
+
+### Changed
+
+- **False-positive mitigations** (from the precision suite). Retired `br.maxtouch_desktop` — it flagged
+  ordinary Windows 2-in-1 touch laptops, and the sound `br.pointer_touch_incoherent` (CSS-vs-JS touch
+  disagreement) supersedes it. Cut `br.macos_dpr1` weight 0.4 → 0.3, below the suspicious threshold, so a
+  desktop Mac on a 1080p external monitor is not flagged on its own — it now only corroborates inside a
+  cluster of tells (Camoufox still trips it and stays `bot` 0.99). Recall unaffected: every evader still
+  scores `bot`.
+
+### Added (continued)
+
 - **Online coordination detector (`FleetTracker`).** Streaming fleet detection: `observe(name, session)`
   ingests sessions one at a time (arrival order), re-scores only the affected JA4-prefix cluster, and
   returns a verdict exactly when a cluster *newly* crosses the `fleet` threshold or escalates severity —

@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 64 engines
+# Kitsune detection matrix — 63 engines
 
 | Detector | layer | baseline-firefox | camoufox-hardened | camoufox-headful | camoufox | full-stealth | human-mouse | max-stealth | nodriver | patchright | rebrowser | spoof-ua | stealth-naive | stealth-patched | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -38,7 +38,6 @@
 | `br.no_connection` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.no_pdfviewer` | browser | · | · | · | · | · | ✓ | ✓ | · | ✓ | ✓ | · | ✓ | · | · | 5 |
 | `br.chrome_runtime_missing` | browser | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
-| `br.maxtouch_desktop` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.mimetypes_empty` | browser | ✓ | · | · | · | · | ✓ | ✓ | · | ✓ | ✓ | · | ✓ | · | · | 6 |
 | `br.no_devicememory` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.notification_denied` | browser | · | · | · | · | · | ✓ | ✓ | · | ✓ | ✓ | · | ✓ | · | · | 5 |
@@ -66,7 +65,7 @@
 | `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webrtc_unavailable` | browser | · | ✓ | · | ✓ | · | · | · | · | · | · | · | · | · | · | 2 |
 | `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| **flagged** |  | **6/64** | **4/64** | **3/64** | **6/64** | **5/64** | **12/64** | **10/64** | **8/64** | **10/64** | **11/64** | **5/64** | **13/64** | **6/64** | **0/64** |  |
+| **flagged** |  | **6/63** | **4/63** | **3/63** | **6/63** | **5/63** | **12/63** | **10/63** | **8/63** | **10/63** | **11/63** | **5/63** | **13/63** | **6/63** | **0/63** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **human** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -88,7 +87,7 @@
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `vanilla` | human | 0 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 36/64 engines catch nothing yet
+## Coverage gaps — 35/63 engines catch nothing yet
 
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`
@@ -108,7 +107,6 @@
 - `br.languages_empty`
 - `br.screen_zero`
 - `br.no_connection`
-- `br.maxtouch_desktop`
 - `br.no_devicememory`
 - `br.platform_empty`
 - `br.productsub_vs_ua`

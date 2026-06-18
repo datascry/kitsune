@@ -469,10 +469,10 @@ rules:
     reads: [browser.maxtouch_desktop]
     predicate: present
     weight: 0.5
-    status: experimental
+    status: retired
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "Touch-vs-UA incoherence"
+    source: "Retired: false-positives on common 2-in-1 touch laptops; superseded by br.pointer_touch_incoherent (CSS vs JS touch coherence)"
 
   - id: br.mimetypes_empty
     title: navigator.mimeTypes is empty
@@ -739,11 +739,11 @@ rules:
     layers: [browser]
     reads: [browser.macos_dpr1]
     predicate: present
-    weight: 0.4
+    weight: 0.3
     status: experimental
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "Camoufox source: devicePixelRatio is pinned to 1.0 (cannot present a coherent Retina profile)"
+    source: "Camoufox source: dPR pinned to 1.0. Weight 0.3 (< suspicious threshold) — corroborating only: a desktop Mac on a 1080p external monitor is also dPR 1.0, so this must not flag a human alone"
 
   # --- v0.17.0: font construction artifacts (white-box: Camoufox's fixed per-OS font lists) ---
 

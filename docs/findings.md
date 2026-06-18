@@ -84,6 +84,30 @@ fixed-delay typing is exactly what a form-filling bot does. Only genuinely *vari
 case (uniform automated typing) — where mouse-straightness is not (even a sine wave clears it). It still
 falls to a bot that bothers to randomize key timing, but it raises the bar more than the mouse rules do.
 
+## Precision — legitimate humans must not be flagged
+
+Every other section is about *recall* (catching evaders). A detector that flags everything is useless, so
+`tests/test_precision.py` asserts the other half: a panel of fully-coherent human profiles
+(Windows Chrome, macOS Chrome Retina, Linux Firefox, plus two notorious edge cases) all score `human`.
+
+Building it **surfaced two real false-positive surfaces** that recall testing never would have:
+
+- **`br.maxtouch_desktop`** (maxTouchPoints > 0 on a desktop UA) flagged a **Windows 2-in-1 touch laptop**
+  — an enormous, ordinary population. Retired: it is superseded by `br.pointer_touch_incoherent`, which
+  is the *sound* version (it fires only when the CSS touch surface and the JS touch surface *disagree*,
+  i.e. a spoof, not a real touchscreen).
+- **`br.macos_dpr1`** (macOS UA + devicePixelRatio 1.0) flagged a **desktop Mac on a 1080p external
+  monitor** (legitimately dPR 1.0). Kept — it is a real Camoufox tell — but its weight was cut to 0.3,
+  *below* the suspicious threshold (0.35), so it can no longer flag a human on its own; it only
+  corroborates inside a cluster of tells (Camoufox still trips it alongside `font_mac_internal`,
+  `webrtc_unavailable`, etc. and stays `bot` 0.99).
+
+The lesson: a tell calibrated only against bots will fire on the long tail of unusual-but-legitimate human
+configurations (touch laptops, external monitors, old displays). Precision testing is the only thing that
+catches it, and the fix is either a *coherence* reformulation (touch) or a weight below the action
+threshold so the signal corroborates without convicting alone (dPR). Recall was unaffected — every evader
+still scores `bot`.
+
 ## The baseline control — separating spoofing from a stripped environment
 
 A detector that only fires on *headless-environment* tells is not detecting anti-detect spoofing — it is
