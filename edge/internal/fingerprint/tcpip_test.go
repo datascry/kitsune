@@ -25,7 +25,7 @@ func buildSYN(ttl uint8, window uint16, opts []byte) []byte {
 // real-stack TCP option byte sequences (kind[,len,...value])
 var (
 	linuxOpts   = []byte{2, 4, 0x05, 0xb4, 4, 2, 8, 10, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 3, 7} // mss,sack,ts,nop,ws
-	windowsOpts = []byte{2, 4, 0x05, 0xb4, 1, 3, 3, 8, 1, 1, 4, 2}                           // mss,nop,ws,nop,nop,sack
+	windowsOpts = []byte{2, 4, 0x05, 0xb4, 1, 3, 3, 8, 1, 1, 4, 2}                          // mss,nop,ws,nop,nop,sack
 )
 
 func TestParseSYNLinux(t *testing.T) {
@@ -92,8 +92,10 @@ func TestClassifyTCPOS(t *testing.T) {
 		{"windows after hops", TCPSyn{TTL: 113, WindowSize: 8192, OptionOrder: "mss,nop,ws,nop,nop,sack"}, "windows"},
 		{"macos/darwin", TCPSyn{TTL: 64, WindowSize: 65535, OptionOrder: "mss,nop,ws,nop,nop,ts,sack,eol"}, "darwin"},
 		{"option order case-insensitive", TCPSyn{TTL: 64, OptionOrder: "MSS,SACK,TS,NOP,WS"}, "linux"},
-		{"unknown ttl (router/255)", TCPSyn{TTL: 250, OptionOrder: "mss,sack,ts,nop,ws"}, ""},
-		{"ttl64 but unrecognised options", TCPSyn{TTL: 64, OptionOrder: "mss,ts"}, ""},
+		// Options are authoritative: an unusual or mangled TTL does not change the verdict.
+		{"odd ttl, linux options", TCPSyn{TTL: 250, OptionOrder: "mss,sack,ts,nop,ws"}, "linux"},
+		{"ttl mangled to windows, linux options -> still linux", TCPSyn{TTL: 128, OptionOrder: "mss,sack,ts,nop,ws"}, "linux"},
+		{"unrecognised options", TCPSyn{TTL: 64, OptionOrder: "mss,ts"}, ""},
 		{"empty", TCPSyn{}, ""},
 	}
 	for _, c := range cases {

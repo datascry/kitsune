@@ -72,40 +72,24 @@ type TCPSyn struct {
 
 // initialTTL rounds an observed TTL up to the nearest standard initial value. Routers decrement TTL per
 // hop, so a SYN seen with TTL 52 started at 64; one seen with 113 started at 128.
-func initialTTL(ttl uint8) int {
-	switch {
-	case ttl <= 64:
-		return 64
-	case ttl <= 128:
-		return 128
-	default:
-		return 255
-	}
-}
-
 // ClassifyTCPOS returns the kernel family ("windows", "linux", "darwin") implied by a SYN, or "" when
-// the signature is not confidently one of them. Windows is the only common stack with initial TTL 128;
-// Linux and Darwin both start at 64 and are told apart by their distinctive TCP option order — Linux
-// leads with SACK_PERMITTED (mss,sack,ts,nop,ws), Darwin places window-scale early and trails with a
-// timestamp/SACK/EOL run (mss,nop,ws,nop,nop,ts,sack,eol). The kernel family is a property of the OS the
-// client actually runs on; a spoofed User-Agent or navigator.platform cannot change it. Android reports
-// "linux" (its stack *is* Linux) and iOS reports "darwin" — the caller maps the claimed platform
-// accordingly before comparing.
+// the signature is not confidently one of them. Classification keys on the TCP *option order*, not the
+// TTL: the order is set by the kernel's network stack and forging it needs a custom raw-socket client,
+// whereas the TTL is trivially mangled (`sysctl net.ipv4.ip_default_ttl=128` to fake Windows). So options
+// are primary and the mangle is defeated. Linux leads with SACK_PERMITTED (mss,sack,…); Darwin and
+// Windows both put window-scale early after two NOPs, then diverge — Darwin trails with a timestamp run
+// (…,ts,sack,eol), Windows with SACK and no timestamp (…,sack). The kernel family is a property of the
+// OS the client runs on; a spoofed UA / navigator.platform cannot change it. Android reports "linux" (its
+// stack *is* Linux) and iOS reports "darwin" — the caller maps the claimed platform before comparing.
 func ClassifyTCPOS(syn TCPSyn) string {
 	opts := strings.ToLower(syn.OptionOrder)
-	switch initialTTL(syn.TTL) {
-	case 128:
-		// Windows is by far the dominant initial-TTL-128 stack; its option order confirms it.
-		if strings.HasPrefix(opts, "mss,nop,ws") || strings.HasPrefix(opts, "mss,nop,nop") || opts == "" {
-			return "windows"
-		}
-	case 64:
-		switch {
-		case strings.HasPrefix(opts, "mss,sack"):
-			return "linux"
-		case strings.HasPrefix(opts, "mss,nop,ws"):
-			return "darwin"
-		}
+	switch {
+	case strings.HasPrefix(opts, "mss,sack"):
+		return "linux"
+	case strings.HasPrefix(opts, "mss,nop,ws,nop,nop,ts"):
+		return "darwin"
+	case strings.HasPrefix(opts, "mss,nop,ws,nop,nop,sack"):
+		return "windows"
 	}
 	return ""
 }
