@@ -64,9 +64,9 @@
 | `br.audio_noise` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | 14 |
 | `br.adblock_present` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.macos_dpr1` | browser | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.macos_dpr1` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.font_linux_leak` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.font_mac_internal` | browser | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.font_mac_internal` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webrtc_unavailable` | browser | · | · | ✓ | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | 2 |
 | `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -79,7 +79,7 @@
 | `net.sec_fetch_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/77** | **10/77** | **4/77** | **3/77** | **6/77** | **13/77** | **12/77** | **10/77** | **8/77** | **10/77** | **11/77** | **15/77** | **13/77** | **6/77** | **8/77** | **1/77** |  |
+| **flagged** |  | **6/77** | **10/77** | **4/77** | **3/77** | **4/77** | **13/77** | **12/77** | **10/77** | **8/77** | **10/77** | **11/77** | **15/77** | **13/77** | **6/77** | **8/77** | **1/77** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -90,7 +90,7 @@
 | `brave` | bot | 0 | 1 | 3 | 4 | 2 | 0 |
 | `camoufox-hardened` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
 | `camoufox-headful` | bot | 0 | 1 | 0 | 2 | 0 | 0 |
-| `camoufox` | bot | 1 | 2 | 0 | 3 | 0 | 0 |
+| `camoufox` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
 | `full-stealth` | bot | 2 | 0 | 6 | 4 | 1 | 0 |
 | `human-mouse` | bot | 0 | 0 | 6 | 6 | 0 | 0 |
 | `max-stealth` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
@@ -103,11 +103,12 @@
 | `undetected` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
 | `vanilla` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 40/77 engines catch nothing yet
+## Coverage gaps — 42/77 engines catch nothing yet
 
-**Evaded** (10) — reads present in the corpus, but every sample passed:
+**Evaded** (11) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
 - `net.h2_vs_tls_browser`
+- `net.accept_lang_vs_navigator`
 - `net.ch_platform_header_vs_ua`
 - `net.h2_settings_vs_order`
 - `bh.path_too_straight`
@@ -117,12 +118,11 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (30) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (31) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.csp_bypassed`
 - `br.canvas_lie`
 - `rep.datacenter_asn`
-- `net.accept_lang_vs_navigator`
 - `rep.known_proxy_exit`
 - `bh.synthetic_no_coalesced`
 - `br.tostring_tampered`
@@ -141,7 +141,9 @@
 - `br.audio_missing`
 - `br.audio_noise`
 - `br.adblock_present`
+- `br.macos_dpr1`
 - `br.font_linux_leak`
+- `br.font_mac_internal`
 - `br.codec_os_incoherent`
 - `net.webrtc_ip_vs_observed`
 - `br.timezone_inconsistent`

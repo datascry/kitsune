@@ -44,6 +44,7 @@ func TestH2SettingsBrowser(t *testing.T) {
 	chrome := []H2Setting{{ID: 1}, {ID: 2}, {ID: 3}, {ID: 4}, {ID: 6}}
 	headlessChrome := []H2Setting{{ID: 1}, {ID: 2}, {ID: 4}, {ID: 6}} // omits MAX_CONCURRENT_STREAMS(3)
 	firefox := []H2Setting{{ID: 1}, {ID: 4}, {ID: 5}}
+	firefoxPush := []H2Setting{{ID: 1}, {ID: 2}, {ID: 4}, {ID: 5}} // modern Firefox/Camoufox: ENABLE_PUSH(2)=0
 	cases := []struct {
 		name     string
 		settings []H2Setting
@@ -51,7 +52,8 @@ func TestH2SettingsBrowser(t *testing.T) {
 	}{
 		{"headful chrome {1,2,3,4,6}", chrome, "chrome"},
 		{"headless chrome {1,2,4,6} (live-captured)", headlessChrome, "chrome"},
-		{"firefox profile {1,4,5}", firefox, "firefox"},
+		{"firefox classic {1,4,5}", firefox, "firefox"},
+		{"firefox/camoufox {1,2,4,5} (live-captured)", firefoxPush, "firefox"},
 		{"go default {2,4}", []H2Setting{{ID: 2}, {ID: 4}}, "unknown"},
 		{"empty", nil, "unknown"},
 	}

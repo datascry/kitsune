@@ -462,6 +462,26 @@ the bytes you need to fingerprint, buffer them, and replay on `Read` so the wrap
 complete connection. Parsing is best-effort — a malformed or truncated preface leaves the connection
 served and simply carries no h2 signal, never breaking traffic to fingerprint it.
 
+### What live capture taught the SETTINGS classifier
+
+Driving real browsers through the edge corrected the SETTINGS-profile classifier twice — a reminder that
+fingerprint constants from blog posts drift, and only live traffic is ground truth. Two SETTINGS bits
+that look like clean engine discriminators are not: **`ENABLE_PUSH(2)`** is sent (`=0`) by *both* modern
+Chromium and Firefox since HTTP/2 server-push was deprecated (live Camoufox sends Firefox `{1,2,4,5}`, not
+the textbook `{1,4,5}`), and **`MAX_CONCURRENT_STREAMS(3)`** is sent by headful Chrome but *omitted* by
+headless (live `{1,2,4,6}` vs `{1,2,3,4,6}`). An early version of the classifier gated on both and so
+silently failed to recognise real headless Chrome and real Camoufox. The stable discriminator is the pair
+that genuinely partitions the two stacks: Chromium sends `MAX_HEADER_LIST_SIZE(6)` and no `MAX_FRAME_SIZE`,
+Firefox sends `MAX_FRAME_SIZE(5)` and no header-list cap. Keying on `6-and-not-5` vs `5-and-not-6` is
+robust across headful/headless and the push-deprecation change.
+
+The Camoufox capture also settled the engine-level-spoof question at the network layer: its h2 fingerprint
+is *fully coherent* Firefox — pseudo-order `m,p,a,s`, SETTINGS classifying firefox, matching its Firefox
+UA — so **no h2 rule fires on it**. That is the expected and important result: Camoufox runs genuine
+Firefox networking (Necko), so the HTTP/2 layer cannot distinguish it from a real Firefox any more than
+the TLS layer can. Camoufox is beaten by capability/environment tells and by coordination, never by
+network-stack incoherence — and the live h2 capture confirms that boundary rather than assuming it.
+
 ## Locale coherence across the HTTP/JS boundary
 
 The same value is often visible at two layers, set from one source of truth — and a spoof that rewrites

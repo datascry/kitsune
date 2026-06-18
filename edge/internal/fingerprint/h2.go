@@ -56,23 +56,24 @@ func (f H2Fingerprint) Browser() string {
 
 // SettingsBrowser classifies the client engine from the *set of SETTINGS identifiers* in the preface —
 // a discriminator independent of the pseudo-header order and present even on a connection that has not
-// yet sent a request. The version-stable Chromium markers are ENABLE_PUSH(2) and MAX_HEADER_LIST_SIZE(6)
-// together with HEADER_TABLE_SIZE(1) and INITIAL_WINDOW_SIZE(4); Firefox alone sends MAX_FRAME_SIZE(5)
-// and omits both push and the header-list cap. Note MAX_CONCURRENT_STREAMS(3) is NOT required: headful
-// Chrome sends {1,2,3,4,6} but headless Chrome omits 3 (live-captured {1,2,4,6}) — requiring it misses
-// real headless Chromium. Classification is deliberately conservative: only Chrome and Firefox have
-// stable, distinctive profiles; everything else (Safari varies by version) is "unknown" so it never
-// contributes a false contradiction. A SETTINGS engine that disagrees with the pseudo-header-order
-// engine is a half-spoofed h2 stack — a tool that patched one facet of the fingerprint but not the other.
+// yet sent a request. The stable discriminator is MAX_HEADER_LIST_SIZE(6), which Chromium sends and
+// Firefox does not, versus MAX_FRAME_SIZE(5), which Firefox sends and Chromium does not; both also send
+// HEADER_TABLE_SIZE(1) and INITIAL_WINDOW_SIZE(4). Two bits that look tempting are deliberately NOT
+// used: ENABLE_PUSH(2) is sent (=0) by BOTH modern engines since server-push deprecation (live Camoufox
+// shows Firefox {1,2,4,5}), and MAX_CONCURRENT_STREAMS(3) is sent by headful Chrome but omitted by
+// headless (live {1,2,4,6}) — gating on either misclassifies real browsers. Classification stays
+// conservative: only Chrome and Firefox have distinctive profiles; everything else (Safari varies by
+// version) is "unknown" so it never contributes a false contradiction. A SETTINGS engine that disagrees
+// with the pseudo-header-order engine is a half-spoofed h2 stack — one facet patched but not the other.
 func (f H2Fingerprint) SettingsBrowser() string {
 	ids := make(map[uint16]bool, len(f.Settings))
 	for _, s := range f.Settings {
 		ids[s.ID] = true
 	}
 	switch {
-	case ids[1] && ids[2] && ids[4] && ids[6]:
+	case ids[1] && ids[4] && ids[6] && !ids[5]:
 		return "chrome"
-	case ids[1] && ids[4] && ids[5] && !ids[2] && !ids[6]:
+	case ids[1] && ids[4] && ids[5] && !ids[6]:
 		return "firefox"
 	default:
 		return "unknown"
