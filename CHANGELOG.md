@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **`Runtime.enable` CDP-leak detection wired** — the `br.cdp_runtime_enabled` rule existed but the
+  collector never emitted its signal (a gap). Implemented the detection (log an `Error` with a `stack`
+  getter that fires only when a CDP client serializes it — the current #1 headless-Chromium tell, 2024-25
+  research). Validated: plain Playwright (`stealth-naive`) fires it; `patchright` (which patches
+  `Runtime.enable`) does not — the detector now *quantifies* patchright's CDP patches (`automation:6` vs
+  `4`), though both remain caught by the headless `environment` tells. Fixed the `stealth`/`patchright`
+  evader image (unpinned patchright pulled a Chromium-revision mismatch; now installs the matching browser).
 - **Codec-support coherence** (ruleset 0.18.0, experimental) — `br.codec_os_incoherent`: from the
   Camoufox cast map, `audioCodecs`/`videoCodecs` are unspoofed, so a non-Linux UA that cannot play
   proprietary H.264/AAC (codecs a real Windows/macOS has via the OS) would betray the real container.

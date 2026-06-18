@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 61 engines
+# Kitsune detection matrix — 62 engines
 
 | Detector | layer | baseline-firefox | camoufox-headful | camoufox | full-stealth | patchright | spoof-ua | stealth-naive | stealth-patched | vanilla | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -7,7 +7,7 @@
 | `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webdriver_present` | browser | ✓ | · | · | · | · | · | ✓ | · | · | 2 |
-| `br.cdp_runtime_enabled` | browser | · | · | · | · | · | · | · | · | · | 0 |
+| `br.cdp_runtime_enabled` | browser | · | · | · | · | · | · | ✓ | · | · | 1 |
 | `br.canvas_lie` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.input_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.no_input_before_action` | behavioral | · | · | · | · | · | · | · | · | · | 0 |
@@ -36,12 +36,12 @@
 | `br.languages_empty` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.screen_zero` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.no_connection` | browser | · | · | · | · | · | · | · | · | · | 0 |
-| `br.no_pdfviewer` | browser | · | · | · | · | · | · | · | · | · | 0 |
+| `br.no_pdfviewer` | browser | · | · | · | · | ✓ | · | ✓ | · | · | 2 |
 | `br.chrome_runtime_missing` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.maxtouch_desktop` | browser | · | · | · | · | · | · | · | · | · | 0 |
-| `br.mimetypes_empty` | browser | ✓ | · | · | · | · | · | · | · | · | 1 |
+| `br.mimetypes_empty` | browser | ✓ | · | · | · | ✓ | · | ✓ | · | · | 3 |
 | `br.no_devicememory` | browser | · | · | · | · | · | · | · | · | · | 0 |
-| `br.notification_denied` | browser | · | · | · | · | · | · | · | · | · | 0 |
+| `br.notification_denied` | browser | · | · | · | · | ✓ | · | ✓ | · | · | 2 |
 | `br.platform_empty` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.productsub_vs_ua` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.cdc_artifacts` | browser | · | · | · | · | · | · | · | · | · | 0 |
@@ -53,17 +53,18 @@
 | `br.devicepixelratio_anomaly` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.hover_none_desktop` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.pointer_touch_incoherent` | browser | · | · | · | · | · | · | · | · | · | 0 |
-| `br.voices_empty` | browser | ✓ | ✓ | ✓ | · | · | · | · | · | · | 3 |
+| `br.voices_empty` | browser | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | · | 5 |
 | `br.voice_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webgl_renderer_artifact` | browser | · | ✓ | · | · | · | · | · | · | · | 1 |
 | `br.audio_missing` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.audio_noise` | browser | · | · | · | · | · | · | · | · | · | 0 |
-| `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | · | · | · | · | · | · | 3 |
+| `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | · | · | 5 |
 | `br.adblock_present` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.macos_dpr1` | browser | · | · | ✓ | · | · | · | · | · | · | 1 |
 | `br.font_linux_leak` | browser | · | · | · | · | · | · | · | · | · | 0 |
 | `br.font_mac_internal` | browser | · | · | ✓ | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/61** | **3/61** | **5/61** | **5/61** | **5/61** | **5/61** | **6/61** | **6/61** | **0/61** |  |
+| `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | 0 |
+| **flagged** |  | **6/62** | **3/62** | **5/62** | **5/62** | **10/62** | **5/62** | **12/62** | **6/62** | **0/62** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **human** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -74,18 +75,17 @@
 | `camoufox-headful` | bot | 0 | 1 | 0 | 2 | 0 | 0 |
 | `camoufox` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
 | `full-stealth` | bot | 1 | 0 | 4 | 0 | 0 | 0 |
-| `patchright` | bot | 0 | 0 | 3 | 2 | 0 | 0 |
+| `patchright` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `spoof-ua` | bot | 1 | 0 | 2 | 2 | 0 | 0 |
-| `stealth-naive` | bot | 0 | 0 | 4 | 2 | 0 | 0 |
+| `stealth-naive` | bot | 0 | 0 | 6 | 6 | 0 | 0 |
 | `stealth-patched` | bot | 1 | 0 | 3 | 2 | 0 | 0 |
 | `vanilla` | human | 0 | 0 | 0 | 0 | 0 | 0 |
 
-## Coverage gaps — 42/61 engines catch nothing yet
+## Coverage gaps — 40/62 engines catch nothing yet
 
 - `net.tls_os_vs_tcp_os`
 - `net.h2_vs_ua_browser`
 - `br.ua_platform_vs_ch_platform`
-- `br.cdp_runtime_enabled`
 - `br.canvas_lie`
 - `bh.input_entropy_floor`
 - `bh.no_input_before_action`
@@ -104,11 +104,9 @@
 - `br.languages_empty`
 - `br.screen_zero`
 - `br.no_connection`
-- `br.no_pdfviewer`
 - `br.chrome_runtime_missing`
 - `br.maxtouch_desktop`
 - `br.no_devicememory`
-- `br.notification_denied`
 - `br.platform_empty`
 - `br.productsub_vs_ua`
 - `br.cdc_artifacts`
@@ -124,3 +122,4 @@
 - `br.audio_noise`
 - `br.adblock_present`
 - `br.font_linux_leak`
+- `br.codec_os_incoherent`

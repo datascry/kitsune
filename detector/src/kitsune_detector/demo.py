@@ -61,6 +61,22 @@ DEMO_PAGE = """<!doctype html>
     try { return !HTMLCanvasElement.prototype.toDataURL.toString().includes("[native code]"); }
     catch (e) { return true; }
   }
+  // CDP Runtime.enable leak (the current #1 headless-Chromium automation tell). Playwright/Puppeteer
+  // enable the CDP Runtime domain, which *eagerly serializes* console arguments for the inspector —
+  // accessing Error.stack. A normal browser with no CDP client attached never reads it. rebrowser-patches
+  // exists specifically to defeat this. Ref: "How V8 Leaks Your Headless Browser's Identity" (2024-25).
+  function cdpRuntimeEnabled() {
+    try {
+      var detected = false;
+      var e = new Error();
+      Object.defineProperty(e, "stack", {
+        configurable: false, enumerable: false,
+        get: function () { detected = true; return ""; }
+      });
+      console.debug(e);  // captured + serialized by CDP Runtime.enable; the getter fires only then
+      return detected;
+    } catch (err) { return false; }
+  }
   // AudioContext fingerprint via OfflineAudioContext (pure computation — works headless). A real engine
   // is deterministic: rendering the same graph twice yields the identical sum. Anti-detect / farbling
   // browsers inject per-render noise to defeat fingerprinting, so the two renders differ — itself a tell.
@@ -271,6 +287,8 @@ DEMO_PAGE = """<!doctype html>
       if (oc) sigs.push(S("browser", "oscpu_os", oc));
     }
     var isChromium = uaEngine === "chromium";
+    // The Runtime.enable leak is CDP-specific (Chromium). Guarded to Chromium to avoid odd Firefox cases.
+    if (isChromium && cdpRuntimeEnabled()) sigs.push(S("browser", "cdp_runtime_enabled", true));
     if (!navigator.languages || navigator.languages.length === 0) sigs.push(S("browser", "languages_empty", true));
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) sigs.push(S("browser", "screen_zero", true));
     if (isChromium && !navigator.connection) sigs.push(S("browser", "chrome_no_connection", true));

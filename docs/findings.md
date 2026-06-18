@@ -26,6 +26,22 @@ durable signal. Every Chromium-based tool runs headless Chromium in a container,
 fingerprint (software WebGL, missing GPU, absent `window.chrome` surface) gives it away regardless of
 how thoroughly the webdriver flag is hidden.
 
+### The `Runtime.enable` CDP leak (the current chromium frontier)
+
+The #1 headless-Chromium automation tell in current (2024-25) research: Playwright/Puppeteer enable the
+CDP **`Runtime.enable`** domain, which makes the browser *eagerly serialize* console arguments for the
+inspector. `br.cdp_runtime_enabled` exploits it — log an `Error` whose `stack` is a getter; the getter
+fires only when a CDP client is serializing it. Validated live:
+
+- **stealth-naive** (plain Playwright) → **fires** (`automation:6`). The CDP automation is caught.
+- **patchright** (drop-in that patches `Runtime.enable`) → **does not fire** (`automation:4`). patchright's
+  entire value-add is now *visible and quantified* in the detector — it zeroes out exactly this tell plus
+  `webdriver`, where plain Playwright trips both. Yet patchright is still caught (`bot`) by the headless
+  `environment` tells, consistent with the takeaway above.
+
+This is the setup for evaluating `rebrowser-patches` (which also patches `Runtime.enable`): the detector
+can now measure precisely which CDP tells a given tool closes.
+
 ## The baseline control — separating spoofing from a stripped environment
 
 A detector that only fires on *headless-environment* tells is not detecting anti-detect spoofing — it is
