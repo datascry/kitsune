@@ -9,6 +9,12 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Speech-synthesis voice coherence** (ruleset 0.13.0) — `br.voices_empty` (no TTS voices: a headless
+  container has no speech stack, a real desktop ships OS voices) and `br.voice_os_vs_ua` (voice set
+  implies an OS contradicting the UA platform). **Result:** cracks a single coherent Camoufox instance —
+  it returns zero voices, so combined with `webgl2_missing` the per-session verdict rises from
+  `suspicious` 0.40 to **`bot` 0.70**. The engine-level spoof that once evaded every per-session rule is
+  now caught per-session, via OS *capabilities* (GPU, TTS) a container cannot fake.
 - **Cross-API device/media coherence** (ruleset 0.12.0) — five CreepJS/fingerprintjs rules comparing the
   CSS `matchMedia` view of the device against the JS-API view: `br.screen_avail_invalid`,
   `br.color_depth_anomaly`, `br.devicepixelratio_anomaly`, `br.hover_none_desktop`,

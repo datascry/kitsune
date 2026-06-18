@@ -21,6 +21,17 @@ DEMO_PAGE = """<!doctype html>
   if (!id) { return; }
   var pts = [];
   addEventListener("mousemove", function (e) { pts.push({ x: e.clientX, y: e.clientY, t: e.timeStamp }); });
+  // speechSynthesis voices load asynchronously — kick the load early so the list is populated by the
+  // time send() runs. The installed TTS voices are OS-specific (Microsoft → Windows, Apple → macOS,
+  // espeak/eSpeak → Linux) and a real desktop has them; a headless container has none or Linux-only.
+  var _voices = [];
+  try {
+    if (window.speechSynthesis) {
+      var grab = function () { _voices = speechSynthesis.getVoices() || []; };
+      grab();
+      speechSynthesis.onvoiceschanged = grab;
+    }
+  } catch (e) {}
   function uaBrowser(ua) {
     if (/Firefox\\//.test(ua)) return "firefox";
     if (/Edg\\//.test(ua)) return "edge";
@@ -251,6 +262,20 @@ DEMO_PAGE = """<!doctype html>
         var cssTouch = matchMedia("(any-pointer: coarse)").matches;
         var jsTouch = (navigator.maxTouchPoints || 0) > 0;
         if (cssTouch !== jsTouch) sigs.push(S("browser", "pointer_touch_incoherent", true));
+      }
+    } catch (e) {}
+    // --- v0.13.0 wave: speech-synthesis voice coherence (OS-specific TTS, hard to spoof) ---
+    try {
+      if (window.speechSynthesis) {
+        if (_voices.length === 0) {
+          sigs.push(S("browser", "voices_empty", true));  // no OS TTS — headless/container tell
+        } else {
+          var names = _voices.map(function (v) { return (v.name || "") + " " + (v.voiceURI || ""); }).join(" ");
+          var voiceOS = /Microsoft|Windows|David|Zira|Hazel/i.test(names) ? "Windows"
+                      : /Apple|Siri|Alex|Samantha|Victoria|macOS/i.test(names) ? "macOS"
+                      : /espeak|eSpeak|Linux/i.test(names) ? "Linux" : "";
+          if (voiceOS) sigs.push(S("browser", "voice_os_hint", voiceOS));
+        }
       }
     } catch (e) {}
     try {

@@ -18,7 +18,7 @@ Each rung defeats the rung below; the detector answers each with a new cross-lay
 | `spoof-ua` | UA forgery on Chromium | `bot` | Firefox UA on a Chromium engine — `vendor`/`productSub`/render contradict the UA |
 | `patchright` | CDP-patched Playwright | `bot` | removes the *automation* surface, but the headless **environment** fingerprint remains |
 | `nodriver` | undetected-chromedriver heir | `bot` (0.94) | same: no webdriver flag, but headless-container environment betrays it |
-| **`camoufox`** | **engine-level (C++) spoof** | **`suspicious` (0.40)** | **coherent at the JS layer — only WebGL2 absence leaks** |
+| **`camoufox`** | **engine-level (C++) spoof** | **`bot` (0.70)** | **coherent at the JS layer — leaks only via absent OS capabilities (WebGL2, TTS voices)** |
 
 **Takeaway for the chromium tools:** removing the automation/webdriver surface does nothing for the
 durable signal. Every Chromium-based tool runs headless Chromium in a container, and the *environment*
@@ -44,10 +44,19 @@ ways patched-Chromium tools cannot match:
   `color_depth_anomaly`, `devicepixelratio_anomaly`, `hover_none_desktop`, `pointer_touch_incoherent`)
   finds nothing on Camoufox. These rules still catch chromium tools that patch one surface but not both.
 
-The single per-session leak that remains: **`br.webgl2_missing`** — headless Camoufox exposes no WebGL2
-context, where a real desktop browser does. A determined adversary running headful (or spoofing a WebGL2
-context) closes even this. Per-session detection of a coherent engine-level spoof is, at the limit, a
-losing game.
+**The per-session leaks that remain are OS *capabilities* a headless Linux container cannot fake**, not
+fingerprint values (which Camoufox spoofs coherently):
+
+- **`br.webgl2_missing`** — headless Camoufox exposes no WebGL2 context, where a real desktop does.
+- **`br.voices_empty`** (confirmed 2026-06-18) — `speechSynthesis.getVoices()` is empty: a container has
+  no TTS engine, but a real macOS/Windows desktop ships OS voices (Apple / Microsoft). Camoufox spoofs
+  the *navigator* perfectly but cannot conjure an OS speech stack. (`br.voice_os_vs_ua` further flags a
+  voice set whose OS contradicts the claimed platform, e.g. espeak/Linux voices under a Windows UA.)
+
+Together these push a single coherent Camoufox instance to **`bot` 0.70** — the engine-level spoof that
+once evaded every per-session rule is now caught per-session. The pattern: stop chasing spoofable
+*values* and probe *capabilities the deployment environment lacks* (GPU, TTS). A determined adversary
+running headful with a full GPU/audio stack closes these — at which point coordination is the backstop.
 
 ## The durable signal: coordination, not the instance
 

@@ -140,6 +140,14 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "devicepixelratio_anomaly", True, Source.collector)], "br.devicepixelratio_anomaly"),
         ([(Layer.browser, "hover_none_desktop", True, Source.collector)], "br.hover_none_desktop"),
         ([(Layer.browser, "pointer_touch_incoherent", True, Source.collector)], "br.pointer_touch_incoherent"),
+        ([(Layer.browser, "voices_empty", True, Source.collector)], "br.voices_empty"),
+        (
+            [
+                (Layer.browser, "voice_os_hint", "Linux", Source.collector),
+                (Layer.browser, "ua_platform", "Windows", Source.collector),
+            ],
+            "br.voice_os_vs_ua",
+        ),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
