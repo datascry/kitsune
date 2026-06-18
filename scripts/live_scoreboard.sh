@@ -20,16 +20,22 @@ echo "[*] vanilla…"
   -e KITSUNE_EDGE=https://edge:8443/healthz -e KITSUNE_DETECTOR=http://detector:8080 \
   vanilla 2>/dev/null >"$OUT/vanilla.json"
 
-echo "[*] stealth (naive + patched)…"
+echo "[*] stealth (naive + patched + spoof-ua)…"
 docker run --rm --network "$NET" \
   -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 \
   -v "$PWD/evaders/stealth":/work -v "$OUT":/out -w /work \
   mcr.microsoft.com/playwright:v1.48.0-jammy \
   bash -c 'npm i -s playwright@1.48.0 >/dev/null 2>&1;
            node run.mjs >/out/stealth-naive.json 2>/dev/null;
-           STEALTH=1 node run.mjs >/out/stealth-patched.json 2>/dev/null'
+           STEALTH=1 node run.mjs >/out/stealth-patched.json 2>/dev/null;
+           SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0" node run.mjs >/out/spoof-ua.json 2>/dev/null'
 
-ARGS=("vanilla=$OUT/vanilla.json" "stealth-naive=$OUT/stealth-naive.json" "stealth-patched=$OUT/stealth-patched.json")
+ARGS=(
+  "vanilla=$OUT/vanilla.json"
+  "stealth-naive=$OUT/stealth-naive.json"
+  "stealth-patched=$OUT/stealth-patched.json"
+  "spoof-ua=$OUT/spoof-ua.json"
+)
 
 if [ "${RUN_AGENT:-0}" = 1 ]; then
   echo "[*] agent (claude -p — spends Claude usage)…"
