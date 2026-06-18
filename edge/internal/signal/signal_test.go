@@ -82,6 +82,26 @@ func TestFromH2UnknownEngineOmitsHint(t *testing.T) {
 	}
 }
 
+func TestFromH2EmitsSettingsHint(t *testing.T) {
+	// A coherent Chrome preface: the Chrome SETTINGS profile {1,2,3,4,6} adds an h2_settings_hint.
+	fp := fingerprint.H2Fingerprint{
+		Settings: []fingerprint.H2Setting{
+			{ID: 1, Value: 65536}, {ID: 2, Value: 0}, {ID: 3, Value: 1000},
+			{ID: 4, Value: 6291456}, {ID: 6, Value: 262144},
+		},
+		PseudoHeaderOrder: "m,a,s,p",
+	}
+	kinds := map[string]string{}
+	for _, s := range FromH2("sess", fp, at) {
+		if v, ok := s.Value.(string); ok {
+			kinds[s.Kind] = v
+		}
+	}
+	if kinds["h2_browser_hint"] != "chrome" || kinds["h2_settings_hint"] != "chrome" {
+		t.Errorf("want both hints = chrome, got %+v", kinds)
+	}
+}
+
 func TestMarshalBatch(t *testing.T) {
 	sigs := []Signal{Network("s", "ja3", "x", at)}
 	b, err := Marshal(sigs)

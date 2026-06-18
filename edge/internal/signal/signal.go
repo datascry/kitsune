@@ -66,6 +66,11 @@ func FromH2(sessionID string, fp fingerprint.H2Fingerprint, at time.Time) []Sign
 	if b := fp.Browser(); b != "unknown" {
 		out = append(out, Network(sessionID, "h2_browser_hint", b, at))
 	}
+	// The SETTINGS-profile engine is a second, independent read of the same connection: when it
+	// disagrees with the pseudo-header-order engine the h2 stack is only half-spoofed (net.h2_settings_vs_order).
+	if b := fp.SettingsBrowser(); b != "unknown" {
+		out = append(out, Network(sessionID, "h2_settings_hint", b, at))
+	}
 	return out
 }
 

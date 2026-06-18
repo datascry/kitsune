@@ -53,3 +53,26 @@ func (f H2Fingerprint) Browser() string {
 		return "unknown"
 	}
 }
+
+// SettingsBrowser classifies the client engine from the *set of SETTINGS identifiers* in the preface —
+// a discriminator independent of the pseudo-header order and present even on a connection that has not
+// yet sent a request. Chromium sends {1,2,3,4,6} (it includes ENABLE_PUSH and MAX_HEADER_LIST_SIZE);
+// Firefox sends {1,4,5} (it alone sends MAX_FRAME_SIZE and omits push). Classification is deliberately
+// conservative — only Chrome and Firefox have stable, distinctive profiles; everything else (Safari
+// varies by version) is "unknown" so it never contributes a false contradiction. A fingerprint whose
+// SETTINGS engine disagrees with its pseudo-header-order engine is a half-spoofed h2 stack — a tool that
+// patched one facet of the fingerprint but not the other.
+func (f H2Fingerprint) SettingsBrowser() string {
+	ids := make(map[uint16]bool, len(f.Settings))
+	for _, s := range f.Settings {
+		ids[s.ID] = true
+	}
+	switch {
+	case ids[1] && ids[2] && ids[3] && ids[4] && ids[6]:
+		return "chrome"
+	case ids[1] && ids[4] && ids[5] && !ids[2] && !ids[6]:
+		return "firefox"
+	default:
+		return "unknown"
+	}
+}

@@ -412,10 +412,19 @@ context on its streams, so the edge serves ALPN `h2` through its own handler (`s
 decrypted preface through a frame parser (`fingerprint.ParsePreface`, built on `x/net/http2` + `hpack` to
 recover pseudo-header order), threads both the ClientHello and the resulting h2 fingerprint into the
 connection's base context, then replays the consumed bytes to `http2.Server.ServeConn` so the request is
-served unharmed. Two rules consume the result: `net.h2_vs_ua_browser` (cross-layer — h2 engine vs UA
+served unharmed. Three rules consume the result: `net.h2_vs_ua_browser` (cross-layer — h2 engine vs UA
 browser, so the incoherence weight applies) and `net.h2_vs_tls_browser` (within-network — h2 engine vs the
 JA4 TLS engine). This closes the last *layer* gap: the edge now fingerprints the client at TLS, HTTP/2,
 and JS simultaneously, and any two disagreeing is a tell no single-layer spoof can avoid.
+
+The h2 fingerprint also carries an **internal** coherence check. The engine can be read two independent
+ways from one preface: the pseudo-header order (`Browser()`) *and* the set of SETTINGS identifiers
+(`SettingsBrowser()` — Chromium sends `{1,2,3,4,6}`, Firefox `{1,4,5}`, both stable and distinctive). A
+tool that patched one facet to look like Chrome but left the other at its library default contradicts
+*itself* within the single h2 fingerprint — `net.h2_settings_vs_order` fires before the TLS or JS layers
+are even consulted. The classifier is deliberately conservative (only the two stable profiles are named;
+everything else is `unknown` and emits no hint), so the rule fires solely on a real half-spoof and never
+on a browser it simply doesn't recognise.
 
 The capture-and-replay trick is the same one the edge already uses for the ClientHello (`peek.Conn`): read
 the bytes you need to fingerprint, buffer them, and replay on `Read` so the wrapping server still sees a

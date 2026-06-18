@@ -40,6 +40,39 @@ func TestH2StringWithPriorities(t *testing.T) {
 	}
 }
 
+func TestH2SettingsBrowser(t *testing.T) {
+	chrome := []H2Setting{{ID: 1}, {ID: 2}, {ID: 3}, {ID: 4}, {ID: 6}}
+	firefox := []H2Setting{{ID: 1}, {ID: 4}, {ID: 5}}
+	cases := []struct {
+		name     string
+		settings []H2Setting
+		want     string
+	}{
+		{"chrome profile {1,2,3,4,6}", chrome, "chrome"},
+		{"firefox profile {1,4,5}", firefox, "firefox"},
+		{"go default {2,4}", []H2Setting{{ID: 2}, {ID: 4}}, "unknown"},
+		{"empty", nil, "unknown"},
+	}
+	for _, c := range cases {
+		fp := H2Fingerprint{Settings: c.settings}
+		if got := fp.SettingsBrowser(); got != c.want {
+			t.Errorf("%s: SettingsBrowser=%s want %s", c.name, got, c.want)
+		}
+	}
+}
+
+func TestH2HalfSpoofIsInternallyIncoherent(t *testing.T) {
+	// A tool that patched the pseudo-header order to look like Chrome but left a Firefox SETTINGS
+	// profile: the two independent reads of the same connection disagree — a half-spoof tell.
+	fp := H2Fingerprint{
+		Settings:          []H2Setting{{ID: 1}, {ID: 4}, {ID: 5}},
+		PseudoHeaderOrder: "m,a,s,p",
+	}
+	if fp.Browser() == fp.SettingsBrowser() {
+		t.Fatalf("expected order/settings engines to disagree, both = %s", fp.Browser())
+	}
+}
+
 func TestH2BrowserClassifier(t *testing.T) {
 	cases := map[string]string{
 		"m,a,s,p": "chrome",

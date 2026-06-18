@@ -61,6 +61,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "net.h2_vs_tls_browser",
         ),
+        (
+            [
+                (Layer.network, "h2_settings_hint", "firefox", Source.edge),
+                (Layer.network, "h2_browser_hint", "chrome", Source.edge),
+            ],
+            "net.h2_settings_vs_order",
+        ),
         ([(Layer.browser, "ua_is_headless", True, Source.collector)], "br.headless_ua"),
         (
             [(Layer.behavioral, "keystroke_entropy", 0.05, Source.collector)],
