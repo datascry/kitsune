@@ -5,6 +5,14 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.0.1](https://github.com/datascry/kitsune/compare/v1.0.0...v1.0.1) (2026-06-18)
+
+
+### Bug Fixes
+
+* **security:** mark ks_sid cookie Secure + minimize release token scope ([212d653](https://github.com/datascry/kitsune/commit/212d6534abb8458900c6d9d6cf278446b8d82c06))
+* **security:** patch collector dev-dep vulns + drop stale stealth lockfile ([e3f52be](https://github.com/datascry/kitsune/commit/e3f52be355203b663bc44b47b0e9e1b29eac6a5a))
+
 ## 1.0.0 (2026-06-18)
 
 
