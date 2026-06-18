@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Online coordination detector (`FleetTracker`).** Streaming fleet detection: `observe(name, session)`
+  ingests sessions one at a time (arrival order), re-scores only the affected JA4-prefix cluster, and
+  returns a verdict exactly when a cluster *newly* crosses the `fleet` threshold or escalates severity —
+  edge-triggered, alerting once rather than on every confirming member. This is how a production bots/DDoS
+  detector works (incremental clustering + threshold alerting) versus the offline `score_corpus` snapshot.
+  `replay_stream` / `render_stream` (and `--stream`) replay a corpus in `first_seen` order; on the
+  residential-proxy fleet it alerts on the second arrival — the instant the paradox is observable. 100% covered.
 - **Fleet threat-severity (DDoS triage).** The coordination verdict now reports `request_volume`,
   `arrival_rate_per_min`, and a `severity` tier (`moderate`/`high`/`critical`) derived from scale and
   rate — *separate* from the confidence `score` (a confirmed fleet maxes the score whether it is 3 nodes

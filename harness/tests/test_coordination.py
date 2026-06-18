@@ -9,7 +9,10 @@ from kitsune_detector.ingest import group_signals
 from kitsune_detector.models import Layer, Session, Signal, Source
 
 from kitsune_harness.coordination import (
+    FleetTracker,
     render_coordination,
+    render_stream,
+    replay_stream,
     score_cluster,
     score_corpus,
 )
@@ -175,6 +178,36 @@ def test_severity_na_for_candidate() -> None:
     assert v.severity == "n/a"
     md = render_coordination([("a", members[0][1]), ("b", members[1][1])])
     assert "candidate" in md and "severity" not in md  # non-fleet clusters omit the severity line
+
+
+def test_tracker_alerts_on_becoming_fleet() -> None:
+    # First session: no cluster. Second (paradox): cluster becomes a fleet → alert fires once.
+    t = FleetTracker()
+    assert t.observe("a", _sess("a", "X", 8)) is None  # singleton, no alert
+    v = t.observe("b", _sess("b", "X", 32))  # paradox now → fleet
+    assert v is not None and v.label == "fleet"
+    # A third confirming member at the same severity does not re-alert.
+    assert t.observe("c", _sess("c", "X", 16)) is None
+
+
+def test_tracker_ignores_no_ja4_and_singletons() -> None:
+    t = FleetTracker()
+    assert t.observe("x", _sess("x", None, 8)) is None  # no JA4 → ignored
+    assert t.observe("y", _sess("y", "Z", 8)) is None  # first of a cluster → no alert
+
+
+def test_replay_stream_orders_by_arrival_and_alerts() -> None:
+    corpus = [
+        ("late", _sess("late", "X", 32, offset_s=50)),
+        ("early", _sess("early", "X", 8, offset_s=0)),
+    ]
+    alerts = replay_stream(corpus)
+    assert len(alerts) == 1
+    # The alert fires on the *second* arrival in time order ("late"), once the paradox is observable.
+    assert alerts[0][0] == "late" and alerts[0][1].label == "fleet"
+    md = render_stream(corpus)
+    assert "alert(s)" in md and "fleet" in md
+    assert "no fleet" in render_stream([("solo", _sess("solo", "Q", 4))])
 
 
 def test_single_member_cluster_has_no_span() -> None:

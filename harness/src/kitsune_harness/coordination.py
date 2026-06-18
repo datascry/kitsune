@@ -200,6 +200,42 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     )
 
 
+_SEVERITY_RANK = {"n/a": 0, "moderate": 1, "high": 2, "critical": 3}
+
+
+class FleetTracker:
+    """Online coordination detector: ingest sessions one at a time (arrival order) and emit an alert the
+    moment a JA4-prefix cluster crosses the ``fleet`` threshold or escalates severity. This is how a
+    production bots/DDoS detector works — incremental clustering with threshold alerting — versus the
+    offline ``score_corpus`` snapshot. Each ``observe`` re-scores only the affected cluster.
+    """
+
+    def __init__(self) -> None:
+        self._clusters: dict[str, list[tuple[str, Session]]] = {}
+        self._label: dict[str, str] = {}
+        self._severity: dict[str, str] = {}
+
+    def observe(self, name: str, session: Session) -> FleetVerdict | None:
+        """Add one session; return a FleetVerdict iff this arrival newly raised the cluster's alert state
+        (became a ``fleet``, or a ``fleet`` escalated to a higher severity tier). Otherwise ``None``."""
+        ja4 = _ja4(session)
+        if ja4 is None:
+            return None
+        prefix = _ja4_prefix(ja4)
+        members = self._clusters.setdefault(prefix, [])
+        members.append((name, session))
+        if len(members) < 2:
+            return None
+        verdict = score_cluster(prefix, members)
+        prev_label = self._label.get(prefix, "benign")
+        prev_sev = self._severity.get(prefix, "n/a")
+        self._label[prefix] = verdict.label
+        self._severity[prefix] = verdict.severity
+        became_fleet = verdict.label == "fleet" and prev_label != "fleet"
+        escalated = verdict.label == "fleet" and _SEVERITY_RANK[verdict.severity] > _SEVERITY_RANK[prev_sev]
+        return verdict if (became_fleet or escalated) else None
+
+
 def score_corpus(corpus: list[tuple[str, Session]]) -> list[FleetVerdict]:
     """Cluster by JA4 *prefix* (cipher-suite identity) and grade clusters of size > 1, strongest first."""
     clusters: dict[str, list[tuple[str, Session]]] = {}
@@ -230,14 +266,44 @@ def render_coordination(corpus: list[tuple[str, Session]]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def replay_stream(corpus: list[tuple[str, Session]]) -> list[tuple[str, FleetVerdict]]:
+    """Feed the corpus through a FleetTracker in arrival (first_seen) order; return (trigger_session,
+    alert_verdict) for each arrival that raised the alert state — the online detector's alert log."""
+    ordered = sorted(corpus, key=lambda nv: nv[1].first_seen)
+    tracker = FleetTracker()
+    alerts: list[tuple[str, FleetVerdict]] = []
+    for name, session in ordered:
+        verdict = tracker.observe(name, session)
+        if verdict is not None:
+            alerts.append((name, verdict))
+    return alerts
+
+
+def render_stream(corpus: list[tuple[str, Session]]) -> str:
+    """Render the online alert log: which arriving session tripped each fleet/severity alert."""
+    alerts = replay_stream(corpus)
+    lines = [f"## Online coordination — {len(alerts)} alert(s) over {len(corpus)} arrivals", ""]
+    if not alerts:
+        return "\n".join([*lines, "- (no fleet crossed the alert threshold)"]) + "\n"
+    for trigger, v in alerts:
+        lines.append(
+            f"- on `{trigger}` → **{v.label}** (severity {v.severity}, {len(v.members)} nodes, "
+            f"score {v.score:.2f}) cluster `{v.ja4}`"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     import sys
 
     from .corpus import load_corpus
 
     argv = sys.argv[1:] if argv is None else argv
-    directory = argv[0] if argv else "corpus/fleet"
-    print(render_coordination(load_corpus(directory)), end="")
+    stream = "--stream" in argv
+    paths = [a for a in argv if a != "--stream"]
+    directory = paths[0] if paths else "corpus/fleet"
+    corpus = load_corpus(directory)
+    print((render_stream if stream else render_coordination)(corpus), end="")
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -344,6 +344,15 @@ derived from scale and rate, independent of the score: aggregate `request_volume
 is `moderate`; a paradox fleet of dozens arriving in a tight window is `critical` — the difference between
 a curiosity and an active attack, which the binary fleet label alone cannot convey.
 
+**Offline snapshot vs online stream.** `score_corpus` grades a static snapshot, but a production bots/DDoS
+detector works **online**: sessions stream in, clusters form incrementally, and it alerts the moment a
+cluster crosses the threshold — not after the attack is over. `FleetTracker.observe(name, session)` models
+this: it re-scores only the affected JA4-prefix cluster per arrival and returns a verdict exactly when the
+cluster *newly* becomes a `fleet` or escalates to a higher severity tier (so it alerts once, not on every
+confirming member). Replayed over the residential-proxy fleet in arrival order, it alerts on the **second
+arrival** — the instant the paradox becomes observable — rather than waiting for the third. That early,
+edge-triggered alert is what lets a real defense act mid-attack instead of in post-mortem.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:
