@@ -48,5 +48,13 @@ fi
 echo "[*] rendering scoreboard…"
 ( cd harness && uv run python -m kitsune_harness.liveboard "${ARGS[@]}" ) | tee docs/scoreboard.md
 
+echo "[*] refreshing the recorded-session corpus…"
+mkdir -p corpus/sessions
+for arg in "${ARGS[@]}"; do
+  label="${arg%%=*}"
+  sid="$(python3 -c "import json;print(json.load(open('${arg#*=}'))['session_id'])" 2>/dev/null)" || continue
+  curl -s "http://localhost:8090/session/$sid" -o "corpus/sessions/$label.json"
+done
+
 "${COMPOSE[@]}" --profile evaders down -v >/dev/null 2>&1
-echo "[*] done → docs/scoreboard.md"
+echo "[*] done → docs/scoreboard.md + corpus/sessions/"
