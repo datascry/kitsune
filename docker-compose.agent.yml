@@ -1,0 +1,24 @@
+# docker-compose.agent — overlay for the claude-driven agent: expose a CDP browser + detector port.
+# Use with the base file; the agent's brain (claude -p) runs on the host and drives this browser.
+
+services:
+  detector:
+    ports: ["127.0.0.1:8090:8080"] # 8090 on host (8080 may be taken by other services)
+
+  # Chrome 130+ binds remote-debugging to container-localhost only, so socat republishes it on
+  # 0.0.0.0:9223 for the host agent (chrome sees a localhost connection → host-header check passes).
+  browser:
+    image: mcr.microsoft.com/playwright:v1.48.0-jammy
+    command:
+      - sh
+      - -c
+      - 'apt-get update -qq && apt-get install -y -qq socat >/dev/null 2>&1;
+         socat TCP-LISTEN:9223,fork,reuseaddr TCP:127.0.0.1:9222 &
+         CHROME=$$(ls -d /ms-playwright/chromium-*/chrome-linux/chrome | head -1);
+         exec "$$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --remote-debugging-port=9222 --remote-allow-origins=* about:blank'
+    # Host 9222 -> container socat 9223 -> chrome 127.0.0.1:9222. Host port matches the port chrome
+    # self-reports in its ws endpoint, so Playwright connect_over_cdp can follow it.
+    ports: ["127.0.0.1:9222:9223"]
+    depends_on:
+      detector:
+        condition: service_healthy

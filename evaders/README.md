@@ -9,12 +9,20 @@ that maps directly onto the cross-layer incoherence thesis:
 | `vanilla` | Python | **live** ✅ | nothing (the control / detection floor) | httpx |
 | `go-tls` | Go | **built** ✅ | the **network** (JA3/JA4) layer | uTLS, tls-client |
 | `stealth` | Playwright (Node) | **live** ✅ | browser-FP + CDP layers | Playwright (→ Camoufox, patchright) |
-| `agent` | Python | design stub | the **behavioral** layer (headline experiment) | browser-use, Claude Computer Use |
+| `agent` | Python + `claude -p` | **live** ✅ | the **behavioral** layer (headline experiment) | Claude Code CLI, Playwright/CDP |
 
-`vanilla` runs end-to-end (scores `human`, the floor); `go-tls` forges real Chrome/Firefox TLS
-(tested); `stealth` drives a real Chromium through the live stack — naive automation scores `bot`
-(0.985), the stealth variant scores `human`. `agent` is a design-complete stub (needs an LLM
-runtime — see its README) and is phase-3 work.
+All four run for real. The live scoreboard tells the whole arms-race story:
+
+| evader | label | caught on |
+|---|---|---|
+| `vanilla` | 🧑 human (0.00) | nothing — the floor |
+| `stealth` naive | 🤖 bot (0.985) | browser: `webdriver` + headless UA |
+| `stealth` patched | 🧑 human (0.00) | nothing — beats the fingerprint layers |
+| `agent` (claude -p) | 🤖 bot (0.80) | **behavioral**: low pointer entropy |
+
+The headline result: the agent beats the network + browser layers but the **behavioral** layer catches
+it — the durable signal is behavioral / intent, exactly the thesis. `go-tls` forges real Chrome/Firefox
+TLS (tested). Beating the behavioral layer (human-input synthesis) is the phase-4 frontier.
 
 > **Spine-first:** these are stubs. They are built out in phase 3 (`docs/architecture.md` §8). The
 > detector, edge, collector, and harness are complete and the scoreboard already runs on replayed

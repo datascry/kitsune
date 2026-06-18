@@ -31,6 +31,10 @@ All notable changes to Kitsune are documented here. The format follows
   Playwright Docker image); the detector serves an in-page collector. Verified red-vs-blue result:
   naive automation scores `bot` (0.985, webdriver + headless tells), the stealth variant scores
   `human`.
+- **`agent` evader (live)** — LLM-driven browser agent using `claude -p` as the reasoning engine
+  (brain on host, Chromium in the Playwright container over CDP). Verified result: the agent beats
+  the network + browser/fingerprint layers but is caught by the **behavioral** layer
+  (`bot`, 0.80) — the thesis, demonstrated.
 - **Coherence registry v0.2.0** — added HTTP/2-vs-TLS, headless-UA, keystroke-entropy, and
   proxy/Tor-exit rules.
 - **docs/catalog.md** — opinionated catalog of ~70 relevant projects across the arms race.

@@ -1,27 +1,44 @@
-# evaders/agent — LLM-driven browser agent (the headline experiment)
+# evaders/agent — LLM-driven browser agent (claude -p as the brain)
 
-Status: **design stub.** Needs an LLM runtime (an API key / a Computer-Use loop), so it is not wired
-or tested in CI yet. The experiment it runs is the point of the whole lab.
+Status: **live** ✅ — uses the Claude Code CLI (`claude -p`) as the reasoning engine; no API key
+needed. The brain runs on the host; the browser runs in the Playwright container and is driven over
+CDP. This is the headline experiment: *does a reasoning agent defeat the layers scripted bots trip?*
 
-## The experiment
+## Loop
 
-Scripted bots trip the **behavioral** layer (no human-like input entropy). The hypothesis: a
-reasoning agent that perceives and acts at the OS level produces human-like cursor trajectories and
-timing, defeating the behavioral layer — proving the durable signal moves to **intent / coordination
-/ cross-layer coherence**, not per-event mechanics.
+```
+host: claude -p  ──action JSON──▶  Chromium (in Playwright container, via CDP) ──▶ edge ──▶ detector
+        ▲                                                                                      │
+        └──────────── page snapshot ◀── browser ◀──────────────────────  verdict ◀────────────┘
+```
 
-## Two arms to compare (from `docs/catalog.md` §8)
+Each step: snapshot the page → `claude -p "pick the next human action as JSON"` → execute (mouse /
+type / scroll) → repeat. The reasoning step (`brain.py`) is pure and unit-tested (100%); the browser
+driving (`runner.py`) is integration.
 
-- **DOM/CDP-driven** (`browser-use`, Playwright-MCP, Skyvern) — drives via CDP + structured DOM
-  actions → *should still trip* the behavioral + CDP layers. The "naive agent" control.
-- **Vision / Computer-Use** (Claude Computer Use, OpenAI CUA) — perceives screenshots, emits OS-level
-  mouse/keyboard → *may defeat* the behavioral layer. The headline arm.
+## Measured result (real claude-driven run, live stack)
 
-Both drive a browser through the edge and are scored identically via the harness `Scenario` surface;
-the interesting result is the **behavioral-layer delta** between the two arms.
+| layer | score | |
+|---|---|---|
+| network | 0.0 | TLS clean |
+| browser | 0.0 | webdriver + headless tells patched — **beats the fingerprint layers** |
+| **behavioral** | **0.8** | **caught**: `bh.input_entropy_floor`, `bh.no_input_before_action` |
+| **verdict** | **bot (0.80)** | |
 
-## Ethics
+**This is the thesis.** The agent defeats the network and browser/fingerprint layers but is caught by
+the **behavioral** layer — its actions didn't produce human-like pointer entropy. Confirms the catalog
+finding (catalog §8): base agents don't beat behavioral detection on their own; the durable signal is
+behavioral / intent / coordination. Beating it needs human-input synthesis (ghost-cursor-style) — the
+phase-4 frontier.
 
-The agent is bound by the same allow-list as every evader
-(`harness/src/kitsune_harness/allowlist.py`): it may only act against the local detector and the
-approved public test endpoints. Never a third-party or production site.
+## Run
+
+```sh
+docker compose -f docker-compose.yml -f docker-compose.agent.yml up -d --build detector edge browser
+cd evaders/agent && uv sync
+KITSUNE_BROWSER_WS=http://localhost:9222 KITSUNE_DETECTOR=http://localhost:8090 \
+  uv run python -m kitsune_agent          # spends Claude usage: KITSUNE_AGENT_STEPS calls
+```
+
+> Cost note: every step calls `claude -p`, consuming Claude usage. `KITSUNE_AGENT_STEPS` (default 2)
+> bounds it.
