@@ -1,4 +1,16 @@
-## Coordination — 1 graded cluster(s) across 3 sessions
+# Coordination verdicts — the two fleet shapes a spoofing fleet cannot both avoid
+
+A fleet hides behind a shared engine identity (JA4) but must look like distinct users. It has exactly two
+ways to do that, and the scorer catches each with a complementary signal:
+
+- **Randomize JS per instance** (Camoufox) → the JS-divergence paradox: shared TLS, divergent JS.
+- **Clone one fingerprint profile** (BotBrowser) → the fingerprint-collision: identical high-entropy
+  `fp_hash` across distinct source IPs (where real machines each hash differently).
+
+Both verdicts below are **real `score_cluster` output**, not hand-authored, on a synthetic 3-node fleet
+(the lab has no live proxies/BotBrowser build to capture).
+
+## Randomizing fleet (residential proxies) — 1 graded cluster across 3 sessions
 
 ### `fleet` — score **1.00** · 3 sessions
 - **severity: moderate** (12 requests, 7.8/min)
@@ -9,4 +21,19 @@
 - timing lockstep: all members arrived within 23s
 - distributed across 3 distinct source IPs — residential-proxy fleet pattern (IP diversity masks one shared engine, defeating IP/ASN rules)
 - 3 proxy IPs front one real IP `45.137.0.42` (WebRTC) — same-origin fleet
+
+## Cloned-profile fleet (BotBrowser-style reuse) — 1 graded cluster across 3 sessions
+
+The trap this closes: JS is **homogeneous** (the scorer notes it "consistent with a real cohort"), so the
+JS-divergence paradox stays silent and the old scorer rated this only a `candidate`. The fingerprint
+collision across distinct IPs is what convicts it.
+
+### `fleet` — score **1.00** · 3 sessions
+- **severity: moderate** (6 requests, 8.2/min)
+- members: bb1, bb2, bb3
+- 3 sessions share JA4 cipher prefix `t13d1516h2_8daaf6152771`
+- JS traits homogeneous across members — consistent with a real cohort
+- identical high-entropy fingerprint `7c3a9f12` across 3 distinct source IPs — cloned-profile reuse (one anti-detect profile shared fleet-wide)
+- timing lockstep: all members arrived within 22s
+- distributed across 3 distinct source IPs — residential-proxy fleet pattern (IP diversity masks one shared engine, defeating IP/ASN rules)
 
