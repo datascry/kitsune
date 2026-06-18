@@ -9,6 +9,12 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **More white-box, source-driven detection** (ruleset 0.16.0) — continuing to read the `camoufox`
+  source. `br.macos_dpr1`: Camoufox pins `devicePixelRatio` to 1.0 (its cast map: "any value other than
+  1.0 is suspicious") but a modern Mac is Retina (dPR 2) — **confirmed live**, fires on exactly the
+  launches where Camoufox draws macOS, not Windows. `br.adblock_present` (experimental): Camoufox bundles
+  uBlock Origin as a default addon (`addons.py`/`utils.py`), detected via an ad-bait element — weak alone
+  (humans run adblockers) and not validated in our short sessions, but a documented default.
 - **White-box, source-driven detection** (ruleset 0.15.0) — read the open-source `camoufox` package to
   drive detections precisely instead of black-box probing. From `browserforge.yml` (its spoof cast map):
   `multimediaDevices` is unsupported → `br.media_devices_empty` (enumerateDevices() empty in a container;

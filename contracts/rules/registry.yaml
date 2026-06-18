@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.15.0"
+ruleset_version: "0.16.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -678,3 +678,27 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Camoufox source: multimediaDevices is unsupported — a headless container enumerates none"
+
+  # --- v0.16.0: content-blocker presence (Camoufox ships uBlock Origin as a default addon) ---
+
+  - id: br.adblock_present
+    title: A content blocker hides the ad bait element (Camoufox default-bundles uBlock Origin)
+    layers: [browser]
+    reads: [browser.adblock_present]
+    predicate: present
+    weight: 0.3
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Camoufox source (addons.py DefaultAddons.UBO); weak alone (humans run adblockers), corroborating"
+
+  - id: br.macos_dpr1
+    title: macOS UA but devicePixelRatio is 1.0 (a modern Mac is Retina, dPR 2)
+    layers: [browser]
+    reads: [browser.macos_dpr1]
+    predicate: present
+    weight: 0.4
+    status: experimental
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Camoufox source: devicePixelRatio is pinned to 1.0 (cannot present a coherent Retina profile)"

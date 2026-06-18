@@ -32,6 +32,17 @@ DEMO_PAGE = """<!doctype html>
       speechSynthesis.onvoiceschanged = grab;
     }
   } catch (e) {}
+  // Adblock "bait" element, added early so a content blocker's cosmetic filters have time to hide it by
+  // send(). Camoufox ships uBlock Origin as a *default* addon (per its source), so a stock Camoufox hides
+  // this — a corroborating tell (weak alone: many humans run adblockers too).
+  var _bait = null;
+  try {
+    _bait = document.createElement("div");
+    _bait.className = "adsbox ad-banner pub_300x250 text-ad sponsored doubleclick";
+    _bait.style.cssText = "position:absolute;left:-9999px;top:-9999px;height:12px;width:12px;";
+    _bait.innerHTML = "&nbsp;";
+    addEventListener("DOMContentLoaded", function () { try { document.body.appendChild(_bait); } catch (e) {} });
+  } catch (e) {}
   function uaBrowser(ua) {
     if (/Firefox\\//.test(ua)) return "firefox";
     if (/Edg\\//.test(ua)) return "edge";
@@ -322,6 +333,17 @@ DEMO_PAGE = """<!doctype html>
         if (!devs || devs.length === 0) sigs.push(S("browser", "media_devices_empty", true));
       }
     } catch (e) {}
+    // Read the adblock bait: a content blocker (Camoufox ships uBlock Origin by default) hides it.
+    try {
+      if (_bait && _bait.parentNode) {
+        var hidden = _bait.offsetHeight === 0 || _bait.offsetParent === null
+          || getComputedStyle(_bait).display === "none";
+        if (hidden) sigs.push(S("browser", "adblock_present", true));
+      }
+    } catch (e) {}
+    // Camoufox pins devicePixelRatio to 1.0 (its source: "any value other than 1.0 is suspicious"), but
+    // a modern Mac is Retina (dPR 2). A macOS UA reporting dPR exactly 1.0 is therefore incoherent.
+    if (uaPlatform(ua) === "macOS" && window.devicePixelRatio === 1) sigs.push(S("browser", "macos_dpr1", true));
     try {
       var ifr = document.createElement("iframe");
       ifr.style.display = "none"; document.body.appendChild(ifr);

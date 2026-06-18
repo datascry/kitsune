@@ -97,8 +97,15 @@ provable detection:
     devices, where a real desktop always has at least a default audio endpoint. **Confirmed live** — it
     fires on both headless and headful Camoufox (pushing them to `bot` 0.86 / 0.955).
   - `# devicePixelRatio … Any value other than 1.0 is suspicious` — Camoufox is pinned to dPR 1.0, so it
-    cannot present a coherent Retina/high-DPI profile (a future coherence rule: macOS UA + dPR 1.0).
+    cannot present a coherent Retina/high-DPI profile. `br.macos_dpr1` exploits this: **confirmed live**,
+    it fires on exactly the launches where Camoufox draws a macOS platform (a modern Mac is Retina, dPR 2)
+    and not on its Windows draws — a Camoufox-specific coherence tell, not a generic headless one.
   - `# Never override productSub`, `pdfViewerEnabled … kept to True` — further fixed values.
+- **`addons.py` — uBlock Origin is a default addon** (`DefaultAddons.UBO`, added unconditionally in
+  `utils.py` unless `exclude_addons` is passed). So a stock Camoufox runs a content blocker.
+  `br.adblock_present` (ad-bait cosmetic detection) targets this — kept *experimental*: it is weak alone
+  (many humans run adblockers) and did not fire in our short isolated sessions (fresh uBO compiles its
+  filter lists slower than the ~3s capture window), but it is a documented default worth flagging.
 - **No audio handling in the package** — Camoufox does *not* farble the AudioContext. So `br.audio_noise`
   (per-render perturbation) correctly does **not** fire on Camoufox; it is reserved for farbling browsers
   (Brave) and tools that randomize audio per read. Reading the source told us this *before* testing,

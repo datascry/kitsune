@@ -152,6 +152,8 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "audio_missing", True, Source.collector)], "br.audio_missing"),
         ([(Layer.browser, "audio_noise", True, Source.collector)], "br.audio_noise"),
         ([(Layer.browser, "media_devices_empty", True, Source.collector)], "br.media_devices_empty"),
+        ([(Layer.browser, "adblock_present", True, Source.collector)], "br.adblock_present"),
+        ([(Layer.browser, "macos_dpr1", True, Source.collector)], "br.macos_dpr1"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
