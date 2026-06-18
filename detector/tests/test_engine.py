@@ -93,6 +93,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "br.navplatform_vs_ua",
         ),
+        ([(Layer.browser, "worker_divergence", True, Source.collector)], "br.worker_divergence"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

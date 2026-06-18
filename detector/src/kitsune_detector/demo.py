@@ -98,6 +98,21 @@ DEMO_PAGE = """<!doctype html>
       return Notification.permission === "denied" && st !== "denied";
     } catch (e) { return false; }
   }
+  // A Web Worker has its own navigator; main-thread-only spoofs (and some engine-level browsers)
+  // diverge between the two — a tamper signal that survives coherent main-thread spoofing.
+  function workerNav() {
+    return new Promise(function (resolve) {
+      try {
+        var code = 'onmessage=function(){postMessage({ua:navigator.userAgent,' +
+          'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
+          'lang:(navigator.languages||[]).join(",")})}';
+        var w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+        var t = setTimeout(function () { resolve(null); }, 1500);
+        w.onmessage = function (e) { clearTimeout(t); resolve(e.data); w.terminate(); };
+        w.postMessage(0);
+      } catch (err) { resolve(null); }
+    });
+  }
   async function send() {
     var ua = navigator.userAgent, now = new Date().toISOString();
     function S(layer, kind, value) {
@@ -146,6 +161,11 @@ DEMO_PAGE = """<!doctype html>
     sigs.push(S("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0));
     sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
     if (await permAnomaly()) sigs.push(S("browser", "permissions_anomaly", true));
+    var wn = await workerNav();
+    if (wn && (wn.ua !== navigator.userAgent || wn.hw !== navigator.hardwareConcurrency ||
+        (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {
+      sigs.push(S("browser", "worker_divergence", true));
+    }
     sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
     sigs.push(S("behavioral", "pointer_event_count", pts.length));
     if (pts.length >= 3) {
