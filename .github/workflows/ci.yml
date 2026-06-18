@@ -63,6 +63,7 @@ jobs:
       - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseClientHello' -fuzztime 20s
       - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParsePreface' -fuzztime 20s
       - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzH2FrameScanner' -fuzztime 20s
+      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseSYN' -fuzztime 20s
 
   collector:
     runs-on: ubuntu-latest

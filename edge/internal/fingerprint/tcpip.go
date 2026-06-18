@@ -3,7 +3,65 @@
 
 package fingerprint
 
-import "strings"
+import (
+	"encoding/binary"
+	"strings"
+)
+
+// tcpOptionNames maps TCP option kinds to the short tokens used in OptionOrder (the discriminating
+// feature). NOP/EOL padding is kept because its placement is part of each stack's signature.
+var tcpOptionNames = map[byte]string{0: "eol", 1: "nop", 2: "mss", 3: "ws", 4: "sack", 5: "sackblk", 8: "ts"}
+
+// ParseSYN reads an IPv4 packet and, if it is a bare client SYN (SYN set, ACK clear), returns the
+// OS-revealing fields. Best-effort and bounds-checked: any malformed or non-IPv4/non-TCP/non-SYN input
+// yields ok=false, never a panic — it is fed raw bytes off an arbitrary client's socket.
+func ParseSYN(ip []byte) (TCPSyn, bool) {
+	if len(ip) < 20 || ip[0]>>4 != 4 {
+		return TCPSyn{}, false // not IPv4
+	}
+	ihl := int(ip[0]&0x0f) * 4
+	if ihl < 20 || len(ip) < ihl+20 || ip[9] != 6 {
+		return TCPSyn{}, false // bad header length or not TCP
+	}
+	ttl := ip[8]
+	tcp := ip[ihl:]
+	flags := tcp[13]
+	if flags&0x02 == 0 || flags&0x10 != 0 {
+		return TCPSyn{}, false // not a bare SYN (SYN set, ACK clear)
+	}
+	window := binary.BigEndian.Uint16(tcp[14:16])
+	dataOffset := int(tcp[12]>>4) * 4
+	syn := TCPSyn{TTL: ttl, WindowSize: window}
+	if dataOffset > 20 && dataOffset <= len(tcp) {
+		syn.OptionOrder = parseTCPOptions(tcp[20:dataOffset])
+	}
+	return syn, true
+}
+
+// parseTCPOptions walks the TCP option bytes and returns the option kinds, in order, as short tokens.
+func parseTCPOptions(opts []byte) string {
+	order := make([]string, 0, 8)
+	for i := 0; i < len(opts); {
+		kind := opts[i]
+		name, known := tcpOptionNames[kind]
+		if name == "" || !known {
+			name = "x" // unknown option kind — keep a placeholder so the order/count is preserved
+		}
+		order = append(order, name)
+		if kind == 0 { // EOL ends the option list
+			break
+		}
+		if kind == 1 { // NOP is a single byte
+			i++
+			continue
+		}
+		if i+1 >= len(opts) || int(opts[i+1]) < 2 {
+			break // malformed length — stop rather than loop
+		}
+		i += int(opts[i+1])
+	}
+	return strings.Join(order, ",")
+}
 
 // TCPSyn captures the OS-revealing fields of a client's TCP SYN packet.
 type TCPSyn struct {
