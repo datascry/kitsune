@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
+    "build:livepage": "tsup src/livepage/main.ts --format esm --no-dts --minify --out-dir site-build",
     "test": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

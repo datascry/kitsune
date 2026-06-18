@@ -1,0 +1,218 @@
+/* collector/page/styles — styling for the live in-browser detection page. */
+/* Verdict banner, per-layer score bars, and the fired-first detection table. */
+
+:root {
+  --bg: #0f1117;
+  --panel: #181b24;
+  --line: #2a2f3c;
+  --text: #e6e8ee;
+  --muted: #9aa3b2;
+  --fired: #ff5c66;
+  --clear: #3ad29f;
+  --accent: #ffa94d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+header,
+main,
+footer {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+
+header h1 {
+  margin: 0.5rem 0;
+}
+
+a {
+  color: var(--accent);
+}
+
+#status {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.verdict {
+  text-align: center;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin: 1rem 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
+.verdict .label {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.verdict-bot .label {
+  color: var(--fired);
+}
+
+.verdict-suspicious .label {
+  color: var(--accent);
+}
+
+.verdict-human .label {
+  color: var(--clear);
+}
+
+.verdict .score {
+  font-size: 1.1rem;
+}
+
+.verdict .sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: 7rem 1fr 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+}
+
+.bar-label {
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.bar-track {
+  background: var(--line);
+  border-radius: 0.4rem;
+  height: 0.7rem;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--clear), var(--accent), var(--fired));
+}
+
+.bar-val {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+h3 .count {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+table.detections {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+table.detections th,
+table.detections td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+table.detections th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+td.mark {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+tr.fired td.mark {
+  color: var(--fired);
+  font-weight: 700;
+}
+
+tr.clear td.mark {
+  color: var(--muted);
+}
+
+tr.clear {
+  opacity: 0.6;
+}
+
+code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  color: var(--accent);
+}
+
+.title {
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.evidence {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.exp {
+  font-size: 0.7rem;
+  color: var(--bg);
+  background: var(--accent);
+  border-radius: 0.3rem;
+  padding: 0 0.3rem;
+}
+
+td.weight {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.edge-list {
+  columns: 2;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.edge-list code {
+  font-size: 0.8rem;
+}
+
+.layers {
+  color: var(--line);
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.82rem;
+  border-top: 1px solid var(--line);
+  margin-top: 2rem;
+}

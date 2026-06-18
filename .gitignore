@@ -12,6 +12,7 @@ htmlcov/
 # Node
 node_modules/
 dist/
+site-build/
 coverage/
 *.tsbuildinfo
 

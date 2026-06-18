@@ -1,5 +1,5 @@
-# .github/workflows/pages — publish the latest scoreboard to GitHub Pages.
-# Runs the spine demo, wraps the Markdown scoreboard + JSON into a static page, and deploys it.
+# .github/workflows/pages — publish the live in-browser detection page to GitHub Pages.
+# Builds the collector live-page bundle + rule registry JSON + scoreboard, assembles site/, and deploys.
 
 name: pages
 on:
@@ -23,21 +23,37 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      # Build the live detection page bundle (collector → site-build/main.js).
+      - uses: pnpm/action-setup@v6
+        with: { version: "9.12.0" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: pnpm, cache-dependency-path: collector/pnpm-lock.yaml }
+      - name: Build live-page bundle
+        working-directory: collector
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build:livepage
+
+      # Render the rule registry JSON (consumed by the page) + the evader scoreboard.
       - uses: astral-sh/setup-uv@v3
         with: { enable-cache: true }
-      - name: Render scoreboard
+      - name: Render registry + scoreboard
         working-directory: harness
         run: |
           uv sync
           mkdir -p ../site
+          uv run python -m kitsune_harness.rules_json > ../site/rules.json
           uv run python -m kitsune_harness > ../site/scoreboard.md
           uv run python -m kitsune_harness --json > ../site/scoreboard.json
-          {
-            echo '<!doctype html><meta charset="utf-8"><title>Kitsune scoreboard</title>'
-            echo '<body style="font-family:system-ui;max-width:60rem;margin:2rem auto">'
-            echo '<pre>'; cat ../site/scoreboard.md; echo '</pre>'
-            echo '<p><a href="scoreboard.json">scoreboard.json</a></p></body>'
-          } > ../site/index.html
+
+      # Assemble the static site: the page shell + styles + bundle + registry + scoreboard.
+      - name: Assemble site
+        run: |
+          cp collector/page/index.html site/index.html
+          cp collector/page/styles.css site/styles.css
+          cp collector/site-build/main.js site/livepage.js
+
       - uses: actions/upload-pages-artifact@v5
         with: { path: site }
       - id: deploy

@@ -1,0 +1,49 @@
+<!doctype html>
+<!-- collector/page/index — the live in-browser bot-detection test page (deployed to GitHub Pages). -->
+<!-- Loads the bundled collector+coherence engine, tests THIS browser, and renders the verdict. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kitsune — live browser detection</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>🦊 Kitsune — live browser detection</h1>
+      <p>
+        Kitsune flags <strong>incoherence across layers</strong>, not just bad signals. This page
+        runs the browser- and behavioral-layer detections against
+        <strong>your current browser</strong>, entirely client-side — the same rules-as-data the
+        detector evaluates server-side. <a href="https://github.com/datascry/kitsune">source</a> ·
+        <a href="./scoreboard.md">evader scoreboard</a>
+      </p>
+    </header>
+
+    <main>
+      <p id="status">
+        Collecting signals from your browser — move your mouse and type for a few seconds…
+      </p>
+      <div id="app"></div>
+    </main>
+
+    <footer>
+      <p>
+        No data leaves your browser: collection, rule evaluation, and scoring all run locally in
+        this page. TLS / HTTP-2 / QUIC / TCP / IP-reputation detections need Kitsune's edge and are
+        listed but not evaluated here.
+      </p>
+    </footer>
+
+    <script type="module">
+      // Hide the status line once the app has rendered a verdict.
+      const obs = new MutationObserver(() => {
+        const app = document.getElementById("app");
+        const status = document.getElementById("status");
+        if (app && app.children.length > 0 && status) status.style.display = "none";
+      });
+      obs.observe(document.getElementById("app"), { childList: true });
+    </script>
+    <script type="module" src="./livepage.js"></script>
+  </body>
+</html>
