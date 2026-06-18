@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,6 +73,15 @@ func prepare(
 		// client whose JA4 is otherwise unrecognised.
 		if isModernBrowserUA(r.Header.Get("User-Agent")) && !hello.HasGREASE() {
 			out.signals = append(out.signals, signal.Network(out.sessionID, "tls_no_grease", true, now))
+		}
+		// A current-Chrome UA over a handshake that offers no post-quantum key share. Chrome 131+ sends
+		// X25519MLKEM768 (124-130 the Kyber768 draft) in supported_groups by default; a static-template TLS
+		// stack (curl-impersonate/utls/Go crypto/tls) pinned to an older Chrome profile lags this rollout —
+		// a TLS tell the impersonation libraries must keep chasing. Scoped to >=131 so an older real Chrome
+		// is never flagged; kept experimental because a corporate TLS-inspection proxy or
+		// PostQuantumKeyAgreementEnabled=false also strips the group.
+		if chromeUAExpectsPQ(r.Header.Get("User-Agent")) && !hello.HasPostQuantumKeyShare() {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "tls_no_pq_keyshare", true, now))
 		}
 	}
 	// The HTTP/2 connection preface (SETTINGS / WINDOW_UPDATE / PRIORITY / pseudo-header order) is a
@@ -196,6 +206,18 @@ func uaChromeMajorVersion(ua string) string {
 		end = len(ver)
 	}
 	return ver[:end]
+}
+
+// chromeUAExpectsPQ reports whether the User-Agent claims a Chrome version that ships the post-quantum
+// key share on by default (X25519MLKEM768, enabled in Chrome 131). Scoping to >=131 means a genuinely
+// older Chrome — which legitimately offers no PQ group — is never flagged by net.tls_pq_keyshare_vs_ua.
+func chromeUAExpectsPQ(ua string) bool {
+	v := uaChromeMajorVersion(ua)
+	if v == "" {
+		return false
+	}
+	n, err := strconv.Atoi(v)
+	return err == nil && n >= 131
 }
 
 // chUAVersionMismatch reports a request whose UA-string Chrome version disagrees with the Sec-CH-UA brand

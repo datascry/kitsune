@@ -593,6 +593,23 @@ trips all five at once (`no_js_execution`, `sec_fetch_vs_ua`, `accept_encoding_v
 at the JS, HTTP-header, TLS, and kernel layers simultaneously — and a tool that isn't a browser on the OS
 it claims cannot.
 
+A sixth TLS-layer tell catches a *different* failure mode than GREASE — not the absence of browser-like
+structure, but a template that has fallen **behind the browser it copies**. Since Chrome 131 (late 2025
+the dominant version), Chrome offers a post-quantum hybrid key share — `X25519MLKEM768` (codepoint
+`0x11EC`; Chrome 124–130 sent the `0x6399` Kyber768 draft) — in its ClientHello `supported_groups` by
+default. An impersonation library pins a *fixed* ClientHello template, and the post-quantum rollout is
+recent enough that an older template still carries GREASE and a plausible JA3 yet omits the PQ group.
+`net.tls_pq_keyshare_vs_ua` fires when a UA claiming **Chrome ≥131** rides a handshake with no PQ group:
+the edge already parses `supported_groups` for JA3, so the check is `HasPostQuantumKeyShare()` against the
+UA's claimed version. It is the rare tell that *forces the impersonator to track Chrome's release cadence*
+— a stale template is caught even though every classical field is perfect. It is kept **experimental**,
+not active, for an honest reason: a corporate TLS-inspection proxy re-originates the handshake (so the
+edge sees the proxy's PQ-less ClientHello under a real Chrome UA), and `PostQuantumKeyAgreementEnabled=false`
+enterprise policy disables it — both genuine, if narrow, false-positive sources that GREASE (universal
+since Chrome 55) does not share. Scoping to `≥131` also means a genuinely older Chrome, which legitimately
+sends no PQ group, is never flagged. The corpus carries no PQ-less capture yet, so it reads 0 there until
+a stale-template client (an outdated `curl-impersonate`/`utls` profile) is recorded.
+
 …unless you make the shape perfectly. `curl-impersonate` (via `curl_cffi`) is the other end of the
 scripted spectrum: it reproduces a real Chrome ClientHello (JA3/JA4), the Chrome HTTP/2 SETTINGS and
 pseudo-header order, and the *full* browser header set — `Sec-Fetch-*`, `Sec-CH-UA(-Platform)`,

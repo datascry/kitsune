@@ -392,6 +392,21 @@ func TestCHUANoGREASEBrand(t *testing.T) {
 	}
 }
 
+func TestChromeUAExpectsPQ(t *testing.T) {
+	cases := map[string]bool{
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131.0.0.0 Safari/537.36": true,
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/140.0.0.0 Safari/537.36": true,
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36": false,
+		"Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/131.0":             false,
+		"": false,
+	}
+	for ua, want := range cases {
+		if got := chromeUAExpectsPQ(ua); got != want {
+			t.Errorf("chromeUAExpectsPQ(%q)=%v want %v", ua, got, want)
+		}
+	}
+}
+
 func TestUAKernel(t *testing.T) {
 	cases := map[string]string{
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125":          "windows",
