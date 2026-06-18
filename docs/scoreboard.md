@@ -1,7 +1,7 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-18T10:14:09.483689+00:00`
-- ruleset: `0.33.0`
+- generated: `2026-06-18T10:20:16.159116+00:00`
+- ruleset: `0.34.0`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|---|---|
@@ -33,7 +33,7 @@
 - **camoufox-hardened** (bot): `br.webgl2_missing`, `br.pointer_touch_incoherent`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **camoufox-headful** (bot): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **camoufox** (bot): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
-- **floor-spoof** (bot): `bh.keystroke_entropy_floor`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`
+- **floor-spoof** (bot): `bh.keystroke_entropy_floor`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.no_plugins`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered`, `br.notification_denied`
 - **full-stealth** (bot): `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.webgl_getparameter_tampered`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.webgpu_webgl_vs`
 - **human-mouse** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **max-stealth** (bot): `bh.synthetic_no_coalesced`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`

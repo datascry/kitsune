@@ -104,6 +104,14 @@ if (FLOOR_SPOOF) {
       navigator.mediaDevices.enumerateDevices = () =>
         Promise.resolve(fakeDevices.map((d) => ({ ...d, toJSON: () => d })));
     }
+    // Fake the PDF floor: pdfViewerEnabled true and a non-empty mimeTypes, the naive way (define on the
+    // navigator instance). A real browser carries these as prototype-inherited accessors, so an own
+    // property is itself the tell — the same lie detection plugins_spoofed already uses.
+    Object.defineProperty(navigator, "pdfViewerEnabled", { get: () => true, configurable: true });
+    Object.defineProperty(navigator, "mimeTypes", {
+      get: () => [{ type: "application/pdf", suffixes: "pdf", description: "Portable Document Format" }],
+      configurable: true,
+    });
   });
 } else if (FULL) {
   // The full battery: every patch a JS-injection anti-detect would apply. Note webdriver is patched

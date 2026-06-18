@@ -110,6 +110,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "plugins_count", 0, Source.collector)], "br.no_plugins"),
         ([(Layer.browser, "webgl_getparameter_tampered", True, Source.collector)], "br.webgl_getparameter_tampered"),
         ([(Layer.browser, "plugins_spoofed", True, Source.collector)], "br.plugins_spoofed"),
+        ([(Layer.browser, "nav_property_spoofed", True, Source.collector)], "br.nav_property_spoofed"),
         ([(Layer.browser, "webdriver_getter_tampered", True, Source.collector)], "br.webdriver_getter_tampered"),
         (
             [

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.33.0"
+ruleset_version: "0.34.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -396,6 +396,18 @@ rules:
     category: automation
     added: "2026-06-18"
     last_validated: "2026-06-18"
+
+  - id: br.nav_property_spoofed
+    title: A prototype-inherited navigator property (pdfViewerEnabled/mimeTypes) is an own property
+    layers: [browser]
+    reads: [browser.nav_property_spoofed]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS own-property lie detection; FLOOR_SPOOF fakes the PDF floor via defineProperty"
     source: "CreepJS lie-detection: native plugins is inherited from Navigator.prototype"
 
   - id: br.webdriver_getter_tampered

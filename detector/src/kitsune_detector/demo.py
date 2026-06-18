@@ -343,6 +343,18 @@ DEMO_PAGE = """<!doctype html>
         sigs.push(S("browser", "webgl_getparameter_tampered", true));
     } catch (e) {}
     if (Object.getOwnPropertyDescriptor(navigator, "plugins")) sigs.push(S("browser", "plugins_spoofed", true));
+    // The same own-property lie, generalised: pdfViewerEnabled and mimeTypes are prototype-inherited on a
+    // real Navigator, so an own property on the instance means a tool redefined them to fake the PDF floor
+    // (beating chrome_no_pdfviewer / mimetypes_empty). See the FLOOR_SPOOF evader.
+    try {
+      var spoofed = ["pdfViewerEnabled", "mimeTypes"];
+      for (var si = 0; si < spoofed.length; si++) {
+        if (Object.getOwnPropertyDescriptor(navigator, spoofed[si])) {
+          sigs.push(S("browser", "nav_property_spoofed", true));
+          break;
+        }
+      }
+    } catch (e) {}
     try {
       var wd = Object.getOwnPropertyDescriptor(Navigator.prototype, "webdriver");
       if (wd && wd.get && wd.get.toString().indexOf("[native code]") < 0)

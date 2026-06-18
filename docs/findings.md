@@ -127,6 +127,19 @@ the *act of supplying it*. The evader stays `bot` either way (still leaking `mim
 the lesson is the durable one: there is no free lunch in faking environment presence from a headless
 browser — absence is a tell, and the only cure for absence is tampering, which is also a tell.
 
+The follow-up round made the same point on *properties* rather than *methods*, and showed the detector
+already half-knew the trick. Extending `FLOOR_SPOOF` to also fake the PDF floor — `pdfViewerEnabled` and
+`mimeTypes`, defined on the navigator instance — duly silenced `br.chrome_no_pdfviewer` and
+`br.mimetypes_empty`, and at first nothing replaced them. But `br.plugins_spoofed` already encoded the
+right idea for one property: `navigator.plugins` is a prototype-inherited accessor on a real browser, so
+an *own* property on the instance is itself the lie (CreepJS-style location detection). The fix just
+generalised that one check to the other prototype properties a floor-spoofer redefines —
+`br.nav_property_spoofed` now fires when `pdfViewerEnabled` or `mimeTypes` appears as an own property.
+Re-run, the PDF fakes are caught not for the value they assert but for living in the wrong place on the
+object. Two rounds, two mechanisms — non-native `toString` for replaced *methods*, own-property descriptors
+for replaced *properties* — and the same conclusion holds: every way to manufacture a missing capability
+leaves a structural fingerprint of the manufacturing.
+
 ### CSP bypass — a tell the patches themselves admit they can't fix
 
 Reading the canonical CDP-detection catalog (`rebrowser-bot-detector`) against Kitsune's coverage, every
