@@ -282,6 +282,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.network, "accept_encoding_no_brotli", True, Source.edge)], "net.accept_encoding_vs_ua"),
         ([(Layer.network, "tls_no_grease", True, Source.edge)], "net.tls_grease_vs_ua"),
         ([(Layer.network, "ch_ua_mobile_mismatch", True, Source.edge)], "net.ch_ua_mobile_vs_ua"),
+        (
+            [(Layer.network, "ch_ua_no_grease_brand", True, Source.edge)],
+            "net.ch_ua_no_grease_brand",
+        ),
         ([(Layer.network, "ch_ua_version_mismatch", True, Source.edge)], "net.ch_ua_version_vs_ua"),
         (
             [

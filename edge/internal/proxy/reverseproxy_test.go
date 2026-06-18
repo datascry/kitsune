@@ -367,6 +367,31 @@ func TestCHUAMobileMismatch(t *testing.T) {
 	}
 }
 
+func TestCHUANoGREASEBrand(t *testing.T) {
+	chromeUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0.0.0 Safari/537.36"
+	firefoxUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Gecko/20100101 Firefox/126.0"
+	cases := []struct {
+		name, ua, chUA string
+		want           bool
+	}{
+		{"real Chromium GREASE brand", chromeUA, `"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"`, false},
+		{"real Chromium alt GREASE punctuation", chromeUA, `"Chromium";v="126", "Not.A/Brand";v="24", "Google Chrome";v="126"`, false},
+		{"hardcoded header, no GREASE brand", chromeUA, `"Google Chrome";v="126", "Chromium";v="126"`, true},
+		{"no Sec-CH-UA (Firefox)", firefoxUA, "", false},
+		{"hardcoded header under non-Chromium UA still fires", firefoxUA, `"Google Chrome";v="126"`, true},
+	}
+	for _, c := range cases {
+		r := httptest.NewRequest(http.MethodGet, "https://localhost/", nil)
+		r.Header.Set("User-Agent", c.ua)
+		if c.chUA != "" {
+			r.Header.Set("Sec-CH-UA", c.chUA)
+		}
+		if got := chUANoGREASEBrand(r); got != c.want {
+			t.Errorf("%s: chUANoGREASEBrand=%v want %v", c.name, got, c.want)
+		}
+	}
+}
+
 func TestUAKernel(t *testing.T) {
 	cases := map[string]string{
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125":          "windows",

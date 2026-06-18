@@ -772,6 +772,20 @@ real browser, which never disagrees with itself here, it stays silent. With brow
 version, every low-entropy client hint a request carries is cross-checked against the layer it should
 agree with.
 
+A fifth check closes the client-hint family at the *integrity* level, not the coherence level. RFC 8701
+anti-ossification requires every real Chromium to inject a GREASE brand — a randomly-punctuated
+`"Not.A/Brand"` / `"Not/A)Brand"` / `"Not:A-Brand"` entry — into its `Sec-CH-UA` list alongside the
+genuine brands. No actual browser brand contains the token "Brand", so the GREASE entry is the only
+source of that substring. A scraper that hand-assembles the header from a static
+`"Google Chrome";v="126", "Chromium";v="126"` string omits it entirely. `net.ch_ua_no_grease_brand`
+fires when a request presents a Chromium-family `Sec-CH-UA` (so the header is claimed at all) whose value
+carries no "brand" token — a hardcoded, non-browser-generated header. It is an `artifact`-class tell, not
+a cross-layer one: it needs nothing but the header itself, which is why it survives even a single-request
+probe. This is live-producible at the edge (unit-tested both ways) and awaits a hardcoded-header evader
+in the recorded corpus to light up the matrix; like other artifact rules it reads 0 there until one is
+captured. With this, the low-entropy client-hint surface — browser, OS, locale, form factor, version, and
+GREASE integrity — is saturated; further client-hint work would be redundant rather than additive.
+
 ## Testing strategy (efficiency)
 
 Re-running the seven known-caught evaders every iteration teaches nothing. Testing is tiered:

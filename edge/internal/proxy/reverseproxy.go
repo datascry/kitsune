@@ -117,7 +117,19 @@ func prepare(
 	if chUAMobileMismatch(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_mobile_mismatch", true, now))
 	}
+	if chUANoGREASEBrand(r) {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_no_grease_brand", true, now))
+	}
 	return out, nil
+}
+
+// chUANoGREASEBrand reports a Chromium Sec-CH-UA brand list that omits the GREASE brand. Every real
+// Chromium injects a randomly-punctuated "Not...Brand" entry (RFC-8701-style anti-ossification); a real
+// browser brand never contains the word "Brand", so its absence means a hand-assembled, hardcoded
+// Sec-CH-UA — a scraper that copied the visible brands and dropped the odd-looking GREASE one.
+func chUANoGREASEBrand(r *http.Request) bool {
+	v := r.Header.Get("Sec-CH-UA")
+	return secCHUABrowser(r) != "" && !strings.Contains(strings.ToLower(v), "brand")
 }
 
 // chUAMobileMismatch reports a request whose Sec-CH-UA-Mobile flag disagrees with the form factor its
