@@ -31,9 +31,19 @@ KITSUNE_DETECTOR=http://127.0.0.1:8080 go run ./cmd/edge
   socket and reverse-proxies to the app (the [`read-tls-client-hello`](https://github.com/httptoolkit/read-tls-client-hello)
   / [`utls`](https://github.com/refraction-networking/utls) technique), plus the **HTTP/2 (Akamai)**
   fingerprint. The JA4→browser/OS **hint table** is loaded by `hintdb.go` (embedded seed +
-  `KITSUNE_JA4_HINTS` file override); ship a real JA4 fingerprint DB to populate it. The seed holds
-  example entries only, so live rules that read hints don't fire until a real DB is supplied (no data
-  ≠ contradiction) — see `docs/architecture.md` §6.
+  `KITSUNE_JA4_HINTS` file override) and is now seeded with **real captured fingerprints** (go-tls's
+  forged Chrome, httpx) — so the network layer recognises them live (`ja4_browser_hint` /
+  `ja4_os_hint` populate, enabling the cross-layer coherence rules). Capture more by observing known
+  clients via the detector's `GET /session/{id}`. (Nice property observed: JA3 varies with GREASE
+  between runs; JA4 is stable — which is why JA4 is the better signal.)
+
+### Known limitation
+
+Network capture works for non-browser clients (httpx, uTLS/go-tls handshake cleanly through the
+peek-proxy). Real **Chromium** currently sends a `certificate_unknown` TLS alert to the self-signed
+edge (the page still loads via Playwright's `ignoreHTTPSErrors`, so browser/behavioral signals are
+captured, but the **network** signals for browser sessions are not). Fixing the edge cert/handshake
+for browsers is a tracked follow-up; it does not affect the non-browser network path.
 
 This is **tier-2** coverage per the testing strategy (network IO), gated lower than the core logic;
 the fingerprint engine itself is held to the core ≥95% bar.

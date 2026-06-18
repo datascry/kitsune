@@ -27,6 +27,10 @@ All notable changes to Kitsune are documented here. The format follows
   `ks_sid`, forwards JA3/JA4 signals), a real `vanilla` evader, and `docker-compose` wiring
   detector + edge + vanilla. Verified end-to-end (`session_id` threads socket → verdict).
 - **`go-tls` evader** — uTLS-based Chrome/Firefox TLS fingerprint forging.
+- **JA4 live network scoring** — detector `GET /session/{id}` to inspect captured signals; the edge's
+  JA4 hint DB seeded with **real captured fingerprints** (go-tls Chrome, httpx), so the network layer
+  recognises clients live (`ja4_browser_hint`/`ja4_os_hint` populate). (Browser-session network
+  capture through the peek-proxy is a known follow-up — see `edge/README.md`.)
 - **`stealth` evader (live)** — drives a real Chromium through the edge via Playwright (in the
   Playwright Docker image); the detector serves an in-page collector. Verified red-vs-blue result:
   naive automation scores `bot` (0.985, webdriver + headless tells), the stealth variant scores

@@ -64,3 +64,11 @@ def test_index_serves_collector(client: TestClient) -> None:
     assert resp.status_code == 200
     assert "navigator.webdriver" in resp.text
     assert "/ingest" in resp.text
+
+
+def test_session_endpoint(client: TestClient) -> None:
+    client.post("/ingest", json=_signals_from("session_bot.json"))
+    resp = client.get("/session/bot-001")
+    assert resp.status_code == 200
+    assert resp.json()["session_id"] == "bot-001"
+    assert client.get("/session/nope").status_code == 404

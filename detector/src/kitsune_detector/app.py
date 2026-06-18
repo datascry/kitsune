@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse
 
 from .detector import Detector
 from .demo import DEMO_PAGE
-from .models import Signal, Verdict
+from .models import Session, Signal, Verdict
 from .store import Store
 
 
@@ -44,6 +44,14 @@ def create_app(detector: Detector | None = None, store: Store | None = None) -> 
             store.save_verdict(verdict)
             verdicts.append(verdict)
         return verdicts
+
+    @app.get("/session/{session_id}", response_model=Session)
+    def get_session(session_id: str) -> Session:
+        # Inspect a correlated session's raw signals (e.g. to read the captured JA4).
+        session = store.get_session(session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="no session")
+        return session
 
     @app.get("/verdict/{session_id}", response_model=Verdict)
     def get_verdict(session_id: str) -> Verdict:

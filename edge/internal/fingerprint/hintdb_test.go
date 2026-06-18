@@ -11,7 +11,8 @@ import (
 
 func TestDefaultHints(t *testing.T) {
 	table := DefaultHints()
-	h, ok := table.Lookup("t13d1516h2_8daaf6152771_example_chrome")
+	// Real captured go-tls (forged Chrome) JA4.
+	h, ok := table.Lookup("t13d1516h2_8daaf6152771_02713d6af862")
 	if !ok || h.Browser != "chrome" || h.OS != "windows" {
 		t.Errorf("seed lookup: %+v ok=%v", h, ok)
 	}

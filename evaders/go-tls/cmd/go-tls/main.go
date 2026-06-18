@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -23,4 +24,10 @@ func main() {
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 	log.Printf("go-tls (chrome fingerprint) -> %s : %s [%d bytes]", target, resp.Status, len(body))
+	// Print the correlation id (from the edge's Set-Cookie) to stdout for inspection.
+	for _, c := range resp.Cookies() {
+		if c.Name == "ks_sid" {
+			fmt.Println(c.Value)
+		}
+	}
 }
