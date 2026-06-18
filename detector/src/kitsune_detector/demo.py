@@ -211,6 +211,48 @@ DEMO_PAGE = """<!doctype html>
     var v = s.reduce(function (a, x) { return a + (x - mean) * (x - mean); }, 0) / s.length;
     return Math.sqrt(v) / mean;
   }
+  // --- biomechanics (mirror of kitsune_harness.biomech; calibrated vs Balabit, see docs/behavioral-data.md) ---
+  function speeds(p) {
+    var s = [];
+    for (var i = 1; i < p.length; i++) { var dt = p[i].t - p[i-1].t; if (dt > 0) s.push(d(p[i-1], p[i]) / dt); }
+    return s;
+  }
+  function submovementCount(p) {
+    var s = speeds(p);
+    if (s.length < 3) return 0;
+    var mx = Math.max.apply(null, s), floor = mx * 0.1, n = 0;
+    for (var i = 1; i < s.length - 1; i++) if (s[i] > floor && s[i] >= s[i-1] && s[i] > s[i+1]) n++;
+    return n;
+  }
+  function pauseRatio(p) {
+    var s = speeds(p);
+    if (!s.length) return 0;
+    var mx = Math.max.apply(null, s), th = mx * 0.05, n = 0;
+    for (var i = 0; i < s.length; i++) if (s[i] <= th) n++;
+    return n / s.length;
+  }
+  function powerLawExp(p) {
+    // β in V ∝ R^β over curved interior points (Menger curvature + log-log OLS); null if <3 fittable points.
+    var xs = [], ys = [];
+    for (var i = 0; i < p.length - 2; i++) {
+      var a = p[i], b = p[i+1], c = p[i+2];
+      var ab = d(a, b), bc = d(b, c), ca = d(c, a), dt = c.t - a.t;
+      if (ab === 0 || bc === 0 || ca === 0 || dt <= 0) continue;
+      var area2 = Math.abs((b.x-a.x)*(c.y-a.y) - (c.x-a.x)*(b.y-a.y));
+      var kappa = 2 * area2 / (ab * bc * ca);
+      if (kappa <= 0) continue;
+      var v = ca / dt, r = 1 / kappa;
+      if (v > 0 && r > 0) { xs.push(Math.log(r)); ys.push(Math.log(v)); }
+    }
+    if (xs.length < 3) return null;
+    var n = xs.length, mx = 0, my = 0, j;
+    for (j = 0; j < n; j++) { mx += xs[j]; my += ys[j]; }
+    mx /= n; my /= n;
+    var sxx = 0, sxy = 0;
+    for (j = 0; j < n; j++) { sxx += (xs[j]-mx)*(xs[j]-mx); sxy += (xs[j]-mx)*(ys[j]-my); }
+    if (sxx === 0) return null;
+    return sxy / sxx;
+  }
   function webglInfo() {
     try {
       var gl = document.createElement("canvas").getContext("webgl");
@@ -667,6 +709,15 @@ DEMO_PAGE = """<!doctype html>
       if (pts.length >= 3) {
         sigs.push(S("behavioral", "mouse_straightness", straightness(pts)));
         sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
+      }
+      // Biomechanics: only with enough of a movement to expect human structure (matches the Balabit
+      // calibration's min segment length). Real hands make corrective sub-movements, pause, and obey the
+      // 2/3 power law; a Bezier humanizer does none of these (docs/behavioral-data.md).
+      if (pts.length >= 12) {
+        sigs.push(S("behavioral", "submovement_count", submovementCount(pts)));
+        sigs.push(S("behavioral", "pause_ratio", pauseRatio(pts)));
+        var ple = powerLawExp(pts);
+        if (ple !== null) sigs.push(S("behavioral", "power_law_exponent", ple));
       }
       if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
       // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.

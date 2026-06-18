@@ -25,6 +25,10 @@ def _human(session_id: str, browser: dict[str, object]) -> Session:
         make_signal(session_id, Layer.behavioral, "mouse_entropy", 0.61),
         make_signal(session_id, Layer.behavioral, "pointer_event_count", 180),
         make_signal(session_id, Layer.behavioral, "keystroke_entropy", 0.74),
+        # Real human biomechanics (Balabit medians) — must clear the calibrated bh.* thresholds.
+        make_signal(session_id, Layer.behavioral, "submovement_count", 4),
+        make_signal(session_id, Layer.behavioral, "pause_ratio", 0.41),
+        make_signal(session_id, Layer.behavioral, "power_law_exponent", 0.55),
         make_signal(session_id, Layer.reputation, "asn_is_datacenter", False),
         # Cross-layer facts a real browser keeps coherent across the HTTP and JS boundaries: the HTTP
         # stack and the JS layer agree on locale and the HTTP/2 engine. These exercise the cross-layer
