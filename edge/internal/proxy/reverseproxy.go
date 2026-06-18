@@ -64,7 +64,15 @@ func prepare(
 		}
 		out.sessionID = id
 		// Not HttpOnly: the in-page collector reads ks_sid to tag its telemetry with the session.
-		out.setCookie = &http.Cookie{Name: session.CookieName, Value: id, Path: "/"}
+		// Secure + SameSite=Lax: the edge is HTTPS-only, so the session cookie rides only over TLS
+		// and is not sent on cross-site requests.
+		out.setCookie = &http.Cookie{
+			Name:     session.CookieName,
+			Value:    id,
+			Path:     "/",
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		}
 	}
 	if hello != nil {
 		out.signals = signal.FromClientHello(out.sessionID, hello, hints, now)

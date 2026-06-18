@@ -5,13 +5,16 @@ name: release
 on:
   push: { branches: [main] }
 
+# Minimal default token; the release job elevates only what release-please needs (Scorecard TokenPermissions).
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         with:
