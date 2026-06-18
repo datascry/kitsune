@@ -174,8 +174,6 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
-        ([(Layer.behavioral, "submovement_count", 1, Source.collector)], "bh.no_submovements"),
-        ([(Layer.behavioral, "pause_ratio", 0.0, Source.collector)], "bh.no_pause"),
         ([(Layer.behavioral, "power_law_exponent", 0.0, Source.collector)], "bh.power_law_violation"),
         (
             [(Layer.behavioral, "coalesced_events_absent", True, Source.collector)],

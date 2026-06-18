@@ -43,26 +43,33 @@ stream produces), grounded in the movement-science literature:
 2. **Loader** — `balabit.py`: parse Balabit CSV → `(x, y, t)`, split into aimed-movement segments on
    pauses; tested on a synthetic fixture (raw data fetched at use-time, never committed). ✅
 3. **Calibration** — extractor run over real Balabit movements → the human envelope (below). ✅
-4. **Detectors** *(next)* — new rules (`bh.power_law_violation`, `bh.no_submovements`, `bh.no_pause`)
-   firing when a session's features fall outside the calibrated human envelope; the collector mirrors the
-   live feature computation (as it already does for `fp_hash`). Validated against **real bot tools**
-   (GhostCursor), never our own synthetic generator — the circular trap curated ground truth exists to avoid.
+4. **Detectors** *(done)* — `bh.power_law_violation` fires when a session's power-law exponent falls below
+   the human floor; the collector mirrors the live feature computation (as it already does for `fp_hash`).
+   `submovement_count` / `pause_ratio` are emitted but **ruleless** — the FP-floor is too low (below).
+   Validated against **real bot tools** (the stealth humanizer), never our own synthetic generator.
 
-## Calibration result — the human movement envelope
+## Calibration result — the human movement envelope (all 10 users)
 
-Run over **5,338 aimed-movement segments** from 3 Balabit users (`min_len=12`, `max_gap=0.5s`):
+Run over **18,537 aimed-movement segments** from **all 10** Balabit users (`min_len=12`, `max_gap=0.5s`).
+The *low* percentiles matter most — they set the false-positive floor for a below-threshold rule:
 
-| Feature | median | p10 | p90 | What a humanizer/script looks like |
-|---|---|---|---|---|
-| `power_law_exponent` (V ∝ R^β) | 0.55 | 0.35 | 0.76 | a Bézier ease / constant-velocity path → β ≈ 0 or negative |
-| `power_law_r2` | 0.63 | 0.32 | — | a synthetic path either fits ~1.0 (too clean) or ~0 (no relationship) |
-| `submovement_count` | 4 | — | 9 | a single smooth ease → 1; humans correct (median 4) |
-| `pause_ratio` | 0.41 | — | 0.66 | scripts move without dwell → ≈ 0; humans pause ~40% of steps |
+| Feature | p1 | p5 | p10 | median | threshold? |
+|---|---|---|---|---|---|
+| `power_law_exponent` (V ∝ R^β) | **0.116** | 0.298 | 0.372 | 0.554 | **< 0.1 — safe** (FP < 1%) |
+| `pause_ratio` | 0.000 | 0.062 | 0.113 | 0.393 | < 0.05 → FPs ~3–4% (short flicks) |
+| `submovement_count` | 0 | 1 | 2 | 4 | < 2 → FPs ~10% (short movements) |
 
-So the discriminators are real and measurable: **a real hand obeys the power law with a positive exponent,
-makes several corrective sub-movements, and pauses ~40% of the time.** A Bézier "humanizer" (GhostCursor)
-produces one smooth sub-movement, no pause, and a flat/negative power-law fit — outside this envelope on
-*every* axis. (3-user sample; widen across all 10 users before pinning production thresholds.)
+**The 3-user sample hid the floor; the 10-user data exposed it** — and it killed two of the three rules I
+first shipped. Over a short live-capture window real humans *do* make brief, smooth, no-dwell movements:
+`submovement_count` and `pause_ratio` reach down into the rule range on ~10% / ~4% of genuine segments, so
+a standalone threshold there false-positives. They are **kept as observational signals** (the collector
+still emits them, useful for a future composite/sequence model) but carry **no firing rule**.
+
+Only **`power_law_exponent`** has a clean floor — human **p1 = 0.116**, comfortably above the `< 0.1`
+threshold — so `bh.power_law_violation` is the one biomech rule that survives the FP-floor check: a real
+hand obeys the 2/3 power law, a Bézier/constant-velocity synthetic path does not. This is the calibration
+pipeline doing its job: grounding thresholds in real data and *removing* the ones the data won't support,
+rather than shipping FP-prone guesses.
 
 This attacks the OS-level-replay / humanizer gap *above* the mechanism tell (`bh.synthetic_no_coalesced`,
 which still backstops CDP injection): a tool can humanize the path all it wants, but reproducing the power
@@ -74,17 +81,18 @@ Run against the lab's own humanizer (`evaders/stealth` `HUMAN_MOUSE=1`: Bézier 
 + variable timing — a GhostCursor-class mover), the captured biomech values land **inside** the human
 envelope on every axis:
 
-| Feature | human envelope | stealth humanizer | rule |
-|---|---|---|---|
-| `submovement_count` | median 4, p90 9 | **9** | `bh.no_submovements` — no fire |
-| `pause_ratio` | median 0.41 | **0.357** | `bh.no_pause` — no fire |
-| `power_law_exponent` | median 0.55, p10 0.35 | **0.448** | `bh.power_law_violation` — no fire |
+| Feature | human envelope | stealth humanizer |
+|---|---|---|
+| `submovement_count` | median 4 (p5 1) | **9** |
+| `pause_ratio` | median 0.39 (p5 0.06) | **0.357** |
+| `power_law_exponent` | median 0.55 (p1 0.116) | **0.448** |
 
-So a **well-crafted** humanizer reproduces real-hand biomechanics and passes all three rules — and that is
-the honest scope: the biomech rules catch the **naive** tier (a single smooth ease / constant-velocity /
-no-dwell path — e.g. a straight-line bot trips `bh.no_pause`, validated live), not a humanizer that adds
-jitter, ease, and timing. The well-crafted humanizer is still convicted — by the **mechanism** tell
-(`bh.synthetic_no_coalesced`, the CDP-injection artifact) plus the environment floor — exactly the thesis:
-motion *statistics* are evadable; the *injection mechanism* and the *environment* are not. The biomech
-rules raise the floor (the naive humanizer tier now has a behavioral tell) and stay `experimental` because
-a good humanizer clears them — they add coverage without over-claiming.
+A **well-crafted** humanizer reproduces real-hand biomechanics on every axis — including the power-law
+exponent (0.448, well above the `< 0.1` rule), so `bh.power_law_violation` correctly does **not** fire.
+That is the honest scope: the surviving biomech rule catches *constant-velocity / non-curved synthetic*
+paths (β ≈ 0), not a humanizer that curves with human-like dynamics. (And the humanizer's `submovement`/
+`pause` sitting squarely in the human range is the same reason those two are ruleless — short human and
+humanizer movements occupy the same low values.) The well-crafted humanizer is still convicted — by the
+**mechanism** tell (`bh.synthetic_no_coalesced`, the CDP-injection artifact) plus the environment floor:
+the thesis holds — motion *statistics* are evadable, the *injection mechanism* and the *environment* are
+not. The biomech work adds one FP-safe motion rule and a calibrated feature set, without over-claiming.

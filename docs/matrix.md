@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 97 rules
+# Kitsune detection matrix — 95 rules
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | ch-ua-hardcoded | chrome-clone-1 | chrome-clone-2 | curl-impersonate | floor-spoof | full-stealth | go-tls | h2-continuation-flood | h2-rapid-reset | human-mouse | max-stealth | nodriver | os-spoof | patchright | primp | pydoll | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | tls-stale-template | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -15,8 +15,6 @@
 | `br.canvas_lie` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.input_entropy_floor` | behavioral | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | ✓ | · | ✓ | · | · | · | · | ✓ | · | ✓ | 8 |
 | `bh.no_input_before_action` | behavioral | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | ✓ | · | ✓ | · | · | · | · | ✓ | · | ✓ | 8 |
-| `bh.no_submovements` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `bh.no_pause` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.power_law_violation` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -99,7 +97,7 @@
 | `net.ch_ua_no_grease_brand` | network | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/97** | **10/97** | **5/97** | **4/97** | **4/97** | **6/97** | **14/97** | **14/97** | **1/97** | **8/97** | **12/97** | **3/97** | **2/97** | **2/97** | **13/97** | **11/97** | **8/97** | **17/97** | **11/97** | **2/97** | **8/97** | **11/97** | **8/97** | **15/97** | **12/97** | **15/97** | **6/97** | **8/97** | **5/97** | **8/97** |  |
+| **flagged** |  | **6/95** | **10/95** | **5/95** | **4/95** | **4/95** | **6/95** | **14/95** | **14/95** | **1/95** | **8/95** | **12/95** | **3/95** | **2/95** | **2/95** | **13/95** | **11/95** | **8/95** | **17/95** | **11/95** | **2/95** | **8/95** | **11/95** | **8/95** | **15/95** | **12/95** | **15/95** | **6/95** | **8/95** | **5/95** | **8/95** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -137,7 +135,7 @@
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
 | `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
-## Coverage gaps — 44/97 rules catch nothing yet
+## Coverage gaps — 42/95 rules catch nothing yet
 
 **Evaded** (10) — reads present in the corpus, but every sample passed:
 - `br.ua_platform_vs_ch_platform`
@@ -151,14 +149,12 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (34) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (32) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.automation_globals`
 - `br.screen_impossible`
 - `br.csp_bypassed`
 - `br.canvas_lie`
-- `bh.no_submovements`
-- `bh.no_pause`
 - `bh.power_law_violation`
 - `rep.datacenter_asn`
 - `net.h2_control_flood`

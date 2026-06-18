@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.50.0"
+ruleset_version: "0.51.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -178,31 +178,11 @@ rules:
     last_validated: "2026-06-17"
     source: "Kitsune"
 
-  - id: bh.no_submovements
-    title: Mouse path has no corrective sub-movements (single smooth ease — humanizer)
-    layers: [behavioral]
-    reads: [behavioral.submovement_count]
-    predicate: below_threshold
-    threshold: 2
-    weight: 0.5
-    status: experimental
-    category: behavioral
-    added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Fitts two-component model; Balabit calibration (docs/behavioral-data.md): human median 4 sub-movements. A Bezier humanizer (GhostCursor) produces one smooth ease."
-
-  - id: bh.no_pause
-    title: Mouse movement never pauses (no human hesitation/dwell)
-    layers: [behavioral]
-    reads: [behavioral.pause_ratio]
-    predicate: below_threshold
-    threshold: 0.05
-    weight: 0.5
-    status: experimental
-    category: behavioral
-    added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Balabit calibration (docs/behavioral-data.md): human pause_ratio median 0.41; a script moves without dwell (~0)."
+  # NB: submovement_count and pause_ratio are still emitted by the collector (observational biomech), but
+  # carry no standalone rule: the 10-user Balabit calibration (docs/behavioral-data.md) shows that over a
+  # short live-capture window the human floor reaches them (submovement_count p10=2, p5=1; pause_ratio
+  # p5=0.062), so a below-threshold rule would false-positive on real short movements. Only the power-law
+  # exponent has a clean human floor (p1=0.116, well above 0.1) — the one biomech axis safe as a threshold.
 
   - id: bh.power_law_violation
     title: Mouse motion violates the 2/3 power law (speed independent of curvature — synthetic path)
@@ -215,7 +195,7 @@ rules:
     category: behavioral
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "Lacquaniti 2/3 power law (1983); Balabit calibration (docs/behavioral-data.md): human exponent median 0.55 (p10 0.35). A Bezier/constant-velocity path has β≈0 or negative."
+    source: "Lacquaniti 2/3 power law (1983); 10-user Balabit calibration (docs/behavioral-data.md): human exponent median 0.55, p1 0.116 — a Bezier/constant-velocity path has β≈0 or negative, well below the human floor."
 
   - id: rep.datacenter_asn
     title: Source IP belongs to a datacenter / hosting ASN
