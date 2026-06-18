@@ -63,3 +63,15 @@ def test_parse_arg_bare_uses_stem(tmp_path: Path) -> None:
     p.write_text(json.dumps(VERDICT))  # no "mode"
     label, _ = _parse_arg(str(p))
     assert label == "vanilla"
+
+
+def test_parse_arg_skips_empty_file(tmp_path: Path) -> None:
+    p = tmp_path / "failed.json"
+    p.write_text("")  # a crashed evader yields an empty file → skipped, not fatal
+    assert _parse_arg(str(p)) is None
+
+
+def test_parse_arg_skips_malformed_json(tmp_path: Path) -> None:
+    p = tmp_path / "garbage.json"
+    p.write_text("not json at all")
+    assert _parse_arg(str(p)) is None

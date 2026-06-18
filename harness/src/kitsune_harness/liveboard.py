@@ -13,17 +13,24 @@ from .live import build_board
 from .scoreboard import render_markdown
 
 
-def _parse_arg(arg: str) -> tuple[str, dict[str, Any]]:
+def _parse_arg(arg: str) -> tuple[str, dict[str, Any]] | None:
     label, _, path = arg.partition("=")
     if not path:  # bare path → derive label from the JSON "mode" or the filename stem
         path, label = label, ""
-    data: dict[str, Any] = json.loads(Path(path).read_text())
+    text = Path(path).read_text().strip()
+    if not text:  # a failed/empty evader output must not abort the whole board
+        return None
+    try:
+        data: dict[str, Any] = json.loads(text)
+    except json.JSONDecodeError:
+        return None
     return (label or data.get("mode") or Path(path).stem, data)
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     argv = sys.argv[1:] if argv is None else argv
-    entries = [(label, "live", data) for label, data in (_parse_arg(a) for a in argv)]
+    parsed = (_parse_arg(a) for a in argv)
+    entries = [(label, "live", data) for label, data in (p for p in parsed if p is not None)]
     board = build_board(entries, generated_at=datetime.now(UTC), ruleset_version="live")
     print(render_markdown(board), end="")
 

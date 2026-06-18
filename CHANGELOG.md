@@ -9,6 +9,25 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Coordination scoring** (`harness/coordination.py`) — grades a JA4 cluster into a graded fleet
+  verdict (`fleet`/`candidate`/`benign`) on the **TLS-identical-but-JS-divergent paradox**: a real
+  same-build cohort shares its JS identity too, but an anti-detect fleet randomizes JS per instance
+  while sharing one TLS handshake. Live Camoufox fleet scores `fleet` 0.85. 100% covered.
+- **Frontier runner** (`scripts/frontier.sh`) — fast, frontier-only loop that exercises *only* the
+  evaders that still beat per-session detection (Camoufox single + a Camoufox fleet), instead of
+  re-detecting the known-caught fleet every iteration. The full sweep (`live_scoreboard.sh`) becomes
+  the sparse regression tier.
+
+### Changed
+
+- **Frontier crack** — `br.webgl2_missing` (v0.10.0) now flags live single-instance Camoufox
+  (`suspicious` 0.40): headless Camoufox exposes no WebGL2 context where real Firefox does. The
+  engine-level anti-detect browser that previously evaded all per-session rules now leaks one.
+- **`liveboard`** — a crashed/empty evader output file is skipped instead of aborting the whole
+  scoreboard render (was a `json.loads("")` fatal).
+
+### Added (earlier)
+
 - **Architecture & contracts.** Session-correlation design (`docs/architecture.md`) and the
   language-agnostic JSON-Schema contracts (`Signal`/`Session`/`Verdict`/`CoherenceRule`) plus the
   initial 10-rule coherence registry.
