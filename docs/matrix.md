@@ -106,17 +106,17 @@
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `human-mouse` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
 | `max-stealth` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
-| `nodriver` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
+| `nodriver` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `patchright` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
-| `pydoll` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
+| `pydoll` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
-| `selenium-driverless` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
+| `selenium-driverless` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `spoof-ua` | bot | 7 | 0 | 3 | 5 | 0 | 0 |
 | `stealth-naive` | bot | 0 | 0 | 6 | 6 | 0 | 0 |
 | `stealth-patched` | bot | 4 | 0 | 5 | 6 | 0 | 0 |
-| `undetected` | bot | 1 | 0 | 2 | 3 | 2 | 0 |
+| `undetected` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `vanilla` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
-| `zendriver` | bot | 1 | 1 | 1 | 3 | 2 | 0 |
+| `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
 ## Coverage gaps — 38/85 engines catch nothing yet
 

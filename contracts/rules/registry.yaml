@@ -22,6 +22,7 @@ rules:
     layers: [network]
     reads: [network.ja4_os_hint, network.tcp_os_hint]
     predicate: not_equal
+    category: coherence
     weight: 0.6
     status: active
     added: "2026-06-17"
@@ -33,6 +34,7 @@ rules:
     layers: [network, browser]
     reads: [network.ja4_browser_hint, browser.ua_browser]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-17"
@@ -44,6 +46,7 @@ rules:
     layers: [network, browser]
     reads: [network.h2_browser_hint, browser.ua_browser]
     predicate: not_equal
+    category: coherence
     weight: 0.6
     status: active
     added: "2026-06-17"
@@ -55,6 +58,7 @@ rules:
     layers: [browser]
     reads: [browser.ua_platform, browser.ch_platform]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-17"
@@ -154,6 +158,7 @@ rules:
     layers: [network]
     reads: [network.h2_browser_hint, network.ja4_browser_hint]
     predicate: not_equal
+    category: coherence
     weight: 0.55
     status: active
     added: "2026-06-18"
@@ -213,6 +218,7 @@ rules:
     layers: [network]
     reads: [network.h2_settings_hint, network.h2_browser_hint]
     predicate: not_equal
+    category: coherence
     weight: 0.6
     status: active
     added: "2026-06-18"
@@ -489,6 +495,7 @@ rules:
     layers: [browser]
     reads: [browser.webgl_os_hint, browser.ua_platform]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -502,6 +509,7 @@ rules:
     layers: [browser]
     reads: [browser.nav_platform_os, browser.ua_platform]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -529,6 +537,7 @@ rules:
     layers: [browser]
     reads: [browser.vendor_engine, browser.ua_engine]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -540,6 +549,7 @@ rules:
     layers: [browser]
     reads: [browser.oscpu_os, browser.ua_platform]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -672,6 +682,7 @@ rules:
     layers: [browser]
     reads: [browser.productsub_render, browser.ua_render]
     predicate: not_equal
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -721,6 +732,7 @@ rules:
     layers: [browser]
     reads: [browser.font_os_hint, browser.ua_platform]
     predicate: not_equal
+    category: coherence
     weight: 0.75
     status: active
     added: "2026-06-18"
@@ -734,6 +746,7 @@ rules:
     layers: [browser]
     reads: [browser.screen_avail_invalid]
     predicate: present
+    category: environment
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -769,6 +782,7 @@ rules:
     layers: [browser]
     reads: [browser.hover_none_desktop]
     predicate: present
+    category: environment
     weight: 0.6
     status: active
     added: "2026-06-18"
@@ -780,6 +794,7 @@ rules:
     layers: [browser]
     reads: [browser.pointer_touch_incoherent]
     predicate: present
+    category: coherence
     weight: 0.7
     status: active
     added: "2026-06-18"
@@ -805,6 +820,7 @@ rules:
     layers: [browser]
     reads: [browser.voice_os_hint, browser.ua_platform]
     predicate: not_equal
+    category: coherence
     weight: 0.75
     status: active
     added: "2026-06-18"
@@ -882,6 +898,7 @@ rules:
     layers: [browser]
     reads: [browser.macos_dpr1]
     predicate: present
+    category: environment
     weight: 0.3
     status: experimental
     added: "2026-06-18"

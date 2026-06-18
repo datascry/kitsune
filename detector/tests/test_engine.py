@@ -14,6 +14,19 @@ from kitsune_detector.models import Layer, Session, Source
 from .conftest import make_signal
 
 
+def test_every_active_rule_declares_a_category() -> None:
+    # The detection-class taxonomy (coherence/artifact = spoofing caught; environment/automation =
+    # headless too) is only meaningful if every rule states its class explicitly. Relying on the model
+    # default silently mis-buckets an environment/automation rule as coherence, skewing the scoreboard.
+    import yaml
+
+    from kitsune_detector.contracts import contracts_dir
+
+    raw = yaml.safe_load((contracts_dir() / "rules" / "registry.yaml").read_text())
+    missing = [r["id"] for r in raw["rules"] if r.get("status") != "retired" and "category" not in r]
+    assert not missing, f"active rules missing an explicit category: {missing}"
+
+
 def test_engine_flags_bot_incoherence(bot_session: Session) -> None:
     engine = CoherenceEngine(load_registry())
     fired = {c.rule_id for c in engine.evaluate(bot_session)}
