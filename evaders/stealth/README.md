@@ -11,16 +11,20 @@ verdict back by `ks_sid`. Two modes:
 
 - **naive** — plain automation; leaks `navigator.webdriver` and a HeadlessChrome UA.
 - **stealth** (`STEALTH=1`) — patches `navigator.webdriver` and presents a real Chrome UA.
+- **spoof-ua** (`SPOOF_UA=<ua>`) — patches webdriver and presents a *lying* UA (e.g. Firefox) on top of
+  Chromium's real Chrome TLS. Every single-layer check passes; only the cross-layer check catches it.
 
 ## Measured result (real browser, live stack)
 
-| mode | browser score | label | contradictions |
-|---|---|---|---|
-| naive | **0.985** | bot | `br.webdriver_present`, `br.headless_ua` |
-| stealth | **0.00** | human | none |
+| mode | network | browser | incoherence | label | caught by |
+|---|---|---|---|---|---|
+| naive | 0.00 | **0.985** | 0.00 | bot | `br.webdriver_present`, `br.headless_ua` |
+| stealth | 0.00 | 0.00 | 0.00 | human | — (defeats the fingerprint layers) |
+| **spoof-ua** | **0.70** | **0.70** | **0.70** | **bot** | **`net.tls_vs_ua_browser` (cross-layer)** |
 
-The detector catches naive automation; the stealth evader defeats the browser layer. This is the
-`vanilla → naive → stealth` arms-race story, end-to-end.
+`stealth` defeats every single-layer check. `spoof-ua` *also* passes every single-layer check
+(webdriver patched, valid Firefox UA, valid Chrome TLS) — yet it's caught, because its **TLS says
+Chrome while its UA says Firefox**. That cross-layer incoherence is the entire thesis, live.
 
 ## Run
 

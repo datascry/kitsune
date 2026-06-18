@@ -43,6 +43,9 @@ All notable changes to Kitsune are documented here. The format follows
   proxy/Tor-exit rules (v0.2.0); then **deeper behavioral shape features** — mouse-path straightness
   and velocity coefficient-of-variation (collector + live demo page) with `bh.path_too_straight` and
   `bh.uniform_velocity` rules (v0.3.0), the start of the real behavioral frontier.
+- **Cross-layer incoherence, demonstrated live** — a `spoof-ua` evader (real Chrome TLS + a lying
+  Firefox UA) passes every single-layer check yet is caught solely by `net.tls_vs_ua_browser`
+  (network 0.70 · browser 0.70 · incoherence 0.70 · bot). The thesis, proven with a real browser.
 - **Unified live scoreboard** — `harness.live`/`liveboard` fold every evader's live verdict into one
   dated board; `scripts/live_scoreboard.sh` runs the whole fleet against the running stack and writes
   `docs/scoreboard.md` (vanilla → stealth → agent in one table).
