@@ -32,3 +32,14 @@ updates:
   - package-ecosystem: "docker"
     directory: "/edge"
     schedule: { interval: "weekly" }
+
+  # The stealth evader pins playwright/patchright/rebrowser-playwright to one Chromium revision;
+  # rebrowser-playwright caps at 1.52.0, so anything newer breaks that coherence — hold at 1.52.x.
+  - package-ecosystem: "npm"
+    directory: "/evaders/stealth"
+    schedule: { interval: "weekly" }
+    ignore:
+      - dependency-name: "playwright"
+        versions: [">=1.53.0"]
+      - dependency-name: "rebrowser-playwright"
+        versions: [">=1.53.0"]

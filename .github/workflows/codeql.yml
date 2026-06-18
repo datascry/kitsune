@@ -1,0 +1,31 @@
+# .github/workflows/codeql — CodeQL static analysis (SAST) across the polyglot tree.
+# Scans Go, Python, and JS/TS for security + quality issues; results land in code-scanning.
+
+name: codeql
+on:
+  push: { branches: [main] }
+  pull_request: { branches: [main] }
+  schedule: [{ cron: "0 6 * * 1" }]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # build-mode: none — CodeQL analyzes source directly (the Go tree is multi-module, so no
+        # single root build; none avoids per-module build wiring while still scanning all Go code).
+        language: [go, python, javascript-typescript]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: github/codeql-action/init@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+      - uses: github/codeql-action/analyze@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
+        with:
+          category: "/language:${{ matrix.language }}"
