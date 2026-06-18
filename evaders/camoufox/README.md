@@ -15,6 +15,13 @@ catches every chromium-based tool.
 
 ## Result (live)
 
+> **Current status (ruleset 0.14.0): caught — headless `bot` 0.70, headful `bot` 0.90.** The detection
+> engine has since closed the gap. Camoufox stays coherent on every fingerprint *value* (navigator,
+> fonts, device/media), but is now caught per-session via OS *capabilities* a container lacks
+> (`webgl2_missing`, `voices_empty`) and an artifact in its own WebGL renderer spoof
+> (`webgl_renderer_artifact`, the `", or similar"` placeholder). See
+> [`docs/findings.md`](../../docs/findings.md). The original evaluation below is the arms-race narrative.
+
 **Camoufox evades the entire ruleset — `0/27`, `human`.** The only browser evader to score human,
 alongside vanilla httpx. It wins because it is a different engine with engine-level spoofing:
 
@@ -45,3 +52,7 @@ docker build -t kitsune-camoufox ./evaders/camoufox    # downloads the Camoufox 
 docker run --rm --network kitsune_default \
   -e KITSUNE_EDGE=https://edge:8443/ -e KITSUNE_DETECTOR=http://detector:8080 kitsune-camoufox
 ```
+
+Env flags: `KS_HEADFUL=1` runs headful in a virtual Xvfb display (vs the default headless);
+`KS_FAST=1` does an event-driven detection-only capture; `KS_REPEAT=N` captures N sessions from one
+browser launch (amortizes the cold-start — single-instance only, not for fleets).

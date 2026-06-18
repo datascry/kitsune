@@ -20,6 +20,11 @@ FAST = os.environ.get("KS_FAST") == "1"
 # iteration. NOT for the fleet: Camoufox randomizes its JS fingerprint per *launch*, so contexts of
 # one launch share a fingerprint and would not exhibit the cross-instance divergence a fleet shows.
 REPEAT = max(1, int(os.environ.get("KS_REPEAT", "1")))
+# KS_HEADFUL=1: run Camoufox *headful* inside a virtual display (Xvfb) instead of headless. Tests
+# whether the per-session "capability" tells (no WebGL2, no TTS voices) are real spoofing flaws or
+# just artifacts of a minimal headless container — a determined adversary runs headful with a stack.
+HEADFUL = os.environ.get("KS_HEADFUL") == "1"
+MODE = "camoufox-headful" if HEADFUL else "camoufox"
 
 
 def _capture(browser: object) -> dict[str, object]:
@@ -45,10 +50,10 @@ def _capture(browser: object) -> dict[str, object]:
 
 
 def main() -> None:
-    with Camoufox(headless=True) as browser:
+    with Camoufox(headless="virtual" if HEADFUL else True) as browser:
         for _ in range(REPEAT):
             verdict = _capture(browser)
-            print("__KS__" + json.dumps({"mode": "camoufox", **verdict}), flush=True)
+            print("__KS__" + json.dumps({"mode": MODE, **verdict}), flush=True)
 
 
 if __name__ == "__main__":

@@ -148,6 +148,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             ],
             "br.voice_os_vs_ua",
         ),
+        ([(Layer.browser, "webgl_renderer_artifact", True, Source.collector)], "br.webgl_renderer_artifact"),
     ],
 )
 def test_v2_rules_fire(signals_spec, rule_id: str) -> None:

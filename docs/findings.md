@@ -18,7 +18,8 @@ Each rung defeats the rung below; the detector answers each with a new cross-lay
 | `spoof-ua` | UA forgery on Chromium | `bot` | Firefox UA on a Chromium engine — `vendor`/`productSub`/render contradict the UA |
 | `patchright` | CDP-patched Playwright | `bot` | removes the *automation* surface, but the headless **environment** fingerprint remains |
 | `nodriver` | undetected-chromedriver heir | `bot` (0.94) | same: no webdriver flag, but headless-container environment betrays it |
-| **`camoufox`** | **engine-level (C++) spoof** | **`bot` (0.70)** | **coherent at the JS layer — leaks only via absent OS capabilities (WebGL2, TTS voices)** |
+| **`camoufox`** (headless) | **engine-level (C++) spoof** | **`bot` (0.70)** | **coherent JS layer — leaks via absent OS capabilities (no WebGL2, no TTS voices)** |
+| **`camoufox-headful`** (Xvfb) | **engine-level, headful** | **`bot` (0.90)** | **gains WebGL2, but its spoofed renderer string is a placeholder; still no TTS voices** |
 
 **Takeaway for the chromium tools:** removing the automation/webdriver surface does nothing for the
 durable signal. Every Chromium-based tool runs headless Chromium in a container, and the *environment*
@@ -55,8 +56,29 @@ fingerprint values (which Camoufox spoofs coherently):
 
 Together these push a single coherent Camoufox instance to **`bot` 0.70** — the engine-level spoof that
 once evaded every per-session rule is now caught per-session. The pattern: stop chasing spoofable
-*values* and probe *capabilities the deployment environment lacks* (GPU, TTS). A determined adversary
-running headful with a full GPU/audio stack closes these — at which point coordination is the backstop.
+*values* and probe *capabilities the deployment environment lacks* (GPU, TTS).
+
+### The headful experiment — keeping the capability-probe honest
+
+`webgl2_missing` could be just an artifact of running Camoufox **headless in a minimal container**, not a
+flaw in its spoofing. So we ran it **headful in a virtual display** (`KS_HEADFUL=1` → `headless="virtual"`,
+Xvfb) and re-measured (corpus: `camoufox-headful`):
+
+- **WebGL2 leak closes** — headful Camoufox gets a software (llvmpipe) WebGL2 context, so `webgl2_missing`
+  no longer fires. And `webgl_software` does *not* fire either: Camoufox spoofs the renderer string to a
+  plausible GPU. Confirmed: the WebGL2 tell was a headless-deployment artifact, not a spoofing flaw.
+- **TTS-voice leak persists** — `voices_empty` still fires; the audio/TTS stack is absent regardless of
+  display. The capability-probe pattern survives going headful here.
+- **New tell — the renderer-spoofing artifact.** Headful Camoufox reports a WebGL renderer of
+  `"Intel(R) HD Graphics 400, or similar"`. No real GPU driver appends `", or similar"` — it is how
+  Camoufox labels its randomized GPU pick. `br.webgl_renderer_artifact` catches this implementation flaw
+  in the anti-detect tool's *own* spoofer, working precisely *because* the browser is headful (a real GL
+  context exposes the spoofed string). Headful Camoufox is caught at **`bot` 0.90** (voices + artifact).
+
+Lesson: each capability tell (`webgl2_missing`) can be a deployment artifact, falsifiable by a more
+complete environment — but the anti-detect tool's own spoofing leaves implementation fingerprints
+(`, or similar`) that betray it regardless. And a determined adversary closing every per-session tell
+still cannot escape **coordination** (below), which is the backstop.
 
 ## The durable signal: coordination, not the instance
 

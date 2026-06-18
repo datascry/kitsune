@@ -9,6 +9,14 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Headful Camoufox evaluation + renderer-artifact counter** (ruleset 0.14.0) — added a headful mode to
+  the Camoufox evader (`KS_HEADFUL=1` → virtual Xvfb display) to test whether the per-session capability
+  tells are real spoofing flaws or headless-container artifacts. **Finding:** headful Camoufox gains a
+  software WebGL2 context (so `webgl2_missing` closes — it *was* a headless artifact) but its spoofed
+  renderer string is the placeholder `"Intel(R) HD Graphics 400, or similar"`. New rule
+  `br.webgl_renderer_artifact` catches that implementation flaw in Camoufox's own WebGL spoofer; headful
+  Camoufox is caught at `bot` 0.90 (renderer artifact + `voices_empty`, which persists headful). New
+  tracked corpus session `camoufox-headful`.
 - **Speech-synthesis voice coherence** (ruleset 0.13.0) — `br.voices_empty` (no TTS voices: a headless
   container has no speech stack, a real desktop ships OS voices) and `br.voice_os_vs_ua` (voice set
   implies an OS contradicting the UA platform). **Result:** cracks a single coherent Camoufox instance —

@@ -180,6 +180,9 @@ DEMO_PAGE = """<!doctype html>
     if (wg.renderer) sigs.push(S("browser", "webgl_renderer", wg.renderer));
     if (wg.vendor) sigs.push(S("browser", "webgl_vendor", wg.vendor));
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
+    // Anti-detect renderer-spoofing artifacts: real GPU driver strings are exact. Camoufox labels its
+    // randomized GPU pick with ", or similar"; placeholder/vague renderers never come from real drivers.
+    if (/,\\s*or similar|generic renderer|placeholder/i.test(wg.renderer)) sigs.push(S("browser", "webgl_renderer_artifact", true));
     // The GPU API in the renderer string implies an OS (Direct3D=Windows, Metal=macOS) — a spoofed
     // renderer often contradicts the platform (e.g. a Direct3D GPU on Linux).
     var wo = /Direct3D|D3D[0-9]/i.test(wg.renderer) ? "Windows"
