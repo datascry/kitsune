@@ -653,6 +653,17 @@ current state of the art therefore adds no rule — it confirms the existing cro
 covers the whole network-impersonation family, present and future, on the one property that does not
 update with the next browser release: a non-browser cannot execute the page.
 
+**Confirmed live (`corpus/sessions/primp.json`).** Running `primp` with `impersonate="chrome_146"`
+through the stack convicts it on exactly **two** rules — `net.no_js_execution` and `net.tcp_os_vs_ua` —
+and *nothing else*. Its JA4 reproduces a real Chrome prefix (`t13d1516h2_8daaf6152771`), its HTTP/2
+SETTINGS and pseudo-header order hint `chrome`, and — the precision check that matters for the rules added
+this cycle — it sends **both** TLS GREASE and the post-quantum `X25519MLKEM768` group, so `tls_no_grease`
+and `tls_pq_keyshare_vs_ua` correctly **stay silent**. A current high-fidelity impersonator is not a stale
+template; the PQ tell does not false-positive on it. What it cannot fake is the host kernel (`tcp_os_vs_ua`:
+a Windows-claiming UA on the Linux container) and the page execution (`no_js_execution`). The most advanced
+network impersonator available wins the entire fingerprint arms race and is still caught on the two axes
+below and above it that are not part of that race.
+
 ## TCP/IP-stack fingerprinting — the OS tell beneath TLS
 
 The deepest layer a session exposes is the one the application never touches: the **TCP/IP stack of the
