@@ -14,7 +14,7 @@ only suspicious when it arrives on the same session as a Linux TCP stack, a `web
 and a datacenter ASN. So the architecture is a **session-correlation pipeline**, not just a detector.
 
 ```
- evader ─▶ EDGE (Go: JA3/JA4 + session id) ─▶ APP (serves collector, ingests telemetry)
+ evader ─▶ EDGE (Go: TLS/HTTP2/TCP-IP fingerprint + session id) ─▶ APP (serves collector, ingests telemetry)
                        │                                   │
                        └──────────── Signals (session_id) ─┴─▶ DETECTOR (Python: coherence engine)
                                                                      │
@@ -28,7 +28,7 @@ and a datacenter ASN. So the architecture is a **session-correlation pipeline**,
 | [`contracts/`](contracts) | JSON Schema | The stable core — the only coupling between components | validated in CI |
 | [`detector/`](detector) | Python | Session correlation + data-driven coherence engine + scoring | **100%** |
 | [`harness/`](harness) | Python | Scenario runner + reproducible scoreboard (ethics enforced) | **100%** |
-| [`edge/`](edge) | Go | Raw ClientHello → JA3/JA4, session minting, signal forwarding | fingerprint **97%** |
+| [`edge/`](edge) | Go | Multi-layer network fingerprinting + session minting: TLS ClientHello → JA3/JA4, HTTP/2 preface (Akamai h2), TCP/IP-stack OS (p0f-style SYN capture), and HTTP/2 DoS attribution (rapid-reset, CONTINUATION flood) | fingerprint **97%** |
 | [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection | **100%** (logic) |
 | [`evaders/`](evaders) | Py/TS/Go | Red-team fleet — every open-source family: scripted/TLS-mimicry (httpx, curl-impersonate), Playwright-stealth, CDP-leak patches (patchright, rebrowser), CDP-native (nodriver, zendriver, pydoll), isolated-world Selenium (undetected, selenium-driverless), engine-level (Camoufox), farbling (Brave), and HTTP/2 DoS (rapid-reset, CONTINUATION flood) | 23 evaluated, all `bot` |
 
