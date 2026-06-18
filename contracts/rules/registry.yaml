@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.56.0"
+ruleset_version: "0.57.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -968,6 +968,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Kitsune: headful Camoufox reports 'Intel(R) HD Graphics 400, or similar' — no real driver does"
+
+  - id: br.engine_feature_vs_ua
+    title: JS engine lacks an API its claimed Chrome version shipped — stale template
+    layers: [browser]
+    reads: [browser.engine_feature_vs_ua]
+    predicate: present
+    weight: 0.65
+    status: active
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Promise.withResolvers shipped in Chrome 119; a UA claiming Chrome >=121 without it is an engine older than it claims (verified Chrome 136 has it). JS-layer analog of net.tls_pq_keyshare_vs_ua."
 
   - id: br.webgl_not_angle
     title: Chromium UA but the WebGL renderer is not ANGLE-wrapped — renderer spoof

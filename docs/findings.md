@@ -119,6 +119,15 @@ never trips it (validated: real renderer → no fire, spoofed bare renderer → 
 pending broad real-browser validation across GPU/OS, since legacy/non-ANGLE Chrome configs could differ.
 (v0.56.0)
 
+### Stale templates at the JS layer — an engine older than the UA it wears
+
+The TLS layer already catches a hardcoded modern-Chrome impersonation template lagging the real
+post-quantum key share (`net.tls_pq_keyshare_vs_ua`). The same lie shows at the JS layer:
+`Promise.withResolvers` shipped in **Chrome 119**, so a UA claiming Chrome ≥ 121 whose engine lacks it is
+demonstrably older than it claims (`br.engine_feature_vs_ua`). FP-safe and deterministic — every real
+Chrome ≥ 119 has the API (verified Chrome 136). It catches the version-inflation spoof (a current UA
+string bolted onto a stale Chromium build) that defeats string-only UA checks. (v0.57.0)
+
 ### Survey coverage — every open-source family, one conclusion
 
 The evaluated fleet now spans every open-source anti-detect family: scripted HTTP (vanilla/httpx),

@@ -548,6 +548,14 @@ export function armCollector(): LiveCollector {
     if (isChromium && wg.renderer && !/^ANGLE \(/.test(wg.renderer)) {
       put("browser", "webgl_not_angle", true);
     }
+    // Stale-template tell: Promise.withResolvers shipped in Chrome 119, so a UA claiming Chrome >=121
+    // without it is an engine older than it claims (the JS analog of net.tls_pq_keyshare_vs_ua).
+    const uaChrome = parseInt(/Chrome\/(\d+)/.exec(ua)?.[1] ?? "0", 10);
+    const hasWithResolvers =
+      typeof (Promise as unknown as { withResolvers?: unknown }).withResolvers === "function";
+    if (isChromium && uaChrome >= 121 && !hasWithResolvers) {
+      put("browser", "engine_feature_vs_ua", true);
+    }
     if (isChromium && cdpRuntimeEnabled()) put("browser", "cdp_runtime_enabled", true);
     if (navigator.languages.length === 0) put("browser", "languages_empty", true);
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) {

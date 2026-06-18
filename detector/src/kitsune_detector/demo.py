@@ -485,6 +485,13 @@ DEMO_PAGE = """<!doctype html>
     // is the common renderer spoof: the anti-detect tool replaced the ANGLE wrapper with a hardware GPU
     // name. Verified real headless Chrome reports "ANGLE (Google, Vulkan ... SwiftShader ...)" → no fire.
     if (isChromium && wg.renderer && !/^ANGLE \\(/.test(wg.renderer)) sigs.push(S("browser", "webgl_not_angle", true));
+    // Stale-template / version-inflation tell — the JS-engine analog of net.tls_pq_keyshare_vs_ua: a
+    // hardcoded modern Chrome UA running on an OLDER Chromium build. Promise.withResolvers shipped in
+    // Chrome 119, so a UA claiming Chrome >= 121 without it is an engine older than it claims. FP-safe:
+    // every real Chrome >= 119 has it (verified Chrome 136 has it).
+    var uaChrome = parseInt((ua.match(/Chrome\\/(\\d+)/) || [])[1] || "0", 10);
+    if (isChromium && uaChrome >= 121 && typeof Promise.withResolvers !== "function")
+      sigs.push(S("browser", "engine_feature_vs_ua", true));
     // The Runtime.enable leak is CDP-specific (Chromium). Guarded to Chromium to avoid odd Firefox cases.
     if (isChromium && cdpRuntimeEnabled()) sigs.push(S("browser", "cdp_runtime_enabled", true));
     if (!navigator.languages || navigator.languages.length === 0) sigs.push(S("browser", "languages_empty", true));
