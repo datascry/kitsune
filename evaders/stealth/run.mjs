@@ -7,9 +7,11 @@ const STEALTH = process.env.STEALTH === "1";
 const FULL = process.env.FULL === "1"; // contest the whole v0.4.0 browser battery
 const SPOOF_UA = process.env.SPOOF_UA; // e.g. a Firefox UA, while the real TLS stays Chrome
 const PATCHRIGHT = process.env.PATCHRIGHT === "1"; // CDP-patched anti-detect drop-in for Playwright
+const REBROWSER = process.env.REBROWSER === "1"; // rebrowser-patches: another Runtime.enable-leak fix
 
-// patchright is API-compatible with playwright; swap the engine at runtime.
-const { chromium } = await import(PATCHRIGHT ? "patchright" : "playwright");
+// patchright / rebrowser-playwright are API-compatible playwright drop-ins; swap the engine at runtime.
+const engine = PATCHRIGHT ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
+const { chromium } = await import(engine);
 
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
@@ -21,13 +23,15 @@ const userAgent = SPOOF_UA || (FULL ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : un
 const evading = STEALTH || FULL || Boolean(SPOOF_UA);
 const mode = PATCHRIGHT
   ? "patchright"
-  : FULL
-    ? "full-stealth"
-    : SPOOF_UA
-      ? "spoof-ua"
-      : STEALTH
-        ? "stealth"
-        : "naive";
+  : REBROWSER
+    ? "rebrowser"
+    : FULL
+      ? "full-stealth"
+      : SPOOF_UA
+        ? "spoof-ua"
+        : STEALTH
+          ? "stealth"
+          : "naive";
 
 // --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.

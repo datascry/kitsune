@@ -36,11 +36,18 @@ fires only when a CDP client is serializing it. Validated live:
 - **stealth-naive** (plain Playwright) → **fires** (`automation:6`). The CDP automation is caught.
 - **patchright** (drop-in that patches `Runtime.enable`) → **does not fire** (`automation:4`). patchright's
   entire value-add is now *visible and quantified* in the detector — it zeroes out exactly this tell plus
-  `webdriver`, where plain Playwright trips both. Yet patchright is still caught (`bot`) by the headless
-  `environment` tells, consistent with the takeaway above.
+  `webdriver`, where plain Playwright trips both.
+- **rebrowser-playwright** (`REBROWSER_PATCHES_RUNTIME_FIX_MODE=addBinding`) → **does not fire**
+  (`automation:5`). A *surgical* fix: it closes exactly the `Runtime.enable` leak (validating both the
+  detection and rebrowser's claim) but leaves `navigator.webdriver`, the `HeadlessChrome` UA token, and
+  `window.chrome` unpatched — unlike patchright's broader stealth.
 
-This is the setup for evaluating `rebrowser-patches` (which also patches `Runtime.enable`): the detector
-can now measure precisely which CDP tells a given tool closes.
+The three tools form a clean gradient of patch coverage — `automation` tells 6 → 5 → 4 (plain →
+rebrowser → patchright) — yet **all three remain `bot`** on `environment:6`. The detector now measures
+precisely which automation tells a given tool closes, while confirming the headless environment is the
+floor none of them escape. (Setup yak-shave: the unpinned `rebrowser-playwright`/`patchright` drop-ins
+each pull a different Playwright-core/Chromium revision; pin `rebrowser-playwright@1.48.2` to the base
+image's Chromium-1140.)
 
 ## The baseline control — separating spoofing from a stripped environment
 

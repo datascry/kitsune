@@ -9,6 +9,12 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **`rebrowser-patches` evaluated** — added a `REBROWSER=1` mode to the stealth evader
+  (`rebrowser-playwright@1.48.2`). Result: it closes exactly the `Runtime.enable` leak (so
+  `br.cdp_runtime_enabled` correctly does not fire — validating both the rule and rebrowser's claim) but
+  leaves `webdriver` / headless-UA / `window.chrome` unpatched. The three CDP tools now form a measured
+  gradient of automation-tell coverage (plain 6 → rebrowser 5 → patchright 4), all still `bot` on the
+  headless `environment` floor. New `rebrowser` corpus session and `docs/findings.md` comparison.
 - **`Runtime.enable` CDP-leak detection wired** — the `br.cdp_runtime_enabled` rule existed but the
   collector never emitted its signal (a gap). Implemented the detection (log an `Error` with a `stack`
   getter that fires only when a CDP client serializes it — the current #1 headless-Chromium tell, 2024-25
