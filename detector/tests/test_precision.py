@@ -37,6 +37,14 @@ def _human(session_id: str, browser: dict[str, object]) -> Session:
     # Safari's is "unknown" and not emitted, so a realistic Safari profile carries no settings hint.
     if ua_browser in ("chrome", "firefox"):
         sigs.append(make_signal(session_id, Layer.network, "h2_settings_hint", ua_browser, source=Source.edge))
+    # A real device's TCP/IP kernel matches the OS its UA claims (Android runs Linux, iOS runs Darwin),
+    # so net.tcp_os_vs_ua stays quiet — its no-fire path. The SYN-revealed kernel can't be spoofed.
+    kernel = {"Windows": "windows", "macOS": "darwin", "Linux": "linux", "Android": "linux"}.get(
+        str(browser["ua_platform"]), ""
+    )
+    if kernel:
+        sigs.append(make_signal(session_id, Layer.network, "tcp_kernel", kernel, source=Source.edge))
+        sigs.append(make_signal(session_id, Layer.network, "ua_kernel", kernel, source=Source.edge))
     # Sec-CH-UA(-Platform) are Chromium client hints; a real Chromium sends them matching its UA. Firefox
     # and Safari never send them, so their absence (not a mismatch) is the coherent case there.
     if "ch_platform" in browser:

@@ -281,6 +281,13 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.network, "sec_fetch_missing", True, Source.edge)], "net.sec_fetch_vs_ua"),
         ([(Layer.network, "accept_encoding_no_brotli", True, Source.edge)], "net.accept_encoding_vs_ua"),
         ([(Layer.network, "ch_ua_version_mismatch", True, Source.edge)], "net.ch_ua_version_vs_ua"),
+        (
+            [
+                (Layer.network, "tcp_kernel", "linux", Source.edge),
+                (Layer.network, "ua_kernel", "windows", Source.edge),
+            ],
+            "net.tcp_os_vs_ua",
+        ),
         ([(Layer.network, "h2_rapid_reset", True, Source.edge)], "net.h2_rapid_reset"),
         ([(Layer.network, "h2_continuation_flood", True, Source.edge)], "net.h2_continuation_flood"),
         ([(Layer.network, "h2_control_flood", True, Source.edge)], "net.h2_control_flood"),

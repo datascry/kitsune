@@ -337,6 +337,22 @@ func TestPrepareEmitsCHPlatform(t *testing.T) {
 	}
 }
 
+func TestUAKernel(t *testing.T) {
+	cases := map[string]string{
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/125":          "windows",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605":    "darwin",
+		"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari": "darwin",
+		"Mozilla/5.0 (Linux; Android 14) Chrome/125 Mobile":             "linux", // Android = Linux kernel
+		"Mozilla/5.0 (X11; Linux x86_64) Firefox/127":                   "linux",
+		"python-httpx/0.27": "",
+	}
+	for ua, want := range cases {
+		if got := uaKernel(ua); got != want {
+			t.Errorf("uaKernel(%q)=%q want %q", ua, got, want)
+		}
+	}
+}
+
 func TestAcceptEncodingNoBrotli(t *testing.T) {
 	chromeUA := "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	cases := []struct {

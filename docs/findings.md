@@ -557,6 +557,27 @@ because there is no browser. It is the network-layer twin of the selenium-driver
 wins its own arms race completely is convicted on the axis it never entered. TLS/HTTP can be impersonated;
 *executing the page* cannot be, by a thing that is not a browser.
 
+## TCP/IP-stack fingerprinting — the OS tell beneath TLS
+
+The deepest layer a session exposes is the one the application never touches: the **TCP/IP stack of the
+kernel the client actually runs on**. The initial TTL and the order of TCP options in the SYN are set by
+the OS kernel before a single byte of TLS or HTTP — Windows starts at TTL 128, Linux and Darwin at 64, and
+the three are told apart by their option order (Linux leads with SACK_PERMITTED; Darwin places window-
+scale early and trails with a timestamp/SACK/EOL run). A bot can forge a `User-Agent`, `navigator.platform`,
+and even `Sec-CH-UA-Platform`, but it cannot change the kernel its packets came from without *being* that
+OS. So a Windows-claiming client whose SYN is a Linux stack is caught a layer below everything else.
+
+The edge fingerprints this **live**, with raw `AF_PACKET` capture (`ClassifyTCPOS`/`ParseSYN`, both
+fuzz-hardened): a sniffer goroutine reads inbound SYNs, classifies the kernel family, and stores it keyed
+by source IP; on the request the edge — which holds both the source IP and the minted session — looks it
+up and emits `tcp_kernel`, alongside `ua_kernel` (the kernel the UA *claims*, mapping Android→linux and
+iOS→darwin so a real phone stays coherent). `net.tcp_os_vs_ua` (0.7) fires when they disagree.
+Live-validated end to end: a Chromium given a Windows UA on the Linux edge reports `tcp_kernel=linux`
+against `ua_kernel=windows` and is caught; a coherent Linux client (`tcp_kernel=linux`, `ua_kernel=linux`)
+stays quiet. Capture is best-effort — it needs `CAP_NET_RAW` (the lab runs the otherwise-non-root edge as
+root for it), and the edge serves normally without it, simply emitting no `tcp_kernel`. This is the
+bottom of the coherence stack: TLS, HTTP/2, the application, and now the kernel itself all have to agree.
+
 ## The HTTP/2 preface — a UA-spoof tell below the application layer
 
 The TLS ClientHello (JA3/JA4) and the in-page JS fingerprint are the two layers an evader works hardest

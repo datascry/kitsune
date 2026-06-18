@@ -12,6 +12,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"github.com/datascry/kitsune/edge/internal/peek"
 	"github.com/datascry/kitsune/edge/internal/session"
 	"github.com/datascry/kitsune/edge/internal/signal"
+	"github.com/datascry/kitsune/edge/internal/tcpfp"
 )
 
 type ctxKey int
@@ -245,6 +247,22 @@ func acceptEncodingNoBrotli(r *http.Request) bool {
 	return true
 }
 
+// uaKernel maps the OS a User-Agent claims to its kernel family — the vocabulary the TCP/IP sniffer
+// reports (Android runs the Linux kernel; iOS runs Darwin like macOS). "" when no OS is recognised.
+// Compared against the network-stack kernel, it catches an OS spoof a layer below TLS.
+func uaKernel(ua string) string {
+	switch {
+	case strings.Contains(ua, "Windows"):
+		return "windows"
+	case strings.Contains(ua, "Macintosh") || strings.Contains(ua, "Mac OS X") ||
+		strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad"):
+		return "darwin"
+	case strings.Contains(ua, "Android") || strings.Contains(ua, "Linux") || strings.Contains(ua, "X11"):
+		return "linux"
+	}
+	return ""
+}
+
 // ReverseProxy is a transparent TLS edge in front of a backend app.
 type ReverseProxy struct {
 	backend     *httputil.ReverseProxy
@@ -253,6 +271,7 @@ type ReverseProxy struct {
 	newID       IDFunc
 	now         func() time.Time
 	client      *http.Client
+	synStore    *tcpfp.Store // source-IP -> TCP/IP kernel family; nil when capture is unavailable
 }
 
 // NewReverseProxy builds a reverse proxy forwarding to backendURL and reporting to detectorURL.
@@ -286,6 +305,16 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Header.Set("X-KS-Session", prep.sessionID)
 	// A rapid-reset flood (CVE-2023-44487) is connection-level abuse; flag it for the session this
 	// connection carries (anonymous pure floods, with no completed request, are a rate limiter's job).
+	// TCP/IP OS coherence: the kernel the client's network stack reveals (from its SYN, captured by the
+	// sniffer) versus the kernel its User-Agent claims. A UA spoof cannot change the real TCP stack.
+	if uak := uaKernel(r.Header.Get("User-Agent")); uak != "" {
+		prep.signals = append(prep.signals, signal.Network(prep.sessionID, "ua_kernel", uak, p.now()))
+	}
+	if p.synStore != nil {
+		if k, ok := p.synStore.Get(clientIP(r)); ok {
+			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "tcp_kernel", k, p.now()))
+		}
+	}
 	if sc, ok := r.Context().Value(scannerKey).(*fingerprint.H2FrameScanner); ok {
 		if sc.RapidReset() {
 			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_rapid_reset", true, p.now()))
@@ -321,6 +350,14 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 	if err != nil {
 		return err
 	}
+	// Start the TCP/IP SYN sniffer (best-effort: needs CAP_NET_RAW). If it can't run, the edge serves
+	// without tcp_kernel signals rather than failing — the source-IP store simply stays empty.
+	p.synStore = tcpfp.NewStore(2 * time.Minute)
+	go func() {
+		if err := tcpfp.Sniff(p.synStore, make(chan struct{})); err != nil {
+			log.Printf("tcp/ip fingerprinting disabled: %v", err)
+		}
+	}()
 	inner, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err

@@ -21,6 +21,12 @@ services:
       KITSUNE_EDGE_ADDR: "0.0.0.0:8443"
       KITSUNE_BACKEND: "http://detector:8080"
       KITSUNE_DETECTOR: "http://detector:8080"
+    # NET_RAW lets the edge raw-capture client SYNs for TCP/IP-stack fingerprinting (p0f-style OS
+    # kernel). The image is non-root by default (secure); the lab runs it as root so CAP_NET_RAW is in
+    # the effective set for the AF_PACKET sniffer. Without this the edge still runs — no tcp_kernel signal.
+    user: root
+    cap_add:
+      - NET_RAW
     # Add `ports: ["8443:8443"]` to drive the edge from the host.
     depends_on:
       detector:
