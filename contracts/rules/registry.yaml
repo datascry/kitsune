@@ -826,3 +826,15 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS timezone lie: a spoof that sets the zone name but not the numeric offset (or forces UTC over a real offset) is self-inconsistent; real browsers never are"
+
+  - id: br.engine_stack_vs_ua
+    title: JS-engine stack API (Error.captureStackTrace = V8) contradicts the UA engine
+    layers: [browser]
+    reads: [browser.engine_stack_mismatch]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "CreepJS: V8-only Error.captureStackTrace; a Chrome UA without it (or a Firefox UA with it) is an engine spoof deeper than navigator.vendor"

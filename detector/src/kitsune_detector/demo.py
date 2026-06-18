@@ -330,6 +330,12 @@ DEMO_PAGE = """<!doctype html>
     var venEngine = /Google/i.test(ven) ? "chromium" : ven === "" ? "firefox"
                   : /Apple/i.test(ven) ? "safari" : "other";
     sigs.push(S("browser", "vendor_engine", venEngine));
+    // Error.captureStackTrace is a V8 (Chromium) API; SpiderMonkey (Firefox) and JSC (Safari) lack it.
+    // A UA claiming Chrome without it — or claiming Firefox WITH it — is an engine spoof deeper than
+    // navigator.vendor (which JS-stealth tools patch, while the Error constructor's API they often miss).
+    var hasV8Stack = typeof Error.captureStackTrace === "function";
+    if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack))
+      sigs.push(S("browser", "engine_stack_mismatch", true));
     if (navigator.oscpu) {
       var oc = /Mac/i.test(navigator.oscpu) ? "macOS" : /Win/i.test(navigator.oscpu) ? "Windows"
              : /Linux/i.test(navigator.oscpu) ? "Linux" : "";

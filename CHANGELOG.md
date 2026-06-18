@@ -9,6 +9,11 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Deep engine-API coherence** (ruleset 0.21.0) — `br.engine_stack_vs_ua`: `Error.captureStackTrace` is
+  a V8 (Chromium) API absent in Firefox/Safari, so a UA claiming Chrome without it — or Firefox *with* it
+  — is an engine spoof deeper than `navigator.vendor` (which JS-stealth patches, while the `Error` API it
+  often misses). **Validated both ways:** fires on `spoof-ua` (Chromium engine + Firefox UA), does not
+  trip real Chromium or Firefox. Near-zero false positives.
 - **Timezone-consistency detection** (ruleset 0.21.0) — `br.timezone_inconsistent` (CreepJS "timezone
   lie"): a real browser derives both the IANA `timeZone` and the numeric `getTimezoneOffset()` from the
   OS, so they always agree; a spoof that sets one but not the other (or forces UTC over a real offset) is
