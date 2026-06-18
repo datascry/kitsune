@@ -93,6 +93,19 @@ on no real GPU, with no OS speech voices and no enumerable media devices, cannot
 person's machine without *being* one. That is the finding the whole survey converges on, and pydoll is
 where it stops being a claim about specific tools and becomes a claim about the category.
 
+### The UA-CH high-entropy brand list — a headless tell that survives UA cleaning
+
+Stripping `Headless` from the User-Agent string (what every UA-spoof does) defeats `br.headless_ua` —
+but `navigator.userAgentData.getHighEntropyValues(["fullVersionList"])` is a *separate* surface, and a
+headless Chromium still names itself there. Verified against HeadlessChrome 136 (secure context — the API
+needs HTTPS, which the edge serves): `fullVersionList` is `[Chromium, HeadlessChrome, Not.A/Brand]`,
+whereas a real headful Chrome reports `[Chromium, Google Chrome, …]`. So `br.ch_he_headless` (present on
+a `headless`-matching brand) catches a headless browser that scrubbed its UA but never patched the
+high-entropy Client-Hints API — a deeper tell than the UA token. The same call also carries
+`uaFullVersion`/`fullVersionList` versions, which must match the UA-string Chrome major
+(`br.ch_he_version_vs_ua`, experimental); both are FP-safe — a real Chrome reports neither a headless
+brand nor a version that disagrees with its own UA. (v0.55.0)
+
 ### Survey coverage — every open-source family, one conclusion
 
 The evaluated fleet now spans every open-source anti-detect family: scripted HTTP (vanilla/httpx),

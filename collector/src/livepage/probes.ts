@@ -12,8 +12,17 @@ import type { PointerSample, SignalValue } from "../types.js";
 import type { SignalMap } from "./engine.js";
 
 // Non-standard / vendor-prefixed surfaces the probes read, typed minimally and reached via unknown casts.
+interface UAHEBrand {
+  brand?: string;
+  version?: string;
+}
 interface UAData {
   platform?: string;
+  brands?: UAHEBrand[];
+  getHighEntropyValues?(hints: string[]): Promise<{
+    uaFullVersion?: string;
+    fullVersionList?: UAHEBrand[];
+  }>;
 }
 interface ExtraNavigator {
   userAgentData?: UAData;
@@ -377,6 +386,25 @@ export function armCollector(): LiveCollector {
 
     const uad = nav().userAgentData;
     if (uad?.platform) put("browser", "ch_platform", uad.platform);
+    // UA-CH high-entropy coherence (Chromium-only, secure-context): the high-entropy brand list still
+    // names HeadlessChrome even when the UA string was cleaned (a deeper headless tell), and its Chrome
+    // version must match the UA-string version — a surface UA-spoofers routinely miss.
+    if (uad?.getHighEntropyValues) {
+      try {
+        const he = await uad.getHighEntropyValues(["uaFullVersion", "fullVersionList"]);
+        const fvl = he.fullVersionList ?? [];
+        const brandList = [...fvl, ...(uad.brands ?? [])];
+        if (brandList.some((b) => /headless/i.test(b.brand ?? ""))) {
+          put("browser", "ch_he_headless", true);
+        }
+        const chBrand = fvl.find((b) => /chrom/i.test(b.brand ?? ""));
+        const chMajor = (chBrand?.version ?? he.uaFullVersion ?? "").split(".")[0];
+        const uaM = /Chrome\/(\d+)/.exec(ua)?.[1];
+        if (chMajor && uaM && chMajor !== uaM) put("browser", "ch_he_version_vs_ua", true);
+      } catch {
+        /* ignore */
+      }
+    }
 
     const np = navigator.platform || "";
     const npo = /Mac/i.test(np)

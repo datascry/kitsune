@@ -356,6 +356,23 @@ DEMO_PAGE = """<!doctype html>
     ];
     var uad = navigator.userAgentData;
     if (uad && uad.platform) sigs.push(S("browser", "ch_platform", uad.platform));
+    // UA-Client-Hints HIGH-entropy coherence. getHighEntropyValues is Chromium-only and needs a secure
+    // context (the edge serves HTTPS); it is a surface UA-string spoofers routinely forget to patch.
+    // (a) the high-entropy brand list still names HeadlessChrome even when the UA string was cleaned —
+    // a headless tell deeper than ua_is_headless; (b) its Chrome version must match the UA-string version.
+    if (uad && uad.getHighEntropyValues) {
+      try {
+        var he = await uad.getHighEntropyValues(["uaFullVersion", "fullVersionList"]);
+        var fvl = he.fullVersionList || [];
+        var brandList = fvl.concat(uad.brands || []);
+        if (brandList.some(function (b) { return /headless/i.test((b && b.brand) || ""); }))
+          sigs.push(S("browser", "ch_he_headless", true));
+        var chBrand = fvl.filter(function (b) { return /chrom/i.test((b && b.brand) || ""); })[0];
+        var chMajor = (chBrand ? String(chBrand.version || "") : String(he.uaFullVersion || "")).split(".")[0];
+        var uaM = (ua.match(/Chrome\\/(\\d+)/) || [])[1];
+        if (chMajor && uaM && chMajor !== uaM) sigs.push(S("browser", "ch_he_version_vs_ua", true));
+      } catch (e) {}
+    }
     // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for
     // Firefox-based anti-detect too, where there is no Client-Hints platform).
     var np = navigator.platform || "";

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.54.0"
+ruleset_version: "0.55.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -373,6 +373,30 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "HeadlessChrome UA token"
+
+  - id: br.ch_he_headless
+    title: UA-Client-Hints high-entropy brand list reveals HeadlessChrome
+    layers: [browser]
+    reads: [browser.ch_he_headless]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "navigator.userAgentData.getHighEntropyValues fullVersionList — a headless tell that survives UA-string cleaning (verified vs HeadlessChrome 136)"
+
+  - id: br.ch_he_version_vs_ua
+    title: UA-CH high-entropy Chrome version contradicts the UA-string version
+    layers: [browser]
+    reads: [browser.ch_he_version_vs_ua]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "getHighEntropyValues uaFullVersion/fullVersionList major vs UA Chrome major — UA-spoofers often miss the high-entropy CH surface"
 
   - id: bh.keystroke_entropy_floor
     title: Keystroke timing entropy below the human floor
