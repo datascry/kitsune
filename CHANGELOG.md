@@ -9,6 +9,22 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **nodriver re-evaluated against the full ruleset** — its "minimal CDP footprint" claim **holds against
+  the SOTA detection**: it trips neither `cdp_runtime_enabled` (`Runtime.enable`) nor `webdriver`
+  (`automation:2`, the lowest of all CDP tools), yet is still `bot` on the environment floor plus a
+  `HeadlessChrome` UA and missing `window.chrome.runtime`. Completes the CDP-tool gradient
+  (plain 6 → rebrowser 5 → patchright 4 → nodriver 2 automation tells).
+
+### Fixed
+
+- **Collector timing regression** — the v0.19 WebRTC probe (1500ms) plus the audio/enumerate probes had
+  pushed the collector's send past short fixed-wait evaders (nodriver's 3s), yielding empty captures. Cut
+  the WebRTC gather window to 700ms (local candidates arrive in ~200ms; STUN does not resolve in the lab
+  anyway) and gave nodriver a 4s margin. Camoufox's `webrtc_unavailable` is unaffected (it blocks WebRTC
+  outright, so no candidates regardless of the window).
+
+### Added (continued)
+
 - **Cross-layer network-identity rule** (ruleset 0.20.0) — `net.webrtc_ip_vs_observed`: the edge now emits
   the observed connection IP (`network.observed_ip`), and the rule fires when it disagrees with the
   WebRTC STUN public IP the collector reported (`browser.webrtc_public_ip`) — the canonical proxied-bot

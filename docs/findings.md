@@ -41,6 +41,12 @@ fires only when a CDP client is serializing it. Validated live:
   (`automation:5`). A *surgical* fix: it closes exactly the `Runtime.enable` leak (validating both the
   detection and rebrowser's claim) but leaves `navigator.webdriver`, the `HeadlessChrome` UA token, and
   `window.chrome` unpatched — unlike patchright's broader stealth.
+- **nodriver** (undetected-chromedriver successor, "minimal CDP footprint") → **does not fire**
+  (`automation:2`, the lowest of all CDP tools). Its claim **holds against the SOTA detection**: it avoids
+  *both* `Runtime.enable` and `navigator.webdriver`. It is the most thorough on the automation *surface*
+  — but it still ships a `HeadlessChrome` UA (`headless_ua`) and no `window.chrome.runtime`
+  (`chrome_runtime_missing`), and is `bot` on the environment floor. Real-Chrome nodriver is also *less*
+  stripped than Playwright's Chromium (`environment:3` vs `6`).
 
 The three tools form a clean gradient of patch coverage — `automation` tells 6 → 5 → 4 (plain →
 rebrowser → patchright) — yet **all three remain `bot`** on `environment:6`. The detector now measures

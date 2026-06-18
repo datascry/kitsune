@@ -23,7 +23,7 @@ async def main() -> None:
         browser_args=["--no-sandbox", "--ignore-certificate-errors"],
     )
     await browser.get(EDGE)
-    await asyncio.sleep(3)
+    await asyncio.sleep(4)  # margin for the collector's async probes (WebRTC/audio) to POST
     cookies = await browser.cookies.get_all()
     sid = next((c.value for c in cookies if c.name == "ks_sid"), None)
     browser.stop()

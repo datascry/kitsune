@@ -129,7 +129,9 @@ DEMO_PAGE = """<!doctype html>
           if (m) { if (/ typ srflx /.test(c)) pub = m[1]; else if (/ typ host /.test(c)) host[m[1]] = 1; }
         };
         pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).catch(function () {});
-        setTimeout(function () { try { pc.close(); } catch (x) {} finish(false); }, 1500);
+        // 700ms: local host/mDNS candidates arrive in ~200ms; a STUN srflx that is reachable comes soon
+        // after. Keeps the collector's total budget bounded so fixed-wait evaders capture before closing.
+        setTimeout(function () { try { pc.close(); } catch (x) {} finish(false); }, 700);
       } catch (e) { finish(true); }
     });
   }
