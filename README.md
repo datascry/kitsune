@@ -1,13 +1,13 @@
-<p align="center">
-  <img src="docs/kitsune.jpg" alt="Kitsune — a nine-tailed fox spirit on a mountain ridge" width="320" />
-</p>
-
-# 🦊 Kitsune — a bot detection ⇄ evasion lab
+# Kitsune — a bot detection ⇄ evasion lab
 
 [![ci](https://github.com/datascry/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/ci.yml)
 [![security](https://github.com/datascry/kitsune/actions/workflows/security.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/security.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![conventional commits](https://img.shields.io/badge/commits-conventional-fe5196.svg)](https://www.conventionalcommits.org)
+
+<p align="center">
+  <img src="docs/kitsune.jpg" alt="Kitsune — a nine-tailed fox spirit on a mountain ridge" width="320" />
+</p>
 
 Kitsune builds **both sides** of the bot-vs-human arms race in one repo — a fingerprint/behavioral
 **detector** ("blue") and an anti-detect **evader fleet** ("red") — and runs them against each other,
