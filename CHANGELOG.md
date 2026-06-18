@@ -9,6 +9,13 @@ All notable changes to Kitsune are documented here. The format follows
 
 ### Added
 
+- **Font construction-artifact detection** (ruleset 0.17.0) — from Camoufox's `fonts.json` (its fixed
+  per-OS font lists). `br.font_mac_internal` (artifact): Camoufox bundles 49 dot-prefixed macOS system
+  fonts (`.Aqua Kana`, …) and exposes them to `measureText`, which a real Mac never does — **confirmed
+  live** on its macOS draws; works headful (no display needed). With `macos_dpr1` a macOS-draw Camoufox
+  now has two spoof-specific catches independent of the headless-environment tells (`bot` 0.976).
+  `br.font_linux_leak` (coherence, experimental): Arimo/Cousine/Tinos under a non-Linux UA — did not fire
+  (Camoufox's font spoofing is complete) but still catches naive non-font-spoofing tools.
 - **Detection-class taxonomy + no-spoof baseline control.** Added a `category` to every rule (and to each
   verdict `Contradiction`): `coherence` / `artifact` (genuine anti-detect catches) vs `environment` /
   `automation` / `behavioral` / `reputation`. Validated it against a **control group** — stock Playwright

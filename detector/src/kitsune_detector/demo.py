@@ -193,6 +193,18 @@ DEMO_PAGE = """<!doctype html>
       return best;
     } catch (e) { return ""; }
   }
+  // Is a single named font installed? (width differs from a generic fallback in any base family.)
+  function fontPresent(f) {
+    try {
+      var bases = ["monospace", "sans-serif", "serif"], probe = "mmmmmmmmmmlli72px";
+      var ctx = document.createElement("canvas").getContext("2d");
+      function w(font) { ctx.font = "72px " + font; return ctx.measureText(probe).width; }
+      for (var i = 0; i < bases.length; i++) {
+        if (w("'" + f + "'," + bases[i]) !== w(bases[i])) return true;
+      }
+      return false;
+    } catch (e) { return false; }
+  }
   async function send() {
     var ua = navigator.userAgent, now = new Date().toISOString();
     function S(layer, kind, value) {
@@ -283,6 +295,16 @@ DEMO_PAGE = """<!doctype html>
     // --- v0.11.0 wave: installed-font OS fingerprint (the engine-level OS-lie counter) ---
     var fo = fontOSHint();
     if (fo) sigs.push(S("browser", "font_os_hint", fo));
+    // --- v0.17.0 wave: font construction artifacts (white-box: Camoufox's fixed per-OS font lists) ---
+    // Arimo/Cousine/Tinos are Google metric-compatible fonts that ship on Linux (Camoufox's lin list
+    // only). Measurable under a non-Linux UA → the real Linux container is leaking through the spoof.
+    var plat = uaPlatform(ua);
+    if (plat && plat !== "Linux" && (fontPresent("Arimo") || fontPresent("Cousine") || fontPresent("Tinos")))
+      sigs.push(S("browser", "font_linux_leak", true));
+    // macOS internal dot-prefixed fonts (.Aqua Kana, .Apple Color Emoji UI) are never web-measurable on
+    // a real Mac; if measurable, an anti-detect tool naively exposed its bundled system-font list.
+    if (fontPresent(".Aqua Kana") || fontPresent(".Apple Color Emoji UI"))
+      sigs.push(S("browser", "font_mac_internal", true));
     // --- v0.12.0 wave: cross-API device/media coherence (CreepJS / fingerprintjs) ---
     // The CSS view of the device (matchMedia) and the JS-API view (navigator/screen) must agree; a
     // spoof that patches one surface but not the other is incoherent across them.

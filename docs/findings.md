@@ -135,6 +135,15 @@ provable detection:
   `br.adblock_present` (ad-bait cosmetic detection) targets this — kept *experimental*: it is weak alone
   (many humans run adblockers) and did not fire in our short isolated sessions (fresh uBO compiles its
   filter lists slower than the ~3s capture window), but it is a documented default worth flagging.
+- **`fonts.json` — fixed per-OS font lists** (win 107, mac 573, lin 134). Two leads; one validated:
+  - The mac list bundles **49 dot-prefixed system fonts** (`.Aqua Kana`, `.Apple Color Emoji UI`) that a
+    real macOS browser never exposes to `measureText`. `br.font_mac_internal` — **confirmed live** on
+    Camoufox's macOS draws — an `artifact` tell (Camoufox over-exposed its bundled list) that works
+    headful (font metrics need no display). With `macos_dpr1` it gives a macOS-draw Camoufox *two*
+    spoof-specific catches independent of the environment tells.
+  - Arimo/Cousine/Tinos are Linux-only in the lists, so a leak under a non-Linux UA would betray the
+    container — but `br.font_linux_leak` did **not** fire: Camoufox's font spoofing is complete, the
+    container fonts do not leak. Kept experimental (it would still catch a naive non-font-spoofing tool).
 - **No audio handling in the package** — Camoufox does *not* farble the AudioContext. So `br.audio_noise`
   (per-render perturbation) correctly does **not** fire on Camoufox; it is reserved for farbling browsers
   (Brave) and tools that randomize audio per read. Reading the source told us this *before* testing,

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.16.0"
+ruleset_version: "0.17.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -744,3 +744,29 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Camoufox source: devicePixelRatio is pinned to 1.0 (cannot present a coherent Retina profile)"
+
+  # --- v0.17.0: font construction artifacts (white-box: Camoufox's fixed per-OS font lists) ---
+
+  - id: br.font_linux_leak
+    title: Linux metric-compatible fonts (Arimo/Cousine/Tinos) present under a non-Linux UA
+    layers: [browser]
+    reads: [browser.font_linux_leak]
+    predicate: present
+    weight: 0.7
+    status: experimental
+    category: coherence
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Camoufox source fonts.json: Arimo/Cousine/Tinos are Linux-only — the container leaking through"
+
+  - id: br.font_mac_internal
+    title: macOS internal dot-prefixed system fonts are web-measurable (never on a real Mac)
+    layers: [browser]
+    reads: [browser.font_mac_internal]
+    predicate: present
+    weight: 0.7
+    status: experimental
+    category: artifact
+    added: "2026-06-18"
+    last_validated: "2026-06-18"
+    source: "Camoufox source fonts.json: 49 dot-prefixed mac fonts bundled; real browsers hide them"
