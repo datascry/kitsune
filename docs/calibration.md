@@ -610,3 +610,15 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   **precision 100% / recall 100%** (the 6 legit-cohort FP-cases — corporate fp_collision, multi-version JA4_c
   divergence, NAT shared-IP, etc. — all correctly cap at `candidate`, every fleet shape caught). Matrix +
   scoreboard refreshed. No rule changed → no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.23 · Intoli precision re-run (refreshed dataset, n=6000) — gate green + a real
+  positive.** Re-ran the second real-traffic source: **100% human / 0% suspicious / 2 bot (0.03%)**. Both
+  `vendor_vs_ua` fixes hold — the only convicting firings are `ua_engine=safari` records (a macOS **Safari**
+  UA reporting `navigator.vendor` "Google Inc."), and the 2 unclassifiable-engine (`other`) records in the
+  data correctly **abstain** in the scoring path (the v0.74.23 narrowing emits no `vendor_engine` for them).
+  Importantly those 2 firings are **not FPs — they are real Chromium-faking-Safari crawlers in genuine site
+  traffic** (no real Safari reports a Google vendor; the `(Lanai)` UA suffix is a known crawler marker). So
+  this is the **first demonstration that a Kitsune coherence rule convicts an actual crawler in a real-traffic
+  dataset**, not just a synthetic fleet evader — `br.vendor_vs_ua` has real-world detection value, locked by
+  `test_intoli_corpus.test_macos_safari_with_google_vendor_still_convicts`. The recurring Intoli re-run remains
+  the highest-yield precision check (it caught the iOS and unknown-engine FPs); it is now clean. No rule changed.
