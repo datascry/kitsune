@@ -42,6 +42,13 @@ func (f H2Fingerprint) String() string {
 
 // Browser classifies the client engine from the request pseudo-header order — the most version-stable
 // discriminator across HTTP/2 stacks: Chromium sends m,a,s,p; Firefox m,p,a,s; Safari m,s,p,a.
+//
+// DO NOT add m,s,a,p -> safari: that is the GENERIC spec-default pseudo-header order (method, scheme,
+// authority, path in declaration order) that bare HTTP/2 libraries emit, NOT a browser signature —
+// hinting it safari would false-positive on any such client. (A live Playwright WebKit on Linux happens to
+// emit m,s,a,p, but that is the library default, not Apple-Safari's real on-wire order; real macOS/iOS
+// Safari's order is unverifiable in this sandbox, so the specific m,s,p,a seed is kept and the generic
+// m,s,a,p stays "unknown" — the FP-safe choice.)
 func (f H2Fingerprint) Browser() string {
 	switch f.PseudoHeaderOrder {
 	case "m,a,s,p":
