@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.70.0"
+ruleset_version: "0.71.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -717,6 +717,18 @@ rules:
     added: "2026-06-19"
     last_validated: "2026-06-19"
     source: "The language half of the geo-spoof realm pair (with timezone_worker_vs_main). A residential-proxy bot patches navigator.languages in the main realm to match the proxy's country, but a JS patch cannot reach Web Worker scope, so a Worker reports the real host languages. Grounded headless: a normal real browser reports identical languages in both realms (no fire). EXPERIMENTAL — unlike timezone, a legitimate CDP locale override (context.locale) does NOT propagate to the Worker (grounded: main es-ES, worker en-US → diverges), so this fires on legit locale emulation and on the rare real user running a language-spoofing privacy extension; kept corroborating until the legit-browser divergence rate is validated against Tier-3 real traffic. Catches both JS- and CDP-level main-realm language spoofs."
+
+  - id: br.timezone_offset_vs_intl
+    title: getTimezoneOffset disagrees with the Intl IANA timezone's actual offset
+    layers: [browser]
+    reads: [browser.timezone_internal_incoherent]
+    predicate: present
+    weight: 0.65
+    status: active
+    category: coherence
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "Internal timezone coherence (self-contained — no Worker, no IP-geo). Date.getTimezoneOffset() and the IANA zone from Intl.DateTimeFormat().resolvedOptions().timeZone both derive from ONE OS setting, so the zone's current UTC offset (recomputed via Intl with an explicit timeZone) must equal -getTimezoneOffset(). A naive residential-proxy geo-spoof patches one field and forgets the other (or hardcodes a wrong-season offset). Grounded headless: a real browser AND a legit CDP timezone override (Emulation.setTimezoneOverride, which moves the whole Intl/Date engine together) are both coherent — no fire; a one-field JS spoof diverges. FP-safe ACTIVE."
 
   - id: br.timezone_worker_vs_main
     title: Timezone differs between the main thread and a Web Worker

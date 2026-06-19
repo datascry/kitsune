@@ -53,6 +53,10 @@ const LANG_SPOOF = process.env.LANG_SPOOF === "1";
 // thread, defeating worker_divergence. But the wrapped Worker constructor is no longer native, so
 // br.worker_constructor_tampered catches the realm the spoof had to compromise to hide.
 const WORKER_WRAP = process.env.WORKER_WRAP === "1";
+// NAIVE_TZ_SPOOF: the one-field geo-spoof. Patch ONLY Intl.resolvedOptions().timeZone (claim a proxy-
+// matching zone) and forget Date.getTimezoneOffset — the offset then contradicts the claimed zone →
+// br.timezone_offset_vs_intl. The canonical incomplete timezone spoof.
+const NAIVE_TZ_SPOOF = process.env.NAIVE_TZ_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -103,8 +107,11 @@ const evading =
   TZ_SPOOF ||
   LANG_SPOOF ||
   WORKER_WRAP ||
+  NAIVE_TZ_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = WORKER_WRAP
+const mode = NAIVE_TZ_SPOOF
+  ? "naive-tz-spoof"
+  : WORKER_WRAP
   ? "worker-wrap"
   : LANG_SPOOF
   ? "lang-spoof"
@@ -281,6 +288,18 @@ if (FLOOR_SPOOF) {
       return new RealWorker(URL.createObjectURL(new Blob([wrapped], { type: "application/javascript" })), opts);
     };
     window.Worker.prototype = RealWorker.prototype;
+  });
+} else if (NAIVE_TZ_SPOOF) {
+  // One-field geo-spoof: patch only Intl.resolvedOptions().timeZone, leave Date.getTimezoneOffset real, so
+  // the offset contradicts the claimed zone → br.timezone_offset_vs_intl.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const RTO = Intl.DateTimeFormat.prototype.resolvedOptions;
+    Intl.DateTimeFormat.prototype.resolvedOptions = function () {
+      const o = RTO.call(this);
+      o.timeZone = "America/New_York";
+      return o;
+    };
   });
 } else if (evading) {
   await context.addInitScript(() => {

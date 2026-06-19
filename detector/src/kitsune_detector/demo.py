@@ -910,6 +910,19 @@ DEMO_PAGE = """<!doctype html>
     if (wtz && (wtz.off !== mainOff || (mainTz !== "" && wtz.tz !== "" && wtz.tz !== mainTz))) {
       sigs.push(S("browser", "timezone_worker_divergence", true));
     }
+    // Internal timezone coherence: the IANA zone's current UTC offset must equal -getTimezoneOffset() (both
+    // derive from one OS setting). A naive geo-spoof patches one and forgets the other; a legit CDP override
+    // keeps both consistent.
+    try {
+      if (mainTz !== "") {
+        var tzParts = new Intl.DateTimeFormat("en-US", { timeZone: mainTz, timeZoneName: "longOffset" }).formatToParts(new Date());
+        var tzn = ""; for (var ti = 0; ti < tzParts.length; ti++) { if (tzParts[ti].type === "timeZoneName") tzn = tzParts[ti].value; }
+        var zoneEast = null;
+        if (tzn === "GMT" || tzn === "UTC") zoneEast = 0;
+        else { var zm = /GMT([+-])(\\d{2}):?(\\d{2})?/.exec(tzn); if (zm) zoneEast = (zm[1] === "-" ? -1 : 1) * (parseInt(zm[2], 10) * 60 + parseInt(zm[3] || "0", 10)); }
+        if (zoneEast !== null && zoneEast !== -mainOff) sigs.push(S("browser", "timezone_internal_incoherent", true));
+      }
+    } catch (e) {}
     // CSP was not enforced on a page that ships a strict img-src — the context bypassed CSP (only an
     // automation framework does this). Emitted in every mode: it is an automation tell, not behavioural.
     if (!cspEnforced) sigs.push(S("browser", "csp_bypassed", true));

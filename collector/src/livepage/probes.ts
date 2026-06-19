@@ -1086,6 +1086,34 @@ export function armCollector(): LiveCollector {
     if (wtz && (wtz.off !== mainOff || (mainTz !== "" && wtz.tz !== "" && wtz.tz !== mainTz))) {
       put("browser", "timezone_worker_divergence", true);
     }
+    // Internal timezone coherence: getTimezoneOffset() and the IANA zone (resolvedOptions) both derive from
+    // one OS setting, so the zone's current UTC offset must equal -getTimezoneOffset(). A naive geo-spoof
+    // patches one field and forgets the other. A legit CDP timezone override keeps both consistent (grounded
+    // — the whole Intl/Date engine moves together), so this fires only on a partial JS spoof.
+    try {
+      if (mainTz !== "") {
+        const tzParts = new Intl.DateTimeFormat("en-US", {
+          timeZone: mainTz,
+          timeZoneName: "longOffset",
+        }).formatToParts(new Date());
+        const tzn = tzParts.find((p) => p.type === "timeZoneName")?.value ?? "";
+        let zoneEast: number | null = null;
+        if (tzn === "GMT" || tzn === "UTC") {
+          zoneEast = 0;
+        } else {
+          const m = /GMT([+-])(\d{2}):?(\d{2})?/.exec(tzn);
+          if (m) {
+            const sign = m[1] === "-" ? -1 : 1;
+            zoneEast = sign * (parseInt(m[2] ?? "0", 10) * 60 + parseInt(m[3] ?? "0", 10));
+          }
+        }
+        if (zoneEast !== null && zoneEast !== -mainOff) {
+          put("browser", "timezone_internal_incoherent", true);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
     if (!cspEnforced) put("browser", "csp_bypassed", true);
 
     // Behavioural layer — only judge once there is enough GENUINE interaction. The behavioural rules

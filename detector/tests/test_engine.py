@@ -222,6 +222,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.timezone_worker_vs_main",
         ),
         (
+            [(Layer.browser, "timezone_internal_incoherent", True, Source.collector)],
+            "br.timezone_offset_vs_intl",
+        ),
+        (
             [(Layer.browser, "languages_worker_divergence", True, Source.collector)],
             "br.languages_worker_vs_main",
         ),

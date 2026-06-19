@@ -44,6 +44,7 @@ run_stealth "$OUT/canvas-spoof.json" -e CANVAS_SPOOF=1 # red-team: main-realm ca
 run_stealth "$OUT/tz-spoof.json" -e TZ_SPOOF=1 # red-team: main-realm geo-spoof → br.timezone_worker_vs_main
 run_stealth "$OUT/lang-spoof.json" -e LANG_SPOOF=1 # red-team: main-realm language spoof → br.languages_worker_vs_main
 run_stealth "$OUT/worker-wrap.json" -e WORKER_WRAP=1 # red-team: wrap window.Worker (escalation) → br.worker_constructor_tampered
+run_stealth "$OUT/naive-tz-spoof.json" -e NAIVE_TZ_SPOOF=1 # red-team: one-field timezone spoof → br.timezone_offset_vs_intl
 run_stealth "$OUT/linear-bot.json" -e LINEAR_BOT=1 # red-team: straight-line constant-velocity → bh.path_too_straight + bh.uniform_velocity
 run_stealth "$OUT/human-mouse.json" -e HUMAN_MOUSE=1 # negative control: curved/eased motion must NOT trip the biomech floor
 # OS spoof: a Windows UA over the Linux edge — caught by net.tcp_os_vs_ua (TCP/IP kernel vs claimed OS).
@@ -83,6 +84,7 @@ ARGS=(
   "tz-spoof=$OUT/tz-spoof.json"
   "lang-spoof=$OUT/lang-spoof.json"
   "worker-wrap=$OUT/worker-wrap.json"
+  "naive-tz-spoof=$OUT/naive-tz-spoof.json"
   "linear-bot=$OUT/linear-bot.json"
   "human-mouse=$OUT/human-mouse.json"
 )
