@@ -1,11 +1,12 @@
-# Kitsune detection matrix — 118 rules vs 40 evaders
+# Kitsune detection matrix — 118 rules vs 41 evaders
 
-_40/40 evaders caught (`bot`). Generated from the committed captures._
+_41/41 evaders caught (`bot`). Generated from the committed captures._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
 | Evader | verdict | score | fired | convicting tells |
 |---|---|---|---:|---|
+| `audio-readback-spoof` | bot | 1.00 | 16/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
 | `baseline-firefox` | bot | 1.00 | 6/118 | `br.webdriver_present` |
 | `brave` | bot | 1.00 | 11/118 | `br.webdriver_present`, `br.headless_ua`, `br.chrome_runtime_missing` +1 |
 | `camoufox-hardened` | bot | 0.98 | 5/118 | `br.pointer_touch_incoherent`, `br.webrtc_unavailable` |
@@ -47,26 +48,26 @@ _40/40 evaders caught (`bot`). Generated from the committed captures._
 | `worker-wrap` | bot | 1.00 | 16/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
 | `zendriver` | bot | 1.00 | 9/118 | `br.chrome_runtime_missing`, `br.webrtc_unavailable` |
 
-## Per-rule coverage — 72/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 73/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 29 |
-| `br.voices_empty` | browser | environment | 29 |
-| `br.webgl_software` | browser | environment | 25 |
-| `br.mimetypes_empty` | browser | environment | 21 |
-| `br.no_plugins` | browser | environment | 21 |
-| `br.notification_denied` | browser | automation | 20 |
-| `br.permissions_anomaly` | browser | automation | 20 |
-| `br.headless_ua` | browser | automation | 19 |
-| `br.no_pdfviewer` | browser | environment | 19 |
-| `br.no_chrome_object` | browser | automation | 18 |
-| `br.cdp_runtime_enabled` | browser | automation | 16 |
-| `br.ch_he_headless` | browser | automation | 15 |
-| `br.math_engine_vs_ua` | browser | coherence | 14 |
-| `bh.keystroke_entropy_floor` | behavioral | behavioral | 13 |
+| `br.media_devices_empty` | browser | environment | 30 |
+| `br.voices_empty` | browser | environment | 30 |
+| `br.webgl_software` | browser | environment | 26 |
+| `br.mimetypes_empty` | browser | environment | 22 |
+| `br.no_plugins` | browser | environment | 22 |
+| `br.notification_denied` | browser | automation | 21 |
+| `br.permissions_anomaly` | browser | automation | 21 |
+| `br.headless_ua` | browser | automation | 20 |
+| `br.no_pdfviewer` | browser | environment | 20 |
+| `br.no_chrome_object` | browser | automation | 19 |
+| `br.cdp_runtime_enabled` | browser | automation | 17 |
+| `br.ch_he_headless` | browser | automation | 16 |
+| `br.math_engine_vs_ua` | browser | coherence | 15 |
+| `bh.keystroke_entropy_floor` | behavioral | behavioral | 14 |
 | `br.fingerprint_improbable` | browser | prevalence | 13 |
-| `br.webdriver_getter_tampered` | browser | automation | 10 |
+| `br.webdriver_getter_tampered` | browser | automation | 11 |
 | `net.no_js_execution` | network,browser | coherence | 10 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 9 |
 | `bh.no_input_before_action` | behavioral | behavioral | 8 |
@@ -112,6 +113,7 @@ _40/40 evaders caught (`bot`). Generated from the committed captures._
 | `br.plugins_spoofed` | browser | automation | 1 |
 | `br.pointer_touch_incoherent` | browser | coherence | 1 |
 | `br.productsub_vs_ua` | browser | coherence | 1 |
+| `br.readback_noise` | browser | artifact | 1 |
 | `br.ua_platform_vs_ch_platform` | browser | coherence | 1 |
 | `br.vendor_vs_ua` | browser | coherence | 1 |
 | `br.webgl_getparameter_tampered` | browser | automation | 1 |
@@ -128,6 +130,7 @@ _40/40 evaders caught (`bot`). Generated from the committed captures._
 
 | Evader | verdict | coherence | artifact | automation | environment | behavioral | reputation |
 |---|---|---|---|---|---|---|---|
+| `audio-readback-spoof` | bot | 1 | 1 | 7 | 6 | 1 | 0 |
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
 | `brave` | bot | 0 | 1 | 3 | 4 | 2 | 0 |
 | `camoufox-hardened` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
@@ -169,7 +172,7 @@ _40/40 evaders caught (`bot`). Generated from the committed captures._
 | `worker-wrap` | bot | 1 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
-## Coverage gaps — 46/118 rules catch nothing yet
+## Coverage gaps — 45/118 rules catch nothing yet
 
 **Evaded** (7) — reads present in the corpus, but every sample passed:
 - `net.tls_vs_ua_browser`
@@ -180,7 +183,7 @@ _40/40 evaders caught (`bot`). Generated from the committed captures._
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (39) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (38) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.automation_globals`
 - `br.electron_process`
@@ -207,7 +210,6 @@ _40/40 evaders caught (`bot`). Generated from the committed captures._
 - `br.webgl_not_angle`
 - `br.audio_missing`
 - `br.audio_noise`
-- `br.readback_noise`
 - `br.domrect_invariant`
 - `br.measuretext_offscreen_vs`
 - `br.adblock_present`
