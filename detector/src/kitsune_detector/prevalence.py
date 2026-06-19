@@ -112,10 +112,23 @@ def _load_prior() -> dict[str, Any]:
     return _PRIOR
 
 
+_SCORED = ("gpu", "screen", "color", "cores")
+
+
 def is_improbable(session: Session) -> bool:
-    """True iff the session's coherent fingerprint is deep in the improbable tail of the real-traffic prior."""
+    """True iff the session's coherent fingerprint is deep in the improbable tail of the real-traffic prior.
+
+    "Unknown never fires": the committed threshold is the 1st percentile of *full-vector* browserforge
+    fingerprints, so the joint is only meaningful when the whole feature vector was actually observed. A
+    MISSING factor adds an ``eps`` floor (~-9.2 nats each) to ``log_prevalence`` — so a session lacking
+    screen + colour alone sinks ~-18 below the threshold and trips on *absence*, not improbability (an
+    absence-as-improbability FP). When any modelled factor is unobserved we cannot assess the joint, so we
+    abstain rather than convict the gap.
+    """
     feats = features_from_session(session)
-    if not feats["plat"] or feats["plat"] == "?" or not feats["gpu"]:
-        return False  # cannot score without the core fields — never fire on a non-browser/no-JS session
+    if not feats["plat"] or feats["plat"] == "?":
+        return False  # no platform anchor — cannot condition the joint (non-browser / no-JS session)
+    if any(feats.get(f) is None for f in _SCORED):
+        return False  # partial vector — abstain (unknown never fires)
     p = _load_prior()
     return log_prevalence(feats, p["prior"]) < float(p["threshold"])

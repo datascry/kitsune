@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.7"
+ruleset_version: "0.74.8"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1185,7 +1185,7 @@ rules:
     category: prevalence
     added: "2026-06-19"
     last_validated: "2026-06-19"
-    source: "The prevalence/likelihood model (docs/prevalence-model.md): coherence rules catch hard contradictions, this catches soft IMPROBABILITY — a coherent fingerprint whose platform/gpu/screen/colour/cores combination is deep in the tail of the real-traffic prior (the BrowserForge/randomizer attack no contradiction rule fires on). Emitted by detector.prevalence below the prior's p1 threshold (~1% of real fingerprints). CORROBORATING-only (experimental, low weight): the prior is single-source (browserforge) until corroborated against Tier-3 real traffic, so it amplifies an existing suspicion, never convicts alone. v0.73.1: the SCREEN factor was cross-checked against the Intoli real-traffic source and FAILED as exact 'WxH' — the browserforge prior missed 13-46% of real desktop resolutions (a circular single-source FP: validated only on browserforge, it would convict real users on an unseen screen). Fixed by coarsening screen to (size-class, orientation) buckets, cutting the real-traffic miss to ~0% (macOS/Android/Linux); gpu/colour/cores stay single-source pending Tier-3."
+    source: "The prevalence/likelihood model (docs/prevalence-model.md): coherence rules catch hard contradictions, this catches soft IMPROBABILITY — a coherent fingerprint whose platform/gpu/screen/colour/cores combination is deep in the tail of the real-traffic prior (the BrowserForge/randomizer attack no contradiction rule fires on). Emitted by detector.prevalence below the prior's p1 threshold (~1% of real fingerprints). CORROBORATING-only (experimental, low weight): the prior is single-source (browserforge) until corroborated against Tier-3 real traffic, so it amplifies an existing suspicion, never convicts alone. v0.73.1: the SCREEN factor was cross-checked against the Intoli real-traffic source and FAILED as exact 'WxH' — the browserforge prior missed 13-46% of real desktop resolutions (a circular single-source FP: validated only on browserforge, it would convict real users on an unseen screen). Fixed by coarsening screen to (size-class, orientation) buckets, cutting the real-traffic miss to ~0% (macOS/Android/Linux); gpu/colour/cores stay single-source pending Tier-3. v0.74.8: 'unknown never fires' — the committed threshold is the p1 of FULL-vector browserforge fingerprints, so scoring a PARTIAL vector let a missing factor's eps floor (~-9.2 nats each) masquerade as improbability (a session lacking screen+colour sank ~-18 below threshold and tripped on ABSENCE, not improbability — an absence-as-improbability FP). Now is_improbable abstains unless gpu/screen/colour/cores are ALL observed; on the live corpus this dropped 14 fires → 3 (the genuine full-vector improbable joints: iframe-spoof/stealth-patched/ios-ua-spoof) with ZERO net detection loss (the 11 dropped were partial-vector captures already hard-convicted by coherence/automation)."
 
 
   - id: br.media_devices_empty

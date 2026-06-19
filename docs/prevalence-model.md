@@ -102,6 +102,25 @@ with a Windows + nvidia-desktop GPU is still improbable. The exact-`WxH` FP land
 single-source (browserforge) until a Tier-3 source can corroborate them — which is why the rule stays
 `experimental` / corroborating-only.
 
+## Partial-vector abstention (v0.74.8) — "unknown never fires"
+
+A second single-source FP, this one structural rather than per-factor. The committed threshold is the **1st
+percentile of *full-vector* browserforge fingerprints** (`browserforge_corpus.build_prior_file`), so it is
+only a meaningful cut-off for a fully-observed feature vector. But `is_improbable` scored *any* session with
+a platform + GPU, summing `log(P + eps)` over every factor — and a **missing** factor contributes
+`log(eps) ≈ -9.2` nats. A real session that simply didn't emit `screen` + `colour` therefore sank ~-18 below
+the threshold and tripped on **absence**, not improbability. On the live corpus this was the dominant cause
+of firing: 11 of 14 `prevalence_low` fires were partial-vector captures (`screen=None`/`colour=None`),
+already hard-convicted by coherence/automation — the rule was claiming "improbable" on a data gap.
+
+**Fix:** `is_improbable` now abstains unless `gpu`, `screen`, `colour`, and `cores` are **all** observed —
+the registry's "unknown never fires" discipline. This is strictly monotonic (it can only make the rule fire
+*less*), so it cannot raise the legitimate-browser flag rate; the browserforge calibration corpus is
+full-vector, so its numbers are unchanged. On the corpus the fires dropped **14 → 3** — the survivors are
+the genuine full-vector improbable joints (`iframe-spoof`, `stealth-patched`, `ios-ua-spoof`: a SwiftShader
+GPU under a desktop platform with a real screen/colour/cores) — with **zero net detection loss** (the 11
+dropped remain `bot`). Locked by `test_partial_vector_abstains_unknown_never_fires`.
+
 ## Remaining (future loop iterations)
 
 1. Build the prior offline from the largest available real-distribution sample; ship it as a data table
