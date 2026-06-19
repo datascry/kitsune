@@ -40,6 +40,17 @@ signal (low weight, amplifies an existing suspicion) until its prior is corrobor
 source — Tier-3 real-traffic data (a real-device matrix or the hosted-demo opt-in). The mechanism (real vs
 scrambled separation) is proven; the prior's *fidelity* is the open item.
 
+> **The second source must be REAL TRAFFIC, not another generator (evaluated 2026-06-19).** The obvious
+> candidates are all the **same Bayesian-network generator family** and do NOT qualify: **apify/fingerprint-suite**
+> IS browserforge's upstream (browserforge is "a reimplementation of apify/fingerprint-suite in Python"), and
+> **scrapfly/fingerprint-generator** is the same daijro model on Scrapfly's data ("Created by daijro, data
+> provided by Scrapfly"). They share the model's conditional-independence structure, so they share its blind
+> spots, and a `fingerprint-injector`-class attacker samples this exact network — probable in all of them by
+> construction. Scrapfly's *independent data* makes it useful only as an **overfit diagnostic** (diff the two
+> priors; factors where they disagree are browserforge data-artifacts), never as ground truth. Ground truth =
+> fingerprints **measured through our own collector** (`build_prior_from_sessions` on a hosted-demo opt-in /
+> real-device matrix). See docs/evasion-catalog.md "Scrapfly fingerprint-generator".
+
 ### Grounding-source assessment (2026-06-19) — what's usable per factor
 
 A search for public, independent grounding sources for the three factors, and a cross-check against each:
