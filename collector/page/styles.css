@@ -1,15 +1,19 @@
-/* collector/page/styles — styling for the live in-browser detection page. */
-/* Verdict banner, per-layer score bars, and the fired-first detection table. */
+/* collector/page/styles — the live in-browser detection page. */
+/* Forensic-inspector aesthetic: ink + bone + a single fox-fire accent, monospace, hairline rules, sharp. */
 
 :root {
-  --bg: #0f1117;
-  --panel: #181b24;
-  --line: #2a2f3c;
-  --text: #e6e8ee;
-  --muted: #9aa3b2;
-  --fired: #ff5c66;
-  --clear: #3ad29f;
-  --accent: #ffa94d;
+  --bg: #0a0a0c;
+  --panel: #0e0e12;
+  --panel-2: #121218;
+  --line: #20202a;
+  --line-bright: #34343f;
+  --ink: #eae7df; /* bone */
+  --muted: #797985;
+  --fox: #e8482b; /* fox-fire vermilion — the one accent */
+  --jade: #5fb89a; /* clear / coherent */
+  --amber: #d6a44e; /* suspicious / experimental */
+  --mono:
+    ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
 }
 
 * {
@@ -18,124 +22,342 @@
 
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    sans-serif;
   background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.01em;
 }
 
 header,
 main,
 footer {
-  max-width: 60rem;
+  max-width: 64rem;
   margin: 0 auto;
-  padding: 1rem 1.25rem;
+  padding: 0 1.5rem;
 }
 
+/* Masthead — a vermilion rule, the wordmark, a forensic subtitle. */
+header {
+  padding-top: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+header .mark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+header .mark::before {
+  content: "";
+  width: 0.55rem;
+  height: 1.4rem;
+  background: var(--fox);
+  transform: translateY(0.2rem);
+}
 header h1 {
-  margin: 0.5rem 0;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+header .tag {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+header p {
+  color: var(--muted);
+  max-width: 46rem;
+  font-size: 0.82rem;
+  margin: 0.75rem 0 0;
+}
+header a,
+footer a {
+  color: var(--fox);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+header a:hover,
+footer a:hover {
+  border-bottom-color: var(--fox);
 }
 
-a {
-  color: var(--accent);
+main {
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
 }
 
 #status {
+  color: var(--amber);
+  font-size: 0.82rem;
+  border-left: 2px solid var(--amber);
+  padding-left: 0.75rem;
+}
+
+/* Section labels — "§ TITLE ────" with a hairline filling the row. */
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 2rem 0 0.85rem;
+}
+h2::before {
+  content: "§";
+  color: var(--fox);
+}
+h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+h2 .note {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+h3 {
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--muted);
-  font-style: italic;
+  margin: 1.25rem 0 0.4rem;
+}
+h3 .count {
+  color: var(--muted);
+  font-weight: 400;
 }
 
+.note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* Verdict — a bordered forensic stamp, colour = result. */
 .verdict {
-  text-align: center;
-  padding: 1.5rem;
-  border-radius: 0.75rem;
-  margin: 1rem 0;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line-bright);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  flex-wrap: wrap;
 }
-
 .verdict .label {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
-
+.verdict-bot {
+  border-color: var(--fox);
+}
 .verdict-bot .label {
-  color: var(--fired);
+  color: var(--fox);
 }
-
+.verdict-suspicious {
+  border-color: var(--amber);
+}
 .verdict-suspicious .label {
-  color: var(--accent);
+  color: var(--amber);
 }
-
+.verdict-human {
+  border-color: var(--jade);
+}
 .verdict-human .label {
-  color: var(--clear);
+  color: var(--jade);
 }
-
 .verdict .score {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
 }
-
 .verdict .sub {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.76rem;
+  margin-left: auto;
 }
 
+/* Coherence banner — feature-prediction vs the claimed UA (the thesis, up front). */
+.coherence {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.75rem;
+  align-items: stretch;
+  margin: 1rem 0 1.5rem;
+  border: 1px solid var(--line);
+}
+.coherence .side {
+  padding: 0.85rem 1.1rem;
+}
+.coherence .side .cap {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.coherence .side .val {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.coherence .verdict-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.coherence.match .verdict-cell {
+  color: var(--jade);
+}
+.coherence.mismatch {
+  border-color: var(--fox);
+}
+.coherence.mismatch .verdict-cell {
+  color: var(--fox);
+}
+
+/* Predicted-browser detail grid. */
+.predict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.kv {
+  background: var(--panel);
+  padding: 0.6rem 0.8rem;
+}
+.kv .k {
+  display: block;
+  color: var(--muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.kv .v {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+details.ev {
+  margin-top: 0.6rem;
+}
+details.ev summary {
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+details.ev ul {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 0.4rem 0;
+}
+
+/* Fingerprint surfaces — value + hash + tamper status, per surface. */
+.surfaces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.surface {
+  background: var(--panel);
+  padding: 0.75rem 0.9rem;
+  border-top: 2px solid var(--jade);
+}
+.surface.tampered {
+  border-top-color: var(--fox);
+}
+.surface .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.surface .sname {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.surface .chip {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--jade);
+}
+.surface.tampered .chip {
+  color: var(--fox);
+}
+.surface .sval {
+  font-size: 0.82rem;
+  word-break: break-all;
+  margin-top: 0.3rem;
+}
+.surface .shash {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 0.2rem;
+}
+.surface .stells {
+  color: var(--fox);
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+}
+
+/* Per-layer score bars — hairline, no gradient. */
 .bar {
   display: grid;
   grid-template-columns: 7rem 1fr 3rem;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0.35rem 0;
+  gap: 0.6rem;
+  margin: 0.3rem 0;
 }
-
 .bar-label {
   color: var(--muted);
-  text-transform: capitalize;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
 }
-
 .bar-track {
-  background: var(--line);
-  border-radius: 0.4rem;
-  height: 0.7rem;
+  background: var(--panel-2);
+  height: 0.55rem;
   overflow: hidden;
+  border: 1px solid var(--line);
 }
-
 .bar-fill {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--clear), var(--accent), var(--fired));
+  background: var(--fox);
 }
-
 .bar-val {
   text-align: right;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
-.note {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-h3 .count {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-
+/* Detection tables. */
 table.detections {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 1.25rem;
-  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
 }
-
 table.detections th,
 table.detections td {
   text-align: left;
@@ -143,155 +365,74 @@ table.detections td {
   border-bottom: 1px solid var(--line);
   vertical-align: top;
 }
-
 table.detections th {
   color: var(--muted);
   font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
-
 td.mark {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-
 tr.fired td.mark {
-  color: var(--fired);
+  color: var(--fox);
   font-weight: 700;
 }
-
 tr.clear td.mark {
   color: var(--muted);
 }
-
 tr.clear {
-  opacity: 0.6;
+  opacity: 0.5;
 }
-
 code {
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-  color: var(--accent);
+  font-family: var(--mono);
+  color: var(--fox);
 }
-
 .title {
-  color: var(--text);
-  font-size: 0.85rem;
+  color: var(--ink);
+  font-size: 0.8rem;
 }
-
-.evidence {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-}
-
 .exp {
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   color: var(--bg);
-  background: var(--accent);
-  border-radius: 0.3rem;
+  background: var(--amber);
   padding: 0 0.3rem;
+  letter-spacing: 0.05em;
 }
-
 td.weight {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
 
+.na {
+  border-left: 2px solid var(--jade);
+  padding-left: 0.85rem;
+  margin: 1rem 0;
+}
+.na-list,
+.edge-list {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0.4rem 0;
+}
+.na-list code {
+  color: var(--jade);
+}
 .edge-list {
   columns: 2;
-  font-size: 0.82rem;
-  color: var(--muted);
+  column-gap: 2rem;
 }
-
-.edge-list code {
-  font-size: 0.8rem;
-}
-
 .layers {
-  color: var(--line);
+  color: var(--line-bright);
 }
 
 footer {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   border-top: 1px solid var(--line);
-  margin-top: 2rem;
-}
-
-/* Predicted browser card */
-.predict {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 0.75rem;
-  padding: 1rem 1.25rem;
-  margin: 1rem 0;
-}
-.predict h2 {
-  margin-top: 0;
-}
-.predict-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-}
-.kv {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.65rem;
-}
-.kv .k {
-  display: block;
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.kv .v {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--clear);
-}
-details.ev summary {
-  color: var(--muted);
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-details.ev ul {
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-/* Enumerated fingerprint values */
-table.fp-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-table.fp-table td {
-  padding: 0.35rem 0.5rem;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-}
-td.fk {
-  color: var(--muted);
-  white-space: nowrap;
-  width: 12rem;
-}
-td.fv code {
-  color: var(--text);
-  word-break: break-all;
-}
-
-/* Adjusted-for-browser (N/A) section */
-.na {
-  border-left: 3px solid var(--clear);
-  padding-left: 0.75rem;
-}
-.na-list {
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-.na-list code {
-  color: var(--clear);
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  padding-bottom: 2.5rem;
 }

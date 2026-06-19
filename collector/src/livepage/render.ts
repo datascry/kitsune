@@ -3,14 +3,25 @@
 
 import type { Layer } from "../types.js";
 import type { Contradiction, Verdict } from "./engine.js";
-import type { Prediction } from "./predict.js";
+import type { Coherence, Prediction } from "./predict.js";
 import type { RuleJSON } from "./registry.js";
 
 const LAYER_ORDER: Layer[] = ["network", "browser", "behavioral", "reputation"];
 
+/** One fingerprint surface: its value/hash and whether any tamper tell fired against it. */
+export interface Surface {
+  name: string;
+  value: string;
+  hash?: string;
+  tampered: boolean;
+  tells: string[];
+}
+
 export interface RenderOpts {
   prediction: Prediction;
+  coherence: Coherence;
   fingerprint: Record<string, string>;
+  surfaces: Surface[];
   rules: RuleJSON[];
   fired: Contradiction[]; // applicable fired detections (counted toward the verdict)
   naReasons: Map<string, string>; // ruleId -> why it fired but does NOT apply to this browser
@@ -64,8 +75,35 @@ function fingerprintTable(fp: Record<string, string>): string {
         `<tr><td class="fk">${esc(k)}</td><td class="fv"><code>${esc(v)}</code></td></tr>`,
     )
     .join("");
-  return `<section class="fingerprint"><h2>Your fingerprint <span class="note">— enumerated values</span></h2>
+  return `<section class="fingerprint"><h2>Enumerated values <span class="note">— the raw fingerprint surface</span></h2>
     <table class="fp-table"><tbody>${rows}</tbody></table></section>`;
+}
+
+function coherenceBanner(c: Coherence, p: Prediction): string {
+  const cls = c.match ? "match" : "mismatch";
+  const verdict = c.match ? "✓ coherent" : "✗ mismatch";
+  return `<section class="coherence ${cls}">
+    <div class="side"><span class="cap">Feature prediction</span><span class="val">${esc(p.engine)} · ${esc(p.os)}</span></div>
+    <div class="verdict-cell">${verdict}</div>
+    <div class="side"><span class="cap">Claimed (User-Agent)</span><span class="val">${esc(c.claimedEngine)} · ${esc(c.claimedOs)}</span></div>
+  </section>
+  <p class="note">${esc(c.reason)} — a real browser's features and UA always agree; a spoofer's do not.</p>`;
+}
+
+function surfacesSection(surfaces: Surface[]): string {
+  const cards = surfaces
+    .map((s) => {
+      const chip = s.tampered ? "tampered" : "clean";
+      const hash = s.hash ? `<div class="shash">hash ${esc(s.hash)}</div>` : "";
+      const tells = s.tampered ? `<div class="stells">${s.tells.map(esc).join(", ")}</div>` : "";
+      return `<div class="surface ${s.tampered ? "tampered" : ""}">
+        <div class="top"><span class="sname">${esc(s.name)}</span><span class="chip">${chip}</span></div>
+        <div class="sval">${esc(s.value)}</div>${hash}${tells}</div>`;
+    })
+    .join("");
+  const dirty = surfaces.filter((s) => s.tampered).length;
+  return `<section><h2>Fingerprint surfaces <span class="note">— value · hash · tamper status (${dirty} tampered)</span></h2>
+    <div class="surfaces">${cards}</div></section>`;
 }
 
 function ruleRow(rule: RuleJSON, fired: boolean): string {
@@ -78,7 +116,17 @@ function ruleRow(rule: RuleJSON, fired: boolean): string {
 }
 
 export function render(root: HTMLElement, opts: RenderOpts): void {
-  const { prediction, fingerprint, rules, fired, naReasons, verdict, rulesetVersion } = opts;
+  const {
+    prediction,
+    coherence,
+    fingerprint,
+    surfaces,
+    rules,
+    fired,
+    naReasons,
+    verdict,
+    rulesetVersion,
+  } = opts;
   const firedIds = new Set(fired.map((c) => c.id));
   const client = rules.filter((r) => r.clientEvaluable);
   const edge = rules.filter((r) => !r.clientEvaluable);
@@ -125,7 +173,9 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
       <div class="score">bot-likelihood ${pct(verdict.score)}</div>
       <div class="sub">incoherence ${pct(verdict.incoherence)} · ruleset ${esc(rulesetVersion)}</div>
     </section>
+    ${coherenceBanner(coherence, prediction)}
     ${predictionCard(prediction)}
+    ${surfacesSection(surfaces)}
     ${fingerprintTable(fingerprint)}
     <section class="scores"><h2>Per-layer score</h2>${layerScoreHtml}
       <p class="note">Network &amp; reputation are 0 here by design: a browser cannot observe its own TLS/HTTP-2/QUIC/TCP

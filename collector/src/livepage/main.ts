@@ -2,13 +2,84 @@
 // Predicts the real browser, collects + enumerates this browser's fingerprint, evaluates rules
 // per-browser (excluding ones that don't apply, lowering false positives), renders the verdict.
 
-import { evaluate, verdictFor } from "./engine.js";
-import { notApplicable, predict } from "./predict.js";
+import { evaluate, type SignalMap, verdictFor } from "./engine.js";
+import { coherence, notApplicable, predict } from "./predict.js";
 import { armCollector } from "./probes.js";
 import type { RegistryJSON } from "./registry.js";
-import { render } from "./render.js";
+import { render, type Surface } from "./render.js";
 
 const COLLECT_DELAY_MS = 4000;
+
+/** A stable FNV-1a hash of this browser's 2D canvas render — the per-surface identifier. */
+function canvasHash(): string {
+  try {
+    const c = document.createElement("canvas");
+    c.width = 200;
+    c.height = 40;
+    const ctx = c.getContext("2d");
+    if (ctx === null) return "—";
+    ctx.textBaseline = "top";
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#069";
+    ctx.fillRect(0, 0, 200, 40);
+    ctx.fillStyle = "#f60";
+    ctx.fillText("Kitsune canvas ✨", 4, 4);
+    const data = c.toDataURL();
+    let h = 2166136261;
+    for (let i = 0; i < data.length; i++) h = ((h ^ data.charCodeAt(i)) * 16777619) >>> 0;
+    return (h >>> 0).toString(16);
+  } catch {
+    return "—";
+  }
+}
+
+/** Group the fingerprint into per-surface cards (value + hash + tamper status from the fired tells). */
+function surfaces(signals: SignalMap, fp: Record<string, string>): Surface[] {
+  const on = (k: string): boolean => signals.get(`browser.${k}`) === true;
+  const mk = (name: string, value: string, kinds: string[], hash?: string): Surface => {
+    const tells = kinds.filter(on);
+    const base: Surface = { name, value, tampered: tells.length > 0, tells };
+    return hash !== undefined ? { ...base, hash } : base;
+  };
+  return [
+    mk("Navigator", `${(fp["User-Agent"] ?? "").slice(0, 52)}…`, [
+      "webdriver",
+      "webdriver_spoofed",
+      "webdriver_getter_tampered",
+      "nav_property_spoofed",
+      "automation_globals",
+    ]),
+    mk("WebGL", fp["WebGL renderer"] ?? "—", [
+      "webgl_getparameter_tampered",
+      "webgl_worker_divergence",
+      "webgl_renderer_artifact",
+    ]),
+    mk(
+      "Canvas",
+      "2D render",
+      ["canvas_lie", "canvas_noise", "canvas_worker_divergence"],
+      canvasHash(),
+    ),
+    mk("Audio", "OfflineAudioContext", ["audio_noise", "audio_readback_noise"]),
+    mk("Timezone", fp["Timezone"] ?? "—", [
+      "timezone_inconsistent",
+      "timezone_internal_incoherent",
+      "timezone_worker_divergence",
+    ]),
+    mk("Functions", "native integrity", [
+      "native_invariant_violated",
+      "function_tostring_tampered",
+      "tostring_tampered",
+      "plugins_spoofed",
+    ]),
+    mk("Workers / realms", "main vs Worker/iframe", [
+      "worker_divergence",
+      "iframe_divergence",
+      "worker_constructor_tampered",
+      "languages_worker_divergence",
+    ]),
+  ];
+}
 
 /** Read the raw, human-readable fingerprint surface (the enumerated values shown on the page). */
 function rawFingerprint(): Record<string, string> {
@@ -75,9 +146,12 @@ async function main(): Promise<void> {
     return true;
   });
 
+  const fingerprint = rawFingerprint();
   render(root, {
     prediction,
-    fingerprint: rawFingerprint(),
+    coherence: coherence(prediction),
+    fingerprint,
+    surfaces: surfaces(signals, fingerprint),
     rules: registry.rules,
     fired: applicable,
     naReasons,

@@ -125,6 +125,44 @@ export function predict(): Prediction {
   return { engine, browser, os, formFactor, confidence, evidence: ev };
 }
 
+/** What the (spoofable) User-Agent string CLAIMS — to diff against the feature prediction. */
+export function uaClaimed(): { engine: Engine; os: string } {
+  const ua = navigator.userAgent;
+  let engine: Engine = "unknown";
+  if (/Firefox\//.test(ua)) engine = "gecko";
+  else if (/Edg\/|OPR\/|Chrome\//.test(ua)) engine = "blink";
+  else if (/Version\/.*Safari\//.test(ua)) engine = "webkit";
+  let os = "unknown";
+  if (/Android/.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
+  else if (/Windows/.test(ua)) os = "Windows";
+  else if (/Macintosh|Mac OS X/.test(ua)) os = "macOS";
+  else if (/Linux|X11/.test(ua)) os = "Linux";
+  return { engine, os };
+}
+
+export interface Coherence {
+  match: boolean;
+  claimedEngine: Engine;
+  claimedOs: string;
+  reason: string;
+}
+
+/** The thesis, up front: does the feature-detected engine/OS agree with what the UA claims? A Gecko
+ * engine under a Chrome UA, or a Linux host under a Windows UA, is a spoof a real browser never produces. */
+export function coherence(pred: Prediction): Coherence {
+  const c = uaClaimed();
+  const engineOk = pred.engine === "unknown" || c.engine === "unknown" || pred.engine === c.engine;
+  const osOk = pred.os === "unknown" || c.os === "unknown" || pred.os === c.os;
+  const match = engineOk && osOk;
+  const reason = match
+    ? "feature prediction agrees with the User-Agent"
+    : !engineOk
+      ? `features detect ${pred.engine}, but the UA claims ${c.engine}`
+      : `features detect ${pred.os}, but the UA claims ${c.os}`;
+  return { match, claimedEngine: c.engine, claimedOs: c.os, reason };
+}
+
 // Per-browser applicability. A detection that is meaningless for the predicted browser/form-factor must
 // not count as a tell — that is what lowers false positives. Each entry maps a rule id to a reason it does
 // NOT apply for a given prediction; if `notApplicable` returns a reason, the rule is shown but excluded
