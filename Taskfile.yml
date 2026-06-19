@@ -76,6 +76,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md"]
 
+  scoreboard:
+    desc: "Refresh docs/scoreboard.md from the committed real captures against the current ruleset (no live run)"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.corpus ../corpus/sessions > ../docs/scoreboard.md"]
+
   ci:
     desc: Run the full local pipeline
     cmds:
