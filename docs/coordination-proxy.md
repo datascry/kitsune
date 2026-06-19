@@ -145,9 +145,15 @@ and the proxy-topology coordination signals) was that the in-sandbox fleet egres
 IPs (172.x), not real ASN-classifiable IPs. The routing plumbing to fix that is now built:
 
 - The stealth evader honours `KS_PROXY=<url>` (`http(s)://`, `socks5://`) — routes the context through a proxy
-  so the edge observes a REAL egress IP. Verified: with no proxy the evader reaches the edge and is scored;
-  with `KS_PROXY` set to a dead address it fails with `net::ERR_PROXY_CONNECTION_FAILED` — proving the option
-  routes traffic rather than being ignored.
+  so the edge observes a REAL egress IP. **End-to-end validated (2026-06-19):** a local CONNECT-proxy
+  stand-in container was run on the lab network, then the same evader was scored twice — `STEALTH=1` alone
+  gave `observed_ip = 172.22.0.5` (the evader's own container IP), while `STEALTH=1` + `KS_PROXY=http://proxy`
+  gave `observed_ip = 172.22.0.4` (**the proxy's** IP). So the edge demonstrably attributes the session to the
+  PROXY's egress, not the client — exactly the substitution `rep.datacenter_asn`/`rep.known_proxy_exit` need:
+  swap the local stand-in for a real residential/datacenter proxy and the edge sees a real ASN-classifiable IP.
+  (The `net.webrtc_ip_vs_observed` half is NOT demonstrable with a stand-in: a headless container gathers no
+  public WebRTC ICE candidate, so the real-IP-behind-proxy leak still needs a real browser with real network
+  connectivity. The IP-attribution plumbing — the load-bearing piece — is the part now proven.)
 - `fleet_capture.sh` honours `PROXIES=url1,url2,url3` — node *i* routes via `PROXIES[i]` (round-robin), so a
   fleet egresses from distinct real IPs.
 
