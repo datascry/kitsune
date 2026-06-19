@@ -246,9 +246,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     webrtc = _distinct_values(sessions, Layer.browser, "webrtc_public_ip")
     distinct_observed = len(observed)
     shared_real_ip: str | None = None
-    if (
-        diverged or ja4c_divergent or collision is not None or trace_collision is not None
-    ) and distinct_observed > 1:
+    if (diverged or ja4c_divergent or collision is not None or trace_collision is not None) and distinct_observed > 1:
         score += _PROXY_FLEET_BONUS
         evidence.append(
             f"distributed across {distinct_observed} distinct source IPs — residential-proxy fleet "
@@ -276,9 +274,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     # real distinct users on one Chrome build legitimately differ in hardware_concurrency, device_memory
     # and OS-platform (Win/Mac Chrome share a JA4) and arrive from distinct IPs — that exact shape, so it
     # cannot convict alone (it would flag a popular browser's user base as a botnet).
-    convicting = (
-        ja4c_divergent or collision is not None or trace_collision is not None or shared_real_ip is not None
-    )
+    convicting = ja4c_divergent or collision is not None or trace_collision is not None or shared_real_ip is not None
     score = max(0.0, min(1.0, score))
     if score >= 0.60 and convicting:
         label = "fleet"
