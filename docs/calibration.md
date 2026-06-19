@@ -483,3 +483,12 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   three masked components are now validated current against external public references: TLS JA4 (Chrome cipher
   hash, FoxIO) · post-quantum keyshare (X25519MLKEM768/0x11EC, IANA/2026) · HTTP/2 (Akamai standard). The
   durable per-session catch for the cutting-edge fleet is grounded end-to-end. No rule changed → no ruleset bump.
+
+- **2026-06-19 · JA4-hint deployment + periodic re-validation** — rebuilt and redeployed the edge image with
+  the new real-browser JA4 hints (Safari/Firefox/Chrome-17), validating they build + run in the actual Docker
+  image (the Go test confirms the `go:embed`, this confirms the containerised deploy). Live stack green with
+  the new edge, no regression: `stealth` → bot, `http2-naive` → bot (`net.h2_header_order_vs_ua` fires),
+  `audio-readback-spoof` → bot (`br.readback_noise` fires). Both named experimental rules re-validated. The
+  additive JA4 hints don't change fleet verdicts (they fire only on real Safari/Firefox/17-ext-Chrome TLS,
+  which the Playwright fleet doesn't produce). Edge change deployed + validated end-to-end. No rule changed →
+  no ruleset bump.
