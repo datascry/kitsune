@@ -57,6 +57,12 @@ const WORKER_WRAP = process.env.WORKER_WRAP === "1";
 // matching zone) and forget Date.getTimezoneOffset — the offset then contradicts the claimed zone →
 // br.timezone_offset_vs_intl. The canonical incomplete timezone spoof.
 const NAIVE_TZ_SPOOF = process.env.NAIVE_TZ_SPOOF === "1";
+// AUDIO_READBACK_SPOOF: the audio analog of CANVAS_SPOOF. A naive audio-farble patches the
+// fingerprint-readable AudioBuffer.getChannelData path to perturb the samples, but forgets copyFromChannel
+// (which reads the SAME buffer). On a real engine the two paths are bit-identical; the inconsistent shim
+// makes them diverge → br.readback_noise. Exercises the experimental readback_noise rule (previously
+// unexercised by the fleet — no other evader perturbs the audio readback inconsistently).
+const AUDIO_READBACK_SPOOF = process.env.AUDIO_READBACK_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -108,10 +114,13 @@ const evading =
   LANG_SPOOF ||
   WORKER_WRAP ||
   NAIVE_TZ_SPOOF ||
+  AUDIO_READBACK_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = NAIVE_TZ_SPOOF
-  ? "naive-tz-spoof"
-  : WORKER_WRAP
+const mode = AUDIO_READBACK_SPOOF
+  ? "audio-readback-spoof"
+  : NAIVE_TZ_SPOOF
+    ? "naive-tz-spoof"
+    : WORKER_WRAP
   ? "worker-wrap"
   : LANG_SPOOF
   ? "lang-spoof"
@@ -250,6 +259,18 @@ if (FLOOR_SPOOF) {
       const r = gid.apply(this, a);
       for (let i = 0; i < r.data.length; i += 499) r.data[i] = r.data[i] ^ 1; // 1-bit per-session farble
       return r;
+    };
+  });
+} else if (AUDIO_READBACK_SPOOF) {
+  // Inconsistent audio farble: perturb ONE of the two AudioBuffer readback paths. The detector writes the
+  // buffer via getChannelData then reads it back via copyFromChannel and diffs them — on a real engine they
+  // are bit-identical, so perturbing the copyFromChannel readback alone makes them diverge → readback_noise.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const cfc = AudioBuffer.prototype.copyFromChannel;
+    AudioBuffer.prototype.copyFromChannel = function (dest, ...rest) {
+      cfc.call(this, dest, ...rest);
+      for (let i = 0; i < dest.length; i += 100) dest[i] += 1e-7; // perturb the readback copy only
     };
   });
 } else if (TZ_SPOOF) {
