@@ -30,7 +30,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `http2-naive` | bot | 1.00 | 8/118 | `net.quic_grease_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser` +5 |
 | `human-mouse` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
 | `iframe-spoof` | bot | 1.00 | 23/118 | `br.ua_platform_vs_ch_platform`, `br.cdp_runtime_enabled`, `net.ch_platform_header_vs_ua` +10 |
-| `ios-ua-spoof` | bot | 1.00 | 22/118 | `net.h2_vs_ua_browser`, `br.ua_platform_vs_ch_platform`, `net.ch_ua_vs_ua_browser` +11 |
+| `ios-ua-spoof` | bot | 1.00 | 22/118 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `br.ua_platform_vs_ch_platform` +11 |
 | `lang-list-spoof` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `lang-spoof` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `linear-bot` | bot | 1.00 | 18/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
@@ -46,7 +46,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `rebrowser` | bot | 1.00 | 11/118 | `br.webdriver_present`, `br.headless_ua`, `br.permissions_anomaly` +2 |
 | `renderer-spoof` | bot | 1.00 | 19/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
 | `selenium-driverless` | bot | 1.00 | 8/118 | `br.headless_ua`, `br.chrome_runtime_missing` |
-| `spoof-ua` | bot | 1.00 | 16/118 | `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser`, `br.ch_he_headless` +7 |
+| `spoof-ua` | bot | 1.00 | 17/118 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +8 |
 | `stealth-naive` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
 | `stealth-patched` | bot | 1.00 | 21/118 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +8 |
 | `tls-stale-template` | bot | 1.00 | 6/118 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
@@ -57,7 +57,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `worker-wrap` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | bot | 1.00 | 8/118 | `br.chrome_runtime_missing` |
 
-## Per-rule coverage — 84/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 85/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
@@ -82,11 +82,11 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `br.webdriver_present` | browser | automation | 9 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 7 |
 | `br.chrome_runtime_missing` | browser | automation | 6 |
-| `br.webgl_os_vs_ua` | browser | coherence | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
 | `br.hover_none_desktop` | browser | environment | 5 |
 | `br.webdriver_spoofed` | browser | automation | 5 |
+| `br.webgl_os_vs_ua` | browser | coherence | 5 |
 | `net.quic_grease_vs_ua` | network,browser | coherence | 5 |
 | `bh.synthetic_no_coalesced` | behavioral | behavioral | 4 |
 | `br.codec_os_incoherent` | browser | environment | 4 |
@@ -115,6 +115,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `net.h2_unknown_vs_ua` | network | coherence | 2 |
 | `net.h2_vs_ua_browser` | network,browser | coherence | 2 |
 | `net.tls_pq_keyshare_vs_ua` | network,browser | coherence | 2 |
+| `net.tls_vs_ua_browser` | network,browser | coherence | 2 |
 | `bh.path_too_straight` | behavioral | behavioral | 1 |
 | `bh.power_law_violation` | behavioral | behavioral | 1 |
 | `bh.uniform_velocity` | behavioral | behavioral | 1 |
@@ -190,7 +191,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
 | `renderer-spoof` | bot | 1 | 1 | 8 | 7 | 1 | 0 |
 | `selenium-driverless` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
-| `spoof-ua` | bot | 6 | 0 | 4 | 5 | 1 | 0 |
+| `spoof-ua` | bot | 7 | 0 | 4 | 5 | 1 | 0 |
 | `stealth-naive` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
 | `stealth-patched` | bot | 5 | 0 | 6 | 8 | 1 | 0 |
 | `tls-stale-template` | bot | 6 | 0 | 0 | 0 | 0 | 0 |
@@ -201,10 +202,9 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | bot | 0 | 0 | 1 | 5 | 2 | 0 |
 
-## Coverage gaps — 34/118 rules catch nothing yet
+## Coverage gaps — 33/118 rules catch nothing yet
 
-**Evaded** (5) — reads present in the corpus, but every sample passed:
-- `net.tls_vs_ua_browser`
+**Evaded** (4) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
 - `br.oscpu_vs_ua`

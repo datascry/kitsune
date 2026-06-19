@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.14"
+ruleset_version: "0.74.15"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -41,8 +41,8 @@ rules:
     weight: 0.7
     status: active
     added: "2026-06-17"
-    last_validated: "2026-06-17"
-    source: "Kitsune"
+    last_validated: "2026-06-19"
+    source: "The core cross-layer thesis tell: the TLS engine (JA4) below the JS spoofing layer must agree with the browser the UA claims. A Chromium-TLS client wearing a Firefox/Safari UA disagrees. v0.74.15 FIRST LIVE POSITIVES + a robustness fix: previously 'evaded' because the edge JA4→browser hint table keyed on a FULL JA4 (incl. JA4_c, the extension/sig-alg hash) — and the real headful Chromium's JA4_c (d8a2da3f94cd) differs from the seeded one (02713d6af862), so REAL Chrome itself got ja4_browser_hint=None (unhinted → rule unevaluable). Fixed by adding the Chromium cipher-suite PREFIX (t13d1516h2_8daaf6152771 → chrome) to edge/internal/fingerprint/ja4_hints.json; the Lookup already falls back to the JA4_a+JA4_b prefix (cipher-level identity is the stable per-engine key, robust to JA4_c randomization — itself an anti-detect technique Camoufox uses). Now: real headful Chromium → prefix=chrome, ua_browser=chrome → MATCH, no fire (GROUNDED, FP-safe); spoof-ua (chrome TLS + Firefox UA) and ios-ua-spoof (chrome TLS + Safari UA) → prefix=chrome, ua_browser=firefox/safari → fire (two live positives). Chrome-impersonators with no JS (primp/curl-impersonate, ua_browser absent) don't fire — the not_equal predicate needs both reads. Browserforge calibration has no JA4, so promotion cannot raise the legit flag rate."
 
   - id: net.h2_vs_ua_browser
     title: HTTP/2 (Akamai) fingerprint contradicts User-Agent browser
