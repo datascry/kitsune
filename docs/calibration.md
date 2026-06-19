@@ -391,3 +391,12 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   blindness → coordination per-cluster ceiling → durable signals = `shared_real_ip`/`trace_collision` +
   population statistics) is complete and the residual frontier is external-data-bound. No rule changed → no
   ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.21 · structural-frontier (coordination) re-validation** — re-ran the live
+  cloned-fleet capture (`fleet_capture.sh`, N=3 concurrent, distinct container IPs) through the healthy
+  edge→detector stack and graded with the live coordination detector → `fleet` **1.00**. Both top-priority
+  durable signals fired: `fp_collision` (identical high-entropy fp `bf779223` across 3 IPs) AND the
+  unambiguous `trace_collision` (identical pointer trace across 2 IPs) — the two signals the threat model
+  (docs/evasion-catalog.md "Coverage envelope") identified as the durable catches a sophisticated fleet must
+  suppress. No drift; the structural frontier works live. Refreshed `corpus/fleet-cloned/cn1-3.json`; the 34
+  coordination unit tests pass on the fresh fixture. No rule changed → no ruleset bump.
