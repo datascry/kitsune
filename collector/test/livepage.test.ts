@@ -9,6 +9,7 @@ import {
   verdictFor,
 } from "../src/livepage/engine.js";
 import { MISSING, PREDICATES, type Resolved } from "../src/livepage/predicates.js";
+import { notApplicable, type Prediction } from "../src/livepage/predict.js";
 import type { RuleJSON } from "../src/livepage/registry.js";
 import {
   finalScore,
@@ -135,5 +136,43 @@ describe("evaluate", () => {
     expect(v.score).toBeCloseTo(0.9);
     expect(v.layers.browser).toBeCloseTo(0.9);
     expect(v.contradictions).toHaveLength(1);
+  });
+});
+
+describe("per-browser applicability (notApplicable) — lowers false positives", () => {
+  const pred = (o: Partial<Prediction>): Prediction => ({
+    engine: "blink",
+    browser: "Chrome",
+    os: "Windows",
+    formFactor: "desktop",
+    confidence: 1,
+    evidence: [],
+    ...o,
+  });
+
+  it("excludes platform-coherence on mobile — the navplatform mobile FP (73% on real traffic)", () => {
+    expect(
+      notApplicable("br.navplatform_vs_ua", pred({ formFactor: "mobile", os: "Android" })),
+    ).not.toBeNull();
+    expect(notApplicable("br.webgl_os_vs_ua", pred({ formFactor: "mobile" }))).not.toBeNull();
+    expect(notApplicable("br.oscpu_vs_ua", pred({ formFactor: "mobile" }))).not.toBeNull();
+  });
+
+  it("applies platform-coherence on desktop (a Windows-UA-on-Linux spoof must still convict)", () => {
+    expect(notApplicable("br.navplatform_vs_ua", pred({ formFactor: "desktop" }))).toBeNull();
+  });
+
+  it("excludes Chromium-only capability tells on non-blink engines", () => {
+    expect(
+      notApplicable("br.no_chrome_object", pred({ engine: "gecko", browser: "Firefox" })),
+    ).not.toBeNull();
+    expect(
+      notApplicable("br.no_connection", pred({ engine: "webkit", browser: "Safari" })),
+    ).not.toBeNull();
+    expect(notApplicable("br.no_chrome_object", pred({ engine: "blink" }))).toBeNull();
+  });
+
+  it("never gates an unrelated detection (a true tell still counts)", () => {
+    expect(notApplicable("br.webdriver_present", pred({ formFactor: "mobile" }))).toBeNull();
   });
 });

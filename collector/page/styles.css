@@ -216,3 +216,82 @@ footer {
   border-top: 1px solid var(--line);
   margin-top: 2rem;
 }
+
+/* Predicted browser card */
+.predict {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+}
+.predict h2 {
+  margin-top: 0;
+}
+.predict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+.kv {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.65rem;
+}
+.kv .k {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.kv .v {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--clear);
+}
+details.ev summary {
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+details.ev ul {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* Enumerated fingerprint values */
+table.fp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+table.fp-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+td.fk {
+  color: var(--muted);
+  white-space: nowrap;
+  width: 12rem;
+}
+td.fv code {
+  color: var(--text);
+  word-break: break-all;
+}
+
+/* Adjusted-for-browser (N/A) section */
+.na {
+  border-left: 3px solid var(--clear);
+  padding-left: 0.75rem;
+}
+.na-list {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.na-list code {
+  color: var(--clear);
+}

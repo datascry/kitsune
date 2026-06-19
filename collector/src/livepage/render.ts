@@ -1,11 +1,22 @@
-// collector/livepage/render — paint the verdict, per-layer scores, and detection table into the DOM.
-// Pure-ish DOM rendering for the live page; no network, no globals beyond the passed root (tier-2 IO).
+// collector/livepage/render — paint the verdict, predicted browser, enumerated fingerprint, and the
+// per-browser detection tables into the DOM. Pure DOM rendering; no network, no globals beyond root.
 
 import type { Layer } from "../types.js";
 import type { Contradiction, Verdict } from "./engine.js";
+import type { Prediction } from "./predict.js";
 import type { RuleJSON } from "./registry.js";
 
 const LAYER_ORDER: Layer[] = ["network", "browser", "behavioral", "reputation"];
+
+export interface RenderOpts {
+  prediction: Prediction;
+  fingerprint: Record<string, string>;
+  rules: RuleJSON[];
+  fired: Contradiction[]; // applicable fired detections (counted toward the verdict)
+  naReasons: Map<string, string>; // ruleId -> why it fired but does NOT apply to this browser
+  verdict: Verdict; // computed over the applicable detections only
+  rulesetVersion: string;
+}
 
 function esc(s: string): string {
   return s.replace(
@@ -24,52 +35,82 @@ function scoreBar(label: string, value: number): string {
     <span class="bar-val">${pct(value)}</span></div>`;
 }
 
-function ruleRow(rule: RuleJSON, fired: boolean, evidence: string[]): string {
-  const cls = fired ? "fired" : "clear";
-  const mark = fired ? "● FIRED" : "○ clear";
-  const ev =
-    fired && evidence.length ? `<div class="evidence">${esc(evidence.join(", "))}</div>` : "";
-  const status = rule.status === "experimental" ? ' <span class="exp">exp</span>' : "";
-  return `<tr class="${cls}">
-    <td class="mark">${mark}</td>
-    <td><code>${esc(rule.id)}</code>${status}<div class="title">${esc(rule.title)}</div>${ev}</td>
-    <td>${esc(rule.category)}</td>
-    <td class="weight">${rule.weight.toFixed(2)}</td>
-  </tr>`;
+function predictionCard(p: Prediction): string {
+  const items: [string, string][] = [
+    ["Browser", p.browser],
+    ["Engine", p.engine],
+    ["OS", p.os],
+    ["Form factor", p.formFactor],
+    ["Confidence", pct(p.confidence)],
+  ];
+  const rows = items
+    .map(
+      ([k, v]) =>
+        `<div class="kv"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span></div>`,
+    )
+    .join("");
+  const ev = p.evidence.map((e) => `<li>${esc(e)}</li>`).join("");
+  return `<section class="predict">
+    <h2>Predicted browser <span class="note">— from feature detection, independent of the User-Agent</span></h2>
+    <div class="predict-grid">${rows}</div>
+    <details class="ev"><summary>why (${p.evidence.length} feature checks)</summary><ul>${ev}</ul></details>
+  </section>`;
 }
 
-/**
- * Render the full live result: verdict banner, per-layer score bars, the client-evaluated detection
- * table (fired first), and an honest "requires Kitsune edge" section for the rules a browser can't see.
- */
-export function render(
-  root: HTMLElement,
-  rules: RuleJSON[],
-  verdict: Verdict,
-  rulesetVersion: string,
-): void {
-  const firedIds = new Map<string, Contradiction>(verdict.contradictions.map((c) => [c.id, c]));
+function fingerprintTable(fp: Record<string, string>): string {
+  const rows = Object.entries(fp)
+    .map(
+      ([k, v]) =>
+        `<tr><td class="fk">${esc(k)}</td><td class="fv"><code>${esc(v)}</code></td></tr>`,
+    )
+    .join("");
+  return `<section class="fingerprint"><h2>Your fingerprint <span class="note">— enumerated values</span></h2>
+    <table class="fp-table"><tbody>${rows}</tbody></table></section>`;
+}
+
+function ruleRow(rule: RuleJSON, fired: boolean): string {
+  const cls = fired ? "fired" : "clear";
+  const mark = fired ? "● FIRED" : "○ clear";
+  const status = rule.status === "experimental" ? ' <span class="exp">exp</span>' : "";
+  return `<tr class="${cls}"><td class="mark">${mark}</td>
+    <td><code>${esc(rule.id)}</code>${status}<div class="title">${esc(rule.title)}</div></td>
+    <td>${esc(rule.category)}</td><td class="weight">${rule.weight.toFixed(2)}</td></tr>`;
+}
+
+export function render(root: HTMLElement, opts: RenderOpts): void {
+  const { prediction, fingerprint, rules, fired, naReasons, verdict, rulesetVersion } = opts;
+  const firedIds = new Set(fired.map((c) => c.id));
   const client = rules.filter((r) => r.clientEvaluable);
   const edge = rules.filter((r) => !r.clientEvaluable);
+  const naRules = client.filter((r) => naReasons.has(r.id));
 
   const layerScoreHtml = LAYER_ORDER.map((l) => scoreBar(l, verdict.layers[l])).join("");
 
-  // Detection table per layer, fired rules first.
-  const byLayer = LAYER_ORDER.filter((l) => client.some((r) => r.layers.includes(l)))
+  // Per-layer detection table: only the APPLICABLE rules, fired first. N/A rules move to their own section.
+  const byLayer = LAYER_ORDER.filter((l) =>
+    client.some((r) => r.layers.includes(l) && !naReasons.has(r.id)),
+  )
     .map((layer) => {
       const inLayer = client
-        .filter((r) => r.layers.includes(layer))
+        .filter((r) => r.layers.includes(layer) && !naReasons.has(r.id))
         .sort(
           (a, b) => Number(firedIds.has(b.id)) - Number(firedIds.has(a.id)) || b.weight - a.weight,
         );
-      const rows = inLayer
-        .map((r) => ruleRow(r, firedIds.has(r.id), firedIds.get(r.id)?.evidence ?? []))
-        .join("");
-      return `<h3>${esc(layer)} <span class="count">${inLayer.filter((r) => firedIds.has(r.id)).length}/${inLayer.length} fired</span></h3>
+      const rows = inLayer.map((r) => ruleRow(r, firedIds.has(r.id))).join("");
+      const n = inLayer.filter((r) => firedIds.has(r.id)).length;
+      return `<h3>${esc(layer)} <span class="count">${n}/${inLayer.length} fired</span></h3>
         <table class="detections"><thead><tr><th></th><th>detection</th><th>category</th><th>weight</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
     })
     .join("");
+
+  const naHtml = naRules.length
+    ? `<section class="na"><h2>Adjusted for your browser
+        <span class="note">— fired, but expected for ${esc(prediction.browser)}/${esc(prediction.formFactor)}; excluded from the verdict</span></h2>
+      <ul class="na-list">${naRules
+        .map((r) => `<li><code>${esc(r.id)}</code> — ${esc(naReasons.get(r.id) ?? "")}</li>`)
+        .join("")}</ul></section>`
+    : "";
 
   const edgeList = edge
     .map(
@@ -84,11 +125,15 @@ export function render(
       <div class="score">bot-likelihood ${pct(verdict.score)}</div>
       <div class="sub">incoherence ${pct(verdict.incoherence)} · ruleset ${esc(rulesetVersion)}</div>
     </section>
+    ${predictionCard(prediction)}
+    ${fingerprintTable(fingerprint)}
     <section class="scores"><h2>Per-layer score</h2>${layerScoreHtml}
       <p class="note">Network &amp; reputation are 0 here by design: a browser cannot observe its own TLS/HTTP-2/QUIC/TCP
-      fingerprint or its IP reputation — those need Kitsune's edge. ${client.length} of ${rules.length} detections ran in your browser.</p>
+      fingerprint or its IP reputation — those need Kitsune's edge. ${client.length} of ${rules.length} detections ran in your browser,
+      scored on a per-browser basis (${naRules.length} excluded as not-applicable).</p>
     </section>
     <section class="results"><h2>Detections evaluated in your browser</h2>${byLayer}</section>
+    ${naHtml}
     <section class="edge"><h2>Requires the Kitsune edge (${edge.length} not evaluated here)</h2>
       <p class="note">These read TLS/HTTP-2/QUIC/TCP or IP-reputation signals only the edge captures from the raw connection.</p>
       <ul class="edge-list">${edgeList}</ul>
