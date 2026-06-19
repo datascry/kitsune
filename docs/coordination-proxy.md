@@ -10,6 +10,21 @@ ways to do that, and the scorer catches each with a complementary signal:
 Both verdicts below are **real `score_cluster` output**, not hand-authored, on a synthetic 3-node fleet
 (the lab has no live proxies/BotBrowser build to capture).
 
+## The conviction gate (why the JS-divergence paradox cannot convict alone)
+
+A `fleet` *label* requires a **convicting** coordination signal — one a real diverse cohort cannot
+produce: JA4_c divergence (per-launch TLS-extension randomization; real Chrome's JA4_c is stable), a
+cloned-fingerprint collision across distinct IPs, or a shared WebRTC origin behind distinct proxy IPs.
+The JS-divergence paradox, IP spread and lockstep are **corroborating only**, because they are *also* the
+null hypothesis: distinct real users on one Chrome build share a JA4 (TLS is per-build) yet legitimately
+differ in `hardware_concurrency`, `device_memory` and OS-platform (Win/Mac/Linux Chrome share a JA4) and
+arrive from distinct IPs. Without the gate, a 4-user real cohort on one popular build — diverse hardware,
+distinct IPs, distinct `fp_hash`, spread over 15 min — scored `fleet` 1.00 (a botnet verdict on a
+browser's user base); it is now correctly capped at `candidate`. Both fleets below clear the gate (one via
+JA4_c divergence + shared origin, the other via the fingerprint collision), so their verdicts are
+unchanged — the gate only withholds conviction where the only evidence is what legitimate diversity also
+produces. This mirrors the detector's convicting-signal gate (`scoring.label_for`) on the per-session side.
+
 ## Randomizing fleet (residential proxies) — 1 graded cluster across 3 sessions
 
 ### `fleet` — score **1.00** · 3 sessions

@@ -12,10 +12,14 @@ JA4. The discriminator is a paradox an anti-detect fleet cannot avoid:
     machines. An anti-detect fleet deliberately *randomizes* those JS traits per instance to look
     like distinct users — but it cannot randomize the TLS handshake, which is the engine's.
 
-So **identical TLS + divergent JS within one cluster** is the signal: it is the shape only a
-spoofing fleet produces. Real diversity comes with diverse JA4; real JA4-sharing comes with shared
-JS. The two diverging at once is the tell. This is the durable bots/DDoS signal — it survives any
-per-session fingerprint spoof because it is a property of the *cluster*, not the instance.
+**identical TLS + divergent JS within one cluster** is suggestive — but on its own it is NOT a
+conviction, because it is also the shape of a real diverse cohort: distinct users on the *same Chrome
+build* share a JA4 (TLS is per-build, not per-machine) yet legitimately differ in hardware_concurrency,
+device_memory and OS-platform (Win/Mac/Linux Chrome share a JA4). So the JS-divergence paradox, the IP
+spread and lockstep timing are **corroborating** signals; a `fleet` *conviction* requires at least one
+signal a real cohort cannot produce — see the conviction gate in ``score_cluster``. This is the durable
+bots/DDoS signal — it survives any per-session fingerprint spoof because it is a property of the
+*cluster*, not the instance.
 
 A native anti-detect browser (BotBrowser) can dodge the paradox by going the *other* way: clone one
 fingerprint profile across the fleet, so the JS is homogeneous and the cluster reads as a real cohort.
@@ -228,8 +232,28 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     if span is not None and span > 0:
         arrival_rate = round(len(names) / (span / 60.0), 1)
 
+    # Conviction gate: a `fleet` label needs a *convicting* coordination signal — one a real diverse
+    # cohort on a shared browser build CANNOT produce. The three that qualify: JA4_c divergence
+    # (per-launch TLS-extension randomization; real Chrome's JA4_c is stable), a cloned-fingerprint
+    # collision across distinct IPs (real machines each hash differently), or a shared WebRTC origin
+    # behind distinct proxy IPs. The JS-divergence paradox, IP spread and lockstep are *corroborating*
+    # only: real distinct users on one Chrome build legitimately differ in hardware_concurrency,
+    # device_memory and OS-platform (Win/Mac Chrome share a JA4) and arrive from distinct IPs — that
+    # exact shape, so it cannot convict alone (it would flag a popular browser's user base as a botnet).
+    convicting = ja4c_divergent or collision is not None or shared_real_ip is not None
     score = max(0.0, min(1.0, score))
-    label = "fleet" if score >= 0.60 else "candidate" if score >= 0.30 else "benign"
+    if score >= 0.60 and convicting:
+        label = "fleet"
+    elif score >= 0.30:
+        label = "candidate"
+        if score >= 0.60:
+            evidence.append(
+                "shared JA4 + JS divergence / IP spread but NO convicting coordination signal "
+                "(per-launch TLS randomization, cloned-profile collision, or shared WebRTC origin) — "
+                "a real diverse cohort on one browser build produces this shape, so capped at candidate"
+            )
+    else:
+        label = "benign"
     return FleetVerdict(
         ja4=prefix,
         members=names,

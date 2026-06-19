@@ -52,14 +52,32 @@ def _sess(
     return group_signals(sigs)[0]
 
 
-def test_paradox_is_a_fleet() -> None:
-    # Same JA4, divergent JS (the Camoufox shape) → high score, labeled "fleet".
+def test_paradox_alone_is_capped_at_candidate() -> None:
+    # JS-divergence paradox with NO convicting coordination signal is the null hypothesis too: real
+    # distinct users on one Chrome build share a JA4 yet differ in hardware_concurrency. High score,
+    # but capped at "candidate" — convicting needs a signal real diversity cannot produce.
     members = [("a", _sess("a", "X", 8)), ("b", _sess("b", "X", 32)), ("c", _sess("c", "X", 8))]
     v = score_cluster("X", members)
-    assert v.label == "fleet"
-    assert v.score >= 0.60
+    assert v.label == "candidate"
+    assert v.score >= 0.60  # the score is high, but the conviction gate withholds the fleet label
     assert v.diverged_traits == {"hardware_concurrency": 2}
-    assert any("divergent" in e for e in v.evidence)
+    assert any("NO convicting coordination signal" in e for e in v.evidence)
+
+
+def test_legit_diverse_cohort_is_not_a_fleet() -> None:
+    # Regression: 4 distinct real users on ONE Chrome build (identical full JA4 → JA4_c stable), diverse
+    # hardware/OS, distinct fp_hash, distinct IPs, spread over 15 min. This is a popular browser's user
+    # base, not a botnet — it must NOT convict, despite paradox + IP-spread both firing.
+    ja4 = "t13d1516h2_8daaf6152771_e5627efa2ab1"  # identical full JA4 across all → not JA4_c-divergent
+    members = [
+        ("u1", _sess("u1", ja4, 4, "Windows", offset_s=0, observed_ip="71.10.0.1", fp_hash="aa01")),
+        ("u2", _sess("u2", ja4, 8, "Windows", offset_s=300, observed_ip="98.20.0.2", fp_hash="bb02")),
+        ("u3", _sess("u3", ja4, 16, "MacIntel", offset_s=620, observed_ip="24.30.0.3", fp_hash="cc03")),
+        ("u4", _sess("u4", ja4, 12, "Windows", offset_s=900, observed_ip="63.40.0.4", fp_hash="dd04")),
+    ]
+    v = score_cluster("t13d1516h2_8daaf6152771", members)
+    assert v.label == "candidate"  # NOT fleet — no convicting signal
+    assert v.ja4c_divergent is False and v.cloned_fingerprint is None and v.shared_real_ip is None
 
 
 def test_homogeneous_cluster_is_only_a_candidate() -> None:
@@ -119,8 +137,8 @@ def test_larger_fleet_scores_higher() -> None:
 
 def test_score_corpus_clusters_and_sorts() -> None:
     corpus = [
-        ("cf1", _sess("cf1", "X", 8)),
-        ("cf2", _sess("cf2", "X", 32)),  # paradox fleet
+        ("cf1", _sess("cf1", "X_a_1", 8)),  # share the cipher prefix `X_a`, JA4_c-divergent per launch
+        ("cf2", _sess("cf2", "X_a_2", 32)),  # → convicted fleet
         ("solo", _sess("solo", "Y", 4)),  # alone → not graded
         ("noja4", _sess("noja4", None, 4)),  # no JA4 → skipped
     ]
@@ -195,9 +213,9 @@ def test_same_origin_behind_proxies() -> None:
 
 
 def test_severity_critical_on_burst() -> None:
-    # A paradox fleet of 5 arriving within ~4s → high arrival rate → critical severity (separate from
-    # the fleet-confidence score, which a 3-node fleet already maxes).
-    members = [(f"n{i}", _sess(f"n{i}", "X", 8 + i * 4, offset_s=i)) for i in range(5)]
+    # A JA4_c-divergent fleet of 5 arriving within ~4s → high arrival rate → critical severity (separate
+    # from the fleet-confidence score, which a 3-node fleet already maxes).
+    members = [(f"n{i}", _sess(f"n{i}", f"X_c_{i}", 8 + i * 4, offset_s=i)) for i in range(5)]
     v = score_cluster("X", members)
     assert v.label == "fleet"
     assert v.arrival_rate_per_min is not None and v.arrival_rate_per_min >= 60
@@ -205,8 +223,8 @@ def test_severity_critical_on_burst() -> None:
 
 
 def test_severity_high_on_volume() -> None:
-    # 12-node paradox fleet spread over minutes → low arrival rate, but the member count alone is "high".
-    members = [(f"n{i}", _sess(f"n{i}", "X", 8 + i, offset_s=i * 60)) for i in range(12)]
+    # 12-node JA4_c-divergent fleet spread over minutes → low arrival rate, but member count alone is "high".
+    members = [(f"n{i}", _sess(f"n{i}", f"X_c_{i}", 8 + i, offset_s=i * 60)) for i in range(12)]
     v = score_cluster("X", members)
     assert v.label == "fleet"
     assert (v.arrival_rate_per_min or 0) < 15  # not a burst
@@ -226,11 +244,11 @@ def test_severity_na_for_candidate() -> None:
 def test_tracker_alerts_on_becoming_fleet() -> None:
     # First session: no cluster. Second (paradox): cluster becomes a fleet → alert fires once.
     t = FleetTracker()
-    assert t.observe("a", _sess("a", "X", 8)) is None  # singleton, no alert
-    v = t.observe("b", _sess("b", "X", 32))  # paradox now → fleet
+    assert t.observe("a", _sess("a", "X_a_1", 8)) is None  # singleton, no alert
+    v = t.observe("b", _sess("b", "X_a_2", 32))  # JA4_c-divergent pair now → fleet
     assert v is not None and v.label == "fleet"
     # A third confirming member at the same severity does not re-alert.
-    assert t.observe("c", _sess("c", "X", 16)) is None
+    assert t.observe("c", _sess("c", "X_a_3", 16)) is None
 
 
 def test_tracker_alerts_on_cloned_profile_fleet() -> None:
@@ -254,12 +272,12 @@ def test_tracker_ignores_no_ja4_and_singletons() -> None:
 
 def test_replay_stream_orders_by_arrival_and_alerts() -> None:
     corpus = [
-        ("late", _sess("late", "X", 32, offset_s=50)),
-        ("early", _sess("early", "X", 8, offset_s=0)),
+        ("late", _sess("late", "X_a_1", 32, offset_s=50)),
+        ("early", _sess("early", "X_a_2", 8, offset_s=0)),
     ]
     alerts = replay_stream(corpus)
     assert len(alerts) == 1
-    # The alert fires on the *second* arrival in time order ("late"), once the paradox is observable.
+    # The alert fires on the *second* arrival in time order ("late"), once the JA4_c divergence is observable.
     assert alerts[0][0] == "late" and alerts[0][1].label == "fleet"
     md = render_stream(corpus)
     assert "alert(s)" in md and "fleet" in md
@@ -269,8 +287,8 @@ def test_replay_stream_orders_by_arrival_and_alerts() -> None:
 def test_windowed_tracker_alerts_on_burst_within_window() -> None:
     # Two paradox members within a 60s window → fleet alert.
     t = FleetTracker(window_seconds=60)
-    assert t.observe("a", _sess("a", "X", 8, offset_s=0)) is None
-    assert t.observe("b", _sess("b", "X", 32, offset_s=10)) is not None  # within window → alert
+    assert t.observe("a", _sess("a", "X_a_1", 8, offset_s=0)) is None
+    assert t.observe("b", _sess("b", "X_a_2", 32, offset_s=10)) is not None  # within window → alert
 
 
 def test_windowed_tracker_ignores_slow_trickle() -> None:
@@ -283,11 +301,11 @@ def test_windowed_tracker_ignores_slow_trickle() -> None:
 def test_windowed_tracker_re_alerts_after_burst_ages_out() -> None:
     # A burst alerts, ages out, then a fresh burst re-alerts (state reset on expiry).
     t = FleetTracker(window_seconds=60)
-    t.observe("a", _sess("a", "X", 8, offset_s=0))
-    assert t.observe("b", _sess("b", "X", 32, offset_s=10)) is not None  # first burst alerts
-    # Far-future fresh burst: old members aged out, then a new paradox pair re-alerts.
-    assert t.observe("c", _sess("c", "X", 8, offset_s=1000)) is None  # singleton in new window
-    assert t.observe("d", _sess("d", "X", 32, offset_s=1005)) is not None  # new burst → re-alert
+    t.observe("a", _sess("a", "X_a_1", 8, offset_s=0))
+    assert t.observe("b", _sess("b", "X_a_2", 32, offset_s=10)) is not None  # first burst alerts
+    # Far-future fresh burst: old members aged out, then a new JA4_c-divergent pair re-alerts.
+    assert t.observe("c", _sess("c", "X_a_3", 8, offset_s=1000)) is None  # singleton in new window
+    assert t.observe("d", _sess("d", "X_a_4", 32, offset_s=1005)) is not None  # new burst → re-alert
 
 
 def test_single_member_cluster_has_no_span() -> None:
@@ -299,5 +317,5 @@ def test_single_member_cluster_has_no_span() -> None:
 
 def test_render_coordination() -> None:
     assert "no JA4 cluster" in render_coordination([("solo", _sess("solo", "Z", 2))])
-    md = render_coordination([("a", _sess("a", "X", 8)), ("b", _sess("b", "X", 32))])
+    md = render_coordination([("a", _sess("a", "X_a_1", 8)), ("b", _sess("b", "X_a_2", 32))])
     assert "fleet" in md and "score" in md and "cf" not in md
