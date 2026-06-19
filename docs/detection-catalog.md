@@ -60,6 +60,27 @@ The original precision-first build order is now fully resolved: `br.readback_noi
 `br.stack_tool_marker` is **DEAD** in our context (the collector is the page's own inline script, so its
 `Error().stack` is clean regardless of automation). The low-FP/high-priority queue is exhausted.
 
+### Live-coverage audit — unexercised active convicting rules (the constraint-#6 worklist)
+
+Saturation means few NEW rules, so the productive precision work shifts to **proving every active convicting
+rule actually fires in our context** (constraint #6: never ship a rule that can't fire here). A systematic
+audit (2026-06-19) scored all 53 committed captures through the detector: **15 of 73 active convicting rules
+fire on zero committed captures.** Of those, 4 had ALSO no detector unit test — the weakest-validated rules,
+the genuine liabilities. Each read-signal IS producible by the collector/edge (none are dead), so each is
+lightable by a faithful evader (the electron-leak / stale-engine pattern):
+
+| rule | category | status | how to light |
+|---|---|---|---|
+| `br.engine_feature_vs_ua` | coherence | ✅ **lit v0.74.22** (stealth `STALE_ENGINE=1`) | claim Chrome ≥121 UA, remove `Promise.withResolvers` |
+| `br.electron_process` | automation | ✅ lit v0.74.22 (stealth `ELECTRON_LEAK=1`) | leak Node `process` into the renderer |
+| `br.canvas_lie` | automation | ⬜ no test, no capture | report a canvas size that disagrees with its backing store |
+| `br.domrect_invariant` | artifact | ⬜ no test, no capture | a getClientRects/DOMRect geometry shim (non-deterministic rects) |
+| `br.measuretext_offscreen_vs` | artifact | ⬜ no test, no capture | farble main-thread `measureText` only (offscreen stays real → divergence) |
+| `br.audio_noise`, `br.automation_globals`, `br.cdc_artifacts`, `br.csp_bypassed`, `br.font_os_vs_ua`, `br.screen_impossible`, `br.voice_os_vs_ua`, `br.webgpu_vendor_vs_webgl`, `net.h2_control_flood`, `net.h2_settings_vs_order` | mixed | unit-tested (logic proven), no live capture | a faithful evader would add a live positive, lower priority |
+
+Reproduce the audit: score `corpus/sessions/*.json` through `Detector().score()` and diff the fired rule_ids
+against the active-convicting set. The 3 remaining ⬜ (no-test, no-capture) rules are the next candidates.
+
 **Per-session convicting detection is SATURATED.** The remaining table rows are either shipped (✅), grounded-
 out dead-ends (❌: `interact_without_focus` — `document.hasFocus()` is `true` in headless too;
 `broken_image_dims` — 0×0 in headless and headful alike), medium-FP environment tells that need a real-device

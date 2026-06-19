@@ -1110,8 +1110,8 @@ rules:
     status: active
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Promise.withResolvers shipped in Chrome 119; a UA claiming Chrome >=121 without it is an engine older than it claims (verified Chrome 136 has it). JS-layer analog of net.tls_pq_keyshare_vs_ua."
+    last_validated: "2026-06-19"
+    source: "Promise.withResolvers shipped in Chrome 119; a UA claiming Chrome >=121 without it is an engine older than it claims (verified Chrome 136 has it). JS-layer analog of net.tls_pq_keyshare_vs_ua. v0.74.22 FIRST LIVE POSITIVE: the new stealth STALE_ENGINE=1 evader (claims a Chrome 125 Linux UA but removes Promise.withResolvers — a faithful hardcoded-modern-UA-on-an-older-build) was run through the live edge+detector and tripped br.engine_feature_vs_ua; the rule was shipped active but previously unexercised (no fleet evader inflated the UA version past the engine), a constraint-#6 liability now resolved. NEGATIVE control: a plain STEALTH=1 run (Chrome 125 WITH the feature) does NOT trip it, and the real headful Chromium capture (modern Chromium, feature present) does not carry the signal — FP-safe."
 
   - id: br.webgl_not_angle
     title: Chromium UA but the WebGL renderer is not ANGLE-wrapped — renderer spoof

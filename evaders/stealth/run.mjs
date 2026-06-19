@@ -104,6 +104,11 @@ const ACCEPT_LANG_SPOOF = process.env.ACCEPT_LANG_SPOOF === "1";
 // Inject process.versions.electron + process.type="renderer" — the markers a real Electron renderer leaks and
 // a real web browser never has → br.electron_process (an active automation rule with no prior live positive).
 const ELECTRON_LEAK = process.env.ELECTRON_LEAK === "1";
+// STALE_ENGINE: the stale-template / version-inflation tell (the JS analog of net.tls_pq_keyshare_vs_ua). A
+// tool hardcodes a modern Chrome UA (>=121) on an OLDER Chromium build. Promise.withResolvers shipped in
+// Chrome 119, so a UA claiming >=121 without it is an engine older than it claims → br.engine_feature_vs_ua.
+// Simulated by claiming Chrome 125 (Linux UA, coherent with the container) and removing Promise.withResolvers.
+const STALE_ENGINE = process.env.STALE_ENGINE === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -141,7 +146,8 @@ const LINUX_CHROME_UA =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 
 const userAgent =
-  SPOOF_UA || (MAX_STEALTH || FULL || FLOOR_SPOOF ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
+  SPOOF_UA ||
+  (MAX_STEALTH || FULL || FLOOR_SPOOF || STALE_ENGINE ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
 const evading =
   STEALTH ||
   FULL ||
@@ -160,8 +166,11 @@ const evading =
   CANVAS_GEOMETRY_SPOOF ||
   BRAVE_FAKE ||
   ELECTRON_LEAK ||
+  STALE_ENGINE ||
   Boolean(SPOOF_UA);
-const mode = ELECTRON_LEAK
+const mode = STALE_ENGINE
+  ? "stale-engine"
+  : ELECTRON_LEAK
   ? "electron-leak"
   : ACCEPT_LANG_SPOOF
   ? "accept-lang-spoof"
@@ -439,6 +448,17 @@ if (FLOOR_SPOOF) {
       o.timeZone = "America/New_York";
       return o;
     };
+  });
+} else if (STALE_ENGINE) {
+  // Stale-template tell: the UA claims Chrome 125 (LINUX_CHROME_UA, set above) but the engine lacks
+  // Promise.withResolvers, which every real Chrome >= 119 ships — so the UA version is inflated above the
+  // real engine. Faithfully simulates a tool that hardcodes a modern UA on an older Chromium build (the JS
+  // analog of a lagging TLS/PQ template) → br.engine_feature_vs_ua. A real Chrome 125 has the feature.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    try {
+      Object.defineProperty(Promise, "withResolvers", { value: undefined, configurable: true });
+    } catch (e) {}
   });
 } else if (ELECTRON_LEAK) {
   // Leak a Node `process` into the renderer the way an Electron app with nodeIntegration on (or a naive

@@ -51,6 +51,7 @@ reached. These exercise the worker/iframe realm-coherence rules directly.
 | Env | Mode | Caught by |
 |---|---|---|
 | `ELECTRON_LEAK=1` | electron-leak | leaks a Node `process` into the renderer (`process.versions.electron` + `process.type="renderer"`) the way an Electron app with nodeIntegration on does → `br.electron_process` (automation). A real web browser has no Node process; the headful captures confirm absence. Gives that active rule its first live positive. |
+| `STALE_ENGINE=1` | stale-engine | claims a Chrome 125 UA but removes `Promise.withResolvers` (shipped Chrome 119) → `br.engine_feature_vs_ua` (coherence). Faithfully simulates a hardcoded-modern-UA-on-an-older-build (the JS analog of a lagging TLS/PQ template). A real Chrome ≥121 ships the feature; the headful Chromium capture does not trip it. Gives that active rule its first live positive. |
 
 ### Escalation
 
