@@ -90,6 +90,22 @@ the prevalence second prior needs real-device gpu/cores data, and the coordinati
 (`fp_collision`, `trace_collision` via fleet-cloned, `shared_real_ip` via fleet-proxy) are already
 demonstrated in-sandbox — only the IP-reputation half (`rep.*`) needs real residential-proxy egress.
 
+### Producer-vs-reader audit — no dead rules (whole ruleset, 2026-06-19)
+
+The live-coverage audit above asks "does each convicting rule *fire*?"; this complementary one asks the
+prior question "can each rule fire *at all* — is its read-signal produced anywhere?" — across **all 91 active
+rules** (not just convicting), every layer. For each rule's `reads`, confirm the signal is emitted by a
+producer: the collector (`demo.py` `S("browser"|"behavioral", …)`), the edge (Go, network layer), or detector
+enrichment (`ip_reputation` for `reputation.*`). **Result: all 96 distinct read-signals are produced — zero
+dead rules** (a rule reading a signal nothing emits can never fire — a constraint-#6 violation; there are
+none). The reverse check (collector signals **no** rule reads) found 13, all accounted for and intentional:
+coordination inputs (`fp_hash`, `trace_hash`), prevalence inputs (`screen_resolution`, `webgl_renderer`,
+`color_depth`), an applicability input (`is_brave`), informational session-record fields (`webgl_vendor`,
+`webgpu_*` — the convicting `webgpu_*_mismatch` is derived from these in-collector), and the **documented
+latent biomech** signals (`pause_ratio`, `submovement_count` — emitted, no rule yet, by design). No dead
+collection to remove. Reproduce: diff registry `reads` against `S("…")` emissions in `demo.py` + edge Go +
+`ip_reputation`.
+
 **Per-session convicting detection is SATURATED.** The remaining table rows are either shipped (✅), grounded-
 out dead-ends (❌: `interact_without_focus` — `document.hasFocus()` is `true` in headless too;
 `broken_image_dims` — 0×0 in headless and headful alike), medium-FP environment tells that need a real-device
