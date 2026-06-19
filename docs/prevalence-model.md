@@ -168,3 +168,28 @@ unchanged (51 bot / 1 suspicious — zero detection loss; the rule is corroborat
 coarsened-robust (immune to browserforge's exact-value coverage gaps); `colour` is dropped (an OS-independent
 display property browserforge generated wrong); `gpu` remains single-source pending a Tier-3 real-device
 matrix (it cannot be coarsened — the engine family IS the signal — and Intoli does not carry it).
+
+## GPU factor — investigated, irreducible single-source (the Tier-3 pending item)
+
+With screen + cores coarsened and colour dropped, `gpu` (gpu_family given platform) is the last single-source
+factor. It was examined for the same circular-FP class and is **mostly sound** — unlike cores it has no
+eps-gaps for the major pairings: Windows {intel 55%, nvidia 24%, amd 17%}, Linux {intel 41%, amd 31%, nvidia
+21%}, Android {mobile 98%} all cover real GPUs well. The one weakness is **macOS at 98% `apple`**, which
+under-samples **Intel Macs** (Apple shipped Intel iGPUs on all, plus AMD/NVIDIA discrete GPUs on 15"/16"
+MacBook Pro, iMac, Mac Pro): `amd|macOS` scores −6.35, so a real Intel-Mac-with-Radeon could be pushed to
+improbable when combined with another factor.
+
+This is **not safely fixable in-sandbox**, and the discipline says leave it:
+- It cannot be **coarsened** — the GPU family *is* the discriminator (apple-on-Windows, swiftshader-on-desktop
+  are the catches); collapsing families destroys the signal.
+- It cannot be **dropped** — it is the prevalence model's primary signal.
+- It cannot be **corroborated** — Intoli carries no GPU, and every in-sandbox real capture is SwiftShader
+  (the container has no real GPU), so the true macOS GPU distribution is unobservable here.
+
+So `gpu` stays single-source, with the documented Intel-Mac under-sampling, until a **Tier-3 real-device
+matrix** (or hosted-demo opt-in) supplies a measured GPU/platform distribution. This concludes the
+prevalence-hardening arc: of the four original factors, `screen` is cross-checked vs Intoli, `cores` is
+coarsened-robust, `colour` is dropped, and `gpu` is the one genuinely-irreducible single-source factor —
+which is itself the honest, precise answer to "what does the prevalence model still need from a second
+source." (Deployed live at ruleset 0.74.21; IFRAME_SPOOF — swiftshader-on-desktop — still fires
+`fingerprint_improbable` end-to-end, zero detection loss.)
