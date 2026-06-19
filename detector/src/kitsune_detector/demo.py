@@ -614,20 +614,25 @@ DEMO_PAGE = """<!doctype html>
     var venEngine = /Google/i.test(ven) ? "chromium" : ven === "" ? "firefox"
                   : /Apple/i.test(ven) ? "safari" : "other";
     sigs.push(S("browser", "vendor_engine", venEngine));
-    // Error.captureStackTrace is a V8 (Chromium) API; SpiderMonkey (Firefox) and JSC (Safari) lack it.
-    // A UA claiming Chrome without it — or claiming Firefox WITH it — is an engine spoof deeper than
-    // navigator.vendor (which JS-stealth tools patch, while the Error constructor's API they often miss).
+    // Error.captureStackTrace lives in V8 (Chromium) and — as of Safari 16.4 (2023) — JSC, but NOT
+    // SpiderMonkey (verified: a live Firefox 137 reports it undefined). So a UA claiming Chrome without it,
+    // or claiming Firefox WITH it, is an engine spoof deeper than navigator.vendor (which JS-stealth tools
+    // patch, while the Error constructor's API they often miss). NOTE: it is NO LONGER Safari-exclusive in
+    // reverse — see apple_ua_nonwebkit below, which dropped the captureStackTrace arm for exactly this reason.
     var hasV8Stack = typeof Error.captureStackTrace === "function";
     if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack))
       sigs.push(S("browser", "engine_stack_mismatch", true));
     // Apple mandates WebKit for Safari AND every iOS browser — Chrome (CriOS), Firefox (FxiOS), Brave,
     // DuckDuckGo, Onion all wrap the system WebKit, none ship Blink. So a UA claiming Apple WebKit (a Safari
     // token with no desktop-Chromium token → uaEngine "safari") that exposes a Blink-ONLY structural API is
-    // impossible on a real Apple browser: window.chrome, navigator.userAgentData (UA-CH, unimplemented in
-    // Safari), and V8's Error.captureStackTrace (JSC has none) never exist there. It is a Chromium host faking
-    // an iOS/Safari UA. STRUCTURAL (positive-API, not error-message/float based) so it survives the message
-    // and math spoofs error_engine/math_engine rely on. Grounded: real desktop+iOS Safari expose none → no fire.
-    if (uaEngine === "safari" && (window.chrome || navigator.userAgentData || hasV8Stack))
+    // impossible on a real Apple browser: window.chrome and navigator.userAgentData (UA-CH, unimplemented in
+    // any Safari) never exist there → a Chromium host faking an iOS/Safari UA. STRUCTURAL (positive-API, not
+    // error-message/float based) so it survives the message and math spoofs error_engine/math_engine rely on.
+    // v0.74.9: the V8 Error.captureStackTrace arm was REMOVED — JSC added captureStackTrace in Safari 16.4
+    // (grounded on a live WebKit 18.4 engine that exposes it while correctly lacking window.chrome /
+    // userAgentData), so the old arm convicted every real Safari 16.4+/iOS user. window.chrome and
+    // userAgentData remain genuinely Blink-only (absent in every Safari), so the spoof catch is preserved.
+    if (uaEngine === "safari" && (window.chrome || navigator.userAgentData))
       sigs.push(S("browser", "apple_ua_nonwebkit", true));
     // Engine error-message format — deeper than navigator.vendor or Error.captureStackTrace, because it
     // is the engine's own message generator (which JS-stealth tools do not rewrite). The same error reads

@@ -223,3 +223,39 @@ convicts). Only a signal a real browser **cannot** produce — a spec invariant,
 cross-realm divergence, an injected-code artifact — earns a convicting category. Five of the eight FPs above
 were rules whose *own source text already said* "corroborating" / "weak alone" yet sat in a convicting
 category: the category, not the description, is what the conviction gate reads.
+
+## Tier-2: a real headful-browser source (`harness/tools/headful_capture.mjs`)
+
+The standing constraint demands a *second, independent* calibration source besides browserforge (a
+generated distribution). `headful_capture.mjs` is it: a clean, **no-spoof** Chromium / Firefox / WebKit,
+launched **headful under xvfb** (the Playwright container's three real engines) and driven only enough to
+navigate the live `edge → detector` spine, so the captured session is exactly what the genuine in-page
+collector emits. Captures land in `corpus/calibration/headful/`. Unlike browserforge (a static field
+distribution) or Intoli (real UAs but no runtime fields), this exercises the **runtime probes** — canvas,
+audio, WebGL, CDP, and the engine-API tells — that the static mappers can't model. Run:
+
+```sh
+docker compose up -d detector edge
+NET=kitsune_default; for e in chromium webkit; do \
+  docker run --rm --network $NET -v "$PWD/harness/tools/headful_capture.mjs:/app/c.mjs:ro" \
+    -e ENGINE=$e --entrypoint sh kitsune-stealth:latest -c 'cd /app && xvfb-run -a node c.mjs'; done
+```
+
+A Playwright-driven browser legitimately trips the **automation** tells (`webdriver`, CDP `Runtime.enable`)
+and the container **environment floor** (`webgl_software`, `voices_empty`, `media_devices_empty`) — those
+are expected and correct. The methodology check is narrower: **no fingerprint-coherence/artifact rule may
+fire on the real engine's genuine fingerprint.** Two findings from the first run, both invisible to
+browserforge (runtime probes the mapper omits) — the second source earning its keep:
+
+1. **Confirmed the `math_engine_vs_ua` retirement (v0.74.0).** The stale live image (then at ruleset 0.73.9)
+   convicted a real headful Chromium via `math_engine_vs_ua` — empirical proof the `Math.pow(PI,-100)` ULP
+   is V8-build-dependent, not engine-stable. Rebuilding to the current ruleset cleared it.
+2. **Found a new convicting FP: `apple_ua_nonwebkit` (fixed v0.74.9).** A real WebKit 18.4 engine (Playwright
+   WebKit, vendor "Apple Computer, Inc.") exposes `Error.captureStackTrace` as a function — because **JSC
+   added it in Safari 16.4 (2023)** — while correctly lacking `window.chrome` / `userAgentData`. The rule's
+   third arm treated `captureStackTrace` as Blink-only, so it convicted **every real Safari 16.4+/iOS user**.
+   Dropped that arm (kept the two genuinely-Blink-only APIs); re-capture confirms the real WebKit no longer
+   trips it, while the `ios-ua-spoof` evader (Chromium under an iOS UA, `window.chrome` present) still does.
+   A counter-check grounded the sibling rule too: `engine_stack_vs_ua`'s `firefox && captureStackTrace` arm
+   is *safe* — a live Firefox 137 reports `captureStackTrace` undefined (SpiderMonkey has not shipped it), so
+   that arm was left untouched. Acting on the unverified "Firefox added it" memory would have been the FP.

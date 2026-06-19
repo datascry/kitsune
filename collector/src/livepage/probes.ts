@@ -750,6 +750,8 @@ export function armCollector(): LiveCollector {
           ? "safari"
           : "other";
     put("browser", "vendor_engine", venEngine);
+    // captureStackTrace is in V8 (Chromium) and JSC (Safari 16.4+) but NOT SpiderMonkey (a live Firefox 137
+    // reports it undefined), so a Chrome UA without it / a Firefox UA with it is an engine spoof.
     const hasV8Stack =
       typeof (Error as { captureStackTrace?: unknown }).captureStackTrace === "function";
     if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack)) {
@@ -757,9 +759,11 @@ export function armCollector(): LiveCollector {
     }
     // Apple mandates WebKit for Safari and EVERY iOS browser (Chrome=CriOS, Firefox=FxiOS, Brave, DuckDuckGo,
     // Onion all wrap WebKit). A UA claiming Apple WebKit (uaEngine "safari") exposing a Blink-only structural
-    // API — window.chrome, navigator.userAgentData (UA-CH, absent in Safari), or V8's Error.captureStackTrace
-    // (JSC has none) — is a Chromium host faking an iOS/Safari UA. Real Safari/iOS expose none → never fires.
-    if (uaEngine === "safari" && (win()["chrome"] || nav().userAgentData || hasV8Stack)) {
+    // API — window.chrome or navigator.userAgentData (UA-CH, absent in any Safari) — is a Chromium host faking
+    // an iOS/Safari UA. Real Safari/iOS expose neither → never fires. v0.74.9: dropped the V8
+    // Error.captureStackTrace arm — JSC added it in Safari 16.4 (grounded on a live WebKit 18.4 engine), so
+    // that arm convicted every real Safari 16.4+/iOS user; window.chrome / userAgentData stay Blink-only.
+    if (uaEngine === "safari" && (win()["chrome"] || nav().userAgentData)) {
       put("browser", "apple_ua_nonwebkit", true);
     }
     try {

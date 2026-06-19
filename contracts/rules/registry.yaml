@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.8"
+ruleset_version: "0.74.9"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1330,7 +1330,7 @@ rules:
     category: coherence
     added: "2026-06-19"
     last_validated: "2026-06-19"
-    source: "Apple mandates WebKit for Safari AND every iOS browser — Chrome (CriOS), Firefox (FxiOS), Brave, DuckDuckGo, Onion all wrap the system WebKit, none ship Blink. So a UA claiming Apple WebKit (a Safari token with no desktop-Chromium token → uaEngine 'safari') that exposes a Blink-ONLY structural API is impossible on a real Apple browser: window.chrome, navigator.userAgentData (UA-CH, unimplemented in Safari/JSC), and V8's Error.captureStackTrace (JSC has no such API) never exist there. The collector fires it only when one of those positive APIs is present under a Safari-engine UA — a Chromium host faking an iOS/Safari UA (a very common mobile-spoof pattern). STRUCTURAL: a positive-API tell, not the error-message (error_engine_vs_ua) or float-precision (math_engine_vs_ua) channel, so it survives a spoof that rewrites engine error messages. Grounded: real desktop + iOS Safari expose none of the three → never fires; desktop Chrome/Firefox have uaEngine chromium/firefox so the rule is gated off. Zero FP by construction."
+    source: "Apple mandates WebKit for Safari AND every iOS browser — Chrome (CriOS), Firefox (FxiOS), Brave, DuckDuckGo, Onion all wrap the system WebKit, none ship Blink. So a UA claiming Apple WebKit (a Safari token with no desktop-Chromium token → uaEngine 'safari') that exposes a Blink-ONLY structural API is impossible on a real Apple browser: window.chrome and navigator.userAgentData (UA-CH, unimplemented in any Safari/JSC) never exist there. The collector fires it only when one of those positive APIs is present under a Safari-engine UA — a Chromium host faking an iOS/Safari UA (a very common mobile-spoof pattern). STRUCTURAL: a positive-API tell, not the error-message (error_engine_vs_ua) or float-precision (math_engine_vs_ua) channel, so it survives a spoof that rewrites engine error messages. Grounded: real desktop + iOS Safari expose neither → never fires; desktop Chrome/Firefox have uaEngine chromium/firefox so the rule is gated off. v0.74.9: the third arm — V8's Error.captureStackTrace — was REMOVED. It was NOT actually Blink-only: JSC implemented Error.captureStackTrace in Safari 16.4 (2023, for V8 compat), so the arm convicted every real Safari 16.4+/iOS user as a bot. GROUNDED by a live headful capture (harness/tools/headful_capture.mjs): Playwright's WebKit 18.4 engine (vendor 'Apple Computer, Inc.') exposes Error.captureStackTrace as a function while correctly lacking window.chrome and userAgentData — proving the API now lives in the real Safari engine. Caught only by the live second-source capture, invisible to browserforge calibration (a runtime API the mapper does not emit). window.chrome / userAgentData remain genuinely Blink-only so the Chromium-faking-Safari catch (e.g. the ios-ua-spoof evader) is preserved."
 
   # --- v0.22.0: scripted / non-browser client (the volumetric-DDoS case) ---
 

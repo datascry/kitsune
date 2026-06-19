@@ -1,0 +1,359 @@
+{
+ "schema_version": "0.1",
+ "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+ "remote_ip": null,
+ "first_seen": "2026-06-19T09:07:06Z",
+ "last_seen": "2026-06-19T09:07:08.110000Z",
+ "request_count": 18,
+ "signals": {
+  "network": [
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "accept_language_primary",
+    "value": "c",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "h2",
+    "value": "4:6291456;1:65536;2:0|15663105|0|m,s,a,p",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "h2_engine_unknown",
+    "value": true,
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "ja3",
+    "value": "d6b0c2645f8b1128fa65e5c572055a21",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "ja4",
+    "value": "t13d2914h2_723694b0fccc_067a5f92fbdb",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "observed_ip",
+    "value": "172.22.0.4",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "tcp_kernel",
+    "value": "linux",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "tls_no_grease",
+    "value": true,
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "network",
+    "kind": "ua_kernel",
+    "value": "darwin",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:07:08Z"
+   }
+  ],
+  "browser": [
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "color_depth",
+    "value": 24,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "fp_hash",
+    "value": "b06f538c",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "hardware_concurrency",
+    "value": 8,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "macos_dpr1",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "media_devices_empty",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "nav_language_primary",
+    "value": "c",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "nav_platform_os",
+    "value": "Linux",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "plugins_count",
+    "value": 5,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "productsub_render",
+    "value": "webkit",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "screen_resolution",
+    "value": "1280x720",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "ua_browser",
+    "value": "safari",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "ua_engine",
+    "value": "safari",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "ua_platform",
+    "value": "macOS",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "ua_render",
+    "value": "webkit",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "vendor_engine",
+    "value": "safari",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "webdriver",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "webgl_os_hint",
+    "value": "macOS",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "webgl_renderer",
+    "value": "Apple GPU",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "webgl_vendor",
+    "value": "Apple Inc.",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "browser",
+    "kind": "webgpu_absent",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   }
+  ],
+  "behavioral": [
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "coalesced_events_absent",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "mouse_entropy",
+    "value": 0.15289527206684675,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "mouse_straightness",
+    "value": 0.9853552021956686,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "mouse_velocity_cv",
+    "value": 0.8382421139030386,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "pause_ratio",
+    "value": 0,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "pointer_event_count",
+    "value": 32,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "power_law_exponent",
+    "value": -0.5514764506432326,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "submovement_count",
+    "value": 3,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "a939b8d56717c0a5c8d23f5309ec7bf0",
+    "layer": "behavioral",
+    "kind": "trace_hash",
+    "value": "bda782f4",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:07:08.110000Z"
+   }
+  ],
+  "reputation": []
+ }
+}
