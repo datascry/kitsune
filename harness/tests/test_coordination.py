@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
 
 from kitsune_detector.ingest import group_signals
 from kitsune_detector.models import Layer, Session, Signal, Source
@@ -16,8 +17,42 @@ from kitsune_harness.coordination import (
     score_cluster,
     score_corpus,
 )
+from kitsune_harness.corpus import load_corpus
 
 from .conftest import FIXED
+
+
+def _repo_corpus(name: str) -> Path:
+    # corpus/ lives at the repo root (harness/tests/<file> -> parents[2] == repo root).
+    return Path(__file__).resolve().parents[2] / "corpus" / name
+
+
+def test_real_residential_proxy_fleet_is_convicted() -> None:
+    # Ground the coordination detector on the REAL captured residential-proxy fleet (came through the edge),
+    # not just synthetic sessions: rp1/rp2/rp3 must score `fleet` via the convicting signals a real diverse
+    # cohort cannot produce — per-launch JA4_c randomization AND one WebRTC-leaked origin behind 3 proxy IPs.
+    verdicts = score_corpus(load_corpus(_repo_corpus("fleet-proxy")))
+    assert len(verdicts) == 1
+    v = verdicts[0]
+    assert sorted(v.members) == ["rp1", "rp2", "rp3"]
+    assert v.label == "fleet"
+    assert v.ja4c_divergent and v.shared_real_ip is not None
+    assert v.distinct_observed_ips == 3
+
+
+def test_real_camoufox_two_node_cohort_is_candidate_not_fleet() -> None:
+    # Trusted-but-verified: the synthetic scenarios assume camoufox randomizes its JA4_c per launch, but the
+    # REAL camoufox capture (cf1/cf2) shows STABLE JA4_c and homogeneous JS — indistinguishable from two real
+    # users on one build. The conviction gate correctly WITHHOLDS `fleet` (no convicting coordination signal),
+    # grading it `candidate`. Convicting a homogeneous 2-node same-JA4 cohort would be a botnet verdict on a
+    # browser's user base.
+    verdicts = score_corpus(load_corpus(_repo_corpus("fleet")))
+    assert len(verdicts) == 1
+    v = verdicts[0]
+    assert sorted(v.members) == ["cf1", "cf2"]
+    assert v.label == "candidate"
+    assert not v.ja4c_divergent
+    assert v.cloned_fingerprint is None and v.cloned_trace is None and v.shared_real_ip is None
 
 
 def _sess(

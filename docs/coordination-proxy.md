@@ -8,7 +8,25 @@ ways to do that, and the scorer catches each with a complementary signal:
   `fp_hash` across distinct source IPs (where real machines each hash differently).
 
 Both verdicts below are **real `score_cluster` output**, not hand-authored, on a synthetic 3-node fleet
-(the lab has no live proxies/BotBrowser build to capture).
+(the lab has no *ongoing* live proxy harness).
+
+## Validated against the REAL captured fleets (not just synthetic)
+
+The coordination detector was synthetic-only; it is now also grounded on the two **real fleet captures**
+that came through the edge→detector pipeline (`corpus/fleet-proxy/`, `corpus/fleet/`), pinned in
+`test_coordination.py`:
+
+| capture | members | verdict | why |
+|---|---|---|---|
+| `corpus/fleet-proxy/` (residential proxy) | rp1·rp2·rp3 | **`fleet`** (1.00) | convicting signals a real cohort cannot make: **per-launch JA4_c randomization** (3 extension/sig-alg variants behind one cipher prefix) **and** one WebRTC-leaked origin `45.137.0.42` behind 3 distinct proxy IPs |
+| `corpus/fleet/` (camoufox) | cf1·cf2 | `candidate` (0.42) | **trusted-but-verified surprise:** the real camoufox capture has **stable** JA4_c (not divergent) and homogeneous JS — indistinguishable from two real users on one build, so the conviction gate correctly **withholds** `fleet` |
+
+The camoufox result corrects an assumption baked into the synthetic `fleet-ja4c-randomizer` scenario: real
+camoufox (at least the captured build/config) does **not** randomize its JA4_c per launch, so a small
+homogeneous camoufox cohort reads as a legitimate same-build cohort. The JA4_c-randomization signal is still
+validated on real traffic — by the **residential-proxy** fleet, which genuinely does randomize. Net: the
+convicting set fires on the fleet that is genuinely distinguishable and stays silent on the one that is not
+(FP-safety), confirmed against real captures rather than only synthetic constructions.
 
 ## A third dimension: the behavioural clone (`trace_collision`)
 
