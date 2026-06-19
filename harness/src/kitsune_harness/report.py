@@ -1,12 +1,14 @@
 # harness/report — VirusTotal-style detection aggregator over the recorded corpus.
-# Samples = evader recordings, columns = detection rules; renders a rule x evader coverage matrix.
+# Scores each evader recording against every rule; renders compact, fixed-width per-evader + per-rule views.
 
 """Detection aggregator.
 
-Treats each recorded session as a "sample" and scores it against every detection rule: report, per
-sample, how many of the N rules flagged it (``X/N``), plus a coverage matrix (rule rows x evader
-columns) that reveals what catches what — and the gaps. Runs in-process in well under a second, so it
-is the rapid tester for both adding rules and adding evasions.
+Treats each recorded session as a "sample" and scores it against every detection rule, then renders two
+FIXED-WIDTH views (so column count never grows with the evader fleet): a per-evader verdict table (each
+evader's score + the convicting tells that caught it) and a per-rule coverage table (catches per rule),
+plus the per-class breakdown and the zero-catch gaps. Runs in-process in well under a second, so it is the
+rapid tester for both adding rules and adding evasions. (The old rule-rows x evader-columns grid grew
+unreadably wide as the fleet grew; these transposed views replace it.)
 """
 
 from __future__ import annotations
@@ -100,27 +102,55 @@ def render_gaps(
     return "\n".join(lines) + "\n"
 
 
-def render_matrix(
+# Convicting categories (mirror detector/scoring.py): a `bot` label needs one of these; the rest only
+# corroborate. Surfacing the convicting tells per evader is what makes the per-evader view actionable.
+_CONVICTING = frozenset({"coherence", "automation", "artifact"})
+
+
+def render_evaders(
     detectors: list[CoherenceRule],
     fired: dict[str, set[str]],
     verdicts: dict[str, Verdict],
 ) -> str:
-    """Render the detector x evader coverage matrix as Markdown (✓ caught, · evaded)."""
-    names = list(fired)
-    n = len(detectors)
-    header = "| Detector | layer | " + " | ".join(names) + " | catches |"
-    divider = "|" + "---|" * (len(names) + 3)
-    rows = [header, divider]
-    for rule in detectors:
-        cells = ["✓" if rule.id in fired[name] else "·" for name in names]
-        catches = sum(rule.id in fired[name] for name in names)
-        layers = ",".join(layer.value for layer in rule.layers)
-        rows.append(f"| `{rule.id}` | {layers} | " + " | ".join(cells) + f" | {catches} |")
+    """Per-evader verdict + the convicting tells that caught it (the actionable, fixed-width view).
 
-    flagged = " | ".join(f"**{len(fired[name])}/{n}**" for name in names)
-    labels = " | ".join(f"**{verdicts[name].label.value}**" for name in names)
-    rows.append(f"| **flagged** |  | {flagged} |  |")
-    rows.append(f"| **verdict** |  | {labels} |  |")
+    Replaces the old rule x evader grid, whose column count grew with every evader (unreadable past a
+    handful). Here columns are fixed; rows grow linearly with the fleet — sustainable as the fleet grows.
+    """
+    n = len(detectors)
+    rows = [
+        "## Per-evader verdict — score and the convicting tells that caught each evader",
+        "",
+        "| Evader | verdict | score | fired | convicting tells |",
+        "|---|---|---|---:|---|",
+    ]
+    for name in fired:
+        v = verdicts[name]
+        conv = [c.rule_id for c in v.contradictions if c.category.value in _CONVICTING]
+        shown = ", ".join(f"`{r}`" for r in conv[:3]) + (f" +{len(conv) - 3}" if len(conv) > 3 else "")
+        rows.append(f"| `{name}` | {v.label.value} | {v.score:.2f} | {len(fired[name])}/{n} | {shown or '—'} |")
+    return "\n".join(rows) + "\n"
+
+
+def render_rule_catches(
+    detectors: list[CoherenceRule],
+    fired: dict[str, set[str]],
+) -> str:
+    """Per-rule catch counts (fixed-width), highest first; 0-catch rules go to the Gaps section."""
+    counts = {rule.id: sum(rule.id in fired[name] for name in fired) for rule in detectors}
+    active = sorted(
+        (rule for rule in detectors if counts[rule.id] > 0),
+        key=lambda r: (-counts[r.id], r.id),
+    )
+    rows = [
+        f"## Per-rule coverage — {len(active)}/{len(detectors)} rules catch ≥1 evader (rest in Gaps)",
+        "",
+        "| Detector | layer | category | catches |",
+        "|---|---|---|---:|",
+    ]
+    for rule in active:
+        layers = ",".join(layer.value for layer in rule.layers)
+        rows.append(f"| `{rule.id}` | {layers} | {rule.category.value} | {counts[rule.id]} |")
     return "\n".join(rows) + "\n"
 
 
@@ -161,8 +191,11 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     detector = Detector()
     corpus = load_corpus(directory)
     detectors, fired, verdicts = coverage(detector, corpus)
-    print(f"# Kitsune detection matrix — {len(detectors)} rules\n")
-    print(render_matrix(detectors, fired, verdicts))
+    bots = sum(v.label.value == "bot" for v in verdicts.values())
+    print(f"# Kitsune detection matrix — {len(detectors)} rules vs {len(verdicts)} evaders\n")
+    print(f"_{bots}/{len(verdicts)} evaders caught (`bot`). Generated from the committed captures._\n")
+    print(render_evaders(detectors, fired, verdicts))
+    print(render_rule_catches(detectors, fired))
     print(render_categories(verdicts))
     print(render_gaps(detectors, fired, corpus_signal_kinds(corpus)), end="")
 

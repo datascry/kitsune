@@ -11,7 +11,8 @@ from kitsune_harness.report import (
     coverage,
     evaluable_detectors,
     render_categories,
-    render_matrix,
+    render_evaders,
+    render_rule_catches,
 )
 
 
@@ -35,13 +36,24 @@ def test_coverage_flags_bot_not_human(detector: Detector) -> None:
     assert verdicts["human"].label.value == "human"
 
 
-def test_render_matrix(detector: Detector) -> None:
+def test_render_evaders(detector: Detector) -> None:
     detectors, fired, verdicts = coverage(detector, _examples())
-    md = render_matrix(detectors, fired, verdicts)
-    assert "| Detector | layer | human | bot | catches |" in md
+    md = render_evaders(detectors, fired, verdicts)
+    # Fixed-width per-evader view: one row per evader, with its verdict and the convicting tells.
+    assert "| Evader | verdict | score | fired | convicting tells |" in md
+    # The human fixture trips nothing → no convicting tells (`—`); the bot row lists convicting rules.
+    assert "| `human` | human | 0.00 | 0/" in md
+    assert "| `bot` | bot |" in md
+    assert "`net.tls_os_vs_tcp_os`" in md  # a convicting tell shown for the bot row
+
+
+def test_render_rule_catches(detector: Detector) -> None:
+    detectors, fired, _verdicts = coverage(detector, _examples())
+    md = render_rule_catches(detectors, fired)
+    assert "| Detector | layer | category | catches |" in md
+    # a rule that catches the bot fixture appears; the column count is fixed regardless of fleet size
     assert "br.webdriver_present" in md
-    assert "**flagged**" in md and "**verdict**" in md
-    assert "✓" in md and "·" in md
+    assert "| Evader |" not in md  # no wide grid
 
 
 def test_render_categories(detector: Detector) -> None:
