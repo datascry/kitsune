@@ -48,9 +48,40 @@ function detectEngine(ev: string[]): { engine: Engine; confidence: number } {
   return { engine: "unknown", confidence: 0.3 };
 }
 
+/** The resistFingerprinting signature shared by Tor Browser, Mullvad Browser, and RFP-Firefox: the
+ * timezone is forced to UTC, the content window is letterboxed to 200×100 multiples, and
+ * hardwareConcurrency is clamped to ≤2. Each trait alone is common (a UK user, a round window, a 2-core
+ * VM); the CONJUNCTION is the RFP tell — so all three are required, matching the detector's br.rfp_browser.
+ * Tor vs Mullvad is NOT separable here: they share an anonymity set by design and are identical at the JS
+ * layer; only the network layer (a Tor exit-IP) tells them apart. */
+function rfpGecko(ev: string[]): boolean {
+  try {
+    let tz = "";
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    } catch {
+      /* intl unavailable */
+    }
+    const utc = tz === "UTC";
+    const letterboxed =
+      window.innerWidth > 0 && window.innerWidth % 200 === 0 && window.innerHeight % 100 === 0;
+    const lowCores = (navigator.hardwareConcurrency || 99) <= 2;
+    if (utc && letterboxed && lowCores) {
+      ev.push("RFP signature: UTC timezone + letterboxed window + ≤2 cores");
+      ev.push(
+        "Tor vs Mullvad is not JS-separable (shared anonymity set) — the exit IP tells them apart",
+      );
+      return true;
+    }
+  } catch {
+    /* defensive: never block the prediction */
+  }
+  return false;
+}
+
 /** Specific browser within an engine, from vendor-specific globals (not the UA). */
 function detectBrowser(engine: Engine, ev: string[]): string {
-  if (engine === "gecko") return "Firefox";
+  if (engine === "gecko") return rfpGecko(ev) ? "Tor / Mullvad Browser" : "Firefox";
   if (engine === "webkit") return "Safari";
   if (engine === "blink") {
     if (has("opr") || has("opera")) {

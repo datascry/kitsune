@@ -72,3 +72,16 @@ valuable but need careful calibration against the real-browser corpus before shi
 - ✅ `br.canvas_geometry_noise (ACTIVE — canvas GEOMETRY farbling, the JShelter white-box tell from evasion-catalog; isPointInPath is an exact GPU-independent hit-test, deterministic in every real engine; 120 trials on a deep-interior + far-exterior point catch a ~5%-flip farbler at ~99.8%; FP-safe (missing API never fires, only a definitive verdict counts) — zero FP across browserforge calibration; distinct from canvas_noise/Brave readback farbling)`
 
 _Skipped: `br.stack_tool_marker` — the collector runs as the page's own inline script, so its Error().stack is clean regardless of automation (can't fire here)._
+
+## Live-page browser discrimination (white-box identification)
+
+The live page predicts the **real** browser from feature detection (`collector/src/livepage/predict.ts`),
+independent of the spoofable UA, and names it: **Brave** (`navigator.brave`), **Chrome / Edge / Opera /
+Samsung Internet** (UA-CH brands + `window.chrome`), **Firefox** (Gecko: `-moz-appearance` / `buildID` /
+`mozInnerScreenX`), **Safari** (WebKit), and the **Tor / Mullvad Browser** family (Gecko + the
+resistFingerprinting conjunction: UTC timezone + a 200×100-letterboxed window + ≤2 cores — the same
+signature the detector's `br.rfp_browser` ships and calibrates, so a vanilla Firefox is not mislabeled).
+
+**Honest limit:** Tor Browser and Mullvad Browser are *intentionally identical* at the JS layer (they share
+one anonymity set), so they are not JS-separable — only the **network layer** (a Tor exit-IP via
+`rep.*`/IP reputation) tells them apart. The prediction surfaces this in its evidence rather than guessing.
