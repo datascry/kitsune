@@ -3,7 +3,21 @@
 
 from __future__ import annotations
 
-from kitsune_harness.prevalence import build_prior, features_from_fingerprint, log_prevalence
+from kitsune_harness.prevalence import (
+    build_prior,
+    features_from_fingerprint,
+    log_prevalence,
+    screen_bucket,
+)
+
+
+def test_screen_bucket() -> None:
+    assert screen_bucket(1920, 1080) == "desktop-land"
+    assert screen_bucket(1470, 956) == "laptop-land"
+    assert screen_bucket(390, 844) == "mobile-port"
+    assert screen_bucket(3840, 2160) == "large-land"
+    assert screen_bucket(1366, 768) == "small-land"
+    assert screen_bucket(0, 0) is None and screen_bucket(-1, 5) is None
 
 
 def _fp(ua: str, renderer: str, w: int, h: int, color: int, cores: int) -> dict:
@@ -20,7 +34,7 @@ MAC = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/147"
 
 def test_features_extraction() -> None:
     f = features_from_fingerprint(_fp(WIN, "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 Direct3D11)", 1920, 1080, 24, 16))
-    assert f == {"plat": "Windows", "gpu": "nvidia", "screen": "1920x1080", "color": 24, "cores": 16}
+    assert f == {"plat": "Windows", "gpu": "nvidia", "screen": "desktop-land", "color": 24, "cores": 16}
     g = features_from_fingerprint(_fp(MAC, "ANGLE (Apple, ANGLE Metal Renderer: Apple M2)", 1470, 956, 30, 8))
     assert g["plat"] == "macOS" and g["gpu"] == "apple"
 

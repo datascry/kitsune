@@ -7,9 +7,12 @@ Coherence rules catch hard contradictions; this scores *soft improbability* — 
 field is valid and consistent (no contradiction) yet whose combination is one no real user has. It reads
 the platform/gpu/screen/colour/cores the collector emits, scores the log-prevalence under a committed
 prior (``data/prevalence_prior.json``), and (below the prior's conservative p1 threshold) emits
-``browser.prevalence_low``. Corroborating-only: the prior is a single source (browserforge), so the rule
-is experimental + low weight until the prior is corroborated against Tier-3 real traffic
-(docs/prevalence-model.md). Field extraction is kept in sync with ``kitsune_harness.prevalence``.
+``browser.prevalence_low``. Corroborating-only: the prior is browserforge-built, so the rule is
+experimental + low weight. The SCREEN factor is cross-validated against the Intoli real-traffic source —
+exact ``WxH`` missed 13-46% of real desktop resolutions (a circular single-source FP), so screen is scored
+as a coarse (size-class, orientation) bucket whose real-traffic miss is ~0%; gpu/colour/cores remain
+single-source pending Tier-3 (docs/prevalence-model.md). Field extraction (incl. the screen bucket) is kept
+in sync with ``kitsune_harness.prevalence``.
 """
 
 from __future__ import annotations
@@ -43,6 +46,35 @@ def _gpu_family(renderer: str) -> str:
     return "other"
 
 
+def _screen_bucket(res: str) -> str | None:
+    """Coarse, cross-source-robust screen feature: (size-class, orientation) from a "WxH" resolution.
+
+    Kept in sync with ``kitsune_harness.prevalence.screen_bucket``. The exact resolution is a single-source
+    FP landmine — the browserforge prior misses 13-46% of REAL desktop resolutions (verified vs the Intoli
+    real-traffic source; see docs/prevalence-model.md) — so prevalence scores the coarse bucket instead.
+    """
+    m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", res)
+    if not m:
+        return None
+    w, h = int(m.group(1)), int(m.group(2))
+    if w <= 0 or h <= 0:
+        return None
+    hi = max(w, h)
+    orient = "port" if h >= w else "land"
+    cls = (
+        "mobile"
+        if hi <= 960
+        else "small"
+        if hi <= 1366
+        else "laptop"
+        if hi <= 1680
+        else "desktop"
+        if hi <= 2560
+        else "large"
+    )
+    return f"{cls}-{orient}"
+
+
 def _v(session: Session, kind: str) -> Any:
     val = session.value(Layer.browser, kind)
     return None if val is MISSING else val
@@ -51,10 +83,11 @@ def _v(session: Session, kind: str) -> Any:
 def features_from_session(session: Session) -> dict[str, Any]:
     """Extract the prevalence features from a session's browser signals (mirrors the collector's values)."""
     renderer = _v(session, "webgl_renderer")
+    res = _v(session, "screen_resolution")
     return {
         "plat": _v(session, "ua_platform"),
         "gpu": _gpu_family(str(renderer)) if renderer else None,
-        "screen": _v(session, "screen_resolution"),
+        "screen": _screen_bucket(str(res)) if res else None,
         "color": _v(session, "color_depth"),
         "cores": _v(session, "hardware_concurrency"),
     }

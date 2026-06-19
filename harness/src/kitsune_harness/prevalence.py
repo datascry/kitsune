@@ -9,8 +9,11 @@ one no real user has (the BrowserForge/randomizer attack). It scores the log-pre
 key field combination under a real-distribution prior; a deep-tail score is the tell.
 
 Pure: ``build_prior`` and ``log_prevalence`` take plain feature dicts, so the prior can be built from any
-source (browserforge today; Tier-3 real traffic later). The prior is a single source for now, so this is a
-**corroborating** signal — see docs/prevalence-model.md for the over-leverage caveat.
+source (browserforge today; Tier-3 real traffic later). The prior is browserforge-built, so this is a
+**corroborating** signal. The SCREEN factor is cross-validated against the Intoli real-traffic source: exact
+``WxH`` missed 13-46% of real desktop resolutions (a circular single-source FP), so screen is bucketed to a
+coarse (size-class, orientation) feature (``screen_bucket``) whose real-traffic miss is ~0% — see
+docs/prevalence-model.md for the over-leverage caveat and the cross-source check.
 """
 
 from __future__ import annotations
@@ -22,6 +25,34 @@ from typing import Any
 
 # The fields whose JOINT distribution is modelled. Each is individually valid; the rarity is in the combo.
 Features = dict[str, Any]
+
+
+def screen_bucket(w: int, h: int) -> str | None:
+    """Coarse, cross-source-robust screen feature: (size-class, orientation).
+
+    The exact "WxH" resolution is a single-source FP landmine: a generated prior (browserforge) misses
+    13-46% of REAL desktop resolutions (verified against the Intoli real-traffic source — see
+    docs/prevalence-model.md), so an exact-resolution prevalence factor convicts real users on an unseen
+    screen. Bucketing the longest edge into size classes + orientation collapses that real-traffic miss to
+    ~0% (macOS/Android/Linux) while keeping the joint signal: a randomizer pairing a mobile-port screen with
+    a Windows + nvidia-desktop combo is still improbable. Returns None for an unknown/zero screen (unscored).
+    """
+    if not w or not h or w <= 0 or h <= 0:
+        return None
+    hi = max(w, h)
+    orient = "port" if h >= w else "land"
+    cls = (
+        "mobile"
+        if hi <= 960
+        else "small"
+        if hi <= 1366
+        else "laptop"
+        if hi <= 1680
+        else "desktop"
+        if hi <= 2560
+        else "large"
+    )
+    return f"{cls}-{orient}"
 
 
 def features_from_fingerprint(fp: dict[str, Any]) -> Features:
@@ -60,7 +91,7 @@ def features_from_fingerprint(fp: dict[str, Any]) -> Features:
     return {
         "plat": plat,
         "gpu": gpu,
-        "screen": f"{scr.get('width')}x{scr.get('height')}",
+        "screen": screen_bucket(int(scr.get("width", 0) or 0), int(scr.get("height", 0) or 0)),
         "color": scr.get("colorDepth"),
         "cores": nav.get("hardwareConcurrency"),
     }

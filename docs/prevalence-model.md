@@ -72,6 +72,36 @@ browser (an improbable-but-coherent joint) on a no-webcam desktop — `prevalenc
 signal. It is now capped at `suspicious`: the browserforge prior corroborates a suspicion but cannot convict
 a legitimate browser on rarity alone until the prior is corroborated against a second source.
 
+## Cross-source check of the prior (v0.73.1) — the screen factor was a circular single-source FP
+
+The standing rule is "never act on a single-source number." The prevalence rule is *calibrated on
+browserforge*, so calibrating it against browserforge is circular — it cannot reveal a factor that is common
+in reality but rare in the generator. Cross-checking the prior's `screen | platform` factor against the
+**Intoli real-traffic source** (its `screen` and UA-derived `plat` fields are faithful — verified in
+[calibration.md](calibration.md)) exposed exactly that:
+
+| platform | real Intoli sessions in a browserforge near-zero (≤eps) **exact-`WxH`** screen bucket |
+|---|---|
+| Windows | **46.2%** |
+| macOS | 13.2% |
+| Linux | 13.5% |
+| Android | 1.1% |
+
+A prevalence model with an exact-resolution screen factor would assign deep-tail (`log eps`) probability to
+13–46% of **real desktop users** — a latent false positive masked entirely by the circular browserforge
+calibration. The browserforge *generated* distribution simply does not cover the long tail of real screen
+sizes.
+
+**Fix:** coarsen the screen feature to `(size-class, orientation)` — `mobile/small/laptop/desktop/large` ×
+`port/land` (`prevalence.screen_bucket`, mirrored in the detector). The same cross-source check on the coarse
+buckets drops the real-traffic miss to **~0%** (macOS/Android/Linux; Windows ~12.6%, mostly Intoli's own
+incoherent UA×screen pairs), while keeping the joint signal — a randomizer pairing a `mobile-port` screen
+with a Windows + nvidia-desktop GPU is still improbable. The exact-`WxH` FP landmine is removed.
+
+`gpu`, `colour`, and `cores` are low-cardinality and stable, but Intoli does not carry them, so they remain
+single-source (browserforge) until a Tier-3 source can corroborate them — which is why the rule stays
+`experimental` / corroborating-only.
+
 ## Remaining (future loop iterations)
 
 1. Build the prior offline from the largest available real-distribution sample; ship it as a data table

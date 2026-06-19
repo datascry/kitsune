@@ -43,9 +43,18 @@ def test_gpu_family_branches() -> None:
     assert f("Some Unknown GPU") == "other"
 
 
+def test_screen_bucket() -> None:
+    # Kept in sync with kitsune_harness.prevalence.screen_bucket.
+    assert prevalence._screen_bucket("1920x1080") == "desktop-land"
+    assert prevalence._screen_bucket("1470x956") == "laptop-land"
+    assert prevalence._screen_bucket("390x844") == "mobile-port"
+    assert prevalence._screen_bucket("3840x2160") == "large-land"
+    assert prevalence._screen_bucket("garbage") is None and prevalence._screen_bucket("0x0") is None
+
+
 def test_features_from_session() -> None:
     feats = prevalence.features_from_session(_fp("macOS", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8))
-    assert feats == {"plat": "macOS", "gpu": "apple", "screen": "1470x956", "color": 30, "cores": 8}
+    assert feats == {"plat": "macOS", "gpu": "apple", "screen": "laptop-land", "color": 30, "cores": 8}
 
 
 def test_common_clears_improbable_fires() -> None:
