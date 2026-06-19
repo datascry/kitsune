@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.73.3"
+ruleset_version: "0.73.4"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1125,7 +1125,7 @@ rules:
     category: artifact
     added: "2026-06-18"
     last_validated: "2026-06-19"
-    source: "CreepJS: a real engine is deterministic; per-render noise is farbling/anti-detect injection. v0.73.3: per-browser N/A — Brave farbles audio by design (its default Shields), so on a session positively identified as Brave (browser.is_brave from navigator.brave) the detector drops this artifact (detector.applicability) rather than convict a real Brave user; a Chrome-claiming farbler with no navigator.brave still convicts, and a Brave-faking bot is caught by its automation tells."
+    source: "CreepJS: a real engine is deterministic; per-render noise is farbling/anti-detect injection. v0.73.3: per-browser N/A — a privacy browser farbles/blocks audio by design (Brave Shields via browser.is_brave; Tor/Mullvad/RFP-Firefox via browser.rfp_browser), so the detector drops this artifact (detector.applicability) rather than convict a real privacy-browser user; a Chrome-claiming farbler with no such identity still convicts, and a privacy-browser-faking bot is caught by its automation tells."
 
   - id: br.readback_noise
     title: AudioBuffer getChannelData and copyFromChannel disagree — readback noise shim
@@ -1469,10 +1469,10 @@ rules:
     predicate: present
     weight: 0.4
     status: active
-    category: artifact
+    category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Tor design: RFP forces UTC, letterboxes to 200x100, clamps hardwareConcurrency to 2 (conjunction required — each alone is common). Identifies a privacy browser = elevated risk, NOT a bot conviction (Tor users are often human); weight 0.4 corroborates rather than convicting alone"
+    last_validated: "2026-06-19"
+    source: "Tor design: RFP forces UTC, letterboxes to 200x100, clamps hardwareConcurrency to 2 (conjunction required — each alone is common). Identifies a privacy browser = elevated risk, NOT a bot conviction (Tor/Mullvad/RFP-Firefox users are HUMAN). v0.73.4: category corrected artifact->ENVIRONMENT to match that intent — RFP is a privacy feature, not a bot signature, so it must only CORROBORATE (cap at suspicious), never convict. Previously its artifact category let a real Tor user noisy-or rfp_browser + the RFP-blocked canvas to bot. Paired with the detector.applicability N/A that drops the privacy-browser farbling artifacts (canvas_noise/audio_noise) for an RFP session."
 
   # --- v0.26.0: canvas farbling (Brave-style per-session readback noise) ---
 
@@ -1486,7 +1486,7 @@ rules:
     category: artifact
     added: "2026-06-18"
     last_validated: "2026-06-19"
-    source: "Brave farbling adds per-session canvas noise; a solid fill read back exactly proves no farbling, any deviation proves it (reference-free). Privacy-tool tell = elevated risk; weight corroborates. v0.73.3: per-browser N/A — since Brave farbles canvas BY DESIGN, a session positively identified as Brave (browser.is_brave from navigator.brave) has this artifact dropped by the detector (detector.applicability) so a real Brave user (~70M) is not convicted; a Chrome-claiming farbler with NO navigator.brave still convicts."
+    source: "Brave farbling adds per-session canvas noise; a solid fill read back exactly proves no farbling, any deviation proves it (reference-free). Privacy-tool tell = elevated risk; weight corroborates. v0.73.3: per-browser N/A — a privacy browser perturbs/blocks the canvas readback BY DESIGN (Brave Shields farble it via browser.is_brave; Tor/Mullvad/RFP-Firefox block it to uniform-white via browser.rfp_browser), so a session positively identified as one has this artifact dropped by the detector (detector.applicability) — a real privacy-browser user is not convicted; a Chrome-claiming farbler with NO such identity still convicts."
 
   - id: br.canvas_geometry_noise
     title: Canvas path geometry is non-deterministic (isPointInPath farbling, e.g. JShelter)

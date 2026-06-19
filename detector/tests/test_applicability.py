@@ -38,3 +38,18 @@ def test_is_brave_does_not_shield_other_tells() -> None:
     verdict = Detector().score(brave_bot)
     assert verdict.label.value == "bot"
     assert "br.webdriver_present" in {c.rule_id for c in verdict.contradictions}
+
+
+def test_real_rfp_browser_is_not_convicted() -> None:
+    # A real Tor/Mullvad/RFP-Firefox user: rfp_browser (now environment, corroborating) + the RFP-blocked
+    # canvas (canvas_noise) would previously noisy-or to bot. Now rfp_browser corroborates and the farbling
+    # is dropped, so the privacy browser caps at suspicious, never bot.
+    tor = _session(rfp_browser=True, canvas_noise=True)
+    verdict = Detector().score(tor)
+    assert verdict.label.value != "bot"
+    assert "br.canvas_noise" not in {c.rule_id for c in verdict.contradictions}
+    # rfp_browser itself remains visible as a corroborating tell, but as environment it cannot convict alone.
+    assert "br.rfp_browser" in {c.rule_id for c in verdict.contradictions}
+    # An RFP-faking automation is still caught by its automation tells.
+    tor_bot = _session(rfp_browser=True, canvas_noise=True, webdriver=True)
+    assert Detector().score(tor_bot).label.value == "bot"
