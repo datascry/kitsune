@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.73.5"
+ruleset_version: "0.73.6"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -717,6 +717,18 @@ rules:
     added: "2026-06-19"
     last_validated: "2026-06-19"
     source: "The language half of the geo-spoof realm pair (with timezone_worker_vs_main). A residential-proxy bot patches navigator.languages in the main realm to match the proxy's country, but a JS patch cannot reach Web Worker scope, so a Worker reports the real host languages. Grounded headless: a normal real browser reports identical languages in both realms (no fire). EXPERIMENTAL — unlike timezone, a legitimate CDP locale override (context.locale) does NOT propagate to the Worker (grounded: main es-ES, worker en-US → diverges), so this fires on legit locale emulation and on the rare real user running a language-spoofing privacy extension; kept corroborating until the legit-browser divergence rate is validated against Tier-3 real traffic. Catches both JS- and CDP-level main-realm language spoofs."
+
+  - id: br.language_vs_languages
+    title: navigator.language disagrees with navigator.languages[0] (spec-invariant violation)
+    layers: [browser]
+    reads: [browser.language_list_incoherent]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: coherence
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "The self-contained, no-Worker language analog of timezone_offset_vs_intl. The HTML standard defines navigator.language as navigator.languages[0], so on EVERY real browser they are identical — there is no legitimate way to make them differ. A residential-proxy / geo locale spoof that Object.defineProperty's navigator.language to the proxy's country but forgets navigator.languages (or vice versa) breaks the invariant. The collector fires only when both are present and differ. FP-safe ACTIVE by spec (a real browser cannot disagree — unlike languages_worker_vs_main, this needs no Worker and is not tripped by a legit CDP locale override, which sets both fields together); convicting coherence. Catches the naive JS locale spoof that the worker-divergence and HTTP-Accept-Language checks may miss when only one main-realm field was patched."
 
   - id: br.timezone_offset_vs_intl
     title: getTimezoneOffset disagrees with the Intl IANA timezone's actual offset

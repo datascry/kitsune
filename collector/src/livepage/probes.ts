@@ -817,6 +817,13 @@ export function armCollector(): LiveCollector {
     }
     if (isChromium && cdpRuntimeEnabled()) put("browser", "cdp_runtime_enabled", true);
     if (navigator.languages.length === 0) put("browser", "languages_empty", true);
+    // Spec invariant: navigator.language IS navigator.languages[0] (HTML standard). A real browser never
+    // disagrees; a mismatch is a sloppy JS locale spoof (navigator.language patched, navigator.languages
+    // left real). Self-contained, FP-safe by spec.
+    const lang0 = navigator.languages[0];
+    if (navigator.language && lang0 && navigator.language !== lang0) {
+      put("browser", "language_list_incoherent", true);
+    }
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) {
       put("browser", "screen_zero", true);
     }

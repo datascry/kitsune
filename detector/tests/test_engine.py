@@ -341,6 +341,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ),
         ([(Layer.browser, "brave_spoofed", True, Source.collector)], "br.brave_spoofed"),
         (
+            [(Layer.browser, "language_list_incoherent", True, Source.collector)],
+            "br.language_vs_languages",
+        ),
+        (
             [
                 (Layer.browser, "webrtc_public_ip", "203.0.113.7", Source.collector),
                 (Layer.network, "observed_ip", "198.51.100.2", Source.edge),

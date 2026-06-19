@@ -247,6 +247,11 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     langs = nav.get("languages") or []
     if len(langs) == 0:
         sig("languages_empty", True)
+    # Spec invariant: navigator.language IS navigator.languages[0] (HTML standard) — a real browser never
+    # disagrees, so this never fires on a coherent fingerprint; a sloppy JS locale spoof makes them differ.
+    lang = str(nav.get("language", "") or "")
+    if lang and langs and lang != str(langs[0]):
+        sig("language_list_incoherent", True)
     if nav.get("platform", "") == "":
         sig("platform_empty", True)
     mimetypes = (fp.get("pluginsData") or {}).get("mimeTypes", []) or []

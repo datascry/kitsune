@@ -673,6 +673,13 @@ DEMO_PAGE = """<!doctype html>
     // The Runtime.enable leak is CDP-specific (Chromium). Guarded to Chromium to avoid odd Firefox cases.
     if (isChromium && cdpRuntimeEnabled()) sigs.push(S("browser", "cdp_runtime_enabled", true));
     if (!navigator.languages || navigator.languages.length === 0) sigs.push(S("browser", "languages_empty", true));
+    // Spec invariant: navigator.language IS navigator.languages[0] (HTML standard). A real browser can never
+    // disagree — the only way to make them differ is a sloppy JS locale spoof (a residential-proxy geo-spoof
+    // that Object.defineProperty's navigator.language to the proxy's country but leaves navigator.languages).
+    // Self-contained (no Worker, no HTTP/IP-geo); FP-safe by spec.
+    var _l0 = navigator.languages && navigator.languages[0];
+    if (navigator.language && _l0 && navigator.language !== _l0)
+      sigs.push(S("browser", "language_list_incoherent", true));
     // Primary language subtag the JS layer reports — cross-checked against the HTTP Accept-Language at
     // the edge (net.accept_lang_vs_navigator). A locale spoofed in JS but not in the HTTP stack mismatches.
     var _nl = (navigator.languages && navigator.languages[0]) || navigator.language || "";

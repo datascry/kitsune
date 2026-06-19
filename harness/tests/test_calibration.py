@@ -123,6 +123,18 @@ def test_coherent_real_chrome_scores_human() -> None:
     assert "webgl_software" not in k and "ch_he_headless" not in k and "media_devices_empty" not in k
 
 
+def test_language_list_spec_invariant() -> None:
+    # navigator.language IS navigator.languages[0] (HTML spec) — a coherent fingerprint never trips it.
+    coherent = {
+        **CHROME_MAC,
+        "navigator": {**CHROME_MAC["navigator"], "language": "en-US", "languages": ["en-US", "en"]},
+    }
+    assert "language_list_incoherent" not in _kinds(signals_from_fingerprint(coherent, "p", NOW))
+    # A locale spoof that patches navigator.language but leaves navigator.languages breaks the invariant.
+    spoof = {**CHROME_MAC, "navigator": {**CHROME_MAC["navigator"], "language": "pt-BR", "languages": ["en-US", "en"]}}
+    assert "language_list_incoherent" in _kinds(signals_from_fingerprint(spoof, "p", NOW))
+
+
 def test_mobile_does_not_trip_desktop_plugin_tells() -> None:
     # A real Android Chrome legitimately reports 0 plugins / 0 mimeTypes / no PDF viewer — desktop-only tells
     # must NOT fire on it (the per-browser FP). The same stripped values on DESKTOP do fire.
