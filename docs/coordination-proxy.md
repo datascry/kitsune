@@ -124,11 +124,19 @@ is NOT blocked (public CIDR data, no live proxy needed); only the *in-sandbox li
 container IPs are private (172.x), so the live fleet captures corroborate via their automation tells instead,
 not via an IP-reputation flag. A production deployment seeing real datacenter/proxy IPs gets the flag.
 
-**Live re-validation (2026-06-19):** a fresh concurrent 3-instance cloned capture through the edge, scored
-under the new gates, → `fleet 1.00` (fp-collision corroborated by the stealth members' automation tells); the
-gating preserves the live conviction end-to-end. The remaining genuinely-blocked piece is narrower than
-before: `net.webrtc_ip_vs_observed` (a proxy-vs-origin IP mismatch) needs a real proxy egress to produce
-live, and the datacenter/proxy CIDR seed lists are non-exhaustive (refresh per docs/ip-reputation-data.md).
+**Live re-validation (2026-06-19, ruleset 0.74.21):** a fresh concurrent 3-instance cloned capture through
+the live edge→detector stack (new sids, `fp_hash bf779223` across distinct container IPs 172.22.0.4/.5/.6),
+scored by the live coordination detector → `fleet 1.00` via the **fp-collision** path. The corroboration
+source was verified by inspecting the captured signals: each member carries automation tells
+(`cdp_runtime_enabled`, `ch_he_headless`, `chrome_object_missing`) on a **private** IP with an empty
+`reputation` layer — so the conviction is carried by `_has_automation_tell`, NOT an IP-reputation flag,
+exactly as the gate intends (the cloned fleet IS automated → it self-corroborates; a clean residential
+corporate fleet would not, and stays `candidate`). This confirms the `a4d1ac0` corroboration-gating
+(fp-collision / JA4_c-divergence now require corroboration) did not break the live cloned-fleet conviction
+end-to-end. CI drift fixed in the same pass (two ruff findings in the coordination module/test). No rule
+semantics changed → no ruleset bump. The remaining genuinely-blocked piece is narrower than before:
+`net.webrtc_ip_vs_observed` (a proxy-vs-origin IP mismatch) needs a real proxy egress to produce live, and
+the datacenter/proxy CIDR seed lists are non-exhaustive (refresh per docs/ip-reputation-data.md).
 
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 

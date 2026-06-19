@@ -341,7 +341,12 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     convicting = unambiguous or fp_collision_convicts or ja4c_convicts
     if (collision is not None or ja4c_divergent) and not corroborated:
         which = " + ".join(
-            w for w, on in (("identical-fingerprint collision", collision is not None), ("JA4_c divergence", ja4c_divergent)) if on
+            w
+            for w, on in (
+                ("identical-fingerprint collision", collision is not None),
+                ("JA4_c divergence", ja4c_divergent),
+            )
+            if on
         )
         evidence.append(
             f"{which} is UNCORROBORATED (no automation tell, cloned trace or shared origin) — ambiguous "

@@ -48,7 +48,7 @@ def test_real_cloned_fleet_online_alert() -> None:
     corpus = load_corpus(_repo_corpus("fleet-cloned"))
     alerts = replay_stream(corpus)
     assert len(alerts) == 1
-    trigger, verdict = alerts[0]
+    _trigger, verdict = alerts[0]
     assert verdict.label == "fleet"
     assert verdict.cloned_fingerprint is not None
     assert len(verdict.members) == 2  # alert raised the instant the 2nd distinct-IP member collides
