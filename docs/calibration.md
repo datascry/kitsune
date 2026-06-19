@@ -173,6 +173,34 @@ browserforge lacks a few signals (speech-synthesis voices, `getHighEntropyValues
 cloud matrix or opt-in collection from the hosted demo). This is Tier-1: real fingerprint *distributions*
 for the 30 rules that depend on the static fingerprint, which is where the false positives concentrate.
 
+### Mapper fidelity & coverage scope (audited 2026-06-19)
+
+The standing constraint demands we prove the mapper (`signals_from_fingerprint`) emits what a REAL browser
+emits. A signal-KIND diff — the mapper over generated/real fingerprints vs. the kinds the real headful
+Chromium/Firefox/WebKit captures emit — settles both directions:
+
+- **Mapper emits, real captures don't:** only `font_os_hint` and `webgl_not_angle`. `font_os_hint` is
+  **faithful** — the mapper's per-OS signature font lists (`Segoe UI`/`Calibri`/… etc.) and its ≥2-match
+  threshold are identical to the collector's `fontOSHint()`; it's simply absent from the sparse-font test
+  container, not fabricated. `webgl_not_angle` is the documented browserforge **renderer-generation
+  artifact** (its generated GPU strings aren't ANGLE-wrapped); it is environment-category, so it can only
+  ever corroborate, never convict — its ~1.8% "FP" is browserforge being unrealistic, not a real-browser FP.
+- **Real captures emit, mapper doesn't (35 kinds):** every `net.*` kind (`ja3`/`ja4`/`h2`/`tcp_kernel`/
+  `tls_no_grease`/`quic_*`), every behavioural kind (`mouse_*`/`trace_hash`/`pause_ratio`/`submovement_*`),
+  the automation kinds (`cdp_runtime_enabled`/`chrome_runtime_missing`), and `webgpu_*`/`voices_empty`/CH
+  headers. **This is the load-bearing caveat:** browserforge has no network/behavioural/automation/CH/webgpu
+  layer, so the FP gate run through it measures ONLY the ~21 browser-fingerprint-coherence kinds — it is
+  **structurally blind** to those 35. The headline "≈80% human (n=500)" therefore validates the
+  browser-coherence rules only; the `net.*`, automation, and behavioural convicting rules are validated
+  against the **live evader fleet** (their first live positives), the **headful captures**, and **Intoli**
+  — never browserforge. Reading the browserforge number as "the FP rate" would over-trust a single source
+  that cannot even see most convicting rules.
+
+The 21-kind scope is pinned by `harness/tests/test_mapper_coverage.py` over the committed real engine
+fingerprints (no browserforge needed): if a future mapper change adds or drops a measured kind, the test
+fails, forcing a conscious update here + a re-check that the new kind is faithful to the collector (not a
+mapper artifact like an early `navigator.platform` / `color_depth` / iOS-`vendor_vs_ua` would have been).
+
 ## Second real-traffic source (Intoli) — verification, and what it actually showed
 
 A third tier of corroboration: the **Intoli `user-agents` dataset** (BSD-2-Clause; ~10k records resampled
