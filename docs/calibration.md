@@ -103,6 +103,17 @@ over-leverage guard working: never prune/down-weight on a single-source FP numbe
 FP rates (media_devices_empty etc.) still need a Tier-3 real-*desktop* source — a container is not a
 desktop, so neither browserforge nor headless engines settle those.
 
+**The guard is now an enforced gate, not a one-time check.** `test_real_engine_captures_trip_no_spurious_coherence`
+scores the three real-engine captures through the detector and pins the convicting (coherence/artifact)
+rules each may fire: **none** for Chromium and Firefox (a real engine is internally coherent), and only
+`br.navplatform_vs_ua` for WebKit — itself a property of the *capture*, not a rule bug, since Playwright's
+WebKit on Linux serves a macOS Safari UA while `navigator.platform` leaks `Linux x86_64` (a real Safari on
+a real Mac would never produce that contradiction). Any future rule that begins firing on real Chromium or
+Firefox breaks the test — an FP on a real browser caught against the second source, before it can ship.
+(Headful captures via Playwright + xvfb were attempted as a cleaner Tier-2 source but the browsers hang on
+headful launch in this headless/no-GPU sandbox; the headless engine captures remain the achievable second
+source here.)
+
 ## Honest scope
 
 browserforge lacks a few signals (speech-synthesis voices, `getHighEntropyValues` runtime, WebRTC), so

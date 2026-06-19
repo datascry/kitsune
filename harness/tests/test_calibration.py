@@ -3,9 +3,13 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 from kitsune_detector.detector import Detector
+from kitsune_detector.ingest import group_signals
+from kitsune_detector.models import RuleCategory
 
 from kitsune_harness.calibration import (
     DERIVABLE_KINDS,
@@ -228,6 +232,37 @@ def test_calibrate_and_report() -> None:
     assert not by_id["br.cdp_runtime_enabled"].calibrated
     out = render_report(report, fp_threshold=0.0)
     assert "Kitsune calibration" in out and "br.webgl_software" in out and "Verdict distribution" in out
+
+
+_ENGINES_DIR = Path(__file__).resolve().parents[2] / "corpus" / "calibration" / "engines"
+
+# The convicting coherence/artifact rules that may fire on each REAL (Tier-2) engine capture. A real
+# browser engine is internally coherent, so chromium/firefox must trip NONE. The one allowed fire —
+# `br.navplatform_vs_ua` on webkit — is a property of the *capture*, not a rule bug: Playwright's WebKit
+# on Linux serves a macOS Safari UA while `navigator.platform` leaks `Linux x86_64` (the container), a
+# genuine Mac-UA-vs-Linux-platform contradiction a real Safari on a real Mac would never produce.
+_EXPECTED_CONVICTING_COHERENCE: dict[str, set[str]] = {
+    "chromium": set(),
+    "firefox": set(),
+    "webkit": {"br.navplatform_vs_ua"},
+}
+
+
+def test_real_engine_captures_trip_no_spurious_coherence() -> None:
+    """Tier-2 over-leverage guard, as an enforced gate: scoring the real Chromium/Firefox/WebKit captures
+    must surface no *new* convicting coherence/artifact rule. This is the second, independent source that
+    refutes a single-source (browserforge) FP number — a coherence rule that starts firing here is an FP
+    on a real browser, the exact regression the calibration discipline exists to catch."""
+    det = Detector()
+    convicting = {RuleCategory.coherence, RuleCategory.artifact}
+    for path in sorted(_ENGINES_DIR.glob("*.json")):
+        name = path.stem
+        fp = json.loads(path.read_text())
+        sigs = signals_from_fingerprint(fp, name, NOW)
+        verdict = det.score(group_signals(sigs)[0])
+        fired = {c.rule_id for c in verdict.contradictions if c.category in convicting}
+        expected = _EXPECTED_CONVICTING_COHERENCE.get(name, set())
+        assert fired == expected, f"{name}: convicting coherence/artifact fires changed: {fired} != {expected}"
 
 
 def test_derivable_kinds_are_a_subset_of_real_rule_reads() -> None:
