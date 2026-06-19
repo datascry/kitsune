@@ -61,6 +61,11 @@ tasks:
     dir: harness
     cmds: ["uv run --with browserforge python -m kitsune_harness.browserforge_corpus --n {{.N | default 500}}"]
 
+  coordination-eval:
+    desc: "Measure the fleet detector's precision/recall across legit + malicious coordination scenarios"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.coordination_scenarios"]
+
   ci:
     desc: Run the full local pipeline
     cmds:
