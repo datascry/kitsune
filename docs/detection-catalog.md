@@ -224,7 +224,27 @@ tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact
 | `br.broken_image_dims` | ❌ DEAD | medium | easy | Broken-image dimensions — Headless renders a broken img at 0x0; real Chrome ~16x16. DEAD: grounded out — a broken <img> is 0x0 in headless AND headful Chromium, so there is no signal to mismatch. |
 | `rep.ja4_traffic_shape` | low | medium | hard | JA4 aggregate traffic-shape — Per-JA4 browser_ratio/h2h3_ratio/quantile vs genuine same-JA4 baseline flags spoofed fps. |
 | `br.antidetect_tool_hash` | low | low | medium | Anti-detect extension hash — Hash patched prototype-method source to name CanvasBlocker/JShelter/puppeteer-extra. |
-| `br.chrome_runtime_authenticity` | ⛔ Tier-3-BLOCKED | high | medium | chrome.runtime AUTHENTICITY (not presence) — NEW gap surfaced by the headful-patchright red-team work. `br.chrome_runtime_missing` (demo.py:742) is a PRESENCE-only check (`window.chrome && !window.chrome.runtime`), trivially cleared by faking `window.chrome.runtime = {}` (the FLOOR_SPOOF mode already does this → it does NOT trip the rule). It is the **only deterministic convicting browser-layer catch** for headful patchright (the rest is timing-dependent `quic_grease` + corroborating env/behavioural), so a patchright-class tool that also fakes chrome.runtime would defeat the deterministic browser layer. Fix = verify chrome.runtime is AUTHENTIC (native `connect`/`sendMessage`, real shape). **BLOCKED:** cannot ground authentic chrome.runtime in-sandbox — Playwright Chromium lacks chrome.runtime entirely, and there is no real non-Playwright Chrome here; shipping the check without that ground truth risks FP on real Chrome (constraint #6). Needs a Tier-3 real-Chrome capture. See docs/evasion-catalog.md. |
+| `br.chrome_runtime_authenticity` | ❌ SUPERSEDED (v0.74.28) | — | — | RESOLVED by grounding against real Chrome. A real non-automated Chrome 149 (CDP-launched, `webdriver=false`) has `window.chrome` but **`chrome.runtime` is `undefined` on a normal page** — modern Chrome removed it from non-extension contexts (~v106). So "authenticity" has no baseline (the API is absent), and `br.chrome_runtime_missing` was RETIRED (it convicted EVERY real Chrome — a presence-check FP, not a buildable gap). Catching a chrome.runtime-faking tool now means catching a tool that ADDS an API real Chrome lacks — the inverse, and only if the fake's shape is distinguishable, which is its own ungrounded surface. See `corpus/calibration/headful/chrome-stable.json` + [[real-browser-capture-profiles]]. |
+
+## Open frontiers — what external data unblocks each (operator menu, 2026-06-20)
+
+Per-session detection is **saturated** and every real-browser FP a sandbox can surface is fixed (8 fixes,
+v0.74.26–0.74.32; all runnable engine families clean — see [[real-browser-capture-profiles]]). Every genuinely
+unbuilt gap above is now classified, and each converges on ONE external data source the sandbox cannot generate.
+This is the operator's menu — provide a source, unlock the detections:
+
+| provide this data source | unlocks |
+|---|---|
+| **Real residential/datacenter proxy egress** (real exit IPs, not container 172.x) | the coordination `rep.*` + proxy-topology signals (plumbing built + tested, `task fleet_capture`); catches the per-session EVADES mimics (zendriver/patchright/camoufox-headful) when they fleet behind proxies |
+| **A real-traffic fingerprint prior** (hosted-demo opt-in or a real-device matrix — NO public dataset of sufficient scale/fields is fetchable; checked 2026-06-20) | a TRUE second prevalence prior to replace the single-source browserforge `gpu` factor (fpgen agrees but is same-family, not ground truth); `build_prior_from_sessions` is ready |
+| **A real GPU host** (non-software-rendering, real WebGL/WebGPU) | `br.canvas_hash_engine_vs_ua`, `br.webgpu_limits_incoherent`, `br.gamut_vs_gpu` — all need a real-GPU baseline to ground without FP |
+| **Real Windows / macOS / Safari browsers** (sandbox is Linux-only) | `br.measuretext_os_vs_ua`, `br.emoji_os_vs_ua` (OS-font baselines); resolves the Playwright-WebKit-≠-real-Safari `net.*` artifacts; cross-OS FP grounding |
+
+The remaining unbuilt gaps without an external blocker are FP-prone (`br.timer_resolution_vm`, `br.hw_memory_implausible`,
+`br.storage_quota_anomaly`), redundant with shipped OS-coherence rules (`br.emoji_os_vs_ua` overlaps `net.tcp_os_vs_ua`
+for direct connections; `net.ja4t_vs_ua`), or dead — i.e. NOT worth building per the standing "don't grind marginal
+tells at saturation" constraint. The honest state: in-sandbox detection advancement is exhausted; genuine new
+coverage needs one of the four data sources above.
 
 ## Build order (precision-first) — COMPLETE
 
