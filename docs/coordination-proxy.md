@@ -151,9 +151,19 @@ IPs (172.x), not real ASN-classifiable IPs. The routing plumbing to fix that is 
   gave `observed_ip = 172.22.0.4` (**the proxy's** IP). So the edge demonstrably attributes the session to the
   PROXY's egress, not the client — exactly the substitution `rep.datacenter_asn`/`rep.known_proxy_exit` need:
   swap the local stand-in for a real residential/datacenter proxy and the edge sees a real ASN-classifiable IP.
-  (The `net.webrtc_ip_vs_observed` half is NOT demonstrable with a stand-in: a headless container gathers no
-  public WebRTC ICE candidate, so the real-IP-behind-proxy leak still needs a real browser with real network
-  connectivity. The IP-attribution plumbing — the load-bearing piece — is the part now proven.)
+  (The `net.webrtc_ip_vs_observed` half is NOT demonstrable in-sandbox — diagnosed precisely 2026-06-19. The
+  rule fires when the WebRTC-leaked srflx IP ≠ the proxy-observed IP, and WebRTC's UDP bypasses the HTTP proxy,
+  so it *should* leak the real container IP. A full attempt was made: a minimal STUN responder + the CONNECT
+  proxy on the lab net, with the evader's WebRTC STUN host redirected to the local responder via Chromium
+  `--host-resolver-rules=MAP stun.l.google.com <ip>`. The STUN responder works (a direct UDP probe gets a
+  reflected address) and UDP egress works, and the headless browser DOES gather host/mDNS candidates
+  (`webrtc_unavailable` never fires) — but it never sends a STUN binding request to the redirected responder,
+  so no `srflx` candidate and no `webrtc_public_ip`. So **headless Chromium's WebRTC `srflx` gathering does not
+  honour the host-resolver redirect** (its ICE stack resolves STUN outside the override) — a Chromium-headless
+  limitation, not a Kitsune one. The rule's logic is unit-tested (`test_engine`); only its live collector→signal
+  path needs a real browser with real STUN reachability. The unvalidated `KS_STUN` evader hook was reverted —
+  per "never ship a signature you couldn't ground." The IP-attribution plumbing — the load-bearing piece — is
+  proven; the WebRTC leak is the icing that genuinely needs real connectivity.)
 - `fleet_capture.sh` honours `PROXIES=url1,url2,url3` — node *i* routes via `PROXIES[i]` (round-robin), so a
   fleet egresses from distinct real IPs.
 
