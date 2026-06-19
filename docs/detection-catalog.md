@@ -80,10 +80,15 @@ lightable by a faithful evader (the electron-leak / stale-engine pattern):
 
 Reproduce the audit: score `corpus/sessions/*.json` through `Detector().score()` and diff the fired rule_ids
 against the active-convicting set. **The no-test/no-capture liability class is now EMPTY** (v0.74.22): every
-active convicting rule has either a live positive or a unit test proving its logic. The remaining 11 rules
-that fire on zero *committed captures* all have unit tests (logic proven); adding a live capture for each is
-optional polish, not a liability. Per-session validation is therefore complete — future iterations should
-pivot to the structural frontiers (prevalence second prior; live proxy/coordination) per the standing brief.
+active convicting rule has either a live positive or a unit test proving its logic. The five lit rules were
+then **captured as committed `corpus/sessions` fixtures** (electron-leak, stale-engine, measuretext-spoof,
+canvas-lie, domrect-spoof) — so they appear in the matrix/scoreboard and are guarded by
+`test_lit_rule_captures.py` (each capture must still trip its target rule). This dropped fire-on-zero-captures
+from 15 → 9; the remaining 9 all have unit tests (logic proven). Per-session validation is therefore complete
+— future iterations pivot to the structural frontiers, both confirmed external-data-bound this iteration:
+the prevalence second prior needs real-device gpu/cores data, and the coordination shape-signals
+(`fp_collision`, `trace_collision` via fleet-cloned, `shared_real_ip` via fleet-proxy) are already
+demonstrated in-sandbox — only the IP-reputation half (`rep.*`) needs real residential-proxy egress.
 
 **Per-session convicting detection is SATURATED.** The remaining table rows are either shipped (✅), grounded-
 out dead-ends (❌: `interact_without_focus` — `document.hasFocus()` is `true` in headless too;
