@@ -622,3 +622,16 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   dataset**, not just a synthetic fleet evader — `br.vendor_vs_ua` has real-world detection value, locked by
   `test_intoli_corpus.test_macos_safari_with_google_vendor_still_convicts`. The recurring Intoli re-run remains
   the highest-yield precision check (it caught the iOS and unknown-engine FPs); it is now clean. No rule changed.
+
+- **2026-06-19 · ruleset 0.74.24 deployed + validated live — the prevalence threshold FP fix is now in
+  effect.** The prevalence cross-source-threshold fix (v0.74.24) had been committed but the live detector was
+  still serving the **stale 0.74.23** image (the over-flagging `-7.73` self-p1). Rebuilt + redeployed the
+  detector; live stack now at 0.74.24 with the conservative `-9.484` (cross-source) threshold. Validated:
+  `br.fingerprint_improbable` still fires on the 3 genuine improbable spoofs (`ios-ua-spoof`, `renderer-spoof`,
+  `webkit-ua-spoof`) — **recall preserved** — while no real-browser capture and no clean stealth run trips it,
+  and the whole committed corpus is unchanged at **57 bot / 1 suspicious** (every evader caught, the lone
+  suspicious is a baseline real browser). A live `STEALTH=1` evader → bot at 0.74.24, `fingerprint_improbable`
+  silent. Lesson logged: **after a prior-data or rule change, redeploy the live detector** — a committed fix
+  isn't in effect until the running image is rebuilt. Also completed the self-referential-calibration audit:
+  the bot/suspicious score cutoffs (`0.35`/`0.65`) are FIXED design constants, not browserforge-self-referential,
+  so the prevalence threshold was the only self-calibrated number — now fixed. No rule changed → no ruleset bump.
