@@ -20,6 +20,7 @@ Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6*
 
 | tool / harness | priority | effort | what it would test that the fleet can't |
 |---|---|---|---|
+| **worker-spoof (stealth WORKER_SPOOF=1) — ✅ ADDED** | — | — | DONE: the context-isolation gap. A main-realm-only navigator spoof (hardwareConcurrency dropped via addInitScript) never reaches Web Worker global scope, so the collector's Blob worker reads the real value → first live catch of `br.worker_divergence` (previously 0-catch). Grounded: a real browser does not diverge. |
 | **Residential/proxy-fleet harness (Scrapoxy or socks5h chain +** | critical | hard | The single biggest test gap. rep.datacenter_asn, rep.known_proxy_exit, net.webrtc_ip_vs_observed, and ALL six proxy-topology coordination signals (residential-p |
 | **curl_cffi / rnet / tls-client (bogdanfinn) as a current-temp** | high | easy | go-tls is deliberately a STALE template (uTLS 1.6.7, no PQ); primp/curl-impersonate are current. Adding rnet or tls-client gives a SECOND current high-fidelity  |
 | **BrowserForge + apify fingerprint-injector JS-coherence evade** | high | medium | Tests the Bayesian-joint-distribution attack head-on: an injector setting UA->platform->codecs->GPU->screen from a real-traffic joint sample is exactly what the |

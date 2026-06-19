@@ -17,6 +17,11 @@ const MAX_STEALTH = process.env.MAX_STEALTH === "1";
 // voices and enumerateDevices. Tests whether voices_empty/media_devices_empty are a real wall or just
 // catch the lazy (absent) case — and whether the detector catches the *spoof* via coherence instead.
 const FLOOR_SPOOF = process.env.FLOOR_SPOOF === "1";
+// WORKER_SPOOF: the context-isolation gap. A JS-injection spoof (addInitScript / Object.defineProperty)
+// patches navigator in the main realm and its iframes, but NOT Web Worker global scope — a Worker reads
+// the real hardwareConcurrency/userAgent. Spoof only the main thread (the lazy way most UA/hardware
+// spoofers do) and the detector's worker_divergence probe catches the realm the patch never reached.
+const WORKER_SPOOF = process.env.WORKER_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -55,8 +60,10 @@ const LINUX_CHROME_UA =
 
 const userAgent =
   SPOOF_UA || (MAX_STEALTH || FULL || FLOOR_SPOOF ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
-const evading = STEALTH || FULL || MAX_STEALTH || FLOOR_SPOOF || Boolean(SPOOF_UA);
-const mode = FLOOR_SPOOF
+const evading = STEALTH || FULL || MAX_STEALTH || FLOOR_SPOOF || WORKER_SPOOF || Boolean(SPOOF_UA);
+const mode = WORKER_SPOOF
+  ? "worker-spoof"
+  : FLOOR_SPOOF
   ? "floor-spoof"
   : MAX_STEALTH
     ? "max-stealth"
@@ -134,6 +141,14 @@ if (FLOOR_SPOOF) {
       if (p === 37446) return "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)";
       return gp.call(this, p);
     };
+  });
+} else if (WORKER_SPOOF) {
+  // Spoof navigator in the MAIN realm only — the lazy hardware/UA spoof. hardwareConcurrency is dropped
+  // to 2 and the UA is rewritten in-page; both patches live on the main thread and its iframes but never
+  // reach Worker global scope, so the collector's Blob worker reports the real values → worker_divergence.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
   });
 } else if (evading) {
   await context.addInitScript(() => {

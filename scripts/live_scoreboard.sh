@@ -37,6 +37,7 @@ run_stealth "$OUT/stealth-patched.json" -e STEALTH=1
 run_stealth "$OUT/spoof-ua.json" -e SPOOF_UA="Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
 run_stealth "$OUT/full-stealth.json" -e FULL=1
 run_stealth "$OUT/floor-spoof.json" -e FLOOR_SPOOF=1 # red-team: fake the environment floor (voices/devices)
+run_stealth "$OUT/worker-spoof.json" -e WORKER_SPOOF=1 # red-team: main-realm-only spoof → br.worker_divergence
 # OS spoof: a Windows UA over the Linux edge — caught by net.tcp_os_vs_ua (TCP/IP kernel vs claimed OS).
 run_stealth "$OUT/os-spoof.json" -e SPOOF_UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 run_stealth "$OUT/patchright.json" -e PATCHRIGHT=1 || true # evaluate a real anti-detect tool
@@ -67,6 +68,7 @@ ARGS=(
   "stealth-patched=$OUT/stealth-patched.json"
   "spoof-ua=$OUT/spoof-ua.json"
   "full-stealth=$OUT/full-stealth.json"
+  "worker-spoof=$OUT/worker-spoof.json"
 )
 [ -s "$OUT/patchright.json" ] && ARGS+=("patchright=$OUT/patchright.json")
 [ -s "$OUT/camoufox.json" ] && ARGS+=("camoufox=$OUT/camoufox.json")
