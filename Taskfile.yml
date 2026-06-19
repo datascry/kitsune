@@ -82,6 +82,11 @@ tasks:
     dir: harness
     cmds: ["uv run --with fpgen python -m kitsune_harness.fpgen_corroborate --n {{.N | default 500}}"]
 
+  coherence-corroborate:
+    desc: "Second-source FP-check of the font/webgl/platform/productSub coherence rules vs fpgen's data"
+    dir: harness
+    cmds: ["uv run --with fpgen python -m kitsune_harness.fpgen_coherence --n {{.N | default 400}}"]
+
   matrix:
     desc: "Refresh docs/matrix.md from the committed real captures against the current ruleset (no live run)"
     dir: harness

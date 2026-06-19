@@ -217,6 +217,24 @@ by `harness/tests/test_mapper_value_fidelity.py` (every shared value must match 
 guarded headless/headful allowlist), so a future mapper change that produces a wrong *value* — a calibration
 artifact deeper than a wrong kind — fails CI.
 
+### Second-source coherence FP-check (fpgen, 2026-06-19) — `task coherence-corroborate`
+
+Four convicting COHERENCE rules — `br.font_os_vs_ua`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`,
+`br.productsub_vs_ua` — were FP-checked against **browserforge alone** (Intoli can't reach them: it carries no
+fonts / WebGL renderer / reliable platform). **fpgen** (Scrapfly's generator — independent data, see the
+prevalence-corroboration) is the only available second source with those fields, so it now corroborates them
+(`kitsune_harness.fpgen_coherence`, scoped to exactly those four — the only rules whose operands map faithfully
+from fpgen; `vendor_vs_ua`/`oscpu_vs_ua` are excluded because fpgen nulls `navigator.vendor` and sets `oscpu`
+to "undefined"). Result over ~300: `webgl_os`/`navplatform`/`productsub` **0%**, `font_os_vs_ua` **~1.3%** —
+and that 1.3% is **not** a real-browser FP: drilling in, the firings are fpgen GENERATION incoherences (a
+*Windows* UA + Windows platform generated with *macOS* fonts like `Al Bayan` / `Academy Engraved LET` that a
+real Windows machine never has), which the rule **correctly** catches. So the four are corroborated FP-safe on
+a second independent population — their only firings are the generator's own OS-incoherent joints, the same
+class as browserforge's `media_devices_empty`/`webgl_not_angle` artifacts. (Note: this font/OS incoherence is
+fpgen-specific — browserforge's `font_os_vs_ua` is ~0% — i.e. a Scrapfly-data trait, not family-wide.) Caveat:
+fpgen is a generator, so this is a generator-vs-generator coherence check, weaker than the real-browser
+value-level fidelity above; a *spike* over the ~1% generator floor would flag a true FP to investigate.
+
 ## Second real-traffic source (Intoli) — verification, and what it actually showed
 
 A third tier of corroboration: the **Intoli `user-agents` dataset** (BSD-2-Clause; ~10k records resampled
