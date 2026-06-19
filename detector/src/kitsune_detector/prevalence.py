@@ -82,6 +82,26 @@ def _screen_bucket(res: str) -> str | None:
     return f"{cls}-{orient}"
 
 
+def _cores_bucket(n: Any) -> str | None:
+    """Coarse, cross-source-robust cores feature: a hardware_concurrency size class.
+
+    Kept in sync with ``kitsune_harness.prevalence.cores_bucket``. The EXACT core count is a single-source FP
+    landmine of the same class as the exact-screen one: browserforge under-samples real cores diversity and
+    has gaps + garbage (e.g. 384 cores), so a real but uncommon-or-high count takes a deep penalty the
+    browserforge calibration cannot see — a real 128-core workstation hits the eps floor (~-9.2) and is
+    flagged improbable on cores ALONE, and a common 6-core CPU takes ~-3.7. Bucketing into size classes maps
+    every plausible real count to a populated bucket (so no eps-gap) while keeping the coarse signal: a
+    1-2-core "desktop" is still low. Returns None for an unparseable/non-positive value (unscored).
+    """
+    try:
+        c = int(n)
+    except (TypeError, ValueError):
+        return None
+    if c <= 0:
+        return None
+    return "<=2" if c <= 2 else "3-4" if c <= 4 else "5-8" if c <= 8 else "9-16" if c <= 16 else "17+"
+
+
 def _v(session: Session, kind: str) -> Any:
     val = session.value(Layer.browser, kind)
     return None if val is MISSING else val
@@ -96,7 +116,7 @@ def features_from_session(session: Session) -> dict[str, Any]:
         "gpu": _gpu_family(str(renderer)) if renderer else None,
         "screen": _screen_bucket(str(res)) if res else None,
         "color": _v(session, "color_depth"),
-        "cores": _v(session, "hardware_concurrency"),
+        "cores": _cores_bucket(_v(session, "hardware_concurrency")),
     }
 
 

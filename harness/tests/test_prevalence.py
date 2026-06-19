@@ -34,7 +34,7 @@ MAC = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/147"
 
 def test_features_extraction() -> None:
     f = features_from_fingerprint(_fp(WIN, "ANGLE (NVIDIA, NVIDIA GeForce RTX 3080 Direct3D11)", 1920, 1080, 24, 16))
-    assert f == {"plat": "Windows", "gpu": "nvidia", "screen": "desktop-land", "color": 24, "cores": 16}
+    assert f == {"plat": "Windows", "gpu": "nvidia", "screen": "desktop-land", "color": 24, "cores": "9-16"}
     g = features_from_fingerprint(_fp(MAC, "ANGLE (Apple, ANGLE Metal Renderer: Apple M2)", 1470, 956, 30, 8))
     assert g["plat"] == "macOS" and g["gpu"] == "apple"
 
@@ -62,4 +62,4 @@ def test_prior_separates_probable_from_improbable() -> None:
 def test_prior_structure() -> None:
     prior = build_prior([features_from_fingerprint(_fp(WIN, "Intel UHD", 1920, 1080, 24, 8))])
     assert prior["gpu"]["Windows"]["intel"] == 1.0
-    assert prior["cores"]["_"]["8"] == 1.0
+    assert prior["cores"]["_"]["5-8"] == 1.0  # 8 cores -> the "5-8" bucket (v0.74.21)

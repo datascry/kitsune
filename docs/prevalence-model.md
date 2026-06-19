@@ -148,3 +148,23 @@ regenerated over `gpu`/`screen`/`cores` (threshold −10.75 → −9.04). A real
 improved (−6.55 → −3.48 vs the threshold) and the corpus label distribution is unchanged (51 bot / 1
 suspicious — zero detection loss; the rule is corroborating-only). `gpu` and `cores` remain single-source
 pending a Tier-3 real-device matrix.
+
+## Cores factor coarsened (v0.74.21) — the screen-factor fix, applied to the last single-source factor
+
+After colour was dropped, `cores` (`hardware_concurrency`) was the last exact-value single-source factor —
+and it had the **same eps-gap FP** the exact-`WxH` screen factor did. browserforge under-samples real cores
+diversity and its prior carries gaps + garbage (a `384`-cores value), so a real but uncommon-or-high count
+took a deep penalty invisible to the browserforge calibration: a real **128-core workstation** hit the eps
+floor (−9.2) and was flagged improbable on **cores alone** (below the −9.04 threshold), and a common
+**6-core** CPU took ~−3.7.
+
+**Fix:** coarsen to size-class buckets — `<=2 / 3-4 / 5-8 / 9-16 / 17+` (`prevalence._cores_bucket`, mirrored
+in the harness `cores_bucket`), so every plausible real count maps to a populated bin and the eps-gap is
+gone. After the fix a real Windows + 128-core workstation scores −4.91 (was effectively −9.2 on cores), a
+6/8-core −3.32 — both well above the regenerated threshold (−9.04 → −7.73). Corpus label distribution
+unchanged (51 bot / 1 suspicious — zero detection loss; the rule is corroborating-only).
+
+**Prevalence factor status after this arc:** `gpu` × `screen` × `cores`. `screen` and `cores` are
+coarsened-robust (immune to browserforge's exact-value coverage gaps); `colour` is dropped (an OS-independent
+display property browserforge generated wrong); `gpu` remains single-source pending a Tier-3 real-device
+matrix (it cannot be coarsened — the engine family IS the signal — and Intoli does not carry it).

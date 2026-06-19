@@ -55,6 +55,21 @@ def screen_bucket(w: int, h: int) -> str | None:
     return f"{cls}-{orient}"
 
 
+def cores_bucket(n: Any) -> str | None:
+    """Coarse, cross-source-robust cores feature: a hardware_concurrency size class. Kept in sync with
+    ``kitsune_detector.prevalence._cores_bucket``. The exact count is a single-source FP landmine
+    (browserforge under-samples real cores diversity + has gaps/garbage), so a real high or uncommon count
+    takes a deep penalty the calibration cannot see; bucketing maps every plausible count to a populated bin.
+    """
+    try:
+        c = int(n)
+    except (TypeError, ValueError):
+        return None
+    if c <= 0:
+        return None
+    return "<=2" if c <= 2 else "3-4" if c <= 4 else "5-8" if c <= 8 else "9-16" if c <= 16 else "17+"
+
+
 def features_from_fingerprint(fp: dict[str, Any]) -> Features:
     """Extract the prevalence features from a fingerprint dict (the shape calibration reads)."""
     nav = fp.get("navigator", {})
@@ -93,7 +108,7 @@ def features_from_fingerprint(fp: dict[str, Any]) -> Features:
         "gpu": gpu,
         "screen": screen_bucket(int(scr.get("width", 0) or 0), int(scr.get("height", 0) or 0)),
         "color": scr.get("colorDepth"),
-        "cores": nav.get("hardwareConcurrency"),
+        "cores": cores_bucket(nav.get("hardwareConcurrency")),
     }
 
 
