@@ -6,6 +6,7 @@ import {
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
+  traceHash,
   velocityCV,
 } from "../behavioral.js";
 import type { PointerSample, SignalValue } from "../types.js";
@@ -1140,6 +1141,8 @@ export function armCollector(): LiveCollector {
       put("behavioral", "pointer_event_count", pointerEventCount(pts));
       put("behavioral", "mouse_straightness", pathStraightness(pts));
       put("behavioral", "mouse_velocity_cv", velocityCV(pts));
+      const th = traceHash(pts);
+      if (th !== null) put("behavioral", "trace_hash", th);
       if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
         put("behavioral", "coalesced_events_absent", true);
       }

@@ -6,6 +6,7 @@ import {
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
+  traceHash,
   velocityCV,
 } from "./behavioral.js";
 import { isHeadlessUA, normalizePlatform, uaBrowser, uaPlatform } from "./detect.js";
@@ -51,6 +52,12 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
   if (env.pointerEvents.length >= 3) {
     out.push(sig("behavioral", "mouse_straightness", pathStraightness(env.pointerEvents)));
     out.push(sig("behavioral", "mouse_velocity_cv", velocityCV(env.pointerEvents)));
+  }
+  // Trajectory identity. Two real users never trace the same path; an identical trace_hash across distinct
+  // IPs is one tool replaying a canned trajectory (the behavioural analog of fp_hash). Absent below a floor.
+  const th = traceHash(env.pointerEvents);
+  if (th !== null) {
+    out.push(sig("behavioral", "trace_hash", th));
   }
   return out;
 }

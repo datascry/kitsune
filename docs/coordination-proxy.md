@@ -10,6 +10,19 @@ ways to do that, and the scorer catches each with a complementary signal:
 Both verdicts below are **real `score_cluster` output**, not hand-authored, on a synthetic 3-node fleet
 (the lab has no live proxies/BotBrowser build to capture).
 
+## A third dimension: the behavioural clone (`trace_collision`)
+
+A fingerprint collision catches a fleet that clones one *fingerprint*; the **trace collision** catches a
+fleet that clones one *behaviour*. The collector hashes the pointer trajectory's shape (`behavioral.trace_hash`,
+timing excluded), and an identical `trace_hash` across distinct source IPs is one tool replaying a single
+canned "humanised" mouse path — two real users never trace the same path. It convicts a fleet that
+randomises its fingerprint per instance yet reuses one recorded trajectory, where the fp-collision stays
+silent. **Grounded on real captures:** three distinct stealth-evader configs (`full-stealth`,
+`naive-tz-spoof`, `stealth-naive`) all reuse the harness's one hardcoded mouse path, so they share the trace
+`a0214e60`; placed on distinct IPs they score `fleet` on the trace collision, while the curved-motion
+`human-mouse` control has a unique hash and never collides. It is a convicting coordination signal (behind
+the same conviction gate as the fp-collision).
+
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 
 A `fleet` *label* requires a **convicting** coordination signal — one a real diverse cohort cannot

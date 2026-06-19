@@ -211,6 +211,16 @@ DEMO_PAGE = """<!doctype html>
     var v = s.reduce(function (a, x) { return a + (x - mean) * (x - mean); }, 0) / s.length;
     return Math.sqrt(v) / mean;
   }
+  // Stable hash of the pointer trajectory shape (quantised coords; timing excluded). Two real users never
+  // trace the same path, so an identical trace_hash across distinct IPs is a replayed canned trajectory —
+  // the behavioural analog of fp_hash (the coordination scorer reads it). Null below a movement floor.
+  function traceHash(p) {
+    if (p.length < 12) return null;
+    var h = 2166136261;
+    function mix(n) { h = ((h ^ (n & 0xffff)) * 16777619) >>> 0; }
+    for (var i = 0; i < p.length; i++) { mix(Math.round(p[i].x)); mix(Math.round(p[i].y)); }
+    return (h >>> 0).toString(16);
+  }
   // --- biomechanics (mirror of kitsune_harness.biomech; calibrated vs Balabit, see docs/behavioral-data.md) ---
   function speeds(p) {
     var s = [];
@@ -944,6 +954,8 @@ DEMO_PAGE = """<!doctype html>
         sigs.push(S("behavioral", "pause_ratio", pauseRatio(pts)));
         var ple = powerLawExp(pts);
         if (ple !== null) sigs.push(S("behavioral", "power_law_exponent", ple));
+        var th = traceHash(pts);
+        if (th !== null) sigs.push(S("behavioral", "trace_hash", th));
       }
       if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
       // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.

@@ -76,6 +76,25 @@ export function velocityCV(samples: PointerSample[]): number {
 }
 
 /**
+ * Stable hash of the pointer trajectory's shape (quantised coordinates, timing excluded — it jitters).
+ * Two REAL users never produce a byte-identical trace, so an identical trace_hash across distinct sessions
+ * is one tool replaying a canned "humanised" trajectory — the behavioural analog of the fingerprint
+ * collision. Null below a movement floor (a trivial trace must not collide spuriously).
+ */
+export function traceHash(samples: PointerSample[]): string | null {
+  if (samples.length < 12) return null;
+  let h = 2166136261;
+  const mix = (n: number): void => {
+    h = ((h ^ (n & 0xffff)) * 16777619) >>> 0;
+  };
+  for (const s of samples) {
+    mix(Math.round(s.x));
+    mix(Math.round(s.y));
+  }
+  return (h >>> 0).toString(16);
+}
+
+/**
  * Normalised Shannon entropy of inter-keystroke intervals, in [0, 1].
  * Constant cadence (scripted typing) -> ~0; varied human cadence -> high.
  */

@@ -86,6 +86,7 @@ class FleetVerdict:
     ja4c_divergent: bool = False  # members share the cipher prefix but differ in extensions/sig-algs
     distinct_observed_ips: int = 0  # distinct source IPs across the cluster (proxy spread)
     cloned_fingerprint: str | None = None  # one high-entropy fp_hash shared across distinct IPs (reuse)
+    cloned_trace: str | None = None  # one pointer-trajectory trace_hash shared across distinct IPs (replay)
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
     arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
@@ -162,6 +163,26 @@ def _fp_collision(sessions: list[Session]) -> tuple[str, int] | None:
     return best
 
 
+def _trace_collision(sessions: list[Session]) -> tuple[str, int] | None:
+    """A pointer-trajectory ``trace_hash`` shared by members spanning >= 2 *distinct* observed IPs — the
+    behavioural analog of ``_fp_collision``. Two real users never trace the same path, so an identical
+    trace_hash from distinct sources is one tool replaying a canned "humanised" trajectory across the fleet.
+    Catches a fleet that clones *behaviour* even when each instance has a distinct fingerprint. Returns
+    ``(hash, distinct_ip_count)`` for the widest such collision, else ``None``."""
+    by_hash: dict[str, set[str]] = {}
+    for session in sessions:
+        th = session.value(Layer.behavioral, "trace_hash")
+        ip = session.value(Layer.network, "observed_ip")
+        if th is MISSING or ip is MISSING:
+            continue
+        by_hash.setdefault(str(th), set()).add(str(ip))
+    best: tuple[str, int] | None = None
+    for th, ips in by_hash.items():
+        if len(ips) >= 2 and (best is None or len(ips) > best[1]):
+            best = (th, len(ips))
+    return best
+
+
 def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdict:
     """Grade one JA4-prefix cluster (>= 2 sessions sharing the cipher-suite ``prefix``)."""
     names = sorted(n for n, _ in members)
@@ -201,6 +222,18 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
             f"source IPs — cloned-profile reuse (one anti-detect profile shared fleet-wide)"
         )
 
+    # Trace-collision: the behavioural analog of the fingerprint collision. An identical pointer-trajectory
+    # trace_hash across distinct source IPs is one canned "humanised" path replayed fleet-wide — it convicts
+    # a fleet that randomises its *fingerprint* per instance but reuses one recorded mouse trace.
+    trace_collision = _trace_collision(sessions)
+    cloned_trace = trace_collision[0] if trace_collision else None
+    if trace_collision is not None:
+        score += _FP_COLLISION_BONUS
+        evidence.append(
+            f"identical pointer trace `{trace_collision[0]}` across {trace_collision[1]} distinct "
+            f"source IPs — replayed canned trajectory (two real users never trace the same path)"
+        )
+
     span = _first_seen_span(sessions)
     if span is not None and span <= _LOCKSTEP_WINDOW_S:
         score += _LOCKSTEP_BONUS
@@ -213,7 +246,9 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     webrtc = _distinct_values(sessions, Layer.browser, "webrtc_public_ip")
     distinct_observed = len(observed)
     shared_real_ip: str | None = None
-    if (diverged or ja4c_divergent or collision is not None) and distinct_observed > 1:
+    if (
+        diverged or ja4c_divergent or collision is not None or trace_collision is not None
+    ) and distinct_observed > 1:
         score += _PROXY_FLEET_BONUS
         evidence.append(
             f"distributed across {distinct_observed} distinct source IPs — residential-proxy fleet "
@@ -233,14 +268,17 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         arrival_rate = round(len(names) / (span / 60.0), 1)
 
     # Conviction gate: a `fleet` label needs a *convicting* coordination signal — one a real diverse
-    # cohort on a shared browser build CANNOT produce. The three that qualify: JA4_c divergence
+    # cohort on a shared browser build CANNOT produce. The qualifying signals: JA4_c divergence
     # (per-launch TLS-extension randomization; real Chrome's JA4_c is stable), a cloned-fingerprint
-    # collision across distinct IPs (real machines each hash differently), or a shared WebRTC origin
-    # behind distinct proxy IPs. The JS-divergence paradox, IP spread and lockstep are *corroborating*
-    # only: real distinct users on one Chrome build legitimately differ in hardware_concurrency,
-    # device_memory and OS-platform (Win/Mac Chrome share a JA4) and arrive from distinct IPs — that
-    # exact shape, so it cannot convict alone (it would flag a popular browser's user base as a botnet).
-    convicting = ja4c_divergent or collision is not None or shared_real_ip is not None
+    # collision across distinct IPs (real machines each hash differently), a cloned-trace collision
+    # across distinct IPs (two real users never trace the same path), or a shared WebRTC origin behind
+    # distinct proxy IPs. The JS-divergence paradox, IP spread and lockstep are *corroborating* only:
+    # real distinct users on one Chrome build legitimately differ in hardware_concurrency, device_memory
+    # and OS-platform (Win/Mac Chrome share a JA4) and arrive from distinct IPs — that exact shape, so it
+    # cannot convict alone (it would flag a popular browser's user base as a botnet).
+    convicting = (
+        ja4c_divergent or collision is not None or trace_collision is not None or shared_real_ip is not None
+    )
     score = max(0.0, min(1.0, score))
     if score >= 0.60 and convicting:
         label = "fleet"
@@ -264,6 +302,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         ja4c_divergent=ja4c_divergent,
         distinct_observed_ips=distinct_observed,
         cloned_fingerprint=cloned_fingerprint,
+        cloned_trace=cloned_trace,
         shared_real_ip=shared_real_ip,
         request_volume=request_volume,
         arrival_rate_per_min=arrival_rate,

@@ -30,6 +30,7 @@ def _sess(
     observed_ip: str | None = None,
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
+    trace_hash: str | None = None,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -49,6 +50,8 @@ def _sess(
         sigs.append(mk(Layer.browser, "webrtc_public_ip", webrtc_ip, Source.collector))
     if fp_hash is not None:
         sigs.append(mk(Layer.browser, "fp_hash", fp_hash, Source.collector))
+    if trace_hash is not None:
+        sigs.append(mk(Layer.behavioral, "trace_hash", trace_hash, Source.collector))
     return group_signals(sigs)[0]
 
 
@@ -115,6 +118,34 @@ def test_fp_collision_same_ip_is_benign() -> None:
     ]
     v = score_cluster("X", members)
     assert v.cloned_fingerprint is None
+    assert v.label == "candidate"
+
+
+def test_trace_collision_fleet_is_caught() -> None:
+    # The behavioural-clone shape: each instance has a DISTINCT fingerprint (no fp-collision) and homogeneous
+    # JS (no paradox), but the SAME canned pointer trace is replayed across DISTINCT IPs — a fleet that
+    # randomises its fingerprint yet reuses one recorded "humanised" trajectory. Two real users never trace
+    # the same path, so the trace-collision convicts it where the fp-collision and paradox both stay silent.
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="aaaa", trace_hash="cafe")),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="bbbb", trace_hash="cafe")),
+        ("c", _sess("c", "X", 8, "Windows", observed_ip="3.3.3.3", fp_hash="cccc", trace_hash="cafe")),
+    ]
+    v = score_cluster("X", members)
+    assert v.label == "fleet"
+    assert v.cloned_trace == "cafe"
+    assert v.cloned_fingerprint is None  # distinct fps — the fp-collision did NOT fire
+    assert any("replayed canned trajectory" in e for e in v.evidence)
+
+
+def test_trace_collision_same_ip_is_benign() -> None:
+    # Identical trace from ONE IP is one machine repeating itself — not a fleet (needs distinct IPs).
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", trace_hash="cafe")),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="1.1.1.1", trace_hash="cafe")),
+    ]
+    v = score_cluster("X", members)
+    assert v.cloned_trace is None
     assert v.label == "candidate"
 
 

@@ -7,11 +7,32 @@ import {
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
+  traceHash,
   velocityCV,
 } from "../src/behavioral.js";
 import type { PointerSample } from "../src/types.js";
 
 const p = (x: number, y: number, t: number): PointerSample => ({ x, y, t });
+
+describe("traceHash", () => {
+  const path = (seed: number): PointerSample[] =>
+    Array.from({ length: 14 }, (_, i) => p(i * 7 + seed, i * 3, i));
+
+  it("returns null below the movement floor", () => {
+    expect(traceHash([p(0, 0, 0), p(1, 1, 1)])).toBeNull();
+  });
+  it("is identical for the same trajectory (a replayed canned trace collides)", () => {
+    expect(traceHash(path(0))).toBe(traceHash(path(0)));
+  });
+  it("differs for distinct trajectories (real users never collide)", () => {
+    expect(traceHash(path(0))).not.toBe(traceHash(path(1)));
+  });
+  it("ignores timing — only the spatial shape matters", () => {
+    const a = path(0);
+    const b = a.map((s) => ({ ...s, t: s.t * 13 + 5 }));
+    expect(traceHash(a)).toBe(traceHash(b));
+  });
+});
 
 describe("pointerEventCount", () => {
   it("counts samples", () => {
