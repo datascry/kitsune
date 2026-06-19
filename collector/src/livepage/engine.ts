@@ -58,9 +58,10 @@ export interface Verdict {
 }
 
 export function verdictFor(contradictions: Contradiction[]): Verdict {
+  const score = finalScore(contradictions);
   return {
-    score: finalScore(contradictions),
-    label: labelFor(finalScore(contradictions)),
+    score,
+    label: labelFor(score, contradictions), // conviction-gated: corroborating-only tells cap at suspicious
     incoherence: incoherenceScore(contradictions),
     layers: layerScores(contradictions),
     contradictions,

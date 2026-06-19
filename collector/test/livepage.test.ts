@@ -100,6 +100,44 @@ describe("scoring", () => {
     expect(labelFor(0.4)).toBe("suspicious");
     expect(labelFor(0.1)).toBe("human");
   });
+
+  it("conviction gate: corroborating-only tells never reach bot, even at a bot-level score", () => {
+    // The real-browser FP: a stripped-but-real browser noisy-or's a few environment tells past the bot
+    // threshold. With the gate it caps at `suspicious` — only a convicting category can label `bot`.
+    const env: Contradiction[] = [
+      {
+        id: "a",
+        title: "",
+        layers: ["browser"],
+        weight: 0.6,
+        category: "environment",
+        evidence: [],
+      },
+      {
+        id: "b",
+        title: "",
+        layers: ["browser"],
+        weight: 0.6,
+        category: "behavioral",
+        evidence: [],
+      },
+    ];
+    expect(finalScore(env)).toBeGreaterThanOrEqual(0.65); // would be `bot` under a bare threshold
+    expect(labelFor(finalScore(env), env)).toBe("suspicious");
+    // A single convicting (coherence/automation/artifact) tell unlocks `bot`.
+    const convicting: Contradiction[] = [
+      {
+        id: "c",
+        title: "",
+        layers: ["browser"],
+        weight: 0.7,
+        category: "automation",
+        evidence: [],
+      },
+    ];
+    expect(labelFor(finalScore(convicting), convicting)).toBe("bot");
+    expect(verdictFor(env).label).toBe("suspicious");
+  });
 });
 
 describe("evaluate", () => {

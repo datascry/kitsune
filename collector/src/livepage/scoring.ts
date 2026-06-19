@@ -11,6 +11,18 @@ export const INCOHERENCE_WEIGHT = 0.5;
 
 export type Label = "human" | "suspicious" | "bot";
 
+// Mirror detector/scoring.py CONVICTING_CATEGORIES. A `bot` conviction requires a *convicting* tell — a
+// clear bot signature (cross-vector coherence contradiction, automation artifact, or injected-code
+// artifact). Environment / behavioral / reputation / prevalence tells only CORROBORATE: they raise the
+// score up to `suspicious` but can never noisy-or their way to `bot` on their own. Without this gate a real
+// browser that trips a few benign environment tells (no webcam, stripped plugins) is mislabelled `bot`.
+const CONVICTING_CATEGORIES = new Set(["coherence", "automation", "artifact"]);
+
+/** True if any fired contradiction is a convicting (coherence/automation/artifact) signature. */
+export function hasConvicting(contradictions: Contradiction[]): boolean {
+  return contradictions.some((c) => CONVICTING_CATEGORIES.has(c.category));
+}
+
 export interface LayerScores {
   network: number;
   browser: number;
@@ -66,8 +78,13 @@ export function finalScore(contradictions: Contradiction[]): number {
   return noisyOr(contradictions.map(effectiveWeight));
 }
 
-export function labelFor(score: number): Label {
-  if (score >= BOT_THRESHOLD) return "bot";
+/** Map a score to a label, gating `bot` on a convicting signal (mirrors detector/scoring.py label_for).
+ * A `bot` conviction needs both a bot-level score AND a convicting contradiction; corroborating-only tells
+ * cap at `suspicious`. Omitting `contradictions` skips the gate (bare threshold lookup). */
+export function labelFor(score: number, contradictions?: Contradiction[]): Label {
+  if (score >= BOT_THRESHOLD && (contradictions === undefined || hasConvicting(contradictions))) {
+    return "bot";
+  }
   if (score >= SUSPICIOUS_THRESHOLD) return "suspicious";
   return "human";
 }
