@@ -75,6 +75,11 @@ const CANVAS_GEOMETRY_SPOOF = process.env.CANVAS_GEOMETRY_SPOOF === "1";
 // N/A) — but a real Brave's navigator.brave.isBrave is NATIVE; the injected one is a plain function →
 // br.brave_spoofed (and the genuineness guard withholds the N/A).
 const BRAVE_FAKE = process.env.BRAVE_FAKE === "1";
+// RENDERER_SPOOF: a naive GPU-masking spoof — patch WebGL getParameter so the UNMASKED_RENDERER reports a
+// generic placeholder ("Generic Renderer") to hide the real/SwiftShader GPU. Under a Chromium UA (which
+// never generalises its renderer the way Firefox does) the placeholder string trips br.webgl_renderer_artifact.
+// Gives that rule a live Blink positive after v0.74.10 scoped it off the (legitimately-generalising) Gecko engine.
+const RENDERER_SPOOF = process.env.RENDERER_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -131,7 +136,9 @@ const evading =
   CANVAS_GEOMETRY_SPOOF ||
   BRAVE_FAKE ||
   Boolean(SPOOF_UA);
-const mode = BRAVE_FAKE
+const mode = RENDERER_SPOOF
+  ? "renderer-spoof"
+  : BRAVE_FAKE
   ? "brave-fake"
   : CANVAS_GEOMETRY_SPOOF
     ? "canvas-geometry-spoof"
@@ -323,6 +330,21 @@ if (FLOOR_SPOOF) {
       value: { isBrave: () => Promise.resolve(true) },
       configurable: true,
     });
+  });
+} else if (RENDERER_SPOOF) {
+  // Naive GPU-masking: patch WebGL getParameter so the UNMASKED_RENDERER (0x9246) reports a generic
+  // placeholder, hiding the real/SwiftShader GPU. Under a Chromium UA the placeholder trips
+  // br.webgl_renderer_artifact (Chromium never generalises its renderer like Firefox's "…, or similar").
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const UNMASKED_RENDERER = 0x9246;
+    for (const proto of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) {
+      if (!proto) continue;
+      const gp = proto.prototype.getParameter;
+      proto.prototype.getParameter = function (p) {
+        return p === UNMASKED_RENDERER ? "Generic Renderer" : gp.call(this, p);
+      };
+    }
   });
 } else if (TZ_SPOOF) {
   // Main-realm-only geo-spoof: claim America/New_York via Intl + Date on the main thread. The patch never
