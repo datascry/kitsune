@@ -419,3 +419,18 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   cipher hashes come from the live headful Firefox/WebKit captures; the full FoxIO DB file would broaden
   per-version recall but is a deploy-time edge refresh — FP-safe either way, since an unhinted JA4 never
   convicts.) No rule changed → no ruleset bump.
+
+- **2026-06-19 · network-layer grounding — Safari/Firefox JA4 hints are Playwright-build-specific (finding)**
+  — continued the grounding search to the Firefox/Safari hints. The documented REAL Safari iOS 18.3 JA4 is
+  `t13d2014h2_a09f3c656075…` (curl_cffi #460 / FoxIO), but our hint is `t13d2914h2_723694b0fccc` — DIFFERENT
+  cipher count (20 vs 29) AND hash. So our safari hint is **Playwright-WebKit's** JA4, not real Safari's,
+  confirming the documented "Playwright WebKit TLS ≠ real Apple Safari" caveat (same for the Playwright-Firefox
+  hint `t13d1717h2_5b57614c22b0`; no clean public real-Firefox JA4 surfaced to compare).
+  **FP-safety holds:** a real Safari (its own JA4, UA=safari) is UNHINTED → `net.tls_vs_ua_browser` cannot
+  fire → no FP; and no real user produces Playwright-WebKit's JA4, so hinting it `safari` only convicts the
+  `webkit-ua-spoof` evader (its point). **Coverage gap (disciplined, NOT acted on):** adding the REAL
+  per-version Safari/Firefox JA4s would let the rule positively recognise real-browser TLS and catch a
+  real-browser-TLS impersonator (e.g. curl_cffi-Safari) faking a mismatched UA — but that is a deploy-time
+  grounding task: the values must be verified as what OUR edge computes (a live real-Safari/Firefox capture,
+  or multi-source/multi-version corroboration) before entering the convicting path. Not a single-source
+  unilateral edit. No rule changed → no ruleset bump.
