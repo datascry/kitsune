@@ -40,6 +40,20 @@ def test_real_residential_proxy_fleet_is_convicted() -> None:
     assert v.distinct_observed_ips == 3
 
 
+def test_real_cloned_fleet_online_alert() -> None:
+    # The ONLINE (production-mode) FleetTracker, grounded on the real captured cloned fleet: replaying
+    # cn1/cn2/cn3 in arrival order must raise exactly one `fleet` alert, on the SECOND arrival — the moment
+    # the cloned fp_hash spans two distinct IPs and the collision becomes observable. Complements the offline
+    # score_corpus grounding (test_real_cloned_fingerprint_fleet_is_convicted) with the streaming detector.
+    corpus = load_corpus(_repo_corpus("fleet-cloned"))
+    alerts = replay_stream(corpus)
+    assert len(alerts) == 1
+    trigger, verdict = alerts[0]
+    assert verdict.label == "fleet"
+    assert verdict.cloned_fingerprint is not None
+    assert len(verdict.members) == 2  # alert raised the instant the 2nd distinct-IP member collides
+
+
 def test_real_cloned_fingerprint_fleet_is_convicted() -> None:
     # Ground the cloned-fingerprint convicting path on a REAL captured fleet (previously only synthetic): three
     # instances of one anti-detect image, run CONCURRENTLY through the live edge so each held a distinct

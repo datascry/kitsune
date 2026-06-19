@@ -12,14 +12,26 @@ Both verdicts below are **real `score_cluster` output**, not hand-authored, on a
 
 ## Validated against the REAL captured fleets (not just synthetic)
 
-The coordination detector was synthetic-only; it is now also grounded on the two **real fleet captures**
-that came through the edge→detector pipeline (`corpus/fleet-proxy/`, `corpus/fleet/`), pinned in
-`test_coordination.py`:
+The coordination detector was synthetic-only; it is now also grounded on the **real fleet captures**
+that came through the edge→detector pipeline (`corpus/fleet-proxy/`, `corpus/fleet-cloned/`, `corpus/fleet/`),
+pinned in `test_coordination.py`:
 
 | capture | members | verdict | why |
 |---|---|---|---|
 | `corpus/fleet-proxy/` (residential proxy) | rp1·rp2·rp3 | **`fleet`** (1.00) | convicting signals a real cohort cannot make: **per-launch JA4_c randomization** (3 extension/sig-alg variants behind one cipher prefix) **and** one WebRTC-leaked origin `45.137.0.42` behind 3 distinct proxy IPs |
+| `corpus/fleet-cloned/` (cloned-profile) | cn1·cn2·cn3 | **`fleet`** (1.00) | the **fp-collision** convicting path, grounded live for the first time (previously synthetic-only): 3 concurrent instances of one evader image, each on a distinct container IP (172.22.0.4/.5/.6), share one deterministic `fp_hash` `bf779223` across 3 distinct IPs — convicted by the collision alone, with **stable** JA4_c and no shared WebRTC origin |
 | `corpus/fleet/` (camoufox) | cf1·cf2 | `candidate` (0.42) | **trusted-but-verified surprise:** the real camoufox capture has **stable** JA4_c (not divergent) and homogeneous JS — indistinguishable from two real users on one build, so the conviction gate correctly **withholds** `fleet` |
+
+The `fleet-cloned` capture is the live coordination harness (`harness/tools/fleet_capture.sh`): with no
+residential proxies, N concurrent containers each hold a distinct compose-bridge IP, so one image's
+deterministic SwiftShader `fp_hash` collides across distinct sources — the cloned-profile-behind-proxies
+shape. Concurrency is load-bearing: run sequentially, the containers reuse the freed bridge IP and the
+detector correctly reads them as one machine over many sessions (benign), not a fleet. The **online**
+`FleetTracker` was validated on the same capture too — replaying cn1·cn2·cn3 in arrival order raises the
+`fleet` alert on the second arrival (the moment the collision spans two IPs), pinned by
+`test_real_cloned_fleet_online_alert`. Still open: the **IP-reputation** half (`rep.datacenter_asn`,
+`rep.known_proxy_exit`, `net.webrtc_ip_vs_observed`) needs real public/proxy egress — private container IPs
+are not ASN-classifiable and WebRTC leaks the same container IP, so no proxy-vs-origin mismatch is producible.
 
 The camoufox result corrects an assumption baked into the synthetic `fleet-ja4c-randomizer` scenario: real
 camoufox (at least the captured build/config) does **not** randomize its JA4_c per launch, so a small
