@@ -520,6 +520,21 @@ export function armCollector(): LiveCollector {
     put("browser", "ua_browser", uaBrowser(ua));
     put("browser", "ua_platform", uaPlat);
 
+    // Brave identity + spoof check. A real Brave's navigator.brave.isBrave is a NATIVE function; a bot that
+    // injects navigator.brave to exploit the privacy-browser farbling N/A has a plain (non-native) isBrave.
+    const brave = (nav() as { brave?: { isBrave?: unknown } }).brave;
+    if (brave) {
+      put("browser", "is_brave", true);
+      try {
+        const ib = brave.isBrave;
+        if (typeof ib !== "function" || !ib.toString().includes("[native code]")) {
+          put("browser", "brave_spoofed", true);
+        }
+      } catch {
+        put("browser", "brave_spoofed", true);
+      }
+    }
+
     const uad = nav().userAgentData;
     if (uad?.platform) put("browser", "ch_platform", uad.platform);
     // UA-CH high-entropy coherence (Chromium-only, secure-context): the high-entropy brand list still

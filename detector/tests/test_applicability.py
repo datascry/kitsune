@@ -41,15 +41,35 @@ def test_is_brave_does_not_shield_other_tells() -> None:
 
 
 def test_real_rfp_browser_is_not_convicted() -> None:
-    # A real Tor/Mullvad/RFP-Firefox user: rfp_browser (now environment, corroborating) + the RFP-blocked
-    # canvas (canvas_noise) would previously noisy-or to bot. Now rfp_browser corroborates and the farbling
-    # is dropped, so the privacy browser caps at suspicious, never bot.
-    tor = _session(rfp_browser=True, canvas_noise=True)
+    # A real Tor/Mullvad/RFP-Firefox user (Gecko): rfp_browser (now environment, corroborating) + the
+    # RFP-blocked canvas (canvas_noise) would previously noisy-or to bot. Now rfp_browser corroborates and the
+    # farbling is dropped, so the privacy browser caps at suspicious, never bot.
+    tor = _session(rfp_browser=True, canvas_noise=True, ua_engine="firefox")
     verdict = Detector().score(tor)
     assert verdict.label.value != "bot"
     assert "br.canvas_noise" not in {c.rule_id for c in verdict.contradictions}
     # rfp_browser itself remains visible as a corroborating tell, but as environment it cannot convict alone.
     assert "br.rfp_browser" in {c.rule_id for c in verdict.contradictions}
     # An RFP-faking automation is still caught by its automation tells.
-    tor_bot = _session(rfp_browser=True, canvas_noise=True, webdriver=True)
+    tor_bot = _session(rfp_browser=True, canvas_noise=True, ua_engine="firefox", webdriver=True)
     assert Detector().score(tor_bot).label.value == "bot"
+
+
+def test_rfp_conjunction_on_chromium_is_not_honored() -> None:
+    # RFP is a Firefox-only feature. A Chromium session that fakes the RFP conjunction (UTC + letterbox + 2
+    # cores) to get its farbling excused is incoherent — the N/A is withheld and canvas_noise still convicts.
+    fake = _session(rfp_browser=True, canvas_noise=True, audio_noise=True, ua_engine="chromium")
+    verdict = Detector().score(fake)
+    assert verdict.label.value == "bot"
+    assert "br.canvas_noise" in {c.rule_id for c in verdict.contradictions}
+
+
+def test_spoofed_brave_keeps_farbling_and_convicts() -> None:
+    # A bot injecting a fake navigator.brave (non-native isBrave) to claim Brave: brave_spoofed fires AND the
+    # genuineness guard withholds the farbling N/A, so canvas_noise/audio_noise still count. Doubly caught.
+    fake = _session(is_brave=True, brave_spoofed=True, canvas_noise=True, audio_noise=True)
+    verdict = Detector().score(fake)
+    assert verdict.label.value == "bot"
+    fired = {c.rule_id for c in verdict.contradictions}
+    assert "br.brave_spoofed" in fired
+    assert "br.canvas_noise" in fired  # not excused for a spoofed identity

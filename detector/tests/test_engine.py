@@ -339,6 +339,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             [(Layer.browser, "apple_ua_nonwebkit", True, Source.collector)],
             "br.apple_ua_nonwebkit",
         ),
+        ([(Layer.browser, "brave_spoofed", True, Source.collector)], "br.brave_spoofed"),
         (
             [
                 (Layer.browser, "webrtc_public_ip", "203.0.113.7", Source.collector),

@@ -31,10 +31,16 @@ _PRIVACY_FARBLING = frozenset({"br.canvas_noise", "br.audio_noise"})
 
 
 def _privacy_browser(session: Session) -> str | None:
-    """Name the privacy browser the session positively identifies as, or ``None``."""
-    if session.value(Layer.browser, "is_brave") is True:
+    """Name the privacy browser the session GENUINELY identifies as, or ``None``.
+
+    Genuineness matters: the farbling N/A is only granted to a real privacy browser, never to a bot that
+    fakes the identity to get its farbling excused. Brave must have a native ``navigator.brave``
+    (``is_brave`` and not ``brave_spoofed``); RFP is Firefox-only, so the conjunction is honored only on a
+    Gecko engine (a Chromium session claiming RFP letterboxing/UTC/2-core is itself incoherent).
+    """
+    if session.value(Layer.browser, "is_brave") is True and (session.value(Layer.browser, "brave_spoofed") is not True):
         return "Brave"
-    if session.value(Layer.browser, "rfp_browser") is True:
+    if session.value(Layer.browser, "rfp_browser") is True and session.value(Layer.browser, "ua_engine") == "firefox":
         return "a resistFingerprinting browser (Tor / Mullvad / RFP-Firefox)"
     return None
 

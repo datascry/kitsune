@@ -436,7 +436,17 @@ DEMO_PAGE = """<!doctype html>
     // a tell: the scorer uses it to mark Brave's BY-DESIGN canvas/audio farbling (canvas_noise/audio_noise)
     // as expected, so a real Brave user is not convicted on its privacy feature. A Brave-faking bot still
     // trips webdriver/CDP/etc., so this cannot help a bot escape.
-    if (navigator.brave) sigs.push(S("browser", "is_brave", true));
+    if (navigator.brave) {
+      sigs.push(S("browser", "is_brave", true));
+      // A real Brave's navigator.brave.isBrave is a NATIVE function. A bot that injects navigator.brave to
+      // exploit the privacy-browser farbling N/A typically has a plain (non-native) isBrave, or none at all.
+      // Flag the fake — a convicting artifact that closes the spoof-the-identity-to-suppress-farbling hole.
+      try {
+        var _ib = navigator.brave.isBrave;
+        if (typeof _ib !== "function" || _ib.toString().indexOf("[native code]") < 0)
+          sigs.push(S("browser", "brave_spoofed", true));
+      } catch (e) { sigs.push(S("browser", "brave_spoofed", true)); }
+    }
     var uad = navigator.userAgentData;
     if (uad && uad.platform) sigs.push(S("browser", "ch_platform", uad.platform));
     // UA-Client-Hints HIGH-entropy coherence. getHighEntropyValues is Chromium-only and needs a secure
