@@ -46,6 +46,12 @@ reached. These exercise the worker/iframe realm-coherence rules directly.
 | `TZ_SPOOF=1` | tz-spoof | Worker timezone (residential-proxy geo-spoof on main thread only) | `br.timezone_worker_vs_main` |
 | `LANG_SPOOF=1` | lang-spoof | Worker `navigator.languages` (geo-spoof on main thread only) | `br.languages_worker_vs_main` |
 
+### Runtime artifact
+
+| Env | Mode | Caught by |
+|---|---|---|
+| `ELECTRON_LEAK=1` | electron-leak | leaks a Node `process` into the renderer (`process.versions.electron` + `process.type="renderer"`) the way an Electron app with nodeIntegration on does → `br.electron_process` (automation). A real web browser has no Node process; the headful captures confirm absence. Gives that active rule its first live positive. |
+
 ### Escalation
 
 | Env | Mode | Demonstrates |

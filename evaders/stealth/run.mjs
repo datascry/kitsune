@@ -100,6 +100,10 @@ const HONEYPOT = process.env.HONEYPOT === "1";
 // forgot the network layer. The HTTP header and the JS locale now disagree → net.accept_lang_vs_navigator.
 // (context locale=en-US makes the real Accept-Language deterministic so the mismatch is clean.)
 const ACCEPT_LANG_SPOOF = process.env.ACCEPT_LANG_SPOOF === "1";
+// ELECTRON_LEAK: an Electron/automation runtime whose renderer exposes a Node `process` (nodeIntegration on).
+// Inject process.versions.electron + process.type="renderer" — the markers a real Electron renderer leaks and
+// a real web browser never has → br.electron_process (an active automation rule with no prior live positive).
+const ELECTRON_LEAK = process.env.ELECTRON_LEAK === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -155,8 +159,11 @@ const evading =
   LANG_LIST_SPOOF ||
   CANVAS_GEOMETRY_SPOOF ||
   BRAVE_FAKE ||
+  ELECTRON_LEAK ||
   Boolean(SPOOF_UA);
-const mode = ACCEPT_LANG_SPOOF
+const mode = ELECTRON_LEAK
+  ? "electron-leak"
+  : ACCEPT_LANG_SPOOF
   ? "accept-lang-spoof"
   : HONEYPOT
   ? "honeypot"
@@ -432,6 +439,18 @@ if (FLOOR_SPOOF) {
       o.timeZone = "America/New_York";
       return o;
     };
+  });
+} else if (ELECTRON_LEAK) {
+  // Leak a Node `process` into the renderer the way an Electron app with nodeIntegration on (or a naive
+  // automation runtime) does — process.versions.electron + process.type="renderer". A real web browser has
+  // no Node process at all, so the collector's Electron-marker check trips → br.electron_process. (Gated to
+  // the Electron-specific markers, so this is NOT a generic process.env/webpack shim — it is the real tell.)
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(window, "process", {
+      value: { type: "renderer", versions: { electron: "31.3.0", node: "20.15.0", chrome: "126.0.0.0" } },
+      configurable: true,
+    });
   });
 } else if (evading) {
   await context.addInitScript(() => {

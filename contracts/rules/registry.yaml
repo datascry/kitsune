@@ -77,8 +77,8 @@ rules:
     status: active
     category: automation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "FingerprintJS BotD process detector: a renderer with process.versions.electron or process.type==='renderer' is an Electron/automation runtime; a real browser has no Node process. Gated to Electron-specific markers so a webpack process.env shim does not trip it. Verified absent on real Chrome 136."
+    last_validated: "2026-06-19"
+    source: "FingerprintJS BotD process detector: a renderer with process.versions.electron or process.type==='renderer' is an Electron/automation runtime; a real browser has no Node process. Gated to Electron-specific markers so a webpack process.env shim does not trip it. Verified absent on real Chrome 136. v0.74.22 FIRST LIVE POSITIVE: the new stealth ELECTRON_LEAK=1 evader (injects process.versions.electron + process.type='renderer' the way an Electron nodeIntegration renderer leaks it) was run through the live edge+detector and tripped br.electron_process — the rule was shipped active but previously unexercised (no Electron evader in the fleet), a constraint-#6 liability now resolved: the rule is proven to fire in-context. NEGATIVE control: a plain STEALTH=1 run (no leak) does NOT trip it, and the real headful Chromium/Firefox/WebKit captures have no Node process — FP-safe."
 
   - id: br.native_invariant_violated
     title: A built-in method claims native but violates native-function invariants
