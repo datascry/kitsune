@@ -17,6 +17,11 @@ tasks:
       - git config core.hooksPath .githooks
       - 'echo "pre-commit hook installed → .githooks/pre-commit (ruff check + ruff format --check + headers)"'
 
+  verify-deployed:
+    desc: "Check the LIVE detector matches the committed ruleset/prior — catch a stale deploy (a fix not in effect)"
+    cmds:
+      - bash scripts/verify_deployed.sh
+
   contracts:
     desc: Validate JSON-Schema contracts + examples + the rule registry
     dir: detector
