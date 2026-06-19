@@ -306,7 +306,9 @@ function workerNav(): Promise<{ ua: string; hw: number; plat: string; lang: stri
       const t = setTimeout(() => {
         resolve(null);
       }, 1500);
-      w.onmessage = (e: MessageEvent<{ ua: string; hw: number; plat: string; lang: string }>): void => {
+      w.onmessage = (
+        e: MessageEvent<{ ua: string; hw: number; plat: string; lang: string }>,
+      ): void => {
         clearTimeout(t);
         resolve(e.data);
         w.terminate();
@@ -330,7 +332,9 @@ function workerGlRenderer(): Promise<string | null> {
         "var d=gl&&gl.getExtension('WEBGL_debug_renderer_info');" +
         "postMessage(d?String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)):null);" +
         "}catch(e){postMessage(null);}}";
-      const w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+      const w = new Worker(
+        URL.createObjectURL(new Blob([code], { type: "application/javascript" })),
+      );
       const t = setTimeout(() => {
         resolve(null);
       }, 1500);
@@ -395,7 +399,9 @@ function workerCanvasHashCW(): Promise<number | null> {
         "onmessage=function(){try{var c=new OffscreenCanvas(100,40);var ctx=c.getContext('2d');" +
         CW_DRAW +
         "postMessage(H(ctx.getImageData(0,0,100,40).data));}catch(e){postMessage(null);}}";
-      const w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+      const w = new Worker(
+        URL.createObjectURL(new Blob([code], { type: "application/javascript" })),
+      );
       const t = setTimeout(() => {
         resolve(null);
       }, 1500);
@@ -420,7 +426,9 @@ function workerTz(): Promise<{ tz: string; off: number } | null> {
       const code =
         "onmessage=function(){var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}" +
         "postMessage({tz:tz,off:new Date().getTimezoneOffset()});}";
-      const w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+      const w = new Worker(
+        URL.createObjectURL(new Blob([code], { type: "application/javascript" })),
+      );
       const t = setTimeout(() => {
         resolve(null);
       }, 1500);
@@ -1053,7 +1061,12 @@ export function armCollector(): LiveCollector {
     // country but a JS patch never reaches Worker scope. Only fire when both report a non-empty list and
     // they differ. (Experimental: a legit CDP locale override does NOT propagate to the Worker, so it
     // diverges too — kept corroborating until real-traffic FP-validated.)
-    if (wn && wn.lang && navigator.languages.length > 0 && wn.lang !== navigator.languages.join(",")) {
+    if (
+      wn &&
+      wn.lang &&
+      navigator.languages.length > 0 &&
+      wn.lang !== navigator.languages.join(",")
+    ) {
       put("browser", "languages_worker_divergence", true);
     }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker's

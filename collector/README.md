@@ -24,17 +24,17 @@ today). Only `index.ts` touches live globals — thin glue, excluded from the co
 verified via build + e2e). The livepage's `probes.ts`/`render.ts`/`main.ts` are likewise live-DOM
 glue and excluded from the unit gate.
 
-| Module           | Role                                                                                  |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| `signal.ts`      | Build contract-valid `Signal` envelopes (stamps `schema_version`, `source=collector`).|
-| `detect.ts`      | UA → browser/platform labels; normalise Client-Hints platform (feeds UA↔CH coherence).|
-| `behavioral.ts`  | Quantify pointer + keystroke motion into the behavioral signals the detector scores.   |
-| `cdp.ts`         | Arm the CDP `Runtime.enable` probe (prototype-chain Proxy `ownKeys` trap).             |
-| `session.ts`     | Read the `ks_sid` correlation cookie.                                                  |
-| `collect.ts`     | Assemble a session's signals from a `BrowserEnv` snapshot (pure).                      |
-| `transport.ts`   | POST signals to the detector's `/ingest` (injected `fetch`).                           |
-| `index.ts`       | Production entrypoint: wire live DOM/navigator probes, collect, send.                  |
-| `livepage/`      | The self-test page: full probe suite + client-side rule engine + verdict render.       |
+| Module          | Role                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------- |
+| `signal.ts`     | Build contract-valid `Signal` envelopes (stamps `schema_version`, `source=collector`). |
+| `detect.ts`     | UA → browser/platform labels; normalise Client-Hints platform (feeds UA↔CH coherence). |
+| `behavioral.ts` | Quantify pointer + keystroke motion into the behavioral signals the detector scores.   |
+| `cdp.ts`        | Arm the CDP `Runtime.enable` probe (prototype-chain Proxy `ownKeys` trap).             |
+| `session.ts`    | Read the `ks_sid` correlation cookie.                                                  |
+| `collect.ts`    | Assemble a session's signals from a `BrowserEnv` snapshot (pure).                      |
+| `transport.ts`  | POST signals to the detector's `/ingest` (injected `fetch`).                           |
+| `index.ts`      | Production entrypoint: wire live DOM/navigator probes, collect, send.                  |
+| `livepage/`     | The self-test page: full probe suite + client-side rule engine + verdict render.       |
 
 ## Signals the production collector emits (`collect.ts`)
 
