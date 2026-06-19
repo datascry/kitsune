@@ -677,6 +677,26 @@ DEMO_PAGE = """<!doctype html>
         }
       }
     } catch (e) {}
+    // --- v0.72.0: canvas GEOMETRY farbling (JShelter et al.) — reference-free, GPU-independent. canvas
+    // isPointInPath/isPointInStroke are EXACT geometric hit-tests (nonzero/evenodd fill rule, no
+    // rasterization, no AA for a point far from the boundary) — deterministic in every real engine,
+    // headless or not. JShelter's canvas farbling wraps them to flip the answer with ~5% probability to
+    // poison fingerprinting; over many trials on a point DEEP inside (and one far outside) a real browser
+    // never errs, a farbled one does. Distinct from canvas_noise (readback farbling, e.g. Brave). Gated
+    // on a definitive interior/exterior point so sub-pixel ambiguity cannot misfire; missing API never fires.
+    try {
+      var gc = document.createElement("canvas"); gc.width = 100; gc.height = 100;
+      var gctx = gc.getContext("2d");
+      if (gctx && typeof gctx.isPointInPath === "function") {
+        gctx.beginPath(); gctx.rect(20, 20, 60, 60);   // square (20,20)-(80,80)
+        var geomBad = false;
+        for (var pi = 0; pi < 120; pi++) {
+          // (50,50) is 30px inside every edge; (5,5) is 15px outside — exact in any real 2D engine.
+          if (gctx.isPointInPath(50, 50) !== true || gctx.isPointInPath(5, 5) !== false) { geomBad = true; break; }
+        }
+        if (geomBad) sigs.push(S("browser", "canvas_geometry_noise", true));
+      }
+    } catch (e) {}
     // --- v0.10.0 wave: more lie-detection (CreepJS / Sannysoft / fpscanner) ---
     if (navigator.platform === "") sigs.push(S("browser", "platform_empty", true));
     var uaRender = uaEngine === "firefox" ? "gecko" : "webkit";

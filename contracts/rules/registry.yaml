@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.71.1"
+ruleset_version: "0.72.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1475,3 +1475,15 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Brave farbling adds per-session canvas noise; a solid fill read back exactly proves no farbling, any deviation proves it (reference-free). Privacy-tool tell = elevated risk; weight corroborates"
+
+  - id: br.canvas_geometry_noise
+    title: Canvas path geometry is non-deterministic (isPointInPath farbling, e.g. JShelter)
+    layers: [browser]
+    reads: [browser.canvas_geometry_noise]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: artifact
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "JShelter's canvas farbling wraps isPointInPath/isPointInStroke to flip the answer with ~5% probability to poison fingerprinting. But these are EXACT geometric hit-tests (nonzero/evenodd fill rule, no rasterization, no AA for a point far from the boundary) — GPU-independent and deterministic in every real engine, headless or not: a point 30px inside a filled square is ALWAYS in-path, one 15px outside is NEVER in-path. The probe runs 120 trials on a deep-interior + far-exterior point; a real browser never errs (1-0.95^120 ≈ 99.8% catch on a 5%-flip farbler). Distinct from canvas_noise (Brave's readback farbling — geometry is untouched there). FP-safe ACTIVE: a missing isPointInPath never fires, and only a definitive interior/exterior verdict counts, so sub-pixel/AA ambiguity cannot misfire. Convicting artifact: a canvas-geometry-randomizing shim is an anti-fingerprinting modification, never a stock browser."

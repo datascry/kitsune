@@ -840,6 +840,29 @@ export function armCollector(): LiveCollector {
     } catch {
       /* ignore */
     }
+    // Canvas GEOMETRY farbling (JShelter): isPointInPath is an exact, GPU-independent hit-test —
+    // deterministic in every real engine. A farbling shim flips the answer ~5% of the time; over many
+    // trials on a deep-interior (and far-exterior) point a real browser never errs. Missing API never fires.
+    try {
+      const gc = document.createElement("canvas");
+      gc.width = 100;
+      gc.height = 100;
+      const gctx = gc.getContext("2d");
+      if (gctx !== null && typeof gctx.isPointInPath === "function") {
+        gctx.beginPath();
+        gctx.rect(20, 20, 60, 60);
+        let geomBad = false;
+        for (let pi = 0; pi < 120; pi++) {
+          if (gctx.isPointInPath(50, 50) !== true || gctx.isPointInPath(5, 5) !== false) {
+            geomBad = true;
+            break;
+          }
+        }
+        if (geomBad) put("browser", "canvas_geometry_noise", true);
+      }
+    } catch {
+      /* ignore */
+    }
     if (navigator.platform === "") put("browser", "platform_empty", true);
     put("browser", "ua_render", uaEngine === "firefox" ? "gecko" : "webkit");
     const ps =
