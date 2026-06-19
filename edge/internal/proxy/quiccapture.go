@@ -110,12 +110,14 @@ func (c *QUICCapturer) FingerprintByIP(ip string) (*fingerprint.ClientHello, err
 }
 
 // quicTells builds the QUIC-layer signals for a captured QUIC ClientHello under the given UA: an
-// observational marker plus, for a modern-browser UA whose QUIC hello lacks GREASE, the quic_no_grease
-// tell — the QUIC analog of net.tls_grease_vs_ua (every browser GREASEs its QUIC hello; a non-browser
-// QUIC stack such as quic-go/Go crypto-tls does not).
+// observational marker plus, for a GREASEing-engine UA (Chromium/Safari) whose QUIC hello lacks GREASE, the
+// quic_no_grease tell — the QUIC analog of net.tls_grease_vs_ua. Firefox is EXCLUDED via uaGreasesHandshake
+// (Gecko does not GREASE; emitting it on a Firefox UA false-fired on real Firefox). NB: quic_no_grease feeds
+// only the corroborating-only net.quic_grease_vs_ua (experimental) — the QUIC capture is opportunistic and
+// IP-attributed, and has fired on real Chromium QUIC + non-QUIC clients, so it must not convict alone.
 func quicTells(sessionID string, ch *fingerprint.ClientHello, ua string, now time.Time) []signal.Signal {
 	out := []signal.Signal{signal.Network(sessionID, "quic_observed", true, now)}
-	if isModernBrowserUA(ua) && !ch.HasGREASE() {
+	if uaGreasesHandshake(ua) && !ch.HasGREASE() {
 		out = append(out, signal.Network(sessionID, "quic_no_grease", true, now))
 	}
 	// QUIC carries a TLS 1.3 ClientHello, so the post-quantum key-share tell applies here too: a UA

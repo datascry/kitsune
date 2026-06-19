@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.31"
+ruleset_version: "0.74.32"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -105,20 +105,16 @@ rules:
     source: "CreepJS / bot.sannysoft.com: screen.availWidth/Height can never exceed screen.width/height on a real device; avail > total is a spoofed/sloppily-randomised screen lie (both logical px, no zoom/dpr confound)"
 
   - id: net.quic_grease_vs_ua
-    title: Modern-browser UA but the QUIC ClientHello has no GREASE
+    title: GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE
     layers: [network, browser]
     reads: [network.quic_no_grease]
     predicate: present
     weight: 0.6
-    # Validated live end to end (corpus/sessions/quic-no-grease.json): a quic-go client attempts QUIC at
-    # the edge, its Initial is captured + decrypted, and on the same IP's HTTP request the edge emits
-    # quic_no_grease under a Chrome UA -> this rule fires. Real browsers GREASE their QUIC hello (same
-    # HasGREASE logic as the active net.tls_grease_vs_ua), so it stays quiet on them.
-    status: active
+    status: retired
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "RFC 9001; every browser GREASEs its QUIC ClientHello, a non-browser QUIC stack (quic-go / Go crypto-tls, verified) does not — the QUIC analog of net.tls_grease_vs_ua"
+    last_validated: "2026-06-19"
+    source: "RFC 9001: the QUIC analog of net.tls_grease_vs_ua. v0.74.32 RETIRED (GROUNDED via a fixture-freshness audit of the real-browser captures): the quic_no_grease signal is BROKEN, so the rule cannot convict FP-safely (experimental would NOT help — an experimental coherence rule still convicts; only retire stops it firing). Three independent failures: (1) Firefox FP — Gecko does not GREASE its QUIC hello (3 real Firefox captures show quic_no_grease), same as TLS; the edge now also excludes Firefox via uaGreasesHandshake so the observational signal is at least correct. (2) Chromium FP — a REAL Brave (Chromium, which DOES GREASE QUIC) tripped it, and Chromium evaders (nodriver, patchright-headful) too, so the HasGREASE check is wrong for at least some captured Chromium QUIC hellos (likely a partial-reassembly parse). (3) Cross-attribution — non-QUIC HTTP/2-over-TCP clients (curl-http2, http2-naive) also show quic_no_grease: the capturer attributes Initials by source IP (FingerprintByIP), so a QUIC probe from one client is misattributed to another session sharing the IP — a NAT FP in production. The QUIC capture is opportunistic + unreproducible in-sandbox (browsers only h3 on a 2nd connection after Alt-Svc; forced-QUIC over the self-signed edge never captured), so it cannot be GROUNDED against a confirmed Chromium-QUIC-with-GREASE positive. The IDEA is sound (a non-browser QUIC stack does not GREASE) — REVIVE when the capture is per-CONNECTION-attributed (not per-IP) and a real Chromium QUIC GREASE positive is grounded. No detection loss: every evader that tripped it keeps other convicting tells (h2/tls/automation/no_js)."
 
   - id: net.quic_pq_keyshare_vs_ua
     title: Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share

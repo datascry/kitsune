@@ -104,6 +104,12 @@ func TestQUICTells(t *testing.T) {
 	if kinds(quicTells("s", plain, "curl/8.0", time.Now()))["quic_no_grease"] {
 		t.Error("non-browser UA must not fire quic_no_grease")
 	}
+	// Firefox UA → gated off (v0.74.32): Gecko does not GREASE its QUIC hello either, so emitting this on a
+	// real Firefox is a false positive (uaGreasesHandshake excludes Firefox).
+	const firefoxUA = "Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0"
+	if kinds(quicTells("s", plain, firefoxUA, time.Now()))["quic_no_grease"] {
+		t.Error("Firefox UA must not fire quic_no_grease (Gecko does not GREASE)")
+	}
 
 	// QUIC PQ key-share tell: a Chrome >=131 UA whose QUIC hello lacks the MLKEM group fires it.
 	const chrome131 = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"

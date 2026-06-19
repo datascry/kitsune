@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **58 exercised techniques** (56 convicted `bot`, 2 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **58 exercised techniques** (55 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (16)
 
@@ -35,7 +35,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
-| `accept-lang-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.languages_worker_vs_main`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.accept_lang_vs_navigator`, `net.quic_grease_vs_ua` |
+| `accept-lang-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.languages_worker_vs_main`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.accept_lang_vs_navigator` |
 | `audio-readback-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.readback_noise`, `br.webdriver_getter_tampered` |
 | `baseline-firefox` | bot | `br.webdriver_present` |
 | `brave` | bot | `br.canvas_noise`, `br.headless_ua`, `br.webdriver_present` |
@@ -49,7 +49,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `ch-ua-hardcoded` | bot | `net.accept_encoding_vs_ua`, `net.ch_ua_no_grease_brand`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `chrome-clone-1` | bot | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `chrome-clone-2` | bot | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
-| `curl-http2` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.quic_grease_vs_ua`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
+| `curl-http2` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `curl-impersonate` | bot | `net.no_js_execution` |
 | `domrect-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.domrect_invariant`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `electron-leak` | bot | `br.automation_globals`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.electron_process`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
@@ -60,7 +60,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `h2-continuation-flood` | bot | `net.h2_continuation_flood`, `net.no_js_execution` |
 | `h2-rapid-reset` | bot | `net.h2_rapid_reset`, `net.no_js_execution` |
 | `honeypot` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.honeypot_interaction`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
-| `http2-naive` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.no_js_execution`, `net.quic_grease_vs_ua`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
+| `http2-naive` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `human-mouse` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `iframe-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.iframe_divergence`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.ua_platform_vs_ch_platform`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.worker_divergence`, `net.ch_platform_header_vs_ua` |
 | `ios-ua-spoof` | bot | `br.apple_ua_nonwebkit`, `br.ch_he_headless`, `br.error_engine_vs_ua`, `br.navplatform_vs_ua`, `br.notification_denied`, `br.permissions_anomaly`, `br.safari_ua_no_webkit_api`, `br.ua_platform_vs_ch_platform`, `br.vendor_vs_ua`, `br.webdriver_spoofed`, `net.ch_ua_mobile_vs_ua`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.tcp_os_vs_ua`, `net.tls_vs_ua_browser` |
@@ -71,13 +71,13 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `measuretext-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.measuretext_offscreen_vs`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `naive-tz-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.timezone_inconsistent`, `br.timezone_offset_vs_intl`, `br.timezone_worker_vs_main`, `br.webdriver_getter_tampered` |
 | `native-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.native_invariant_violated`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.webgl_worker_vs_main` |
-| `nodriver` | bot | `br.headless_ua`, `net.quic_grease_vs_ua` |
+| `nodriver` | bot | `br.headless_ua` |
 | `os-spoof` | bot | `br.cdp_runtime_enabled`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_spoofed`, `br.webgl_os_vs_ua`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` |
 | `patchright` | bot | `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly` |
-| `patchright-headful` | bot | `net.quic_grease_vs_ua` |
+| `patchright-headful` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `primp` | bot | `net.no_js_execution`, `net.tcp_os_vs_ua` |
 | `pydoll` | bot | `br.headless_ua` |
-| `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.quic_grease_vs_ua`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
+| `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
 | `rebrowser` | bot | `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `renderer-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_renderer_artifact`, `br.webgl_worker_vs_main` |
 | `selenium-driverless` | bot | `br.headless_ua` |

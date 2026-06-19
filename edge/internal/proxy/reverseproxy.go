@@ -79,8 +79,8 @@ func prepare(
 		// A GREASEing-engine UA (Chromium/Safari) over a handshake with no TLS GREASE: those engines inject
 		// GREASE (RFC 8701) but a scripted TLS stack (OpenSSL/Go) does not — a TLS-layer tell for a UA-faking
 		// client whose JA4 is otherwise unrecognised. Firefox is EXCLUDED: it does not GREASE TLS by default,
-		// so emitting this on a Firefox UA false-fired on every real Firefox (see uaGreasesTLS).
-		if uaGreasesTLS(r.Header.Get("User-Agent")) && !hello.HasGREASE() {
+		// so emitting this on a Firefox UA false-fired on every real Firefox (see uaGreasesHandshake).
+		if uaGreasesHandshake(r.Header.Get("User-Agent")) && !hello.HasGREASE() {
 			out.signals = append(out.signals, signal.Network(out.sessionID, "tls_no_grease", true, now))
 		}
 		// A current-Chrome UA over a handshake that offers no post-quantum key share. Chrome 131+ sends
@@ -297,14 +297,14 @@ func isModernBrowserUA(ua string) bool {
 		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
 }
 
-// uaGreasesTLS reports whether the UA's ENGINE injects TLS GREASE (RFC 8701) by default. Chromium and
-// Safari/WebKit do; GECKO/FIREFOX does NOT (security.tls.grease_probability defaults to 0). v0.74.31 FP fix,
-// GROUNDED on real geckodriver Firefox 152 + Mullvad 140 + Playwright Firefox: all three send a GREASE-free
-// ClientHello, while every Chromium capture GREASEs — a clean engine split. Emitting tls_no_grease on a
-// Firefox UA therefore convicted EVERY real Firefox (net.tls_grease_vs_ua, coherence). A non-browser stack
-// faking a Firefox UA is still caught by its JA4 engine mismatch (net.tls_vs_ua_browser), so excluding Firefox
-// here loses no real coverage; a Chrome/Edge/Safari UA over a GREASE-free handshake remains the tell.
-func uaGreasesTLS(ua string) bool {
+// uaGreasesHandshake reports whether the UA's ENGINE injects GREASE (RFC 8701) into its TLS/QUIC ClientHello
+// by default. Chromium and Safari/WebKit do; GECKO/FIREFOX does NOT (security.tls.grease_probability defaults
+// to 0). v0.74.31/.32 FP fix, GROUNDED on real geckodriver Firefox 152 + Mullvad 140 + Playwright Firefox: all
+// three send a GREASE-free ClientHello (both TLS and QUIC), while every Chromium capture GREASEs — a clean
+// engine split. Emitting *_no_grease on a Firefox UA therefore convicted EVERY real Firefox. A non-browser
+// stack faking a Firefox UA is still caught by its JA4 engine mismatch (net.tls_vs_ua_browser), so excluding
+// Firefox here loses no real coverage; a Chrome/Edge/Safari UA over a GREASE-free handshake remains the tell.
+func uaGreasesHandshake(ua string) bool {
 	return isModernBrowserUA(ua) && !strings.Contains(ua, "Firefox/")
 }
 
