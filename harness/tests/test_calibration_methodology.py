@@ -209,3 +209,20 @@ def test_real_mullvad_rfp_farbling_does_not_trip_the_canvas_spoof_rules() -> Non
     signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
     fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
     assert fired.isdisjoint({"br.canvas_noise", "br.canvas_geometry_noise", "br.canvas_worker_vs_main"}), fired
+
+
+def test_no_real_firefox_fixture_trips_tls_grease_vs_ua() -> None:
+    # Systematic stale-fixture guard (v0.74.31/.32 lesson): Gecko does not GREASE its TLS/QUIC hello, so the
+    # edge excludes Firefox from *_no_grease emission — but a fixture captured BEFORE that edge change bakes in
+    # the old signal and re-scores as the FP. Score EVERY real-Firefox/Gecko baseline and require it clean of
+    # net.tls_grease_vs_ua, so any future stale Gecko capture fails CI (not just the one a human re-captured).
+    fixtures = [
+        _HEADFUL / "firefox-stock.json",
+        _HEADFUL / "firefox.json",
+        _PRIVACY / "mullvad.json",
+    ]
+    for path in fixtures:
+        capture = json.loads(path.read_text())
+        signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+        fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+        assert "net.tls_grease_vs_ua" not in fired, f"{path.name} (stale GREASE signal?): {sorted(fired)}"
