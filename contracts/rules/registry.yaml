@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.27"
+ruleset_version: "0.74.28"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -871,11 +871,11 @@ rules:
     reads: [browser.chrome_runtime_missing]
     predicate: present
     weight: 0.6
-    status: active
+    status: retired
     category: automation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "puppeteer-extra-stealth gap; headless chrome.runtime absence"
+    last_validated: "2026-06-19"
+    source: "RETIRED v0.74.28 — a convicting FP on the MOST COMMON real browser, GROUNDED on real non-automated Google Chrome 149 (manually launched, navigator.webdriver===false): window.chrome is present (loadTimes/csi/app) but chrome.runtime is UNDEFINED on a normal page. Chrome removed chrome.runtime from non-extension page contexts (~v106), so 'window.chrome without chrome.runtime' no longer distinguishes headless/automation from a real human's Chrome — it fires identically on both, convicting (automation) every real Chrome user. Original premise (puppeteer-extra-stealth gap / headless chrome.runtime absence) decayed with the browser. NO detection loss: every fleet evader that tripped it also trips br.webdriver_present / br.headless_ua / net.quic_grease_vs_ua (corpus verified). The salvage path — authenticating a PRESENT chrome.runtime's shape (a stealth tool that INJECTS a fake one) — is the separate br.chrome_runtime_authenticity gap, which needs the present-case grounded first."
 
   - id: br.maxtouch_desktop
     title: maxTouchPoints > 0 on a desktop User-Agent

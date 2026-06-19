@@ -235,11 +235,35 @@ both spoof directions. Verified end-to-end: stock Firefox 152 + a re-captured Mu
 spoof STILL trips it (and `firefox_ua_nongecko`). Locked by
 `test_calibration_methodology.test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp`.
 
+### ✅ RETIRED (v0.74.28): `br.chrome_runtime_missing` convicted every real Chrome — and a saturation finding
+
+Captured the most common real browser for the first time: **real Google Chrome 149**, both via Playwright
+(`channel:chrome`) and — decisively — **manually launched + CDP-attached** so `navigator.webdriver === false`
+(a genuine non-automated human-Chrome baseline, `corpus/calibration/headful/chrome-stable.json`). Result:
+`window.chrome` is present (`loadTimes`/`csi`/`app`) but **`chrome.runtime` is `undefined`** on a normal page.
+Chrome removed `chrome.runtime` from non-extension page contexts (~v106), so the rule's premise ("window.chrome
+without runtime = headless/stealth") decayed: it now fires identically on real Chrome and convicts (automation,
+w=0.6) **every real Chrome user**. A non-automated real Chrome scored **bot** on it alone. Retired
+(`status: retired`), grounded, locked by `test_real_nonautomated_chrome_trips_no_browser_layer_conviction`.
+
+**Honest consequence — a saturation marker, not hidden:** retiring it dropped the `zendriver` evader from
+**bot → suspicious**. Why: a well-configured zendriver hides `webdriver` (false), emits no headless-UA / CDC /
+CDP tell — its *only* convicting signal was `chrome_runtime_missing`, the **same** signal real Chrome emits. So
+the rule only ever "caught" zendriver by also convicting all real Chrome; that is not a valid detection. Per
+the prime directive (a real browser must not trip a convicting rule) the FP wins. **This is the per-session
+saturation frontier made concrete:** a perfect-mimic anti-detect Chrome (real fingerprint, webdriver hidden) is
+now indistinguishable from real Chrome on per-session JS signals. Catching it requires a signal real Chrome does
+NOT share — the **structural frontiers** (network-layer TLS/h2 deviation outside the container confound;
+coordination/prevalence), not another per-session tell. NB: `net.h2_header_order_vs_ua` fired on the real-Chrome
+CDP capture too (a container network-path artifact — flagged for the experimental-rule re-validation, needs a
+non-container real capture to act on).
+
 ### Open data gap (remaining)
 
 LibreWolf is the next privacy/Gecko source; fetchable via the geckodriver path proven here (Tor/Mullvad/stock
-Firefox all captured), no longer external-data-bound. A real-Chrome capture (for `br.chrome_runtime_authenticity`)
-remains the one per-session gap that needs a non-Playwright real Chrome.
+Firefox all captured), no longer external-data-bound. `br.chrome_runtime_authenticity` (authenticate a PRESENT
+chrome.runtime's shape — a stealth tool that INJECTS a fake one) is the salvage of the retired rule, but needs
+the rare present-case grounded first.
 
 ## Shipped from this catalog
 

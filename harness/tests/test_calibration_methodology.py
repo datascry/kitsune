@@ -107,6 +107,21 @@ def test_real_headful_chromium_firefox_no_browser_coherence_or_artifact_fp() -> 
         assert fired.get(RuleCategory.artifact, set()) == set(), engine
 
 
+def test_real_nonautomated_chrome_trips_no_browser_layer_conviction() -> None:
+    # corpus/calibration/headful/chrome-stable.json: REAL Google Chrome 149, MANUALLY launched (NOT via
+    # Playwright automation, connected over CDP) so navigator.webdriver === false — a genuine human-Chrome
+    # baseline, the most common real browser. v0.74.28 grounds the br.chrome_runtime_missing RETIREMENT:
+    # modern Chrome removed chrome.runtime from normal pages (~v106), so window.chrome-without-runtime no
+    # longer distinguishes headless from a real human's Chrome — the rule convicted EVERY real Chrome user.
+    # A real, non-automated Chrome must trip NO browser-layer convicting rule (coherence/artifact/AUTOMATION).
+    # (The session legitimately carries chrome_runtime_missing=True, so this assertion is non-vacuous; the
+    # network-layer h2/QUIC GREASE fires are the documented container path artifacts, out of scope here.)
+    fired = _headful_browser_layer_convictions("chrome-stable")
+    assert fired.get(RuleCategory.coherence, set()) == set(), fired
+    assert fired.get(RuleCategory.artifact, set()) == set(), fired
+    assert fired.get(RuleCategory.automation, set()) == set(), fired
+
+
 def test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp() -> None:
     # Stock Firefox 152 (geckodriver, NOT Playwright's Juggler build — the strongest real-Firefox source).
     # v0.74.27 grounds the engine_stack_vs_ua FP fix: Firefox added Error.captureStackTrace natively in v122,

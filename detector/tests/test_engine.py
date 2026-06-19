@@ -251,7 +251,8 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "screen_zero", True, Source.collector)], "br.screen_zero"),
         ([(Layer.browser, "chrome_no_connection", True, Source.collector)], "br.no_connection"),
         ([(Layer.browser, "chrome_no_pdfviewer", True, Source.collector)], "br.no_pdfviewer"),
-        ([(Layer.browser, "chrome_runtime_missing", True, Source.collector)], "br.chrome_runtime_missing"),
+        # br.chrome_runtime_missing retired v0.74.28 (FP on real Chrome 149: chrome.runtime undefined on
+        # normal pages); covered by test_engine_skips_retired_rules + the methodology guard on real Chrome.
         ([(Layer.browser, "mimetypes_empty", True, Source.collector)], "br.mimetypes_empty"),
         ([(Layer.browser, "chrome_no_devicememory", True, Source.collector)], "br.no_devicememory"),
         ([(Layer.browser, "notification_denied", True, Source.collector)], "br.notification_denied"),
