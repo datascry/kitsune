@@ -149,6 +149,28 @@ def test_firefox_null_vendor_maps_to_firefox_not_other() -> None:
     assert "br.vendor_vs_ua" not in fired
 
 
+def test_non_chromium_ua_emits_no_client_hint_signals_even_with_stray_userAgentData() -> None:
+    # Mapper-fidelity: UA Client Hints (navigator.userAgentData) exist ONLY on Chromium — a real Safari/iOS/
+    # Firefox reports it undefined, so the collector emits no ch_*. If a source erroneously attaches a
+    # userAgentData to a non-Chromium UA (a generation artifact), the mapper must NOT invent ch_* and falsely
+    # trip br.ua_platform_vs_ch_platform / br.ch_he_* (a fidelity bug real non-Chromium browsers never produce).
+    safari_with_stray_uad = {
+        "navigator": {
+            "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",  # noqa: E501
+            "platform": "iPhone",
+            "languages": ["en-US"],
+            "vendor": "Apple Computer, Inc.",
+        },
+        "userAgentData": {"platform": "iOS", "brands": [{"brand": "HeadlessChrome", "version": "99"}]},
+        "screen": {"width": 390, "height": 844, "colorDepth": 24, "devicePixelRatio": 3},
+    }
+    sigs = signals_from_fingerprint(safari_with_stray_uad, "ios", NOW)
+    k = _kinds(sigs)
+    assert "ch_platform" not in k and "ch_he_headless" not in k and "ch_he_version_vs_ua" not in k
+    fired = {c.rule_id for c in Detector().ingest_and_score(sigs)[0].contradictions}
+    assert fired.isdisjoint({"br.ua_platform_vs_ch_platform", "br.ch_he_headless", "br.ch_he_version_vs_ua"})
+
+
 def test_language_list_spec_invariant() -> None:
     # navigator.language IS navigator.languages[0] (HTML spec) — a coherent fingerprint never trips it.
     coherent = {

@@ -230,7 +230,12 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     if not is_mobile:
         sig("plugins_count", len(plugins))
 
-    if uad.get("platform"):
+    # UA Client Hints (navigator.userAgentData) exist ONLY on Chromium — Firefox/Safari/iOS report it
+    # undefined, so the collector emits no ch_* for them. Gate the UA-CH-derived signals on the engine so a
+    # source that erroneously attaches a userAgentData to a non-Chromium UA (a generation artifact) cannot make
+    # the mapper invent ch_* and falsely trip br.ua_platform_vs_ch_platform / br.ch_he_* (a fidelity bug a real
+    # non-Chromium browser never produces). Matches demo.py, which reads userAgentData only where it exists.
+    if is_chromium and uad.get("platform"):
         sig("ch_platform", "macOS" if uad["platform"] == "macOS" else uad["platform"])
     nav_os = _os_family(_nav_platform_os(str(nav.get("platform", ""))), plat)
     if nav_os:
@@ -256,12 +261,13 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
         pass  # ua_is_headless: not a browser-only derivable in DERIVABLE_KINDS scope
     fvl = uad.get("fullVersionList") or []
     brands = fvl + (uad.get("brands") or [])
-    if any(re.search(r"headless", str(b.get("brand", "")), re.I) for b in brands):
+    # UA-CH-derived (see the ch_platform note above): Chromium-only — a non-Chromium UA has no userAgentData.
+    if is_chromium and any(re.search(r"headless", str(b.get("brand", "")), re.I) for b in brands):
         sig("ch_he_headless", True)
     ch_brand = next((b for b in fvl if re.search(r"chrom", str(b.get("brand", "")), re.I)), None)
     ch_major = str((ch_brand or {}).get("version", uad.get("uaFullVersion", ""))).split(".")[0]
     ua_major_m = re.search(r"Chrome/(\d+)", ua)
-    if ch_major and ua_major_m and ch_major != ua_major_m.group(1):
+    if is_chromium and ch_major and ua_major_m and ch_major != ua_major_m.group(1):
         sig("ch_he_version_vs_ua", True)
 
     if renderer:
