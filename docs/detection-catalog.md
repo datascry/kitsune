@@ -219,24 +219,27 @@ The Gecko-RFP gap is now **closed** — and it was NOT a no-op like Brave. Real 
   re-captured Mullvad now sets `rfp_browser=true` and the three rules drop. Locked by
   `test_real_mullvad_rfp_farbling_does_not_trip_the_canvas_spoof_rules`.
 
-### ⬜ NEXT (pre-grounded): `br.engine_stack_vs_ua` false-fires on modern Firefox 122+
+### ✅ FIXED (v0.74.27): `br.engine_stack_vs_ua` false-fired on modern Firefox 122+
 
 The Mullvad capture surfaced a SECOND, broader FP — convicting and **not** privacy-specific. `engine_stack_vs_ua`
-treats `Error.captureStackTrace` as V8/JSC-only ("Firefox WITH it = spoof"), but **Firefox added
-`Error.captureStackTrace` natively in v122 (Jan 2024)**; real Mullvad (Firefox 140) reports it `=== "function"`,
-so the `firefox && hasV8Stack` arm fires on **every modern real Firefox / Tor / Mullvad** (coherence, w=0.7 →
-convicts). Our committed Firefox captures miss it because Playwright's Firefox is Juggler-patched and camoufox
-pins an older build (both report it `undefined`). The rule's own note ("a live Firefox 137 reports it
-undefined") was that patched build, not stock. **Fix (next iteration):** drop the `firefox` arm (the Chromium
-arm stays valid; a Chromium-faking-Firefox bot is still caught by `br.firefox_ua_nongecko`/`buildID`), AFTER a
-stock-Firefox-122+ capture confirms it isn't Mullvad-specific (RFP doesn't touch JS engine builtins, so the
-single real-Mullvad point + the public Firefox-122 fact already strongly indicate it — but a convicting-rule
-change earns its own confirming capture).
+treated `Error.captureStackTrace` as V8/JSC-only ("Firefox WITH it = spoof"), but **Firefox added
+`Error.captureStackTrace` natively in v122 (Jan 2024)**, so the `firefox && hasV8Stack` arm fired on **every
+modern real Firefox / Tor / Mullvad** (coherence, w=0.7 → convicts). Our committed Firefox captures missed it
+because Playwright's Firefox is Juggler-patched and camoufox pins an older build (both report it `undefined`).
+**Grounded + fixed:** captured **stock Firefox 152** via geckodriver (`corpus/calibration/headful/firefox-stock.json`)
+— it reports `Error.captureStackTrace === "function"` (confirming Firefox-wide, not Mullvad-specific) AND
+`Error.stackTraceLimit === undefined`, whereas Chromium reports `stackTraceLimit === "number"` (10). So the
+discriminator switched to `Error.stackTraceLimit`, which stays V8-exclusive: it fixes the FP while PRESERVING
+both spoof directions. Verified end-to-end: stock Firefox 152 + a re-captured Mullvad now trip no
+`engine_stack` (zero browser-layer coherence/artifact fires on stock FF), while a real Chromium-faking-Firefox
+spoof STILL trips it (and `firefox_ua_nongecko`). Locked by
+`test_calibration_methodology.test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp`.
 
 ### Open data gap (remaining)
 
-LibreWolf + a stock-modern-Firefox capture (for the `engine_stack` confirm above) are the next privacy/Gecko
-sources; both are now fetchable via the geckodriver path proven here, no longer external-data-bound.
+LibreWolf is the next privacy/Gecko source; fetchable via the geckodriver path proven here (Tor/Mullvad/stock
+Firefox all captured), no longer external-data-bound. A real-Chrome capture (for `br.chrome_runtime_authenticity`)
+remains the one per-session gap that needs a non-Playwright real Chrome.
 
 ## Shipped from this catalog
 

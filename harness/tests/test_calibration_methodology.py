@@ -107,6 +107,16 @@ def test_real_headful_chromium_firefox_no_browser_coherence_or_artifact_fp() -> 
         assert fired.get(RuleCategory.artifact, set()) == set(), engine
 
 
+def test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp() -> None:
+    # Stock Firefox 152 (geckodriver, NOT Playwright's Juggler build — the strongest real-Firefox source).
+    # v0.74.27 grounds the engine_stack_vs_ua FP fix: Firefox added Error.captureStackTrace natively in v122,
+    # so the rule switched to the still-V8-exclusive Error.stackTraceLimit. A real modern Firefox must trip no
+    # br.* coherence/artifact rule — in particular NOT engine_stack_vs_ua (the FP this capture exposed).
+    fired = _headful_browser_layer_convictions("firefox-stock")
+    assert fired.get(RuleCategory.coherence, set()) == set(), fired
+    assert fired.get(RuleCategory.artifact, set()) == set(), fired
+
+
 def test_real_headful_webkit_only_browser_coherence_is_the_navplatform_quirk() -> None:
     # Real headful WebKit's only browser-layer coherence fire is the same Playwright-on-Linux Mac-UA quirk
     # (navigator.platform=Linux vs a macOS Safari UA) — not real Safari, which is MacIntel and coherent.

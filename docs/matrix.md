@@ -1,6 +1,6 @@
 # Kitsune detection matrix — 120 rules vs 58 evaders
 
-_57/58 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.26`._
+_57/58 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.27`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 

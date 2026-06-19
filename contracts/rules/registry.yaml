@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.26"
+ruleset_version: "0.74.27"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1322,7 +1322,7 @@ rules:
     source: "CreepJS timezone lie: a spoof that sets the zone name but not the numeric offset (or forces UTC over a real offset) is self-inconsistent; real browsers never are"
 
   - id: br.engine_stack_vs_ua
-    title: JS-engine stack API (Error.captureStackTrace = V8) contradicts the UA engine
+    title: JS-engine stack API (Error.stackTraceLimit = V8) contradicts the UA engine
     layers: [browser]
     reads: [browser.engine_stack_mismatch]
     predicate: present
@@ -1330,8 +1330,8 @@ rules:
     status: active
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "CreepJS: V8-only Error.captureStackTrace; a Chrome UA without it (or a Firefox UA with it) is an engine spoof deeper than navigator.vendor"
+    last_validated: "2026-06-19"
+    source: "CreepJS: a V8-only Error stack API; a Chrome UA without it (or a Firefox UA with it) is an engine spoof deeper than navigator.vendor. v0.74.27 FP FIX (GROUNDED on stock Firefox 152 + a real Mullvad Browser 140): the original discriminator was Error.captureStackTrace, but SpiderMonkey ADDED that natively in Firefox 122 (Jan 2024) — both real Firefoxes report it 'function', so the firefox arm convicted EVERY modern real Firefox/Tor/Mullvad (a convicting coherence FP; the committed Firefox captures missed it because Playwright's Firefox is Juggler-patched and camoufox pins an older build, both reporting it undefined). Switched to Error.stackTraceLimit, which stays V8-exclusive — grounded Chromium === 'number' (10), stock Firefox 152 === undefined, JSC has none — so it fixes the FP while PRESERVING both spoof directions (a V8 engine faking Firefox still trips it; a non-V8 engine faking Chrome still trips it). A Chromium-faking-Firefox is also independently caught by firefox_ua_nongecko (Gecko buildID)."
 
   - id: br.safari_ua_no_webkit_api
     title: A UA claiming Safari lacks window.GestureEvent — a WebKit-only surface, so it is not WebKit

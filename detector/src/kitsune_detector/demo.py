@@ -684,12 +684,17 @@ td code{font-size:12px;color:#0a3}
     // on a Chromium host is still caught by apple_ua_nonwebkit (window.chrome/userAgentData).
     var isIOS = /iPhone|iPad|iPod/i.test(ua);
     if (!isIOS && uaEngine !== "other") sigs.push(S("browser", "vendor_engine", venEngine));
-    // Error.captureStackTrace lives in V8 (Chromium) and — as of Safari 16.4 (2023) — JSC, but NOT
-    // SpiderMonkey (verified: a live Firefox 137 reports it undefined). So a UA claiming Chrome without it,
-    // or claiming Firefox WITH it, is an engine spoof deeper than navigator.vendor (which JS-stealth tools
-    // patch, while the Error constructor's API they often miss). NOTE: it is NO LONGER Safari-exclusive in
-    // reverse — see apple_ua_nonwebkit below, which dropped the captureStackTrace arm for exactly this reason.
-    var hasV8Stack = typeof Error.captureStackTrace === "function";
+    // Error.stackTraceLimit is a NUMBER on V8 (Chromium, default 10) but does NOT exist on SpiderMonkey or
+    // JSC (undefined). So a UA claiming Chrome without it, or claiming Firefox WITH it, is an engine spoof
+    // deeper than navigator.vendor (which JS-stealth tools patch, while the V8 Error-API surface they often
+    // miss). v0.74.27: the discriminator was Error.captureStackTrace, but SpiderMonkey ADDED that natively in
+    // Firefox 122 (Jan 2024) — GROUNDED on stock Firefox 152 AND a real Mullvad Browser 140, both report
+    // typeof Error.captureStackTrace === "function" — so the old check false-fired the firefox arm on EVERY
+    // modern real Firefox/Tor/Mullvad (a convicting coherence FP). Error.stackTraceLimit stays V8-exclusive
+    // (grounded: Chromium === "number" 10, stock Firefox 152 === undefined, JSC has none), so it fixes the FP
+    // while PRESERVING both spoof directions (a V8 engine faking Firefox still has it; a non-V8 faking Chrome
+    // still lacks it). NOTE: not Safari-exclusive in reverse — apple_ua_nonwebkit covers the WebKit side.
+    var hasV8Stack = typeof Error.stackTraceLimit === "number";
     if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack))
       sigs.push(S("browser", "engine_stack_mismatch", true));
     // Apple mandates WebKit for Safari AND every iOS browser — Chrome (CriOS), Firefox (FxiOS), Brave,
