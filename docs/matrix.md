@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 101 rules
+# Kitsune detection matrix — 108 rules
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | ch-ua-hardcoded | chrome-clone-1 | chrome-clone-2 | curl-impersonate | floor-spoof | full-stealth | go-tls | h2-continuation-flood | h2-rapid-reset | human-mouse | max-stealth | nodriver | os-spoof | patchright | primp | pydoll | quic-no-grease | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | tls-stale-template | undetected | vanilla | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -6,10 +6,13 @@
 | `net.tls_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_vs_ua_browser` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
 | `br.automation_globals` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.electron_process` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.native_invariant_violated` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.screen_impossible` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `net.quic_grease_vs_ua` | network,browser | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 3 |
+| `net.quic_grease_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 2 |
 | `net.quic_pq_keyshare_vs_ua` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_unknown_vs_ua` | network | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `net.h2_header_order_vs_ua` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.ua_platform_vs_ch_platform` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webdriver_present` | browser | ✓ | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | ✓ | · | · | ✓ | · | · | · | · | · | 7 |
 | `br.cdp_runtime_enabled` | browser | · | · | · | · | · | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | · | · | ✓ | · | · | · | · | · | · | · | ✓ | ✓ | · | · | · | · | 7 |
@@ -17,7 +20,7 @@
 | `br.canvas_lie` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.input_entropy_floor` | behavioral | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | ✓ | · | · | ✓ | · | · | · | · | ✓ | · | ✓ | 8 |
 | `bh.no_input_before_action` | behavioral | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | ✓ | · | · | ✓ | · | · | · | · | ✓ | · | ✓ | 8 |
-| `bh.power_law_violation` | behavioral | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `bh.power_law_violation` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `rep.datacenter_asn` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.h2_vs_tls_browser` | network | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.accept_lang_vs_navigator` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -32,11 +35,11 @@
 | `br.headless_ua` | browser | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | · | ✓ | · | · | ✓ | · | · | 11 |
 | `br.ch_he_headless` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | ✓ | ✓ | · | · | · | · | 5 |
 | `br.ch_he_version_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 2 |
-| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 3 |
+| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | ✓ | ✓ | · | · | · | · | 4 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `bh.synthetic_no_coalesced` | behavioral | · | · | · | · | ✓ | · | · | · | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 4 |
+| `bh.synthetic_no_coalesced` | behavioral | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 3 |
 | `br.webdriver_spoofed` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | 4 |
 | `br.webgl_software` | browser | · | ✓ | · | · | · | · | ✓ | ✓ | · | ✓ | · | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | 17 |
 | `br.permissions_anomaly` | browser | · | · | · | · | · | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | ✓ | · | ✓ | ✓ | · | · | · | ✓ | · | ✓ | ✓ | ✓ | · | · | · | · | 11 |
@@ -65,7 +68,7 @@
 | `br.platform_empty` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.productsub_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
 | `br.cdc_artifacts` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.webgl2_missing` | browser | ✓ | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 4 |
+| `br.webgl2_missing` | browser | ✓ | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 3 |
 | `br.iframe_divergence` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.font_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.screen_avail_invalid` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -73,24 +76,28 @@
 | `br.devicepixelratio_anomaly` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.hover_none_desktop` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | ✓ | · | · | ✓ | · | · | · | · | ✓ | · | ✓ | 5 |
 | `br.pointer_touch_incoherent` | browser | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| `br.voices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | 21 |
+| `br.voices_empty` | browser | ✓ | ✓ | ✓ | ✓ | · | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | 20 |
 | `br.voice_os_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webgl_renderer_artifact` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.engine_feature_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.webgl_not_angle` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.audio_missing` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.audio_noise` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | 21 |
+| `br.readback_noise` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.domrect_invariant` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.measuretext_offscreen_vs` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| `br.fingerprint_improbable` | browser | · | ✓ | · | · | · | · | ✓ | ✓ | · | ✓ | · | · | · | · | ✓ | ✓ | · | ✓ | · | · | ✓ | · | ✓ | ✓ | · | · | ✓ | · | ✓ | · | ✓ | 13 |
+| `br.media_devices_empty` | browser | ✓ | ✓ | ✓ | ✓ | · | · | ✓ | ✓ | · | · | ✓ | · | · | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | ✓ | ✓ | ✓ | ✓ | · | ✓ | · | ✓ | 20 |
 | `br.adblock_present` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
-| `br.macos_dpr1` | browser | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.macos_dpr1` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.font_linux_leak` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 2 |
-| `br.font_mac_internal` | browser | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
+| `br.font_mac_internal` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.codec_os_incoherent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 2 |
-| `br.webrtc_unavailable` | browser | · | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | 4 |
+| `br.webrtc_unavailable` | browser | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | 3 |
 | `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.timezone_inconsistent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.engine_stack_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
-| `net.no_js_execution` | network,browser | · | · | · | · | · | ✓ | · | · | ✓ | · | · | ✓ | ✓ | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | 9 |
+| `net.no_js_execution` | network,browser | · | · | · | · | ✓ | ✓ | · | · | ✓ | · | · | ✓ | ✓ | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | · | ✓ | · | ✓ | · | 10 |
 | `br.webgpu_webgl_vs` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.webgpu_vendor_vs_webgl` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.error_engine_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | 1 |
@@ -103,7 +110,7 @@
 | `net.ch_ua_no_grease_brand` | network | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/101** | **10/101** | **5/101** | **4/101** | **11/101** | **6/101** | **14/101** | **14/101** | **1/101** | **8/101** | **17/101** | **3/101** | **2/101** | **2/101** | **13/101** | **11/101** | **9/101** | **17/101** | **12/101** | **2/101** | **8/101** | **5/101** | **11/101** | **8/101** | **16/101** | **14/101** | **20/101** | **6/101** | **8/101** | **5/101** | **8/101** |  |
+| **flagged** |  | **6/108** | **11/108** | **5/108** | **4/108** | **3/108** | **6/108** | **15/108** | **15/108** | **1/108** | **9/108** | **16/108** | **3/108** | **2/108** | **2/108** | **14/108** | **12/108** | **9/108** | **18/108** | **12/108** | **2/108** | **9/108** | **5/108** | **12/108** | **9/108** | **16/108** | **15/108** | **22/108** | **6/108** | **9/108** | **5/108** | **9/108** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -111,38 +118,38 @@
 | Evader | verdict | coherence | artifact | automation | environment | behavioral | reputation |
 |---|---|---|---|---|---|---|---|
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
-| `brave` | bot | 0 | 1 | 3 | 4 | 2 | 0 |
+| `brave` | bot | 1 | 1 | 3 | 4 | 2 | 0 |
 | `camoufox-hardened` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
 | `camoufox-headful` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
-| `camoufox` | bot | 3 | 2 | 0 | 4 | 2 | 0 |
+| `camoufox` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `ch-ua-hardcoded` | bot | 5 | 1 | 0 | 0 | 0 | 0 |
-| `chrome-clone-1` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
-| `chrome-clone-2` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
+| `chrome-clone-1` | bot | 1 | 0 | 6 | 6 | 2 | 0 |
+| `chrome-clone-2` | bot | 1 | 0 | 6 | 6 | 2 | 0 |
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
-| `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
-| `full-stealth` | bot | 5 | 0 | 7 | 4 | 1 | 0 |
+| `floor-spoof` | bot | 1 | 0 | 4 | 2 | 2 | 0 |
+| `full-stealth` | bot | 5 | 0 | 7 | 4 | 0 | 0 |
 | `go-tls` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `h2-continuation-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
-| `human-mouse` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
-| `max-stealth` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
+| `human-mouse` | bot | 1 | 0 | 6 | 6 | 1 | 0 |
+| `max-stealth` | bot | 1 | 0 | 4 | 6 | 1 | 0 |
 | `nodriver` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
-| `os-spoof` | bot | 6 | 0 | 5 | 6 | 0 | 0 |
+| `os-spoof` | bot | 7 | 0 | 5 | 6 | 0 | 0 |
 | `patchright` | bot | 1 | 0 | 5 | 6 | 0 | 0 |
 | `primp` | bot | 2 | 0 | 0 | 0 | 0 | 0 |
-| `pydoll` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
+| `pydoll` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
 | `quic-no-grease` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
-| `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
-| `selenium-driverless` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
+| `rebrowser` | bot | 1 | 0 | 5 | 6 | 0 | 0 |
+| `selenium-driverless` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
 | `spoof-ua` | bot | 6 | 0 | 4 | 5 | 1 | 0 |
-| `stealth-naive` | bot | 1 | 0 | 7 | 6 | 0 | 0 |
-| `stealth-patched` | bot | 8 | 0 | 6 | 6 | 0 | 0 |
+| `stealth-naive` | bot | 1 | 0 | 7 | 6 | 1 | 0 |
+| `stealth-patched` | bot | 9 | 0 | 6 | 6 | 1 | 0 |
 | `tls-stale-template` | bot | 6 | 0 | 0 | 0 | 0 | 0 |
-| `undetected` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
+| `undetected` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
-| `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
+| `zendriver` | bot | 1 | 1 | 1 | 4 | 2 | 0 |
 
-## Coverage gaps — 42/101 rules catch nothing yet
+## Coverage gaps — 51/108 rules catch nothing yet
 
 **Evaded** (11) — reads present in the corpus, but every sample passed:
 - `net.tls_vs_ua_browser`
@@ -157,13 +164,17 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (31) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (40) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.automation_globals`
+- `br.electron_process`
+- `br.native_invariant_violated`
 - `br.screen_impossible`
 - `net.quic_pq_keyshare_vs_ua`
+- `net.h2_header_order_vs_ua`
 - `br.csp_bypassed`
 - `br.canvas_lie`
+- `bh.power_law_violation`
 - `rep.datacenter_asn`
 - `net.h2_control_flood`
 - `rep.known_proxy_exit`
@@ -183,7 +194,12 @@
 - `br.webgl_not_angle`
 - `br.audio_missing`
 - `br.audio_noise`
+- `br.readback_noise`
+- `br.domrect_invariant`
+- `br.measuretext_offscreen_vs`
 - `br.adblock_present`
+- `br.macos_dpr1`
+- `br.font_mac_internal`
 - `net.webrtc_ip_vs_observed`
 - `br.timezone_inconsistent`
 - `br.webgpu_vendor_vs_webgl`
