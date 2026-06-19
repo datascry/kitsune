@@ -26,7 +26,14 @@ from typing import Any
 from .models import MISSING, Layer, Session
 
 _DATA = Path(__file__).parent / "data"
-_FACTORS: tuple[tuple[str, str | None], ...] = (("gpu", "plat"), ("screen", "plat"), ("color", "plat"), ("cores", None))
+# v0.74.20: the COLOUR factor (color_depth given platform) was DROPPED — a circular single-source FP.
+# color_depth is a DISPLAY property (24 = sRGB, 30 = HDR), OS-independent — every real browser reports 24
+# regardless of platform (grounded: the headful Chromium/Firefox/WebKit captures all report 24). But
+# browserforge GENERATES color_depth=32 for Windows at 93%, so a real Windows user (24) took a ~-3 log
+# penalty the calibration could never see (browserforge scores its own 32s against a 32-heavy prior).
+# Conditioning a display property on the OS is unsound and the prior is uncorroborable (Intoli lacks
+# color_depth), so the factor is removed rather than trusted single-source. gpu/screen/cores remain.
+_FACTORS: tuple[tuple[str, str | None], ...] = (("gpu", "plat"), ("screen", "plat"), ("cores", None))
 
 
 def _gpu_family(renderer: str) -> str:
@@ -112,7 +119,7 @@ def _load_prior() -> dict[str, Any]:
     return _PRIOR
 
 
-_SCORED = ("gpu", "screen", "color", "cores")
+_SCORED = ("gpu", "screen", "cores")
 
 
 def is_improbable(session: Session) -> bool:

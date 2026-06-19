@@ -130,3 +130,21 @@ dropped remain `bot`). Locked by `test_partial_vector_abstains_unknown_never_fir
 3. Gate it through `task calibrate` against *both* browserforge and the real-engine corpus; never let it
    raise the legitimate-browser flag rate.
 4. Corroborate the prior against Tier-3 before raising its weight toward convicting.
+
+## Colour factor dropped (v0.74.20) — the second circular single-source FP
+
+The screen-factor lesson recurred on colour. `color_depth` is a **display** property — 24 (sRGB) or 30
+(HDR/wide-gamut) — and is **OS-independent**: every real browser reports 24 regardless of platform (grounded
+on the headful Chromium/Firefox/WebKit captures, all 24; `screen.colorDepth` does not depend on the OS). But
+the browserforge prior generates `color_depth=32` for **Windows at 93%**, so the colour factor charged every
+real Windows user (who reports 24) a ~−3 log penalty. Like the exact-`WxH` screen artifact, it is **invisible
+to the browserforge calibration** — browserforge scores its own generated 32s against a 32-heavy prior, so no
+penalty shows; the bias only bites real 24-reporting traffic, which the single source can't represent.
+
+Conditioning a display property on the OS is unsound, and the colour prior is **uncorroborable** (Intoli
+carries no `color_depth`, and the Tier-2 captures only confirm 24). Per the standing rule — never act on a
+single-source number — the factor was **removed** rather than trusted. The prior and p1 threshold were
+regenerated over `gpu`/`screen`/`cores` (threshold −10.75 → −9.04). A real-Windows-like fingerprint's margin
+improved (−6.55 → −3.48 vs the threshold) and the corpus label distribution is unchanged (51 bot / 1
+suspicious — zero detection loss; the rule is corroborating-only). `gpu` and `cores` remain single-source
+pending a Tier-3 real-device matrix.

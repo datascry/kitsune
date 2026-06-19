@@ -98,10 +98,12 @@ def features_from_fingerprint(fp: dict[str, Any]) -> Features:
 
 
 # Each modelled factor: (field, conditioned-on). ``None`` = marginal (unconditioned).
+# v0.74.20: the COLOUR factor was dropped — color_depth is a display property (OS-independent; every real
+# browser reports 24), but browserforge generates 32 for Windows at 93%, penalising real Windows users on a
+# single-source artifact the calibration could not see. Kept in sync with kitsune_detector.prevalence.
 _FACTORS: tuple[tuple[str, str | None], ...] = (
     ("gpu", "plat"),
     ("screen", "plat"),
-    ("color", "plat"),
     ("cores", None),
 )
 

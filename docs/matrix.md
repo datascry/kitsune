@@ -38,7 +38,7 @@ _51/52 evaders caught (`bot`). Generated from the committed captures._
 | `max-stealth` | bot | 1.00 | 11/120 | `br.webdriver_spoofed`, `br.permissions_anomaly`, `br.no_chrome_object` +1 |
 | `naive-tz-spoof` | bot | 1.00 | 17/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
 | `native-spoof` | bot | 1.00 | 17/120 | `br.native_invariant_violated`, `br.cdp_runtime_enabled`, `br.headless_ua` +7 |
-| `nodriver` | bot | 1.00 | 9/120 | `net.quic_grease_vs_ua`, `br.headless_ua`, `br.chrome_runtime_missing` |
+| `nodriver` | bot | 1.00 | 10/120 | `net.quic_grease_vs_ua`, `br.headless_ua`, `br.chrome_runtime_missing` |
 | `os-spoof` | bot | 1.00 | 17/120 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +6 |
 | `patchright` | bot | 1.00 | 11/120 | `br.headless_ua`, `br.ch_he_headless`, `br.permissions_anomaly` +2 |
 | `primp` | bot | 0.97 | 2/120 | `net.tcp_os_vs_ua`, `net.no_js_execution` |
@@ -55,8 +55,8 @@ _51/52 evaders caught (`bot`). Generated from the committed captures._
 | `undetected` | bot | 1.00 | 8/120 | `br.headless_ua`, `br.chrome_runtime_missing` |
 | `vanilla` | bot | 1.00 | 5/120 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
 | `webkit-ua-spoof` | bot | 1.00 | 18/120 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
-| `worker-spoof` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
-| `worker-wrap` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
+| `worker-spoof` | bot | 1.00 | 16/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
+| `worker-wrap` | bot | 1.00 | 16/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | bot | 1.00 | 8/120 | `br.chrome_runtime_missing` |
 
 ## Per-rule coverage — 89/120 rules catch ≥1 evader (rest in Gaps)
@@ -83,13 +83,13 @@ _51/52 evaders caught (`bot`). Generated from the committed captures._
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
+| `br.fingerprint_improbable` | browser | prevalence | 8 |
 | `br.chrome_runtime_missing` | browser | automation | 6 |
 | `br.hover_none_desktop` | browser | environment | 6 |
 | `br.navplatform_vs_ua` | browser | coherence | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
-| `br.fingerprint_improbable` | browser | prevalence | 5 |
 | `br.webdriver_spoofed` | browser | automation | 5 |
 | `net.quic_grease_vs_ua` | network,browser | coherence | 5 |
 | `bh.synthetic_no_coalesced` | behavioral | behavioral | 4 |

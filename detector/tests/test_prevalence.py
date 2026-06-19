@@ -74,10 +74,10 @@ def test_unscoreable_sessions_never_fire() -> None:
 def test_partial_vector_abstains_unknown_never_fires() -> None:
     # The Windows+Apple-GPU+Mac-screen joint IS improbable with a full vector (asserted above). But the
     # committed threshold is the p1 of FULL-vector fingerprints, so a MISSING factor adds an eps floor
-    # (~-9.2 nats) that masquerades as improbability. Dropping any one scored factor must make the rule
-    # ABSTAIN, not convict the gap — "unknown never fires".
+    # (~-9.2 nats) that masquerades as improbability. Dropping any SCORED factor (gpu/screen/cores) must
+    # make the rule ABSTAIN, not convict the gap — "unknown never fires".
     assert prevalence.is_improbable(_fp("Windows", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8)) is True
-    for drop in ("screen_resolution", "color_depth", "hardware_concurrency"):
+    for drop in ("screen_resolution", "hardware_concurrency"):
         fields = {
             "ua_platform": "Windows",
             "webgl_renderer": "ANGLE (Apple, Apple M2)",
@@ -87,6 +87,15 @@ def test_partial_vector_abstains_unknown_never_fires() -> None:
         }
         del fields[drop]
         assert prevalence.is_improbable(_session(**fields)) is False, f"fired on a vector missing {drop}"
+    # color_depth is NO LONGER a scored factor (v0.74.20, dropped as a browserforge single-source artifact),
+    # so a vector missing it still scores normally (and this improbable joint still fires) — not abstention.
+    no_colour = {
+        "ua_platform": "Windows",
+        "webgl_renderer": "ANGLE (Apple, Apple M2)",
+        "screen_resolution": "1470x956",
+        "hardware_concurrency": 8,
+    }
+    assert prevalence.is_improbable(_session(**no_colour)) is True
 
 
 def test_log_prevalence_orders_by_probability() -> None:
