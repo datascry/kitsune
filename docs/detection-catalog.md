@@ -28,16 +28,16 @@ tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact
 | suggested rule | priority | fp-risk | effort | technique |
 |---|---|---|---|---|
 | `br.canvas_hash_engine_vs_ua` | high | medium | medium | Canvas hash vs engine baseline — Hash toDataURL vs Blink/Gecko/WebKit/SwiftShader baselines. |
-| `net.h_order_vs_ua` | high | medium | medium | JA4H header order & casing — On-wire header order/casing is per-stack; browser UA over non-browser order is a tell. |
-| `bh.interact_without_focus` | high | medium | easy | document.hasFocus coherence — Interaction (pointer/keystroke/submit) while document.hasFocus() false is incoherent. |
-| `br.readback_noise` | high | low | easy | getImageData/audio readback-noise — getImageData and getChannelData-vs-copyFromChannel must round-trip identical bytes; diverg |
-| `br.native_invariant_violated` | high | low | medium | Native prototype-lie suite — Illegal-invocation throw, non-constructability, ownKeys=length,name, prototype-in-fn false |
-| `br.electron_process` | high | low | easy | Electron process leak — Electron exposes a Node process object in the renderer; a real browser never does. |
+| `net.h_order_vs_ua` | ✅ DONE | medium | medium | JA4H header order & casing — On-wire header order/casing is per-stack; browser UA over non-browser order is a tell. SHIPPED as `net.h2_header_order_vs_ua` (active v0.74.13, two-source corroborated). |
+| `bh.interact_without_focus` | ❌ DEAD | medium | easy | document.hasFocus coherence — Interaction (pointer/keystroke/submit) while document.hasFocus() false is incoherent. DEAD: grounded out — document.hasFocus() is `true` in headless Chromium (identical to headful), so there is no signal and the rule cannot fire in our context. |
+| `br.readback_noise` | ✅ DONE | low | easy | getImageData/audio readback-noise — getImageData and getChannelData-vs-copyFromChannel must round-trip identical bytes; diverg SHIPPED (active; live-validated via audio-readback-spoof). |
+| `br.native_invariant_violated` | ✅ DONE | low | medium | Native prototype-lie suite — Illegal-invocation throw, non-constructability, ownKeys=length,name, prototype-in-fn false SHIPPED (active; native-spoof evader). |
+| `br.electron_process` | ✅ DONE | low | easy | Electron process leak — Electron exposes a Node process object in the renderer; a real browser never does. SHIPPED (active; no Electron evader in the fleet so unexercised, but live-producible). |
 | `br.measuretext_os_vs_ua` | medium | medium | medium | measureText OS signature — measureText metrics encode OS renderer; main vs OffscreenCanvas divergence; Camoufox spoof |
 | `br.emoji_os_vs_ua` | medium | medium | medium | Emoji glyph vs OS — Emoji raster hash + tofu-vs-glyph maps to OS/version; Windows UA with Noto emoji is incohe |
 | `br.isolated_world` | medium | medium | hard | Isolated-world execution tell — Main-world sentinel unreachable from isolated-world automation (selenium-driverless/patchr |
-| `br.stack_tool_marker` | medium | low | easy | Error.stack tool-marker leak — Error().stack leaks pptr/puppeteer/playwright/_evaluation_script__ markers. |
-| `br.domrect_invariant` | medium | low | medium | DOMRect transform geometry — getClientRects on transformed/zero-size elements; per-engine sub-pixel + invariant checks. |
+| `br.stack_tool_marker` | ❌ DEAD | low | easy | Error.stack tool-marker leak — Error().stack leaks pptr/puppeteer/playwright/_evaluation_script__ markers. DEAD: the collector runs as the page's own inline script, so its Error().stack is clean regardless of automation — cannot fire in our context. |
+| `br.domrect_invariant` | ✅ DONE | low | medium | DOMRect transform geometry — getClientRects on transformed/zero-size elements; per-engine sub-pixel + invariant checks. SHIPPED (active). |
 | `bh.honeypot_interaction` | ✅ DONE | low | medium | Honeypot bait interaction — Hidden bait element/field; automation that touches/fills it trips. Very low FP. SHIPPED as `br.honeypot_interaction` (automation) v0.74.11. |
 | `net.ja4t_vs_ua` | medium | low | medium | JA4T active TCP fingerprint — TCP window/options-order/MSS/wscale; JA4T-vs-TLS-engine incoherence is a second TCP anchor |
 | `br.timer_resolution_vm` | low | high | medium | performance.now VM timing — VM/headless timer resolution/jitter + micro-benchmark distinguish virtualized hosts. |
@@ -48,25 +48,30 @@ tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact
 | `br.gamut_vs_gpu` | low | medium | easy | color-gamut/HDR vs GPU — P3/HDR display claim while software-rendering (SwiftShader) is suspicious. |
 | `br.battery_anomaly` | low | medium | easy | Battery API stub/presence — Chrome clamps getBattery; varying values, or presence/absence wrong for the engine, is inc |
 | `br.sensor_vs_formfactor` | low | medium | medium | Sensor presence vs form factor — DeviceMotion/Sensor presence must match mobile-ness; mobile UA with no motion, or static s |
-| `br.broken_image_dims` | low | medium | easy | Broken-image dimensions — Headless renders a broken img at 0x0; real Chrome ~16x16. |
+| `br.broken_image_dims` | ❌ DEAD | medium | easy | Broken-image dimensions — Headless renders a broken img at 0x0; real Chrome ~16x16. DEAD: grounded out — a broken <img> is 0x0 in headless AND headful Chromium, so there is no signal to mismatch. |
 | `rep.ja4_traffic_shape` | low | medium | hard | JA4 aggregate traffic-shape — Per-JA4 browser_ratio/h2h3_ratio/quantile vs genuine same-JA4 baseline flags spoofed fps. |
 | `br.antidetect_tool_hash` | low | low | medium | Anti-detect extension hash — Hash patched prototype-method source to name CanvasBlocker/JShelter/puppeteer-extra. |
 
-## Build order (precision-first)
+## Build order (precision-first) — COMPLETE
 
-The low-FP, high-priority gaps are the safe wins (they add detection without raising the 23% legitimate-
-browser flag rate the calibration measured):
+The original precision-first build order is now fully resolved: `br.readback_noise`, `br.electron_process`,
+`br.native_invariant_violated`, and `net.h_order_vs_ua` (as `net.h2_header_order_vs_ua`) all **shipped active**;
+`br.stack_tool_marker` is **DEAD** in our context (the collector is the page's own inline script, so its
+`Error().stack` is clean regardless of automation). The low-FP/high-priority queue is exhausted.
 
-1. **`br.readback_noise`** — `getImageData`/audio `copyFromChannel` must round-trip identical bytes; a
-   noise/farbling shim diverges. Deeper than `canvas_noise` (which only probes a solid fill). Easy, low FP.
-2. **`br.electron_process`** — a renderer exposing a Node `process` object is Electron, never a real browser.
-3. **`br.native_invariant_violated`** — illegal-invocation throw / non-constructability / ownKeys checks:
-   a Proxy-based spoof passes `tostring_tampered` (native-code string) yet fails these. Low FP.
-4. **`br.stack_tool_marker`** — `Error().stack` leaks `puppeteer`/`playwright`/`_evaluation_script__` markers.
-5. **`net.h_order_vs_ua`** — JA4H regular-header order/casing vs claimed browser (in progress).
+**Per-session convicting detection is SATURATED.** The remaining table rows are either shipped (✅), grounded-
+out dead-ends (❌: `interact_without_focus` — `document.hasFocus()` is `true` in headless too;
+`broken_image_dims` — 0×0 in headless and headful alike), medium-FP environment tells that need a real-device
+corpus to calibrate (`canvas_hash_engine_vs_ua`, `measuretext_os`, `emoji_os`, `gamut_vs_gpu`, `hw_memory`,
+`storage_quota`, `battery_anomaly`, `sensor_vs_formfactor`), or blocked on inputs the sandbox cannot produce
+(`ja4t_vs_ua`/`tls_raw_value` need an edge-side JA4T/JA4_r build; `webgpu_limits` needs a real GPU;
+`ja4_traffic_shape`/`rep.*` IP-reputation need a real residential-proxy source; the prevalence model's
+gpu/colour/cores factors need a Tier-3 real-device matrix to corroborate browserforge).
 
-Medium-FP gaps (`canvas_hash_engine_vs_ua`, `measuretext_os`, `emoji_os`, `interact_without_focus`) are
-valuable but need careful calibration against the real-browser corpus before shipping active.
+The productive frontier has shifted to **red-team-driven validation** (build the evader that exercises a
+known-good rule, ground the real-browser negative) — which cleared the "Evaded" rule queue and surfaced the
+engine-identity family — and to **periodic live re-validation + scoreboard/matrix refresh** (see
+docs/calibration.md). New marginal per-session tells are deliberately NOT pursued at saturation.
 
 ## Shipped from this catalog
 

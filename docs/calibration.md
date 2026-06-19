@@ -274,3 +274,17 @@ browserforge (runtime probes the mapper omits) — the second source earning its
    Firefox — so the GREASE question needs a non-Playwright real-Firefox capture before acting, and was left
    untouched (the same "don't act on a single questionable source" discipline as the `tcp_os_vs_ua` proxy
    question).
+
+## Live re-validation log
+
+Periodic re-validation of the experimental/named rules + the base anti-detect fleet against the LIVE
+edge→detector stack (not just re-scored captures), per the standing loop directive. Each entry confirms the
+committed captures still match live behaviour (no evader-tool or stack drift) at the recorded ruleset.
+
+- **2026-06-19 · ruleset 0.74.18** — live stack confirmed at 0.74.18. `br.readback_noise` fires live
+  (audio-readback-spoof → bot). `net.h2_header_order_vs_ua` fires live (http2-naive → bot). Base anti-detect
+  fleet re-run live: `nodriver`, `undetected`, `pydoll`, `zendriver` all → `bot` (score 1.00, ≥2 convicting
+  tells each). No drift. The recent rule additions (tls_vs_ua_browser, accept_lang, oscpu_vs_ua,
+  firefox_ua_nongecko, safari_ua_no_webkit_api, honeypot_interaction) were each live-validated in their
+  shipping iteration and are reflected in matrix.md (50/51; camoufox-headful the lone `suspicious`, a raw-SYN
+  capture miss — `net.tcp_os_vs_ua` convicts it when the SYN is captured).
