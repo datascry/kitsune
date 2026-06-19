@@ -635,3 +635,13 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   isn't in effect until the running image is rebuilt. Also completed the self-referential-calibration audit:
   the bot/suspicious score cutoffs (`0.35`/`0.65`) are FIXED design constants, not browserforge-self-referential,
   so the prevalence threshold was the only self-calibrated number — now fixed. No rule changed → no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.24 · whole-system green + precision gate clean (comprehensive cross-component
+  verification).** Intoli precision re-run (n=7000, the refreshing real-traffic source): **100% human / 0%
+  suspicious / 3 bot (0.04%)** — the 3 firings are the macOS-Safari-UA + `Google Inc.`-vendor true positives
+  (real Chromium-faking-Safari crawlers), no FP; the iOS + unknown-engine `vendor_vs_ua` fixes hold, and the
+  Intoli-measurable surface (UA↔vendor coherence) is fully resolved (no fixable FP remains). Then verified all
+  5 components green at 0.74.24: **detector** (ruff/mypy/234 tests), **harness** (ruff/mypy/150 tests), **edge**
+  (gofmt clean / go vet / `session`+`signal`+`tcpfp` tests pass), **collector** (tsc/eslint/prettier clean,
+  100% on engine·predicates·scoring), and the live stack current (`task verify-deployed` → match at 0.74.24,
+  threshold −9.4842). System comprehensively healthy; nothing to fix. No rule changed → no ruleset bump.
