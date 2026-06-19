@@ -84,6 +84,11 @@ const RENDERER_SPOOF = process.env.RENDERER_SPOOF === "1";
 // link + fill every text input. It blindly trips the collector's off-screen aria-hidden honeypot bait (a
 // link/input a human cannot reach) → br.honeypot_interaction. A real browser navigated by a human never does.
 const HONEYPOT = process.env.HONEYPOT === "1";
+// ACCEPT_LANG_SPOOF: the cross-layer locale gap. A geo-spoof patches navigator.language/languages in JS to
+// the proxy's country (fr) but the browser still sends its real HTTP Accept-Language header (en) — the bot
+// forgot the network layer. The HTTP header and the JS locale now disagree → net.accept_lang_vs_navigator.
+// (context locale=en-US makes the real Accept-Language deterministic so the mismatch is clean.)
+const ACCEPT_LANG_SPOOF = process.env.ACCEPT_LANG_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -140,7 +145,9 @@ const evading =
   CANVAS_GEOMETRY_SPOOF ||
   BRAVE_FAKE ||
   Boolean(SPOOF_UA);
-const mode = HONEYPOT
+const mode = ACCEPT_LANG_SPOOF
+  ? "accept-lang-spoof"
+  : HONEYPOT
   ? "honeypot"
   : RENDERER_SPOOF
   ? "renderer-spoof"
@@ -194,6 +201,8 @@ const browser = await chromium.launch({ args: ["--no-sandbox", "--ignore-certifi
 const context = await browser.newContext({
   ignoreHTTPSErrors: true,
   ...(userAgent ? { userAgent } : {}),
+  // Pin the HTTP Accept-Language so ACCEPT_LANG_SPOOF's JS-vs-header locale mismatch is deterministic.
+  ...(ACCEPT_LANG_SPOOF ? { locale: "en-US" } : {}),
 });
 if (FLOOR_SPOOF) {
   // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are
@@ -351,6 +360,16 @@ if (FLOOR_SPOOF) {
         return p === UNMASKED_RENDERER ? "Generic Renderer" : gp.call(this, p);
       };
     }
+  });
+} else if (ACCEPT_LANG_SPOOF) {
+  // Patch the JS locale to fr (a proxy-country geo-spoof) while the context's HTTP Accept-Language stays
+  // en-US — the bot spoofed navigator but forgot the network layer. nav_language_primary=fr vs
+  // accept_language_primary=en → net.accept_lang_vs_navigator. Both navigator.language AND languages are
+  // patched coherently (fr) so the JS layer is internally consistent and ONLY the HTTP header disagrees.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(navigator, "language", { get: () => "fr-FR", configurable: true });
+    Object.defineProperty(navigator, "languages", { get: () => ["fr-FR", "fr"], configurable: true });
   });
 } else if (TZ_SPOOF) {
   // Main-realm-only geo-spoof: claim America/New_York via Intl + Date on the main thread. The patch never

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.13"
+ruleset_version: "0.74.14"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -311,8 +311,8 @@ rules:
     status: active
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Cross-layer locale coherence; bot spoofs JS locale but not the HTTP stack"
+    last_validated: "2026-06-19"
+    source: "Cross-layer locale coherence: a real browser's HTTP Accept-Language always matches its JS navigator.languages[0] (same browser config drives both). A bot that geo-spoofs the JS locale (to a proxy's country) but forgets the HTTP stack disagrees across layers. v0.74.14 FIRST LIVE POSITIVE: the accept-lang-spoof evader (stealth ACCEPT_LANG_SPOOF=1 — context locale en-US so the real Accept-Language=en is sent, while navigator.language/languages are JS-patched to fr) fires it (accept_language_primary=en vs nav_language_primary=fr) — previously 'evaded' (read signals present in the corpus but no evader created the mismatch). GROUNDED FP-safe across the real-browser second source: the headful Chromium/Firefox/WebKit captures all have accept_lang==nav_lang (match → no fire). Browserforge calibration carries no HTTP Accept-Language, so it cannot raise the legit flag rate."
 
   - id: net.ch_platform_header_vs_ua
     title: HTTP Sec-CH-UA-Platform contradicts the JS UA platform
