@@ -32,6 +32,7 @@ _NOW = datetime(2026, 6, 19, tzinfo=UTC)
 _CALIB = Path(__file__).resolve().parents[2] / "corpus" / "calibration"
 _ENGINES = _CALIB / "engines"
 _HEADFUL = _CALIB / "headful"
+_PRIVACY = _CALIB / "privacy"
 
 
 def _fired_by_category(engine: str) -> dict[RuleCategory, set[str]]:
@@ -112,3 +113,25 @@ def test_real_headful_webkit_only_browser_coherence_is_the_navplatform_quirk() -
     fired = _headful_browser_layer_convictions("webkit")
     assert fired.get(RuleCategory.coherence, set()) == {"br.navplatform_vs_ua"}
     assert fired.get(RuleCategory.artifact, set()) == set()
+
+
+# --- Privacy-browser FP grounding: a real Brave's BY-DESIGN farbling must not convict it. -----------------
+# corpus/calibration/privacy/brave.json is a REAL Brave (default Shields) capture through the live collector.
+# Privacy/hardened browsers (Brave, Tor, Mullvad, LibreWolf) deliberately farble canvas/audio — a surface
+# browserforge/fpgen/Intoli/SapiMouse all miss. This pins the FP-safety question a privacy-browser user
+# raises: farbling is NOT a conviction. (The capture is Playwright-driven, so it legitimately trips
+# automation/environment/behavioural tells from the driver + container — those are out of scope here.)
+def test_real_brave_farbling_does_not_trip_the_canvas_or_audio_spoof_rules() -> None:
+    capture = json.loads((_PRIVACY / "brave.json").read_text())
+    browser = {s["kind"]: s["value"] for s in capture["signals"]["browser"]}
+    # The capture is only meaningful if Brave actually farbled — else the assertion below is vacuous.
+    assert browser.get("is_brave") is True
+    assert browser.get("canvas_noise") is True  # Brave perturbs canvas readback by default
+    assert browser.get("audio_readback_noise") is True  # ...and audio readback
+    assert "canvas_lie" not in browser  # engine-level farbling keeps toDataURL NATIVE — no getter-override lie
+
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+    # The privacy-feature-targeted rules must NOT convict a real privacy browser on its privacy feature:
+    # canvas_lie stays silent (native toString), and is_brave drops audio_noise/readback_noise (applicability).
+    assert fired.isdisjoint({"br.canvas_lie", "br.audio_noise", "br.readback_noise"}), fired

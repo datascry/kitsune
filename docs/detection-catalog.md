@@ -175,6 +175,33 @@ saturated against the current collection surface. New convicting coverage now re
 collector signal (new attack surface) or the structural frontiers (prevalence second prior; live proxy
 coordination), both of which are external-data-blocked as noted above.
 
+### Privacy-browser FP surface — a real-Brave grounding (2026-06-19)
+
+Privacy/hardened browsers (Brave, Tor, Mullvad, LibreWolf) deliberately **farble or block** canvas / audio /
+WebGL by default — exactly the footprint a naive bot blocker produces. That surface is invisible to every
+calibration source we have (browserforge / fpgen / Intoli / SapiMouse all model *normal* browsers), so "does
+a real privacy browser's farbling convict it?" was an **assumption**, not grounded — the risk a real
+Mullvad/Tor user raises. Grounded it against a **real Brave** (default Shields) through the live collector
+(`corpus/calibration/privacy/brave.json`, the corpus's first privacy-browser fixture):
+
+- `canvas_noise=true`, `audio_readback_noise=true` — Brave really does farble both — yet **`br.canvas_lie`
+  does NOT fire**: Brave's farbling is **engine-level**, so `toDataURL` stays NATIVE (`[native code]`). The
+  convicting `automation` rule keys on a non-native getter *override* (a JS blocker / bot), which an
+  engine-level privacy browser never presents. This is the coherence thesis working: same *signal* (perturbed
+  canvas), different *mechanism* (native engine vs JS lie) → only the lie convicts.
+- `is_brave=true` → `br.audio_noise` / `br.readback_noise` dropped by `detector.applicability`, so the
+  by-design audio farble does not convict either.
+- The capture's `bot` label comes **only** from the Playwright driver's automation tells (`webdriver`,
+  `chrome_runtime_missing`) + the headless container's environment tells — never from a privacy feature.
+
+Locked by `test_calibration_methodology.test_real_brave_farbling_does_not_trip_the_canvas_or_audio_spoof_rules`
+(grounding, not a rule change → no ruleset bump). **Open data gap:** the Gecko-RFP side (Tor / Mullvad /
+LibreWolf) is **not in-fleet** — Playwright can't drive a stock Gecko-RFP build (needs Marionette/geckodriver,
+not Juggler), so a real Tor/Mullvad capture is the external-data-bound next source to ground `rfp_browser`
+(the `rfpUTC && rfpBox && rfpCores` identity that gates the same drops for Gecko). Until then the Gecko path
+rests on the in-fleet Firefox/camoufox captures (canvas stays engine-consistent, no `canvas_lie`) + the
+engine-level-RFP design argument, not a real RFP-browser capture.
+
 ## Shipped from this catalog
 
 - ✅ `br.safari_ua_no_webkit_api (ACTIVE v0.74.18 — completes the engine-identity family. window.GestureEvent is a WebKit-ONLY global (every desktop + iOS Safari since Safari 5; Blink and Gecko have none). A Safari UA without it is a non-WebKit faker — the negative-surface complement to apple_ua_nonwebkit (which keys on Blink APIs PRESENT), robust to a spoof that DELETES window.chrome/userAgentData to beat that rule. GROUNDED on the real-browser second source (live Playwright WebKit GestureEvent="function" vs Chromium/Firefox undefined); real headful WebKit does NOT fire, the ios-ua-spoof evader (Chromium under an iPhone Safari UA) does. FP-safe: every real Safari has GestureEvent. The three engine-identity tells now cover all three: chromium↔engine_stack, gecko↔firefox_ua_nongecko (buildID), webkit↔this (GestureEvent) + apple_ua_nonwebkit (Blink-present).)`
