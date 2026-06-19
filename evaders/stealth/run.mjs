@@ -22,6 +22,11 @@ const FLOOR_SPOOF = process.env.FLOOR_SPOOF === "1";
 // the real hardwareConcurrency/userAgent. Spoof only the main thread (the lazy way most UA/hardware
 // spoofers do) and the detector's worker_divergence probe catches the realm the patch never reached.
 const WORKER_SPOOF = process.env.WORKER_SPOOF === "1";
+// IFRAME_SPOOF: the sibling context-isolation gap. The spoof guards on window.top===window, so it only
+// rewrites the top frame's navigator (the lazy pattern). A dynamically-created same-origin iframe gets
+// its own, un-patched navigator → the detector's iframe_divergence probe catches the realm the patch
+// skipped. Distinct from WORKER_SPOOF (a prototype patch reaches iframes but never Worker scope).
+const IFRAME_SPOOF = process.env.IFRAME_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -60,8 +65,11 @@ const LINUX_CHROME_UA =
 
 const userAgent =
   SPOOF_UA || (MAX_STEALTH || FULL || FLOOR_SPOOF ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
-const evading = STEALTH || FULL || MAX_STEALTH || FLOOR_SPOOF || WORKER_SPOOF || Boolean(SPOOF_UA);
-const mode = WORKER_SPOOF
+const evading =
+  STEALTH || FULL || MAX_STEALTH || FLOOR_SPOOF || WORKER_SPOOF || IFRAME_SPOOF || Boolean(SPOOF_UA);
+const mode = IFRAME_SPOOF
+  ? "iframe-spoof"
+  : WORKER_SPOOF
   ? "worker-spoof"
   : FLOOR_SPOOF
   ? "floor-spoof"
@@ -149,6 +157,18 @@ if (FLOOR_SPOOF) {
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
     Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
+  });
+} else if (IFRAME_SPOOF) {
+  // Spoof navigator.userAgent in the TOP frame only (guarded on window.top===window). A same-origin
+  // iframe the collector creates later is not the top frame, so it keeps the real UA → iframe_divergence.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    if (window.top === window.self) {
+      Object.defineProperty(Navigator.prototype, "userAgent", {
+        get: () => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        configurable: true,
+      });
+    }
   });
 } else if (evading) {
   await context.addInitScript(() => {
