@@ -344,3 +344,16 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   deliberately-inconsistent `AUDIO_READBACK_SPOOF` shim; with no independent corroboration the rule **stays
   experimental** (promoting on a single self-constructed positive would be single-source over-leverage). Its
   real-browser negative is CI-guarded (`test_calibration_methodology`). No semantics changed → no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.21 · cutting-edge CDP-patched fleet drift check** — re-validated the most
+  advanced anti-detect tools live (the ones engineered to defeat the automation tells), none previously
+  drift-checked at 0.74.21: `selenium-driverless`, `zendriver`, `patchright` (CDP-patched Playwright drop-in),
+  `rebrowser` (Runtime.enable-leak fix), `max-stealth` (full combined battery). **All five → `bot`** (score
+  ≥0.999): selenium-driverless and zendriver 3 convicting each, patchright 6, rebrowser 8, max-stealth 3.
+  No drift, no evasion. Observation: **`net.quic_grease_vs_ua` convicts all five** — the network layer is the
+  robust backstop even where the browser-layer automation tells are patched away (patchright/rebrowser fix
+  the CDP/webdriver leaks but still trip `quic_grease` + `chrome_runtime_missing`/`ch_he_headless`) or where
+  the JS collector did not report (max-stealth was caught on network tells alone: `quic_grease`,
+  `ch_ua_version`, `no_js_execution`). Confirms the cutting-edge fleet has found no gap at the current
+  ruleset; the Playwright-Chromium QUIC hello not matching the claimed browser is the universal catch. No
+  rule semantics changed → no ruleset bump.
