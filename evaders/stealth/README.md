@@ -52,6 +52,7 @@ reached. These exercise the worker/iframe realm-coherence rules directly.
 |---|---|---|
 | `ELECTRON_LEAK=1` | electron-leak | leaks a Node `process` into the renderer (`process.versions.electron` + `process.type="renderer"`) the way an Electron app with nodeIntegration on does → `br.electron_process` (automation). A real web browser has no Node process; the headful captures confirm absence. Gives that active rule its first live positive. |
 | `STALE_ENGINE=1` | stale-engine | claims a Chrome 125 UA but removes `Promise.withResolvers` (shipped Chrome 119) → `br.engine_feature_vs_ua` (coherence). Faithfully simulates a hardcoded-modern-UA-on-an-older-build (the JS analog of a lagging TLS/PQ template). A real Chrome ≥121 ships the feature; the headful Chromium capture does not trip it. Gives that active rule its first live positive. |
+| `MEASURETEXT_SPOOF=1` | measuretext-spoof | hooks main-thread `CanvasRenderingContext2D.measureText` to farble font metrics but leaves `OffscreenCanvasRenderingContext2D` (a distinct prototype) real → `br.measuretext_offscreen_vs` (artifact, realm-coherence). The measureText analog of `CANVAS_SPOOF`. A real engine — and Camoufox's engine-level protection — return identical metrics on both paths (the committed camoufox captures do not trip it). Gives that active rule its first live positive. |
 
 ### Escalation
 

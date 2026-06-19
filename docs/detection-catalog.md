@@ -73,13 +73,14 @@ lightable by a faithful evader (the electron-leak / stale-engine pattern):
 |---|---|---|---|
 | `br.engine_feature_vs_ua` | coherence | ✅ **lit v0.74.22** (stealth `STALE_ENGINE=1`) | claim Chrome ≥121 UA, remove `Promise.withResolvers` |
 | `br.electron_process` | automation | ✅ lit v0.74.22 (stealth `ELECTRON_LEAK=1`) | leak Node `process` into the renderer |
-| `br.canvas_lie` | automation | ⬜ no test, no capture | report a canvas size that disagrees with its backing store |
-| `br.domrect_invariant` | artifact | ⬜ no test, no capture | a getClientRects/DOMRect geometry shim (non-deterministic rects) |
-| `br.measuretext_offscreen_vs` | artifact | ⬜ no test, no capture | farble main-thread `measureText` only (offscreen stays real → divergence) |
+| `br.measuretext_offscreen_vs` | artifact | ✅ **lit v0.74.22** (stealth `MEASURETEXT_SPOOF=1`) | farble main-thread `measureText` only (offscreen stays real → divergence) |
+| `br.canvas_lie` | automation | ⬜ no test, no capture | override `HTMLCanvasElement.prototype.toDataURL` with a non-native fn (toString lacks `[native code]`) |
+| `br.domrect_invariant` | artifact | ⬜ no test, no capture | a getClientRects/DOMRect geometry shim (per-call noise breaks determinism) |
 | `br.audio_noise`, `br.automation_globals`, `br.cdc_artifacts`, `br.csp_bypassed`, `br.font_os_vs_ua`, `br.screen_impossible`, `br.voice_os_vs_ua`, `br.webgpu_vendor_vs_webgl`, `net.h2_control_flood`, `net.h2_settings_vs_order` | mixed | unit-tested (logic proven), no live capture | a faithful evader would add a live positive, lower priority |
 
 Reproduce the audit: score `corpus/sessions/*.json` through `Detector().score()` and diff the fired rule_ids
-against the active-convicting set. The 3 remaining ⬜ (no-test, no-capture) rules are the next candidates.
+against the active-convicting set. The 2 remaining ⬜ (no-test, no-capture) rules — `br.canvas_lie`,
+`br.domrect_invariant` — are the next candidates.
 
 **Per-session convicting detection is SATURATED.** The remaining table rows are either shipped (✅), grounded-
 out dead-ends (❌: `interact_without_focus` — `document.hasFocus()` is `true` in headless too;

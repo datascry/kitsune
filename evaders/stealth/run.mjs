@@ -109,6 +109,11 @@ const ELECTRON_LEAK = process.env.ELECTRON_LEAK === "1";
 // Chrome 119, so a UA claiming >=121 without it is an engine older than it claims → br.engine_feature_vs_ua.
 // Simulated by claiming Chrome 125 (Linux UA, coherent with the container) and removing Promise.withResolvers.
 const STALE_ENGINE = process.env.STALE_ENGINE === "1";
+// MEASURETEXT_SPOOF: the realm-incomplete font spoof (the measureText analog of CANVAS_SPOOF). Hook the
+// main-thread CanvasRenderingContext2D.measureText to perturb the reported font metrics, but leave
+// OffscreenCanvasRenderingContext2D (a DISTINCT prototype) real — so the two diverge, which a real engine
+// (and an engine-level spoofer like Camoufox) never does → br.measuretext_offscreen_vs.
+const MEASURETEXT_SPOOF = process.env.MEASURETEXT_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -167,8 +172,11 @@ const evading =
   BRAVE_FAKE ||
   ELECTRON_LEAK ||
   STALE_ENGINE ||
+  MEASURETEXT_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = STALE_ENGINE
+const mode = MEASURETEXT_SPOOF
+  ? "measuretext-spoof"
+  : STALE_ENGINE
   ? "stale-engine"
   : ELECTRON_LEAK
   ? "electron-leak"
@@ -447,6 +455,23 @@ if (FLOOR_SPOOF) {
       const o = RTO.call(this);
       o.timeZone = "America/New_York";
       return o;
+    };
+  });
+} else if (MEASURETEXT_SPOOF) {
+  // Realm-incomplete font spoof: perturb measureText on the main-thread CanvasRenderingContext2D only. The
+  // collector measures the same string on a regular canvas AND an OffscreenCanvas (a different prototype the
+  // patch never reaches), so the widths diverge → br.measuretext_offscreen_vs. A real engine (and Camoufox's
+  // engine-level protection) returns identical metrics on both paths, so this is an incomplete-spoof tell.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const mt = CanvasRenderingContext2D.prototype.measureText;
+    CanvasRenderingContext2D.prototype.measureText = function (text) {
+      const m = mt.call(this, text);
+      return {
+        width: m.width + 0.5, // a per-string font-fingerprint farble on the main-canvas path only
+        actualBoundingBoxAscent: m.actualBoundingBoxAscent,
+        actualBoundingBoxDescent: m.actualBoundingBoxDescent,
+      };
     };
   });
 } else if (STALE_ENGINE) {
