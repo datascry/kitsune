@@ -35,7 +35,7 @@
 | `br.headless_ua` | browser | · | ✓ | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | ✓ | · | ✓ | · | ✓ | · | ✓ | · | ✓ | ✓ | · | ✓ | · | · | ✓ | · | · | 11 |
 | `br.ch_he_headless` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | ✓ | ✓ | ✓ | · | · | · | · | 5 |
 | `br.ch_he_version_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | 2 |
-| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | ✓ | ✓ | · | · | · | · | 4 |
+| `bh.keystroke_entropy_floor` | behavioral | · | · | · | · | · | · | · | · | · | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | 4 |
 | `rep.known_proxy_exit` | reputation | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.path_too_straight` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `bh.uniform_velocity` | behavioral | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -110,7 +110,7 @@
 | `net.ch_ua_no_grease_brand` | network | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
-| **flagged** |  | **6/108** | **11/108** | **5/108** | **4/108** | **3/108** | **6/108** | **15/108** | **15/108** | **1/108** | **9/108** | **16/108** | **3/108** | **2/108** | **2/108** | **14/108** | **12/108** | **9/108** | **18/108** | **12/108** | **2/108** | **9/108** | **5/108** | **12/108** | **9/108** | **16/108** | **15/108** | **22/108** | **6/108** | **9/108** | **5/108** | **9/108** |  |
+| **flagged** |  | **6/108** | **11/108** | **5/108** | **4/108** | **3/108** | **6/108** | **15/108** | **15/108** | **1/108** | **9/108** | **17/108** | **3/108** | **2/108** | **2/108** | **14/108** | **12/108** | **9/108** | **18/108** | **12/108** | **2/108** | **9/108** | **5/108** | **12/108** | **9/108** | **16/108** | **14/108** | **22/108** | **6/108** | **9/108** | **5/108** | **9/108** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -118,42 +118,43 @@
 | Evader | verdict | coherence | artifact | automation | environment | behavioral | reputation |
 |---|---|---|---|---|---|---|---|
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
-| `brave` | bot | 1 | 1 | 3 | 4 | 2 | 0 |
+| `brave` | bot | 0 | 1 | 3 | 4 | 2 | 0 |
 | `camoufox-hardened` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
 | `camoufox-headful` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
 | `camoufox` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `ch-ua-hardcoded` | bot | 5 | 1 | 0 | 0 | 0 | 0 |
-| `chrome-clone-1` | bot | 1 | 0 | 6 | 6 | 2 | 0 |
-| `chrome-clone-2` | bot | 1 | 0 | 6 | 6 | 2 | 0 |
+| `chrome-clone-1` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
+| `chrome-clone-2` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
-| `floor-spoof` | bot | 1 | 0 | 4 | 2 | 2 | 0 |
-| `full-stealth` | bot | 5 | 0 | 7 | 4 | 0 | 0 |
+| `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
+| `full-stealth` | bot | 5 | 0 | 7 | 4 | 1 | 0 |
 | `go-tls` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `h2-continuation-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
-| `human-mouse` | bot | 1 | 0 | 6 | 6 | 1 | 0 |
-| `max-stealth` | bot | 1 | 0 | 4 | 6 | 1 | 0 |
+| `human-mouse` | bot | 0 | 0 | 6 | 6 | 1 | 0 |
+| `max-stealth` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
 | `nodriver` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
-| `os-spoof` | bot | 7 | 0 | 5 | 6 | 0 | 0 |
+| `os-spoof` | bot | 6 | 0 | 5 | 6 | 0 | 0 |
 | `patchright` | bot | 1 | 0 | 5 | 6 | 0 | 0 |
 | `primp` | bot | 2 | 0 | 0 | 0 | 0 | 0 |
-| `pydoll` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
+| `pydoll` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `quic-no-grease` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
-| `rebrowser` | bot | 1 | 0 | 5 | 6 | 0 | 0 |
-| `selenium-driverless` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
+| `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
+| `selenium-driverless` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `spoof-ua` | bot | 6 | 0 | 4 | 5 | 1 | 0 |
-| `stealth-naive` | bot | 1 | 0 | 7 | 6 | 1 | 0 |
-| `stealth-patched` | bot | 9 | 0 | 6 | 6 | 1 | 0 |
+| `stealth-naive` | bot | 1 | 0 | 7 | 6 | 0 | 0 |
+| `stealth-patched` | bot | 8 | 0 | 6 | 6 | 1 | 0 |
 | `tls-stale-template` | bot | 6 | 0 | 0 | 0 | 0 | 0 |
-| `undetected` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
+| `undetected` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
-| `zendriver` | bot | 1 | 1 | 1 | 4 | 2 | 0 |
+| `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
 ## Coverage gaps — 51/108 rules catch nothing yet
 
-**Evaded** (11) — reads present in the corpus, but every sample passed:
+**Evaded** (12) — reads present in the corpus, but every sample passed:
 - `net.tls_vs_ua_browser`
 - `br.ua_platform_vs_ch_platform`
+- `bh.power_law_violation`
 - `net.h2_vs_tls_browser`
 - `net.accept_lang_vs_navigator`
 - `net.ch_platform_header_vs_ua`
@@ -164,7 +165,7 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (40) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (39) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.automation_globals`
 - `br.electron_process`
@@ -174,7 +175,6 @@
 - `net.h2_header_order_vs_ua`
 - `br.csp_bypassed`
 - `br.canvas_lie`
-- `bh.power_law_violation`
 - `rep.datacenter_asn`
 - `net.h2_control_flood`
 - `rep.known_proxy_exit`
