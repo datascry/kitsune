@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 120 rules vs 51 evaders
+# Kitsune detection matrix — 120 rules vs 52 evaders
 
-_50/51 evaders caught (`bot`). Generated from the committed captures._
+_51/52 evaders caught (`bot`). Generated from the committed captures._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -54,15 +54,16 @@ _50/51 evaders caught (`bot`). Generated from the committed captures._
 | `tz-spoof` | bot | 1.00 | 17/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
 | `undetected` | bot | 1.00 | 8/120 | `br.headless_ua`, `br.chrome_runtime_missing` |
 | `vanilla` | bot | 1.00 | 5/120 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
+| `webkit-ua-spoof` | bot | 1.00 | 18/120 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
 | `worker-spoof` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `worker-wrap` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | bot | 1.00 | 8/120 | `br.chrome_runtime_missing` |
 
-## Per-rule coverage — 88/120 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 89/120 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 38 |
+| `br.media_devices_empty` | browser | environment | 39 |
 | `br.voices_empty` | browser | environment | 38 |
 | `br.webgl_software` | browser | environment | 32 |
 | `br.mimetypes_empty` | browser | environment | 29 |
@@ -70,55 +71,57 @@ _50/51 evaders caught (`bot`). Generated from the committed captures._
 | `br.notification_denied` | browser | automation | 28 |
 | `br.permissions_anomaly` | browser | automation | 28 |
 | `br.headless_ua` | browser | automation | 26 |
+| `br.no_chrome_object` | browser | automation | 26 |
 | `br.no_pdfviewer` | browser | environment | 26 |
-| `br.no_chrome_object` | browser | automation | 25 |
 | `br.cdp_runtime_enabled` | browser | automation | 23 |
 | `br.ch_he_headless` | browser | automation | 23 |
 | `bh.keystroke_entropy_floor` | behavioral | behavioral | 20 |
 | `br.webdriver_getter_tampered` | browser | automation | 16 |
 | `net.no_js_execution` | network,browser | coherence | 12 |
-| `net.tcp_os_vs_ua` | network | coherence | 11 |
+| `net.tcp_os_vs_ua` | network | coherence | 12 |
+| `br.webdriver_present` | browser | automation | 11 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
-| `br.webdriver_present` | browser | automation | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
-| `net.tls_grease_vs_ua` | network,browser | coherence | 8 |
+| `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
 | `br.chrome_runtime_missing` | browser | automation | 6 |
 | `br.hover_none_desktop` | browser | environment | 6 |
+| `br.navplatform_vs_ua` | browser | coherence | 6 |
+| `br.webgl_os_vs_ua` | browser | coherence | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
-| `br.navplatform_vs_ua` | browser | coherence | 5 |
+| `br.fingerprint_improbable` | browser | prevalence | 5 |
 | `br.webdriver_spoofed` | browser | automation | 5 |
-| `br.webgl_os_vs_ua` | browser | coherence | 5 |
 | `net.quic_grease_vs_ua` | network,browser | coherence | 5 |
 | `bh.synthetic_no_coalesced` | behavioral | behavioral | 4 |
 | `br.codec_os_incoherent` | browser | environment | 4 |
-| `br.fingerprint_improbable` | browser | prevalence | 4 |
 | `br.font_linux_leak` | browser | environment | 4 |
 | `br.webgl2_missing` | browser | environment | 4 |
+| `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.ch_he_version_vs_ua` | browser | coherence | 3 |
+| `br.error_engine_vs_ua` | browser | coherence | 3 |
+| `br.vendor_vs_ua` | browser | coherence | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
 | `br.webgpu_webgl_vs` | browser | environment | 3 |
 | `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 3 |
-| `bh.path_too_straight` | behavioral | behavioral | 2 |
+| `net.h2_header_order_vs_ua` | network | coherence | 3 |
+| `net.h2_unknown_vs_ua` | network | coherence | 3 |
+| `net.tls_vs_ua_browser` | network,browser | coherence | 3 |
+| `bh.power_law_violation` | behavioral | behavioral | 2 |
 | `br.canvas_noise` | browser | artifact | 2 |
-| `br.error_engine_vs_ua` | browser | coherence | 2 |
 | `br.languages_worker_vs_main` | browser | coherence | 2 |
+| `br.no_connection` | browser | environment | 2 |
 | `br.timezone_inconsistent` | browser | coherence | 2 |
 | `br.timezone_offset_vs_intl` | browser | coherence | 2 |
 | `br.timezone_worker_vs_main` | browser | coherence | 2 |
 | `br.tostring_tampered` | browser | automation | 2 |
 | `br.ua_platform_vs_ch_platform` | browser | coherence | 2 |
-| `br.vendor_vs_ua` | browser | coherence | 2 |
 | `br.webgl_getparameter_tampered` | browser | automation | 2 |
+| `br.webgl_not_angle` | browser | environment | 2 |
 | `br.worker_divergence` | browser | automation | 2 |
 | `net.ch_ua_vs_ua_browser` | network,browser | coherence | 2 |
-| `net.h2_header_order_vs_ua` | network | coherence | 2 |
-| `net.h2_unknown_vs_ua` | network | coherence | 2 |
 | `net.h2_vs_ua_browser` | network,browser | coherence | 2 |
 | `net.tls_pq_keyshare_vs_ua` | network,browser | coherence | 2 |
-| `net.tls_vs_ua_browser` | network,browser | coherence | 2 |
-| `bh.power_law_violation` | behavioral | behavioral | 1 |
 | `bh.uniform_velocity` | behavioral | behavioral | 1 |
 | `br.apple_ua_nonwebkit` | browser | coherence | 1 |
 | `br.brave_spoofed` | browser | artifact | 1 |
@@ -132,7 +135,7 @@ _50/51 evaders caught (`bot`). Generated from the committed captures._
 | `br.macos_dpr1` | browser | environment | 1 |
 | `br.native_invariant_violated` | browser | artifact | 1 |
 | `br.nav_property_spoofed` | browser | automation | 1 |
-| `br.no_connection` | browser | environment | 1 |
+| `br.no_devicememory` | browser | environment | 1 |
 | `br.notification_getter_tampered` | browser | automation | 1 |
 | `br.oscpu_vs_ua` | browser | coherence | 1 |
 | `br.plugins_spoofed` | browser | automation | 1 |
@@ -140,7 +143,6 @@ _50/51 evaders caught (`bot`). Generated from the committed captures._
 | `br.productsub_vs_ua` | browser | coherence | 1 |
 | `br.readback_noise` | browser | artifact | 1 |
 | `br.safari_ua_no_webkit_api` | browser | coherence | 1 |
-| `br.webgl_not_angle` | browser | environment | 1 |
 | `br.webgl_renderer_artifact` | browser | artifact | 1 |
 | `br.worker_constructor_tampered` | browser | artifact | 1 |
 | `net.accept_lang_vs_navigator` | network,browser | coherence | 1 |
@@ -203,18 +205,19 @@ _50/51 evaders caught (`bot`). Generated from the committed captures._
 | `tz-spoof` | bot | 3 | 0 | 7 | 6 | 1 | 0 |
 | `undetected` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
+| `webkit-ua-spoof` | bot | 9 | 0 | 2 | 4 | 2 | 0 |
 | `worker-spoof` | bot | 0 | 0 | 8 | 6 | 1 | 0 |
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | bot | 0 | 0 | 1 | 5 | 2 | 0 |
 
-## Coverage gaps — 32/120 rules catch nothing yet
+## Coverage gaps — 31/120 rules catch nothing yet
 
 **Evaded** (3) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
 - `br.font_os_vs_ua`
 
-**Unexercised** (29) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (28) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.automation_globals`
 - `br.electron_process`
@@ -227,7 +230,6 @@ _50/51 evaders caught (`bot`). Generated from the committed captures._
 - `rep.known_proxy_exit`
 - `br.languages_empty`
 - `br.screen_zero`
-- `br.no_devicememory`
 - `br.platform_empty`
 - `br.cdc_artifacts`
 - `br.screen_avail_invalid`
