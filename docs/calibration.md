@@ -288,3 +288,12 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   firefox_ua_nongecko, safari_ua_no_webkit_api, honeypot_interaction) were each live-validated in their
   shipping iteration and are reflected in matrix.md (50/51; camoufox-headful the lone `suspicious`, a raw-SYN
   capture miss — `net.tcp_os_vs_ua` convicts it when the SYN is captured).
+
+- **2026-06-19 · ruleset 0.74.19** — full live re-validation after the WebKit-engine additions
+  (WebKit JA4 hint, br.safari_ua_no_webkit_api, webkit-ua-spoof evader). Live stack rebuilt to 0.74.19.
+  Engine-identity family all fire live: `net.tls_vs_ua_browser` (webkit-ua-spoof → bot, WebKit JA4 hint
+  working), `br.firefox_ua_nongecko` (spoof-ua), `br.safari_ua_no_webkit_api` (ios-ua-spoof). Named
+  experimental rules fire live: `br.readback_noise` (audio-readback-spoof), `net.h2_header_order_vs_ua`
+  (http2-naive). Stealth fleet drift check: selenium-driverless, PATCHRIGHT, REBROWSER all → `bot` (1.00,
+  5–7 convicting tells each). No drift. Matrix 51/52 (camoufox-headful the lone `suspicious`, a raw-SYN
+  capture miss).
