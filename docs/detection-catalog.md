@@ -9,6 +9,20 @@ near-saturated; the gaps cluster in deeper fingerprint-content checks, automatio
 network refinements. Prioritize **FP-safe** gaps (the calibration showed adding FP-prone environment
 tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact gaps over medium-fp ones.
 
+> **Per-session saturation, measured (v0.73.1, 2026-06-19).** Scoring all 40 **real captured** evader
+> sessions (`corpus/sessions/`, the live-stack second source — not browserforge) through the current
+> ruleset: **every evader scores `bot`**, including the top-tier stealth tools (`max-stealth`,
+> `full-stealth`, `patchright`, `selenium-driverless`, `camoufox-hardened`, `zendriver`, `nodriver`,
+> `rebrowser`, `undetected`). There is **no escaping evader** to build a new per-session detection against.
+> The remaining catalog gaps below are either un-groundable in this sandbox (need a real GPU / real device /
+> headful — `canvas_hash_engine_vs_ua`, `emoji_os_vs_ua`, `webgpu_limits`), confirmed-defeated
+> (`h_order_vs_ua`), or FP-prone environment tells that only corroborate. Net: per-session convicting
+> coverage is **saturated**; the live frontiers (real-residential-proxy harness, Tier-3 real-device matrix,
+> real-hardware-headful) are blocked by sandbox limits. Iterations now harden the structural frontiers
+> (prevalence prior, coordination gate) and the calibration's trustworthiness instead of grinding marginal
+> tells. The detection matrix (`matrix.md`) is regenerated from these captures against the current ruleset;
+> the latest refresh added the 2 newest rules with **no catch-count regression** on any existing rule.
+
 ## Prioritized gaps
 
 | suggested rule | priority | fp-risk | effort | technique |

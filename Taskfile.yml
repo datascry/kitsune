@@ -71,6 +71,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.intoli_corpus --n {{.N | default 4000}}"]
 
+  matrix:
+    desc: "Refresh docs/matrix.md from the committed real captures against the current ruleset (no live run)"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md"]
+
   ci:
     desc: Run the full local pipeline
     cmds:

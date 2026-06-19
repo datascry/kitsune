@@ -1,4 +1,4 @@
-# Kitsune detection matrix — 114 rules
+# Kitsune detection matrix — 116 rules
 
 | Detector | layer | baseline-firefox | brave | camoufox-hardened | camoufox-headful | camoufox | canvas-spoof | ch-ua-hardcoded | chrome-clone-1 | chrome-clone-2 | curl-impersonate | floor-spoof | full-stealth | go-tls | h2-continuation-flood | h2-rapid-reset | human-mouse | iframe-spoof | lang-spoof | linear-bot | max-stealth | naive-tz-spoof | native-spoof | nodriver | os-spoof | patchright | primp | pydoll | quic-no-grease | rebrowser | selenium-driverless | spoof-ua | stealth-naive | stealth-patched | tls-stale-template | tz-spoof | undetected | vanilla | worker-spoof | worker-wrap | zendriver | catches |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -103,6 +103,7 @@
 | `net.webrtc_ip_vs_observed` | network,browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.timezone_inconsistent` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | 2 |
 | `br.engine_stack_vs_ua` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | 1 |
+| `br.apple_ua_nonwebkit` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `net.no_js_execution` | network,browser | · | · | · | · | ✓ | · | ✓ | · | · | ✓ | · | · | ✓ | ✓ | ✓ | · | · | · | · | · | · | · | · | · | · | ✓ | · | ✓ | · | · | · | · | · | ✓ | · | · | ✓ | · | · | · | 10 |
 | `br.webgpu_webgl_vs` | browser | · | · | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 2 |
 | `br.webgpu_vendor_vs_webgl` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
@@ -116,7 +117,8 @@
 | `net.ch_ua_no_grease_brand` | network | · | · | · | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 1 |
 | `br.rfp_browser` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
 | `br.canvas_noise` | browser | · | ✓ | · | · | · | ✓ | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 2 |
-| **flagged** |  | **6/114** | **11/114** | **5/114** | **4/114** | **3/114** | **18/114** | **6/114** | **15/114** | **15/114** | **1/114** | **9/114** | **18/114** | **3/114** | **2/114** | **2/114** | **15/114** | **24/114** | **16/114** | **19/114** | **12/114** | **18/114** | **18/114** | **9/114** | **18/114** | **12/114** | **2/114** | **9/114** | **5/114** | **12/114** | **9/114** | **16/114** | **15/114** | **22/114** | **6/114** | **18/114** | **9/114** | **5/114** | **16/114** | **16/114** | **9/114** |  |
+| `br.canvas_geometry_noise` | browser | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | · | 0 |
+| **flagged** |  | **6/116** | **11/116** | **5/116** | **4/116** | **3/116** | **18/116** | **6/116** | **15/116** | **15/116** | **1/116** | **9/116** | **18/116** | **3/116** | **2/116** | **2/116** | **15/116** | **24/116** | **16/116** | **19/116** | **12/116** | **18/116** | **18/116** | **9/116** | **18/116** | **12/116** | **2/116** | **9/116** | **5/116** | **12/116** | **9/116** | **16/116** | **15/116** | **22/116** | **6/116** | **18/116** | **9/116** | **5/116** | **16/116** | **16/116** | **9/116** |  |
 | **verdict** |  | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** | **bot** |  |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -164,7 +166,7 @@
 | `worker-wrap` | bot | 1 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
 
-## Coverage gaps — 42/114 rules catch nothing yet
+## Coverage gaps — 44/116 rules catch nothing yet
 
 **Evaded** (7) — reads present in the corpus, but every sample passed:
 - `net.tls_vs_ua_browser`
@@ -175,7 +177,7 @@
 - `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
-**Unexercised** (35) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (37) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.automation_globals`
 - `br.electron_process`
@@ -208,6 +210,8 @@
 - `br.macos_dpr1`
 - `br.font_mac_internal`
 - `net.webrtc_ip_vs_observed`
+- `br.apple_ua_nonwebkit`
 - `br.webgpu_vendor_vs_webgl`
 - `net.ch_ua_mobile_vs_ua`
 - `br.rfp_browser`
+- `br.canvas_geometry_noise`
