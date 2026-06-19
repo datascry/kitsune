@@ -114,6 +114,13 @@ const STALE_ENGINE = process.env.STALE_ENGINE === "1";
 // OffscreenCanvasRenderingContext2D (a DISTINCT prototype) real — so the two diverge, which a real engine
 // (and an engine-level spoofer like Camoufox) never does → br.measuretext_offscreen_vs.
 const MEASURETEXT_SPOOF = process.env.MEASURETEXT_SPOOF === "1";
+// CANVAS_LIE: a naive canvas-fingerprint blocker overrides HTMLCanvasElement.toDataURL with a plain (non-
+// native) function. Its toString lacks "[native code]" → br.canvas_lie. A real browser's toDataURL is native.
+const CANVAS_LIE = process.env.CANVAS_LIE === "1";
+// DOMRECT_SPOOF: a DOMRect-fingerprint farble adds per-call sub-pixel noise to getBoundingClientRect, so two
+// reads of an unchanged element differ — breaking the determinism invariant → br.domrect_invariant. A real
+// engine's getBoundingClientRect is deterministic.
+const DOMRECT_SPOOF = process.env.DOMRECT_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -173,8 +180,14 @@ const evading =
   ELECTRON_LEAK ||
   STALE_ENGINE ||
   MEASURETEXT_SPOOF ||
+  CANVAS_LIE ||
+  DOMRECT_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = MEASURETEXT_SPOOF
+const mode = DOMRECT_SPOOF
+  ? "domrect-spoof"
+  : CANVAS_LIE
+  ? "canvas-lie"
+  : MEASURETEXT_SPOOF
   ? "measuretext-spoof"
   : STALE_ENGINE
   ? "stale-engine"
@@ -455,6 +468,30 @@ if (FLOOR_SPOOF) {
       const o = RTO.call(this);
       o.timeZone = "America/New_York";
       return o;
+    };
+  });
+} else if (CANVAS_LIE) {
+  // Naive canvas-fingerprint blocker: override toDataURL with a plain wrapper. A real toDataURL is native
+  // ("[native code]"); this wrapper's toString is its JS source → br.canvas_lie. (A sophisticated blocker
+  // fakes the toString too — that case is native_invariant_violated's job; this is the naive variant.)
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const orig = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = function (...a) {
+      return orig.apply(this, a);
+    };
+  });
+} else if (DOMRECT_SPOOF) {
+  // DOMRect-fingerprint farble: add per-call sub-pixel noise to getBoundingClientRect, so two reads of an
+  // unchanged element differ — breaking the determinism invariant a real engine always holds →
+  // br.domrect_invariant. (The collector reads getBoundingClientRect twice and compares.)
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const gbcr = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function () {
+      const r = gbcr.call(this);
+      const n = (Math.random() - 0.5) * 0.01; // sub-pixel per-call noise
+      return new DOMRect(r.x + n, r.y + n, r.width, r.height);
     };
   });
 } else if (MEASURETEXT_SPOOF) {
