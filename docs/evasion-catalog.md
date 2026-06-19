@@ -92,6 +92,28 @@ Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6*
    to the allow-list edge) is the only live test of `rep.*`, `net.webrtc_ip_vs_observed`, and the six
    proxy-topology coordination signals.
 
+### Coverage envelope (the threat-model ceiling, grounded 2026-06-19)
+
+Chaining the recent findings to their endpoint: a maximally-sophisticated fleet defeats BOTH the per-session
+layer AND coordination's per-cluster signals. A `fingerprint-injector`-class attacker injects DIVERSE real
+fingerprints (clean Proxy-over-native injection — defeats the artifact + coherence layers; probable joints —
+clears the same-source prevalence model) over ONE clean stack (shared JA4) on patchright (defeats automation
+tells) behind residential proxies (distinct IPs, no datacenter IP-rep). That fleet's coordination shape —
+**shared JA4 + divergent JS + distinct residential IPs** — is *identical to a real diverse cohort on one
+browser build*, so the conviction gate correctly does NOT label it `fleet` (no `fp_collision` on diverse fps,
+no abnormal `ja4c_divergent`, no automation/IP-rep corroboration, no unambiguous signal). Verified against
+`score_cluster`'s gate logic.
+
+So the genuinely **durable** signals are the ones a fleet must actively SUPPRESS and a real cohort never
+emits: `shared_real_ip` (the WebRTC real-IP leak behind diverse proxies) and `trace_collision` (a reused
+behavioural script) — the two UNAMBIGUOUS solo-convicting coordination signals — plus **population-level
+statistics** (per-JA4 traffic shape / rate vs a real-traffic baseline), which need the same Tier-3 real-traffic
+data the prevalence second-prior does. Implication for prioritisation: `shared_real_ip` + `trace_collision`
+are the highest-value coordination signals (they alone catch the fully-evasive fleet, if it leaks); the
+ambiguous `fp_collision`/`ja4c_divergent` signals only catch *less* sophisticated fleets. Kitsune catches
+everything up to that maximal bar — a high bar most bots do not reach — and the residual frontier is
+honestly external-data-bound.
+
 ## Known red-team-fleet limitation: patchright configs self-defeat the collector (2026-06-19)
 
 Grounded finding while characterising the thinnest-caught cutting-edge config. The patchright-engine
