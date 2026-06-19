@@ -332,3 +332,15 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   - Base anti-detect fleet drift check: `nodriver`, `undetected`, `pydoll` all → `bot` (score ≥0.999, ≥2
     convicting tells each). No drift. Matrix/scoreboard confirmed current at 0.74.21 (re-scored captures
     match live behaviour). No rule semantics changed → no ruleset bump (verification, not a new rule).
+
+- **2026-06-19 · ruleset 0.74.21 · `br.readback_noise` promotion review** — checked whether the experimental
+  `br.readback_noise` is promotable to active. Promotion needs an INDEPENDENT second positive (cf. how
+  `net.h2_header_order_vs_ua` was promoted only after curl corroborated httpx). A fresh **live Camoufox**
+  capture (an independent engine-level anti-detect browser) → `bot 0.997` but does **NOT** trip
+  `br.readback_noise` — no audio-divergence signal at all. Camoufox sets no privacy-browser identity, so
+  applicability does not drop it: the absence is real signal — its readback is internally CONSISTENT across
+  `getChannelData`/`copyFromChannel` (a quality tool, not a naive one-path shim). This **corrects** the rule's
+  prior source note (which claimed Camoufox trips it — it does not). So the only live positive remains the
+  deliberately-inconsistent `AUDIO_READBACK_SPOOF` shim; with no independent corroboration the rule **stays
+  experimental** (promoting on a single self-constructed positive would be single-source over-leverage). Its
+  real-browser negative is CI-guarded (`test_calibration_methodology`). No semantics changed → no ruleset bump.
