@@ -114,12 +114,18 @@ def test_real_nonautomated_chrome_trips_no_browser_layer_conviction() -> None:
     # modern Chrome removed chrome.runtime from normal pages (~v106), so window.chrome-without-runtime no
     # longer distinguishes headless from a real human's Chrome — the rule convicted EVERY real Chrome user.
     # A real, non-automated Chrome must trip NO browser-layer convicting rule (coherence/artifact/AUTOMATION).
-    # (The session legitimately carries chrome_runtime_missing=True, so this assertion is non-vacuous; the
-    # network-layer h2/QUIC GREASE fires are the documented container path artifacts, out of scope here.)
+    # (The session legitimately carries chrome_runtime_missing=True, so this assertion is non-vacuous.)
     fired = _headful_browser_layer_convictions("chrome-stable")
     assert fired.get(RuleCategory.coherence, set()) == set(), fired
     assert fired.get(RuleCategory.artifact, set()) == set(), fired
     assert fired.get(RuleCategory.automation, set()) == set(), fired
+    # Also pin the v0.74.29 NETWORK-layer fix: the fixture is re-captured under the fixed edge, so the h2
+    # header-order tell does NOT fire on a real Chrome fetch request. (Guards against a STALE fixture silently
+    # re-introducing the FP — the pre-0.74.29 capture had h2_header_order_non_chromium baked in and tripped it.)
+    capture = json.loads((_HEADFUL / "chrome-stable.json").read_text())
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    all_fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+    assert "net.h2_header_order_vs_ua" not in all_fired, all_fired
 
 
 def test_real_edge_chromium_family_not_a_tls_or_h2_browser_contradiction() -> None:

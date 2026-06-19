@@ -1,27 +1,27 @@
 {
-  "first_seen": "2026-06-19T21:33:29Z",
-  "last_seen": "2026-06-19T21:33:31Z",
+  "first_seen": "2026-06-19T22:38:44Z",
+  "last_seen": "2026-06-19T22:38:46Z",
   "remote_ip": null,
-  "request_count": 29,
+  "request_count": 24,
   "schema_version": "0.1",
-  "session_id": "5a9afae7676f30e614265b144ee8a93f",
+  "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
   "signals": {
     "behavioral": [
       {
         "kind": "mouse_entropy",
         "layer": "behavioral",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": 0
       },
       {
         "kind": "pointer_event_count",
         "layer": "behavioral",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": 0
       }
@@ -30,171 +30,171 @@
       {
         "kind": "ch_platform",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "Linux"
       },
       {
         "kind": "chrome_runtime_missing",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": true
       },
       {
         "kind": "color_depth",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": 24
       },
       {
         "kind": "fp_hash",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "1599bf38"
       },
       {
         "kind": "hardware_concurrency",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": 12
       },
       {
         "kind": "media_devices_empty",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": true
       },
       {
         "kind": "nav_language_primary",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "en"
       },
       {
         "kind": "nav_platform_os",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "Linux"
       },
       {
         "kind": "plugins_count",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": 5
       },
       {
         "kind": "productsub_render",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "webkit"
       },
       {
         "kind": "screen_resolution",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "1280x1024"
       },
       {
         "kind": "ua_browser",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "chrome"
       },
       {
         "kind": "ua_engine",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "chromium"
       },
       {
         "kind": "ua_platform",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "Linux"
       },
       {
         "kind": "ua_render",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "webkit"
       },
       {
         "kind": "vendor_engine",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": "chromium"
       },
       {
         "kind": "webdriver",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": false
       },
       {
         "kind": "webgl2_missing",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": true
       },
       {
         "kind": "webgpu_no_adapter",
         "layer": "browser",
-        "observed_at": "2026-06-19T21:33:30.387000Z",
+        "observed_at": "2026-06-19T22:38:45.675000Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "collector",
         "value": true
       }
@@ -203,135 +203,108 @@
       {
         "kind": "accept_language_primary",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "en"
       },
       {
         "kind": "ch_platform_header",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "Linux"
       },
       {
         "kind": "ch_ua_browser",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "chrome"
       },
       {
         "kind": "h2",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p"
       },
       {
         "kind": "h2_browser_hint",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "chrome"
       },
       {
-        "kind": "h2_header_order_non_chromium",
-        "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
-        "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
-        "source": "edge",
-        "value": true
-      },
-      {
         "kind": "h2_settings_hint",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "chrome"
       },
       {
         "kind": "ja3",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
-        "value": "4c7f0e1be8dd3083cce0244d07fd9aee"
+        "value": "90643fddf4b2aa6bc4f6c8537ea2a758"
       },
       {
         "kind": "ja4",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "t13d1517h2_8daaf6152771_b6f405a00624"
       },
       {
         "kind": "ja4_browser_hint",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "chrome"
       },
       {
         "kind": "observed_ip",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "172.22.0.4"
       },
       {
-        "kind": "quic_no_grease",
-        "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
-        "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
-        "source": "edge",
-        "value": true
-      },
-      {
-        "kind": "quic_observed",
-        "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
-        "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
-        "source": "edge",
-        "value": true
-      },
-      {
         "kind": "tcp_kernel",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "linux"
       },
       {
         "kind": "ua_kernel",
         "layer": "network",
-        "observed_at": "2026-06-19T21:33:31Z",
+        "observed_at": "2026-06-19T22:38:46Z",
         "schema_version": "0.1",
-        "session_id": "5a9afae7676f30e614265b144ee8a93f",
+        "session_id": "2bac01e3439b0cc21d4dd74fd356f686",
         "source": "edge",
         "value": "linux"
       }

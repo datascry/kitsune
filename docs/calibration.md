@@ -655,3 +655,32 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   threshold — so the cross-source-conservative threshold **preserved live recall of the randomizer/improbable-
   joint attack** while it cut the FP over-flag (fpgen 5% → 0.8%). Both axes of the prevalence fix — fewer FPs,
   same genuine catches — are now confirmed live, not just offline. No rule changed → no ruleset bump.
+
+## Periodic experimental-rule re-validation + a stale-fixture fix (0.74.30, 2026-06-19)
+
+Re-ran the directive's two named experimental rules against the **live fleet** at 0.74.30:
+
+- **`br.readback_noise`** — the `audio-readback-spoof` evader still trips it (→ bot); the real-browser
+  negative holds (the committed headful captures carry no `audio_readback_noise`). Rule intact.
+- **`net.h2_header_order_vs_ua`** — the real-Chrome NEGATIVE is grounded by re-capturing
+  `corpus/calibration/headful/chrome-stable.json` under the fixed edge (no `h2_header_order_non_chromium` now,
+  the rule does not fire); the POSITIVE held last iteration (webkit-ua-spoof still fires).
+
+**Stale-fixture FP, caught by this pass:** the committed `chrome-stable.json` was captured BEFORE the v0.74.29
+edge fix, so it had `h2_header_order_non_chromium=True` baked in and — when scored — still tripped
+`net.h2_header_order_vs_ua`, i.e. the committed fixture masked the very FP that fix removed. The methodology
+guard only checked `br.*` rules, so it missed the `net.*` regression. Fixed: re-captured the fixture under the
+current edge and extended `test_real_nonautomated_chrome_trips_no_browser_layer_conviction` to assert
+`net.h2_header_order_vs_ua` is absent — so a stale capture can never silently re-introduce a network-layer FP.
+Lesson: **after an edge signal-emission change, re-capture the affected real-browser fixtures**, not just bump
+the rule. No rule semantics changed → no ruleset bump.
+
+**Per-session saturation, restated.** The evasion registry's only two `EVADES` techniques — `camoufox-headful`
+(0.946) and `zendriver` (0.995) — fire ONLY environment + behavioural tells (`webrtc_unavailable`,
+`media_devices_empty`, `voices_empty`, `webgl_software`), zero convicting (coherence/automation/artifact). They
+present coherent fingerprints with automation hidden (`webdriver=false`); the tells they leak also fire on real
+browsers in a container, so convicting them would FP real privacy/VM/disabled-WebRTC users. Catching them needs
+a signal real browsers do not share — the structural frontiers (network deviation outside the container
+confound; coordination/behavioural-over-time), which remain external-data-bound. Per-session per-browser
+detection is saturated; the productive in-sandbox work is keeping the gate trustworthy (this pass) + the
+generated catalogs current.
