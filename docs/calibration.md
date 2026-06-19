@@ -434,3 +434,15 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   grounding task: the values must be verified as what OUR edge computes (a live real-Safari/Firefox capture,
   or multi-source/multi-version corroboration) before entering the convicting path. Not a single-source
   unilateral edit. No rule changed → no ruleset bump.
+
+- **2026-06-19 · network grounding — PQ-keyshare stale-template tells confirmed current (FP-critical)** — the
+  Hero white-box flagged "stale template" as the coherence seam, so I grounded the PQ-keyshare reference
+  (`net.tls_pq_keyshare_vs_ua` / `net.quic_pq_keyshare_vs_ua`, which fire on ABSENCE of a PQ key share under a
+  current-Chrome UA — a false reference would FP on real Chrome). Cross-checked against public 2026 status:
+  **X25519MLKEM768 (codepoint `0x11EC`/4588) is IANA-Recommended and remains Chrome's deployed PQ default**
+  (Google/Cloudflare/Akamai all ship it through 2026). The edge's `HasPostQuantumKeyShare()`
+  (`edge/internal/fingerprint/keyshare.go`) recognises BOTH `0x11EC` (standard) and `0x6399` (Chrome 124-130
+  Kyber draft) — so a real current Chrome (offering 0x11EC) is seen as PQ-present → the rule **does not fire**
+  → no FP. The reference + the edge's codepoint detection are both current; the stale-template seam is
+  correctly grounded (catches a pre-2025 template lacking both codepoints, silent on real Chrome). No drift,
+  no rule change → no ruleset bump.
