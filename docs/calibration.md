@@ -219,21 +219,29 @@ artifact deeper than a wrong kind — fails CI.
 
 ### Second-source coherence FP-check (fpgen, 2026-06-19) — `task coherence-corroborate`
 
-Four convicting COHERENCE rules — `br.font_os_vs_ua`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`,
-`br.productsub_vs_ua` — were FP-checked against **browserforge alone** (Intoli can't reach them: it carries no
-fonts / WebGL renderer / reliable platform). **fpgen** (Scrapfly's generator — independent data, see the
-prevalence-corroboration) is the only available second source with those fields, so it now corroborates them
-(`kitsune_harness.fpgen_coherence`, scoped to exactly those four — the only rules whose operands map faithfully
-from fpgen; `vendor_vs_ua`/`oscpu_vs_ua` are excluded because fpgen nulls `navigator.vendor` and sets `oscpu`
-to "undefined"). Result over ~300: `webgl_os`/`navplatform`/`productsub` **0%**, `font_os_vs_ua` **~1.3%** —
-and that 1.3% is **not** a real-browser FP: drilling in, the firings are fpgen GENERATION incoherences (a
-*Windows* UA + Windows platform generated with *macOS* fonts like `Al Bayan` / `Academy Engraved LET` that a
-real Windows machine never has), which the rule **correctly** catches. So the four are corroborated FP-safe on
-a second independent population — their only firings are the generator's own OS-incoherent joints, the same
-class as browserforge's `media_devices_empty`/`webgl_not_angle` artifacts. (Note: this font/OS incoherence is
-fpgen-specific — browserforge's `font_os_vs_ua` is ~0% — i.e. a Scrapfly-data trait, not family-wide.) Caveat:
-fpgen is a generator, so this is a generator-vs-generator coherence check, weaker than the real-browser
-value-level fidelity above; a *spike* over the ~1% generator floor would flag a true FP to investigate.
+**Six** convicting COHERENCE rules were FP-checked against **browserforge alone** (Intoli can't reach them: it
+carries no fonts / WebGL renderer / reliable platform / voices / WebGPU). **fpgen** (Scrapfly's generator —
+independent data, see the prevalence-corroboration) is the only available second source with those fields, so
+it now corroborates them (`kitsune_harness.fpgen_coherence`, `task coherence-corroborate`), scoped to exactly
+the rules whose operands map faithfully from fpgen; `vendor_vs_ua`/`oscpu_vs_ua` are excluded because fpgen
+nulls `navigator.vendor` and sets `oscpu` to "undefined":
+
+- **Four via the standard mapper** — `br.font_os_vs_ua`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`,
+  `br.productsub_vs_ua` (operands from UA / platform / WebGL renderer / fonts / productSub).
+- **Two runtime-derived** — `br.voice_os_vs_ua` and `br.webgpu_vendor_vs_webgl`, the **least-calibrated**
+  convicting rules (their only prior FP grounding was unit tests + 3 headful captures). `fpgen_coherence`
+  replicates the collector's *exact* `voice_os` (TTS-name regex) and WebGPU/WebGL `gpu_family` derivations
+  (hermetically tested for fidelity) over fpgen's `voices` / `gpuInfo`.
+
+Result over ~300: **`webgl_os` / `navplatform` / `productsub` / `voice_os` / `webgpu_vendor` all 0%**;
+`font_os_vs_ua` ~0.3–1.3%, and that is **not** a real-browser FP — the firings are fpgen GENERATION
+incoherences (a *Windows* UA + Windows platform generated with *macOS* fonts like `Al Bayan` a real Windows
+machine never has), which the rule **correctly** catches. So all six are corroborated FP-safe on a second
+independent population; their only firings are the generator's OS-incoherent joints (same class as
+browserforge's `media_devices_empty`/`webgl_not_angle` artifacts). The font/OS incoherence is fpgen-specific
+(browserforge `font_os_vs_ua` ~0%) — a Scrapfly-data trait, not family-wide. Caveat: fpgen is a generator, so
+this is a generator-vs-generator check, weaker than the real-browser value-level fidelity above; a *spike* over
+the ~1% generator floor would flag a true FP to investigate.
 
 ## Second real-traffic source (Intoli) — verification, and what it actually showed
 
