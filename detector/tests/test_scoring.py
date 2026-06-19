@@ -63,7 +63,8 @@ def test_has_convicting() -> None:
     assert scoring.has_convicting([*env, _cat(0.5, RuleCategory.coherence)]) is True
     for c in (RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact):
         assert scoring.has_convicting([_cat(0.4, c)]) is True
-    for c in (RuleCategory.environment, RuleCategory.behavioral, RuleCategory.reputation):
+    # prevalence is corroborating-by-design: a single-source likelihood prior must not convict alone.
+    for c in (RuleCategory.environment, RuleCategory.behavioral, RuleCategory.reputation, RuleCategory.prevalence):
         assert scoring.has_convicting([_cat(0.99, c)]) is False
 
 

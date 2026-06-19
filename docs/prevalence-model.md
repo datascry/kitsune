@@ -63,6 +63,15 @@ prior's p1 threshold; the rule `br.fingerprint_improbable` (experimental, weight
 by design at corroborating weight, so it never convicts a clean browser alone. Stays experimental until the
 prior is corroborated against Tier-3 real traffic.
 
+**Corroborating-only is now enforced structurally, not just by weight (v0.65.0).** The rule carries its own
+`prevalence` rule-category, which is deliberately excluded from `scoring.CONVICTING_CATEGORIES`. After the
+convicting-signal gate (v0.64.0), category — not weight — decides whether a tell can unlock a `bot` label,
+and a single-source likelihood signal must not. The latent case this closes, grounded: a real-but-rare
+browser (an improbable-but-coherent joint) on a no-webcam desktop — `prevalence_low` (0.25) ⊕
+`media_devices_empty` (0.55) = 0.66 — crossed the bot threshold with prevalence as the *sole* convicting
+signal. It is now capped at `suspicious`: the browserforge prior corroborates a suspicion but cannot convict
+a legitimate browser on rarity alone until the prior is corroborated against a second source.
+
 ## Remaining (future loop iterations)
 
 1. Build the prior offline from the largest available real-distribution sample; ship it as a data table

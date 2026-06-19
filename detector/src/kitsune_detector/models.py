@@ -55,6 +55,10 @@ class RuleCategory(StrEnum):
     artifact = "artifact"  # anti-detect implementation flaw (spoofing placeholder, injected addon)
     behavioral = "behavioral"  # behavioral / input signals
     reputation = "reputation"  # network reputation (datacenter ASN, proxy exit)
+    prevalence = "prevalence"  # statistical likelihood (improbable-but-coherent joint) — corroborating
+    # only: a single-source likelihood prior cannot CONVICT alone (a real-but-rare browser must not be a
+    # bot on rarity), so it is excluded from scoring.CONVICTING_CATEGORIES until the prior is corroborated
+    # against a second (Tier-3 real-traffic) source.
 
 
 class _Strict(BaseModel):

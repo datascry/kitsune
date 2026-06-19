@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from kitsune_detector import prevalence
 from kitsune_detector.detector import Detector
 from kitsune_detector.ingest import group_signals
-from kitsune_detector.models import Layer, Session, Signal, Source
+from kitsune_detector.models import Label, Layer, Session, Signal, Source
 
 NOW = datetime(2026, 6, 19, tzinfo=UTC)
 
@@ -75,3 +75,24 @@ def test_detector_emits_prevalence_low_and_rule_fires() -> None:
     # a common fingerprint does not trip it
     clear = Detector().score(_fp("macOS", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8))
     assert "br.fingerprint_improbable" not in {c.rule_id for c in clear.contradictions}
+
+
+def test_prevalence_is_corroborating_never_convicts_alone() -> None:
+    # A real-but-rare browser: improbable joint (prevalence_low) + a no-webcam desktop (media_devices_empty,
+    # an environment tell) and NO hard coherence/automation signal. The single-source browserforge
+    # prevalence rule must NOT convict it — the bot conviction gate requires a non-prevalence signal.
+    sess = _session(
+        ua_platform="Windows",
+        webgl_renderer="ANGLE (Apple, Apple M2)",
+        screen_resolution="1470x956",
+        color_depth=30,
+        hardware_concurrency=8,
+        media_devices_empty=True,
+    )
+    verdict = Detector().score(sess)
+    fired = {c.rule_id for c in verdict.contradictions}
+    assert "br.fingerprint_improbable" in fired and "br.media_devices_empty" in fired
+    assert verdict.score >= 0.65  # noisy-or crosses the bot threshold...
+    assert verdict.label is not Label.bot  # ...but prevalence cannot convict alone → capped at suspicious
+    prevalence_cat = next(c.category for c in verdict.contradictions if c.rule_id == "br.fingerprint_improbable")
+    assert prevalence_cat.value == "prevalence"

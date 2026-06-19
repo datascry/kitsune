@@ -38,7 +38,7 @@
     "category": {
       "type": "string",
       "description": "Detection class: what kind of tell this rule is.",
-      "enum": ["coherence", "environment", "automation", "artifact", "behavioral", "reputation"]
+      "enum": ["coherence", "environment", "automation", "artifact", "behavioral", "reputation", "prevalence"]
     },
     "added": { "type": "string", "format": "date" },
     "last_validated": { "type": "string", "format": "date" },

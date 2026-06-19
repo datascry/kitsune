@@ -20,8 +20,10 @@ from .models import Contradiction, Label, LayerScores, RuleCategory
 # A `bot` conviction requires a *convicting* tell — a clear bot signature. Coherence (cross-vector
 # contradiction), automation (webdriver/CDP surface) and artifact (anti-detect implementation flaw)
 # are positive signatures of a bot. The corroborating categories — environment (a stripped/headless
-# *capability* gap), behavioral and reputation — also fire on legitimate diversity (a desktop with no
-# webcam, a quiet user, a datacenter VPN), so they may raise *suspicion* but never convict alone.
+# *capability* gap), behavioral, reputation and prevalence — also fire on legitimate diversity (a desktop
+# with no webcam, a quiet user, a datacenter VPN, a real-but-statistically-rare fingerprint), so they may
+# raise *suspicion* but never convict alone. ``prevalence`` is corroborating-by-design: a single-source
+# likelihood prior (browserforge) must not convict a real-but-rare browser until corroborated (Tier-3).
 CONVICTING_CATEGORIES = frozenset({RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact})
 
 
