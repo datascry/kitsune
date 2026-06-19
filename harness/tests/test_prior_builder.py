@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
-from kitsune_harness.browserforge_corpus import build_prior_from_dir, build_prior_from_sessions
+from kitsune_harness.browserforge_corpus import build_prior_from_dir, build_prior_from_sessions, write_prior
 
 _REPO = Path(__file__).resolve().parents[2]
 _ENGINES = _REPO / "corpus" / "calibration" / "engines"
@@ -43,3 +44,29 @@ def test_build_prior_from_sessions_matches_shipped_schema(tmp_path: Path) -> Non
     assert isinstance(built["threshold"], float)
     assert set(built) == set(shipped)
     assert set(built["prior"]) == set(shipped["prior"])
+
+
+def _feat(plat: str, gpu: str, screen: str, cores: str) -> dict[str, Any]:
+    return {"plat": plat, "gpu": gpu, "screen": screen, "cores": cores, "color": 24}
+
+
+def test_threshold_is_cross_source_conservative(tmp_path: Path) -> None:
+    # The v0.74.24 FP fix: a SELF-referential p1 over-flags an independent dataset, so write_prior takes an
+    # independent threshold_feats and uses the CONSERVATIVE (deeper) bound min(self-p1, independent-p1).
+    # Base set: 200 of one common joint → its own p1 is shallow (the common joint scores high).
+    feats = [_feat("Windows", "intel", "small-land", "5-8") for _ in range(200)]
+    # Independent set: mostly the same common joint, but 5% a joint RARE in the prior (nvidia/large-port/17+)
+    # → its p1 sits deep in the prior's tail.
+    independent = [_feat("Windows", "intel", "small-land", "5-8") for _ in range(95)]
+    independent += [_feat("Windows", "nvidia", "large-port", "17+") for _ in range(5)]
+
+    self_t = write_prior(feats, str(tmp_path / "self.json"), "browserforge")
+    cross_t = write_prior(feats, str(tmp_path / "cross.json"), "browserforge", threshold_feats=independent)
+
+    # The cross-source threshold must be at least as DEEP (<=) as the self-p1 — never shallower (FP-safe).
+    assert cross_t <= self_t
+    # And here strictly deeper, because the independent set has a rarer joint in the prior's tail.
+    assert cross_t < self_t
+    # Metadata records which calibration was used (so a stale prior is auditable).
+    assert json.loads((tmp_path / "self.json").read_text())["threshold_calibration"] == "self-p1"
+    assert json.loads((tmp_path / "cross.json").read_text())["threshold_calibration"] == "cross-source-conservative"
