@@ -178,3 +178,48 @@ to the UA — under an Android UA, `Linux` IS `Android`. Applied at every **real
 a Windows UA) is untouched and still fires — the Camoufox counter is intact. This is validated against
 real-browser behavior and the detector's own Android precision case, **not** against Intoli's unreliable
 field.
+
+## Convicting-rule FP audit (v0.74.x) — eight rules that flagged real users
+
+The browserforge FP gate is blind to runtime probes (canvas/audio/webrtc/webgpu/adblock/…) — the static
+mapper never emits them — so a convicting rule could false-fire on a real browser and pass every static
+check (browserforge, the Tier-2 engine-corpus test, unit tests) clean. Scoring real captures + scrutinising
+each convicting rule against *real* browser behaviour surfaced eight such rules. Each asserted a
+"a real browser always/never does X" invariant where X is actually a **build / config / hardware / privacy**
+choice; the fix demoted the soft signal to corroborating-only (or fixed the derivation / retired it), while
+keeping every genuinely-hard convicting tell.
+
+| rule | the "always/never" it assumed | the real browser that breaks it | fix |
+|---|---|---|---|
+| `math_engine_vs_ua` | `Math.pow(PI,-100)` ULP is engine-stable | a V8 build returning the "Firefox" value (node 22 ≠ Playwright Chromium) | retired |
+| `webrtc_unavailable` | a real browser never disables WebRTC | privacy config (about:config, uBO, Brave, enterprise) | → environment |
+| `font_linux_leak` | Arimo/Cousine/Tinos are Linux-only | Croscore fonts installed from Google Fonts on any OS | → environment |
+| `codec_os_incoherent` | a real desktop always has H.264/AAC | open-source Chromium (no proprietary codecs) | → environment |
+| `webgl_os_vs_ua` | Vulkan/OpenGL/SwiftShader ⇒ Linux | software rendering / non-default ANGLE on Windows/macOS | derivation: OS-exclusive stacks only |
+| `webgpu_webgl_vs` | a real GPU drives both WebGL and WebGPU | WebGPU support ⊊ WebGL support (older GPUs) | → environment |
+| `webgl_not_angle` | modern Chrome always reports ANGLE(...) | Linux/legacy Chrome with native GL | → environment |
+| `adblock_present` | (its own note: "humans run adblockers") | 40%+ of users run uBO / AdBlock / Brave Shields | → environment |
+
+**Cumulative impact:** zero detection loss on the spoof fleet — 44 of 45 captured evaders still score `bot`
+(only headful `camoufox-headful`, whose *sole* conviction was the privacy-config WebRTC signal, correctly
+drops to `suspicious`). The hard cross-layer tells (`tcp_os_vs_ua`, `ua_platform_vs_ch_platform`,
+`cdp_runtime_enabled`, `native_invariant_violated`, the worker-realm divergences, …) carry every evader.
+Locked in by `detector/tests/test_fp_regression.py`.
+
+### Checklist before categorising a rule as convicting (coherence/automation/artifact)
+
+A convicting rule can unlock the `bot` label; the conviction gate trusts it not to fire on a real human.
+Before shipping one, ask — **can a real browser produce this exact signal via any of:**
+
+1. **a browser build?** (Chromium-vs-Chrome codecs, a V8/CPU float quirk, Linux native-GL vs ANGLE)
+2. **a user/OS config?** (WebRTC off, an ad-blocker, an installed font/voice pack, a non-default GPU backend)
+3. **hardware?** (an old GPU lacking WebGPU, software rendering on a VM/RDP/blacklisted driver, a touchscreen)
+4. **a privacy browser's by-design defense?** (Brave/Tor/Mullvad farbling — see `detector.applicability`)
+5. **a network middlebox?** (an explicit corporate proxy presenting its own TCP/OS — the open `tcp_os_vs_ua`
+   question, deferred pending a real-proxy capture)
+
+If **yes** to any, the signal is *configurable/variable* → category **environment** (corroborates, never
+convicts). Only a signal a real browser **cannot** produce — a spec invariant, a hard engine API, a
+cross-realm divergence, an injected-code artifact — earns a convicting category. Five of the eight FPs above
+were rules whose *own source text already said* "corroborating" / "weak alone" yet sat in a convicting
+category: the category, not the description, is what the conviction gate reads.
