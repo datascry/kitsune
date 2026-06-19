@@ -46,6 +46,10 @@ run_stealth "$OUT/lang-spoof.json" -e LANG_SPOOF=1 # red-team: main-realm langua
 run_stealth "$OUT/worker-wrap.json" -e WORKER_WRAP=1 # red-team: wrap window.Worker (escalation) → br.worker_constructor_tampered
 run_stealth "$OUT/naive-tz-spoof.json" -e NAIVE_TZ_SPOOF=1 # red-team: one-field timezone spoof → br.timezone_offset_vs_intl
 run_stealth "$OUT/audio-readback-spoof.json" -e AUDIO_READBACK_SPOOF=1 # red-team: inconsistent audio readback shim → br.readback_noise
+run_stealth "$OUT/lang-list-spoof.json" -e LANG_LIST_SPOOF=1 # red-team: one-field locale spoof → br.language_vs_languages
+run_stealth "$OUT/canvas-geometry-spoof.json" -e CANVAS_GEOMETRY_SPOOF=1 # red-team: isPointInPath farble → br.canvas_geometry_noise
+run_stealth "$OUT/brave-fake.json" -e BRAVE_FAKE=1 # red-team: fake navigator.brave → br.brave_spoofed
+run_stealth "$OUT/ios-ua-spoof.json" -e SPOOF_UA="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1" # red-team: Chromium under an iOS/Safari UA → br.apple_ua_nonwebkit
 run_stealth "$OUT/linear-bot.json" -e LINEAR_BOT=1 # red-team: straight-line constant-velocity → bh.path_too_straight + bh.uniform_velocity
 run_stealth "$OUT/human-mouse.json" -e HUMAN_MOUSE=1 # negative control: curved/eased motion must NOT trip the biomech floor
 # OS spoof: a Windows UA over the Linux edge — caught by net.tcp_os_vs_ua (TCP/IP kernel vs claimed OS).

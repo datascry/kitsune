@@ -63,6 +63,18 @@ const NAIVE_TZ_SPOOF = process.env.NAIVE_TZ_SPOOF === "1";
 // makes them diverge → br.readback_noise. Exercises the experimental readback_noise rule (previously
 // unexercised by the fleet — no other evader perturbs the audio readback inconsistently).
 const AUDIO_READBACK_SPOOF = process.env.AUDIO_READBACK_SPOOF === "1";
+// LANG_LIST_SPOOF: the one-field locale spoof. Patch navigator.language (claim a proxy-matching language)
+// but leave navigator.languages real — the HTML spec makes them identical, so they now disagree →
+// br.language_vs_languages. The language analog of NAIVE_TZ_SPOOF.
+const LANG_LIST_SPOOF = process.env.LANG_LIST_SPOOF === "1";
+// CANVAS_GEOMETRY_SPOOF: the JShelter canvas-geometry farble. Wrap isPointInPath to flip its boolean ~5% of
+// the time to poison fingerprinting — but the hit-test is exact in a real engine, so a point deep inside a
+// filled path must always read in-path → br.canvas_geometry_noise.
+const CANVAS_GEOMETRY_SPOOF = process.env.CANVAS_GEOMETRY_SPOOF === "1";
+// BRAVE_FAKE: inject a fake navigator.brave to claim Brave (and try to get the privacy-browser farbling
+// N/A) — but a real Brave's navigator.brave.isBrave is NATIVE; the injected one is a plain function →
+// br.brave_spoofed (and the genuineness guard withholds the N/A).
+const BRAVE_FAKE = process.env.BRAVE_FAKE === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -115,10 +127,19 @@ const evading =
   WORKER_WRAP ||
   NAIVE_TZ_SPOOF ||
   AUDIO_READBACK_SPOOF ||
+  LANG_LIST_SPOOF ||
+  CANVAS_GEOMETRY_SPOOF ||
+  BRAVE_FAKE ||
   Boolean(SPOOF_UA);
-const mode = AUDIO_READBACK_SPOOF
-  ? "audio-readback-spoof"
-  : NAIVE_TZ_SPOOF
+const mode = BRAVE_FAKE
+  ? "brave-fake"
+  : CANVAS_GEOMETRY_SPOOF
+    ? "canvas-geometry-spoof"
+    : LANG_LIST_SPOOF
+      ? "lang-list-spoof"
+      : AUDIO_READBACK_SPOOF
+        ? "audio-readback-spoof"
+        : NAIVE_TZ_SPOOF
     ? "naive-tz-spoof"
     : WORKER_WRAP
   ? "worker-wrap"
@@ -272,6 +293,36 @@ if (FLOOR_SPOOF) {
       cfc.call(this, dest, ...rest);
       for (let i = 0; i < dest.length; i += 100) dest[i] += 1e-7; // perturb the readback copy only
     };
+  });
+} else if (LANG_LIST_SPOOF) {
+  // One-field locale spoof: claim navigator.language = pt-BR but leave navigator.languages real. The HTML
+  // spec defines language as languages[0], so they now disagree → br.language_vs_languages.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "language", { get: () => "pt-BR", configurable: true });
+  });
+} else if (CANVAS_GEOMETRY_SPOOF) {
+  // JShelter-style canvas-geometry farble: wrap isPointInPath to flip its boolean ~5% of the time. The
+  // hit-test is exact in a real engine, so a point deep inside a filled path is ALWAYS in-path → over many
+  // trials the flip betrays itself → br.canvas_geometry_noise.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const ipp = CanvasRenderingContext2D.prototype.isPointInPath;
+    CanvasRenderingContext2D.prototype.isPointInPath = function (...a) {
+      const r = ipp.apply(this, a);
+      return Math.random() < 0.05 ? !r : r;
+    };
+  });
+} else if (BRAVE_FAKE) {
+  // Fake the Brave identity: inject navigator.brave to claim Brave (and try to earn the privacy-browser
+  // farbling N/A). But a real Brave's navigator.brave.isBrave is NATIVE; this plain function is not →
+  // br.brave_spoofed, and the genuineness guard refuses the N/A.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(navigator, "brave", {
+      value: { isBrave: () => Promise.resolve(true) },
+      configurable: true,
+    });
   });
 } else if (TZ_SPOOF) {
   // Main-realm-only geo-spoof: claim America/New_York via Intl + Date on the main thread. The patch never
