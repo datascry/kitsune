@@ -32,6 +32,11 @@ const IFRAME_SPOOF = process.env.IFRAME_SPOOF === "1";
 // function has an own `prototype` and is constructable, which a real built-in never is. The detector's
 // native-invariant suite checks exactly that, so the deeper structural lie is caught where toString isn't.
 const NATIVE_SPOOF = process.env.NATIVE_SPOOF === "1";
+// LINEAR_BOT: the behavioral floor. Drag the cursor in a single straight line at constant velocity —
+// straightness → 1.0 (> bh.path_too_straight 0.97) and velocity CV → 0 (< bh.uniform_velocity 0.08).
+// The fleet's human-mouse mode (bezier curves, eased velocity) is the negative control that must NOT trip
+// these, so this pair demonstrates the biomech rules discriminate scripted motion from human motion.
+const LINEAR_BOT = process.env.LINEAR_BOT === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -79,7 +84,9 @@ const evading =
   IFRAME_SPOOF ||
   NATIVE_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = NATIVE_SPOOF
+const mode = LINEAR_BOT
+  ? "linear-bot"
+  : NATIVE_SPOOF
   ? "native-spoof"
   : IFRAME_SPOOF
   ? "iframe-spoof"
@@ -207,7 +214,19 @@ if (FLOOR_SPOOF) {
 const page = await context.newPage();
 await page.goto(EDGE, { waitUntil: "load" });
 const human = HUMAN_MOUSE || MAX_STEALTH;
-if (human) {
+if (LINEAR_BOT) {
+  // Scripted motion: a single straight-line drag at constant velocity (fixed pixel step + fixed delay).
+  // straightness → 1.0 and velocity CV → 0, tripping bh.path_too_straight and bh.uniform_velocity.
+  const from = { x: 100, y: 120 };
+  const to = { x: 760, y: 520 };
+  const steps = 24;
+  for (let i = 1; i <= steps; i++) {
+    await page.mouse.move(from.x + ((to.x - from.x) * i) / steps, from.y + ((to.y - from.y) * i) / steps);
+    // A longer fixed interval keeps dispatch jitter a small fraction of dt, so velocity CV stays under the
+    // uniform_velocity floor (0.08) — at 20ms the ~few-ms jitter alone pushed CV to ~0.19.
+    await page.waitForTimeout(75);
+  }
+} else if (human) {
   // Human-like curved moves between random targets — the behavioral evasion frontier (mouse only, to
   // keep this a clean behavioral-evasion demo within the collector's capture window).
   let pos = { x: 120, y: 140 };
