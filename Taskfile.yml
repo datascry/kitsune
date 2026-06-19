@@ -66,6 +66,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.coordination_scenarios"]
 
+  calibrate-intoli:
+    desc: "Corroborate the calibration against a second real-traffic source (Intoli user-agents dataset)"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.intoli_corpus --n {{.N | default 4000}}"]
+
   ci:
     desc: Run the full local pipeline
     cmds:

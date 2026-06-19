@@ -120,3 +120,31 @@ browserforge lacks a few signals (speech-synthesis voices, `getHighEntropyValues
 `voices_empty` and similar aren't calibrated here — they need Tier-3 real-device data (a cross-browser
 cloud matrix or opt-in collection from the hosted demo). This is Tier-1: real fingerprint *distributions*
 for the 30 rules that depend on the static fingerprint, which is where the false positives concentrate.
+
+## Second real-traffic source (Intoli) — and the critical FP it surfaced
+
+A third tier of corroboration: the **Intoli `user-agents` dataset** (BSD-2-Clause; ~10k records resampled
+from real site traffic), scored via `kitsune_harness.intoli_corpus` (fetched at runtime, not committed).
+Unlike browserforge (a generated distribution skewed desktop) and the headless engine captures, this is
+**real-traffic** and **~75% mobile** — the surface our desktop-oriented coherence rules are most likely to
+mishandle. It emits only the coherence signals the dataset genuinely supports (UA / platform / vendor /
+language); since the conviction gate lets only a convicting signal label `bot`, the verdict rate is a clean
+measure of *coherence-driven* false positives on real traffic.
+
+```sh
+task calibrate-intoli            # uv run python -m kitsune_harness.intoli_corpus --n 4000
+```
+
+**It immediately found a showstopper the single source missed.** On 4000 real records:
+
+| rule | browserforge (Tier-1) FP | Intoli real-traffic FP | verdict |
+|---|---|---|---|
+| `br.navplatform_vs_ua` | 3.6% | **73.1%** | **real, severe** — false-fires on real mobile |
+| `br.vendor_vs_ua` | 0.4% | 0.3% | corroborated FP-safe |
+
+A real Android browser carries `navigator.platform = "Linux …"` while its UA-platform is `Android` — a
+legitimate, coherent pairing (Android is a Linux-family OS) that the platform-coherence rule read as a
+contradiction, convicting **73% of real traffic** as `bot`. Browserforge (desktop-skewed) reported 3.6% and
+missed it entirely. This is the over-leverage guard inverted: the single source *under*-counted a catastrophic
+FP, and only the independent real-traffic source revealed it. The fix is per-platform OS-family normalization
+(Android ↔ Linux), handled in the per-browser detection work.
