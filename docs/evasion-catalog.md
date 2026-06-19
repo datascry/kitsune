@@ -16,6 +16,28 @@ and ruleset. For the lab's own red-team ladder (allow-list only), never third-pa
 
 Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6**, research **9**.
 
+## Threat-landscape alignment (scanned 2026-06-19)
+
+A web scan of the **current (2026)** commercial + research state of the art, to ground the "per-session
+saturated" claim against external reality rather than only our own catalog. Every technique in active use maps
+to existing Kitsune coverage — **no new evasion technique and no new detection surface surfaced**:
+
+| 2026 SOTA technique (source) | Kitsune coverage |
+|---|---|
+| **JA4+ at the edge** — Cloudflare / Akamai Bot Manager / F5 / CloudFront now key on JA4 (HTTP + QUIC context) | `edge` emits JA4 / JA4H / QUIC fingerprints; `net.tls_vs_ua_browser`, `net.h2_*`, `net.quic_*` |
+| **TLS template forgers** producing a genuine-Chrome JA4 (GoLogin, Multilogin, uTLS, curl-impersonate) | same class as the white-boxed **Ulixee Hero** / **hazetunnel** — a *current* template → coordination; a *lagging* one → stale-template tells (`net.tls_pq_keyshare_vs_ua`, `net.ch_ua_version_vs_ua`, `net.h2_header_order_vs_ua`) |
+| **ML correlating TLS ↔ client-side fingerprints** | this IS Kitsune's core cross-layer-incoherence thesis (the coherence engine) |
+| **Tampered-function / self-integrity (toString/native probes)** (GeeTest "dynamic passwords") | `br.function_tostring_tampered`, `br.native_invariant_violated`, the whole artifact layer |
+| **Selective Chrome feature masking / OS-attribute emulation** (stealth plugins, BotBrowser) | realm-coherence family (`worker_divergence`, `iframe_divergence`, `*_worker_vs_main`) + OS-coherence (`*_os_vs_ua`) |
+| **Canvas/WebGL rendering-level obfuscation** (noise injection) | `br.canvas_noise` / `canvas_geometry_noise` / `readback_noise` / `webgl_getparameter_tampered` |
+
+The GeeTest "defeat BotBrowser" writeup is holistic cross-layer + tampered-function + behavioral analysis —
+the same philosophy as Kitsune, no specific signal we lack. The academic **BFAD** result (231 fingerprinting
+APIs, 161 unseen by SOTA) is a survey of fingerprinting *surfaces*, not a coherence/automation *detection*, so
+it adds collection breadth ideas but no convicting rule. **Conclusion:** the threat model is current; the
+residual frontier remains the same two external-data-bound structural gaps below, not a missing per-session
+tell.
+
 ## Evaders worth adding (new test surface)
 
 | tool / harness | priority | effort | what it would test that the fleet can't |
