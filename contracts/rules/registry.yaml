@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.6"
+ruleset_version: "0.74.7"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1209,10 +1209,10 @@ rules:
     predicate: present
     weight: 0.3
     status: experimental
-    category: artifact
+    category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Camoufox source (addons.py DefaultAddons.UBO); weak alone (humans run adblockers), corroborating"
+    last_validated: "2026-06-19"
+    source: "Camoufox source (addons.py DefaultAddons.UBO). v0.74.7: category corrected artifact->ENVIRONMENT to match its own stated intent ('weak alone, humans run adblockers, corroborating'). An ad-blocker hiding the bait element is one of the MOST common real-human configurations — 40%+ of users run uBlock Origin / AdBlock Plus / Brave Shields — so it can never CONVICT (its artifact category let a real ad-block user on a VM, where adblock_present + media_devices_empty + voices_empty noisy-or'd, score bot). It only corroborates now. Camoufox (which bundles uBO) is still caught by its many hard tells; this signal caught ZERO evaders on its own."
 
   - id: br.macos_dpr1
     title: macOS UA but devicePixelRatio is 1.0 (a modern Mac is Retina, dPR 2)
