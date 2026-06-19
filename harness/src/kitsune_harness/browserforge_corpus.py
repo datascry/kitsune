@@ -91,9 +91,29 @@ def profiles_from_dir(path: str, now: datetime) -> list[tuple[str, list[Any]]]: 
     return out
 
 
+def build_prior_file(n: int, out_path: str) -> None:  # pragma: no cover - external data
+    """Sample n browserforge fingerprints and write the prevalence prior (joint-frequency tables) to JSON."""
+    import json
+
+    from browserforge.fingerprints import FingerprintGenerator
+
+    from .prevalence import build_prior, features_from_fingerprint
+
+    fg = FingerprintGenerator()
+    feats = [features_from_fingerprint(_fingerprint_to_dict(fg.generate())) for _ in range(n)]
+    prior = build_prior(feats)
+    with open(out_path, "w") as fh:
+        json.dump({"n": n, "source": "browserforge", "prior": prior}, fh)
+    print(f"wrote prevalence prior from {n} fingerprints -> {out_path}")
+
+
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     argv = sys.argv[1:] if argv is None else argv
     now = datetime.now(UTC)
+    if "--build-prior" in argv:
+        n = int(argv[argv.index("--n") + 1]) if "--n" in argv else 5000
+        build_prior_file(n, argv[argv.index("--build-prior") + 1])
+        return
     detector = Detector()
     if "--from-dir" in argv:
         report = calibrate(detector, profiles_from_dir(argv[argv.index("--from-dir") + 1], now))

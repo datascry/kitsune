@@ -40,6 +40,19 @@ signal (low weight, amplifies an existing suspicion) until its prior is corrobor
 source — Tier-3 real-traffic data (a real-device matrix or the hosted-demo opt-in). The mechanism (real vs
 scrambled separation) is proven; the prior's *fidelity* is the open item.
 
+## Foundation built (tested + reproducible)
+
+The prototype is now a tested module — `harness/prevalence.py` (`features_from_fingerprint`, `build_prior`,
+`log_prevalence`, pure + unit-tested) — and the prior is a committed, regenerable artifact:
+
+```sh
+uv run --with browserforge python -m kitsune_harness.browserforge_corpus --build-prior corpus/calibration/prevalence_prior.json --n 5000
+```
+
+Validated on three independent inputs: the synthetic improbable joint (Windows UA + Apple GPU + Mac
+screen) scores `-23.5`, far below the real-engine Tier-2 captures (`-8.9` … `-16.0`) — the deep tail is
+the improbable combination, exactly as intended.
+
 ## Integration plan (future loop iterations)
 
 1. Build the prior offline from the largest available real-distribution sample; ship it as a data table
