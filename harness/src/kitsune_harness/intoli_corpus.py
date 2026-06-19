@@ -81,11 +81,13 @@ def intoli_signals(rec: dict[str, Any], session_id: str, now: datetime) -> list[
     # (The earlier "73% navplatform FP" reading conflated this artifact with a genuine sub-problem —
     # real Android reporting a Linux platform — which is fixed independently by OS-family resolution
     # in calibration.py / demo.py / probes.ts and validated against real-browser behavior, not Intoli.)
-    # On iOS, navigator.vendor follows the browser BRAND while the engine is always WebKit, so the
-    # vendor/UA-engine axes decouple legitimately (Chrome-iOS reports "Google Inc." on WebKit; in-app
-    # WebViews report "Apple…" with a non-Safari-token UA) — abstain rather than convict (see _is_ios).
+    # vendor_engine (drives br.vendor_vs_ua) is abstained in two cases: (1) iOS, where navigator.vendor
+    # follows the browser BRAND while the engine is always WebKit, so the axes decouple legitimately
+    # (Chrome-iOS reports "Google Inc." on WebKit); (2) an UNCLASSIFIABLE UA engine ("other" — a bare
+    # AppleWebKit macOS WKWebView UA), where comparing a vendor against an unknown engine convicts on
+    # "unknown" — unknown never fires. A classifiable engine still fires (macOS Safari UA + "Google Inc.").
     vendor = str(rec.get("vendor", ""))
-    if vendor and not _is_ios(ua):
+    if vendor and not _is_ios(ua) and _ua_engine(ua) != "other":
         sig(Layer.browser, "vendor_engine", _vendor_engine(vendor))
     lang = str(rec.get("language", ""))
     if lang:

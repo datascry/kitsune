@@ -105,3 +105,43 @@ def test_desktop_vendor_mismatch_still_convicts() -> None:
     spoof = {**_DESKTOP, "vendor": "Apple Computer, Inc."}
     verdict = Detector().score(group_signals(intoli_signals(spoof, "s", NOW))[0])
     assert "br.vendor_vs_ua" in {c.rule_id for c in verdict.contradictions}
+
+
+# A bare macOS WKWebView UA: "AppleWebKit (KHTML, like Gecko)" with NO Version/Safari/Chrome token, so
+# _ua_engine cannot classify it → "other". navigator.vendor is the real WebKit "Apple Computer, Inc.".
+_MACOS_WKWEBVIEW = {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+    "vendor": "Apple Computer, Inc.",
+    "language": "en-US",
+    "screenWidth": 1440,
+    "screenHeight": 900,
+}
+
+
+def test_unclassifiable_engine_does_not_emit_vendor_engine() -> None:
+    # v0.74.23: when the UA engine is unclassifiable ("other"), comparing a vendor against an UNKNOWN engine
+    # would convict on "unknown" — so the mapper abstains (no vendor_engine), and br.vendor_vs_ua cannot fire.
+    kinds = {s.kind for s in intoli_signals(_MACOS_WKWEBVIEW, "w", NOW)}
+    assert "vendor_engine" not in kinds
+    assert "ua_engine" in kinds  # still emitted; the rule simply lacks the second operand to compare
+
+
+def test_real_macos_wkwebview_is_clean() -> None:
+    # Regression guard for the v0.74.23 "unknown never fires" fix: a bare-AppleWebKit macOS WebView (vendor
+    # correctly Apple) must NOT be convicted on br.vendor_vs_ua.
+    verdict = Detector().score(group_signals(intoli_signals(_MACOS_WKWEBVIEW, "w", NOW))[0])
+    assert "br.vendor_vs_ua" not in {c.rule_id for c in verdict.contradictions}
+
+
+def test_macos_safari_with_google_vendor_still_convicts() -> None:
+    # The true positive must survive: a macOS SAFARI UA (has the Version/Safari token → ua_engine=safari, NOT
+    # "other") reporting vendor "Google Inc." is a Chromium-faking-Safari signature and must still convict.
+    spoof = {
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",  # noqa: E501
+        "vendor": "Google Inc.",
+        "language": "en-US",
+        "screenWidth": 1440,
+        "screenHeight": 900,
+    }
+    verdict = Detector().score(group_signals(intoli_signals(spoof, "s", NOW))[0])
+    assert "br.vendor_vs_ua" in {c.rule_id for c in verdict.contradictions}

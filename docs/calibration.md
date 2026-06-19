@@ -262,12 +262,18 @@ real **Chrome-on-iOS** (`CriOS …Safari/604.1` → `ua_engine` safari, but `nav
 is false on iOS. **Fix:** the collector + both calibration mappers no longer *emit* `vendor_engine` on an iOS
 UA (`/iPhone|iPad|iPod/`), so the rule abstains there ("unknown never fires") — narrowing only. **No coverage
 lost:** an iOS-UA spoof on a Chromium host is still convicted structurally by `br.apple_ua_nonwebkit`
-(`window.chrome`/`userAgentData` on a claimed-WebKit host). Post-fix the Intoli FP is **0.1% (2–6/10k)**, and
-those residuals are *not* real-browser FPs — they are genuine desktop incoherences the rule *should* catch:
-a **macOS Safari UA reporting vendor `Google Inc.`** (no real Safari does — a Chromium-crawler-faking-Safari
-signature, 4×) and rare malformed bare-`AppleWebKit` Mac UAs with no browser token (2×). Mirrored across
-`demo.py` / `calibration.py` / `intoli_corpus.py` / `livepage/probes.ts`; guarded by
-`test_intoli_corpus.py` (iOS abstains + real Chrome-iOS clean + desktop mismatch still convicts).
+(`window.chrome`/`userAgentData` on a claimed-WebKit host). The two residual patterns split: a **macOS Safari
+UA reporting vendor `Google Inc.`** (no real Safari does — a Chromium-crawler-faking-Safari signature, `4×`)
+is a genuine TRUE POSITIVE the rule keeps; but the **bare `AppleWebKit (KHTML, like Gecko)` macOS UA with no
+browser token** (`2×`) classifies as `ua_engine=other` (unclassifiable — most likely a real macOS WKWebView
+whose vendor is correctly `Apple`), and convicting on a comparison whose engine operand is UNKNOWN violates
+*unknown never fires*. **v0.74.23 (Intoli second-source re-run on the refreshed dataset):** `vendor_engine` is
+now also withheld when `ua_engine == "other"`, so the rule abstains on an unclassifiable engine — the `other`
+firings drop `2 → 0` while the Safari-UA-+-Google-vendor true positive stays `4 → 4`. browserforge is
+unaffected (its UAs are classifiable, so the gate only ever lowers the flag rate). Mirrored across
+`demo.py` / `calibration.py` / `intoli_corpus.py` / `livepage/probes.ts`; guarded by `test_intoli_corpus.py`
+(iOS abstains, real Chrome-iOS clean, real macOS-WKWebView clean, and both the desktop-mismatch and
+macOS-Safari-+-Google-vendor true positives still convict).
 
 **The genuine sub-problem, fixed independently (v0.71.1).** Buried inside the artifact is a real issue we
 could ground without Intoli: a real Android browser *does* carry `navigator.platform = "Linux armv8l"` under

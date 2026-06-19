@@ -674,13 +674,16 @@ td code{font-size:12px;color:#0a3}
     var ven = navigator.vendor;
     var venEngine = /Google/i.test(ven) ? "chromium" : ven === "" ? "firefox"
                   : /Apple/i.test(ven) ? "safari" : "other";
-    // vendor_engine drives br.vendor_vs_ua. On iOS, Apple forces WebKit for EVERY browser but
-    // navigator.vendor follows the BRAND (real Chrome-iOS/CriOS reports "Google Inc." on WebKit; in-app
-    // WebViews report "Apple…" with a non-Safari-token UA), so the vendor and UA-engine axes decouple
-    // legitimately — abstain there (grounded on the Intoli real-traffic source: 122/10000 iOS FPs). An iOS
-    // UA-spoof on a Chromium host is still caught by apple_ua_nonwebkit (window.chrome/userAgentData).
+    // vendor_engine drives br.vendor_vs_ua. Abstain (don't emit) in two cases: (1) iOS — Apple forces WebKit
+    // for EVERY browser but navigator.vendor follows the BRAND (Chrome-iOS/CriOS reports "Google Inc." on
+    // WebKit; in-app WebViews report "Apple…"), so the vendor and UA-engine axes decouple legitimately
+    // (grounded on Intoli: 122/10000 iOS FPs); (2) uaEngine "other" — an unclassifiable UA (a bare
+    // "AppleWebKit (KHTML, like Gecko)" macOS WKWebView with no browser token), where comparing vendor
+    // against an UNKNOWN engine would convict on "unknown" (unknown never fires). A classifiable engine still
+    // fires (a macOS Safari UA reporting vendor "Google Inc." stays uaEngine=safari → caught). An iOS UA-spoof
+    // on a Chromium host is still caught by apple_ua_nonwebkit (window.chrome/userAgentData).
     var isIOS = /iPhone|iPad|iPod/i.test(ua);
-    if (!isIOS) sigs.push(S("browser", "vendor_engine", venEngine));
+    if (!isIOS && uaEngine !== "other") sigs.push(S("browser", "vendor_engine", venEngine));
     // Error.captureStackTrace lives in V8 (Chromium) and — as of Safari 16.4 (2023) — JSC, but NOT
     // SpiderMonkey (verified: a live Firefox 137 reports it undefined). So a UA claiming Chrome without it,
     // or claiming Firefox WITH it, is an engine spoof deeper than navigator.vendor (which JS-stealth tools
