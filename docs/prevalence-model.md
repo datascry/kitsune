@@ -47,6 +47,14 @@ browser-layer ruleset gives 80% `human`, and `br.fingerprint_improbable` fires o
 own p1 tail). So an independent prior is needed for *detection power* against generator-based attacks, not
 merely FP-hygiene (see docs/evasion-catalog.md "Prevalence / likelihood model").
 
+**Scope limit (grounded via botright, 2026-06-19):** an independent real-traffic prior catches *improbable*
+joints (generated or incoherent), but NOT **real-value reuse** — a tool like botright that drives a fresh
+*self-scraped REAL* fingerprint per session presents joints that are genuinely probable in real traffic, so
+no prevalence prior flags them. Prevalence's scope is therefore "improbable joints," not all evasion;
+real-value-reuse fleets are the **coordination** layer's job (`fp_collision` on reuse, or the leak signals
+if each session is a distinct real fp). The prevalence prior and the coordination harness are complementary,
+not redundant.
+
 ### Turnkey second-source procedure (the builder is ready; only the data is missing)
 
 The infrastructure to swap in a real-traffic prior is built and tested — `build_prior_from_dir`
