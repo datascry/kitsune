@@ -12,11 +12,45 @@ joining the network signals into one session.
 from __future__ import annotations
 
 DEMO_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Kitsune</title></head>
-<body><h1>Kitsune lab</h1><p>collecting…</p>
+<html><head><meta charset="utf-8"><title>Kitsune</title>
+<style>
+body{font:14px system-ui,-apple-system,sans-serif;margin:2rem;max-width:780px;color:#222;line-height:1.45}
+h1{font-size:1.4rem;margin:0 0 .25rem}
+.sub{color:#666;margin:0 0 1rem}
+#ks-result .verdict{font-size:1.5rem;font-weight:700;padding:.45rem .8rem;border-radius:6px;display:inline-block;margin:.4rem 0}
+.verdict.bot{background:#fde2e1;color:#a11}.verdict.suspicious{background:#fff3cd;color:#7a5c00}.verdict.human{background:#d9f2e3;color:#067a52}
+.verdict .score{font-weight:400;font-size:.95rem;opacity:.75}
+table.tells{border-collapse:collapse;width:100%;margin-top:.7rem;font-size:13px}
+table.tells th,table.tells td{border:1px solid #e3e3e3;padding:4px 8px;text-align:left;vertical-align:top}
+table.tells th{background:#f6f6f6}
+td code{font-size:12px;color:#0a3}
+.cat-coherence,.cat-automation,.cat-artifact{color:#a11;font-weight:600}
+.cat-environment,.cat-behavioral,.cat-reputation{color:#888}
+</style></head>
+<body><h1>Kitsune lab</h1><p class="sub">Live bot-detection demo — your browser's signals are scored by the real detector.</p><p id="ks-status">collecting…</p><div id="ks-result"></div>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  // Close the detection loop for the visitor: render the REAL detector's verdict (the /ingest response).
+  function showVerdict(v) {
+    var status = document.getElementById("ks-status"), out = document.getElementById("ks-result");
+    if (!v) { if (status) status.textContent = "no verdict (no session?)"; return; }
+    if (status) status.textContent = "";
+    var label = String(v.label || "?"), pct = Math.round((v.score || 0) * 100);
+    var html = '<div class="verdict ' + esc(label) + '">' + esc(label.toUpperCase()) + ' <span class="score">score ' + pct + '%</span></div>';
+    var cs = v.contradictions || [];
+    if (cs.length) {
+      html += "<p>" + cs.length + " signal(s) fired (only coherence/automation/artifact convict; the rest corroborate):</p>";
+      html += '<table class="tells"><tr><th>signal</th><th>category</th><th>why</th></tr>';
+      for (var i = 0; i < cs.length; i++) {
+        var c = cs[i];
+        html += '<tr><td><code>' + esc(c.rule_id) + '</code></td><td class="cat-' + esc(c.category) + '">' + esc(c.category) + '</td><td>' + esc(c.detail) + '</td></tr>';
+      }
+      html += "</table>";
+    } else { html += "<p>No convicting signals — consistent with a real browser.</p>"; }
+    if (out) out.innerHTML = html;
+  }
   var id = sid();
   if (!id) { return; }
   var pts = [];
@@ -1084,7 +1118,12 @@ DEMO_PAGE = """<!doctype html>
       }
     }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
-      .then(function () { document.body.setAttribute("data-ks", "sent"); });
+      .then(function (r) { return r.json(); })
+      .then(function (list) {
+        document.body.setAttribute("data-ks", "sent");
+        showVerdict(list && list.length ? list[list.length - 1] : null);
+      })
+      .catch(function () { document.body.setAttribute("data-ks", "sent"); });
   }
   // Default 1200ms lets behavioral (mouse) signals accumulate. `?fast` cuts the wait for
   // detection-only captures that need the browser-layer fingerprint, not behaviour (e.g. the
