@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.4"
+ruleset_version: "0.74.5"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1355,10 +1355,10 @@ rules:
     predicate: present
     weight: 0.7
     status: active
-    category: coherence
+    category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "WebGPU (2024-25): a real hardware GPU drives both WebGL and WebGPU; a spoofed WebGL renderer with no WebGPU adapter is exposed below the spoof"
+    last_validated: "2026-06-19"
+    source: "WebGPU (2024-25): a spoofed WebGL renderer with no WebGPU adapter may be exposed below the spoof. v0.74.5: category corrected coherence->ENVIRONMENT — the premise that a real hardware GPU drives BOTH is FALSE. WebGPU's hardware requirements (Vulkan 1.1+/D3D12/Metal, recent drivers) are a STRICT SUBSET of WebGL's, and Chrome blacklists many GPUs for WebGPU while WebGL still works — so a real Chrome user on an older/integrated GPU (pre-2015 Intel HD, older NVIDIA/AMD) or a blacklisted driver has navigator.gpu present but requestAdapter()=null while WebGL still reports the hardware renderer, tripping this. Confirmed: a webgpu_webgl_mismatch-only session scored bot. It must only CORROBORATE, never convict. The reliable companion br.webgpu_vendor_vs_webgl stays convicting: it fires only when a WebGPU adapter EXISTS and its GPU family disagrees with the WebGL renderer (the real GPU showing through a spoofed WebGL string). Renderer-spoofers are still caught by webgl_renderer_artifact / native_invariant_violated and the many other tells (full-stealth, native-spoof have 10+ each)."
 
   - id: br.webgpu_vendor_vs_webgl
     title: WebGPU adapter GPU family contradicts the WebGL renderer (spoofed renderer on real hardware)

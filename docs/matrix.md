@@ -20,7 +20,7 @@ _44/45 evaders caught (`bot`). Generated from the committed captures._
 | `chrome-clone-2` | bot | 1.00 | 15/117 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
 | `curl-impersonate` | bot | 0.90 | 1/117 | `net.no_js_execution` |
 | `floor-spoof` | bot | 1.00 | 9/117 | `br.tostring_tampered`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered` +1 |
-| `full-stealth` | bot | 1.00 | 17/117 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +9 |
+| `full-stealth` | bot | 1.00 | 17/117 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +8 |
 | `go-tls` | bot | 0.99 | 3/117 | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
 | `h2-continuation-flood` | bot | 0.99 | 2/117 | `net.h2_continuation_flood`, `net.no_js_execution` |
 | `h2-rapid-reset` | bot | 0.99 | 2/117 | `net.h2_rapid_reset`, `net.no_js_execution` |
@@ -32,7 +32,7 @@ _44/45 evaders caught (`bot`). Generated from the committed captures._
 | `linear-bot` | bot | 1.00 | 18/117 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
 | `max-stealth` | bot | 1.00 | 12/117 | `br.webdriver_spoofed`, `br.permissions_anomaly`, `br.no_chrome_object` +1 |
 | `naive-tz-spoof` | bot | 1.00 | 17/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
-| `native-spoof` | bot | 1.00 | 17/117 | `br.native_invariant_violated`, `br.cdp_runtime_enabled`, `br.headless_ua` +8 |
+| `native-spoof` | bot | 1.00 | 17/117 | `br.native_invariant_violated`, `br.cdp_runtime_enabled`, `br.headless_ua` +7 |
 | `nodriver` | bot | 1.00 | 9/117 | `net.quic_grease_vs_ua`, `br.headless_ua`, `br.chrome_runtime_missing` |
 | `os-spoof` | bot | 1.00 | 18/117 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +6 |
 | `patchright` | bot | 1.00 | 11/117 | `br.headless_ua`, `br.ch_he_headless`, `br.permissions_anomaly` +2 |
@@ -100,7 +100,7 @@ _44/45 evaders caught (`bot`). Generated from the committed captures._
 | `br.ua_platform_vs_ch_platform` | browser | coherence | 2 |
 | `br.vendor_vs_ua` | browser | coherence | 2 |
 | `br.webgl_worker_vs_main` | browser | coherence | 2 |
-| `br.webgpu_webgl_vs` | browser | coherence | 2 |
+| `br.webgpu_webgl_vs` | browser | environment | 2 |
 | `br.worker_divergence` | browser | automation | 2 |
 | `net.ch_ua_vs_ua_browser` | network,browser | coherence | 2 |
 | `net.h2_vs_ua_browser` | network,browser | coherence | 2 |
@@ -153,7 +153,7 @@ _44/45 evaders caught (`bot`). Generated from the committed captures._
 | `chrome-clone-2` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 | `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
-| `full-stealth` | bot | 5 | 0 | 7 | 4 | 1 | 0 |
+| `full-stealth` | bot | 4 | 0 | 7 | 5 | 1 | 0 |
 | `go-tls` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `h2-continuation-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
@@ -165,7 +165,7 @@ _44/45 evaders caught (`bot`). Generated from the committed captures._
 | `linear-bot` | bot | 0 | 0 | 7 | 6 | 5 | 0 |
 | `max-stealth` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
 | `naive-tz-spoof` | bot | 3 | 0 | 7 | 6 | 1 | 0 |
-| `native-spoof` | bot | 3 | 1 | 7 | 5 | 1 | 0 |
+| `native-spoof` | bot | 2 | 1 | 7 | 6 | 1 | 0 |
 | `nodriver` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
 | `os-spoof` | bot | 4 | 0 | 5 | 8 | 0 | 0 |
 | `patchright` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
