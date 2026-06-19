@@ -73,6 +73,38 @@ known-good rule, ground the real-browser negative) — which cleared the "Evaded
 engine-identity family — and to **periodic live re-validation + scoreboard/matrix refresh** (see
 docs/calibration.md). New marginal per-session tells are deliberately NOT pursued at saturation.
 
+### Saturation is PROVEN, not asserted — the emitted-vs-consumed audit (2026-06-19)
+
+Saturation was re-confirmed systematically rather than by inspection: diff every signal the collector
+**emits** against every signal a rule **consumes**.
+
+```sh
+# emitted kinds (collector): the S("<layer>","<kind>",…) calls in detector/src/kitsune_detector/demo.py
+grep -rhoE 'S\("(network|browser|behavioral|reputation)",[[:space:]]*"[a-z_0-9]+"' \
+  detector/src/kitsune_detector/demo.py | grep -oE '"[a-z_0-9]+"[[:space:]]*$' | tr -d '" ' | sort -u
+# consumed kinds (rules): the reads: lists in contracts/rules/registry.yaml
+grep -oE '(network|browser|behavioral|reputation)\.[a-z_0-9]+' contracts/rules/registry.yaml \
+  | sed -E 's/^[a-z]+\.//' | sort -u
+```
+
+Of 112 emitted kinds, **all but 12 feed a rule directly**, and every one of those 12 is accounted for —
+none is an unbuilt **convicting** (coherence/automation/artifact) gap:
+
+- **Raw-value inputs to the structural models, by design** (not direct rule predicates): `fp_hash` +
+  `trace_hash` (coordination collision signals), `color_depth` + `screen_resolution` + `webgl_renderer`
+  (prevalence factors / `webgl_os_hint` derivation), `webgl_vendor` + `webgpu_vendor`.
+- **WebGPU-absence environment tells** (`webgpu_absent`/`webgpu_fallback`/`webgpu_no_adapter`): environment
+  tier — corroborating only, and the convicting WebGPU coherence (`webgpu_*_mismatch`) is already ruled.
+- **Dead collection — two behavioural metrics** (`pause_ratio`, `submovement_count`): collected but read by
+  no rule. They are *behavioural*, hence corroborating-only/FP-prone, so wiring them would be a marginal
+  non-convicting tell — deliberately NOT built at saturation. Flagged here as a latent corroborating option
+  (or remove from the collector) for a future biomech pass, not a detection gap.
+
+So there is provably **no unconsumed signal that could become a convicting per-session rule** — the gate is
+saturated against the current collection surface. New convicting coverage now requires either a new
+collector signal (new attack surface) or the structural frontiers (prevalence second prior; live proxy
+coordination), both of which are external-data-blocked as noted above.
+
 ## Shipped from this catalog
 
 - ✅ `br.safari_ua_no_webkit_api (ACTIVE v0.74.18 — completes the engine-identity family. window.GestureEvent is a WebKit-ONLY global (every desktop + iOS Safari since Safari 5; Blink and Gecko have none). A Safari UA without it is a non-WebKit faker — the negative-surface complement to apple_ua_nonwebkit (which keys on Blink APIs PRESENT), robust to a spoof that DELETES window.chrome/userAgentData to beat that rule. GROUNDED on the real-browser second source (live Playwright WebKit GestureEvent="function" vs Chromium/Firefox undefined); real headful WebKit does NOT fire, the ios-ua-spoof evader (Chromium under an iPhone Safari UA) does. FP-safe: every real Safari has GestureEvent. The three engine-identity tells now cover all three: chromium↔engine_stack, gecko↔firefox_ua_nongecko (buildID), webkit↔this (GestureEvent) + apple_ua_nonwebkit (Blink-present).)`
