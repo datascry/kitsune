@@ -126,6 +126,29 @@ def test_coherent_real_chrome_scores_human() -> None:
     assert "webgl_software" not in k and "ch_he_headless" not in k and "media_devices_empty" not in k
 
 
+def test_firefox_null_vendor_maps_to_firefox_not_other() -> None:
+    # Mapper-fidelity regression: real Firefox reports navigator.vendor === "" (→ vendor_engine "firefox",
+    # coherent), but browserforge represents that as `None`. The mapper must normalise None → "" so it does
+    # NOT map to "other" and FALSELY trip br.vendor_vs_ua on every Firefox fingerprint (the collector never
+    # does — firefox-stock.json emits vendor_engine "firefox"). Grounds the calibration FP gate's fidelity.
+    firefox = {
+        "navigator": {
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
+            "platform": "Win32",
+            "languages": ["en-US"],
+            "hardwareConcurrency": 8,
+            "vendor": None,  # browserforge's representation of Firefox's empty navigator.vendor
+        },
+        "screen": {"width": 1920, "height": 1080, "colorDepth": 24, "devicePixelRatio": 1},
+    }
+    sigs = signals_from_fingerprint(firefox, "ff", NOW)
+    k = _kinds(sigs)
+    assert k.get("ua_engine") == "firefox"
+    assert k.get("vendor_engine") == "firefox"  # not "other"
+    fired = {c.rule_id for c in Detector().ingest_and_score(sigs)[0].contradictions}
+    assert "br.vendor_vs_ua" not in fired
+
+
 def test_language_list_spec_invariant() -> None:
     # navigator.language IS navigator.languages[0] (HTML spec) — a coherent fingerprint never trips it.
     coherent = {

@@ -212,8 +212,13 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     # macOS WKWebView UA with no browser token), where comparing a vendor against an unknown engine would
     # convict on "unknown" — the principle is unknown never fires. A classifiable engine still fires (a
     # macOS Safari UA reporting vendor "Google Inc." stays ua_engine=safari → caught).
+    # `... or ""` normalises a NULL/absent vendor to the empty string. Real Firefox reports
+    # navigator.vendor === "" (→ vendor_engine "firefox", coherent), but browserforge represents that as
+    # `None`; str(None) == "None" would map to "other" and FALSELY trip br.vendor_vs_ua on every Firefox
+    # fingerprint — a mapper artifact the real collector never produces (firefox-stock.json: vendor_engine
+    # "firefox"). Matching the collector's `vendor === "" ? "firefox"` keeps the calibration FP gate faithful.
     if not _is_ios(ua) and engine != "other":
-        sig("vendor_engine", _vendor_engine(str(nav.get("vendor", ""))))
+        sig("vendor_engine", _vendor_engine(str(nav.get("vendor") or "")))
     sig("hardware_concurrency", int(nav.get("hardwareConcurrency", 0) or 0))
     # Desktop-only tells (mirror the collector): a real desktop browser ships a standardized 5 plugins / 2
     # mimeTypes / pdfViewerEnabled=true, so a zero there is a stripped-browser signature — but every real
