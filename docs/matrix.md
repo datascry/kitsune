@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 120 rules vs 52 evaders
+# Kitsune detection matrix — 120 rules vs 53 evaders
 
-_51/52 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.21`._
+_52/53 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.21`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -40,6 +40,7 @@ _51/52 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `native-spoof` | bot | 1.00 | 17/120 | `br.native_invariant_violated`, `br.cdp_runtime_enabled`, `br.headless_ua` +7 |
 | `nodriver` | bot | 1.00 | 9/120 | `net.quic_grease_vs_ua`, `br.headless_ua`, `br.chrome_runtime_missing` |
 | `os-spoof` | bot | 1.00 | 17/120 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +6 |
+| `patchright-headful` | bot | 1.00 | 6/120 | `net.quic_grease_vs_ua`, `br.chrome_runtime_missing` |
 | `patchright` | bot | 1.00 | 11/120 | `br.headless_ua`, `br.ch_he_headless`, `br.permissions_anomaly` +2 |
 | `primp` | bot | 0.97 | 2/120 | `net.tcp_os_vs_ua`, `net.no_js_execution` |
 | `pydoll` | bot | 1.00 | 8/120 | `br.headless_ua`, `br.chrome_runtime_missing` |
@@ -63,8 +64,8 @@ _51/52 evaders caught (`bot`). Generated from the committed captures at ruleset 
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 39 |
-| `br.voices_empty` | browser | environment | 38 |
+| `br.media_devices_empty` | browser | environment | 40 |
+| `br.voices_empty` | browser | environment | 39 |
 | `br.webgl_software` | browser | environment | 32 |
 | `br.mimetypes_empty` | browser | environment | 29 |
 | `br.no_plugins` | browser | environment | 29 |
@@ -83,19 +84,19 @@ _51/52 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
+| `br.chrome_runtime_missing` | browser | automation | 7 |
 | `br.fingerprint_improbable` | browser | prevalence | 7 |
-| `br.chrome_runtime_missing` | browser | automation | 6 |
 | `br.hover_none_desktop` | browser | environment | 6 |
 | `br.navplatform_vs_ua` | browser | coherence | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
+| `net.quic_grease_vs_ua` | network,browser | coherence | 6 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
+| `bh.synthetic_no_coalesced` | behavioral | behavioral | 5 |
 | `br.webdriver_spoofed` | browser | automation | 5 |
-| `net.quic_grease_vs_ua` | network,browser | coherence | 5 |
-| `bh.synthetic_no_coalesced` | behavioral | behavioral | 4 |
+| `br.webgl2_missing` | browser | environment | 5 |
 | `br.codec_os_incoherent` | browser | environment | 4 |
 | `br.font_linux_leak` | browser | environment | 4 |
-| `br.webgl2_missing` | browser | environment | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.ch_he_version_vs_ua` | browser | coherence | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
@@ -191,6 +192,7 @@ _51/52 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `native-spoof` | bot | 2 | 1 | 7 | 6 | 1 | 0 |
 | `nodriver` | bot | 1 | 0 | 2 | 4 | 2 | 0 |
 | `os-spoof` | bot | 4 | 0 | 5 | 8 | 0 | 0 |
+| `patchright-headful` | bot | 1 | 0 | 1 | 3 | 1 | 0 |
 | `patchright` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
 | `primp` | bot | 2 | 0 | 0 | 0 | 0 | 0 |
 | `pydoll` | bot | 0 | 0 | 2 | 4 | 2 | 0 |

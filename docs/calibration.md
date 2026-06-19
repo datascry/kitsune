@@ -374,3 +374,11 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   is **untested** by the current fleet. See docs/evasion-catalog.md "Known red-team-fleet limitation". The
   "no evasion" claim is honest for what the fleet exercises, but the browser-layer-under-patchright frontier
   is open.
+
+  **RESOLVED (same day):** added a `HEADFUL=1` flag and captured headful patchright with a working collector
+  (`corpus/sessions/patchright-headful.json`, 20 browser + 10 behavioural signals). It is caught — `bot` 1.00
+  — and the robust browser-layer catch is **`br.chrome_runtime_missing`**: patchright defeats CDP + the
+  headless tells but does not restore `window.chrome.runtime`. So the browser layer DOES hold against
+  patchright-class stealth; the frontier is now tested, not open. The thin remaining path (also faking
+  `window.chrome.runtime` — itself a native-invariant artifact) is the next red-team probe. Matrix now 52/53
+  `bot` (patchright-headful added; camoufox-headful the lone `suspicious`).

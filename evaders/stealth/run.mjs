@@ -9,6 +9,11 @@ const SPOOF_UA = process.env.SPOOF_UA; // e.g. a Firefox UA, while the real TLS 
 const PATCHRIGHT = process.env.PATCHRIGHT === "1"; // CDP-patched anti-detect drop-in for Playwright
 const REBROWSER = process.env.REBROWSER === "1"; // rebrowser-patches: another Runtime.enable-leak fix
 const HUMAN_MOUSE = process.env.HUMAN_MOUSE === "1"; // synthesize human-like motion vs the naive path
+// HEADFUL=1: launch headless:false (run via xvfb-run). A headful Chromium's UA + Sec-CH-UA carry no
+// HeadlessChrome token, so headless-reveal tells (ch_he_headless/headless_ua) do not auto-fire — this is
+// how we test browser-layer evasion under patchright with a NATURAL coherent UA (no override that, under
+// patchright, breaks the page collector — see docs/evasion-catalog.md). Pair with PATCHRIGHT=1.
+const HEADFUL = process.env.HEADFUL === "1";
 // MAX_STEALTH: the kitchen sink — patchright (best CDP stealth) + a coherent Linux-Chrome UA (no headless
 // token) + human-like motion. The chromium analog of hardened-Camoufox: what survives maximal stealth.
 const MAX_STEALTH = process.env.MAX_STEALTH === "1";
@@ -197,7 +202,7 @@ const mode = ACCEPT_LANG_SPOOF
 
 // --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.
-const browser = await chromium.launch({ args: ["--no-sandbox", "--ignore-certificate-errors"] });
+const browser = await chromium.launch({ headless: !HEADFUL, args: ["--no-sandbox", "--ignore-certificate-errors"] });
 const context = await browser.newContext({
   ignoreHTTPSErrors: true,
   ...(userAgent ? { userAgent } : {}),

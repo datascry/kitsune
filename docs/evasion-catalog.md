@@ -96,8 +96,16 @@ patchright deliberately neutralising `addInitScript`-style injection (its docume
 **Implication for the "no evasion at 0.74.21" claim:** it holds (these configs ARE caught, deterministically,
 by `no_js_execution` + `net.ch_ua_version_vs_ua`), but the catch is an over-spoofing / collector-break
 artifact, **NOT** a defeat of the browser-layer tells — and the injected spoofs do not even apply under
-patchright. So the fleet does **not** currently test the genuinely-evasive config: patchright-class CDP
-stealth + a coherent non-headless UA + a *working* page collector (ideally headful, so `ch_he_headless`
-does not auto-fire). That browser-layer-evasion frontier under patchright is **untested**. Red-team TODO:
-either drive patchright headful via `page.addInitScript` alternatives that survive its stealth, or add a
-headful patchright capture — only then can we claim the browser layer holds against patchright-class tools.
+patchright.
+
+**RESOLVED (same day):** added a `HEADFUL=1` flag to the stealth evader (launch `headless:false` under
+xvfb). Headful patchright uses its NATURAL non-headless UA + Sec-CH-UA (no `HeadlessChrome` token, so
+`ch_he_headless`/`headless_ua` do not auto-fire) and — crucially — needs no UA override, so the page
+collector POSTS (verified: 20 browser + 10 behavioural signals, fixture `corpus/sessions/patchright-headful.json`).
+This is the genuinely-evasive config, and it is **caught** (`bot` 1.00): the robust browser-layer catch is
+**`br.chrome_runtime_missing`** — patchright defeats CDP (`cdp_runtime_enabled`) and the headless tells but
+does NOT restore `window.chrome.runtime`. So **the browser layer holds against patchright-class stealth**,
+via `chrome_runtime_missing` (the timing-dependent `net.quic_grease_vs_ua` is a bonus, not load-bearing).
+The remaining thin path: a tool that *also* fakes `window.chrome.runtime` would clear `chrome_runtime_missing`
+— but a non-native faked `chrome.runtime` is itself an artifact the native-invariant suite targets. That
+specific escalation (patchright + a convincing native-looking `chrome.runtime`) is the next red-team probe.
