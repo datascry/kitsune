@@ -111,9 +111,7 @@ def refresh(fetch: Fetcher) -> dict[str, str]:
     Pure but for ``fetch`` — the orchestration is fully exercised in tests with an offline fetcher.
     """
     tor = normalize_cidrs(parse_tor_bulk_exit(fetch(TOR_BULK_EXIT_URL)))
-    datacenter = normalize_cidrs(
-        parse_aws_ranges(fetch(AWS_RANGES_URL)) + parse_gcp_ranges(fetch(GCP_RANGES_URL))
-    )
+    datacenter = normalize_cidrs(parse_aws_ranges(fetch(AWS_RANGES_URL)) + parse_gcp_ranges(fetch(GCP_RANGES_URL)))
     regen = (
         "Regenerate: python -m kitsune_detector.ip_reputation_refresh "
         "(output not committed — see docs/ip-reputation-data.md)."

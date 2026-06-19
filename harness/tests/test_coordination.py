@@ -188,8 +188,12 @@ def test_datacenter_ip_corroborates_a_clean_clone() -> None:
     def dc(name: str, ip: str) -> Session:
         s = _sess(name, "X", 8, "Windows", observed_ip=ip, fp_hash="clean-clone")
         extra = Signal(
-            session_id=name, layer=Layer.reputation, kind="asn_is_datacenter", value=True,
-            source=Source.detector, observed_at=FIXED,
+            session_id=name,
+            layer=Layer.reputation,
+            kind="asn_is_datacenter",
+            value=True,
+            source=Source.detector,
+            observed_at=FIXED,
         )
         return group_signals(list(s.signals.network) + list(s.signals.browser) + [extra])[0]
 

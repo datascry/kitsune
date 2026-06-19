@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit — gate every commit on the fast CI checks so lint/format drift never reaches CI.
+# Mirrors `task ci`'s ruff + header steps for the Python components. Install with `task hooks`.
+set -uo pipefail
+
+repo="$(git rev-parse --show-toplevel)"
+cd "$repo" || exit 1
+
+fail=0
+
+echo "[pre-commit] 2-line file headers…"
+python3 scripts/check_headers.py || fail=1
+
+for comp in detector harness; do
+  echo "[pre-commit] ${comp}: ruff check + ruff format --check…"
+  ( cd "$comp" && uv run ruff check . && uv run ruff format --check . ) || fail=1
+done
+
+if [ "$fail" -ne 0 ]; then
+  echo "" >&2
+  echo "[pre-commit] BLOCKED — fix the above before committing." >&2
+  echo "  format:  (cd detector && uv run ruff format .) ; (cd harness && uv run ruff format .)" >&2
+  echo "  lint:    (cd detector && uv run ruff check --fix .) ; (cd harness && uv run ruff check --fix .)" >&2
+  echo "  (full pipeline incl. mypy/pytest/edge/collector: task ci)" >&2
+  exit 1
+fi
+
+echo "[pre-commit] ok"
