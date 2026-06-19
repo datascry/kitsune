@@ -40,6 +40,23 @@ def test_real_residential_proxy_fleet_is_convicted() -> None:
     assert v.distinct_observed_ips == 3
 
 
+def test_real_cloned_fingerprint_fleet_is_convicted() -> None:
+    # Ground the cloned-fingerprint convicting path on a REAL captured fleet (previously only synthetic): three
+    # instances of one anti-detect image, run CONCURRENTLY through the live edge so each held a distinct
+    # container IP, share one deterministic high-entropy fp_hash across 3 distinct observed IPs — the
+    # cloned-profile-behind-proxies shape (the complement of the JS-divergence paradox). cn1/cn2/cn3 must
+    # score `fleet` via the cloned-fingerprint collision alone — NOT JA4_c (their TLS is identical) and NOT a
+    # shared WebRTC origin — so it exercises a different convicting signal than the fleet-proxy fixture.
+    verdicts = score_corpus(load_corpus(_repo_corpus("fleet-cloned")))
+    assert len(verdicts) == 1
+    v = verdicts[0]
+    assert sorted(v.members) == ["cn1", "cn2", "cn3"]
+    assert v.label == "fleet"
+    assert v.cloned_fingerprint is not None  # one fp_hash across distinct IPs — the convicting signal
+    assert v.distinct_observed_ips == 3
+    assert v.ja4c_divergent is False  # convicted by the collision, not per-launch TLS randomization
+
+
 def test_real_camoufox_two_node_cohort_is_candidate_not_fleet() -> None:
     # Trusted-but-verified: the synthetic scenarios assume camoufox randomizes its JA4_c per launch, but the
     # REAL camoufox capture (cf1/cf2) shows STABLE JA4_c and homogeneous JS — indistinguishable from two real
