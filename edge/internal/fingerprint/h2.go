@@ -62,31 +62,36 @@ func (f H2Fingerprint) Browser() string {
 	}
 }
 
-// HeaderOrderBrowser positively identifies a Chromium client from its regular (non-pseudo) header order:
-// Chrome/Edge/Brave emit the Sec-CH-UA client-hint group BEFORE user-agent on a secure origin (the edge
-// is HTTPS), an order no other engine or scripting HTTP client reproduces by default. It deliberately
-// returns "chrome" or "unknown" only — Firefox and Safari both omit Sec-CH-UA and lead with user-agent,
-// so they are indistinguishable from a non-browser stack by header order alone and stay "unknown" (never
-// a false contradiction). The tell is asymmetric: a Chromium UA whose header order is NOT chromium-shaped
-// is a non-browser h2 stack wearing a Chrome UA (the JA4H analog of h2_engine_unknown).
+// HeaderOrderBrowser positively identifies a Chromium client from its presence of the low-entropy Sec-CH-UA
+// client-hint TRIO — sec-ch-ua + sec-ch-ua-mobile + sec-ch-ua-platform — which Chrome/Edge/Brave send on
+// EVERY request over a secure origin (the edge is HTTPS), and which no other engine or naive scripting HTTP
+// client reproduces by default (Firefox/Safari omit Sec-CH-UA entirely; a curl/httpx stack faking a Chrome
+// UA sends user-agent but not the trio). It returns "chrome" or "unknown" only, so Firefox/Safari and
+// non-browser stacks stay "unknown" (never a false contradiction). The tell is asymmetric: a Chromium UA
+// without the trio is a non-browser h2 stack wearing a Chrome UA (the JA4H analog of h2_engine_unknown).
+//
+// v0.74.29: this was an ORDER check (sec-ch-ua before user-agent). GROUNDED on real Google Chrome 149, that
+// false-positived: the sec-ch-ua-before-user-agent order holds only for the DOCUMENT NAVIGATION; Chrome's
+// fetch()/XHR requests (e.g. the collector's own POST to /ingest) legitimately interleave the trio AROUND
+// user-agent ("...,sec-ch-ua-platform,user-agent,sec-ch-ua,..."), so a real Chrome fetch tripped
+// h2_header_order_non_chromium. Keying on the trio's PRESENCE (request-type-invariant) fixes the FP while
+// preserving every catch (curl-http2 / http2-naive / webkit-ua-spoof all lack the trio).
 func (f H2Fingerprint) HeaderOrderBrowser() string {
 	if f.HeaderOrder == "" {
 		return "unknown"
 	}
-	posSecCHUA, posUA := -1, -1
-	for i, h := range strings.Split(f.HeaderOrder, ",") {
+	var chua, chuaMobile, chuaPlatform bool
+	for _, h := range strings.Split(f.HeaderOrder, ",") {
 		switch h {
 		case "sec-ch-ua":
-			if posSecCHUA < 0 {
-				posSecCHUA = i
-			}
-		case "user-agent":
-			if posUA < 0 {
-				posUA = i
-			}
+			chua = true
+		case "sec-ch-ua-mobile":
+			chuaMobile = true
+		case "sec-ch-ua-platform":
+			chuaPlatform = true
 		}
 	}
-	if posSecCHUA >= 0 && posUA >= 0 && posSecCHUA < posUA {
+	if chua && chuaMobile && chuaPlatform {
 		return "chrome"
 	}
 	return "unknown"

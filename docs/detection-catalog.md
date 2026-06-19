@@ -254,9 +254,19 @@ the prime directive (a real browser must not trip a convicting rule) the FP wins
 saturation frontier made concrete:** a perfect-mimic anti-detect Chrome (real fingerprint, webdriver hidden) is
 now indistinguishable from real Chrome on per-session JS signals. Catching it requires a signal real Chrome does
 NOT share — the **structural frontiers** (network-layer TLS/h2 deviation outside the container confound;
-coordination/prevalence), not another per-session tell. NB: `net.h2_header_order_vs_ua` fired on the real-Chrome
-CDP capture too (a container network-path artifact — flagged for the experimental-rule re-validation, needs a
-non-container real capture to act on).
+coordination/prevalence), not another per-session tell.
+
+### ✅ FIXED (v0.74.29): `net.h2_header_order_vs_ua` false-fired on real Chrome's fetch() requests
+
+The `net.h2_header_order_vs_ua` fire on the real-Chrome capture was NOT a container artifact — a real coherence
+FP. The edge's `HeaderOrderBrowser` keyed on `sec-ch-ua` before `user-agent`, which holds only for the document
+NAVIGATION. Real Chrome 149's fetch()/XHR requests (the collector's own POST to `/ingest`) interleave the
+Sec-CH-UA trio AROUND user-agent
+(`content-length,sec-ch-ua-platform,user-agent,sec-ch-ua,content-type,sec-ch-ua-mobile,accept`), so the edge
+fingerprinting that request convicted a real Chrome. Fixed: `HeaderOrderBrowser` now keys on the PRESENCE of the
+full Sec-CH-UA trio (request-type-invariant; a naive non-browser stack omits it). Re-validated LIVE — real
+Chrome 149 now has ZERO convicting fires across all layers; `webkit-ua-spoof` (real WebKit + Chrome UA, no trio)
+still trips it (no detection loss); partial-trio cases unit-tested in edge `h2_test.go`.
 
 ### Open data gap (remaining)
 

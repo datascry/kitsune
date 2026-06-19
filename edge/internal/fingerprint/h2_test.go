@@ -95,16 +95,20 @@ func TestH2BrowserClassifier(t *testing.T) {
 
 func TestH2HeaderOrderBrowser(t *testing.T) {
 	cases := map[string]string{
-		// Chromium emits the Sec-CH-UA group before user-agent.
+		// Chromium sends the full Sec-CH-UA trio. Document-navigation order (trio before user-agent):
 		"sec-ch-ua,sec-ch-ua-mobile,sec-ch-ua-platform,upgrade-insecure-requests,user-agent,accept": "chrome",
-		"sec-ch-ua,user-agent": "chrome",
+		// Real Chrome 149 fetch()/XHR order: the trio is interleaved AROUND user-agent, yet all present →
+		// chrome (the v0.74.29 FP fix — this exact order tripped the old sec-ch-ua-before-user-agent check).
+		"content-length,sec-ch-ua-platform,user-agent,sec-ch-ua,content-type,sec-ch-ua-mobile,accept": "chrome",
 		// Firefox/Safari lead with user-agent and omit Sec-CH-UA — indistinguishable from a non-browser
 		// stack by header order alone, so deliberately "unknown" (never a false contradiction).
 		"user-agent,accept,accept-language,accept-encoding": "unknown",
-		// A non-browser client faking Chrome that does NOT reproduce the order → unknown (the tell).
-		"user-agent,accept,sec-ch-ua": "unknown",
-		"accept,accept-encoding":      "unknown",
-		"":                            "unknown",
+		// A non-browser client faking Chrome that sends only a PARTIAL Sec-CH-UA (no full trio) → unknown.
+		"user-agent,accept,sec-ch-ua":                  "unknown",
+		"sec-ch-ua,user-agent":                         "unknown",
+		"sec-ch-ua,sec-ch-ua-mobile,user-agent,accept": "unknown",
+		"accept,accept-encoding":                       "unknown",
+		"":                                             "unknown",
 	}
 	for order, want := range cases {
 		fp := H2Fingerprint{HeaderOrder: order}
