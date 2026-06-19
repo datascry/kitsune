@@ -110,12 +110,25 @@ The coordination detector's four convicting signals have now had a full FP-safet
 | `shared_real_ip` | distinct users sharing a private `192.168.x` WebRTC IP | **safe by construction**: the collector emits only the srflx/PUBLIC WebRTC candidate (host/private candidates are excluded), so distinct real users each leak their OWN distinct public IP — they cannot share an origin (pinned by `test_distinct_public_ips_do_not_share_origin`) |
 
 The two *ambiguous* signals each have a benign twin a real cohort produces, so they convict only when
-corroborated (automation tell or an unambiguous signal). The two *unambiguous* signals have no benign twin —
-verified above, not just asserted. **Live re-validation (2026-06-19):** a fresh concurrent 3-instance cloned
-capture through the edge, scored under the new gates, → `fleet 1.00` (fp-collision corroborated by the stealth
-members' automation tells); the corroboration gating preserves the live conviction end-to-end. The single
-remaining open item for *both* ambiguous signals is the same: **IP reputation** (datacenter/proxy vs
-residential) is the true disambiguator, and it needs a real public/proxy egress source the sandbox lacks.
+corroborated; the two *unambiguous* signals have no benign twin (verified above, not just asserted).
+
+**Corroboration now includes IP reputation (wired, not just documented).** The detector already classifies
+the source IP against curated public datacenter/proxy/Tor-exit CIDR lists (`ip_reputation.py`, emitting
+`reputation.asn_is_datacenter` / `is_proxy_exit`); those signals are now a corroboration source for the
+ambiguous gate. This is the real disambiguator: a CLONED/randomizer bot fleet runs on datacenter or proxy
+infrastructure (flagged), a corporate or multi-version real cohort on genuine residential IPs (never flagged,
+and private IPs classify as neither). So a CLEAN native clone (no automation tell) on datacenter IPs now
+convicts — `fleet-cloned-datacenter` in the battery, pinned by `test_datacenter_ip_corroborates_a_clean_clone`
+— closing the recall gap, while `legit-corporate-fleet` (residential) stays `candidate`. The classification
+is NOT blocked (public CIDR data, no live proxy needed); only the *in-sandbox live exercise* is limited —
+container IPs are private (172.x), so the live fleet captures corroborate via their automation tells instead,
+not via an IP-reputation flag. A production deployment seeing real datacenter/proxy IPs gets the flag.
+
+**Live re-validation (2026-06-19):** a fresh concurrent 3-instance cloned capture through the edge, scored
+under the new gates, → `fleet 1.00` (fp-collision corroborated by the stealth members' automation tells); the
+gating preserves the live conviction end-to-end. The remaining genuinely-blocked piece is narrower than
+before: `net.webrtc_ip_vs_observed` (a proxy-vs-origin IP mismatch) needs a real proxy egress to produce
+live, and the datacenter/proxy CIDR seed lists are non-exhaustive (refresh per docs/ip-reputation-data.md).
 
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 

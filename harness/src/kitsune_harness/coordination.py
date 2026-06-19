@@ -209,6 +209,22 @@ def _has_automation_tell(sessions: list[Session]) -> bool:
     return any(session.value(Layer.browser, kind) is True for session in sessions for kind in _AUTOMATION_TELLS)
 
 
+def _has_ip_reputation_flag(sessions: list[Session]) -> bool:
+    """True iff any cluster member's source IP is flagged datacenter/hosting or a known proxy/VPN/Tor exit
+    (the ``reputation.asn_is_datacenter`` / ``is_proxy_exit`` signals the detector emits via the curated CIDR
+    feed). This is the IP-reputation disambiguator the ambiguous signals need: a CLONED/randomizer bot fleet
+    runs on datacenter or residential-PROXY infrastructure, whereas a standardized corporate fleet or a
+    multi-Chrome-version cohort is on genuine RESIDENTIAL IPs (no flag). So an IP-reputation flag corroborates
+    an fp-collision / JA4_c divergence as a real bot fleet even when no per-session automation tell is present
+    (a clean native anti-detect clone). A private/residential IP yields (False, False) — never a flag — so it
+    cannot corroborate a real cohort."""
+    return any(
+        session.value(Layer.reputation, "asn_is_datacenter") is True
+        or session.value(Layer.reputation, "is_proxy_exit") is True
+        for session in sessions
+    )
+
+
 def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdict:
     """Grade one JA4-prefix cluster (>= 2 sessions sharing the cipher-suite ``prefix``)."""
     names = sorted(n for n, _ in members)
@@ -315,7 +331,11 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     # (datacenter/proxy = bot, residential = legit), the still-blocked coordination half. The JS-divergence
     # paradox, IP spread and lockstep stay corroborating-only (a real diverse cohort produces them too).
     unambiguous = trace_collision is not None or shared_real_ip is not None
-    corroborated = unambiguous or _has_automation_tell(sessions)
+    # Corroboration = an unambiguous signal, a per-session automation tell, OR an IP-reputation flag
+    # (datacenter/proxy/Tor exit). The IP-reputation flag is the production disambiguator: a bot fleet runs on
+    # datacenter/proxy infrastructure (flagged), a corporate / multi-version real cohort on residential IPs
+    # (never flagged), so it convicts a CLEAN native clone on datacenter IPs that carries no automation tell.
+    corroborated = unambiguous or _has_automation_tell(sessions) or _has_ip_reputation_flag(sessions)
     fp_collision_convicts = collision is not None and corroborated
     ja4c_convicts = ja4c_divergent and corroborated
     convicting = unambiguous or fp_collision_convicts or ja4c_convicts

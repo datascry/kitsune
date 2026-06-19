@@ -42,6 +42,7 @@ def _session(
     fp_hash: str | None = None,
     trace_hash: str | None = None,
     webdriver: bool = False,
+    datacenter: bool = False,
 ) -> Session:
     when = _BASE + timedelta(seconds=offset_s)
 
@@ -51,6 +52,8 @@ def _session(
     sigs: list[Signal] = [mk(Layer.network, "ja4", ja4)]
     if webdriver:  # a per-session automation tell — corroborates an fp-collision as a CLONED bot fleet
         sigs.append(mk(Layer.browser, "webdriver", True))
+    if datacenter:  # IP-reputation flag — corroborates a CLEAN clone on datacenter/proxy infrastructure
+        sigs.append(mk(Layer.reputation, "asn_is_datacenter", True))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw))
     if plat is not None:
@@ -234,6 +237,30 @@ def scenarios() -> list[Scenario]:
                     f"f{i}",
                     _session(
                         f"f{i}", _CHROME, hw=8, plat="Windows", observed_ip=_ip(i), fp_hash="cloned-fp", webdriver=True
+                    ),
+                )
+                for i in range(3)
+            ],
+        )
+    )
+    out.append(
+        Scenario(
+            "fleet-cloned-datacenter",
+            True,
+            "a CLEAN native anti-detect clone (BotBrowser-style, no automation tell, no JS divergence) but on "
+            "DATACENTER IPs — the IP-reputation flag corroborates the fp-collision as a bot fleet where no "
+            "automation tell does; distinguishes it from a residential corporate cohort",
+            [
+                (
+                    f"dc{i}",
+                    _session(
+                        f"dc{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash="cloned-clean-fp",
+                        datacenter=True,
                     ),
                 )
                 for i in range(3)

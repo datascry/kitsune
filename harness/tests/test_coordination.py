@@ -180,6 +180,25 @@ def test_profile_reuse_fleet_is_caught() -> None:
     assert any("cloned-profile reuse" in e for e in v.evidence)
 
 
+def test_datacenter_ip_corroborates_a_clean_clone() -> None:
+    # The IP-reputation disambiguator: a CLEAN native clone (no automation tell) sharing one fp across distinct
+    # DATACENTER IPs IS a bot fleet — the reputation.asn_is_datacenter flag corroborates the fp-collision where
+    # no automation tell does. (A residential corporate cohort with the same fp-collision but no flag stays
+    # candidate — test_corporate_fleet_fp_collision_is_not_convicted.)
+    def dc(name: str, ip: str) -> Session:
+        s = _sess(name, "X", 8, "Windows", observed_ip=ip, fp_hash="clean-clone")
+        extra = Signal(
+            session_id=name, layer=Layer.reputation, kind="asn_is_datacenter", value=True,
+            source=Source.detector, observed_at=FIXED,
+        )
+        return group_signals(list(s.signals.network) + list(s.signals.browser) + [extra])[0]
+
+    members = [("d0", dc("d0", "11.0.0.1")), ("d1", dc("d1", "22.0.0.2")), ("d2", dc("d2", "33.0.0.3"))]
+    v = score_cluster("X", members)
+    assert v.cloned_fingerprint == "clean-clone"
+    assert v.label == "fleet"  # datacenter IP-reputation flag corroborates the collision — no automation needed
+
+
 def test_corporate_fleet_fp_collision_is_not_convicted() -> None:
     # FP guard: a STANDARDIZED corporate fleet (identical laptop model + locked image hashes byte-identically)
     # on distinct WFH residential IPs produces the SAME identical-fp-across-distinct-IPs shape as a cloned bot
