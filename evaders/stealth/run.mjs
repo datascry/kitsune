@@ -45,6 +45,9 @@ const CANVAS_SPOOF = process.env.CANVAS_SPOOF === "1";
 // match the proxy's country, but a JS patch never reaches Worker scope, so a Worker reports the real host
 // timezone → timezone_worker_vs_main. The geo analog of WORKER_SPOOF.
 const TZ_SPOOF = process.env.TZ_SPOOF === "1";
+// LANG_SPOOF: the language half of the geo-spoof realm pair. Patch navigator.languages in the main realm
+// to match the proxy's country; the patch never reaches Worker scope → languages_worker_vs_main.
+const LANG_SPOOF = process.env.LANG_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -93,8 +96,11 @@ const evading =
   NATIVE_SPOOF ||
   CANVAS_SPOOF ||
   TZ_SPOOF ||
+  LANG_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = TZ_SPOOF
+const mode = LANG_SPOOF
+  ? "lang-spoof"
+  : TZ_SPOOF
   ? "tz-spoof"
   : CANVAS_SPOOF
   ? "canvas-spoof"
@@ -245,6 +251,13 @@ if (FLOOR_SPOOF) {
     Date.prototype.getTimezoneOffset = function () {
       return 300;
     };
+  });
+} else if (LANG_SPOOF) {
+  // Main-realm-only geo-spoof: claim French via navigator.languages on the main thread. The patch never
+  // reaches Worker scope, so a Worker reports the real host languages → languages_worker_vs_main.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "languages", { get: () => ["fr-FR", "fr"], configurable: true });
   });
 } else if (evading) {
   await context.addInitScript(() => {

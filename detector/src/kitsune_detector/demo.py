@@ -878,6 +878,11 @@ DEMO_PAGE = """<!doctype html>
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {
       sigs.push(S("browser", "worker_divergence", true));
     }
+    // Language realm coherence: navigator.languages must agree across the main thread and a Worker; a
+    // main-realm geo-spoof of navigator.languages never reaches Worker scope.
+    if (wn && wn.lang && navigator.languages.length > 0 && wn.lang !== navigator.languages.join(",")) {
+      sigs.push(S("browser", "languages_worker_divergence", true));
+    }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker OffscreenCanvas
     // (one physical GPU). A getParameter spoof patches the main realm but never the Worker → divergence.
     var wglr = await workerGlRenderer();

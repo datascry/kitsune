@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.68.0"
+ruleset_version: "0.69.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -693,6 +693,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS / rebrowser: main-thread spoofs and some engine-level browsers leak in workers"
+
+  - id: br.languages_worker_vs_main
+    title: navigator.languages differs between the main thread and a Web Worker
+    layers: [browser]
+    reads: [browser.languages_worker_divergence]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "The language half of the geo-spoof realm pair (with timezone_worker_vs_main). A residential-proxy bot patches navigator.languages in the main realm to match the proxy's country, but a JS patch cannot reach Web Worker scope, so a Worker reports the real host languages. Grounded headless: a normal real browser reports identical languages in both realms (no fire). EXPERIMENTAL — unlike timezone, a legitimate CDP locale override (context.locale) does NOT propagate to the Worker (grounded: main es-ES, worker en-US → diverges), so this fires on legit locale emulation and on the rare real user running a language-spoofing privacy extension; kept corroborating until the legit-browser divergence rate is validated against Tier-3 real traffic. Catches both JS- and CDP-level main-realm language spoofs."
 
   - id: br.timezone_worker_vs_main
     title: Timezone differs between the main thread and a Web Worker

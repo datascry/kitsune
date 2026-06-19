@@ -293,19 +293,20 @@ function webrtcProbe(): Promise<RtcResult> {
     }
   });
 }
-function workerNav(): Promise<{ ua: string; hw: number; plat: string } | null> {
+function workerNav(): Promise<{ ua: string; hw: number; plat: string; lang: string } | null> {
   return new Promise((resolve) => {
     try {
       const code =
         "onmessage=function(){postMessage({ua:navigator.userAgent," +
-        'hw:navigator.hardwareConcurrency,plat:navigator.platform||""})}';
+        'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
+        'lang:(navigator.languages||[]).join(",")})}';
       const w = new Worker(
         URL.createObjectURL(new Blob([code], { type: "application/javascript" })),
       );
       const t = setTimeout(() => {
         resolve(null);
       }, 1500);
-      w.onmessage = (e: MessageEvent<{ ua: string; hw: number; plat: string }>): void => {
+      w.onmessage = (e: MessageEvent<{ ua: string; hw: number; plat: string; lang: string }>): void => {
         clearTimeout(t);
         resolve(e.data);
         w.terminate();
@@ -1038,6 +1039,14 @@ export function armCollector(): LiveCollector {
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))
     ) {
       put("browser", "worker_divergence", true);
+    }
+    // Language realm coherence: navigator.languages must agree across the main thread and a Worker. A
+    // residential-proxy geo-spoof patches navigator.languages in the main realm to match the proxy's
+    // country but a JS patch never reaches Worker scope. Only fire when both report a non-empty list and
+    // they differ. (Experimental: a legit CDP locale override does NOT propagate to the Worker, so it
+    // diverges too — kept corroborating until real-traffic FP-validated.)
+    if (wn && wn.lang && navigator.languages.length > 0 && wn.lang !== navigator.languages.join(",")) {
+      put("browser", "languages_worker_divergence", true);
     }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker's
     // OffscreenCanvas (one physical GPU). A getParameter spoof patches the main realm but never reaches

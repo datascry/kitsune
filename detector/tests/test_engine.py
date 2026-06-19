@@ -222,6 +222,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.timezone_worker_vs_main",
         ),
         (
+            [(Layer.browser, "languages_worker_divergence", True, Source.collector)],
+            "br.languages_worker_vs_main",
+        ),
+        (
             [
                 (Layer.browser, "vendor_engine", "chromium", Source.collector),
                 (Layer.browser, "ua_engine", "firefox", Source.collector),
