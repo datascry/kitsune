@@ -153,6 +153,13 @@ def test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp() -> None:
     fired = _headful_browser_layer_convictions("firefox-stock")
     assert fired.get(RuleCategory.coherence, set()) == set(), fired
     assert fired.get(RuleCategory.artifact, set()) == set(), fired
+    # Also pin the v0.74.31 NETWORK-layer fix: Firefox does NOT GREASE TLS (security.tls.grease_probability=0),
+    # so net.tls_grease_vs_ua must NOT fire on a real Firefox. The fixture is re-captured under the fixed edge
+    # (no tls_no_grease emitted for a Firefox UA); a stale pre-fix capture would carry it and re-introduce the FP.
+    capture = json.loads((_HEADFUL / "firefox-stock.json").read_text())
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    all_fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+    assert "net.tls_grease_vs_ua" not in all_fired, all_fired
 
 
 def test_real_headful_webkit_only_browser_coherence_is_the_navplatform_quirk() -> None:

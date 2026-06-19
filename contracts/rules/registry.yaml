@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.30"
+ruleset_version: "0.74.31"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1461,7 +1461,7 @@ rules:
     source: "HTTP compression fingerprint; browsers advertise br/zstd over HTTPS, httpx/requests do not"
 
   - id: net.tls_grease_vs_ua
-    title: UA claims a modern browser but the TLS ClientHello has no GREASE
+    title: UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE
     layers: [network, browser]
     reads: [network.tls_no_grease]
     predicate: present
@@ -1469,8 +1469,8 @@ rules:
     status: active
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "RFC 8701; every current browser GREASEs its ClientHello, scripted OpenSSL/Go TLS stacks do not"
+    last_validated: "2026-06-19"
+    source: "RFC 8701: Chromium and Safari/WebKit GREASE their ClientHello; a scripted OpenSSL/Go TLS stack does not. v0.74.31 FP FIX (GROUNDED on real geckodriver Firefox 152 + Mullvad 140 + Playwright Firefox): the original 'every current browser GREASEs' premise is FALSE — GECKO/FIREFOX does NOT GREASE TLS by default (security.tls.grease_probability=0). All three real Firefox captures send a GREASE-free ClientHello while every Chromium capture GREASEs (a clean engine split), so emitting tls_no_grease on a Firefox UA convicted EVERY real Firefox (a coherence FP on ~all Firefox users). Fixed in the edge: tls_no_grease is now gated by uaGreasesTLS (Chromium/Safari, NOT Firefox). No coverage lost — a non-browser stack faking a Firefox UA is still caught by its JA4 engine mismatch (net.tls_vs_ua_browser). NB: the QUIC analog net.quic_grease_vs_ua still emits on Firefox UAs and additionally fired on a real Brave (Chromium that DOES GREASE QUIC) in-container — a separate, murkier QUIC-capture issue flagged for investigation, not fixed here."
 
   - id: net.tls_pq_keyshare_vs_ua
     title: UA claims current Chrome but the TLS handshake offers no post-quantum key share

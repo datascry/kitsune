@@ -513,3 +513,24 @@ func TestSecFetchMissing(t *testing.T) {
 		}
 	}
 }
+
+func TestUAGreasesTLS(t *testing.T) {
+	// Chromium + Safari engines GREASE TLS; Gecko/Firefox does NOT (v0.74.31 FP fix). The tls_no_grease tell
+	// must therefore be withheld from a Firefox UA but kept for the GREASEing engines and non-browser stacks.
+	cases := []struct {
+		name string
+		ua   string
+		want bool
+	}{
+		{"real Chrome", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36", true},
+		{"real Edge", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0", true},
+		{"real Safari", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", true},
+		{"real Firefox — does NOT GREASE TLS", "Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0", false},
+		{"non-browser stack", "python-httpx/0.27", false},
+	}
+	for _, c := range cases {
+		if got := uaGreasesTLS(c.ua); got != c.want {
+			t.Errorf("%s: uaGreasesTLS=%v want %v", c.name, got, c.want)
+		}
+	}
+}

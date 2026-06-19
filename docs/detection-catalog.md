@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.30`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 90 active · 29 experimental · 3 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.31`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 90 active · 29 experimental · 3 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (25)
 
@@ -30,7 +30,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.quic_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
 | `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
 | `net.tcp_os_vs_ua` | coherence✦ | not_equal | 0.7 | active | TCP/IP-stack OS kernel contradicts the OS the User-Agent claims |
-| `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but the TLS ClientHello has no GREASE |
+| `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_os_vs_tcp_os` | coherence✦ | not_equal | 0.6 | experimental | JA4-implied OS contradicts TCP/IP-implied OS |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
@@ -80,7 +80,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.quic_grease_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the QUIC ClientHello has no GREASE |
 | `net.quic_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
 | `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
-| `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but the TLS ClientHello has no GREASE |
+| `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
 | `net.webrtc_ip_vs_observed` | coherence✦ | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
