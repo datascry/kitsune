@@ -446,3 +446,16 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   → no FP. The reference + the edge's codepoint detection are both current; the stale-template seam is
   correctly grounded (catches a pre-2025 template lacking both codepoints, silent on real Chrome). No drift,
   no rule change → no ruleset bump.
+
+- **2026-06-19 · network grounding — HTTP/2 fingerprint confirmed Chrome (completes the Hero-seam grounding)**
+  — cross-checked the edge's h2 fingerprint `1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p`
+  (`edge/internal/fingerprint/h2.go`, Akamai format) against the public Akamai HTTP/2 fingerprinting standard
+  (BlackHat white paper / peet.ws): the pseudo-header order **`m,a,s,p`** (`:method,:authority,:scheme,:path`)
+  is Chrome's, and the SETTINGS + WINDOW_UPDATE match Chrome's documented signature. The edge classifies the
+  browser from the pseudo-header order — the most version-stable component (Firefox sends a different order),
+  so it is FP-safe (real Chrome's `m,a,s,p` → hinted chrome → matches UA → no fire; a non-Chrome h2 order
+  under a Chrome UA → `net.h2_header_order_vs_ua` / `h2_vs_ua` fire).
+  **This completes the grounding of the network-coherence seam the Ulixee-Hero white-box flagged** — all
+  three masked components are now validated current against external public references: TLS JA4 (Chrome cipher
+  hash, FoxIO) · post-quantum keyshare (X25519MLKEM768/0x11EC, IANA/2026) · HTTP/2 (Akamai standard). The
+  durable per-session catch for the cutting-edge fleet is grounded end-to-end. No rule changed → no ruleset bump.
