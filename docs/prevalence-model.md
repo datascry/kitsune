@@ -53,6 +53,11 @@ A search for public, independent grounding sources for the three factors, and a 
   (gamers vs general web), not a browserforge error — so Steam is the *wrong population* to ground a web GPU
   prior. A web-representative WebGL-renderer distribution (hosted-demo opt-in) is still required; open
   per-sample fingerprint datasets do not exist publicly (confirmed — even anti-detect tooling notes this gap).
+  **Web3DSurvey** (web3dsurvey.com) is the right *population* (a live WebGL survey of general web visitors,
+  not gamers), but it publishes only WebGL extension/parameter *support* rates, not a GPU-vendor-share table —
+  so even it doesn't expose the breakdown. Net: no clean fetchable public web GPU distribution exists; the
+  gpu factor's grounding is genuinely a hosted-demo capture (which `--build-prior-from-sessions` consumes,
+  extracting gpu from `webgl_renderer` via `features_from_session`).
 - **cores — a real-second-source FLAG, not acted on.** Mapping the Steam CPU-core survey to our buckets
   gives `5-8`≈55%, `9-16`≈11%; browserforge gives `5-8`=38%, `9-16`=**32%**. Steam gamers should skew to
   *more* cores yet show *fewer* `9-16` than browserforge — i.e. browserforge may **over-generate high core
