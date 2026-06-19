@@ -48,6 +48,11 @@ const TZ_SPOOF = process.env.TZ_SPOOF === "1";
 // LANG_SPOOF: the language half of the geo-spoof realm pair. Patch navigator.languages in the main realm
 // to match the proxy's country; the patch never reaches Worker scope → languages_worker_vs_main.
 const LANG_SPOOF = process.env.LANG_SPOOF === "1";
+// WORKER_WRAP: the realm-coherence escalation. Wrap window.Worker so worker code is prefixed with the
+// same navigator spoof (via importScripts of the original blob) — the worker now AGREES with the main
+// thread, defeating worker_divergence. But the wrapped Worker constructor is no longer native, so
+// br.worker_constructor_tampered catches the realm the spoof had to compromise to hide.
+const WORKER_WRAP = process.env.WORKER_WRAP === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -97,8 +102,11 @@ const evading =
   CANVAS_SPOOF ||
   TZ_SPOOF ||
   LANG_SPOOF ||
+  WORKER_WRAP ||
   Boolean(SPOOF_UA);
-const mode = LANG_SPOOF
+const mode = WORKER_WRAP
+  ? "worker-wrap"
+  : LANG_SPOOF
   ? "lang-spoof"
   : TZ_SPOOF
   ? "tz-spoof"
@@ -258,6 +266,21 @@ if (FLOOR_SPOOF) {
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
     Object.defineProperty(Navigator.prototype, "languages", { get: () => ["fr-FR", "fr"], configurable: true });
+  });
+} else if (WORKER_WRAP) {
+  // Escalation: spoof hardwareConcurrency on main AND wrap window.Worker so each worker imports the
+  // original script behind the same spoof — defeating worker_divergence. The wrap makes window.Worker a
+  // non-native plain function → br.worker_constructor_tampered.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
+    const RealWorker = window.Worker;
+    const SPOOF = "Object.defineProperty(self.navigator,'hardwareConcurrency',{get:function(){return 2}});";
+    window.Worker = function (url, opts) {
+      const wrapped = SPOOF + "importScripts('" + url + "');";
+      return new RealWorker(URL.createObjectURL(new Blob([wrapped], { type: "application/javascript" })), opts);
+    };
+    window.Worker.prototype = RealWorker.prototype;
   });
 } else if (evading) {
   await context.addInitScript(() => {

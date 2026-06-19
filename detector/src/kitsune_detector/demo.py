@@ -477,6 +477,16 @@ DEMO_PAGE = """<!doctype html>
         if (ctor) { sigs.push(S("browser", "native_invariant_violated", true)); break; }
       }
     } catch (e) {}
+    // Worker-realm constructor integrity: a tool can only defeat the realm-coherence rules (worker/
+    // timezone/languages/webgl/canvas_worker_vs_main) by wrapping window.Worker / OffscreenCanvas to inject
+    // its spoof into worker scope — but a real browser's global Worker/OffscreenCanvas are native; a
+    // wrapped one's toString lacks "[native code]". Closes the escalation path for the whole family.
+    try {
+      function ctorTampered(c) { return typeof c === "function" && c.toString().indexOf("[native code]") < 0; }
+      if (ctorTampered(self.Worker) || ctorTampered(self.OffscreenCanvas)) {
+        sigs.push(S("browser", "worker_constructor_tampered", true));
+      }
+    } catch (e) {}
     // Electron process leak: a renderer exposing a Node `process` (type=renderer or versions.electron) is
     // an Electron/automation runtime, never a real browser. Guarded to the Electron-specific markers so a
     // webpack `process.env` shim does not trip it.

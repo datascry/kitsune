@@ -589,6 +589,14 @@ export function armCollector(): LiveCollector {
     } catch {
       /* ignore */
     }
+    // Worker-realm constructor integrity: the realm-coherence rules (worker_divergence, timezone/
+    // languages/webgl/canvas_worker_vs_main) all observe a Web Worker, which a tool can only defeat by
+    // wrapping window.Worker / OffscreenCanvas to inject its spoof into worker scope. A real browser's
+    // global Worker and OffscreenCanvas are native; a wrapped one is a plain function (toString lacks
+    // "[native code]"). This closes the escalation path for the entire realm-coherence family.
+    if (nativeToString(win()["Worker"]) || nativeToString(win()["OffscreenCanvas"])) {
+      put("browser", "worker_constructor_tampered", true);
+    }
     // Electron process leak: a renderer exposing a Node `process` is an Electron/automation runtime.
     const proc = (win()["process"] ?? undefined) as
       | { versions?: { electron?: string }; type?: string }

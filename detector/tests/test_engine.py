@@ -226,6 +226,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.languages_worker_vs_main",
         ),
         (
+            [(Layer.browser, "worker_constructor_tampered", True, Source.collector)],
+            "br.worker_constructor_tampered",
+        ),
+        (
             [
                 (Layer.browser, "vendor_engine", "chromium", Source.collector),
                 (Layer.browser, "ua_engine", "firefox", Source.collector),

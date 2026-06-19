@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.69.0"
+ruleset_version: "0.70.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -693,6 +693,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS / rebrowser: main-thread spoofs and some engine-level browsers leak in workers"
+
+  - id: br.worker_constructor_tampered
+    title: Web Worker / OffscreenCanvas constructor is not native (worker-realm spoof injection)
+    layers: [browser]
+    reads: [browser.worker_constructor_tampered]
+    predicate: present
+    weight: 0.75
+    status: active
+    category: artifact
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "The escalation guard for the realm-coherence family (worker_divergence, timezone/languages/webgl/canvas_worker_vs_main). Those rules observe a Web Worker, which a tool can only defeat by wrapping window.Worker / OffscreenCanvas to inject its spoof into worker scope — but a real browser's global Worker and OffscreenCanvas are native (toString contains '[native code]'); a wrapped one is a plain function. Grounded headless: real Chromium's Worker/OffscreenCanvas are native (no fire); a window.Worker wrap is caught. FP-safe ACTIVE: extensions run in isolated worlds and do not replace these globals, so a non-native Worker constructor is an injection tool, not a real browser. (A wrap that also fakes its toString to '[native code]' is a rarer escalation — a future prototype-constructor-identity check.)"
 
   - id: br.languages_worker_vs_main
     title: navigator.languages differs between the main thread and a Web Worker
