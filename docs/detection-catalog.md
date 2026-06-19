@@ -81,6 +81,21 @@ known-good rule, ground the real-browser negative) — which cleared the "Evaded
 engine-identity family — and to **periodic live re-validation + scoreboard/matrix refresh** (see
 docs/calibration.md). New marginal per-session tells are deliberately NOT pursued at saturation.
 
+### Frontier activation runbook — the turnkey infra is built; supply the data, run the command
+
+The structural-frontier consumption infrastructure is built and tested, so each frontier is now
+**data-only-blocked** (no further code needed — supply the external data the sandbox can't generate and
+run the command). The one entry point:
+
+| frontier | what to supply | command (already built + tested) |
+|---|---|---|
+| **Prevalence — independent prior** (fixes browserforge same-source blindness) | real-traffic SESSION captures (a hosted-demo opt-in yields these; shape = `corpus/sessions/*.json`) | `cd harness && uv run python -m kitsune_harness.browserforge_corpus --build-prior-from-sessions <dir>` (or `--build-prior-from-dir` for raw fingerprint dicts). Detector then loads the new prior automatically. See docs/prevalence-model.md. |
+| **Live proxy / coordination harness** (activates `rep.*`, `net.webrtc_ip_vs_observed`, proxy-topology signals) | real residential/datacenter proxy endpoints | `IMAGE=… N=… PROXIES="socks5://p1,socks5://p2,…" OUT=corpus/fleet-proxy harness/tools/fleet_capture.sh` then grade with `kitsune_harness.coordination`. Refresh CIDR seeds first: `python -m kitsune_detector.ip_reputation_refresh`. See docs/coordination-proxy.md. |
+| **`br.chrome_runtime_authenticity`** (the one per-session gap) | a real (non-Playwright) **Chrome** capture, to ground authentic `window.chrome.runtime` | NOT turnkey yet — needs a real-Chrome session through the collector first, THEN add a `chrome.runtime`-shape probe + the FP-safe authenticity rule (grounded against that capture). The capture path (collector + `/session`) exists; the probe+rule are a small follow-up once real-Chrome data lands. |
+
+So two of the three are pure data drops; the third needs a real-Chrome capture before its (small) probe+rule
+can be written FP-safely. Nothing here is buildable further in-sandbox without that external data.
+
 ### Saturation is PROVEN, not asserted — the emitted-vs-consumed audit (2026-06-19)
 
 Saturation was re-confirmed systematically rather than by inspection: diff every signal the collector
