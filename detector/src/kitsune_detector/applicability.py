@@ -27,7 +27,11 @@ from __future__ import annotations
 from .models import MISSING, Contradiction, Layer, Session
 
 # Canvas/audio readback artifacts that a privacy browser produces BY DESIGN (Brave farbling, RFP blocking).
-_PRIVACY_FARBLING = frozenset({"br.canvas_noise", "br.audio_noise"})
+# canvas_noise = perturbed/blocked 2D readback; audio_noise = per-render audio perturbation; readback_noise
+# = getChannelData vs copyFromChannel divergence — all three are the same privacy-feature footprint, so a
+# genuine Brave/Tor/Mullvad/RFP-Firefox user must not be convicted on any of them. (Camoufox, an anti-detect
+# TOOL, sets neither navigator.brave nor the RFP conjunction, so it is not exempted and stays caught.)
+_PRIVACY_FARBLING = frozenset({"br.canvas_noise", "br.audio_noise", "br.readback_noise"})
 
 
 def _privacy_browser(session: Session) -> str | None:

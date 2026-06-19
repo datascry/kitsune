@@ -40,6 +40,20 @@ def test_is_brave_does_not_shield_other_tells() -> None:
     assert "br.webdriver_present" in {c.rule_id for c in verdict.contradictions}
 
 
+def test_brave_readback_noise_is_excused() -> None:
+    # readback_noise (getChannelData vs copyFromChannel divergence) is the same privacy-feature footprint as
+    # canvas_noise/audio_noise — Brave's by-design audio farbling trips it, so it must also be N/A for Brave.
+    brave = _session(audio_readback_noise=True, audio_noise=True, canvas_noise=True, is_brave=True)
+    verdict = Detector().score(brave)
+    assert verdict.label.value != "bot"
+    fired = {c.rule_id for c in verdict.contradictions}
+    assert "br.readback_noise" not in fired
+    # An anti-detect tool perturbing the readback WITHOUT a privacy-browser identity still convicts.
+    tool = _session(audio_readback_noise=True, audio_noise=True, canvas_noise=True)
+    assert Detector().score(tool).label.value == "bot"
+    assert "br.readback_noise" in {c.rule_id for c in Detector().score(tool).contradictions}
+
+
 def test_real_rfp_browser_is_not_convicted() -> None:
     # A real Tor/Mullvad/RFP-Firefox user (Gecko): rfp_browser (now environment, corroborating) + the
     # RFP-blocked canvas (canvas_noise) would previously noisy-or to bot. Now rfp_browser corroborates and the

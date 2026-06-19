@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.73.7"
+ruleset_version: "0.73.8"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1148,8 +1148,8 @@ rules:
     status: experimental
     category: artifact
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "getChannelData and copyFromChannel read the same AudioBuffer, so a real engine returns bit-identical bytes (verified diff=0 on Chrome 136); a farbling shim perturbing one path diverges. Deeper than audio_noise (render determinism). Corroborating, not convicting — fires on legitimate privacy browsers (Brave/Camoufox farbling), so experimental + low weight per the calibration precision discipline. (Canvas putImageData round-trips are NOT used: premultiplied alpha makes them lossy on every real browser.)"
+    last_validated: "2026-06-19"
+    source: "getChannelData and copyFromChannel read the same AudioBuffer, so a real engine returns bit-identical bytes (verified diff=0 on Chrome 136); a farbling shim perturbing one path diverges. Deeper than audio_noise (render determinism). v0.73.7: this also fires on a real privacy browser's by-design audio farbling (Brave), which is the SAME footprint as canvas_noise/audio_noise — so it joins the detector.applicability privacy-browser N/A: dropped for a session positively identified as Brave/Tor/Mullvad/RFP-Firefox (browser.is_brave / rfp_browser+gecko) so a real privacy-browser user is not flagged. An anti-detect tool that perturbs the audio readback without that identity (incl. Camoufox, which sets neither) still trips it. (Canvas putImageData round-trips are NOT used: premultiplied alpha makes them lossy on every real browser.)"
 
   - id: br.domrect_invariant
     title: getBoundingClientRect is non-deterministic or disagrees with getClientRects — geometry shim
