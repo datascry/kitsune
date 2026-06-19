@@ -1,0 +1,73 @@
+# tests/test_calibration_methodology — lock the Tier-2 proof: the mapper invents no FALSE coherence/artifact.
+# Scores the real-engine references through signals_from_fingerprint and pins which convicting rules may fire.
+
+"""Methodology regression guard for the FP gate (docs/calibration.md "Second data source").
+
+The calibration FP numbers are only trustworthy if ``signals_from_fingerprint`` reproduces what a REAL
+browser emits — not artefacts of the mapper. ``corpus/calibration/engines/`` holds real (headless,
+Playwright-captured) Chromium/Firefox/WebKit fingerprints; mapping + scoring them must show that the
+*coherence* and *artifact* convicting categories — the ones that actually convict — never false-fire on a
+real engine's own internally-coherent fingerprint. The headless captures legitimately trip *automation*
+(`webdriver_present`/`ch_he_headless`) and *environment* (container `media_devices_empty` etc.) tells; those
+are expected and are NOT the methodology question.
+
+This test pins the documented Tier-2 result so a future mapper/rule change cannot silently reintroduce a
+single-source FP: Chromium/Firefox produce ZERO coherence+artifact contradictions; the only coherence fire
+anywhere is WebKit's `br.navplatform_vs_ua`, the known Playwright-on-Linux (Mac UA + Linux host platform)
+quirk — not real Safari — and `br.webgl_not_angle` (a refuted browserforge artifact) fires on none.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+
+from kitsune_detector.detector import Detector
+from kitsune_detector.models import RuleCategory
+
+from kitsune_harness.calibration import signals_from_fingerprint
+
+_NOW = datetime(2026, 6, 19, tzinfo=UTC)
+_ENGINES = Path(__file__).resolve().parents[2] / "corpus" / "calibration" / "engines"
+
+
+def _fired_by_category(engine: str) -> dict[RuleCategory, set[str]]:
+    fingerprint = json.loads((_ENGINES / f"{engine}.json").read_text())
+    signals = signals_from_fingerprint(fingerprint, engine, _NOW)
+    verdict = Detector().ingest_and_score(signals)[0]
+    by_category: dict[RuleCategory, set[str]] = {}
+    for contradiction in verdict.contradictions:
+        by_category.setdefault(contradiction.category, set()).add(contradiction.rule_id)
+    return by_category
+
+
+def test_real_engines_never_false_fire_a_coherence_or_artifact_rule() -> None:
+    # Chromium and Firefox are internally coherent: no convicting coherence/artifact rule may fire.
+    for engine in ("chromium", "firefox"):
+        fired = _fired_by_category(engine)
+        assert fired.get(RuleCategory.coherence, set()) == set(), engine
+        assert fired.get(RuleCategory.artifact, set()) == set(), engine
+
+
+def test_webkit_only_coherence_fire_is_the_known_playwright_linux_quirk() -> None:
+    # The single documented exception: Playwright WebKit is a Linux host wearing a macOS Safari UA, so
+    # navigator.platform (Linux) contradicts the UA platform (Mac). Real Safari is MacIntel — coherent.
+    fired = _fired_by_category("webkit")
+    assert fired.get(RuleCategory.coherence, set()) == {"br.navplatform_vs_ua"}
+    assert fired.get(RuleCategory.artifact, set()) == set()
+
+
+def test_webgl_not_angle_is_a_refuted_browserforge_artifact_on_no_real_engine() -> None:
+    for engine in ("chromium", "firefox", "webkit"):
+        fired = _fired_by_category(engine)
+        fired_rules = set().union(*fired.values()) if fired else set()
+        assert "br.webgl_not_angle" not in fired_rules, engine
+
+
+def test_headless_engine_references_still_convict_via_automation() -> None:
+    # Sanity: the references ARE headless/automated and must score bot via the automation category — the
+    # methodology check is about coherence/artifact precision, not about these (correct) automation tells.
+    for engine in ("chromium", "firefox", "webkit"):
+        fired = _fired_by_category(engine)
+        assert fired.get(RuleCategory.automation, set()), engine
