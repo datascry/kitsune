@@ -24,12 +24,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from kitsune_detector.detector import Detector
-from kitsune_detector.models import RuleCategory
+from kitsune_detector.models import RuleCategory, Signal
 
 from kitsune_harness.calibration import signals_from_fingerprint
 
 _NOW = datetime(2026, 6, 19, tzinfo=UTC)
-_ENGINES = Path(__file__).resolve().parents[2] / "corpus" / "calibration" / "engines"
+_CALIB = Path(__file__).resolve().parents[2] / "corpus" / "calibration"
+_ENGINES = _CALIB / "engines"
+_HEADFUL = _CALIB / "headful"
 
 
 def _fired_by_category(engine: str) -> dict[RuleCategory, set[str]]:
@@ -71,3 +73,42 @@ def test_headless_engine_references_still_convict_via_automation() -> None:
     for engine in ("chromium", "firefox", "webkit"):
         fired = _fired_by_category(engine)
         assert fired.get(RuleCategory.automation, set()), engine
+
+
+# --- The stronger, mapper-FREE guard: score the REAL headful captures (collector ground truth). ----------
+# corpus/calibration/headful/ holds clean headful (xvfb) Chromium/Firefox/WebKit captures driven through the
+# genuine collector — the closest thing the lab has to a real user's browser. This bypasses the fingerprint
+# mapper entirely and asserts the FP-critical invariant directly on real signals: no BROWSER-layer (br.*)
+# fingerprint coherence/artifact rule may false-fire on a real browser. The NETWORK-layer (net.*) coherence
+# fires on Playwright Firefox/WebKit (TLS/QUIC GREASE, h2 order, tcp_os) are out of scope — those are
+# PATCHED-build network-stack artifacts, not real Firefox/Safari (documented in docs/calibration.md); acting
+# on them would need a non-Playwright real-Firefox/Safari capture (the "no single questionable source" rule).
+
+
+def _headful_browser_layer_convictions(engine: str) -> dict[RuleCategory, set[str]]:
+    capture = json.loads((_HEADFUL / f"{engine}.json").read_text())
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    verdict = Detector().ingest_and_score(signals)[0]
+    out: dict[RuleCategory, set[str]] = {}
+    for contradiction in verdict.contradictions:
+        if contradiction.rule_id.startswith("br."):
+            out.setdefault(contradiction.category, set()).add(contradiction.rule_id)
+    return out
+
+
+def test_real_headful_chromium_firefox_no_browser_coherence_or_artifact_fp() -> None:
+    # The strongest FP-safety statement: real headful browsers trip no browser-layer fingerprint
+    # coherence/artifact rule. (Automation/environment/behavioural tells from the driver + container are
+    # expected and out of scope.) Chromium's Playwright network stack is representative; it is fully clean.
+    for engine in ("chromium", "firefox"):
+        fired = _headful_browser_layer_convictions(engine)
+        assert fired.get(RuleCategory.coherence, set()) == set(), engine
+        assert fired.get(RuleCategory.artifact, set()) == set(), engine
+
+
+def test_real_headful_webkit_only_browser_coherence_is_the_navplatform_quirk() -> None:
+    # Real headful WebKit's only browser-layer coherence fire is the same Playwright-on-Linux Mac-UA quirk
+    # (navigator.platform=Linux vs a macOS Safari UA) — not real Safari, which is MacIntel and coherent.
+    fired = _headful_browser_layer_convictions("webkit")
+    assert fired.get(RuleCategory.coherence, set()) == {"br.navplatform_vs_ua"}
+    assert fired.get(RuleCategory.artifact, set()) == set()

@@ -104,12 +104,22 @@ FP rates (media_devices_empty etc.) still need a Tier-3 real-*desktop* source �
 desktop, so neither browserforge nor headless engines settle those.
 
 This Tier-2 proof is now **CI-guarded** (`harness/tests/test_calibration_methodology.py`, re-confirmed live
-at ruleset 0.74.21): the test maps each engine reference through `signals_from_fingerprint` and asserts the
-invariant that actually protects the FP gate — Chromium/Firefox produce **zero** coherence+artifact
-contradictions, the only coherence fire anywhere is WebKit's `br.navplatform_vs_ua` (the Playwright-on-Linux
-Mac-UA quirk, not real Safari), and `br.webgl_not_angle` fires on no real engine. A future mapper/rule change
-that reintroduced a false coherence/artifact fire on a real engine now fails the build instead of silently
-inflating a single-source FP number.
+at ruleset 0.74.21) on two independent paths:
+
+- **Mapper path** (`engines/`, headless references through `signals_from_fingerprint`): Chromium/Firefox
+  produce **zero** coherence+artifact contradictions, the only coherence fire anywhere is WebKit's
+  `br.navplatform_vs_ua` (the Playwright-on-Linux Mac-UA quirk, not real Safari), and `br.webgl_not_angle`
+  fires on no real engine.
+- **Mapper-FREE path** (`headful/`, real collector signals from clean headful xvfb captures — the closest
+  thing the lab has to a real user's browser): no BROWSER-layer (`br.*`) fingerprint coherence/artifact rule
+  false-fires on real headful Chromium/Firefox; WebKit's only `br.*` coherence fire is again the
+  `navplatform` quirk. The NETWORK-layer (`net.*`) coherence fires on Playwright Firefox/WebKit (TLS/QUIC
+  GREASE, h2 order, `tcp_os`) are explicitly **out of scope** — patched-build network-stack artifacts, not
+  real Firefox/Safari; acting on them would need a non-Playwright capture (the no-single-questionable-source
+  discipline). Real headful Chromium, whose Playwright network stack IS representative, is fully clean.
+
+A future mapper/rule change that reintroduced a false browser-layer coherence/artifact fire on a real engine
+now fails the build instead of silently inflating a single-source FP number.
 
 **`media_devices_empty` (the top FP at ~18%) is largely a browserforge generation artifact, not real FP
 risk.** Generating 1500 browserforge fingerprints and bucketing the empty-`multimediaDevices` rate by
