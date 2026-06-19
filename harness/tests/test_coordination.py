@@ -97,6 +97,7 @@ def _sess(
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
     trace_hash: str | None = None,
+    webdriver: bool = False,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -106,6 +107,8 @@ def _sess(
     sigs: list[Signal] = []
     if ja4 is not None:
         sigs.append(mk(Layer.network, "ja4", ja4, Source.edge))
+    if webdriver:  # per-session automation tell — corroborates an fp-collision as a cloned bot fleet
+        sigs.append(mk(Layer.browser, "webdriver", True, Source.collector))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
@@ -162,17 +165,35 @@ def test_profile_reuse_fleet_is_caught() -> None:
     # The BotBrowser shape: homogeneous JS (one cloned profile, so it would otherwise read as a benign
     # same-build cohort) but the SAME high-entropy fp_hash arriving from DISTINCT source IPs — one
     # anti-detect profile fronted by proxies. The fp-collision signal must lift this to "fleet" where the
-    # JS-divergence paradox cannot (JS is identical, not divergent).
+    # JS-divergence paradox cannot (JS is identical, not divergent). The instances are AUTOMATED (webdriver),
+    # which corroborates the fp-collision as a CLONED bot fleet rather than a standardized corporate cohort
+    # (identical hardware also hashes alike — see test_corporate_fleet_fp_collision_is_not_convicted).
     members = [
-        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef")),
-        ("b", _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="deadbeef")),
-        ("c", _sess("c", "X", 8, "Windows", observed_ip="3.3.3.3", fp_hash="deadbeef")),
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef", webdriver=True)),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="deadbeef", webdriver=True)),
+        ("c", _sess("c", "X", 8, "Windows", observed_ip="3.3.3.3", fp_hash="deadbeef", webdriver=True)),
     ]
     v = score_cluster("X", members)
     assert v.label == "fleet"
     assert v.diverged_traits == {}  # JS homogeneous — the paradox did NOT fire
     assert v.cloned_fingerprint == "deadbeef"
     assert any("cloned-profile reuse" in e for e in v.evidence)
+
+
+def test_corporate_fleet_fp_collision_is_not_convicted() -> None:
+    # FP guard: a STANDARDIZED corporate fleet (identical laptop model + locked image hashes byte-identically)
+    # on distinct WFH residential IPs produces the SAME identical-fp-across-distinct-IPs shape as a cloned bot
+    # fleet — but they are clean real browsers (no automation tell) with DISTINCT human traces. fp-collision
+    # alone must NOT convict them as a `fleet` (a botnet verdict on a corporate cohort); capped at candidate.
+    members = [
+        ("c0", _sess("c0", "X", 8, "Windows", observed_ip="73.1.1.1", fp_hash="image-fp", trace_hash="human0")),
+        ("c1", _sess("c1", "X", 8, "Windows", observed_ip="73.2.2.2", fp_hash="image-fp", trace_hash="human1")),
+        ("c2", _sess("c2", "X", 8, "Windows", observed_ip="73.3.3.3", fp_hash="image-fp", trace_hash="human2")),
+    ]
+    v = score_cluster("X", members)
+    assert v.cloned_fingerprint == "image-fp"  # the collision IS detected
+    assert v.label != "fleet"  # but it does NOT convict — uncorroborated (clean, residential, distinct traces)
+    assert any("UNCORROBORATED" in e for e in v.evidence)
 
 
 def test_fp_collision_same_ip_is_benign() -> None:
@@ -353,9 +374,9 @@ def test_tracker_alerts_on_cloned_profile_fleet() -> None:
     # paradox never fires — but an identical fp_hash arriving from a SECOND distinct IP is the collision.
     # The online tracker must alert the moment that second clone arrives, not only in an offline snapshot.
     t = FleetTracker()
-    first = _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef")
+    first = _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="deadbeef", webdriver=True)
     assert t.observe("a", first) is None  # singleton, no alert
-    second = _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="deadbeef")
+    second = _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="deadbeef", webdriver=True)
     v = t.observe("b", second)
     assert v is not None and v.label == "fleet"
     assert v.cloned_fingerprint == "deadbeef" and v.diverged_traits == {}  # convicted by collision, not paradox

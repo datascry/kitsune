@@ -183,6 +183,32 @@ def _trace_collision(sessions: list[Session]) -> tuple[str, int] | None:
     return best
 
 
+# Per-session AUTOMATION / headless / injection tells a clean corporate real browser never carries. Their
+# presence on a cluster member is what tells a CLONED-profile bot fleet (automated) apart from a STANDARDIZED
+# corporate fleet (clean real browsers on identical hardware) — the one case fp_collision alone cannot
+# distinguish (see the conviction gate in score_cluster).
+_AUTOMATION_TELLS: frozenset[str] = frozenset(
+    {
+        "webdriver",
+        "webdriver_spoofed",
+        "cdp_runtime_enabled",
+        "automation_globals",
+        "cdc_artifacts",
+        "csp_bypassed",
+        "ch_he_headless",
+        "ua_is_headless",
+        "chrome_object_missing",
+        "chrome_runtime_missing",
+    }
+)
+
+
+def _has_automation_tell(sessions: list[Session]) -> bool:
+    """True iff any cluster member carries a per-session automation/headless/injection tell — the corroboration
+    that an identical-fingerprint cluster is a CLONED bot fleet, not a clean standardized corporate cohort."""
+    return any(session.value(Layer.browser, kind) is True for session in sessions for kind in _AUTOMATION_TELLS)
+
+
 def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdict:
     """Grade one JA4-prefix cluster (>= 2 sessions sharing the cipher-suite ``prefix``)."""
     names = sorted(n for n, _ in members)
@@ -266,15 +292,33 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         arrival_rate = round(len(names) / (span / 60.0), 1)
 
     # Conviction gate: a `fleet` label needs a *convicting* coordination signal — one a real diverse
-    # cohort on a shared browser build CANNOT produce. The qualifying signals: JA4_c divergence
-    # (per-launch TLS-extension randomization; real Chrome's JA4_c is stable), a cloned-fingerprint
-    # collision across distinct IPs (real machines each hash differently), a cloned-trace collision
-    # across distinct IPs (two real users never trace the same path), or a shared WebRTC origin behind
-    # distinct proxy IPs. The JS-divergence paradox, IP spread and lockstep are *corroborating* only:
-    # real distinct users on one Chrome build legitimately differ in hardware_concurrency, device_memory
-    # and OS-platform (Win/Mac Chrome share a JA4) and arrive from distinct IPs — that exact shape, so it
-    # cannot convict alone (it would flag a popular browser's user base as a botnet).
-    convicting = ja4c_divergent or collision is not None or trace_collision is not None or shared_real_ip is not None
+    # cohort on a shared browser build CANNOT produce. Three of the four are unambiguous and solo-convict:
+    # JA4_c divergence (per-launch TLS-extension randomization; real Chrome's JA4_c is stable), a
+    # cloned-TRACE collision (two real users never trace the same path — identical trace_hash across IPs is
+    # a replayed canned path), and a shared WebRTC origin behind distinct proxy IPs.
+    #
+    # The fp-COLLISION is the exception: an identical high-entropy fp_hash across distinct IPs is NOT unique
+    # to a cloned profile — a STANDARDIZED CORPORATE FLEET (the same laptop model + a locked OS/browser image
+    # hashes byte-identically) on distinct WFH IPs produces the exact same shape (grounded: 4 clean Windows
+    # laptops with one fp on 4 residential IPs scored `fleet 1.00`). So "real machines each hash differently"
+    # is FALSE for identical hardware, and fp_collision MUST NOT solo-convict. It convicts only when
+    # CORROBORATED by a signal a clean corporate cohort lacks: a per-session AUTOMATION/headless tell on a
+    # cluster member (a cloned-profile bot fleet is automated; corporate machines are clean real browsers),
+    # or another cluster-property coordination signal (JA4_c / shared origin). An uncorroborated identical-fp
+    # cluster is genuinely AMBIGUOUS (corporate hardware vs a clean native clone) and caps at `candidate` for
+    # operator review — the disambiguator is IP reputation (datacenter/proxy = clone, residential = legit),
+    # the still-blocked coordination half. The JS-divergence paradox, IP spread and lockstep stay
+    # corroborating-only (a real diverse cohort on one build produces them too).
+    fp_collision_corroborated = collision is not None and (
+        _has_automation_tell(sessions) or ja4c_divergent or shared_real_ip is not None
+    )
+    convicting = ja4c_divergent or fp_collision_corroborated or trace_collision is not None or shared_real_ip is not None
+    if collision is not None and not fp_collision_corroborated:
+        evidence.append(
+            "identical-fingerprint collision is UNCORROBORATED (no automation tell, JA4_c randomization or "
+            "shared origin) — ambiguous between a cloned-profile fleet and a standardized corporate cohort "
+            "(identical hardware hashes alike); capped at candidate pending IP reputation"
+        )
     score = max(0.0, min(1.0, score))
     if score >= 0.60 and convicting:
         label = "fleet"

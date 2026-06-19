@@ -53,6 +53,33 @@ silent. **Grounded on real captures:** three distinct stealth-evader configs (`f
 `human-mouse` control has a unique hash and never collides. It is a convicting coordination signal (behind
 the same conviction gate as the fp-collision).
 
+## The fp-collision FP: a standardized corporate fleet (fixed)
+
+The fp-collision rationale — "real machines each hash differently (GPU/driver/OS/font variance)" — is an
+**overstatement**, and trusting it produced a real false positive. A **standardized corporate fleet** (the
+same laptop model running a *locked* OS + browser image) hashes its canvas/WebGL/audio **byte-identically**;
+on distinct work-from-home residential IPs that is the *exact* shape fp-collision convicted — grounded by
+constructing it: **4 clean Windows laptops, one shared `fp_hash`, 4 residential IPs → `fleet` 1.00**, evidence
+reading "cloned-profile reuse" and "residential-proxy fleet." A botnet verdict on a corporate cohort.
+
+It cannot be disambiguated from a cloned bot fleet by the fingerprint alone — a native anti-detect browser
+(BotBrowser, C++-level spoofing) clones the fp with clean JS APIs and can synthesize distinct per-instance
+behaviour, so neither tampering tells nor behavioural diversity separate them. The only true discriminator is
+**IP reputation** (datacenter/proxy = clone; residential/corporate = legit), the still-blocked coordination
+half.
+
+**Fix (FP-safe):** fp-collision **no longer solo-convicts**. It convicts only when *corroborated* by a signal
+a clean corporate cohort lacks — a per-session **automation/headless tell** on a cluster member (a cloned bot
+fleet is automated; the real `corpus/fleet-cloned` captures carry `webdriver`/`cdp_runtime_enabled`), or
+another cluster-property signal (JA4_c randomization / shared WebRTC origin). An *uncorroborated* identical-fp
+cluster is genuinely ambiguous (corporate hardware vs a clean native clone) → capped at `candidate` for
+operator review. Pinned by `legit-corporate-fleet` in the scenario battery (precision stays 1.0) and
+`test_corporate_fleet_fp_collision_is_not_convicted`; the malicious `fleet-cloned-fingerprint` scenario was
+made AUTOMATED (realistic) so recall stays 1.0, and the live `fleet-cloned` fixture still convicts (its
+stealth-evader members carry automation tells). The cloned-TRACE, JA4_c and shared-origin signals are
+unaffected — none can fire on a clean corporate cohort (real humans never share a trace; real Chrome's JA4_c
+is stable; there is no shared WebRTC origin).
+
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 
 A `fleet` *label* requires a **convicting** coordination signal — one a real diverse cohort cannot

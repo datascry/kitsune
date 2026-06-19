@@ -41,6 +41,7 @@ def _session(
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
     trace_hash: str | None = None,
+    webdriver: bool = False,
 ) -> Session:
     when = _BASE + timedelta(seconds=offset_s)
 
@@ -48,6 +49,8 @@ def _session(
         return Signal(session_id=name, layer=layer, kind=kind, value=value, source=Source.edge, observed_at=when)
 
     sigs: list[Signal] = [mk(Layer.network, "ja4", ja4)]
+    if webdriver:  # a per-session automation tell — corroborates an fp-collision as a CLONED bot fleet
+        sigs.append(mk(Layer.browser, "webdriver", True))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw))
     if plat is not None:
@@ -191,10 +194,40 @@ def scenarios() -> list[Scenario]:
         Scenario(
             "fleet-cloned-fingerprint",
             True,
-            "BotBrowser-style: homogeneous JS but one fp_hash cloned across distinct IPs",
+            "BotBrowser-style: homogeneous JS but one fp_hash cloned across distinct IPs, AUTOMATED (webdriver) "
+            "— the automation tell corroborates the collision as a cloned bot fleet, not standardized hardware",
             [
-                (f"f{i}", _session(f"f{i}", _CHROME, hw=8, plat="Windows", observed_ip=_ip(i), fp_hash="cloned-fp"))
+                (
+                    f"f{i}",
+                    _session(
+                        f"f{i}", _CHROME, hw=8, plat="Windows", observed_ip=_ip(i), fp_hash="cloned-fp", webdriver=True
+                    ),
+                )
                 for i in range(3)
+            ],
+        )
+    )
+    out.append(
+        Scenario(
+            "legit-corporate-fleet",
+            False,
+            "a STANDARDIZED corporate fleet: identical laptop model + locked image hashes byte-identically, on "
+            "distinct WFH residential IPs, with DISTINCT human traces and NO automation tell — fp collides but "
+            "the cohort is real; must cap at candidate, not `fleet` (the fp-collision-vs-corporate FP)",
+            [
+                (
+                    f"corp{i}",
+                    _session(
+                        f"corp{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash="standardized-image-fp",
+                        trace_hash=f"human-trace-{i}",
+                    ),
+                )
+                for i in range(4)
             ],
         )
     )
