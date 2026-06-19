@@ -350,10 +350,18 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   drift-checked at 0.74.21: `selenium-driverless`, `zendriver`, `patchright` (CDP-patched Playwright drop-in),
   `rebrowser` (Runtime.enable-leak fix), `max-stealth` (full combined battery). **All five → `bot`** (score
   ≥0.999): selenium-driverless and zendriver 3 convicting each, patchright 6, rebrowser 8, max-stealth 3.
-  No drift, no evasion. Observation: **`net.quic_grease_vs_ua` convicts all five** — the network layer is the
-  robust backstop even where the browser-layer automation tells are patched away (patchright/rebrowser fix
-  the CDP/webdriver leaks but still trip `quic_grease` + `chrome_runtime_missing`/`ch_he_headless`) or where
-  the JS collector did not report (max-stealth was caught on network tells alone: `quic_grease`,
-  `ch_ua_version`, `no_js_execution`). Confirms the cutting-edge fleet has found no gap at the current
-  ruleset; the Playwright-Chromium QUIC hello not matching the claimed browser is the universal catch. No
-  rule semantics changed → no ruleset bump.
+  No drift, no evasion. `net.quic_grease_vs_ua` fired on all five in these (long) runs.
+
+  **CORRECTION (next iteration, grounded):** that initial read overstated `quic_grease` as "the universal
+  backstop." It reads `network.quic_no_grease` (present-predicate), which the edge emits ONLY when the
+  session lives long enough for Chromium to retry over h3/QUIC after learning the edge's Alt-Svc — so it is
+  **timing/session-length-dependent for recall** (real headful Chromium and the committed `full-stealth`
+  capture emit NO QUIC signal at all and do not trip it). It is FP-safe (real Chrome GREASEs its QUIC →
+  `quic_no_grease` never present), but it is a **bonus catch, not the reliable backstop.** Re-verified that
+  each tool still convicts on **deterministic** tells with `quic_grease` excluded: patchright → 5 browser
+  tells (`headless_ua`/`ch_he_headless`/`permissions_anomaly`/`no_chrome_object`/`notification_denied`),
+  selenium-driverless → `headless_ua` + `chrome_runtime_missing`, max-stealth → `net.ch_ua_version_vs_ua` +
+  `net.no_js_execution`, zendriver → `h2_header_order` + `chrome_runtime_missing`, rebrowser → `webdriver` +
+  `cdp_runtime_enabled` + more. So the robust backstop is the **deterministic h2-layer + browser-layer**
+  tells (each tool caught ≥2 ways), and the "no evasion at 0.74.21" conclusion holds independent of the
+  timing-dependent QUIC catch. No rule semantics changed → no ruleset bump.
