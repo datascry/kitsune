@@ -14,7 +14,7 @@ Behavioral biometrics is a mature field with public, anonymised, consented resea
 | Dataset | Subjects | Format | Access / license | Role |
 |---|---|---|---|---|
 | **[Balabit Mouse Dynamics Challenge](https://github.com/balabit/Mouse-Dynamics-Challenge)** | 10 | CSV: `record_timestamp, client_timestamp, button, state, x, y` | Public (GitHub) | **Primary** — clean access, the field's baseline |
-| [SapiMouse](https://www.researchgate.net/publication/343700660_Mouse_dynamics_based_user_recognition_using_deep_learning) | 120 | per-session CSV (x, y, t) | Academic | Diversity (add later) |
+| **[SapiMouse](https://github.com/margitantal68/sapimouse)** | 120 | `dx,dy` 128-blocks + subject label | Public (GitHub) | **Second source (sourced 2026-06-19)** — corroborates the power-law floor; `task biomech-corroborate` |
 | [Bogazici Mouse Dynamics](https://www.researchgate.net/publication/351381848_Bogazici_Mouse_Dynamics_Dataset) | — | trajectory logs | Academic | Cross-validation |
 | [BEACON (2026)](https://arxiv.org/pdf/2605.10867) | — | multimodal | Recent | Stretch — multimodal frontier |
 
@@ -79,6 +79,43 @@ rather than shipping FP-prone guesses.
 This attacks the OS-level-replay / humanizer gap *above* the mechanism tell (`bh.synthetic_no_coalesced`,
 which still backstops CDP injection): a tool can humanize the path all it wants, but reproducing the power
 law, sub-movement structure, and pausing of a real hand is a much higher bar — and now a measured one.
+
+## Second-source corroboration — SapiMouse (v0.74.25, 2026-06-19)
+
+The standing discipline that caught the prevalence FP — *never act on a single-source floor* — was applied
+to this layer too, and it surfaced two things. First, a **methodology mismatch**: the detector
+(`demo.py` `powerLawExp`) fits **one β over the whole pointer stream**, but the Balabit calibration above
+measured β **per pause-split segment** — different quantities, so the `p1=0.116` per-segment number never
+actually bounded the rule's FP rate. Re-measuring with the *shipped* extractor exposed the real shape:
+
+| Capture regime (Balabit, detector-style whole-stream β) | human p1 | FP @ 0.1 |
+|---|---|---|
+| whole session (long, many points) | 0.547 | **0.00%** |
+| short ~40-sample windows (incl. dwell) | 0.115 | 0.94% aggregate, **2.88% worst individual** |
+
+So on long/clean captures the rule is rock-solid, but on very short pause-contaminated windows the `0.1`
+floor sat *at* the human p1, not above it — mild single-source over-fit.
+
+Second, a genuine **independent corpus** was sourced to corroborate, not just re-slice Balabit:
+**SapiMouse** (Antal et al., Sapientia University — 120 subjects, a different rig and era), public on
+GitHub like Balabit. Its committed CSVs are model-ready fixed-length `dx,dy` blocks (no raw timestamps);
+that is fine for the power law because β is the slope of `log V` on `log R` and a uniform-Δt reconstruction
+only shifts the intercept, leaving β invariant. Measured with the **same `biomech.power_law` code the
+detector runs** (`task biomech-corroborate`, `kitsune_harness.sapimouse_corpus`):
+
+| SapiMouse session | subjects | samples | β p1 | β median | FP @ 0.1 | FP @ 0.05 | subjects p1 < thr |
+|---|---|---|---|---|---|---|---|
+| 1-min | 120 | 2,042 | 0.384 | 0.488 | 0.00% | 0.00% | 0/120 |
+| 3-min | 120 | 6,359 | 0.384 | 0.485 | 0.00% | 0.00% | 0/120 |
+
+Both sources agree: real aimed motion obeys the 2/3 power law far above the floor, independent of capture
+rig. The threshold was **tightened `0.1 → 0.05`** — now justified by *two* sources (both 0% FP at 0.05) —
+to add margin against the only elevated-FP regime (short Balabit windows) at **zero recall cost**: a
+constant-velocity / Bezier synthetic path is β ≈ 0 (the corpus bot at β = −0.004 still fires, the lab
+humanizer at β ≈ 0.45 still correctly does not), and no corpus session sits in `(0.05, 0.1)`, so labels are
+unchanged. Raw SapiMouse is fetched at use-time, never committed (license + size); the committed artifact
+is the pipeline + the corroborated constant. *Open frontier:* a Tier-3 real-device motion corpus (trackpad
+/ touchscreen, in the wild) remains the next source — both committed corpora are mouse-on-desktop.
 
 ## Live evaluation — what the biomech rules catch, and what they don't
 

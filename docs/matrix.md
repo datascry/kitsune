@@ -1,6 +1,6 @@
 # Kitsune detection matrix — 120 rules vs 58 evaders
 
-_57/58 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.23`._
+_57/58 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.25`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -33,7 +33,7 @@ _57/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `honeypot` | bot | 1.00 | 16/120 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.honeypot_interaction` +5 |
 | `http2-naive` | bot | 1.00 | 8/120 | `net.quic_grease_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser` +5 |
 | `human-mouse` | bot | 1.00 | 14/120 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
-| `iframe-spoof` | bot | 1.00 | 23/120 | `br.ua_platform_vs_ch_platform`, `br.cdp_runtime_enabled`, `net.ch_platform_header_vs_ua` +10 |
+| `iframe-spoof` | bot | 1.00 | 22/120 | `br.ua_platform_vs_ch_platform`, `br.cdp_runtime_enabled`, `net.ch_platform_header_vs_ua` +10 |
 | `ios-ua-spoof` | bot | 1.00 | 23/120 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `br.ua_platform_vs_ch_platform` +12 |
 | `lang-list-spoof` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `lang-spoof` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
@@ -55,14 +55,14 @@ _57/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `spoof-ua` | bot | 1.00 | 18/120 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +9 |
 | `stale-engine` | bot | 1.00 | 16/120 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +6 |
 | `stealth-naive` | bot | 1.00 | 14/120 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
-| `stealth-patched` | bot | 1.00 | 21/120 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +8 |
+| `stealth-patched` | bot | 1.00 | 20/120 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +8 |
 | `tls-stale-template` | bot | 1.00 | 6/120 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
 | `tz-spoof` | bot | 1.00 | 17/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
 | `undetected` | bot | 1.00 | 8/120 | `br.headless_ua`, `br.chrome_runtime_missing` |
 | `vanilla` | bot | 1.00 | 5/120 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
 | `webkit-ua-spoof` | bot | 1.00 | 18/120 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
-| `worker-spoof` | bot | 1.00 | 16/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
-| `worker-wrap` | bot | 1.00 | 16/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
+| `worker-spoof` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
+| `worker-wrap` | bot | 1.00 | 15/120 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | bot | 1.00 | 8/120 | `br.chrome_runtime_missing` |
 
 ## Per-rule coverage — 95/120 rules catch ≥1 evader (rest in Gaps)
@@ -90,7 +90,6 @@ _57/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
 | `br.chrome_runtime_missing` | browser | automation | 7 |
-| `br.fingerprint_improbable` | browser | prevalence | 7 |
 | `br.hover_none_desktop` | browser | environment | 6 |
 | `br.navplatform_vs_ua` | browser | coherence | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
@@ -106,6 +105,7 @@ _57/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
+| `br.fingerprint_improbable` | browser | prevalence | 3 |
 | `br.tostring_tampered` | browser | automation | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
