@@ -766,6 +766,12 @@ export function armCollector(): LiveCollector {
     if (uaEngine === "safari" && (win()["chrome"] || nav().userAgentData)) {
       put("browser", "apple_ua_nonwebkit", true);
     }
+    // Gecko analog: navigator.buildID is Gecko-only. Every real Firefox (incl. Tor/Mullvad/forks) exposes it
+    // (release builds freeze it to "20181001000000"); Blink and WebKit have no buildID. A Firefox UA with no
+    // buildID is a non-Gecko engine faking Firefox. Complementary to engine_stack (a deeper, harder-to-fake surface).
+    if (uaEngine === "firefox" && typeof (nav() as { buildID?: unknown }).buildID !== "string") {
+      put("browser", "firefox_ua_nongecko", true);
+    }
     try {
       const u = undefined as unknown as { x: unknown };
       void u.x;

@@ -661,6 +661,15 @@ DEMO_PAGE = """<!doctype html>
     // userAgentData remain genuinely Blink-only (absent in every Safari), so the spoof catch is preserved.
     if (uaEngine === "safari" && (window.chrome || navigator.userAgentData))
       sigs.push(S("browser", "apple_ua_nonwebkit", true));
+    // Gecko analog of apple_ua_nonwebkit: navigator.buildID is a Gecko-ONLY surface. Every real Firefox
+    // (and every Gecko browser: Tor, Mullvad, LibreWolf, ESR/Nightly) exposes it — release builds freeze it
+    // to "20181001000000" for anti-fingerprinting, but it is always a present non-empty string. Blink and
+    // WebKit have no navigator.buildID at all (verified: a live Chromium/WebKit reports undefined). So a UA
+    // claiming Firefox (uaEngine "firefox") with NO buildID is a non-Gecko engine (Chromium/WebKit) faking a
+    // Firefox UA. STRUCTURAL positive-surface tell, complementary to engine_stack_vs_ua: a spoof that deletes
+    // Error.captureStackTrace to beat engine_stack still cannot synthesise a real Gecko buildID surface.
+    if (uaEngine === "firefox" && (typeof navigator.buildID !== "string" || !navigator.buildID))
+      sigs.push(S("browser", "firefox_ua_nongecko", true));
     // Engine error-message format — deeper than navigator.vendor or Error.captureStackTrace, because it
     // is the engine's own message generator (which JS-stealth tools do not rewrite). The same error reads
     // differently per engine: V8 "Cannot read properties of…", SpiderMonkey "can't access property…",
