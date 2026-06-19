@@ -138,6 +138,31 @@ semantics changed → no ruleset bump. The remaining genuinely-blocked piece is 
 `net.webrtc_ip_vs_observed` (a proxy-vs-origin IP mismatch) needs a real proxy egress to produce live, and
 the datacenter/proxy CIDR seed lists are non-exhaustive (refresh per docs/ip-reputation-data.md).
 
+## Turnkey live-proxy harness (2026-06-19) — the egress plumbing is built; only real proxies are missing
+
+The blocker for the live proxy half (`rep.datacenter_asn`, `rep.known_proxy_exit`, `net.webrtc_ip_vs_observed`,
+and the proxy-topology coordination signals) was that the in-sandbox fleet egresses from private container
+IPs (172.x), not real ASN-classifiable IPs. The routing plumbing to fix that is now built:
+
+- The stealth evader honours `KS_PROXY=<url>` (`http(s)://`, `socks5://`) — routes the context through a proxy
+  so the edge observes a REAL egress IP. Verified: with no proxy the evader reaches the edge and is scored;
+  with `KS_PROXY` set to a dead address it fails with `net::ERR_PROXY_CONNECTION_FAILED` — proving the option
+  routes traffic rather than being ignored.
+- `fleet_capture.sh` honours `PROXIES=url1,url2,url3` — node *i* routes via `PROXIES[i]` (round-robin), so a
+  fleet egresses from distinct real IPs.
+
+```sh
+# Turnkey: supply real residential/datacenter proxies (target stays the allow-listed edge; the proxy is only
+# the egress path), then the rep.* + webrtc-leak + proxy-topology signals fire on real IPs:
+IMAGE=kitsune-stealth:latest N=3 ENV="-e STEALTH=1" \
+  PROXIES="socks5://p1:1080,socks5://p2:1080,socks5://p3:1080" \
+  OUT=corpus/fleet-proxy harness/tools/fleet_capture.sh
+```
+
+So this frontier is now **data-only-blocked** (needs proxy endpoints, no code change) — the parallel of the
+turnkey real-traffic prevalence prior (`build_prior_from_dir`, docs/prevalence-model.md). Ethics: the proxy
+is the egress path only; the TARGET stays the allow-listed edge, so the allow-list is not weakened.
+
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 
 A `fleet` *label* requires a **convicting** coordination signal — one a real diverse cohort cannot

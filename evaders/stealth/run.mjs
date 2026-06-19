@@ -14,6 +14,12 @@ const HUMAN_MOUSE = process.env.HUMAN_MOUSE === "1"; // synthesize human-like mo
 // how we test browser-layer evasion under patchright with a NATURAL coherent UA (no override that, under
 // patchright, breaks the page collector — see docs/evasion-catalog.md). Pair with PATCHRIGHT=1.
 const HEADFUL = process.env.HEADFUL === "1";
+// KS_PROXY=<url>: route this context's traffic through a proxy (http(s)://, socks5://) so the edge observes
+// a REAL egress IP instead of the private container IP. The turnkey hook for the live proxy/coordination
+// harness: point a fleet at residential/datacenter proxies and rep.datacenter_asn / rep.known_proxy_exit /
+// net.webrtc_ip_vs_observed + the proxy-topology coordination signals fire on real IPs. Target stays the
+// allow-listed edge; the proxy is only the egress path (ethics: TARGET unchanged). See docs/coordination-proxy.md.
+const KS_PROXY = process.env.KS_PROXY;
 // MAX_STEALTH: the kitchen sink — patchright (best CDP stealth) + a coherent Linux-Chrome UA (no headless
 // token) + human-like motion. The chromium analog of hardened-Camoufox: what survives maximal stealth.
 const MAX_STEALTH = process.env.MAX_STEALTH === "1";
@@ -208,6 +214,8 @@ const context = await browser.newContext({
   ...(userAgent ? { userAgent } : {}),
   // Pin the HTTP Accept-Language so ACCEPT_LANG_SPOOF's JS-vs-header locale mismatch is deterministic.
   ...(ACCEPT_LANG_SPOOF ? { locale: "en-US" } : {}),
+  // Route through a real proxy so the edge sees a real egress IP (turnkey live-proxy harness hook).
+  ...(KS_PROXY ? { proxy: { server: KS_PROXY } } : {}),
 });
 if (FLOOR_SPOOF) {
   // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are

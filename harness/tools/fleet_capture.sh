@@ -17,13 +17,23 @@ ENV_ARGS="${ENV:--e STEALTH=1}"
 OUT="${OUT:-corpus/fleet-cloned}"
 EDGE="${KITSUNE_EDGE:-https://edge:8443/}"
 DETECTOR="${KITSUNE_DETECTOR:-http://detector:8080}"
+# PROXIES (optional): comma-separated proxy URLs (http(s)://, socks5://), one per node — node i routes via
+# PROXIES[i]. The turnkey live-proxy harness: supply real residential/datacenter proxies so the edge sees
+# real egress IPs and rep.* + net.webrtc_ip_vs_observed + the proxy-topology coordination signals fire.
+# Without it, nodes use distinct CONTAINER IPs (the in-sandbox analog; private, so rep.* stays quiet).
+IFS=',' read -r -a PROXY_LIST <<< "${PROXIES:-}"
 
 tmp="$(mktemp -d)"
-echo "launching $N concurrent $IMAGE instances on $NET ..."
+echo "launching $N concurrent $IMAGE instances on $NET ${PROXIES:+via ${#PROXY_LIST[@]} proxies}..."
 for i in $(seq 1 "$N"); do
+  proxy_arg=""
+  if [ "${#PROXY_LIST[@]}" -gt 0 ]; then
+    px="${PROXY_LIST[$(( (i - 1) % ${#PROXY_LIST[@]} ))]}"
+    [ -n "$px" ] && proxy_arg="-e KS_PROXY=$px"
+  fi
   # shellcheck disable=SC2086
   ( timeout 120 docker run --rm --name "fleet-node-$i" --network "$NET" \
-      -e KITSUNE_EDGE="$EDGE" -e KITSUNE_DETECTOR="$DETECTOR" $ENV_ARGS "$IMAGE" \
+      -e KITSUNE_EDGE="$EDGE" -e KITSUNE_DETECTOR="$DETECTOR" $proxy_arg $ENV_ARGS "$IMAGE" \
       > "$tmp/node$i.out" 2>&1 ) &
 done
 wait
