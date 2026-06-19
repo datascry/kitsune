@@ -27,6 +27,11 @@ const WORKER_SPOOF = process.env.WORKER_SPOOF === "1";
 // its own, un-patched navigator → the detector's iframe_divergence probe catches the realm the patch
 // skipped. Distinct from WORKER_SPOOF (a prototype patch reaches iframes but never Worker scope).
 const IFRAME_SPOOF = process.env.IFRAME_SPOOF === "1";
+// NATIVE_SPOOF: the prototype-invariant gap. A naive GPU spoof replaces WebGLRenderingContext.getParameter
+// with a plain function and fakes its toString to "[native code]" to beat tostring_tampered — but a plain
+// function has an own `prototype` and is constructable, which a real built-in never is. The detector's
+// native-invariant suite checks exactly that, so the deeper structural lie is caught where toString isn't.
+const NATIVE_SPOOF = process.env.NATIVE_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -66,8 +71,17 @@ const LINUX_CHROME_UA =
 const userAgent =
   SPOOF_UA || (MAX_STEALTH || FULL || FLOOR_SPOOF ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
 const evading =
-  STEALTH || FULL || MAX_STEALTH || FLOOR_SPOOF || WORKER_SPOOF || IFRAME_SPOOF || Boolean(SPOOF_UA);
-const mode = IFRAME_SPOOF
+  STEALTH ||
+  FULL ||
+  MAX_STEALTH ||
+  FLOOR_SPOOF ||
+  WORKER_SPOOF ||
+  IFRAME_SPOOF ||
+  NATIVE_SPOOF ||
+  Boolean(SPOOF_UA);
+const mode = NATIVE_SPOOF
+  ? "native-spoof"
+  : IFRAME_SPOOF
   ? "iframe-spoof"
   : WORKER_SPOOF
   ? "worker-spoof"
@@ -169,6 +183,20 @@ if (FLOOR_SPOOF) {
         configurable: true,
       });
     }
+  });
+} else if (NATIVE_SPOOF) {
+  // Replace getParameter with a plain function and fake its toString to "[native code]" — beating
+  // tostring_tampered, but the plain function carries an own `prototype` and is constructable, which a
+  // real built-in never is → native_invariant_violated catches the structural lie toString cannot.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const gp = WebGLRenderingContext.prototype.getParameter;
+    const fake = function getParameter(p) {
+      if (p === 37446) return "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0, D3D11)";
+      return gp.call(this, p);
+    };
+    fake.toString = () => "function getParameter() { [native code] }";
+    WebGLRenderingContext.prototype.getParameter = fake;
   });
 } else if (evading) {
   await context.addInitScript(() => {
