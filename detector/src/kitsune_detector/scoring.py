@@ -15,12 +15,24 @@ from collections.abc import Iterable
 from math import prod
 
 from .config import BOT_THRESHOLD, INCOHERENCE_WEIGHT, SUSPICIOUS_THRESHOLD
-from .models import Contradiction, Label, LayerScores
+from .models import Contradiction, Label, LayerScores, RuleCategory
+
+# A `bot` conviction requires a *convicting* tell — a clear bot signature. Coherence (cross-vector
+# contradiction), automation (webdriver/CDP surface) and artifact (anti-detect implementation flaw)
+# are positive signatures of a bot. The corroborating categories — environment (a stripped/headless
+# *capability* gap), behavioral and reputation — also fire on legitimate diversity (a desktop with no
+# webcam, a quiet user, a datacenter VPN), so they may raise *suspicion* but never convict alone.
+CONVICTING_CATEGORIES = frozenset({RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact})
 
 
 def noisy_or(weights: Iterable[float]) -> float:
     """Combine independent probabilities: 1 - ∏(1 - w). Empty -> 0.0."""
     return 1.0 - prod((1.0 - w) for w in weights)
+
+
+def has_convicting(contradictions: Iterable[Contradiction]) -> bool:
+    """True if any fired contradiction is a convicting (coherence/automation/artifact) signature."""
+    return any(c.category in CONVICTING_CATEGORIES for c in contradictions)
 
 
 def _effective_weight(c: Contradiction) -> float:
@@ -54,8 +66,15 @@ def final_score(contradictions: list[Contradiction]) -> float:
     return noisy_or(_effective_weight(c) for c in contradictions)
 
 
-def label_for(score: float) -> Label:
-    if score >= BOT_THRESHOLD:
+def label_for(score: float, contradictions: Iterable[Contradiction] | None = None) -> Label:
+    """Map a score to a label, gating `bot` on a convicting signal.
+
+    A `bot` conviction requires both a bot-level score *and* at least one convicting contradiction —
+    environment/behavioral/reputation tells corroborate up to `suspicious` but never convict alone, so
+    a real-but-stripped browser (no webcam, no plugins) can no longer noisy-or its way to `bot`.
+    ``contradictions=None`` (a bare threshold lookup) skips the gate for backwards compatibility.
+    """
+    if score >= BOT_THRESHOLD and (contradictions is None or has_convicting(contradictions)):
         return Label.bot
     if score >= SUSPICIOUS_THRESHOLD:
         return Label.suspicious

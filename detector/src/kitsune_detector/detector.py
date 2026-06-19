@@ -100,7 +100,7 @@ class Detector:
             contradictions=contradictions,
             incoherence_score=scoring.incoherence_score(contradictions),
             score=score,
-            label=scoring.label_for(score),
+            label=scoring.label_for(score, contradictions),
             ruleset_version=self._ruleset.ruleset_version,
             scored_at=self._clock(),
         )

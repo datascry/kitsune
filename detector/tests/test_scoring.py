@@ -6,11 +6,15 @@ from __future__ import annotations
 import pytest
 
 from kitsune_detector import scoring
-from kitsune_detector.models import Contradiction, Label, Layer
+from kitsune_detector.models import Contradiction, Label, Layer, RuleCategory
 
 
 def _c(weight: float, *layers: Layer) -> Contradiction:
     return Contradiction(rule_id="r", layers=list(layers), detail="d", weight=weight)
+
+
+def _cat(weight: float, category: RuleCategory) -> Contradiction:
+    return Contradiction(rule_id="r", layers=[Layer.browser], detail="d", weight=weight, category=category)
 
 
 def test_noisy_or() -> None:
@@ -51,3 +55,25 @@ def test_final_score_uses_effective_weights() -> None:
 )
 def test_label_for(score: float, label: Label) -> None:
     assert scoring.label_for(score) is label
+
+
+def test_has_convicting() -> None:
+    env = [_cat(0.9, RuleCategory.environment), _cat(0.9, RuleCategory.behavioral)]
+    assert scoring.has_convicting(env) is False
+    assert scoring.has_convicting([*env, _cat(0.5, RuleCategory.coherence)]) is True
+    for c in (RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact):
+        assert scoring.has_convicting([_cat(0.4, c)]) is True
+    for c in (RuleCategory.environment, RuleCategory.behavioral, RuleCategory.reputation):
+        assert scoring.has_convicting([_cat(0.99, c)]) is False
+
+
+def test_label_gate_requires_convicting_signal() -> None:
+    # bot-level score from environment tells alone is capped at suspicious — a stripped-but-real browser.
+    env_only = [_cat(0.55, RuleCategory.environment), _cat(0.3, RuleCategory.environment)]
+    assert scoring.final_score(env_only) >= scoring.BOT_THRESHOLD  # would be bot under bare threshold
+    assert scoring.label_for(scoring.final_score(env_only), env_only) is Label.suspicious
+    # add one convicting tell and the same score now convicts
+    convicted = [*env_only, _cat(0.4, RuleCategory.automation)]
+    assert scoring.label_for(scoring.final_score(convicted), convicted) is Label.bot
+    # corroborating-only below the suspicious floor stays human
+    assert scoring.label_for(0.2, [_cat(0.2, RuleCategory.environment)]) is Label.human

@@ -46,6 +46,30 @@ a convicting coherence/automation/artifact signal; cap the environment contribut
 or pruning the offenders above — and then this calibration becomes a **regression gate**: no future rule
 (including anything the enumeration fleet surfaces) may push the legitimate-browser flag rate back up.
 
+## The convicting-signal gate (shipped v0.64.0)
+
+The scoring change above is now implemented: a `bot` *label* requires at least one **convicting**
+contradiction — `coherence`, `automation`, or `artifact` (a positive bot signature). The corroborating
+categories — `environment` (a stripped/headless capability gap), `behavioral`, `reputation` — still
+raise the score and can reach `suspicious`, but can no longer noisy-or their way to a conviction on their
+own. The score itself stays a full, monotonic noisy-or (every point still traces to evidence); only the
+label is gated (`detector/scoring.py:label_for`).
+
+Measured on **one** 800-fingerprint corpus scored both ways (same fingerprints — the only honest
+before/after, since each `task calibrate` run samples fresh):
+
+| labeler | bot | suspicious | human |
+|---|---|---|---|
+| bare threshold (old) | 62 | 127 | 611 |
+| **convicting-gate (new)** | **43** | 146 | 611 |
+
+**19 environment-only `bot` false positives → `suspicious` (−31% hard bot FPs), human rate unchanged, and
+zero evader regression** — re-scoring all 31 recorded evader sessions, every one still scores `bot` and
+every one carries a convicting signal (bots always trip one). The residual 43 bot FPs are driven by the
+two browserforge coherence *data artifacts* (`navplatform_vs_ua`, `webgl_not_angle`) the Tier-2 engines
+already refuted — not a scoring problem, so the gate has removed every env-only bot FP that scoring *can*
+fix. The remaining lever is the Tier-3 real-desktop source for the environment-tell weights themselves.
+
 ## Methodology validation (not just browserforge)
 
 browserforge is one generated distribution, not ground truth — so the mapper itself is validated against a
