@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.2"
+ruleset_version: "0.74.3"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1261,10 +1261,10 @@ rules:
     predicate: present
     weight: 0.65
     status: experimental
-    category: coherence
+    category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Camoufox source: audioCodecs/videoCodecs unspoofed — real container codec support leaks"
+    last_validated: "2026-06-19"
+    source: "Camoufox source: audioCodecs/videoCodecs unspoofed — real container codec support leaks under a spoofed non-Linux UA. v0.74.3: category corrected coherence->ENVIRONMENT — the premise that a real Windows/macOS browser ALWAYS has H.264/AAC is BUILD-dependent, not universal. H.264/AAC are PROPRIETARY codecs; open-source Chromium (ungoogled-chromium, several Linux-distro Chromium packages, some flatpak/snap builds) is compiled WITHOUT them and can return canPlayType='' for H.264/AAC even on Windows/macOS. A real ungoogled-chromium user therefore trips this, so it must only CORROBORATE (cap at suspicious), never convict — proprietary-codec support is a build property, not an OS contradiction. The Linux-container OS-spoofs that trip it (os-spoof, ios-ua-spoof, iframe-spoof, stealth-patched) are all still convicted by the hard cross-layer tells (net.tcp_os_vs_ua, ua_platform_vs_ch_platform, ch_ua_version_vs_ua, cdp_runtime_enabled)."
 
   # --- v0.19.0: WebRTC ICE probe (real network identity — the bots/DDoS frontier) ---
 
