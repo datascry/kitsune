@@ -1,7 +1,7 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-19T07:49:48.468020+00:00`
-- ruleset: `0.74.0`
+- generated: `2026-06-19T07:55:21.491832+00:00`
+- ruleset: `0.74.1`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|---|---|
@@ -10,7 +10,7 @@
 | brave-fake | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
 | brave | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 | camoufox-hardened | corpus | 0.00 | 0.98 | 0.00 | 0.00 | 0.00 | 0.98 | bot |
-| camoufox-headful | corpus | 0.00 | 0.95 | 0.00 | 0.00 | 0.00 | 0.95 | bot |
+| camoufox-headful | corpus | 0.00 | 0.95 | 0.00 | 0.00 | 0.00 | 0.95 | suspicious |
 | camoufox | corpus | 0.95 | 0.84 | 0.00 | 0.00 | 0.84 | 1.00 | bot |
 | canvas-geometry-spoof | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
 | canvas-spoof | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
@@ -58,7 +58,7 @@
 - **brave-fake** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.brave_spoofed`
 - **brave** (bot): `br.webdriver_present`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.webgl_software`, `br.no_connection`, `br.chrome_runtime_missing`, `br.voices_empty`, `br.fingerprint_improbable`, `br.media_devices_empty`, `br.canvas_noise`
 - **camoufox-hardened** (bot): `br.webgl2_missing`, `br.pointer_touch_incoherent`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
-- **camoufox-headful** (bot): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
+- **camoufox-headful** (suspicious): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **camoufox** (bot): `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.tls_grease_vs_ua`
 - **canvas-geometry-spoof** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.canvas_geometry_noise`
 - **canvas-spoof** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.tostring_tampered`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.canvas_worker_vs_main`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.canvas_noise`

@@ -1,6 +1,6 @@
 # Kitsune detection matrix — 117 rules vs 45 evaders
 
-_45/45 evaders caught (`bot`). Generated from the committed captures._
+_44/45 evaders caught (`bot`). Generated from the committed captures._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -10,8 +10,8 @@ _45/45 evaders caught (`bot`). Generated from the committed captures._
 | `baseline-firefox` | bot | 1.00 | 6/117 | `br.webdriver_present` |
 | `brave-fake` | bot | 1.00 | 15/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `brave` | bot | 1.00 | 11/117 | `br.webdriver_present`, `br.headless_ua`, `br.chrome_runtime_missing` +1 |
-| `camoufox-hardened` | bot | 0.98 | 5/117 | `br.pointer_touch_incoherent`, `br.webrtc_unavailable` |
-| `camoufox-headful` | bot | 0.95 | 4/117 | `br.webrtc_unavailable` |
+| `camoufox-hardened` | bot | 0.98 | 5/117 | `br.pointer_touch_incoherent` |
+| `camoufox-headful` | suspicious | 0.95 | 4/117 | — |
 | `camoufox` | bot | 1.00 | 3/117 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.tls_grease_vs_ua` |
 | `canvas-geometry-spoof` | bot | 1.00 | 15/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `canvas-spoof` | bot | 1.00 | 17/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
@@ -50,7 +50,7 @@ _45/45 evaders caught (`bot`). Generated from the committed captures._
 | `vanilla` | bot | 1.00 | 5/117 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
 | `worker-spoof` | bot | 1.00 | 15/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `worker-wrap` | bot | 1.00 | 15/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
-| `zendriver` | bot | 1.00 | 9/117 | `br.chrome_runtime_missing`, `br.webrtc_unavailable` |
+| `zendriver` | bot | 1.00 | 9/117 | `br.chrome_runtime_missing` |
 
 ## Per-rule coverage — 78/117 rules catch ≥1 evader (rest in Gaps)
 
@@ -89,7 +89,7 @@ _45/45 evaders caught (`bot`). Generated from the committed captures._
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 4 |
 | `br.ch_he_version_vs_ua` | browser | coherence | 3 |
 | `br.webgl2_missing` | browser | environment | 3 |
-| `br.webrtc_unavailable` | browser | artifact | 3 |
+| `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 3 |
 | `br.canvas_noise` | browser | artifact | 2 |
 | `br.error_engine_vs_ua` | browser | coherence | 2 |
@@ -143,8 +143,8 @@ _45/45 evaders caught (`bot`). Generated from the committed captures._
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
 | `brave-fake` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `brave` | bot | 0 | 1 | 3 | 4 | 2 | 0 |
-| `camoufox-hardened` | bot | 1 | 1 | 0 | 3 | 0 | 0 |
-| `camoufox-headful` | bot | 0 | 1 | 0 | 3 | 0 | 0 |
+| `camoufox-hardened` | bot | 1 | 0 | 0 | 4 | 0 | 0 |
+| `camoufox-headful` | suspicious | 0 | 0 | 0 | 4 | 0 | 0 |
 | `camoufox` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `canvas-geometry-spoof` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `canvas-spoof` | bot | 1 | 1 | 8 | 6 | 1 | 0 |
@@ -183,7 +183,7 @@ _45/45 evaders caught (`bot`). Generated from the committed captures._
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
 | `worker-spoof` | bot | 0 | 0 | 8 | 6 | 1 | 0 |
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
-| `zendriver` | bot | 0 | 1 | 1 | 4 | 2 | 0 |
+| `zendriver` | bot | 0 | 0 | 1 | 5 | 2 | 0 |
 
 ## Coverage gaps — 39/117 rules catch nothing yet
 
