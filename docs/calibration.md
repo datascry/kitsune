@@ -201,6 +201,22 @@ fingerprints (no browserforge needed): if a future mapper change adds or drops a
 fails, forcing a conscious update here + a re-check that the new kind is faithful to the collector (not a
 mapper artifact like an early `navigator.platform` / `color_depth` / iOS-`vendor_vs_ua` would have been).
 
+**Value-level fidelity (2026-06-19) — the methodology proof, completed.** Kinds matching isn't enough; the
+mapper must emit the right *values*. We hold both halves per engine: the **fingerprint**
+(`corpus/calibration/engines/<e>.json`, the mapper input) and the real **collector session**
+(`corpus/calibration/headful/<e>.json`, what the live in-page collector emitted for that engine). Running
+`signals_from_fingerprint` on the fingerprint and diffing against the collector's signals, **43 of 44 shared
+values match exactly** across Chromium/Firefox/WebKit (Firefox 14/14, WebKit 15/15, Chromium 14/15). The lone
+diff — Chromium `plugins_count` mapper **0** vs collector **5** — is NOT mapper infidelity: the engine
+fingerprints are **headless** Playwright captures (they carry the headless stripped-browser tells —
+`plugins_count` 0, `mimetypes_empty`, `chrome_no_pdfviewer`), while the headful session has the 5 standard PDF
+plugins. So the mapper faithfully reproduces whatever the input fingerprint says. **Implication:** the engine
+fixtures are a valid baseline for the **coherence/artifact** convicting categories (which match exactly — the
+methodology claim `test_calibration_methodology` rests on), but NOT for the headless-environment tells. Pinned
+by `harness/tests/test_mapper_value_fidelity.py` (every shared value must match except a documented, self-
+guarded headless/headful allowlist), so a future mapper change that produces a wrong *value* — a calibration
+artifact deeper than a wrong kind — fails CI.
+
 ## Second real-traffic source (Intoli) — verification, and what it actually showed
 
 A third tier of corroboration: the **Intoli `user-agents` dataset** (BSD-2-Clause; ~10k records resampled
