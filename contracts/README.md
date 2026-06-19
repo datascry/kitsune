@@ -50,7 +50,7 @@ Two independent versions:
 - **`schema_version`** (`MAJOR.MINOR`) on every wire envelope — currently **0.1**. Adding an optional
   field is a MINOR bump; changing/removing a field or tightening validation is a MAJOR bump and
   requires a migration note. See [ADR-0002](../docs/adr/0002-polyglot-with-contracts.md).
-- **`ruleset_version`** at the head of `registry.yaml` — currently **0.73.2** — and echoed into each
+- **`ruleset_version`** at the head of `registry.yaml` — currently **0.73.3** — and echoed into each
   verdict, so a scoreboard pins exactly which ruleset produced it.
 
 ## Validation

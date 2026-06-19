@@ -120,9 +120,10 @@ a tell that is *expected* for the identified browser so it cannot convict a real
   real Brave user (~70M of them) would otherwise noisy-or two *artifact* (convicting) tells to `bot`. A
   Chrome-claiming farbler with no `navigator.brave` (an anti-detect tool) still convicts.
 
-> **Detector-side follow-up (tracked):** the same Brave farbling FP exists server-side — the detector has no
-> Brave awareness (Brave's UA is plain Chrome; `navigator.brave` is not yet emitted as a signal, and the
-> coherence engine has no per-browser N/A like the live page). Not measured by the browserforge calibration
-> (which has no live farbling). Fixing it needs a `browser.is_brave` collector signal + a scoring-level
-> suppression of the farbling artifacts when present — a per-browser-N/A architecture decision for the
-> detector, deferred as its own piece.
+> **Detector-side parity (done, v0.73.3).** The same Brave farbling FP existed server-side; the detector now
+> has its own per-browser N/A (`detector.applicability`, the analog of the live page's `predict.notApplicable`).
+> The collector emits `browser.is_brave` (from `navigator.brave`); `Detector.score` drops the Brave-expected
+> farbling artifacts (`canvas_noise`, `audio_noise`) before scoring when the session is Brave, so a real Brave
+> user is not convicted. A Chrome-claiming farbler with no `navigator.brave` still convicts, and a Brave-faking
+> bot is still caught by its automation tells, so it cannot help a bot escape. Calibration is unchanged
+> (browserforge never emits `is_brave`, so the filter is a no-op there).

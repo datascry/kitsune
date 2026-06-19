@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from . import prevalence, scoring
+from . import applicability, prevalence, scoring
 from .coherence import CoherenceEngine, RuleSet, load_registry
 from .config import SCHEMA_VERSION
 from .ingest import group_signals
@@ -92,6 +92,9 @@ class Detector:
         """Score one correlated session into an explainable verdict."""
         session = self._with_derived(session)
         contradictions = self._engine.evaluate(session)
+        # Per-browser applicability: drop tells that are a BY-DESIGN feature of the identified browser (e.g.
+        # Brave's canvas/audio farbling) so a real browser is not convicted on them. Mirrors the live page.
+        contradictions = applicability.filter_applicable(contradictions, session)
         score = scoring.final_score(contradictions)
         return Verdict(
             schema_version=SCHEMA_VERSION,

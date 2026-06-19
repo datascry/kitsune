@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.73.2"
+ruleset_version: "0.73.3"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1124,8 +1124,8 @@ rules:
     status: active
     category: artifact
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "CreepJS: a real engine is deterministic; per-render noise is farbling/anti-detect injection"
+    last_validated: "2026-06-19"
+    source: "CreepJS: a real engine is deterministic; per-render noise is farbling/anti-detect injection. v0.73.3: per-browser N/A — Brave farbles audio by design (its default Shields), so on a session positively identified as Brave (browser.is_brave from navigator.brave) the detector drops this artifact (detector.applicability) rather than convict a real Brave user; a Chrome-claiming farbler with no navigator.brave still convicts, and a Brave-faking bot is caught by its automation tells."
 
   - id: br.readback_noise
     title: AudioBuffer getChannelData and copyFromChannel disagree — readback noise shim
@@ -1485,8 +1485,8 @@ rules:
     status: active
     category: artifact
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Brave farbling adds per-session canvas noise; a solid fill read back exactly proves no farbling, any deviation proves it (reference-free). Privacy-tool tell = elevated risk; weight corroborates"
+    last_validated: "2026-06-19"
+    source: "Brave farbling adds per-session canvas noise; a solid fill read back exactly proves no farbling, any deviation proves it (reference-free). Privacy-tool tell = elevated risk; weight corroborates. v0.73.3: per-browser N/A — since Brave farbles canvas BY DESIGN, a session positively identified as Brave (browser.is_brave from navigator.brave) has this artifact dropped by the detector (detector.applicability) so a real Brave user (~70M) is not convicted; a Chrome-claiming farbler with NO navigator.brave still convicts."
 
   - id: br.canvas_geometry_noise
     title: Canvas path geometry is non-deterministic (isPointInPath farbling, e.g. JShelter)
