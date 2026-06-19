@@ -5,11 +5,14 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from kitsune_detector.ip_reputation import IPReputation, _parse_cidrs
 from kitsune_detector.ip_reputation_refresh import (
     AWS_RANGES_URL,
     GCP_RANGES_URL,
     TOR_BULK_EXIT_URL,
+    SourceDriftError,
     normalize_cidrs,
     parse_aws_ranges,
     parse_gcp_ranges,
@@ -92,3 +95,19 @@ def test_refresh_wires_sources_into_loadable_seeds() -> None:
     assert rep.classify("171.25.193.25") == (False, True)
     # A residential-style address in neither set stays clean — the FP-safety invariant.
     assert rep.classify("203.0.113.7") == (False, False)
+
+
+def test_refresh_floor_guard_passes_when_sources_meet_floor() -> None:
+    # The canned payloads parse to tor=4 / aws=3 / gcp=2; floors at/below those let a healthy refresh through.
+    payloads = {TOR_BULK_EXIT_URL: _TOR, AWS_RANGES_URL: _AWS, GCP_RANGES_URL: _GCP}
+    files = refresh(payloads.__getitem__, min_counts={"tor": 2, "aws": 3, "gcp": 2})
+    assert set(files) == {"proxy_exit_cidrs.txt", "datacenter_cidrs.txt"}
+
+
+def test_refresh_floor_guard_fails_loud_on_drifted_source() -> None:
+    # AWS renamed its top-level key → parse_aws_ranges returns 0; with a floor the guard raises instead of
+    # silently writing a near-empty datacenter seed (the rot the hermetic parser tests cannot catch).
+    drifted_aws = json.dumps({"renamed_prefixes": [{"ip_prefix": "3.5.140.0/22"}]})
+    payloads = {TOR_BULK_EXIT_URL: _TOR, AWS_RANGES_URL: drifted_aws, GCP_RANGES_URL: _GCP}
+    with pytest.raises(SourceDriftError, match="aws"):
+        refresh(payloads.__getitem__, min_counts={"tor": 1, "aws": 1, "gcp": 1})

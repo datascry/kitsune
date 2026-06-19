@@ -25,8 +25,15 @@ observed source IP against curated public lists and emits `reputation.asn_is_dat
   (`detector/src/kitsune_detector/ip_reputation_refresh.py`) fetches them from the sources above into the
   same seed format — run it at deploy time, not at commit. The classifier is list-agnostic: populate and
   it just works. The fetch is injectable so the parse/normalise logic is unit-tested offline against the
-  real AWS/GCP/Tor payload shapes; a live run currently pulls ~11.6k datacenter (AWS + GCP) and ~1.2k Tor
-  CIDRs. Output stays uncommitted (stale-prone, large); the curated seeds remain the documented fallback.
+  real AWS/GCP/Tor payload shapes; a live run (re-validated 2026-06-19 against the current sources) pulls
+  ~11.6k datacenter (AWS + GCP) and ~1.2k Tor CIDRs. Output stays uncommitted (stale-prone, large); the
+  curated seeds remain the documented fallback.
+- **Fail-loud on source drift.** The offline parser tests use fixed sample payloads, so a live source
+  silently changing its URL or JSON shape would pass CI yet make the parse collapse to ~0 — quietly writing
+  a near-empty seed and degrading `rep.*` with no error. To catch exactly that, the deploy path
+  (`main`) enforces conservative per-source floors (`_PRODUCTION_FLOORS` = Tor ≥ 100, AWS ≥ 1000, GCP ≥ 100,
+  ~10× below the live counts) and raises `SourceDriftError` naming the drifted source rather than degrading
+  silently. The pure `refresh()` keeps its floor-free signature (`min_counts` opt-in) for the offline tests.
 
 ## Behaviour & guarantees
 

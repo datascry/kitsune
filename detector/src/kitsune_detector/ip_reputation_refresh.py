@@ -29,6 +29,21 @@ GCP_RANGES_URL = "https://www.gstatic.com/ipranges/cloud.json"
 _DATA = Path(__file__).parent / "data"
 _Net = ipaddress.IPv4Network | ipaddress.IPv6Network
 
+
+class SourceDriftError(RuntimeError):
+    """A refresh source returned implausibly few entries — its URL or response format likely drifted.
+
+    The parsers are unit-tested against fixed sample payloads, so a live source changing its URL or JSON
+    shape would slip past CI and silently write a near-empty seed (degrading rep.* without any error). The
+    deploy path (:func:`main`) enforces per-source floors so that drift fails LOUD instead.
+    """
+
+
+#: Conservative per-source minimum entry counts enforced at deploy time. Live counts (2026-06-19, validated
+#: against the real sources): Tor 1238, AWS 10613, GCP 979 — these floors sit ~10x below, so normal source
+#: fluctuation passes while a format/URL drift (which collapses a parse to ~0) trips the guard.
+_PRODUCTION_FLOORS = {"tor": 100, "aws": 1000, "gcp": 100}
+
 #: A function that fetches a URL and returns the body as text. Injected so tests stay offline.
 Fetcher = Callable[[str], str]
 
@@ -105,13 +120,27 @@ def render_seed(title: str, note: str, cidrs: list[str]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def refresh(fetch: Fetcher) -> dict[str, str]:
+def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict[str, str]:
     """Fetch every source via ``fetch`` and return ``{filename: rendered_seed_text}``.
 
-    Pure but for ``fetch`` — the orchestration is fully exercised in tests with an offline fetcher.
+    Pure but for ``fetch`` — the orchestration is fully exercised in tests with an offline fetcher. When
+    ``min_counts`` is given (the deploy path passes :data:`_PRODUCTION_FLOORS`), each source's parsed count
+    is checked against its floor and a :class:`SourceDriftError` is raised if it falls short — so a drifted
+    URL/format fails loud instead of silently writing a near-empty seed. Default ``None`` skips the check
+    (keeping the pure parser tests, which use tiny canned payloads, untouched).
     """
-    tor = normalize_cidrs(parse_tor_bulk_exit(fetch(TOR_BULK_EXIT_URL)))
-    datacenter = normalize_cidrs(parse_aws_ranges(fetch(AWS_RANGES_URL)) + parse_gcp_ranges(fetch(GCP_RANGES_URL)))
+    tor_raw = parse_tor_bulk_exit(fetch(TOR_BULK_EXIT_URL))
+    aws_raw = parse_aws_ranges(fetch(AWS_RANGES_URL))
+    gcp_raw = parse_gcp_ranges(fetch(GCP_RANGES_URL))
+    if min_counts:
+        for src, got in (("tor", len(tor_raw)), ("aws", len(aws_raw)), ("gcp", len(gcp_raw))):
+            floor = min_counts.get(src, 0)
+            if got < floor:
+                raise SourceDriftError(
+                    f"{src} source returned {got} entries (< {floor} floor) — its URL or format likely drifted"
+                )
+    tor = normalize_cidrs(tor_raw)
+    datacenter = normalize_cidrs(aws_raw + gcp_raw)
     regen = (
         "Regenerate: python -m kitsune_detector.ip_reputation_refresh "
         "(output not committed — see docs/ip-reputation-data.md)."
@@ -138,7 +167,8 @@ def _http_get(url: str) -> str:  # pragma: no cover - network IO shell
 
 
 def main(fetch: Fetcher = _http_get, out_dir: Path = _DATA) -> None:  # pragma: no cover - IO wrapper
-    for name, content in refresh(fetch).items():
+    # Deploy path: enforce the per-source floors so a drifted source fails loud, not silently degraded.
+    for name, content in refresh(fetch, min_counts=_PRODUCTION_FLOORS).items():
         (out_dir / name).write_text(content, encoding="utf-8")
         print(f"wrote {out_dir / name} ({content.count(chr(10))} lines)")
 
