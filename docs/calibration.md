@@ -6,6 +6,30 @@ non-Retina Mac, a VM, an ad-blocker) trips single-layer `environment` tells that
 accumulates into a `bot` verdict — a false positive. Same discipline the biomech rules got from the
 Balabit calibration, now generalised to the fingerprint layer.
 
+## Grounding-source status (2026-06-19) — what's grounded against what, and what needs operator capture
+
+Consolidated map of which detection references are cross-checked against an independent source vs.
+browserforge-only (the per-finding detail is in the re-validation log below). The standing rule: never act
+on a single source — corroborate first.
+
+| layer / factor | independent grounding source | status |
+|---|---|---|
+| **behavioural biomech** (path/velocity/keystroke) | Balabit mouse-dynamics dataset | ✅ grounded (original design) |
+| **prevalence — screen** | Intoli real-traffic resolutions | ✅ grounded (drove the size-class bucketing) |
+| **network — TLS JA4** (`net.tls_vs_ua_browser`) | FoxIO JA4 reference | ✅ Chrome cipher hash confirmed; edge JA4 = spec |
+| **network — PQ keyshare** (`net.*_pq_keyshare_vs_ua`) | IANA registry + 2026 deployment | ✅ X25519MLKEM768/0x11EC current + FP-safe |
+| **network — HTTP/2** (`net.h2_header_order_vs_ua`) | Akamai HTTP/2 standard (BlackHat) | ✅ Chrome `m,a,s,p` + SETTINGS confirmed |
+| **IP reputation** (`rep.*`) | AWS/GCP/Tor public ranges (refresh tool) | ✅ CIDR data public; live exercise needs proxy egress |
+| **network — Safari/Firefox JA4** | curl_cffi #460 / FoxIO | ⚠ ours is Playwright-build-specific; real values found, need edge-verified add |
+| **prevalence — cores** | Steam HW survey | ⚠ flag: browserforge may over-generate high cores (corroborate, don't act) |
+| **prevalence — gpu** | none (Steam gamer-skewed; Web3DSurvey lacks vendor table) | ✗ needs web-representative capture |
+| **`chrome_runtime_authenticity`** | none (docs ≠ verification) | ✗ needs live real-Chrome capture |
+
+The whole **network-coherence seam** (the layer Ulixee-Hero-class tools attack) is grounded end-to-end
+against external standards. The remaining ✗/⚠ items have **no clean public dataset** — they require capturing
+real browsers/traffic/proxies through our own stack, which the turnkey infra (`--build-prior-from-sessions`,
+`PROXIES=`, a real-browser edge capture) consumes.
+
 ## How it works
 
 ```sh
