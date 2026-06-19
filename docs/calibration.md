@@ -365,3 +365,12 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   `cdp_runtime_enabled` + more. So the robust backstop is the **deterministic h2-layer + browser-layer**
   tells (each tool caught ≥2 ways), and the "no evasion at 0.74.21" conclusion holds independent of the
   timing-dependent QUIC catch. No rule semantics changed → no ruleset bump.
+
+  **SCOPE CAVEAT (next iteration):** the patchright-engine configs (`patchright`, `max-stealth`) are caught,
+  but `max-stealth` and any `patchright + spoof/UA` are caught by `net.no_js_execution` because patchright
+  breaks our evader's own page collector (zero browser signals) — an over-spoofing/collector-break artifact,
+  NOT a defeat of the browser-layer tells, and the spoofs do not even apply under patchright. So the
+  genuinely-evasive config (patchright-class CDP stealth + coherent non-headless UA + a WORKING collector)
+  is **untested** by the current fleet. See docs/evasion-catalog.md "Known red-team-fleet limitation". The
+  "no evasion" claim is honest for what the fleet exercises, but the browser-layer-under-patchright frontier
+  is open.

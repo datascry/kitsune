@@ -81,3 +81,23 @@ Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6*
    is currently exercised only by a synthetic fleet. A real residential/proxy-fleet harness (ethics-gated
    to the allow-list edge) is the only live test of `rep.*`, `net.webrtc_ip_vs_observed`, and the six
    proxy-topology coordination signals.
+
+## Known red-team-fleet limitation: patchright configs self-defeat the collector (2026-06-19)
+
+Grounded finding while characterising the thinnest-caught cutting-edge config. The patchright-engine
+stealth modes (`MAX_STEALTH`, and any `PATCHRIGHT=1` + a spoof or UA override) **break our evader's own
+page collector** — the session reaches the detector with ZERO browser/behavioural signals (only the 14
+network signals), so it is caught by `net.no_js_execution` (a Chrome UA that executes no page JS). Isolated
+by comparison: plain `PATCHRIGHT=1` (no spoofs, no UA override) posts fine (6 browser tells); `playwright`
++ `WORKER_SPOOF=1` posts fine (31 signals); but `PATCHRIGHT=1` + a UA override (no spoofs at all) posts
+**nothing**. So the break is `patchright × (addInitScript | newContext userAgent)`, consistent with
+patchright deliberately neutralising `addInitScript`-style injection (its documented stealth behaviour).
+
+**Implication for the "no evasion at 0.74.21" claim:** it holds (these configs ARE caught, deterministically,
+by `no_js_execution` + `net.ch_ua_version_vs_ua`), but the catch is an over-spoofing / collector-break
+artifact, **NOT** a defeat of the browser-layer tells — and the injected spoofs do not even apply under
+patchright. So the fleet does **not** currently test the genuinely-evasive config: patchright-class CDP
+stealth + a coherent non-headless UA + a *working* page collector (ideally headful, so `ch_he_headless`
+does not auto-fire). That browser-layer-evasion frontier under patchright is **untested**. Red-team TODO:
+either drive patchright headful via `page.addInitScript` alternatives that survive its stealth, or add a
+headful patchright capture — only then can we claim the browser layer holds against patchright-class tools.
