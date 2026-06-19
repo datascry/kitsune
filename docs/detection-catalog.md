@@ -51,6 +51,7 @@ tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact
 | `br.broken_image_dims` | ❌ DEAD | medium | easy | Broken-image dimensions — Headless renders a broken img at 0x0; real Chrome ~16x16. DEAD: grounded out — a broken <img> is 0x0 in headless AND headful Chromium, so there is no signal to mismatch. |
 | `rep.ja4_traffic_shape` | low | medium | hard | JA4 aggregate traffic-shape — Per-JA4 browser_ratio/h2h3_ratio/quantile vs genuine same-JA4 baseline flags spoofed fps. |
 | `br.antidetect_tool_hash` | low | low | medium | Anti-detect extension hash — Hash patched prototype-method source to name CanvasBlocker/JShelter/puppeteer-extra. |
+| `br.chrome_runtime_authenticity` | ⛔ Tier-3-BLOCKED | high | medium | chrome.runtime AUTHENTICITY (not presence) — NEW gap surfaced by the headful-patchright red-team work. `br.chrome_runtime_missing` (demo.py:742) is a PRESENCE-only check (`window.chrome && !window.chrome.runtime`), trivially cleared by faking `window.chrome.runtime = {}` (the FLOOR_SPOOF mode already does this → it does NOT trip the rule). It is the **only deterministic convicting browser-layer catch** for headful patchright (the rest is timing-dependent `quic_grease` + corroborating env/behavioural), so a patchright-class tool that also fakes chrome.runtime would defeat the deterministic browser layer. Fix = verify chrome.runtime is AUTHENTIC (native `connect`/`sendMessage`, real shape). **BLOCKED:** cannot ground authentic chrome.runtime in-sandbox — Playwright Chromium lacks chrome.runtime entirely, and there is no real non-Playwright Chrome here; shipping the check without that ground truth risks FP on real Chrome (constraint #6). Needs a Tier-3 real-Chrome capture. See docs/evasion-catalog.md. |
 
 ## Build order (precision-first) — COMPLETE
 
@@ -67,6 +68,13 @@ corpus to calibrate (`canvas_hash_engine_vs_ua`, `measuretext_os`, `emoji_os`, `
 (`ja4t_vs_ua`/`tls_raw_value` need an edge-side JA4T/JA4_r build; `webgpu_limits` needs a real GPU;
 `ja4_traffic_shape`/`rep.*` IP-reputation need a real residential-proxy source; the prevalence model's
 gpu/colour/cores factors need a Tier-3 real-device matrix to corroborate browserforge).
+
+One **new convicting gap** was surfaced (2026-06-19) by the headful-patchright red-team work and is the
+clearest per-session frontier, but it too is Tier-3-blocked: `br.chrome_runtime_authenticity`. The current
+`br.chrome_runtime_missing` is presence-only and is the *sole deterministic* browser-layer catch for headful
+patchright; faking `window.chrome.runtime` clears it (FLOOR_SPOOF already does). The fix — an authenticity
+check — cannot be FP-safely grounded in-sandbox (no real non-Playwright Chrome to observe a genuine
+`chrome.runtime`), so it is deferred to a Tier-3 real-Chrome capture rather than shipped ungrounded.
 
 The productive frontier has shifted to **red-team-driven validation** (build the evader that exercises a
 known-good rule, ground the real-browser negative) — which cleared the "Evaded" rule queue and surfaced the
