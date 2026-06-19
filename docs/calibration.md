@@ -400,3 +400,10 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   (docs/evasion-catalog.md "Coverage envelope") identified as the durable catches a sophisticated fleet must
   suppress. No drift; the structural frontier works live. Refreshed `corpus/fleet-cloned/cn1-3.json`; the 34
   coordination unit tests pass on the fresh fixture. No rule changed → no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.21 · periodic re-validation (live fleet + matrix)** — explicitly-requested
+  recurring check (~9 iterations since the last). Live stack healthy; both named experimental rules fire
+  live: `br.readback_noise` (audio-readback-spoof → bot) and `net.h2_header_order_vs_ua` (http2-naive → bot).
+  Cutting-edge drift sample: `nodriver`, `patchright` → bot. Matrix re-scored vs committed → NO DRIFT at
+  0.74.21. Nothing changed (ruleset + evader images pinned); confirms the live deployment still behaves. No
+  rule changed → no ruleset bump.
