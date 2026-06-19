@@ -297,3 +297,20 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   (http2-naive). Stealth fleet drift check: selenium-driverless, PATCHRIGHT, REBROWSER all → `bot` (1.00,
   5–7 convicting tells each). No drift. Matrix 51/52 (camoufox-headful the lone `suspicious`, a raw-SYN
   capture miss).
+
+- **2026-06-19 · ruleset 0.74.21** — full live re-validation after the prevalence hardening (colour-factor
+  drop v0.74.20, cores-bucket coarsening v0.74.21) and the coordination/IP-reputation work. Live stack
+  confirmed at 0.74.21 (`docker exec` on the running detector). Both named experimental rules re-validated
+  TRUSTED-BUT-VERIFIED on both sides:
+  - **Fire on the evaders that should trip them.** `br.readback_noise` fires live (audio-readback-spoof →
+    `bot`, score 1.00, artifact category alongside 6 automation convictions). `net.h2_header_order_vs_ua`
+    fires live (http2-naive = vanilla `KS_HTTP2=1` + Chrome `KS_UA` → `bot`, score 1.00) — and a SECOND
+    independent live positive this run: `undetected` (undetected-chromedriver) also trips it → `bot`.
+  - **Stay clean on a real engine.** A fresh Tier-2 headful Chromium capture (xvfb, clean Playwright, the
+    genuine collector) at 0.74.21 → both `br.readback_noise` and `net.h2_header_order_vs_ua` CLEAN; the only
+    convicting rules are the expected Playwright automation tells (`webdriver_present`, `cdp_runtime_enabled`,
+    `chrome_runtime_missing`). No fingerprint-coherence/artifact rule fires on the real engine — the
+    methodology invariant holds at the current ruleset.
+  - Base anti-detect fleet drift check: `nodriver`, `undetected`, `pydoll` all → `bot` (score ≥0.999, ≥2
+    convicting tells each). No drift. Matrix/scoreboard confirmed current at 0.74.21 (re-scored captures
+    match live behaviour). No rule semantics changed → no ruleset bump (verification, not a new rule).
