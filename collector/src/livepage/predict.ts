@@ -79,18 +79,39 @@ function rfpGecko(ev: string[]): boolean {
   return false;
 }
 
-/** Specific browser within an engine, from vendor-specific globals (not the UA). */
-function detectBrowser(engine: Engine, ev: string[]): string {
-  if (engine === "gecko") return rfpGecko(ev) ? "Tor / Mullvad Browser" : "Firefox";
-  if (engine === "webkit") return "Safari";
+/** Specific browser within an engine, from vendor-specific globals (not the UA), refined by OS/form. */
+function detectBrowser(engine: Engine, os: string, form: FormFactor, ev: string[]): string {
+  // iOS: Apple forbids non-WebKit engines, so Safari, Chrome (CriOS), Firefox (FxiOS), Brave, DuckDuckGo,
+  // and Onion Browser all run the SAME system WebKit — the engine literally cannot tell them apart. Honest.
+  if (os === "iOS") {
+    ev.push(
+      "iOS: all browsers (Safari/Chrome/Firefox/Brave/DuckDuckGo/Onion) share the system WebKit — not JS-separable by engine",
+    );
+    return "iOS browser (WebKit)";
+  }
+  if (engine === "gecko") {
+    if (rfpGecko(ev)) {
+      // Android Tor Browser / Mull and desktop Tor / Mullvad Browser are the RFP-Gecko privacy family.
+      return form === "mobile"
+        ? "Tor Browser / Mull (Android, RFP-Gecko)"
+        : "Tor / Mullvad Browser";
+    }
+    if (form === "mobile") {
+      ev.push("Gecko on Android = GeckoView family — Firefox / Focus / Fennec share the engine");
+      return "Firefox / GeckoView (Android)";
+    }
+    return "Firefox";
+  }
+  if (engine === "webkit") return "Safari"; // non-iOS WebKit = desktop Safari (macOS)
   if (engine === "blink") {
+    const mob = (name: string): string => (form === "mobile" ? `${name} (Android)` : name);
     if (has("opr") || has("opera")) {
       ev.push("window.opr (Opera)");
-      return "Opera";
+      return mob("Opera");
     }
     if ("brave" in navigator) {
       ev.push("navigator.brave (Brave)");
-      return "Brave";
+      return mob("Brave");
     }
     const brands =
       (navigator as { userAgentData?: { brands?: { brand: string }[] } }).userAgentData?.brands ??
@@ -98,17 +119,20 @@ function detectBrowser(engine: Engine, ev: string[]): string {
     const brand = brands.map((b) => b.brand).join(" ");
     if (/Edg/i.test(brand)) {
       ev.push("UA-CH brand: Edge");
-      return "Edge";
+      return mob("Edge");
     }
     if (/Samsung/i.test(brand)) {
       ev.push("UA-CH brand: Samsung Internet");
-      return "Samsung Internet";
+      return "Samsung Internet"; // Android-only by nature
     }
     if (/Google Chrome/i.test(brand)) {
       ev.push("UA-CH brand: Google Chrome");
-      return "Chrome";
+      return mob("Chrome");
     }
-    return "Chromium";
+    // Blink without a vendor tell: Vivaldi, Yandex, UC, DuckDuckGo-Android et al. suppress their brand, so
+    // name the family rather than guess a specific browser we cannot ground from features.
+    ev.push("Chromium engine, no vendor-specific global or UA-CH brand");
+    return mob("Chromium");
   }
   return "unknown";
 }
@@ -151,8 +175,8 @@ function detectOsForm(ev: string[]): { os: string; formFactor: FormFactor } {
 export function predict(): Prediction {
   const ev: string[] = [];
   const { engine, confidence } = detectEngine(ev);
-  const browser = detectBrowser(engine, ev);
   const { os, formFactor } = detectOsForm(ev);
+  const browser = detectBrowser(engine, os, formFactor, ev);
   return { engine, browser, os, formFactor, confidence, evidence: ev };
 }
 

@@ -732,6 +732,13 @@ export function armCollector(): LiveCollector {
     if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack)) {
       put("browser", "engine_stack_mismatch", true);
     }
+    // Apple mandates WebKit for Safari and EVERY iOS browser (Chrome=CriOS, Firefox=FxiOS, Brave, DuckDuckGo,
+    // Onion all wrap WebKit). A UA claiming Apple WebKit (uaEngine "safari") exposing a Blink-only structural
+    // API — window.chrome, navigator.userAgentData (UA-CH, absent in Safari), or V8's Error.captureStackTrace
+    // (JSC has none) — is a Chromium host faking an iOS/Safari UA. Real Safari/iOS expose none → never fires.
+    if (uaEngine === "safari" && (win()["chrome"] || nav().userAgentData || hasV8Stack)) {
+      put("browser", "apple_ua_nonwebkit", true);
+    }
     try {
       const u = undefined as unknown as { x: unknown };
       void u.x;

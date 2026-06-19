@@ -70,6 +70,7 @@ valuable but need careful calibration against the real-browser corpus before shi
 - ✅ `br.worker_constructor_tampered (ACTIVE — the escalation guard for the whole realm-coherence family; window.Worker/OffscreenCanvas must be native; fires live on worker-wrap, which defeats worker_divergence by injecting the spoof into worker scope but cannot keep the Worker constructor native)`
 - ✅ `br.timezone_offset_vs_intl (ACTIVE — internal timezone coherence; getTimezoneOffset must match the Intl IANA zone's actual offset; self-contained, no worker/IP-geo; FP-safe (real + legit CDP override both coherent); fires live on naive-tz-spoof and the wrong-season tz-spoof)`
 - ✅ `br.canvas_geometry_noise (ACTIVE — canvas GEOMETRY farbling, the JShelter white-box tell from evasion-catalog; isPointInPath is an exact GPU-independent hit-test, deterministic in every real engine; 120 trials on a deep-interior + far-exterior point catch a ~5%-flip farbler at ~99.8%; FP-safe (missing API never fires, only a definitive verdict counts) — zero FP across browserforge calibration; distinct from canvas_noise/Brave readback farbling)`
+- ✅ `br.apple_ua_nonwebkit (ACTIVE — iOS/Safari engine lock; Apple mandates WebKit for Safari AND every iOS browser (Chrome=CriOS, Firefox=FxiOS, Brave, DuckDuckGo, Onion all wrap system WebKit), so a UA claiming Apple WebKit that exposes a Blink-only structural API — window.chrome, navigator.userAgentData, or V8 Error.captureStackTrace — is a Chromium host faking an iOS/Safari UA. STRUCTURAL positive-API tell (survives error-message/float spoofing that error_engine/math_engine rely on); zero FP by construction — real desktop/iOS Safari expose none of the three. Catches the common mobile-Safari-UA spoof on headless Chromium)`
 
 _Skipped: `br.stack_tool_marker` — the collector runs as the page's own inline script, so its Error().stack is clean regardless of automation (can't fire here)._
 
@@ -81,6 +82,16 @@ Samsung Internet** (UA-CH brands + `window.chrome`), **Firefox** (Gecko: `-moz-a
 `mozInnerScreenX`), **Safari** (WebKit), and the **Tor / Mullvad Browser** family (Gecko + the
 resistFingerprinting conjunction: UTC timezone + a 200×100-letterboxed window + ≤2 cores — the same
 signature the detector's `br.rfp_browser` ships and calibrates, so a vanilla Firefox is not mislabeled).
+
+**Mobile + privacy browsers** are named with the same honesty about what features *can* prove:
+- **iOS** — Apple forbids non-WebKit engines, so Safari, Chrome (CriOS), Firefox (FxiOS), Brave, DuckDuckGo,
+  and Onion Browser all run the *same* system WebKit. The engine cannot separate them, so the page reports
+  `iOS browser (WebKit)` and says so — and the detector's convicting `br.apple_ua_nonwebkit` fires on any UA
+  that claims iOS/Safari while exposing a Blink-only API (a Chromium host faking an iOS UA).
+- **Android** — `Brave`/`Opera`/`Edge`/`Chrome` carry an `(Android)` tag; a Blink engine with no vendor tell
+  is named `Chromium (Android)` (Vivaldi/Yandex/UC/DuckDuckGo-Android suppress their brand — not guessed);
+  Gecko is `Firefox / GeckoView (Android)` (Firefox/Focus/Fennec share the engine), and the RFP-Gecko variant
+  is `Tor Browser / Mull (Android)`.
 
 **Honest limit:** Tor Browser and Mullvad Browser are *intentionally identical* at the JS layer (they share
 one anonymity set), so they are not JS-separable — only the **network layer** (a Tor exit-IP via

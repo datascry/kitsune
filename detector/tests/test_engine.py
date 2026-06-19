@@ -336,6 +336,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.canvas_geometry_noise",
         ),
         (
+            [(Layer.browser, "apple_ua_nonwebkit", True, Source.collector)],
+            "br.apple_ua_nonwebkit",
+        ),
+        (
             [
                 (Layer.browser, "webrtc_public_ip", "203.0.113.7", Source.collector),
                 (Layer.network, "observed_ip", "198.51.100.2", Source.edge),

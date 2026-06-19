@@ -595,6 +595,15 @@ DEMO_PAGE = """<!doctype html>
     var hasV8Stack = typeof Error.captureStackTrace === "function";
     if ((uaEngine === "chromium" && !hasV8Stack) || (uaEngine === "firefox" && hasV8Stack))
       sigs.push(S("browser", "engine_stack_mismatch", true));
+    // Apple mandates WebKit for Safari AND every iOS browser — Chrome (CriOS), Firefox (FxiOS), Brave,
+    // DuckDuckGo, Onion all wrap the system WebKit, none ship Blink. So a UA claiming Apple WebKit (a Safari
+    // token with no desktop-Chromium token → uaEngine "safari") that exposes a Blink-ONLY structural API is
+    // impossible on a real Apple browser: window.chrome, navigator.userAgentData (UA-CH, unimplemented in
+    // Safari), and V8's Error.captureStackTrace (JSC has none) never exist there. It is a Chromium host faking
+    // an iOS/Safari UA. STRUCTURAL (positive-API, not error-message/float based) so it survives the message
+    // and math spoofs error_engine/math_engine rely on. Grounded: real desktop+iOS Safari expose none → no fire.
+    if (uaEngine === "safari" && (window.chrome || navigator.userAgentData || hasV8Stack))
+      sigs.push(S("browser", "apple_ua_nonwebkit", true));
     // Engine error-message format — deeper than navigator.vendor or Error.captureStackTrace, because it
     // is the engine's own message generator (which JS-stealth tools do not rewrite). The same error reads
     // differently per engine: V8 "Cannot read properties of…", SpiderMonkey "can't access property…",
