@@ -72,6 +72,33 @@ DEMO_PAGE = """<!doctype html>
     _bait.innerHTML = "&nbsp;";
     addEventListener("DOMContentLoaded", function () { try { document.body.appendChild(_bait); } catch (e) {} });
   } catch (e) {}
+  // Honeypot bait: an element a human literally cannot reach — pushed off-screen, aria-hidden, and removed
+  // from the tab order (tabIndex -1) — but a "click/fill everything" scraper or form-spammer enumerates the
+  // DOM (querySelectorAll) and trips it. A click on the bait link, or a value typed into the bait input, is
+  // a programmatic interaction no human pointer/keyboard can produce — an automation artifact, not a
+  // behavioural measurement. Named like a real CTA/field ("Verify account" / "email_confirm") to tempt the
+  // naive bot. Appended at DOMContentLoaded so it exists before the bot interacts and before send().
+  var honeypotHit = false;
+  var _hpInput = null;
+  try {
+    addEventListener("DOMContentLoaded", function () {
+      try {
+        var hw = document.createElement("div");
+        hw.setAttribute("aria-hidden", "true");
+        hw.style.cssText = "position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;";
+        var a = document.createElement("a");
+        // Fragment href: a DOM-enumerating scraper still clicks it (the click is the tell), but it never
+        // navigates the document away, so the collector survives to report the hit. preventDefault belt-and-braces.
+        a.id = "ks-hp"; a.href = "#"; a.tabIndex = -1; a.textContent = "Verify account";
+        a.addEventListener("click", function (ev) { honeypotHit = true; try { ev.preventDefault(); } catch (x) {} });
+        _hpInput = document.createElement("input");
+        _hpInput.type = "text"; _hpInput.name = "email_confirm"; _hpInput.tabIndex = -1;
+        _hpInput.setAttribute("autocomplete", "off");
+        hw.appendChild(a); hw.appendChild(_hpInput);
+        document.body.appendChild(hw);
+      } catch (e) {}
+    });
+  } catch (e) {}
   function uaBrowser(ua) {
     if (/Firefox\\//.test(ua)) return "firefox";
     if (/Edg\\//.test(ua)) return "edge";
@@ -1008,6 +1035,10 @@ DEMO_PAGE = """<!doctype html>
     // CSP was not enforced on a page that ships a strict img-src — the context bypassed CSP (only an
     // automation framework does this). Emitted in every mode: it is an automation tell, not behavioural.
     if (!cspEnforced) sigs.push(S("browser", "csp_bypassed", true));
+    // Honeypot: a click on the off-screen aria-hidden bait link, or a value typed into the hidden bait
+    // input, is a programmatic DOM-enumeration interaction no human can perform. Emitted in every mode
+    // (an automation artifact, not behaviour); conservative — fires ONLY on a definitive hit, never on absence.
+    if (honeypotHit || (_hpInput && _hpInput.value !== "")) sigs.push(S("browser", "honeypot_interacted", true));
     // In `?fast` (detection-only) captures we don't simulate input, so emitting empty behavioral
     // signals would make the *absence* of input score as bot-like and mask the fingerprint result.
     // Omit the behavioral layer entirely in fast mode; a full capture still scores behaviour.

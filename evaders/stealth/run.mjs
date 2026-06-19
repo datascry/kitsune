@@ -80,6 +80,10 @@ const BRAVE_FAKE = process.env.BRAVE_FAKE === "1";
 // never generalises its renderer the way Firefox does) the placeholder string trips br.webgl_renderer_artifact.
 // Gives that rule a live Blink positive after v0.74.10 scoped it off the (legitimately-generalising) Gecko engine.
 const RENDERER_SPOOF = process.env.RENDERER_SPOOF === "1";
+// HONEYPOT: the naive "interact with everything" scraper/form-spammer — enumerate the DOM and click every
+// link + fill every text input. It blindly trips the collector's off-screen aria-hidden honeypot bait (a
+// link/input a human cannot reach) → br.honeypot_interaction. A real browser navigated by a human never does.
+const HONEYPOT = process.env.HONEYPOT === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -136,7 +140,9 @@ const evading =
   CANVAS_GEOMETRY_SPOOF ||
   BRAVE_FAKE ||
   Boolean(SPOOF_UA);
-const mode = RENDERER_SPOOF
+const mode = HONEYPOT
+  ? "honeypot"
+  : RENDERER_SPOOF
   ? "renderer-spoof"
   : BRAVE_FAKE
   ? "brave-fake"
@@ -404,7 +410,25 @@ if (FLOOR_SPOOF) {
 const page = await context.newPage();
 await page.goto(EDGE, { waitUntil: "load" });
 const human = HUMAN_MOUSE || MAX_STEALTH;
-if (LINEAR_BOT) {
+if (HONEYPOT) {
+  // Naive form-spammer: enumerate the DOM and fill every text input + dispatch a click on every link. A
+  // human reaches only the visible page; this blindly trips the off-screen aria-hidden honeypot bait (input
+  // email_confirm / link #ks-hp) → br.honeypot_interaction. dispatchEvent (not .click()) and value-set never
+  // navigate the document, so the collector survives to report. Bait was appended at DOMContentLoaded.
+  await page.evaluate(() => {
+    try {
+      document.querySelectorAll('input[type="text"]').forEach((i) => {
+        i.value = "bot@example.com";
+      });
+      document.querySelectorAll("a").forEach((a) => {
+        a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      });
+    } catch (e) {}
+  });
+  // The interaction is instant (unlike the typing/mouse paths), so keep the page alive long enough for the
+  // collector's send (1200ms timer + edge round-trip ≈ 2.5s) to fire — the shared 2s wait below alone is short.
+  await page.waitForTimeout(2500);
+} else if (LINEAR_BOT) {
   // Scripted motion: a single straight-line drag at constant velocity (fixed pixel step + fixed delay).
   // straightness → 1.0 and velocity CV → 0, tripping bh.path_too_straight and bh.uniform_velocity.
   const from = { x: 100, y: 120 };

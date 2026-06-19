@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.10"
+ruleset_version: "0.74.11"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -206,6 +206,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "rebrowser-bot-detector bypassCsp; Playwright/Puppeteer setBypassCSP(true), unfixable by patches"
+
+  - id: br.honeypot_interaction
+    title: Interacted with a honeypot bait element a human cannot reach (off-screen + aria-hidden + tabindex -1)
+    layers: [browser]
+    reads: [browser.honeypot_interacted]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "Classic honeypot (OWASP/Project-Honeypot bait-field technique). The collector injects a bait <a href=/account/verify> and <input name=email_confirm> inside an aria-hidden, off-screen (left:-9999px), tabIndex=-1 wrapper appended at DOMContentLoaded. A human literally cannot reach it — it is not rendered, not in the tab order, and hidden from assistive tech (link prefetchers fetch href without a click event; password managers fill visible login fields, not an off-screen aria-hidden one) — so a click on the bait link OR a value in the bait input is a programmatic DOM-enumeration interaction: a 'click/fill everything' scraper or form-spammer (querySelectorAll().forEach(click/fill)) trips it. AUTOMATION (a real browser driven by a human produces neither event); conservative — fires ONLY on a definitive hit (click event / non-empty value), never on absence, so a passive load never trips it. GROUNDED: a real headful Chromium/Firefox/WebKit navigated normally through the edge (corpus/calibration/headful/) never touches the bait → no fire. Fires in-context via the stealth HONEYPOT=1 evader (the naive interact-with-everything bot). Catalog gap bh.honeypot_interaction."
 
   - id: br.canvas_lie
     title: Canvas/WebGL API tampering detected (getter override)

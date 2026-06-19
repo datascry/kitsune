@@ -1,7 +1,7 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-19T09:28:53.827789+00:00`
-- ruleset: `0.74.10`
+- generated: `2026-06-19T10:00:14.004152+00:00`
+- ruleset: `0.74.11`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|---|---|
@@ -23,6 +23,7 @@
 | go-tls | corpus | 0.92 | 0.80 | 0.00 | 0.00 | 0.80 | 0.99 | bot |
 | h2-continuation-flood | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
 | h2-rapid-reset | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
+| honeypot | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 | human-mouse | corpus | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
 | iframe-spoof | corpus | 0.60 | 1.00 | 0.55 | 0.00 | 0.60 | 1.00 | bot |
 | ios-ua-spoof | corpus | 0.98 | 1.00 | 0.55 | 0.00 | 0.94 | 1.00 | bot |
@@ -72,6 +73,7 @@
 - **go-tls** (bot): `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua`
 - **h2-continuation-flood** (bot): `net.h2_continuation_flood`, `net.no_js_execution`
 - **h2-rapid-reset** (bot): `net.h2_rapid_reset`, `net.no_js_execution`
+- **honeypot** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.honeypot_interaction`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.ch_he_headless`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **human-mouse** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **iframe-spoof** (bot): `br.ua_platform_vs_ch_platform`, `br.cdp_runtime_enabled`, `net.ch_platform_header_vs_ua`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`, `br.worker_divergence`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.iframe_divergence`, `br.voices_empty`, `br.fingerprint_improbable`, `br.media_devices_empty`, `br.font_linux_leak`, `br.codec_os_incoherent`
 - **ios-ua-spoof** (bot): `net.h2_vs_ua_browser`, `br.ua_platform_vs_ch_platform`, `net.ch_ua_vs_ua_browser`, `net.tcp_os_vs_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`, `br.vendor_vs_ua`, `br.notification_denied`, `br.voices_empty`, `br.fingerprint_improbable`, `br.media_devices_empty`, `br.macos_dpr1`, `br.font_linux_leak`, `br.codec_os_incoherent`, `br.apple_ua_nonwebkit`, `br.error_engine_vs_ua`, `net.ch_ua_mobile_vs_ua`

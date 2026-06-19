@@ -38,7 +38,7 @@ tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact
 | `br.isolated_world` | medium | medium | hard | Isolated-world execution tell — Main-world sentinel unreachable from isolated-world automation (selenium-driverless/patchr |
 | `br.stack_tool_marker` | medium | low | easy | Error.stack tool-marker leak — Error().stack leaks pptr/puppeteer/playwright/_evaluation_script__ markers. |
 | `br.domrect_invariant` | medium | low | medium | DOMRect transform geometry — getClientRects on transformed/zero-size elements; per-engine sub-pixel + invariant checks. |
-| `bh.honeypot_interaction` | medium | low | medium | Honeypot bait interaction — Hidden bait element/field; automation that touches/fills it trips. Very low FP. |
+| `bh.honeypot_interaction` | ✅ DONE | low | medium | Honeypot bait interaction — Hidden bait element/field; automation that touches/fills it trips. Very low FP. SHIPPED as `br.honeypot_interaction` (automation) v0.74.11. |
 | `net.ja4t_vs_ua` | medium | low | medium | JA4T active TCP fingerprint — TCP window/options-order/MSS/wscale; JA4T-vs-TLS-engine incoherence is a second TCP anchor |
 | `br.timer_resolution_vm` | low | high | medium | performance.now VM timing — VM/headless timer resolution/jitter + micro-benchmark distinguish virtualized hosts. |
 | `net.tls_raw_value_anomaly` | low | medium | medium | JA4_r raw value anomaly — Raw cipher/ext hex values vs claimed-browser profile; catches a value the hashed JA4 hides |
@@ -70,6 +70,7 @@ valuable but need careful calibration against the real-browser corpus before shi
 
 ## Shipped from this catalog
 
+- ✅ `br.honeypot_interaction (ACTIVE — the classic honeypot, the catalog's bh.honeypot_interaction gap. The collector injects an off-screen, aria-hidden, tabIndex=-1 bait link + input a human literally cannot reach; a click on the bait or a value in the bait input is a programmatic DOM-enumeration interaction → automation. FP-safe: fires ONLY on a definitive hit, never on absence; grounded against clean headful Chromium AND Firefox (no fire). Fires in-context via the stealth HONEYPOT=1 form-spammer evader.)`
 - ✅ `net.h2_header_order_vs_ua`
 - ✅ `br.readback_noise`
 - ✅ `br.electron_process`
