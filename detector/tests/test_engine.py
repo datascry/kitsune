@@ -57,7 +57,15 @@ def test_registry_rules_are_well_formed() -> None:
 
     from kitsune_detector.contracts import contracts_dir
 
-    arity = {"present": 1, "absent": 1, "equals": 2, "not_equal": 2, "below_threshold": 1, "above_threshold": 1}
+    arity = {
+        "present": 1,
+        "absent": 1,
+        "equals": 2,
+        "not_equal": 2,
+        "not_equal_browser": 2,
+        "below_threshold": 1,
+        "above_threshold": 1,
+    }
     needs_threshold = {"below_threshold", "above_threshold"}
     raw = yaml.safe_load((contracts_dir() / "rules" / "registry.yaml").read_text())
     problems: list[str] = []

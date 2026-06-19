@@ -122,6 +122,23 @@ def test_real_nonautomated_chrome_trips_no_browser_layer_conviction() -> None:
     assert fired.get(RuleCategory.automation, set()) == set(), fired
 
 
+def test_real_edge_chromium_family_not_a_tls_or_h2_browser_contradiction() -> None:
+    # corpus/calibration/headful/msedge.json: REAL Microsoft Edge 149. Edge is Chromium, so its TLS/HTTP-2
+    # stack hints 'chrome' while ua_browser is 'edge'. v0.74.30 (not_equal_browser predicate): a literal
+    # not_equal convicted every real Edge on net.tls_vs_ua_browser + net.h2_vs_ua_browser; the family-aware
+    # predicate collapses the Chromium family so those do NOT fire. Non-vacuous: the fixture carries the
+    # ja4/h2 hint 'chrome' vs ua_browser 'edge' mismatch inputs.
+    capture = json.loads((_HEADFUL / "msedge.json").read_text())
+    browser = {s["kind"]: s["value"] for s in capture["signals"]["browser"]}
+    network = {s["kind"]: s["value"] for s in capture["signals"]["network"]}
+    assert browser.get("ua_browser") == "edge"
+    assert network.get("ja4_browser_hint") == "chrome" and network.get("h2_browser_hint") == "chrome"
+
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+    assert fired.isdisjoint({"net.tls_vs_ua_browser", "net.h2_vs_ua_browser"}), fired
+
+
 def test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp() -> None:
     # Stock Firefox 152 (geckodriver, NOT Playwright's Juggler build — the strongest real-Firefox source).
     # v0.74.27 grounds the engine_stack_vs_ua FP fix: Firefox added Error.captureStackTrace natively in v122,

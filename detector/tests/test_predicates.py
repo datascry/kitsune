@@ -12,6 +12,7 @@ from kitsune_detector.coherence.predicates import (
     below_threshold,
     equals,
     not_equal,
+    not_equal_browser,
     present,
 )
 from kitsune_detector.models import MISSING
@@ -54,12 +55,27 @@ def test_above_threshold() -> None:
     assert above_threshold([0.9], None) is False
 
 
+def test_not_equal_browser() -> None:
+    # A Chromium-family UA (Edge/Brave/Opera) matches the 'chrome' network engine-hint → no contradiction.
+    assert not_equal_browser(["chrome", "edge"], None) is False  # real Edge: ja4 hint chrome vs UA edge
+    assert not_equal_browser(["chrome", "brave"], None) is False
+    assert not_equal_browser(["chrome", "chrome"], None) is False
+    # Cross-ENGINE pairings still fire (the actual spoof signal).
+    assert not_equal_browser(["chrome", "firefox"], None) is True  # spoof-ua: chrome TLS, Firefox UA
+    assert not_equal_browser(["chrome", "safari"], None) is True  # ios-ua-spoof
+    assert not_equal_browser(["safari", "chrome"], None) is True  # webkit-ua-spoof
+    # Missing data is never a contradiction.
+    assert not_equal_browser([MISSING, "edge"], None) is False
+    assert not_equal_browser(["chrome", MISSING], None) is False
+
+
 def test_registry_complete() -> None:
     assert set(PREDICATES) == {
         "present",
         "absent",
         "equals",
         "not_equal",
+        "not_equal_browser",
         "below_threshold",
         "above_threshold",
     }

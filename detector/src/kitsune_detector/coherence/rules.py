@@ -37,7 +37,7 @@ class CoherenceRule(BaseModel):
 
     @model_validator(mode="after")
     def _check_predicate_arity(self) -> CoherenceRule:
-        if self.predicate in ("equals", "not_equal") and len(self.reads) < 2:
+        if self.predicate in ("equals", "not_equal", "not_equal_browser") and len(self.reads) < 2:
             raise ValueError(f"rule {self.id}: predicate {self.predicate} needs >=2 reads")
         if self.predicate in ("below_threshold", "above_threshold") and self.threshold is None:
             raise ValueError(f"rule {self.id}: predicate {self.predicate} needs a threshold")

@@ -26,7 +26,7 @@
     },
     "predicate": {
       "type": "string",
-      "enum": ["equals", "not_equal", "present", "absent", "below_threshold", "above_threshold"],
+      "enum": ["equals", "not_equal", "not_equal_browser", "present", "absent", "below_threshold", "above_threshold"],
       "description": "Generic predicate evaluated by the engine over the resolved reads."
     },
     "threshold": {
@@ -50,7 +50,7 @@
       "then": { "required": ["threshold"] }
     },
     {
-      "if": { "properties": { "predicate": { "enum": ["equals", "not_equal"] } } },
+      "if": { "properties": { "predicate": { "enum": ["equals", "not_equal", "not_equal_browser"] } } },
       "then": { "properties": { "reads": { "minItems": 2 } } }
     }
   ]

@@ -268,6 +268,19 @@ full Sec-CH-UA trio (request-type-invariant; a naive non-browser stack omits it)
 Chrome 149 now has ZERO convicting fires across all layers; `webkit-ua-spoof` (real WebKit + Chrome UA, no trio)
 still trips it (no detection loss); partial-trio cases unit-tested in edge `h2_test.go`.
 
+### ✅ FIXED (v0.74.30): `net.tls_vs_ua_browser` + `net.h2_vs_ua_browser` convicted real Microsoft Edge
+
+First capture of **real Microsoft Edge 149** (`corpus/calibration/headful/msedge.json`) — the 2nd–3rd most common
+desktop browser — surfaced a coherence FP. Edge is built on Chromium, so its TLS/HTTP-2 stack is **identical to
+Chrome's** (`ja4_browser_hint=chrome`, `h2_browser_hint=chrome`), but `ua_browser=edge`. The two cross-layer
+browser-coherence rules used `predicate: not_equal`, so `chrome != edge` convicted every real Edge. Fixed with a
+new **`not_equal_browser`** predicate that collapses the Chromium family (edge/brave/opera/vivaldi/samsung →
+chrome) to its engine before comparing: a Chromium-engine UA matches the `chrome` network hint (no fire) while a
+CROSS-ENGINE pairing still fires. Re-validated LIVE — real Edge 149 now has zero coherence/artifact fires;
+`webkit-ua-spoof` (WebKit TLS + Chrome UA) and `spoof-ua`/`ios-ua-spoof` (Chrome TLS + Firefox/Safari UA) still
+fire (no detection loss). Unit-tested in `test_predicates.test_not_equal_browser`; locked by
+`test_real_edge_chromium_family_not_a_tls_or_h2_browser_contradiction`.
+
 ### Open data gap (remaining)
 
 LibreWolf is the next privacy/Gecko source; fetchable via the geckodriver path proven here (Tor/Mullvad/stock
