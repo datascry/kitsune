@@ -303,6 +303,23 @@ DEMO_PAGE = """<!doctype html>
       } catch (err) { resolve(null); }
     });
   }
+  // The WebGL UNMASKED_RENDERER from an OffscreenCanvas inside a Worker. A getParameter spoof patches the
+  // main realm but not Worker scope, so a Worker reports the real GPU. Null on any failure → never fires.
+  function workerGlRenderer() {
+    return new Promise(function (resolve) {
+      try {
+        var code = 'onmessage=function(){try{' +
+          "var c=new OffscreenCanvas(8,8);var gl=c.getContext('webgl');" +
+          "var d=gl&&gl.getExtension('WEBGL_debug_renderer_info');" +
+          'postMessage(d?String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)):null);' +
+          '}catch(e){postMessage(null);}}';
+        var w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+        var t = setTimeout(function () { resolve(null); }, 1500);
+        w.onmessage = function (e) { clearTimeout(t); resolve(e.data); w.terminate(); };
+        w.postMessage(0);
+      } catch (err) { resolve(null); }
+    });
+  }
   // Installed fonts betray the real OS: a box's font stack is OS-specific (Windows ships Segoe UI /
   // Calibri, macOS ships Lucida Grande / Menlo, Linux ships DejaVu / Liberation). An anti-detect
   // browser can spoof the UA platform but not cheaply re-skin the host's installed fonts — so the
@@ -815,6 +832,12 @@ DEMO_PAGE = """<!doctype html>
     if (wn && (wn.ua !== navigator.userAgent || wn.hw !== navigator.hardwareConcurrency ||
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {
       sigs.push(S("browser", "worker_divergence", true));
+    }
+    // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker OffscreenCanvas
+    // (one physical GPU). A getParameter spoof patches the main realm but never the Worker → divergence.
+    var wglr = await workerGlRenderer();
+    if (wglr && wg.renderer && wglr !== wg.renderer) {
+      sigs.push(S("browser", "webgl_worker_divergence", true));
     }
     // CSP was not enforced on a page that ships a strict img-src — the context bypassed CSP (only an
     // automation framework does this). Emitted in every mode: it is an automation tell, not behavioural.

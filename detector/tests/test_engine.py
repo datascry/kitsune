@@ -210,6 +210,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ),
         ([(Layer.browser, "worker_divergence", True, Source.collector)], "br.worker_divergence"),
         (
+            [(Layer.browser, "webgl_worker_divergence", True, Source.collector)],
+            "br.webgl_worker_vs_main",
+        ),
+        (
             [
                 (Layer.browser, "vendor_engine", "chromium", Source.collector),
                 (Layer.browser, "ua_engine", "firefox", Source.collector),

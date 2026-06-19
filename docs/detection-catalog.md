@@ -63,5 +63,6 @@ valuable but need careful calibration against the real-browser corpus before shi
 - ✅ `br.domrect_invariant`
 - ✅ `br.measuretext_offscreen_vs`
 - ✅ `br.fingerprint_improbable (prevalence model — the structural frontier)`
+- ✅ `br.webgl_worker_vs_main (experimental — GPU analog of worker_divergence; fires live on full-stealth + native-spoof; pending Tier-3 real-GPU FP validation)`
 
 _Skipped: `br.stack_tool_marker` — the collector runs as the page's own inline script, so its Error().stack is clean regardless of automation (can't fire here)._

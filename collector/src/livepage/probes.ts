@@ -317,6 +317,34 @@ function workerNav(): Promise<{ ua: string; hw: number; plat: string } | null> {
   });
 }
 
+/** The WebGL UNMASKED_RENDERER of an OffscreenCanvas inside a Worker. A GPU spoof that patches the main
+ * realm's getParameter cannot reach Worker scope, so a Worker reports the real GPU. Returns null on any
+ * failure (no OffscreenCanvas/WebGL/debug-info, or timeout) so a missing capability never fires a rule. */
+function workerGlRenderer(): Promise<string | null> {
+  return new Promise((resolve) => {
+    try {
+      const code =
+        "onmessage=function(){try{" +
+        "var c=new OffscreenCanvas(8,8);var gl=c.getContext('webgl');" +
+        "var d=gl&&gl.getExtension('WEBGL_debug_renderer_info');" +
+        "postMessage(d?String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)):null);" +
+        "}catch(e){postMessage(null);}}";
+      const w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+      const t = setTimeout(() => {
+        resolve(null);
+      }, 1500);
+      w.onmessage = (e: MessageEvent<string | null>): void => {
+        clearTimeout(t);
+        resolve(e.data);
+        w.terminate();
+      };
+      w.postMessage(0);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 /** A live in-browser collector: arm listeners now, snapshot the full signal set later via collect(). */
 export interface LiveCollector {
   collect(): Promise<SignalMap>;
@@ -920,6 +948,14 @@ export function armCollector(): LiveCollector {
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))
     ) {
       put("browser", "worker_divergence", true);
+    }
+    // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker's
+    // OffscreenCanvas (one physical GPU). A getParameter spoof patches the main realm but never reaches
+    // Worker scope, so a Worker reports the real GPU. Only fire when both report a renderer and they
+    // differ — a missing capability (null) never fires.
+    const wglr = await workerGlRenderer();
+    if (wglr && wg.renderer && wglr !== wg.renderer) {
+      put("browser", "webgl_worker_divergence", true);
     }
     if (!cspEnforced) put("browser", "csp_bypassed", true);
 
