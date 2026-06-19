@@ -1,7 +1,7 @@
 # landscape — Kitsune vs. the bot-detection field
 
 A survey of well-known bot-detection projects, test sites, and libraries, and an honest comparison of
-Kitsune's current detections (ruleset v0.70.0; 114 rules — 83 active, 30 experimental, 2 retired)
+Kitsune's current detections (ruleset 0.74.21; 122 rules, ~91 active / 29 experimental / 3 retired)
 against what they do. Grounded in current sources (2025–2026), not just the codebase.
 
 ## Who's out there
@@ -93,3 +93,27 @@ The IP-reputation, behavioral-biomechanics, and QUIC gaps from the first survey 
 versus the *commercial* field is proprietary by nature — trained behavioral ML over scroll/intent, active
 proof-of-work challenges, and a million-fingerprint reference corpus. The lab's thesis — incoherence across
 layers + coordination — is genuinely differentiated; the remaining gaps are posture/scale, not detection ideas.
+
+## 2026 landscape recheck (ruleset 0.74.21) — the thesis is current, no missed technique
+
+Re-surveyed the public 2026 anti-detect field to confirm Kitsune is not behind the cutting edge. The field's
+state of the art maps directly onto what is already built or documented — no new attack technique surfaced
+that the threat model (see docs/evasion-catalog.md "Coverage envelope") does not already address:
+
+- **"Consistency checking" across UA / TLS / device is described as THE industry detection approach** — i.e.
+  the field has converged on exactly Kitsune's cross-layer-incoherence thesis (a Chrome UA over a Python-TLS
+  signature is flagged before any interaction). Kitsune leads here (`net.tls_vs_ua_browser`, `tcp_os_vs_ua`,
+  `ch_ua_version_vs_ua`, the h2/QUIC tells).
+- **SOTA stealth "works directly with native interfaces, leaves no automation-library traces"** — this is the
+  Proxy-over-native technique white-boxed in fingerprint-injector, whose artifact-layer ceiling is documented.
+  An industry **~53% evasion rate against commercial anti-bot** corroborates that the per-session ceiling is
+  real field-wide, not a Kitsune limitation — and that the durable answer is coordination + a real-traffic
+  prevalence prior, exactly the (external-data-bound) frontiers.
+- **"Outdated browser versions stand out"** — version *incoherence* and stale templates are already covered
+  (`net.ch_ua_version_vs_ua`, `br.ch_he_version_vs_ua`, `engine_feature_vs_ua`, PQ-keyshare lag). The only
+  uncovered case — a *uniformly* stale-but-consistent version — is a corroborating prevalence/recency tell
+  needing a maintained current-version reference; per the saturation guidance it is deliberately not built as
+  a marginal environment tell (and is subsumed by a real-traffic prevalence prior when one exists).
+
+Net: the 2026 SOTA confirms the thesis and the threat model are current; the residual frontier is unchanged
+and external-data-bound. Sources: browserless.io, hcaptcha.com, scrapfly.io, scrapingbee.com (2026).
