@@ -20,7 +20,7 @@ on a single source — corroborate first.
 | **network — PQ keyshare** (`net.*_pq_keyshare_vs_ua`) | IANA registry + 2026 deployment | ✅ X25519MLKEM768/0x11EC current + FP-safe |
 | **network — HTTP/2** (`net.h2_header_order_vs_ua`) | Akamai HTTP/2 standard (BlackHat) | ✅ Chrome `m,a,s,p` + SETTINGS confirmed |
 | **IP reputation** (`rep.*`) | AWS/GCP/Tor public ranges (refresh tool) | ✅ CIDR data public; live exercise needs proxy egress |
-| **network — Safari/Firefox JA4** | curl_cffi #460 / FoxIO | ⚠ ours is Playwright-build-specific; real values found, need edge-verified add |
+| **network — Safari/Firefox JA4** | FoxIO `ja4plus-mapping.csv` | ✅ real-browser JA4s ADDED (corroborated 2 sources; edge JA4 proven spec-compliant) alongside the Playwright hints |
 | **prevalence — cores** | Steam HW survey | ⚠ flag: browserforge may over-generate high cores (corroborate, don't act) |
 | **prevalence — gpu** | none (Steam gamer-skewed; Web3DSurvey lacks vendor table) | ✗ needs web-representative capture |
 | **`chrome_runtime_authenticity`** | none (docs ≠ verification) | ✗ needs live real-Chrome capture |

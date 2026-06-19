@@ -30,6 +30,21 @@ func TestPrefixFallbackClassifiesFirefox(t *testing.T) {
 	}
 }
 
+func TestRealSafariFirefoxJA4Hints(t *testing.T) {
+	// Real-browser JA4s grounded against the FoxIO ja4plus-mapping (NOT the Playwright-build captures): real
+	// Safari t13d2014h2_a09f3c656075 (20 ciphers, vs Playwright-WebKit's 723694b0fccc) and real Firefox
+	// t13d1715h2_5b57614c22b0 (15 extensions, vs the Playwright-Firefox capture's 17). Classify via the
+	// JA4_c-independent a+b prefix, so a real Safari/Firefox visitor's TLS is recognised (no FP — its UA
+	// matches), and a Chromium faking that engine's TLS under a mismatched UA is convicted.
+	table := DefaultHints()
+	if h, ok := table.Lookup("t13d2014h2_a09f3c656075_14788d8d241b"); !ok || h.Browser != "safari" {
+		t.Errorf("real Safari JA4 should classify safari: %+v ok=%v", h, ok)
+	}
+	if h, ok := table.Lookup("t13d1715h2_5b57614c22b0_7121afd63204"); !ok || h.Browser != "firefox" {
+		t.Errorf("real Firefox JA4 should classify firefox: %+v ok=%v", h, ok)
+	}
+}
+
 func TestLookupRejectsNonMatches(t *testing.T) {
 	table := DefaultHints()
 	if _, ok := table.Lookup("t13d9999h2_deadbeefcafe_0123456789ab"); ok {
