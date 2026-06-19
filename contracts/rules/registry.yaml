@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.11"
+ruleset_version: "0.74.12"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -157,7 +157,7 @@ rules:
     category: coherence
     added: "2026-06-18"
     last_validated: "2026-06-19"
-    source: "JA4H regular-header order: Chromium emits the Sec-CH-UA client-hint group before user-agent on a secure origin; a Chrome/Edge UA whose header order does not is a non-browser h2 stack wearing a Chrome UA. Conservative + asymmetric (only the Chromium signature is positively classified; Firefox/Safari/non-browser stay 'unknown' and gate off) — experimental pending live-fleet validation of real-browser header orders. Extends pseudo-header coverage (net.h2_unknown_vs_ua) to the regular-header order. Ref FoxIO JA4H. v0.73.7 LIVE re-validation (detector+edge stack vs the HTTP fleet): zero positives — primp and go-tls replicate Chrome's h2 regular-header order (the edge correctly never emits h2_header_order_non_chromium), and the only non-Chromium stack (httpx/vanilla) speaks HTTP/1.1 so it has no h2 order at all. The read signal is genuinely never produced by the current fleet — chromium-impersonation stacks defeat it by replicating Chrome's order. Stays experimental/dormant: correct behavior (not a bug); needs a non-Chromium h2 stack to fire."
+    source: "JA4H regular-header order: Chromium emits the Sec-CH-UA client-hint group before user-agent on a secure origin; a Chrome/Edge UA whose header order does not is a non-browser h2 stack wearing a Chrome UA. Conservative + asymmetric (only the Chromium signature is positively classified; Firefox/Safari/non-browser stay 'unknown' and gate off) — experimental pending live-fleet validation of real-browser header orders. Extends pseudo-header coverage (net.h2_unknown_vs_ua) to the regular-header order. Ref FoxIO JA4H. v0.73.7 LIVE re-validation (detector+edge stack vs the HTTP fleet): zero positives — primp and go-tls replicate Chrome's h2 regular-header order (the edge correctly never emits h2_header_order_non_chromium), and the only non-Chromium stack (httpx/vanilla) speaks HTTP/1.1 so it has no h2 order at all. The read signal is genuinely never produced by the current fleet — chromium-impersonation stacks defeat it by replicating Chrome's order. Stays experimental/dormant: correct behavior (not a bug); needs a non-Chromium h2 stack to fire. v0.74.12 LIVE POSITIVE: the new http2-naive evader (vanilla KS_HTTP2=1 + a Chrome KS_UA — httpx over HTTP/2 with the h2 stack) emits a non-Chrome regular-header order (no Sec-CH-UA group) under a Chrome UA, so the edge emits h2_header_order_non_chromium=True and this rule fires — its FIRST live positive. Confirms the rule is correct and capable, not dead: it catches the naive h2 scraper that fakes a Chrome UA without replicating Chrome's on-wire order (where curl-impersonate/primp/go-tls defeat it by replicating). Grounded: a real Chrome (the headful captures) emits the Sec-CH-UA-first order → never fires. Stays experimental (one stack); promote toward active when a second independent non-Chrome h2 stack corroborates."
 
   - id: br.ua_platform_vs_ch_platform
     title: navigator/UA platform contradicts Sec-CH-UA-Platform

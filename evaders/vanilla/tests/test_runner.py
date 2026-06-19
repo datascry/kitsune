@@ -45,3 +45,15 @@ def test_build_client_ks_ua_fakes_browser(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setenv("KS_UA", "Mozilla/5.0 Chrome/125.0.0.0")
     with build_client() as client:
         assert client.headers["user-agent"] == "Mozilla/5.0 Chrome/125.0.0.0"
+
+
+def test_build_client_http2_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
+    # KS_HTTP2=1 negotiates HTTP/2 (exercises the env branch + proves the h2 stack is installed); default
+    # stays HTTP/1.1. A naive h2 client faking a Chrome UA does not replicate Chrome's on-wire header order,
+    # so the edge's h2_header_order_non_chromium signal can fire where Chrome-impersonating stacks defeat it.
+    monkeypatch.delenv("KS_HTTP2", raising=False)
+    with build_client() as default_client:
+        assert isinstance(default_client, httpx.Client)
+    monkeypatch.setenv("KS_HTTP2", "1")
+    with build_client() as h2_client:  # raises ImportError if h2 is not installed
+        assert isinstance(h2_client, httpx.Client)

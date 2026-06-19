@@ -43,8 +43,14 @@ def build_client() -> httpx.Client:
 
     ``KS_UA`` fakes a browser User-Agent over plain httpx (no Sec-Fetch headers) — the classic
     UA-spoofing scripted client that the edge's ``net.sec_fetch_vs_ua`` HTTP-layer tell catches.
+    ``KS_HTTP2=1`` upgrades to HTTP/2 (via the ``h2`` stack): a naive h2 client that, paired with a
+    Chrome ``KS_UA``, emits a non-Chrome regular-header order and no Sec-CH-UA group — so it does NOT
+    replicate Chrome's on-wire header order the way curl-impersonate/primp/go-tls do, giving the edge's
+    ``h2_header_order_non_chromium`` signal (``net.h2_header_order_vs_ua``) a live positive the
+    Chrome-impersonating stacks defeat. The discriminator: impersonate Chrome's order, or be caught.
     """
     headers = {}
     if ua := os.environ.get("KS_UA"):
         headers["User-Agent"] = ua
-    return httpx.Client(verify=False, timeout=10.0, follow_redirects=True, headers=headers)
+    http2 = os.environ.get("KS_HTTP2") == "1"
+    return httpx.Client(verify=False, timeout=10.0, follow_redirects=True, headers=headers, http2=http2)
