@@ -72,12 +72,21 @@ Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6*
 
 ## The two strategic gaps
 
-1. **Prevalence / likelihood model.** Kitsune is a hard-contradiction detector. The field's generators
-   (BrowserForge, fingerprint-suite) are built to produce statistically-coherent joint fingerprints that
-   *have no contradiction*. Scoring a fingerprint by how *improbable* its field combination is (a
-   likelihood model over a real-traffic prior — the same datapoints the generators sample from) is the
-   one detection class the lab lacks. This is also why the calibration matters: a prevalence model is the
-   principled way to weight "unusual but real" without the FP blowup of single-layer environment tells.
+1. **Prevalence / likelihood model — BUILT but SAME-SOURCE-BLIND (the real gap).** The likelihood model
+   exists (`br.fingerprint_improbable`, corroborating-only) and catches hand-crafted improbable-but-coherent
+   joints in unit tests. But its prior is browserforge — the SAME generator a `fingerprint-injector`-class
+   attacker samples from — so it has a structural blind spot, now measured: scoring browserforge fingerprints
+   (the injector's exact attack surface) through the full browser-layer ruleset gives **80% `human`** (n=800),
+   and the ~20% non-human trip browserforge *generation artifacts* (`media_devices_empty` ~20% — a documented
+   macOS quirk; `navplatform_vs_ua` 0.4%; `webgl_not_angle`), NOT real detection of a clean injection.
+   `br.fingerprint_improbable` itself fires on only ~1% — exactly browserforge's own p1 tail — so it is blind
+   to the ~99% bulk a browserforge-based injector draws from. **Conclusion:** a SECOND, INDEPENDENT prior
+   (real-traffic / Tier-3 real-device, NOT another generator) is required not merely for FP-safety but for
+   *detection power* — without it the model has near-zero power against its canonical adversary (a fingerprint
+   sampled from the same distribution we built the prior from). A clean generator-sampled fingerprint defeats
+   the whole per-session fingerprint+coherence layer; only the driver's network/automation tells (defeatable
+   by patchright + a high-fidelity network stack, per the white-box findings above) and ultimately
+   **coordination** remain. This is the quantified case for the second prior + the coordination frontier.
 2. **Live proxy/coordination harness.** The durable bots-at-scale signal (coordination + IP reputation)
    is currently exercised only by a synthetic fleet. A real residential/proxy-fleet harness (ethics-gated
    to the allow-list edge) is the only live test of `rep.*`, `net.webrtc_ip_vs_observed`, and the six
