@@ -18,6 +18,13 @@ It maps fpgen output through the SAME ``features_from_fingerprint`` the prior is
 total-variation distance (TVD: 0 = identical, 1 = disjoint) per factor and conditioning value. It changes no
 rule — it is a trust diagnostic, run on demand (fpgen fetches its model over the network, so it is not a CI
 test). Run: ``uv run --with fpgen python -m kitsune_harness.fpgen_corroborate --n 500``.
+
+SCOPE (do not extend naively): fpgen is faithful for the DISTRIBUTIONAL prevalence features used here
+(gpu via the robust ANGLE-aware family regex, screen bucket, cores bucket) but NOT for the navigator-
+**coherence** rules — it nulls ``navigator.vendor`` (it carries the WebGL vendor only) and emits ``oscpu`` as
+the literal string ``"undefined"`` with no ``userAgentData``. Routing fpgen through ``signals_from_fingerprint``
+would therefore fabricate ``vendor_vs_ua`` / ``oscpu_vs_ua`` contradictions that are mapper artifacts, not rule
+FPs. Use fpgen to corroborate the prevalence prior only; coherence-rule FP must come from real captures.
 """
 
 from __future__ import annotations

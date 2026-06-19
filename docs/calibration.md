@@ -537,3 +537,16 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   additive JA4 hints don't change fleet verdicts (they fire only on real Safari/Firefox/17-ext-Chrome TLS,
   which the Playwright fleet doesn't produce). Edge change deployed + validated end-to-end. No rule changed →
   no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.22 · periodic experimental-rule re-validation + fpgen-scope finding** — live
+  stack healthy at 0.74.22; both named experimental rules re-confirmed: `net.h2_header_order_vs_ua` fires on
+  http2-naive (vanilla `KS_HTTP2=1` + Chrome UA → bot), `br.readback_noise` fires on `audio-readback-spoof`
+  (→ bot) AND does NOT fire on real Camoufox (engine-level audio = consistent — negative intact). Matrix
+  current (zero content drift; only the scoreboard's `generated:` timestamp differs — cosmetic, not
+  committed). **fpgen calibration-scope finding:** fpgen (the Scrapfly second source, see
+  `kitsune_harness.fpgen_corroborate`) is faithful for the **distributional prevalence features**
+  (gpu/screen/cores) but NOT for navigator-**coherence** rules — it nulls `navigator.vendor` (carries the
+  WebGL vendor only) and sets `oscpu` to the literal string `"undefined"` with no `userAgentData`, so feeding
+  it through `signals_from_fingerprint` would fabricate `vendor_vs_ua`/`oscpu_vs_ua` "FPs" that are mapper
+  artifacts, not rule FPs. So fpgen corroborates the prevalence prior (done) but must NOT be used as a
+  drop-in coherence FP source. No rule changed → no ruleset bump.
