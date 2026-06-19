@@ -382,3 +382,12 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   patchright-class stealth; the frontier is now tested, not open. The thin remaining path (also faking
   `window.chrome.runtime` — itself a native-invariant artifact) is the next red-team probe. Matrix now 52/53
   `bot` (patchright-headful added; camoufox-headful the lone `suspicious`).
+
+- **2026-06-19 · ruleset 0.74.21 · periodic experimental-rule re-validation** — both named experimental
+  rules re-confirmed firing live through the edge→detector stack (healthy): `br.readback_noise`
+  (audio-readback-spoof → `bot`) and `net.h2_header_order_vs_ua` (http2-naive → `bot`). No drift; live stack
+  at 0.74.21. Their real-browser negatives stay CI-guarded by `test_calibration_methodology`. Per-session
+  detection remains saturated; the threat-model exploration (per-session ceiling → prevalence same-source
+  blindness → coordination per-cluster ceiling → durable signals = `shared_real_ip`/`trace_collision` +
+  population statistics) is complete and the residual frontier is external-data-bound. No rule changed → no
+  ruleset bump.
