@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.73.1"
+ruleset_version: "0.73.2"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -587,8 +587,8 @@ rules:
     status: experimental
     category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "fpscanner / Sannysoft plugins length"
+    last_validated: "2026-06-19"
+    source: "fpscanner / Sannysoft plugins length. DESKTOP-only: a real desktop browser ships a standardized 5 plugins, so zero is a stripped-browser signature — but every real MOBILE browser (Android Chrome, iOS Safari) legitimately reports 0 plugins, so the collector gates plugins_count emission to non-mobile UAs (browserforge measured 98% of Android tripping this; the gate cut the calibration FP 4.4%->1.1%, the residual being desktop-stripped profiles). Corroborating-only environment tell."
 
   # --- v0.5.0: catch JS-injection anti-detect tampering (the full-stealth tells) ---
 
@@ -837,8 +837,8 @@ rules:
     status: experimental
     category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Chrome ships a PDF viewer; headless can lack it"
+    last_validated: "2026-06-19"
+    source: "Chrome ships a PDF viewer; headless can lack it. DESKTOP-only: mobile Chrome has no built-in PDF viewer (pdfViewerEnabled=false on every real Android Chrome), so the collector gates chrome_no_pdfviewer to non-mobile UAs to avoid false-firing on real mobile users (calibration FP 4.2%->1.1%). Corroborating-only."
 
   - id: br.chrome_runtime_missing
     title: window.chrome present but chrome.runtime missing
@@ -872,8 +872,8 @@ rules:
     status: experimental
     category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Sannysoft: headless reports zero mimeTypes"
+    last_validated: "2026-06-19"
+    source: "Sannysoft: headless reports zero mimeTypes. DESKTOP-only: a real desktop browser ships a standardized 2 mimeTypes, but every real MOBILE browser reports 0, so the collector gates mimetypes_empty emission to non-mobile UAs (calibration FP 4.4%->1.1%). Corroborating-only."
 
   - id: br.no_devicememory
     title: Chromium UA but navigator.deviceMemory is undefined

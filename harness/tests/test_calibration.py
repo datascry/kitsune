@@ -123,6 +123,30 @@ def test_coherent_real_chrome_scores_human() -> None:
     assert "webgl_software" not in k and "ch_he_headless" not in k and "media_devices_empty" not in k
 
 
+def test_mobile_does_not_trip_desktop_plugin_tells() -> None:
+    # A real Android Chrome legitimately reports 0 plugins / 0 mimeTypes / no PDF viewer — desktop-only tells
+    # must NOT fire on it (the per-browser FP). The same stripped values on DESKTOP do fire.
+    android = {
+        "navigator": {
+            "userAgent": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",  # noqa: E501
+            "platform": "Linux armv8l",
+            "vendor": "Google Inc.",
+            "languages": ["en-US"],
+            "hardwareConcurrency": 8,
+        },
+        "pluginsData": {"plugins": [], "mimeTypes": []},
+        "screen": {"width": 412, "height": 915, "colorDepth": 24, "devicePixelRatio": 2.6},
+    }
+    k = _kinds(signals_from_fingerprint(android, "m", NOW))
+    assert "plugins_count" not in k  # so no_plugins (below_threshold) cannot fire on mobile
+    assert "mimetypes_empty" not in k
+    assert "chrome_no_pdfviewer" not in k
+    # The identical stripped values under a DESKTOP UA still surface the tells.
+    desktop = {**android, "navigator": {**android["navigator"], "userAgent": CHROME_MAC["navigator"]["userAgent"]}}
+    kd = _kinds(signals_from_fingerprint(desktop, "d", NOW))
+    assert "plugins_count" in kd and "mimetypes_empty" in kd and "chrome_no_pdfviewer" in kd
+
+
 def test_unusual_but_legit_configs_surface_expected_tells() -> None:
     # A real Intel Mac without a Retina display (dpr 1) trips macos_dpr1 — exactly the FP to catch.
     mac_dpr1 = {**CHROME_MAC, "screen": {**CHROME_MAC["screen"], "devicePixelRatio": 1}}

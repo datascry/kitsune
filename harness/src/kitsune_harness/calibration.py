@@ -191,8 +191,15 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     sig("ua_render", "gecko" if engine == "firefox" else "webkit")
     sig("vendor_engine", _vendor_engine(str(nav.get("vendor", ""))))
     sig("hardware_concurrency", int(nav.get("hardwareConcurrency", 0) or 0))
+    # Desktop-only tells (mirror the collector): a real desktop browser ships a standardized 5 plugins / 2
+    # mimeTypes / pdfViewerEnabled=true, so a zero there is a stripped-browser signature — but every real
+    # MOBILE browser legitimately reports 0 plugins / 0 mimeTypes / no PDF viewer (browserforge: 98% of
+    # Android). Gate emission to non-mobile so no_plugins/mimetypes_empty/chrome_no_pdfviewer fire only where
+    # zero is genuinely anomalous, not on every real Android/iOS user.
+    is_mobile = bool(re.search(r"Mobile|Android|iPhone|iPad", ua))
     plugins = (fp.get("pluginsData") or {}).get("plugins", []) or []
-    sig("plugins_count", len(plugins))
+    if not is_mobile:
+        sig("plugins_count", len(plugins))
 
     if uad.get("platform"):
         sig("ch_platform", "macOS" if uad["platform"] == "macOS" else uad["platform"])
@@ -243,7 +250,7 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     if nav.get("platform", "") == "":
         sig("platform_empty", True)
     mimetypes = (fp.get("pluginsData") or {}).get("mimeTypes", []) or []
-    if len(mimetypes) == 0:
+    if len(mimetypes) == 0 and not is_mobile:
         sig("mimetypes_empty", True)
 
     width, height = int(scr.get("width", 0) or 0), int(scr.get("height", 0) or 0)
@@ -284,7 +291,7 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
 
     if is_chromium and nav.get("deviceMemory") is None:
         sig("chrome_no_devicememory", True)
-    if is_chromium and not any("pdf" in str(p.get("name", "")).lower() for p in plugins):
+    if is_chromium and not is_mobile and not any("pdf" in str(p.get("name", "")).lower() for p in plugins):
         sig("chrome_no_pdfviewer", True)
 
     return out

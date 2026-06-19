@@ -707,7 +707,12 @@ export function armCollector(): LiveCollector {
       /* ignore */
     }
     put("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0);
-    put("browser", "plugins_count", navigator.plugins.length || 0);
+    // Desktop-only tells: a real desktop browser ships a standardized 5 plugins / 2 mimeTypes /
+    // pdfViewerEnabled=true, so a zero there is a stripped-browser signature — but every real MOBILE browser
+    // legitimately reports 0 plugins, 0 mimeTypes, and no PDF viewer, so on mobile these false-fire on every
+    // real user. Gate emission to non-mobile (matches no_plugins' "Desktop browser" rule intent).
+    const isMobileEnv = /Mobile|Android|iPhone|iPad/i.test(ua);
+    if (!isMobileEnv) put("browser", "plugins_count", navigator.plugins.length || 0);
     if (await permAnomaly()) put("browser", "permissions_anomaly", true);
 
     const uaEngine = /Firefox\//.test(ua)
@@ -809,11 +814,11 @@ export function armCollector(): LiveCollector {
       put("browser", "screen_impossible", true);
     }
     if (isChromium && !nav().connection) put("browser", "chrome_no_connection", true);
-    if (isChromium && navigator.pdfViewerEnabled === false)
+    if (isChromium && !isMobileEnv && navigator.pdfViewerEnabled === false)
       put("browser", "chrome_no_pdfviewer", true);
     const chromeObj = win()["chrome"] as { runtime?: unknown } | undefined;
     if (chromeObj && !chromeObj.runtime) put("browser", "chrome_runtime_missing", true);
-    if (navigator.mimeTypes.length === 0) put("browser", "mimetypes_empty", true);
+    if (!isMobileEnv && navigator.mimeTypes.length === 0) put("browser", "mimetypes_empty", true);
     if (isChromium && nav().deviceMemory === undefined)
       put("browser", "chrome_no_devicememory", true);
     try {

@@ -578,7 +578,14 @@ DEMO_PAGE = """<!doctype html>
       }
     } catch (e) {}
     sigs.push(S("browser", "hardware_concurrency", navigator.hardwareConcurrency || 0));
-    sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
+    // no_plugins / mimetypes_empty / chrome_no_pdfviewer are DESKTOP tells: a real desktop browser ships a
+    // standardized 5 plugins / 2 mimeTypes / pdfViewerEnabled=true, so a zero there is a stripped-browser
+    // signature. But every real MOBILE browser (Android Chrome, iOS Safari) legitimately reports 0 plugins,
+    // 0 mimeTypes, and no PDF viewer — so on mobile these would false-fire on every real user (browserforge:
+    // 98% of Android). Gate their emission to non-mobile so they fire only where zero is genuinely anomalous.
+    var isMobileEnv = /Mobile|Android|iPhone|iPad/i.test(ua);
+    if (!isMobileEnv)
+      sigs.push(S("browser", "plugins_count", (navigator.plugins && navigator.plugins.length) || 0));
     if (await permAnomaly()) sigs.push(S("browser", "permissions_anomaly", true));
     // --- v0.9.0 bulk fingerprint + coherence checks (CreepJS / Sannysoft / fpscanner) ---
     var uaEngine = /Firefox\\//.test(ua) ? "firefox"
@@ -664,10 +671,10 @@ DEMO_PAGE = """<!doctype html>
     // impossible value only a spoofed/sloppily-randomised screen produces (no zoom/dpr confound; both logical px).
     if (screen.availWidth > screen.width || screen.availHeight > screen.height) sigs.push(S("browser", "screen_impossible", true));
     if (isChromium && !navigator.connection) sigs.push(S("browser", "chrome_no_connection", true));
-    if (isChromium && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));
+    if (isChromium && !isMobileEnv && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));
     if (window.chrome && !window.chrome.runtime) sigs.push(S("browser", "chrome_runtime_missing", true));
     if (navigator.maxTouchPoints > 0 && !/Mobile|Android|iPhone|iPad/i.test(ua)) sigs.push(S("browser", "maxtouch_desktop", true));
-    if (navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
+    if (!isMobileEnv && navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
     if (isChromium && typeof navigator.deviceMemory === "undefined") sigs.push(S("browser", "chrome_no_devicememory", true));
     try { if (window.Notification && Notification.permission === "denied") sigs.push(S("browser", "notification_denied", true)); } catch (e) {}
     // --- v0.26.0: canvas farbling (Brave) — reference-free. A farbling browser adds per-session noise to
