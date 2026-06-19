@@ -146,13 +146,42 @@ def build_prior_from_dir(dir_path: str, out_path: str, source: str = "real-captu
     return len(feats)
 
 
+def build_prior_from_sessions(dir_path: str, out_path: str, source: str = "real-traffic") -> int:
+    """Build the prevalence prior from a directory of SESSION JSONs — the shape the collector+edge actually
+    produce (what a hosted-demo opt-in or live real-traffic capture yields, e.g. ``corpus/sessions/*.json``).
+
+    Complements :func:`build_prior_from_dir` (which reads raw browserforge-shape fingerprint dicts): real
+    captures arrive as sessions of layered signals, not fingerprint dicts. This uses the DETECTOR's own
+    ``features_from_session`` — the exact extraction the scorer runs on live sessions — so the prior's features
+    match what the detector computes at scoring time. The turnkey real-traffic path for the prevalence second
+    source (see docs/prevalence-model.md). Returns the number of sessions used.
+    """
+    from kitsune_detector.prevalence import features_from_session
+
+    from .corpus import load_corpus
+
+    corpus = load_corpus(dir_path)
+    if not corpus:
+        raise SystemExit(f"no session JSONs in {dir_path}")
+    feats = [features_from_session(session) for _name, session in corpus]
+    threshold = write_prior(feats, out_path, source)
+    print(f"wrote prior from {len(feats)} {source} sessions (p1 threshold {threshold:.2f}) -> {out_path}")
+    return len(feats)
+
+
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     argv = sys.argv[1:] if argv is None else argv
     now = datetime.now(UTC)
+    default_out = "../detector/src/kitsune_detector/data/prevalence_prior.json"
+    if "--build-prior-from-sessions" in argv:
+        # Turnkey Tier-3: rebuild the prevalence prior from real-traffic SESSION captures (collector shape).
+        src = argv[argv.index("--build-prior-from-sessions") + 1]
+        out = argv[argv.index("--out") + 1] if "--out" in argv else default_out
+        build_prior_from_sessions(src, out)
+        return
     if "--build-prior-from-dir" in argv:
-        # Turnkey Tier-3: rebuild the prevalence prior from a directory of REAL-captured fingerprints.
+        # Turnkey Tier-3: rebuild the prevalence prior from a directory of REAL-captured fingerprint dicts.
         src = argv[argv.index("--build-prior-from-dir") + 1]
-        default_out = "../detector/src/kitsune_detector/data/prevalence_prior.json"
         out = argv[argv.index("--out") + 1] if "--out" in argv else default_out
         build_prior_from_dir(src, out)
         return

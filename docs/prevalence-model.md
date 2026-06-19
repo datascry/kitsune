@@ -54,18 +54,26 @@ The infrastructure to swap in a real-traffic prior is built and tested — `buil
 one command rebuilds the prior from REAL ground truth and the detector uses it automatically (it loads
 `data/prevalence_prior.json`):
 
+Two builders, by capture shape (both write `../detector/src/kitsune_detector/data/prevalence_prior.json`,
+which the detector loads automatically):
+
 ```sh
-# Drop real-captured fingerprint JSONs (the shape signals_from_fingerprint reads — e.g. hosted-demo opt-in
-# captures, or a real-device matrix) into a directory, then:
+# PRIMARY real-traffic path — SESSION captures (what the collector+edge produce; a hosted-demo opt-in
+# yields these, shape = corpus/sessions/*.json). Uses the detector's own features_from_session, so the
+# prior matches what the scorer computes on live sessions:
+cd harness && uv run python -m kitsune_harness.browserforge_corpus --build-prior-from-sessions <session-dir>
+
+# ALT path — raw fingerprint dicts (the shape signals_from_fingerprint reads, e.g. a real-device matrix
+# exported as fingerprint JSONs):
 cd harness && uv run python -m kitsune_harness.browserforge_corpus --build-prior-from-dir <real-fp-dir>
-# (writes ../detector/src/kitsune_detector/data/prevalence_prior.json, source="real-capture")
 ```
 
-The builder produces a prior with the identical schema/factors (gpu/screen/cores) the model already loads,
-so it is a drop-in replacement — verified against the real-engine fingerprints. **The frontier is now
-data-only-blocked:** supply real-traffic fingerprints and the prevalence model gains power immediately, no
-code change. (Promoting it from corroborating to a higher weight then becomes defensible — the single-source
-caveat above is exactly what a real prior removes.)
+Both produce a prior with the identical schema/factors (gpu/screen/cores) the model already loads, so it is a
+drop-in replacement — verified (`tests/test_prior_builder.py`) against the real-engine fingerprints AND real
+session captures. **The frontier is now data-only-blocked:** supply real-traffic captures (a hosted-demo
+opt-in is the natural source — its sessions feed `--build-prior-from-sessions` directly) and the prevalence
+model gains power immediately, no code change. Promoting it from corroborating to a higher weight then
+becomes defensible — the single-source caveat above is exactly what a real prior removes.
 
 ## Foundation built (tested + reproducible)
 
