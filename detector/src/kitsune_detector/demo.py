@@ -640,17 +640,10 @@ DEMO_PAGE = """<!doctype html>
       if (errEngine && uaEngine !== "other" && errEngine !== uaEngine)
         sigs.push(S("browser", "error_engine_mismatch", true));
     }
-    // Engine float-precision tell (CreepJS Math fingerprint): Math.pow(PI,-100) differs by the last ULP
-    // between V8 (...204e-50) and SpiderMonkey (...206e-50) — the engine's own pow implementation, stable
-    // across OS/version (verified V8 vs Firefox). A hard-to-spoof channel: a UA-spoofer that patches the
-    // obvious engine tells rarely also matches the right engine's float precision.
-    try {
-      var mp = Math.pow(Math.PI, -100).toString();
-      var mathEngine = mp === "1.9275814160560204e-50" ? "chromium"
-                     : mp === "1.9275814160560206e-50" ? "firefox" : "";
-      if (mathEngine && uaEngine !== "other" && mathEngine !== uaEngine)
-        sigs.push(S("browser", "math_engine_mismatch", true));
-    } catch (e) {}
+    // (Removed v0.74.0) The Math.pow(PI,-100) last-ULP engine tell was RETIRED: it is NOT engine-stable —
+    // it is V8-build/CPU-dependent (node 22 → ...204e-50, Playwright Chromium → ...206e-50), so it
+    // false-fired on a real Chromium. Engine coherence is covered by engine_stack_vs_ua / error_engine_vs_ua
+    // / vendor_vs_ua / apple_ua_nonwebkit (hard, reliable channels). See br.math_engine_vs_ua in the registry.
     if (navigator.oscpu) {
       var oc = /Mac/i.test(navigator.oscpu) ? "macOS" : /Win/i.test(navigator.oscpu) ? "Windows"
              : /Linux/i.test(navigator.oscpu) ? "Linux" : "";

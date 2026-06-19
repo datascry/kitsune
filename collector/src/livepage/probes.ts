@@ -775,20 +775,9 @@ export function armCollector(): LiveCollector {
         put("browser", "error_engine_mismatch", true);
       }
     }
-    try {
-      const mp = Math.pow(Math.PI, -100).toString();
-      const mathEngine =
-        mp === "1.9275814160560204e-50"
-          ? "chromium"
-          : mp === "1.9275814160560206e-50"
-            ? "firefox"
-            : "";
-      if (mathEngine && uaEngine !== "other" && mathEngine !== uaEngine) {
-        put("browser", "math_engine_mismatch", true);
-      }
-    } catch {
-      /* ignore */
-    }
+    // (Removed v0.74.0) The Math.pow(PI,-100) last-ULP engine tell was RETIRED — it is V8-build/CPU-dependent
+    // (node 22 → ...204e-50, Playwright Chromium → ...206e-50), not engine-stable, so it false-fired on a
+    // real Chromium. Engine coherence stays covered by engine_stack/error_engine/vendor/apple_ua_nonwebkit.
     const oscpu = nav().oscpu;
     if (oscpu) {
       const oc = /Mac/i.test(oscpu)

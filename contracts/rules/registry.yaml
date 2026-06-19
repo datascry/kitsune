@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.73.9"
+ruleset_version: "0.74.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1392,11 +1392,11 @@ rules:
     reads: [browser.math_engine_mismatch]
     predicate: present
     weight: 0.7
-    status: active
+    status: retired
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "CreepJS Math fingerprint: Math.pow(PI,-100) is ...204e-50 on V8 vs ...206e-50 on SpiderMonkey (engine-own pow impl, platform-stable; verified V8 vs Firefox) — a hard-to-spoof engine-coherence channel beyond Error.captureStackTrace and the error-message format"
+    last_validated: "2026-06-19"
+    source: "CreepJS Math fingerprint: Math.pow(PI,-100) is ...204e-50 on V8 vs ...206e-50 on SpiderMonkey. RETIRED v0.74.0 — DECAYED, false-fires on a real Chromium. The last ULP is NOT platform-stable: it is V8-BUILD/CPU-dependent. Corroborated across two V8 builds: node 22 returns ...204e-50 (the V8 baseline) but the Playwright Chromium (Chrome ~125) returns ...206e-50 (the value the rule assumed is Firefox-only) — so a clean headless Chromium with ua_engine=chromium trips math_engine_mismatch and is convicted by this coherence rule. The FP was invisible to the static browserforge calibration (a runtime probe the mapper does not emit) and was only caught by a LIVE clean-Chromium capture — the trusted-but-verified discipline working. The collector probe is removed too. Engine coherence is still covered by the reliable channels: engine_stack_vs_ua (Error.captureStackTrace is a hard V8 API), error_engine_vs_ua (engine error-message format), vendor_vs_ua, and apple_ua_nonwebkit."
 
   # --- v0.24.0: HTTP-layer Sec-Fetch coherence (scripted client faking a browser UA) ---
 
