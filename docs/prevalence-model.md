@@ -40,6 +40,33 @@ signal (low weight, amplifies an existing suspicion) until its prior is corrobor
 source — Tier-3 real-traffic data (a real-device matrix or the hosted-demo opt-in). The mechanism (real vs
 scrambled separation) is proven; the prior's *fidelity* is the open item.
 
+**Why this matters for power, not just FP-safety (measured):** the prior is the SAME generator a
+`fingerprint-injector`-class attacker samples from, so a browserforge-sampled fingerprint is probable in our
+prior *by construction* — same-source-blind. Scoring 800 browserforge fingerprints through the full
+browser-layer ruleset gives 80% `human`, and `br.fingerprint_improbable` fires on only ~1% (browserforge's
+own p1 tail). So an independent prior is needed for *detection power* against generator-based attacks, not
+merely FP-hygiene (see docs/evasion-catalog.md "Prevalence / likelihood model").
+
+### Turnkey second-source procedure (the builder is ready; only the data is missing)
+
+The infrastructure to swap in a real-traffic prior is built and tested — `build_prior_from_dir`
+(`harness/browserforge_corpus.py`, guarded by `tests/test_prior_builder.py`). When a Tier-3 capture exists,
+one command rebuilds the prior from REAL ground truth and the detector uses it automatically (it loads
+`data/prevalence_prior.json`):
+
+```sh
+# Drop real-captured fingerprint JSONs (the shape signals_from_fingerprint reads — e.g. hosted-demo opt-in
+# captures, or a real-device matrix) into a directory, then:
+cd harness && uv run python -m kitsune_harness.browserforge_corpus --build-prior-from-dir <real-fp-dir>
+# (writes ../detector/src/kitsune_detector/data/prevalence_prior.json, source="real-capture")
+```
+
+The builder produces a prior with the identical schema/factors (gpu/screen/cores) the model already loads,
+so it is a drop-in replacement — verified against the real-engine fingerprints. **The frontier is now
+data-only-blocked:** supply real-traffic fingerprints and the prevalence model gains power immediately, no
+code change. (Promoting it from corroborating to a higher weight then becomes defensible — the single-source
+caveat above is exactly what a real prior removes.)
+
 ## Foundation built (tested + reproducible)
 
 The prototype is now a tested module — `harness/prevalence.py` (`features_from_fingerprint`, `build_prior`,

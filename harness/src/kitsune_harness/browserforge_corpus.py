@@ -91,29 +91,71 @@ def profiles_from_dir(path: str, now: datetime) -> list[tuple[str, list[Any]]]: 
     return out
 
 
-def build_prior_file(n: int, out_path: str) -> None:  # pragma: no cover - external data
-    """Sample n browserforge fingerprints and write the prevalence prior (joint-frequency tables) to JSON."""
+def write_prior(feats: list[Any], out_path: str, source: str) -> float:
+    """Build the prevalence prior (joint-frequency tables) from features and write it to JSON. Returns the
+    p1 threshold. Shared by the browserforge (Tier-1) and real-capture (Tier-3) builders."""
     import json
 
-    from browserforge.fingerprints import FingerprintGenerator
+    from .prevalence import build_prior, log_prevalence
 
-    from .prevalence import build_prior, features_from_fingerprint, log_prevalence
-
-    fg = FingerprintGenerator()
-    feats = [features_from_fingerprint(_fingerprint_to_dict(fg.generate())) for _ in range(n)]
     prior = build_prior(feats)
     # Conservative threshold: the 1st percentile of the training distribution's own log-prevalence, so a
     # real fingerprint trips it only ~1% of the time (corroborating, not convicting).
     scores = sorted(log_prevalence(f, prior) for f in feats)
     threshold = scores[len(scores) // 100]
     with open(out_path, "w") as fh:
-        json.dump({"n": n, "source": "browserforge", "threshold": threshold, "prior": prior}, fh)
-    print(f"wrote prevalence prior from {n} fingerprints (p1 threshold {threshold:.2f}) -> {out_path}")
+        json.dump({"n": len(feats), "source": source, "threshold": threshold, "prior": prior}, fh)
+    return threshold
+
+
+def build_prior_file(n: int, out_path: str) -> None:  # pragma: no cover - external data
+    """Sample n browserforge fingerprints and write the prevalence prior (joint-frequency tables) to JSON."""
+    from browserforge.fingerprints import FingerprintGenerator
+
+    from .prevalence import features_from_fingerprint
+
+    fg = FingerprintGenerator()
+    feats = [features_from_fingerprint(_fingerprint_to_dict(fg.generate())) for _ in range(n)]
+    threshold = write_prior(feats, out_path, "browserforge")
+    print(f"wrote prevalence prior from {n} browserforge fingerprints (p1 threshold {threshold:.2f}) -> {out_path}")
+
+
+def build_prior_from_dir(dir_path: str, out_path: str, source: str = "real-capture") -> int:
+    """Build the prevalence prior from a DIRECTORY of real-captured fingerprint JSONs — the turnkey SECOND
+    source the standing constraint calls for.
+
+    The shipped prior is browserforge-only, which is *same-source-blind*: a generator-based attacker samples
+    from the same distribution, so its fingerprints are probable in our prior by construction (see
+    docs/evasion-catalog.md "Prevalence / likelihood model"). Drop real-traffic fingerprint captures — the
+    shape ``signals_from_fingerprint`` reads, e.g. a hosted-demo opt-in or a real-device matrix — into a
+    directory and run this to rebuild the prior from REAL ground truth. The detector then scores improbability
+    against real traffic and gains *detection power* against generator-sampled fingerprints that are probable
+    in browserforge yet improbable in reality. Returns the number of fingerprints used.
+    """
+    import json
+    from pathlib import Path
+
+    from .prevalence import features_from_fingerprint
+
+    paths = sorted(Path(dir_path).glob("*.json"))
+    if not paths:
+        raise SystemExit(f"no *.json fingerprints in {dir_path}")
+    feats = [features_from_fingerprint(json.loads(p.read_text())) for p in paths]
+    threshold = write_prior(feats, out_path, source)
+    print(f"wrote prior from {len(feats)} {source} fingerprints (p1 threshold {threshold:.2f}) -> {out_path}")
+    return len(feats)
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     argv = sys.argv[1:] if argv is None else argv
     now = datetime.now(UTC)
+    if "--build-prior-from-dir" in argv:
+        # Turnkey Tier-3: rebuild the prevalence prior from a directory of REAL-captured fingerprints.
+        src = argv[argv.index("--build-prior-from-dir") + 1]
+        default_out = "../detector/src/kitsune_detector/data/prevalence_prior.json"
+        out = argv[argv.index("--out") + 1] if "--out" in argv else default_out
+        build_prior_from_dir(src, out)
+        return
     if "--build-prior" in argv:
         n = int(argv[argv.index("--n") + 1]) if "--n" in argv else 5000
         build_prior_file(n, argv[argv.index("--build-prior") + 1])
