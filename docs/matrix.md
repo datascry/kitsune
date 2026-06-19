@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 118 rules vs 50 evaders
+# Kitsune detection matrix — 118 rules vs 51 evaders
 
-_49/50 evaders caught (`bot`). Generated from the committed captures._
+_50/51 evaders caught (`bot`). Generated from the committed captures._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -21,6 +21,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `chrome-clone-2` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
 | `curl-http2` | bot | 1.00 | 8/118 | `net.quic_grease_vs_ua`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +5 |
 | `curl-impersonate` | bot | 0.90 | 1/118 | `net.no_js_execution` |
+| `firefox-os-spoof` | bot | 1.00 | 12/118 | `br.webdriver_present`, `net.tcp_os_vs_ua`, `br.navplatform_vs_ua` +2 |
 | `floor-spoof` | bot | 1.00 | 8/118 | `br.tostring_tampered`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered` +1 |
 | `full-stealth` | bot | 1.00 | 17/118 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +8 |
 | `go-tls` | bot | 0.99 | 3/118 | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
@@ -57,15 +58,15 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `worker-wrap` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | bot | 1.00 | 8/118 | `br.chrome_runtime_missing` |
 
-## Per-rule coverage — 85/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 86/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 37 |
-| `br.voices_empty` | browser | environment | 37 |
+| `br.media_devices_empty` | browser | environment | 38 |
+| `br.voices_empty` | browser | environment | 38 |
 | `br.webgl_software` | browser | environment | 32 |
-| `br.mimetypes_empty` | browser | environment | 28 |
-| `br.no_plugins` | browser | environment | 28 |
+| `br.mimetypes_empty` | browser | environment | 29 |
+| `br.no_plugins` | browser | environment | 29 |
 | `br.notification_denied` | browser | automation | 28 |
 | `br.permissions_anomaly` | browser | automation | 28 |
 | `br.headless_ua` | browser | automation | 26 |
@@ -76,15 +77,16 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `bh.keystroke_entropy_floor` | behavioral | behavioral | 20 |
 | `br.webdriver_getter_tampered` | browser | automation | 16 |
 | `net.no_js_execution` | network,browser | coherence | 12 |
+| `net.tcp_os_vs_ua` | network | coherence | 11 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
-| `net.tcp_os_vs_ua` | network | coherence | 10 |
+| `br.webdriver_present` | browser | automation | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
-| `br.webdriver_present` | browser | automation | 9 |
-| `net.tls_grease_vs_ua` | network,browser | coherence | 7 |
+| `net.tls_grease_vs_ua` | network,browser | coherence | 8 |
 | `br.chrome_runtime_missing` | browser | automation | 6 |
+| `br.hover_none_desktop` | browser | environment | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
-| `br.hover_none_desktop` | browser | environment | 5 |
+| `br.navplatform_vs_ua` | browser | coherence | 5 |
 | `br.webdriver_spoofed` | browser | automation | 5 |
 | `br.webgl_os_vs_ua` | browser | coherence | 5 |
 | `net.quic_grease_vs_ua` | network,browser | coherence | 5 |
@@ -92,13 +94,13 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `br.codec_os_incoherent` | browser | environment | 4 |
 | `br.fingerprint_improbable` | browser | prevalence | 4 |
 | `br.font_linux_leak` | browser | environment | 4 |
-| `br.navplatform_vs_ua` | browser | coherence | 4 |
+| `br.webgl2_missing` | browser | environment | 4 |
 | `br.ch_he_version_vs_ua` | browser | coherence | 3 |
-| `br.webgl2_missing` | browser | environment | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
 | `br.webgpu_webgl_vs` | browser | environment | 3 |
 | `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 3 |
+| `bh.path_too_straight` | behavioral | behavioral | 2 |
 | `br.canvas_noise` | browser | artifact | 2 |
 | `br.error_engine_vs_ua` | browser | coherence | 2 |
 | `br.languages_worker_vs_main` | browser | coherence | 2 |
@@ -116,7 +118,6 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `net.h2_vs_ua_browser` | network,browser | coherence | 2 |
 | `net.tls_pq_keyshare_vs_ua` | network,browser | coherence | 2 |
 | `net.tls_vs_ua_browser` | network,browser | coherence | 2 |
-| `bh.path_too_straight` | behavioral | behavioral | 1 |
 | `bh.power_law_violation` | behavioral | behavioral | 1 |
 | `bh.uniform_velocity` | behavioral | behavioral | 1 |
 | `br.apple_ua_nonwebkit` | browser | coherence | 1 |
@@ -132,6 +133,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `br.nav_property_spoofed` | browser | automation | 1 |
 | `br.no_connection` | browser | environment | 1 |
 | `br.notification_getter_tampered` | browser | automation | 1 |
+| `br.oscpu_vs_ua` | browser | coherence | 1 |
 | `br.plugins_spoofed` | browser | automation | 1 |
 | `br.pointer_touch_incoherent` | browser | coherence | 1 |
 | `br.productsub_vs_ua` | browser | coherence | 1 |
@@ -166,6 +168,7 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `chrome-clone-2` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
 | `curl-http2` | bot | 8 | 0 | 0 | 0 | 0 | 0 |
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
+| `firefox-os-spoof` | bot | 4 | 0 | 1 | 6 | 1 | 0 |
 | `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
 | `full-stealth` | bot | 4 | 0 | 7 | 5 | 1 | 0 |
 | `go-tls` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
@@ -202,12 +205,11 @@ _49/50 evaders caught (`bot`). Generated from the committed captures._
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | bot | 0 | 0 | 1 | 5 | 2 | 0 |
 
-## Coverage gaps — 33/118 rules catch nothing yet
+## Coverage gaps — 32/118 rules catch nothing yet
 
-**Evaded** (4) — reads present in the corpus, but every sample passed:
+**Evaded** (3) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
-- `br.oscpu_vs_ua`
 - `br.font_os_vs_ua`
 
 **Unexercised** (29) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
