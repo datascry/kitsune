@@ -43,6 +43,10 @@ func TestRealSafariFirefoxJA4Hints(t *testing.T) {
 	if h, ok := table.Lookup("t13d1715h2_5b57614c22b0_7121afd63204"); !ok || h.Browser != "firefox" {
 		t.Errorf("real Firefox JA4 should classify firefox: %+v ok=%v", h, ok)
 	}
+	// Chrome ships in two real extension-count variants (16 and 17), both per the FoxIO mapping; cover both.
+	if h, ok := table.Lookup("t13d1517h2_8daaf6152771_b0da82dd1658"); !ok || h.Browser != "chrome" {
+		t.Errorf("real Chrome 17-ext JA4 should classify chrome: %+v ok=%v", h, ok)
+	}
 }
 
 func TestLookupRejectsNonMatches(t *testing.T) {
