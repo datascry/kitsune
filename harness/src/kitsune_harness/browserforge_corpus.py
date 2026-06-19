@@ -91,33 +91,71 @@ def profiles_from_dir(path: str, now: datetime) -> list[tuple[str, list[Any]]]: 
     return out
 
 
-def write_prior(feats: list[Any], out_path: str, source: str) -> float:
+def write_prior(feats: list[Any], out_path: str, source: str, *, threshold_feats: list[Any] | None = None) -> float:
     """Build the prevalence prior (joint-frequency tables) from features and write it to JSON. Returns the
-    p1 threshold. Shared by the browserforge (Tier-1) and real-capture (Tier-3) builders."""
+    p1 threshold. Shared by the browserforge (Tier-1) and real-capture (Tier-3) builders.
+
+    The threshold is the 1st-percentile log-prevalence below which ``br.fingerprint_improbable`` fires. By
+    default it is the SELF-p1 (the 1% tail of the prior's own training set) — but that over-flags an
+    INDEPENDENT dataset (an fpgen second source falls below the browserforge self-p1 at ~4-6%, not 1%; the
+    threshold is over-fit to browserforge's narrower distribution — see docs/prevalence-model.md). When
+    ``threshold_feats`` (an independent calibration set) is given, the threshold is the CONSERVATIVE bound —
+    the deeper of the self-p1 and the independent set's p1 — so it flags <=1% of BOTH distributions, per the
+    standing constraint's "corroborate the single-source number / never raise the legit-browser flag rate".
+    """
     import json
 
     from .prevalence import build_prior, log_prevalence
 
     prior = build_prior(feats)
-    # Conservative threshold: the 1st percentile of the training distribution's own log-prevalence, so a
-    # real fingerprint trips it only ~1% of the time (corroborating, not convicting).
-    scores = sorted(log_prevalence(f, prior) for f in feats)
-    threshold = scores[len(scores) // 100]
+
+    def _p1(fs: list[Any]) -> float:
+        scores = sorted(log_prevalence(f, prior) for f in fs)
+        return scores[len(scores) // 100]
+
+    threshold = _p1(feats)
+    calibration = "self-p1"
+    if threshold_feats:
+        threshold = min(threshold, _p1(threshold_feats))  # conservative: flag <=1% of both → strictly FP-safer
+        calibration = "cross-source-conservative"
     with open(out_path, "w") as fh:
-        json.dump({"n": len(feats), "source": source, "threshold": threshold, "prior": prior}, fh)
+        json.dump(
+            {
+                "n": len(feats),
+                "source": source,
+                "threshold": threshold,
+                "threshold_calibration": calibration,
+                "prior": prior,
+            },
+            fh,
+        )
     return threshold
 
 
 def build_prior_file(n: int, out_path: str) -> None:  # pragma: no cover - external data
-    """Sample n browserforge fingerprints and write the prevalence prior (joint-frequency tables) to JSON."""
+    """Sample n browserforge fingerprints and write the prevalence prior (joint-frequency tables) to JSON.
+
+    Calibrates the threshold against an INDEPENDENT second source (fpgen, if installed) so it is not
+    browserforge-self-referential — which over-flags independent data ~4-6x (docs/prevalence-model.md). Falls
+    back to the self-p1 if fpgen is unavailable.
+    """
     from browserforge.fingerprints import FingerprintGenerator
 
     from .prevalence import features_from_fingerprint
 
     fg = FingerprintGenerator()
     feats = [features_from_fingerprint(_fingerprint_to_dict(fg.generate())) for _ in range(n)]
-    threshold = write_prior(feats, out_path, "browserforge")
-    print(f"wrote prevalence prior from {n} browserforge fingerprints (p1 threshold {threshold:.2f}) -> {out_path}")
+    threshold_feats = None
+    try:
+        import fpgen
+
+        from .fpgen_coherence import fingerprint_from_fpgen
+
+        threshold_feats = [features_from_fingerprint(fingerprint_from_fpgen(fpgen.generate())) for _ in range(n // 2)]
+    except Exception:  # fpgen optional — fall back to the (less FP-safe) self-p1 with a warning in the output
+        print("WARNING: fpgen unavailable — threshold falls back to browserforge self-p1 (over-flags independent data)")
+    threshold = write_prior(feats, out_path, "browserforge", threshold_feats=threshold_feats)
+    print(f"wrote prevalence prior from {n} browserforge fingerprints (threshold {threshold:.2f}) -> {out_path}")
 
 
 def build_prior_from_dir(dir_path: str, out_path: str, source: str = "real-capture") -> int:

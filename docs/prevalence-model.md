@@ -78,6 +78,25 @@ still require real-traffic-through-our-collector ground truth. The diagnostic is
 (`task prevalence-corroborate`; fpgen fetches its model over the network, so it is not a CI gate), with its
 pure logic unit-tested.
 
+### THRESHOLD over-flag, found + fixed (v0.74.24) — the diagnostic that mattered
+
+The TVD diagnostic above corroborates the prior's *distributions*; a separate check on the *rule's firing
+rate* found a real FP. `br.fingerprint_improbable` fires below the committed threshold, which was browserforge's
+**self-p1** (−7.73 — the 1% tail of browserforge scored against its own prior). Scoring fpgen (the independent
+second source) under that prior, **~5% of fpgen fingerprints fall below −7.73, not 1%**: the threshold is
+over-fit to browserforge's narrower distribution, so it over-flags any independent (more real-diverse) dataset
+~5×. This is the exact single-source-number trap the standing constraint warns about — and although the rule
+is corroborating-only (no false `bot`), it lifts the legit-browser *suspicious* rate ~5× above the 1% design.
+**Fix:** the threshold is now the **conservative cross-source bound** `min(browserforge-p1, fpgen-p1) = −9.48`,
+so it flags ≤1% of *both* distributions (fpgen 5.0% → 0.8%; browserforge drops below the calibration re-tier
+cutoff) — strictly FP-safer, never raising the flag rate, and the near-impossible joints still fire (a
+one-eps-floor factor like Apple-GPU-on-Windows is ≈ −10, well below −9.48; synthetic + corpus full-vector
+improbables unchanged). `write_prior` now takes a `threshold_feats` independent calibration set and
+`build_prior_file` calibrates on fpgen by default; the committed threshold is guarded conservative by
+`test_prevalence.test_committed_threshold_is_cross_source_conservative`. The proper end-state remains a
+real-traffic prior (`build_prior_from_sessions`), at which point the threshold is recomputed from real diversity
+directly — this fpgen-conservative bound is the FP-safe interim.
+
 ### Grounding-source assessment (2026-06-19) — what's usable per factor
 
 A search for public, independent grounding sources for the three factors, and a cross-check against each:

@@ -132,3 +132,19 @@ def test_prevalence_is_corroborating_never_convicts_alone() -> None:
     assert verdict.label is not Label.bot  # ...but prevalence cannot convict alone → capped at suspicious
     prevalence_cat = next(c.category for c in verdict.contradictions if c.rule_id == "br.fingerprint_improbable")
     assert prevalence_cat.value == "prevalence"
+
+
+def test_committed_threshold_is_cross_source_conservative() -> None:
+    # Guard the v0.74.24 FP fix: the committed threshold must stay CONSERVATIVE (cross-source-calibrated),
+    # not the browserforge self-p1 (~-7.73) which over-flags an independent dataset (fpgen) ~5x. A regen that
+    # reverts to the self-p1 (build without fpgen) would lift it back above this bound and fail here.
+    import json
+
+    from kitsune_detector.prevalence import _DATA
+
+    prior = json.loads((_DATA / "prevalence_prior.json").read_text())
+    assert prior["threshold"] <= -8.0, (
+        f"prevalence threshold {prior['threshold']} is shallower than the cross-source-conservative bound — "
+        "it over-flags independent data; rebuild with fpgen (see browserforge_corpus.build_prior_file)"
+    )
+    assert prior.get("threshold_calibration", "").startswith("cross-source")
