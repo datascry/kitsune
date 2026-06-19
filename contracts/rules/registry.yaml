@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.62.0"
+ruleset_version: "0.63.0"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1090,6 +1090,18 @@ rules:
     added: "2026-06-19"
     last_validated: "2026-06-19"
     source: "Main CanvasRenderingContext2D.measureText and OffscreenCanvas measureText use the same engine font metrics, so they are identical on a real browser (verified width 390.34375 == on Chrome 136). A tool that hooks the main-thread path to spoof fonts (e.g. Camoufox) but not OffscreenCanvas diverges — the incomplete-spoof tell from the catalog's measureText gap. FP-safe (a real browser never diverges); gated on OffscreenCanvas support."
+
+  - id: br.fingerprint_improbable
+    title: Fingerprint joint (platform/gpu/screen/colour/cores) is improbable under the real-traffic prior
+    layers: [browser]
+    reads: [browser.prevalence_low]
+    predicate: present
+    weight: 0.25
+    status: experimental
+    category: coherence
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "The prevalence/likelihood model (docs/prevalence-model.md): coherence rules catch hard contradictions, this catches soft IMPROBABILITY — a coherent fingerprint whose platform/gpu/screen/colour/cores combination is deep in the tail of the real-traffic prior (the BrowserForge/randomizer attack no contradiction rule fires on). Emitted by detector.prevalence below the prior's p1 threshold (~1% of real fingerprints). CORROBORATING-only (experimental, low weight): the prior is single-source (browserforge) until corroborated against Tier-3 real traffic, so it amplifies an existing suspicion, never convicts alone."
 
 
   - id: br.media_devices_empty

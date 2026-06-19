@@ -53,7 +53,17 @@ Validated on three independent inputs: the synthetic improbable joint (Windows U
 screen) scores `-23.5`, far below the real-engine Tier-2 captures (`-8.9` … `-16.0`) — the deep tail is
 the improbable combination, exactly as intended.
 
-## Integration plan (future loop iterations)
+## Integrated (v0.63.0) — live as a corroborating signal
+
+Wired into the live detector: the collector now emits raw `screen_resolution` + `color_depth` (alongside
+`webgl_renderer`, `hardware_concurrency`, `ua_platform`); `detector/prevalence.py` scores the session against
+the committed prior (`detector/.../data/prevalence_prior.json`) and emits `browser.prevalence_low` below the
+prior's p1 threshold; the rule `br.fingerprint_improbable` (experimental, weight 0.25) fires on it.
+**`task calibrate` confirms the legitimate-browser human rate is unchanged at 77%** — the rule fires on ~1%
+by design at corroborating weight, so it never convicts a clean browser alone. Stays experimental until the
+prior is corroborated against Tier-3 real traffic.
+
+## Remaining (future loop iterations)
 
 1. Build the prior offline from the largest available real-distribution sample; ship it as a data table
    (rules-as-data stays the coupling) with the ruleset.

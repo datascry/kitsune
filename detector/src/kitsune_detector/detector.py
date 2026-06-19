@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from . import scoring
+from . import prevalence, scoring
 from .coherence import CoherenceEngine, RuleSet, load_registry
 from .config import SCHEMA_VERSION
 from .ingest import group_signals
@@ -63,8 +63,13 @@ class Detector:
 
         net_add: list[Signal] = []
         rep_add: list[Signal] = []
+        browser_add: list[Signal] = []
         if session.signals.network and not session.signals.browser:
             net_add.append(mk(Layer.network, kind="browser_absent", value=True))
+        # Prevalence: a coherent fingerprint whose platform/gpu/screen/colour/cores joint is deep in the
+        # improbable tail of the real-traffic prior (the randomizer attack no coherence rule catches).
+        if session.signals.browser and prevalence.is_improbable(session):
+            browser_add.append(mk(Layer.browser, kind="prevalence_low", value=True))
         ip = session.value(Layer.network, "observed_ip")
         if ip is not MISSING:
             is_dc, is_px = self._iprep.classify(str(ip))
@@ -72,13 +77,15 @@ class Detector:
                 rep_add.append(mk(Layer.reputation, kind="asn_is_datacenter", value=True))
             if is_px:
                 rep_add.append(mk(Layer.reputation, kind="is_proxy_exit", value=True))
-        if not net_add and not rep_add:
+        if not net_add and not rep_add and not browser_add:
             return session
         update: dict[str, list[Signal]] = {}
         if net_add:
             update["network"] = [*session.signals.network, *net_add]
         if rep_add:
             update["reputation"] = [*session.signals.reputation, *rep_add]
+        if browser_add:
+            update["browser"] = [*session.signals.browser, *browser_add]
         return session.model_copy(update={"signals": session.signals.model_copy(update=update)})
 
     def score(self, session: Session) -> Verdict:

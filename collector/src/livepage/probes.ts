@@ -646,6 +646,11 @@ export function armCollector(): LiveCollector {
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) {
       put("browser", "screen_zero", true);
     }
+    // Raw screen geometry + colour depth as values — feed the prevalence (joint-probability) model.
+    if (screen.width && screen.height) {
+      put("browser", "screen_resolution", `${screen.width}x${screen.height}`);
+    }
+    if (screen.colorDepth) put("browser", "color_depth", screen.colorDepth);
     if (screen.availWidth > screen.width || screen.availHeight > screen.height) {
       put("browser", "screen_impossible", true);
     }

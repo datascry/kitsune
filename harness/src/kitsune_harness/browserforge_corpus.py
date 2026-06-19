@@ -97,14 +97,18 @@ def build_prior_file(n: int, out_path: str) -> None:  # pragma: no cover - exter
 
     from browserforge.fingerprints import FingerprintGenerator
 
-    from .prevalence import build_prior, features_from_fingerprint
+    from .prevalence import build_prior, features_from_fingerprint, log_prevalence
 
     fg = FingerprintGenerator()
     feats = [features_from_fingerprint(_fingerprint_to_dict(fg.generate())) for _ in range(n)]
     prior = build_prior(feats)
+    # Conservative threshold: the 1st percentile of the training distribution's own log-prevalence, so a
+    # real fingerprint trips it only ~1% of the time (corroborating, not convicting).
+    scores = sorted(log_prevalence(f, prior) for f in feats)
+    threshold = scores[len(scores) // 100]
     with open(out_path, "w") as fh:
-        json.dump({"n": n, "source": "browserforge", "prior": prior}, fh)
-    print(f"wrote prevalence prior from {n} fingerprints -> {out_path}")
+        json.dump({"n": n, "source": "browserforge", "threshold": threshold, "prior": prior}, fh)
+    print(f"wrote prevalence prior from {n} fingerprints (p1 threshold {threshold:.2f}) -> {out_path}")
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI

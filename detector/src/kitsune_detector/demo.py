@@ -556,6 +556,10 @@ DEMO_PAGE = """<!doctype html>
     var _nl = (navigator.languages && navigator.languages[0]) || navigator.language || "";
     if (_nl) sigs.push(S("browser", "nav_language_primary", String(_nl).split("-")[0].toLowerCase()));
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) sigs.push(S("browser", "screen_zero", true));
+    // Raw screen geometry + colour depth as VALUES (not just the anomaly tells) — the prevalence model
+    // scores how probable the platform/gpu/screen/colour/cores combination is under a real-traffic prior.
+    if (screen.width && screen.height) sigs.push(S("browser", "screen_resolution", screen.width + "x" + screen.height));
+    if (screen.colorDepth) sigs.push(S("browser", "color_depth", screen.colorDepth));
     // CreepJS/sannysoft: the available screen can never exceed the physical screen — avail > total is an
     // impossible value only a spoofed/sloppily-randomised screen produces (no zoom/dpr confound; both logical px).
     if (screen.availWidth > screen.width || screen.availHeight > screen.height) sigs.push(S("browser", "screen_impossible", true));

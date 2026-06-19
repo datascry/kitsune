@@ -212,6 +212,8 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     if ch_major and ua_major_m and ch_major != ua_major_m.group(1):
         sig("ch_he_version_vs_ua", True)
 
+    if renderer:
+        sig("webgl_renderer", renderer)  # raw value — feeds the prevalence model (gpu family)
     if re.search(r"swiftshader|llvmpipe|software|mesa", renderer, re.I):
         sig("webgl_software", True)
     if re.search(r",\s*or similar|generic renderer|placeholder", renderer, re.I):
@@ -232,6 +234,10 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     avail_w, avail_h = int(scr.get("availWidth", 0) or 0), int(scr.get("availHeight", 0) or 0)
     dpr = scr.get("devicePixelRatio", 0) or 0
     color = int(scr.get("colorDepth", 0) or 0)
+    if width and height:
+        sig("screen_resolution", f"{width}x{height}")  # raw values — feed the prevalence model
+    if color:
+        sig("color_depth", color)
     if not width or not height or not scr.get("outerWidth") or not scr.get("outerHeight"):
         sig("screen_zero", True)
     if avail_w > width or avail_h > height:
