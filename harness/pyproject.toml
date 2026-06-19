@@ -52,3 +52,7 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = "browserforge.*"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "fpgen.*"
+ignore_missing_imports = true

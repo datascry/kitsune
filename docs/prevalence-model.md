@@ -51,6 +51,33 @@ scrambled separation) is proven; the prior's *fidelity* is the open item.
 > fingerprints **measured through our own collector** (`build_prior_from_sessions` on a hosted-demo opt-in /
 > real-device matrix). See docs/evasion-catalog.md "Scrapfly fingerprint-generator".
 
+### Overfit diagnostic run (2026-06-19) — `task prevalence-corroborate`
+
+The diagnostic above is now built (`kitsune_harness.fpgen_corroborate`) and run: it maps fpgen (Scrapfly's
+data) through the **same** `features_from_fingerprint` the prior is built from and reports the total-variation
+distance (TVD) between browserforge's and fpgen's conditional distributions per factor. First run (n≈400–500):
+
+| factor \| condition | TVD (0=identical, 1=disjoint) | read |
+|---|---|---|
+| `gpu \| macOS` | **0.06** | robust — agrees across two independent datasets |
+| `gpu \| Windows` | **0.12** | robust (the `_gpu_family` extraction survives browserforge's non-ANGLE renderers) |
+| `gpu \| Linux` | 0.28–0.34 | softest, but low-n (Linux ≈ 32/sample) → noise-dominated |
+| `screen \| Windows` | **0.11** | robust |
+| `screen \| macOS` | **0.23** | moderate — the one desktop cell worth scrutiny when real data lands |
+| `screen \| Linux` | 0.18 | low-n |
+| `cores` (marginal) | **0.11** | robust |
+
+**Finding:** the single-source prior is **not wildly data-idiosyncratic** — no factor exceeds the 0.35
+"high-divergence" flag; the weakest factors I most feared (gpu/cores, which had *no* independent check) agree
+to TVD ≤ 0.12 on the high-n desktop cells. So the corroborating-weight prevalence signal is better-grounded
+than pure-single-source would suggest. **Honest limits:** fpgen is the *same model family* (independent data,
+shared Bayesian structure), so this corroborates the **data**, not the model's structural assumptions — it
+**downgrades** the single-source risk, it does not retire it. It also cannot compare the `Android`/mobile
+cells (fpgen's natural sample skewed desktop) — those, plus a *convicting* (not corroborating) promotion,
+still require real-traffic-through-our-collector ground truth. The diagnostic is on-demand
+(`task prevalence-corroborate`; fpgen fetches its model over the network, so it is not a CI gate), with its
+pure logic unit-tested.
+
 ### Grounding-source assessment (2026-06-19) — what's usable per factor
 
 A search for public, independent grounding sources for the three factors, and a cross-check against each:

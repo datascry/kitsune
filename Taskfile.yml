@@ -77,6 +77,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.intoli_corpus --n {{.N | default 4000}}"]
 
+  prevalence-corroborate:
+    desc: "Diff the prevalence prior (gpu/screen/cores) vs fpgen's independent data — single-source overfit check"
+    dir: harness
+    cmds: ["uv run --with fpgen python -m kitsune_harness.fpgen_corroborate --n {{.N | default 500}}"]
+
   matrix:
     desc: "Refresh docs/matrix.md from the committed real captures against the current ruleset (no live run)"
     dir: harness
