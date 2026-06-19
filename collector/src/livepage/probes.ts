@@ -749,7 +749,13 @@ export function armCollector(): LiveCollector {
         : /Apple/i.test(ven)
           ? "safari"
           : "other";
-    put("browser", "vendor_engine", venEngine);
+    // vendor_engine drives br.vendor_vs_ua. On iOS, Apple forces WebKit for every browser but
+    // navigator.vendor follows the BRAND (Chrome-iOS/CriOS reports "Google Inc." on WebKit; in-app WebViews
+    // report "Apple…" with a non-Safari-token UA), so vendor and the UA-derived engine decouple legitimately
+    // — abstain there (grounded on Intoli real traffic: 122/10000 iOS FPs). An iOS UA-spoof on a Chromium
+    // host is still caught by apple_ua_nonwebkit (window.chrome/userAgentData).
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    if (!isIOS) put("browser", "vendor_engine", venEngine);
     // captureStackTrace is in V8 (Chromium) and JSC (Safari 16.4+) but NOT SpiderMonkey (a live Firefox 137
     // reports it undefined), so a Chrome UA without it / a Firefox UA with it is an engine spoof.
     const hasV8Stack =

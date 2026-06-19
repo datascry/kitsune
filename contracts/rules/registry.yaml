@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.21"
+ruleset_version: "0.74.22"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -801,8 +801,8 @@ rules:
     weight: 0.7
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "CreepJS: navigator.vendor (Google Inc./empty/Apple) must match the UA engine"
+    last_validated: "2026-06-19"
+    source: "CreepJS: navigator.vendor (Google Inc./empty/Apple) must match the UA engine. v0.74.22 iOS FP fix (grounded on the Intoli real-traffic SECOND source — single-source browserforge missed it): the rule convicted real iOS browsers 122/10000. Apple forces WebKit for EVERY iOS browser but navigator.vendor follows the BRAND, so the vendor and UA-engine axes decouple legitimately: real Chrome-iOS (`CriOS …Safari/604.1` → ua_engine safari) reports vendor 'Google Inc.' → vendor_engine chromium (107x), and iOS in-app WebViews (no Safari token → ua_engine 'other') report vendor 'Apple…' (7x). Both are real browsers → hard bot FP on a CONVICTING rule. Fix: the collector + calibration no longer EMIT vendor_engine on an iOS UA (/iPhone|iPad|iPod/), so the rule abstains there ('unknown never fires') — narrowing only, never broadening. No coverage lost: an iOS UA-spoof on a Chromium host is still convicted structurally by br.apple_ua_nonwebkit (window.chrome/userAgentData on a claimed-WebKit host). Browserforge calibration is desktop-heavy so its FP rate is unchanged; the Intoli iOS FP drops to 0. Mirrored across demo.py / calibration.py / intoli_corpus.py / livepage/probes.ts."
 
   - id: br.oscpu_vs_ua
     title: navigator.oscpu implies an OS that contradicts the UA platform

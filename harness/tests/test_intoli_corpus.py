@@ -29,6 +29,17 @@ _DESKTOP = {
     "screenWidth": 1920,
     "screenHeight": 1080,
 }
+# A real Chrome-on-iOS record (CriOS): Apple forces WebKit so the UA carries the Safari token (ua_engine
+# "safari") while navigator.vendor follows the BRAND → "Google Inc." (vendor_engine "chromium"). The two
+# axes disagree legitimately — this is the real-traffic combination that convicted iOS users on
+# br.vendor_vs_ua (107/10000) until v0.74.22.
+_IOS_CHROME = {
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/123.0.6312.52 Mobile/15E148 Safari/604.1",  # noqa: E501
+    "vendor": "Google Inc.",
+    "language": "en-US",
+    "screenWidth": 393,
+    "screenHeight": 852,
+}
 
 
 def test_mapper_emits_only_faithfully_paired_signals() -> None:
@@ -69,3 +80,28 @@ def test_real_android_is_clean() -> None:
 def test_real_desktop_is_clean() -> None:
     verdict = Detector().score(group_signals(intoli_signals(_DESKTOP, "d", NOW))[0])
     assert verdict.label.value == "human"
+
+
+def test_ios_chrome_does_not_emit_vendor_engine() -> None:
+    # On iOS the vendor/UA-engine axes decouple (Apple forces WebKit, vendor follows the brand), so the
+    # mapper must ABSTAIN — no vendor_engine signal → br.vendor_vs_ua cannot fire ("unknown never fires").
+    kinds = {s.kind for s in intoli_signals(_IOS_CHROME, "i", NOW)}
+    assert "vendor_engine" not in kinds
+    assert "ua_engine" in kinds  # the engine signal is still emitted (other rules read it)
+
+
+def test_real_ios_chrome_is_clean() -> None:
+    # Regression guard for the v0.74.22 fix: a real Chrome-iOS visitor must NOT be convicted on
+    # br.vendor_vs_ua (it scored bot 100% before the iOS gate).
+    verdict = Detector().score(group_signals(intoli_signals(_IOS_CHROME, "i", NOW))[0])
+    assert "br.vendor_vs_ua" not in {c.rule_id for c in verdict.contradictions}
+    assert verdict.label.value == "human"
+
+
+def test_desktop_vendor_mismatch_still_convicts() -> None:
+    # Positive control: the iOS gate must narrow ONLY iOS. A DESKTOP UA whose vendor contradicts the UA
+    # engine (Windows Chrome UA → chromium, but vendor "Apple…" → safari) is a real spoof and must still
+    # trip br.vendor_vs_ua.
+    spoof = {**_DESKTOP, "vendor": "Apple Computer, Inc."}
+    verdict = Detector().score(group_signals(intoli_signals(spoof, "s", NOW))[0])
+    assert "br.vendor_vs_ua" in {c.rule_id for c in verdict.contradictions}

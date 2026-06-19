@@ -105,6 +105,19 @@ def _vendor_engine(vendor: str) -> str:
     return "other"
 
 
+def _is_ios(ua: str) -> bool:
+    """An iOS UA, where navigator.vendor decouples from the UA-derived engine (so vendor_vs_ua abstains).
+
+    Apple forces WebKit for Safari AND every iOS browser, but navigator.vendor follows the BRAND, not the
+    engine: real-traffic Chrome-iOS (``CriOS …Safari/604.1`` → ua_engine "safari") reports vendor
+    "Google Inc." → vendor_engine "chromium", and iOS in-app WebViews (no Safari token → ua_engine "other")
+    report vendor "Apple…" — both legitimate, both tripped br.vendor_vs_ua on the Intoli real-traffic source
+    (122/10000) until this gate. iOS UA-spoofs on a Chromium host stay caught structurally by
+    apple_ua_nonwebkit (window.chrome/userAgentData on a claimed-WebKit host), so no coverage is lost.
+    """
+    return bool(re.search(r"iPhone|iPad|iPod", ua))
+
+
 def _webgl_os(renderer: str) -> str:
     # OS hint ONLY from OS-exclusive GPU stacks (v0.74.4). Direct3D = Windows-only ANGLE backend; Metal/Apple
     # = macOS-only; Mesa/GLX = Linux/X11 stacks Windows/macOS never use. Vulkan/OpenGL/SwiftShader/llvmpipe
@@ -193,7 +206,10 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     sig("ua_platform", plat)
     sig("ua_engine", engine)
     sig("ua_render", "gecko" if engine == "firefox" else "webkit")
-    sig("vendor_engine", _vendor_engine(str(nav.get("vendor", ""))))
+    # vendor_engine drives br.vendor_vs_ua, but on iOS navigator.vendor follows the browser BRAND while the
+    # engine is always WebKit — the two axes decouple legitimately (see _is_ios), so abstain there.
+    if not _is_ios(ua):
+        sig("vendor_engine", _vendor_engine(str(nav.get("vendor", ""))))
     sig("hardware_concurrency", int(nav.get("hardwareConcurrency", 0) or 0))
     # Desktop-only tells (mirror the collector): a real desktop browser ships a standardized 5 plugins / 2
     # mimeTypes / pdfViewerEnabled=true, so a zero there is a stripped-browser signature — but every real

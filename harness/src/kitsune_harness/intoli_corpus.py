@@ -39,6 +39,7 @@ from kitsune_detector.detector import Detector
 from kitsune_detector.models import Layer, Signal, Source
 
 from .calibration import (
+    _is_ios,
     _ua_engine,
     _ua_platform,
     _vendor_engine,
@@ -80,8 +81,11 @@ def intoli_signals(rec: dict[str, Any], session_id: str, now: datetime) -> list[
     # (The earlier "73% navplatform FP" reading conflated this artifact with a genuine sub-problem —
     # real Android reporting a Linux platform — which is fixed independently by OS-family resolution
     # in calibration.py / demo.py / probes.ts and validated against real-browser behavior, not Intoli.)
+    # On iOS, navigator.vendor follows the browser BRAND while the engine is always WebKit, so the
+    # vendor/UA-engine axes decouple legitimately (Chrome-iOS reports "Google Inc." on WebKit; in-app
+    # WebViews report "Apple…" with a non-Safari-token UA) — abstain rather than convict (see _is_ios).
     vendor = str(rec.get("vendor", ""))
-    if vendor:
+    if vendor and not _is_ios(ua):
         sig(Layer.browser, "vendor_engine", _vendor_engine(vendor))
     lang = str(rec.get("language", ""))
     if lang:

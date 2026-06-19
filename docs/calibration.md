@@ -191,7 +191,7 @@ actionable. Field-by-field over the 10k records:
 
 | field | faithful to the device? | evidence |
 |---|---|---|
-| `userAgent` ↔ `vendor` | **yes** (99.6%) | chromium↔Google, safari↔Apple; ~0.4% incoherent (matches browserforge) |
+| `userAgent` ↔ `vendor` | **device-faithful but axis-decoupled on iOS** | chromium↔Google / safari↔Apple on desktop+Android, but on **iOS the axes legitimately decouple** — see the `vendor_vs_ua` iOS FP below |
 | `screen` | **yes** | 99% of iPhone UAs report width ≤ 500 |
 | `language` | **yes** | tracks UA region |
 | `navigator.platform` | **no** | **70% report `"Linux x86_64"` regardless of device** — iPhones (real: `iPhone`), arm Androids (real: `Linux armv8l`), and Macs alike. A collection-environment value leaking into the field. |
@@ -200,13 +200,30 @@ So a naive run that derived `nav_platform_os` from the `platform` field convicte
 `br.navplatform_vs_ua` — but that number is **mostly a dataset artifact**, not a real-browser FP: it is the
 fabricated mismatch of a real iPhone/Mac/Android UA against a fixed `Linux x86_64` platform that no such
 device actually reports. The corpus therefore **cannot measure platform-coherence FP**, and the mapper
-omits `navigator.platform` entirely. What it *can* measure — `vendor_vs_ua` (0.3% vs browserforge 0.4%),
-engine, language, screen — corroborates the browserforge coherence numbers.
+omits `navigator.platform` entirely. What it *can* measure — `vendor_vs_ua`, engine, language, screen.
 
 | rule | browserforge (Tier-1) FP | Intoli real-traffic FP | verdict |
 |---|---|---|---|
-| `br.vendor_vs_ua` | 0.4% | 0.3% | corroborated FP-safe |
+| `br.vendor_vs_ua` | 0.8% (desktop, browserforge's own gen incoherence) | 1.4% → **0.1%** after the iOS gate (v0.74.22) | **second source caught a real FP** — see below |
 | `br.navplatform_vs_ua` | 3.6% | *not measurable* | Intoli's `platform` field is unreliable; see above |
+
+**The second source earned its keep: `br.vendor_vs_ua` convicted real iOS browsers (v0.74.22).** The
+single-source (browserforge, desktop-heavy) calibration rated `vendor_vs_ua` FP-safe; a fresh mobile-heavy
+Intoli run showed it firing on **1.4% (55/4000)** as a *hard bot* false positive — a **convicting coherence
+rule** mislabelling real traffic. Drill-down (all 10k records): the firings are two legitimate iOS patterns —
+real **Chrome-on-iOS** (`CriOS …Safari/604.1` → `ua_engine` safari, but `navigator.vendor` = `Google Inc.` →
+`vendor_engine` chromium, 107×) and iOS **in-app WebViews** (no Safari token → `ua_engine` "other", vendor
+`Apple…`, 7×). Root cause: Apple forces WebKit for *every* iOS browser, but `navigator.vendor` follows the
+**brand**, so the vendor and UA-engine axes decouple — the desktop "vendor must match UA engine" assumption
+is false on iOS. **Fix:** the collector + both calibration mappers no longer *emit* `vendor_engine` on an iOS
+UA (`/iPhone|iPad|iPod/`), so the rule abstains there ("unknown never fires") — narrowing only. **No coverage
+lost:** an iOS-UA spoof on a Chromium host is still convicted structurally by `br.apple_ua_nonwebkit`
+(`window.chrome`/`userAgentData` on a claimed-WebKit host). Post-fix the Intoli FP is **0.1% (2–6/10k)**, and
+those residuals are *not* real-browser FPs — they are genuine desktop incoherences the rule *should* catch:
+a **macOS Safari UA reporting vendor `Google Inc.`** (no real Safari does — a Chromium-crawler-faking-Safari
+signature, 4×) and rare malformed bare-`AppleWebKit` Mac UAs with no browser token (2×). Mirrored across
+`demo.py` / `calibration.py` / `intoli_corpus.py` / `livepage/probes.ts`; guarded by
+`test_intoli_corpus.py` (iOS abstains + real Chrome-iOS clean + desktop mismatch still convicts).
 
 **The genuine sub-problem, fixed independently (v0.71.1).** Buried inside the artifact is a real issue we
 could ground without Intoli: a real Android browser *does* carry `navigator.platform = "Linux armv8l"` under
