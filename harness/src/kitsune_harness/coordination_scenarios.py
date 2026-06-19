@@ -180,13 +180,46 @@ def scenarios() -> list[Scenario]:
         Scenario(
             "fleet-ja4c-randomizer",
             True,
-            "Camoufox-style: shared cipher prefix but per-launch JA4_c randomization, diverse JS, distinct IPs",
+            "Camoufox-style: shared cipher prefix but per-launch JA4_c randomization, diverse JS, distinct IPs, "
+            "AUTOMATED (webdriver) — the automation tell corroborates the divergence as per-launch randomization, "
+            "not a benign multi-Chrome-version cohort (which also diverges JA4_c)",
             [
                 (
                     f"c{i}",
-                    _session(f"c{i}", f"{_PREFIX}_rand{i:04d}", hw=4 + i * 4, observed_ip=_ip(i), offset_s=i * 5.0),
+                    _session(
+                        f"c{i}",
+                        f"{_PREFIX}_rand{i:04d}",
+                        hw=4 + i * 4,
+                        observed_ip=_ip(i),
+                        offset_s=i * 5.0,
+                        webdriver=True,
+                    ),
                 )
                 for i in range(3)
+            ],
+        )
+    )
+    out.append(
+        Scenario(
+            "legit-multi-version-cohort",
+            False,
+            "real Chrome users spanning auto-update versions: ONE cipher prefix but a few distinct JA4_c (JA4_c "
+            "varies across Chrome versions), distinct IPs + fps + traces, NO automation — diverges JA4_c but is a "
+            "real cohort; must cap at candidate, not `fleet` (the JA4_c-randomizer-vs-multi-version FP)",
+            [
+                (
+                    f"v{i}",
+                    _session(
+                        f"v{i}",
+                        f"{_PREFIX}_{['027a', '027a', 'd8a2', 'd8a2'][i]}",  # 2 real JA4_c across 4 users
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash=f"realfp{i}",
+                        trace_hash=f"human-{i}",
+                    ),
+                )
+                for i in range(4)
             ],
         )
     )

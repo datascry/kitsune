@@ -76,9 +76,27 @@ cluster is genuinely ambiguous (corporate hardware vs a clean native clone) → 
 operator review. Pinned by `legit-corporate-fleet` in the scenario battery (precision stays 1.0) and
 `test_corporate_fleet_fp_collision_is_not_convicted`; the malicious `fleet-cloned-fingerprint` scenario was
 made AUTOMATED (realistic) so recall stays 1.0, and the live `fleet-cloned` fixture still convicts (its
-stealth-evader members carry automation tells). The cloned-TRACE, JA4_c and shared-origin signals are
-unaffected — none can fire on a clean corporate cohort (real humans never share a trace; real Chrome's JA4_c
-is stable; there is no shared WebRTC origin).
+stealth-evader members carry automation tells). The cloned-TRACE and shared-origin signals stay
+solo-convicting — neither can fire on a clean corporate cohort (real humans never share a trace; there is no
+shared WebRTC origin). (`ja4c_divergent` gets the same corroboration gate — see the next section.)
+
+## The JA4_c-divergence FP: a multi-Chrome-version cohort (fixed)
+
+The same lesson recurred on `ja4c_divergent`. Its rationale — "real Chrome's JA4_c is stable" — holds
+per-**launch** but NOT per-**version**: JA4_c (the extensions/sig-algs hash) changes across Chrome versions
+while the cipher prefix (JA4_a+JA4_b) stays, so a normal mix of auto-update states **diverges JA4_c**.
+Grounded in the fleet captures themselves — one cipher prefix `t13d1516h2_8daaf6152771` carries **two** real
+JA4_c (`02713d6af862`, `d8a2da3f94cd`) across older vs newer captures, i.e. a Chromium version bump — and by
+construction: a clean 4-user cohort spanning 2 versions (distinct IPs/fps/traces, no automation) scored
+`fleet 0.92`, the evidence wrongly reading "per-launch TLS randomization."
+
+So `ja4c_divergent` is **AMBIGUOUS** exactly like `fp_collision` — per-launch randomization (anti-detect) vs
+a multi-version cohort (real) — and gets the same corroboration gate: it convicts only with a per-session
+automation tell or an unambiguous signal (cloned trace / shared origin); uncorroborated it caps at
+`candidate`. Pinned by `legit-multi-version-cohort` (→ candidate) and a now-AUTOMATED `fleet-ja4c-randomizer`
+(→ fleet); the live `fleet-proxy` fixture is unaffected (it convicts via its **shared WebRTC origin**, an
+unambiguous signal). Only `trace_collision` and `shared_real_ip` remain solo-convicting — no real cohort,
+standardized or multi-version, can produce them.
 
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 

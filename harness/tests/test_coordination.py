@@ -255,8 +255,10 @@ def test_larger_fleet_scores_higher() -> None:
 
 def test_score_corpus_clusters_and_sorts() -> None:
     corpus = [
-        ("cf1", _sess("cf1", "X_a_1", 8)),  # share the cipher prefix `X_a`, JA4_c-divergent per launch
-        ("cf2", _sess("cf2", "X_a_2", 32)),  # → convicted fleet
+        # share the cipher prefix `X_a`, JA4_c-divergent per launch + AUTOMATED → convicted fleet (the
+        # automation tell corroborates the divergence as per-launch randomization, not a multi-version cohort)
+        ("cf1", _sess("cf1", "X_a_1", 8, webdriver=True)),
+        ("cf2", _sess("cf2", "X_a_2", 32, webdriver=True)),
         ("solo", _sess("solo", "Y", 4)),  # alone → not graded
         ("noja4", _sess("noja4", None, 4)),  # no JA4 → skipped
     ]
@@ -280,9 +282,9 @@ def test_ja4c_randomization_is_a_fleet() -> None:
     # Shared cipher-suite prefix, homogeneous JS, but DIFFERENT JA4_c (extensions) per launch — the
     # Camoufox TLS-randomization shape. Clusters by prefix and the JA4_c divergence makes it a fleet.
     members = [
-        ("a", _sess("a", "t13d_aaaa_1111", 8, "Windows")),
-        ("b", _sess("b", "t13d_aaaa_2222", 8, "Windows")),
-        ("c", _sess("c", "t13d_aaaa_3333", 8, "Windows")),
+        ("a", _sess("a", "t13d_aaaa_1111", 8, "Windows", webdriver=True)),
+        ("b", _sess("b", "t13d_aaaa_2222", 8, "Windows", webdriver=True)),
+        ("c", _sess("c", "t13d_aaaa_3333", 8, "Windows", webdriver=True)),
     ]
     v = score_corpus([(n, s) for n, s in members])[0]
     assert v.ja4 == "t13d_aaaa"  # keyed on the stable prefix, not the randomized full JA4
@@ -333,7 +335,7 @@ def test_same_origin_behind_proxies() -> None:
 def test_severity_critical_on_burst() -> None:
     # A JA4_c-divergent fleet of 5 arriving within ~4s → high arrival rate → critical severity (separate
     # from the fleet-confidence score, which a 3-node fleet already maxes).
-    members = [(f"n{i}", _sess(f"n{i}", f"X_c_{i}", 8 + i * 4, offset_s=i)) for i in range(5)]
+    members = [(f"n{i}", _sess(f"n{i}", f"X_c_{i}", 8 + i * 4, offset_s=i, webdriver=True)) for i in range(5)]
     v = score_cluster("X", members)
     assert v.label == "fleet"
     assert v.arrival_rate_per_min is not None and v.arrival_rate_per_min >= 60
@@ -342,7 +344,7 @@ def test_severity_critical_on_burst() -> None:
 
 def test_severity_high_on_volume() -> None:
     # 12-node JA4_c-divergent fleet spread over minutes → low arrival rate, but member count alone is "high".
-    members = [(f"n{i}", _sess(f"n{i}", f"X_c_{i}", 8 + i, offset_s=i * 60)) for i in range(12)]
+    members = [(f"n{i}", _sess(f"n{i}", f"X_c_{i}", 8 + i, offset_s=i * 60, webdriver=True)) for i in range(12)]
     v = score_cluster("X", members)
     assert v.label == "fleet"
     assert (v.arrival_rate_per_min or 0) < 15  # not a burst
@@ -362,11 +364,11 @@ def test_severity_na_for_candidate() -> None:
 def test_tracker_alerts_on_becoming_fleet() -> None:
     # First session: no cluster. Second (paradox): cluster becomes a fleet → alert fires once.
     t = FleetTracker()
-    assert t.observe("a", _sess("a", "X_a_1", 8)) is None  # singleton, no alert
-    v = t.observe("b", _sess("b", "X_a_2", 32))  # JA4_c-divergent pair now → fleet
+    assert t.observe("a", _sess("a", "X_a_1", 8, webdriver=True)) is None  # singleton, no alert
+    v = t.observe("b", _sess("b", "X_a_2", 32, webdriver=True))  # JA4_c-divergent + automated pair → fleet
     assert v is not None and v.label == "fleet"
     # A third confirming member at the same severity does not re-alert.
-    assert t.observe("c", _sess("c", "X_a_3", 16)) is None
+    assert t.observe("c", _sess("c", "X_a_3", 16, webdriver=True)) is None
 
 
 def test_tracker_alerts_on_cloned_profile_fleet() -> None:
@@ -390,8 +392,8 @@ def test_tracker_ignores_no_ja4_and_singletons() -> None:
 
 def test_replay_stream_orders_by_arrival_and_alerts() -> None:
     corpus = [
-        ("late", _sess("late", "X_a_1", 32, offset_s=50)),
-        ("early", _sess("early", "X_a_2", 8, offset_s=0)),
+        ("late", _sess("late", "X_a_1", 32, offset_s=50, webdriver=True)),
+        ("early", _sess("early", "X_a_2", 8, offset_s=0, webdriver=True)),
     ]
     alerts = replay_stream(corpus)
     assert len(alerts) == 1
@@ -405,8 +407,8 @@ def test_replay_stream_orders_by_arrival_and_alerts() -> None:
 def test_windowed_tracker_alerts_on_burst_within_window() -> None:
     # Two paradox members within a 60s window → fleet alert.
     t = FleetTracker(window_seconds=60)
-    assert t.observe("a", _sess("a", "X_a_1", 8, offset_s=0)) is None
-    assert t.observe("b", _sess("b", "X_a_2", 32, offset_s=10)) is not None  # within window → alert
+    assert t.observe("a", _sess("a", "X_a_1", 8, offset_s=0, webdriver=True)) is None
+    assert t.observe("b", _sess("b", "X_a_2", 32, offset_s=10, webdriver=True)) is not None  # within window → alert
 
 
 def test_windowed_tracker_ignores_slow_trickle() -> None:
@@ -419,11 +421,11 @@ def test_windowed_tracker_ignores_slow_trickle() -> None:
 def test_windowed_tracker_re_alerts_after_burst_ages_out() -> None:
     # A burst alerts, ages out, then a fresh burst re-alerts (state reset on expiry).
     t = FleetTracker(window_seconds=60)
-    t.observe("a", _sess("a", "X_a_1", 8, offset_s=0))
-    assert t.observe("b", _sess("b", "X_a_2", 32, offset_s=10)) is not None  # first burst alerts
+    t.observe("a", _sess("a", "X_a_1", 8, offset_s=0, webdriver=True))
+    assert t.observe("b", _sess("b", "X_a_2", 32, offset_s=10, webdriver=True)) is not None  # first burst alerts
     # Far-future fresh burst: old members aged out, then a new JA4_c-divergent pair re-alerts.
-    assert t.observe("c", _sess("c", "X_a_3", 8, offset_s=1000)) is None  # singleton in new window
-    assert t.observe("d", _sess("d", "X_a_4", 32, offset_s=1005)) is not None  # new burst → re-alert
+    assert t.observe("c", _sess("c", "X_a_3", 8, offset_s=1000, webdriver=True)) is None  # singleton in new window
+    assert t.observe("d", _sess("d", "X_a_4", 32, offset_s=1005, webdriver=True)) is not None  # new burst → re-alert
 
 
 def test_single_member_cluster_has_no_span() -> None:
