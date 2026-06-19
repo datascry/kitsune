@@ -110,3 +110,19 @@ signature the detector's `br.rfp_browser` ships and calibrates, so a vanilla Fir
 **Honest limit:** Tor Browser and Mullvad Browser are *intentionally identical* at the JS layer (they share
 one anonymity set), so they are not JS-separable — only the **network layer** (a Tor exit-IP via
 `rep.*`/IP reputation) tells them apart. The prediction surfaces this in its evidence rather than guessing.
+
+**Per-browser FP suppression (the point of the prediction).** `notApplicable(ruleId, prediction)` excludes
+a tell that is *expected* for the identified browser so it cannot convict a real user:
+- platform-coherence (`navplatform/webgl/oscpu_vs_ua`) on **mobile** (Android's `Linux` platform is genuine);
+- Chromium-only capability tells (`no_chrome_object`, `no_connection`, …) on **non-blink** engines;
+- **Brave's by-design farbling** (`canvas_noise`, `audio_noise`) when the browser is positively **Brave**
+  (the definitive `navigator.brave` global) — Brave's default Shields perturb the canvas/audio readback, so a
+  real Brave user (~70M of them) would otherwise noisy-or two *artifact* (convicting) tells to `bot`. A
+  Chrome-claiming farbler with no `navigator.brave` (an anti-detect tool) still convicts.
+
+> **Detector-side follow-up (tracked):** the same Brave farbling FP exists server-side — the detector has no
+> Brave awareness (Brave's UA is plain Chrome; `navigator.brave` is not yet emitted as a signal, and the
+> coherence engine has no per-browser N/A like the live page). Not measured by the browserforge calibration
+> (which has no live farbling). Fixing it needs a `browser.is_brave` collector signal + a scoring-level
+> suppression of the farbling artifacts when present — a per-browser-N/A architecture decision for the
+> detector, deferred as its own piece.

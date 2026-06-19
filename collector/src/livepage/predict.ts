@@ -236,6 +236,12 @@ const CHROMIUM_ONLY = new Set([
   "br.no_connection",
   "br.no_devicememory",
 ]);
+// Brave farbles the canvas and audio readback BY DESIGN (its default "Shields" privacy feature), so a real
+// Brave user trips canvas_noise / audio_noise — but Brave is a legitimate human browser (~70M users), not a
+// bot. These farbling artifacts are EXPECTED when the browser is positively identified as Brave (the
+// definitive navigator.brave global, which detectBrowser reads). A non-Brave browser that farbles — a
+// Chrome-claiming anti-detect tool with NO navigator.brave — has no such excuse and still convicts.
+const BRAVE_FARBLING = new Set(["br.canvas_noise", "br.audio_noise"]);
 
 export function notApplicable(ruleId: string, pred: Prediction): string | null {
   if (PLATFORM_COHERENCE.has(ruleId) && pred.formFactor === "mobile") {
@@ -243,6 +249,9 @@ export function notApplicable(ruleId: string, pred: Prediction): string | null {
   }
   if (CHROMIUM_ONLY.has(ruleId) && pred.engine !== "blink") {
     return `a Chromium-only capability — its absence is expected on ${pred.browser}`;
+  }
+  if (BRAVE_FARBLING.has(ruleId) && pred.browser.startsWith("Brave")) {
+    return "Brave farbles canvas/audio readback by design (its Shields privacy feature) — expected, not a bot signature";
   }
   return null;
 }

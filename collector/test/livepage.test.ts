@@ -213,4 +213,16 @@ describe("per-browser applicability (notApplicable) — lowers false positives",
   it("never gates an unrelated detection (a true tell still counts)", () => {
     expect(notApplicable("br.webdriver_present", pred({ formFactor: "mobile" }))).toBeNull();
   });
+
+  it("excludes Brave's by-design canvas/audio farbling — but only when it IS Brave", () => {
+    // A real Brave user farbles canvas/audio by default; that is expected, not a bot signature.
+    expect(notApplicable("br.canvas_noise", pred({ browser: "Brave" }))).not.toBeNull();
+    expect(notApplicable("br.audio_noise", pred({ browser: "Brave" }))).not.toBeNull();
+    expect(notApplicable("br.canvas_noise", pred({ browser: "Brave (Android)" }))).not.toBeNull();
+    // A Chrome-claiming farbler (anti-detect tool, no navigator.brave) still convicts.
+    expect(notApplicable("br.canvas_noise", pred({ browser: "Chrome" }))).toBeNull();
+    expect(
+      notApplicable("br.audio_noise", pred({ browser: "Firefox", engine: "gecko" })),
+    ).toBeNull();
+  });
 });
