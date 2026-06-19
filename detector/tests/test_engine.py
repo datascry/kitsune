@@ -218,6 +218,10 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
             "br.canvas_worker_vs_main",
         ),
         (
+            [(Layer.browser, "timezone_worker_divergence", True, Source.collector)],
+            "br.timezone_worker_vs_main",
+        ),
+        (
             [
                 (Layer.browser, "vendor_engine", "chromium", Source.collector),
                 (Layer.browser, "ua_engine", "firefox", Source.collector),

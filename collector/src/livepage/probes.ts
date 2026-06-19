@@ -410,6 +410,31 @@ function workerCanvasHashCW(): Promise<number | null> {
   });
 }
 
+/** Timezone (IANA zone + UTC offset) reported inside a Worker. Timezone is a process-level setting, so a
+ * real browser — and a legit CDP timezone override — reports it identically in every realm; only a JS
+ * main-realm geo-spoof (patching Intl/Date) fails to reach Worker scope. Null on failure → never fires. */
+function workerTz(): Promise<{ tz: string; off: number } | null> {
+  return new Promise((resolve) => {
+    try {
+      const code =
+        "onmessage=function(){var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}" +
+        "postMessage({tz:tz,off:new Date().getTimezoneOffset()});}";
+      const w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+      const t = setTimeout(() => {
+        resolve(null);
+      }, 1500);
+      w.onmessage = (e: MessageEvent<{ tz: string; off: number }>): void => {
+        clearTimeout(t);
+        resolve(e.data);
+        w.terminate();
+      };
+      w.postMessage(0);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 /** A live in-browser collector: arm listeners now, snapshot the full signal set later via collect(). */
 export interface LiveCollector {
   collect(): Promise<SignalMap>;
@@ -1029,6 +1054,20 @@ export function armCollector(): LiveCollector {
     const wch = await workerCanvasHashCW();
     if (mch !== null && wch !== null && mch !== wch) {
       put("browser", "canvas_worker_divergence", true);
+    }
+    // Timezone realm coherence: a process-level setting is identical in every realm (a legit CDP override
+    // reaches the Worker too); only a JS main-realm geo-spoof (Intl/Date) fails to. Fire when the Worker
+    // reports a timezone and its UTC offset or IANA zone differs from the main thread.
+    let mainTz = "";
+    try {
+      mainTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    } catch {
+      /* ignore */
+    }
+    const mainOff = new Date().getTimezoneOffset();
+    const wtz = await workerTz();
+    if (wtz && (wtz.off !== mainOff || (mainTz !== "" && wtz.tz !== "" && wtz.tz !== mainTz))) {
+      put("browser", "timezone_worker_divergence", true);
     }
     if (!cspEnforced) put("browser", "csp_bypassed", true);
 

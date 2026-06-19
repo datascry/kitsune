@@ -351,6 +351,20 @@ DEMO_PAGE = """<!doctype html>
       } catch (err) { resolve(null); }
     });
   }
+  // Timezone reported inside a Worker — a process-level setting identical across realms on a real browser
+  // (and a legit CDP override); only a JS main-realm geo-spoof fails to reach Worker scope.
+  function workerTz() {
+    return new Promise(function (resolve) {
+      try {
+        var code = "onmessage=function(){var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}" +
+          "postMessage({tz:tz,off:new Date().getTimezoneOffset()});}";
+        var w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+        var t = setTimeout(function () { resolve(null); }, 1500);
+        w.onmessage = function (e) { clearTimeout(t); resolve(e.data); w.terminate(); };
+        w.postMessage(0);
+      } catch (err) { resolve(null); }
+    });
+  }
   // Installed fonts betray the real OS: a box's font stack is OS-specific (Windows ships Segoe UI /
   // Calibri, macOS ships Lucida Grande / Menlo, Linux ships DejaVu / Liberation). An anti-detect
   // browser can spoof the UA platform but not cheaply re-skin the host's installed fonts — so the
@@ -874,6 +888,12 @@ DEMO_PAGE = """<!doctype html>
     var wch = await workerCanvasHashCW();
     if (mch !== null && wch !== null && mch !== wch) {
       sigs.push(S("browser", "canvas_worker_divergence", true));
+    }
+    var mainTz = ""; try { mainTz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+    var mainOff = new Date().getTimezoneOffset();
+    var wtz = await workerTz();
+    if (wtz && (wtz.off !== mainOff || (mainTz !== "" && wtz.tz !== "" && wtz.tz !== mainTz))) {
+      sigs.push(S("browser", "timezone_worker_divergence", true));
     }
     // CSP was not enforced on a page that ships a strict img-src — the context bypassed CSP (only an
     // automation framework does this). Emitted in every mode: it is an automation tell, not behavioural.

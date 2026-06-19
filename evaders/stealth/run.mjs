@@ -41,6 +41,10 @@ const LINEAR_BOT = process.env.LINEAR_BOT === "1";
 // getImageData (and iframes) but never reaches Worker scope, so a Worker OffscreenCanvas renders clean →
 // canvas_worker_vs_main catches the realm the farble skipped. The canvas analog of WORKER_SPOOF.
 const CANVAS_SPOOF = process.env.CANVAS_SPOOF === "1";
+// TZ_SPOOF: the geo-spoof realm gap. A residential-proxy bot patches Intl/Date on the main thread to
+// match the proxy's country, but a JS patch never reaches Worker scope, so a Worker reports the real host
+// timezone → timezone_worker_vs_main. The geo analog of WORKER_SPOOF.
+const TZ_SPOOF = process.env.TZ_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -88,8 +92,11 @@ const evading =
   IFRAME_SPOOF ||
   NATIVE_SPOOF ||
   CANVAS_SPOOF ||
+  TZ_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = CANVAS_SPOOF
+const mode = TZ_SPOOF
+  ? "tz-spoof"
+  : CANVAS_SPOOF
   ? "canvas-spoof"
   : LINEAR_BOT
   ? "linear-bot"
@@ -222,6 +229,21 @@ if (FLOOR_SPOOF) {
       const r = gid.apply(this, a);
       for (let i = 0; i < r.data.length; i += 499) r.data[i] = r.data[i] ^ 1; // 1-bit per-session farble
       return r;
+    };
+  });
+} else if (TZ_SPOOF) {
+  // Main-realm-only geo-spoof: claim America/New_York via Intl + Date on the main thread. The patch never
+  // reaches Worker scope, so a Worker reports the real host timezone → timezone_worker_vs_main.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const RTO = Intl.DateTimeFormat.prototype.resolvedOptions;
+    Intl.DateTimeFormat.prototype.resolvedOptions = function () {
+      const o = RTO.call(this);
+      o.timeZone = "America/New_York";
+      return o;
+    };
+    Date.prototype.getTimezoneOffset = function () {
+      return 300;
     };
   });
 } else if (evading) {
