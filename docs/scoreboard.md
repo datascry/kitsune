@@ -1,7 +1,7 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-19T07:55:21.491832+00:00`
-- ruleset: `0.74.1`
+- generated: `2026-06-19T08:00:36.203017+00:00`
+- ruleset: `0.74.2`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|---|---|

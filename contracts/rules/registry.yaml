@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.1"
+ruleset_version: "0.74.2"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1235,10 +1235,10 @@ rules:
     predicate: present
     weight: 0.7
     status: experimental
-    category: coherence
+    category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Camoufox source fonts.json: Arimo/Cousine/Tinos are Linux-only — the container leaking through"
+    last_validated: "2026-06-19"
+    source: "Camoufox source fonts.json: Arimo/Cousine/Tinos leak from the container under a spoofed non-Linux UA. v0.74.2: category corrected coherence->ENVIRONMENT — the 'Linux-only' premise is FALSE. Arimo/Cousine/Tinos are the CROSCORE fonts, freely downloadable from Google Fonts and installable on ANY OS (a web developer/designer on Windows/macOS commonly has them), so their presence under a non-Linux UA is not a reliable OS contradiction — font presence is user-configurable, so this must only CORROBORATE, never convict. The Linux-container OS-spoofs that trip it (os-spoof, ios-ua-spoof, iframe-spoof, stealth-patched) are all still convicted by the many HARD cross-layer tells (net.tcp_os_vs_ua, ua_platform_vs_ch_platform, ch_ua_version_vs_ua, cdp_runtime_enabled). (Contrast br.font_mac_internal, which stays convicting: the dot-prefixed '.Aqua Kana' macOS system fonts are NOT normally enumerable, so their presence is a genuine camoufox font-list leak, not a user-installable font.)"
 
   - id: br.font_mac_internal
     title: macOS internal dot-prefixed system fonts are web-measurable (never on a real Mac)
