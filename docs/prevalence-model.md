@@ -40,6 +40,32 @@ signal (low weight, amplifies an existing suspicion) until its prior is corrobor
 source — Tier-3 real-traffic data (a real-device matrix or the hosted-demo opt-in). The mechanism (real vs
 scrambled separation) is proven; the prior's *fidelity* is the open item.
 
+### Grounding-source assessment (2026-06-19) — what's usable per factor
+
+A search for public, independent grounding sources for the three factors, and a cross-check against each:
+
+- **screen — already grounded.** The `screen_bucket` size-class design was cross-checked against the
+  **Intoli** real-traffic resolution distribution (collapsing a 13–46% exact-resolution miss to ~0%). Not
+  single-source; this is the model for the others.
+- **gpu — no usable public source (the weakest factor stays single-source).** The only fetchable independent
+  GPU distribution is the **Steam Hardware Survey**, which is NVIDIA-dominant (~70%) vs browserforge's
+  general-web Windows profile (intel 55% / nvidia 24% / amd 17%). That gap is a **population mismatch**
+  (gamers vs general web), not a browserforge error — so Steam is the *wrong population* to ground a web GPU
+  prior. A web-representative WebGL-renderer distribution (hosted-demo opt-in) is still required; open
+  per-sample fingerprint datasets do not exist publicly (confirmed — even anti-detect tooling notes this gap).
+- **cores — a real-second-source FLAG, not acted on.** Mapping the Steam CPU-core survey to our buckets
+  gives `5-8`≈55%, `9-16`≈11%; browserforge gives `5-8`=38%, `9-16`=**32%**. Steam gamers should skew to
+  *more* cores yet show *fewer* `9-16` than browserforge — i.e. browserforge may **over-generate high core
+  counts** for general web. Per the over-leverage discipline this is a flag to corroborate against a
+  web-representative source, **not** grounds to act on one skewed survey (and `cores` is corroborating-only,
+  so the FP stakes are low regardless). Logged here for a future Tier-3 confirm.
+
+**Net:** the clean public grounding sources are exhausted — screen is done (Intoli), gpu/cores need a
+*web-representative* sample that only the hosted-demo opt-in / real-device matrix provides (the turnkey
+`--build-prior-from-sessions` path consumes exactly that). Market-share surveys are independent but
+population-skewed, usable only as flags. Sources: StatCounter, Steam Hardware Survey, AmIUnique/ThumbmarkJS
+(2025–2026).
+
 **Why this matters for power, not just FP-safety (measured):** the prior is the SAME generator a
 `fingerprint-injector`-class attacker samples from, so a browserforge-sampled fingerprint is probable in our
 prior *by construction* — same-source-blind. Scoring 800 browserforge fingerprints through the full
