@@ -15,6 +15,7 @@ from kitsune_harness.calibration import (
     DERIVABLE_KINDS,
     _font_os,
     _nav_platform_os,
+    _os_family,
     _ua_engine,
     _ua_platform,
     _vendor_engine,
@@ -100,6 +101,16 @@ def test_helpers_cover_all_branches() -> None:
     assert _nav_platform_os("") == ""
     assert _font_os(["Segoe UI", "Calibri", "Tahoma"]) == "Windows"
     assert _font_os(["Helvetica"]) == ""
+
+
+def test_os_family_resolves_android_linux_kernel() -> None:
+    # Android IS Linux: a "Linux" kernel hint under an Android UA resolves to the OS family "Android",
+    # so the platform-coherence rules see agreement, not a contradiction (the 73% real-mobile FP).
+    assert _os_family("Linux", "Android") == "Android"
+    # Desktop OS impersonation is untouched — a Linux host claiming Windows still contradicts.
+    assert _os_family("Linux", "Windows") == "Linux"
+    assert _os_family("Windows", "Android") == "Windows"
+    assert _os_family("Linux", "Linux") == "Linux"
 
 
 def test_coherent_real_chrome_scores_human() -> None:

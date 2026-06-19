@@ -421,10 +421,16 @@ DEMO_PAGE = """<!doctype html>
     function S(layer, kind, value) {
       return { schema_version: "0.1", session_id: id, layer: layer, kind: kind, value: value, source: "collector", observed_at: now };
     }
+    var plat = uaPlatform(ua);
+    // Android IS Linux: its navigator.platform / oscpu / WebGL report the Linux kernel ("Linux armv8l",
+    // OpenGL ES), which under an Android UA is the genuine value, not a spoof. Resolve such a "Linux" hint
+    // to the device's true OS family ("Android") so the platform-coherence rules don't false-fire on every
+    // real Android visitor (Intoli real-traffic: 73% of legit sessions). Desktop OS spoofs are untouched.
+    function osForUa(os) { return (plat === "Android" && os === "Linux") ? "Android" : os; }
     var sigs = [
       S("browser", "webdriver", navigator.webdriver === true),
       S("browser", "ua_browser", uaBrowser(ua)),
-      S("browser", "ua_platform", uaPlatform(ua))
+      S("browser", "ua_platform", plat)
     ];
     var uad = navigator.userAgentData;
     if (uad && uad.platform) sigs.push(S("browser", "ch_platform", uad.platform));
@@ -450,6 +456,7 @@ DEMO_PAGE = """<!doctype html>
     var np = navigator.platform || "";
     var npo = /Mac/i.test(np) ? "macOS" : /Win/i.test(np) ? "Windows"
             : /Linux|X11/i.test(np) ? "Linux" : /Android/i.test(np) ? "Android" : "";
+    npo = osForUa(npo);
     if (npo) sigs.push(S("browser", "nav_platform_os", npo));
     if (canvasLie()) sigs.push(S("browser", "canvas_lie", true));
     if (/Headless/i.test(ua)) sigs.push(S("browser", "ua_is_headless", true));
@@ -468,6 +475,7 @@ DEMO_PAGE = """<!doctype html>
     var wo = /Direct3D|D3D[0-9]/i.test(wg.renderer) ? "Windows"
            : /Metal|Apple/i.test(wg.renderer) ? "macOS"
            : /Vulkan|OpenGL|GLX|Mesa|SwiftShader|llvmpipe/i.test(wg.renderer) ? "Linux" : "";
+    wo = osForUa(wo);
     if (wo) sigs.push(S("browser", "webgl_os_hint", wo));
     if (/Chrome|Edg/.test(ua) && !window.chrome) sigs.push(S("browser", "chrome_object_missing", true));
     if (toStringTampered()) sigs.push(S("browser", "function_tostring_tampered", true));
@@ -615,6 +623,7 @@ DEMO_PAGE = """<!doctype html>
     if (navigator.oscpu) {
       var oc = /Mac/i.test(navigator.oscpu) ? "macOS" : /Win/i.test(navigator.oscpu) ? "Windows"
              : /Linux/i.test(navigator.oscpu) ? "Linux" : "";
+      oc = osForUa(oc);
       if (oc) sigs.push(S("browser", "oscpu_os", oc));
     }
     var isChromium = uaEngine === "chromium";

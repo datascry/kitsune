@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.71.0"
+ruleset_version: "0.71.1"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -663,8 +663,8 @@ rules:
     weight: 0.7
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Kitsune: a spoofed GPU string (e.g. Direct3D on Linux) is self-inconsistent"
+    last_validated: "2026-06-19"
+    source: "Kitsune: a spoofed GPU string (e.g. Direct3D on Linux) is self-inconsistent. v0.71.1: the OS hint is resolved to the device's OS FAMILY before comparison — under an Android UA a Linux/OpenGL-ES GPU hint is genuine (Android is Linux), so it no longer false-fires on real mobile."
 
   # --- v0.7.0: engine-agnostic OS coherence (the Camoufox counter) ---
 
@@ -677,8 +677,8 @@ rules:
     weight: 0.7
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Engine-agnostic: works for Firefox-based anti-detect (no Client-Hints needed)"
+    last_validated: "2026-06-19"
+    source: "Engine-agnostic: works for Firefox-based anti-detect (no Client-Hints needed). v0.71.1: a real Android browser carries navigator.platform=\"Linux armv8l\" under an Android UA — a coherent pairing (Android IS Linux) that this rule would read as a contradiction, false-firing on every real Android visitor. Fixed by resolving the platform to the device's OS family before comparison. (Surfaced while verifying the Intoli corpus; the headline ~73% there was mostly a dataset artifact — Intoli's platform field is a fixed \"Linux x86_64\" for 70% of records regardless of device — so the fix is grounded in real Android behavior, not that number. See docs/calibration.md.) Desktop OS impersonation (a Linux host claiming a Windows UA) still fires."
 
   # --- v0.8.0: worker-vs-main divergence (the engine-level / Camoufox counter) ---
 
@@ -789,8 +789,8 @@ rules:
     weight: 0.7
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Firefox navigator.oscpu OS vs UA platform (engine-agnostic)"
+    last_validated: "2026-06-19"
+    source: "Firefox navigator.oscpu OS vs UA platform (engine-agnostic). v0.71.1: OS-family resolution (Android↔Linux) applied before comparison, matching navplatform_vs_ua — Firefox on Android reports oscpu \"Linux armv8l\" under an Android UA, which is genuine."
 
   - id: br.languages_empty
     title: navigator.languages is empty

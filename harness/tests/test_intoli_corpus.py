@@ -31,29 +31,39 @@ _DESKTOP = {
 }
 
 
-def test_mapper_emits_only_supported_signals() -> None:
+def test_mapper_emits_only_faithfully_paired_signals() -> None:
     sigs = intoli_signals(_ANDROID, "a", NOW)
     kinds = {s.kind for s in sigs}
-    # only coherence inputs the dataset genuinely supports — never absence-based environment tells
+    # Only the fields verified to track the device: UA / vendor / language / screen. navigator.platform
+    # is omitted (70% of dataset records report "Linux x86_64" regardless of device — see module docstring),
+    # and absence-based environment tells are omitted (missing from the dataset, not the real browser).
     assert kinds == {
         "ua_platform",
         "ua_engine",
-        "nav_platform_os",
         "vendor_engine",
         "nav_language_primary",
         "screen_resolution",
     }
+    assert "nav_platform_os" not in kinds  # the unreliable field is not derived
     assert "media_devices_empty" not in kinds and "no_plugins" not in kinds
 
 
-def test_real_android_mismatch_is_the_root_cause() -> None:
-    # The second source surfaced that a legitimate Android browser carries UA-platform `Android` but a
-    # `Linux` navigator.platform — the desktop-oriented platform-coherence rules read that as a
-    # contradiction (a 73% FP on real mobile traffic). This pins the root-cause signal pair; the fix is
-    # per-platform OS-family normalization (Android is a Linux-family OS) handled in the per-browser work.
+def test_platform_field_is_not_derived() -> None:
+    # Guard the verification finding: even though _ANDROID carries platform "Linux armv8l", the mapper
+    # must NOT emit nav_platform_os — the dataset's platform field is not faithfully paired with the UA,
+    # so feeding it to the platform-coherence rules would fabricate a mismatch. (The genuine sub-problem —
+    # real Android reporting a Linux platform — is fixed by OS-family resolution on the real-browser
+    # derivation paths, not here.)
+    assert _ANDROID["platform"] == "Linux armv8l"
     sigs = {s.kind: s.value for s in intoli_signals(_ANDROID, "a", NOW)}
-    assert sigs["ua_platform"] == "Android"
-    assert sigs["nav_platform_os"] == "Linux"
+    assert "nav_platform_os" not in sigs
+
+
+def test_real_android_is_clean() -> None:
+    # A real Android visitor must not be convicted by the corpus — without the unreliable platform field,
+    # the faithfully-paired UA/vendor/language/screen signals are all coherent.
+    verdict = Detector().score(group_signals(intoli_signals(_ANDROID, "a", NOW))[0])
+    assert verdict.label.value == "human"
 
 
 def test_real_desktop_is_clean() -> None:

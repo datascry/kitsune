@@ -127,6 +127,22 @@ def _nav_platform_os(platform: str) -> str:
     return ""
 
 
+def _os_family(os_hint: str, ua_plat: str) -> str:
+    """Resolve a derived OS hint to the device's true OS FAMILY relative to the UA platform.
+
+    Android's navigator.platform / oscpu / WebGL report the Linux KERNEL ("Linux armv8l", Mesa /
+    OpenGL ES) because Android *is* Linux. Under an Android UA that "Linux" is the coherent, genuine
+    value — not a spoof — so it resolves to "Android". Without this, the platform-coherence rules
+    (navplatform_vs_ua, webgl_os_vs_ua, oscpu_vs_ua) false-fire on every real Android visitor: the
+    Intoli real-traffic source measured navplatform_vs_ua firing on 73% of legitimate sessions, all
+    Android. The desktop cases (Linux/Windows/macOS impersonating each other) are untouched, so the
+    Camoufox / anti-detect counter still fires on a Linux host that claims a Windows UA.
+    """
+    if ua_plat == "Android" and os_hint == "Linux":
+        return "Android"
+    return os_hint
+
+
 def _font_os(fonts: list[str]) -> str:
     present = set(fonts)
     best, best_n = "", 1  # require >= 2 signature fonts before classifying (mirrors demo.py)
@@ -180,18 +196,18 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
 
     if uad.get("platform"):
         sig("ch_platform", "macOS" if uad["platform"] == "macOS" else uad["platform"])
-    nav_os = _nav_platform_os(str(nav.get("platform", "")))
+    nav_os = _os_family(_nav_platform_os(str(nav.get("platform", ""))), plat)
     if nav_os:
         sig("nav_platform_os", nav_os)
     oscpu = str(nav.get("oscpu") or "")
     if oscpu:
-        oc = _nav_platform_os(oscpu) or _webgl_os(oscpu)
+        oc = _os_family(_nav_platform_os(oscpu) or _webgl_os(oscpu), plat)
         if oc:
             sig("oscpu_os", oc)
     ps = {"20030107": "webkit", "20100101": "gecko"}.get(str(nav.get("productSub", "")), "")
     if ps:
         sig("productsub_render", ps)
-    wo = _webgl_os(renderer)
+    wo = _os_family(_webgl_os(renderer), plat)
     if wo:
         sig("webgl_os_hint", wo)
     fo = _font_os(fp.get("fonts") or [])

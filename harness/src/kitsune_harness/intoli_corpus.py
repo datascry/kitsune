@@ -5,17 +5,20 @@
 
 The calibration's Tier-1 source is browserforge — a *generated* distribution. This module adds an
 independent second source: the Intoli ``user-agents`` dataset (BSD-2-Clause, Intoli LLC), ~10k records
-resampled from real site traffic, each a real ``userAgent`` paired with its real ``platform`` / ``vendor``
-/ ``screen`` / language. It is ~75% mobile — exactly the surface browserforge under-represents and a
-desktop-oriented coherence rule is most likely to false-fire on (a real Android UA carries
-``navigator.platform = "Linux …"``, which a naive platform-coherence check reads as a contradiction).
+resampled from real site traffic, each a real ``userAgent`` paired with ``vendor`` / ``screen`` / language.
+It is mobile-heavy (~27% iPhone) — exactly the surface browserforge under-represents.
 
-Intoli does not capture WebGL / canvas / media-device / font fields, so this mapper deliberately emits
-ONLY the signals the dataset genuinely supports — the UA / platform / vendor / language *coherence*
-inputs. Emitting the absence-based environment tells would be a schema artifact (the field is missing from
-the dataset, not from the real browser). Because the conviction gate lets only a coherence/automation/
-artifact signal convict, the verdict rate over this corpus is a clean measure of *coherence-driven* false
-positives on real traffic — corroborating or refuting the browserforge coherence numbers.
+Field faithfulness was verified against the dataset before trusting any field as a coherence input:
+``userAgent`` ↔ ``vendor`` agree (chromium↔Google, safari↔Apple) for 99.6% of records, and ``screen``
+tracks the UA (99% of iPhone UAs report width ≤ 500). But ``platform`` does NOT track the device — 70% of
+records report ``"Linux x86_64"`` regardless of UA (iPhones, arm Androids, Macs alike), a
+collection-environment value leaking into the field. So this mapper emits ONLY the faithfully-paired
+signals (UA / vendor / language / screen) and deliberately omits ``navigator.platform``; deriving
+``nav_platform_os`` from the unreliable field would feed the platform-coherence rules a fabricated
+mismatch. Absence-based environment tells are likewise omitted (the field is missing from the dataset,
+not from the real browser). Because the conviction gate lets only a coherence/automation/artifact signal
+convict, the verdict rate over this corpus is a clean measure of the *coherence-driven* false positives the
+dataset can actually support — corroborating or refuting the browserforge coherence numbers.
 
     uv run python -m kitsune_harness.intoli_corpus --n 4000
 
@@ -36,7 +39,6 @@ from kitsune_detector.detector import Detector
 from kitsune_detector.models import Layer, Signal, Source
 
 from .calibration import (
-    _nav_platform_os,
     _ua_engine,
     _ua_platform,
     _vendor_engine,
@@ -70,11 +72,14 @@ def intoli_signals(rec: dict[str, Any], session_id: str, now: datetime) -> list[
 
     sig(Layer.browser, "ua_platform", _ua_platform(ua))
     sig(Layer.browser, "ua_engine", _ua_engine(ua))
-    plat = str(rec.get("platform", ""))
-    if plat:
-        nav_os = _nav_platform_os(plat)
-        if nav_os:
-            sig(Layer.browser, "nav_platform_os", nav_os)
+    # NOTE: `navigator.platform` is deliberately NOT derived here. Verified against the dataset, the
+    # `platform` field is NOT faithfully paired with the UA — 70% of records report "Linux x86_64"
+    # regardless of device (real iPhones, which report "iPhone"; arm Androids, which report
+    # "Linux armv8l"; and Macs). It is a collection-environment value leaking into the field, so a
+    # nav_platform_os derived from it would feed the platform-coherence rules a fabricated mismatch.
+    # (The earlier "73% navplatform FP" reading conflated this artifact with a genuine sub-problem —
+    # real Android reporting a Linux platform — which is fixed independently by OS-family resolution
+    # in calibration.py / demo.py / probes.ts and validated against real-browser behavior, not Intoli.)
     vendor = str(rec.get("vendor", ""))
     if vendor:
         sig(Layer.browser, "vendor_engine", _vendor_engine(vendor))

@@ -508,9 +508,17 @@ export function armCollector(): LiveCollector {
     };
     const ua = navigator.userAgent;
 
+    const uaPlat = uaPlatform(ua);
+    // Android IS Linux: navigator.platform / oscpu / WebGL report the Linux kernel ("Linux armv8l",
+    // OpenGL ES), which under an Android UA is genuine, not a spoof. Resolve such a "Linux" hint to the
+    // device's true OS family ("Android") so the platform-coherence rules don't false-fire on real Android
+    // (Intoli real-traffic: 73% of legit sessions). Desktop OS spoofs (Linux-claims-Windows) are untouched.
+    const osForUa = (os: string): string =>
+      uaPlat === "Android" && os === "Linux" ? "Android" : os;
+
     put("browser", "webdriver", navigator.webdriver === true);
     put("browser", "ua_browser", uaBrowser(ua));
-    put("browser", "ua_platform", uaPlatform(ua));
+    put("browser", "ua_platform", uaPlat);
 
     const uad = nav().userAgentData;
     if (uad?.platform) put("browser", "ch_platform", uad.platform);
@@ -544,7 +552,8 @@ export function armCollector(): LiveCollector {
           : /Android/i.test(np)
             ? "Android"
             : "";
-    if (npo) put("browser", "nav_platform_os", npo);
+    const npoOs = osForUa(npo);
+    if (npoOs) put("browser", "nav_platform_os", npoOs);
     if (canvasLie()) put("browser", "canvas_lie", true);
     if (/Headless/i.test(ua)) put("browser", "ua_is_headless", true);
     if (Object.getOwnPropertyDescriptor(navigator, "webdriver")) {
@@ -564,7 +573,8 @@ export function armCollector(): LiveCollector {
         : /Vulkan|OpenGL|GLX|Mesa|SwiftShader|llvmpipe/i.test(wg.renderer)
           ? "Linux"
           : "";
-    if (wo) put("browser", "webgl_os_hint", wo);
+    const woOs = osForUa(wo);
+    if (woOs) put("browser", "webgl_os_hint", woOs);
     if (/Chrome|Edg/.test(ua) && !win()["chrome"]) put("browser", "chrome_object_missing", true);
     if (toStringTampered()) put("browser", "function_tostring_tampered", true);
     // Native-function invariants: a real built-in is not a constructor and has no own `prototype`; a Proxy
@@ -761,7 +771,8 @@ export function armCollector(): LiveCollector {
           : /Linux/i.test(oscpu)
             ? "Linux"
             : "";
-      if (oc) put("browser", "oscpu_os", oc);
+      const ocOs = osForUa(oc);
+      if (ocOs) put("browser", "oscpu_os", ocOs);
     }
     const isChromium = uaEngine === "chromium";
     // Chrome wraps its WebGL renderer in "ANGLE (...)" on every desktop backend; a bare GPU string under a

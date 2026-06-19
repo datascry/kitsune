@@ -121,30 +121,50 @@ browserforge lacks a few signals (speech-synthesis voices, `getHighEntropyValues
 cloud matrix or opt-in collection from the hosted demo). This is Tier-1: real fingerprint *distributions*
 for the 30 rules that depend on the static fingerprint, which is where the false positives concentrate.
 
-## Second real-traffic source (Intoli) — and the critical FP it surfaced
+## Second real-traffic source (Intoli) — verification, and what it actually showed
 
 A third tier of corroboration: the **Intoli `user-agents` dataset** (BSD-2-Clause; ~10k records resampled
 from real site traffic), scored via `kitsune_harness.intoli_corpus` (fetched at runtime, not committed).
 Unlike browserforge (a generated distribution skewed desktop) and the headless engine captures, this is
-**real-traffic** and **~75% mobile** — the surface our desktop-oriented coherence rules are most likely to
-mishandle. It emits only the coherence signals the dataset genuinely supports (UA / platform / vendor /
-language); since the conviction gate lets only a convicting signal label `bot`, the verdict rate is a clean
-measure of *coherence-driven* false positives on real traffic.
+mobile-heavy real traffic (~27% iPhone) — the surface our desktop-oriented coherence rules are most likely
+to mishandle.
 
 ```sh
 task calibrate-intoli            # uv run python -m kitsune_harness.intoli_corpus --n 4000
 ```
 
-**It immediately found a showstopper the single source missed.** On 4000 real records:
+**Trusted-but-verified: before trusting any field as a coherence input, we checked it tracks the device.**
+This is where the single-source guard earns its keep — an unverified FP number from one corpus is not
+actionable. Field-by-field over the 10k records:
+
+| field | faithful to the device? | evidence |
+|---|---|---|
+| `userAgent` ↔ `vendor` | **yes** (99.6%) | chromium↔Google, safari↔Apple; ~0.4% incoherent (matches browserforge) |
+| `screen` | **yes** | 99% of iPhone UAs report width ≤ 500 |
+| `language` | **yes** | tracks UA region |
+| `navigator.platform` | **no** | **70% report `"Linux x86_64"` regardless of device** — iPhones (real: `iPhone`), arm Androids (real: `Linux armv8l`), and Macs alike. A collection-environment value leaking into the field. |
+
+So a naive run that derived `nav_platform_os` from the `platform` field convicted **~73%** of records on
+`br.navplatform_vs_ua` — but that number is **mostly a dataset artifact**, not a real-browser FP: it is the
+fabricated mismatch of a real iPhone/Mac/Android UA against a fixed `Linux x86_64` platform that no such
+device actually reports. The corpus therefore **cannot measure platform-coherence FP**, and the mapper
+omits `navigator.platform` entirely. What it *can* measure — `vendor_vs_ua` (0.3% vs browserforge 0.4%),
+engine, language, screen — corroborates the browserforge coherence numbers.
 
 | rule | browserforge (Tier-1) FP | Intoli real-traffic FP | verdict |
 |---|---|---|---|
-| `br.navplatform_vs_ua` | 3.6% | **73.1%** | **real, severe** — false-fires on real mobile |
 | `br.vendor_vs_ua` | 0.4% | 0.3% | corroborated FP-safe |
+| `br.navplatform_vs_ua` | 3.6% | *not measurable* | Intoli's `platform` field is unreliable; see above |
 
-A real Android browser carries `navigator.platform = "Linux …"` while its UA-platform is `Android` — a
-legitimate, coherent pairing (Android is a Linux-family OS) that the platform-coherence rule read as a
-contradiction, convicting **73% of real traffic** as `bot`. Browserforge (desktop-skewed) reported 3.6% and
-missed it entirely. This is the over-leverage guard inverted: the single source *under*-counted a catastrophic
-FP, and only the independent real-traffic source revealed it. The fix is per-platform OS-family normalization
-(Android ↔ Linux), handled in the per-browser detection work.
+**The genuine sub-problem, fixed independently (v0.71.1).** Buried inside the artifact is a real issue we
+could ground without Intoli: a real Android browser *does* carry `navigator.platform = "Linux armv8l"` under
+an `Android` UA — a legitimate, coherent pairing (Android is a Linux-family OS) that the platform-coherence
+rule would read as a contradiction, false-firing on **every** real Android visitor. The fix is **OS-family
+resolution** at signal derivation: before the platform-coherence rules compare, a `Linux` kernel hint
+(`navigator.platform`, `oscpu`, or the WebGL OS hint) is resolved to the device's true OS *family* relative
+to the UA — under an Android UA, `Linux` IS `Android`. Applied at every **real-browser** derivation site
+(detector `demo.py`, collector `probes.ts`, harness `calibration.py`) so all three platform-coherence rules
+(`navplatform_vs_ua`, `webgl_os_vs_ua`, `oscpu_vs_ua`) agree. Desktop OS impersonation (a Linux host claiming
+a Windows UA) is untouched and still fires — the Camoufox counter is intact. This is validated against
+real-browser behavior and the detector's own Android precision case, **not** against Intoli's unreliable
+field.
