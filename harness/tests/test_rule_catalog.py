@@ -7,7 +7,15 @@ from pathlib import Path
 
 import yaml
 
-from kitsune_harness.rule_catalog import _CATALOG, _END, _REGISTRY, _START, generate_registry_md, render_into
+from kitsune_harness.rule_catalog import (
+    _CATALOG,
+    _END,
+    _REGISTRY,
+    _START,
+    generate_registry_md,
+    main,
+    render_into,
+)
 
 _ROOT = Path(__file__).resolve().parents[2]
 
@@ -33,6 +41,10 @@ def test_convicting_marker_only_on_convicting_categories() -> None:
 def test_committed_catalog_is_fresh() -> None:
     # The generated block in the committed doc must match a fresh render — `task catalog` keeps it current.
     assert _CATALOG.read_text() == render_into(), "docs/detection-catalog.md is stale — run `task catalog`"
+
+
+def test_main_check_passes_when_fresh() -> None:
+    assert main(["--check"]) == 0  # the CI freshness gate returns 0 on a current catalog
 
 
 def test_markers_present_and_curated_prose_preserved() -> None:

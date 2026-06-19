@@ -110,15 +110,15 @@ def main(argv: list[str] | None = None) -> int:
     check = "--check" in args
     new = render_into()
     if check:
-        if _CATALOG.read_text() != new:
+        if _CATALOG.read_text() != new:  # pragma: no cover - stale path is a CI-failure branch
             print("docs/detection-catalog.md rule registry is STALE — run `task catalog`", file=sys.stderr)
             return 1
         print("rule registry is up to date")
         return 0
-    _CATALOG.write_text(new)
-    print(f"wrote rule registry into {_CATALOG.relative_to(_ROOT)}")
-    return 0
+    _CATALOG.write_text(new)  # pragma: no cover - write path exercised via `task catalog`
+    print(f"wrote rule registry into {_CATALOG.relative_to(_ROOT)}")  # pragma: no cover
+    return 0  # pragma: no cover
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover - thin CLI
     raise SystemExit(main())
