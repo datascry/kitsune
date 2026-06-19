@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 118 rules vs 48 evaders
+# Kitsune detection matrix — 118 rules vs 49 evaders
 
-_47/48 evaders caught (`bot`). Generated from the committed captures._
+_48/49 evaders caught (`bot`). Generated from the committed captures._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -18,6 +18,7 @@ _47/48 evaders caught (`bot`). Generated from the committed captures._
 | `ch-ua-hardcoded` | bot | 1.00 | 6/118 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
 | `chrome-clone-1` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
 | `chrome-clone-2` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
+| `curl-http2` | bot | 1.00 | 8/118 | `net.quic_grease_vs_ua`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +5 |
 | `curl-impersonate` | bot | 0.90 | 1/118 | `net.no_js_execution` |
 | `floor-spoof` | bot | 1.00 | 8/118 | `br.tostring_tampered`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered` +1 |
 | `full-stealth` | bot | 1.00 | 17/118 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +8 |
@@ -73,30 +74,30 @@ _47/48 evaders caught (`bot`). Generated from the committed captures._
 | `br.ch_he_headless` | browser | automation | 22 |
 | `bh.keystroke_entropy_floor` | behavioral | behavioral | 19 |
 | `br.webdriver_getter_tampered` | browser | automation | 15 |
-| `net.no_js_execution` | network,browser | coherence | 11 |
+| `net.no_js_execution` | network,browser | coherence | 12 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
+| `net.tcp_os_vs_ua` | network | coherence | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
 | `br.webdriver_present` | browser | automation | 9 |
-| `net.tcp_os_vs_ua` | network | coherence | 9 |
+| `net.tls_grease_vs_ua` | network,browser | coherence | 7 |
 | `br.chrome_runtime_missing` | browser | automation | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
-| `net.tls_grease_vs_ua` | network,browser | coherence | 6 |
+| `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
+| `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
 | `br.hover_none_desktop` | browser | environment | 5 |
 | `br.webdriver_spoofed` | browser | automation | 5 |
-| `net.accept_encoding_vs_ua` | network,browser | coherence | 5 |
-| `net.sec_fetch_vs_ua` | network,browser | coherence | 5 |
 | `bh.synthetic_no_coalesced` | behavioral | behavioral | 4 |
 | `br.codec_os_incoherent` | browser | environment | 4 |
 | `br.fingerprint_improbable` | browser | prevalence | 4 |
 | `br.font_linux_leak` | browser | environment | 4 |
 | `br.navplatform_vs_ua` | browser | coherence | 4 |
+| `net.quic_grease_vs_ua` | network,browser | coherence | 4 |
 | `br.ch_he_version_vs_ua` | browser | coherence | 3 |
 | `br.webgl2_missing` | browser | environment | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
 | `br.webgpu_webgl_vs` | browser | environment | 3 |
 | `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 3 |
-| `net.quic_grease_vs_ua` | network,browser | coherence | 3 |
 | `br.canvas_noise` | browser | artifact | 2 |
 | `br.error_engine_vs_ua` | browser | coherence | 2 |
 | `br.timezone_inconsistent` | browser | coherence | 2 |
@@ -108,6 +109,8 @@ _47/48 evaders caught (`bot`). Generated from the committed captures._
 | `br.webgl_getparameter_tampered` | browser | automation | 2 |
 | `br.worker_divergence` | browser | automation | 2 |
 | `net.ch_ua_vs_ua_browser` | network,browser | coherence | 2 |
+| `net.h2_header_order_vs_ua` | network | coherence | 2 |
+| `net.h2_unknown_vs_ua` | network | coherence | 2 |
 | `net.h2_vs_ua_browser` | network,browser | coherence | 2 |
 | `net.tls_pq_keyshare_vs_ua` | network,browser | coherence | 2 |
 | `bh.path_too_straight` | behavioral | behavioral | 1 |
@@ -138,9 +141,7 @@ _47/48 evaders caught (`bot`). Generated from the committed captures._
 | `net.ch_ua_mobile_vs_ua` | network,browser | coherence | 1 |
 | `net.ch_ua_no_grease_brand` | network | artifact | 1 |
 | `net.h2_continuation_flood` | network | automation | 1 |
-| `net.h2_header_order_vs_ua` | network | coherence | 1 |
 | `net.h2_rapid_reset` | network | automation | 1 |
-| `net.h2_unknown_vs_ua` | network | coherence | 1 |
 | `net.h2_vs_tls_browser` | network | coherence | 1 |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
@@ -159,6 +160,7 @@ _47/48 evaders caught (`bot`). Generated from the committed captures._
 | `ch-ua-hardcoded` | bot | 5 | 1 | 0 | 0 | 0 | 0 |
 | `chrome-clone-1` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
 | `chrome-clone-2` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
+| `curl-http2` | bot | 8 | 0 | 0 | 0 | 0 | 0 |
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
 | `floor-spoof` | bot | 0 | 0 | 4 | 2 | 2 | 0 |
 | `full-stealth` | bot | 4 | 0 | 7 | 5 | 1 | 0 |

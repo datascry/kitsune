@@ -71,7 +71,7 @@ valuable but need careful calibration against the real-browser corpus before shi
 ## Shipped from this catalog
 
 - ✅ `br.honeypot_interaction (ACTIVE — the classic honeypot, the catalog's bh.honeypot_interaction gap. The collector injects an off-screen, aria-hidden, tabIndex=-1 bait link + input a human literally cannot reach; a click on the bait or a value in the bait input is a programmatic DOM-enumeration interaction → automation. FP-safe: fires ONLY on a definitive hit, never on absence; grounded against clean headful Chromium AND Firefox (no fire). Fires in-context via the stealth HONEYPOT=1 form-spammer evader.)`
-- ✅ `net.h2_header_order_vs_ua`
+- ✅ `net.h2_header_order_vs_ua (ACTIVE v0.74.13 — promoted from experimental after two independent non-Chrome h2 stacks corroborated: httpx/h2 (http2-naive) and curl/nghttp2 (curl-http2), both faking a Chrome UA with a non-Chrome regular-header order. Real Chrome + all 40+ Chrome impersonators emit the Sec-CH-UA-first order → never fire. Catches the naive h2 scraper that fakes Chrome without replicating its on-wire order.)`
 - ✅ `br.readback_noise`
 - ✅ `br.electron_process`
 - ✅ `br.native_invariant_violated`
