@@ -11,10 +11,11 @@ HUMAN turned on:
 * **Brave** — its default Shields farble the canvas and audio readback, so a real Brave user trips
   ``canvas_noise`` + ``audio_noise``. Identified by the definitive ``navigator.brave`` global
   (``browser.is_brave``).
-* **Tor Browser / Mullvad Browser / RFP-Firefox** — resistFingerprinting blocks the canvas readback (a
-  solid fill reads back uniform-white, tripping ``canvas_noise``) and forces UTC + a letterboxed window + 2
-  cores. Identified by ``browser.rfp_browser`` (that conjunction). ``rfp_browser`` itself is an *environment*
-  tell (corroborates, never convicts).
+* **Tor Browser / Mullvad Browser / RFP-Firefox** — resistFingerprinting perturbs the canvas readback
+  (tripping ``canvas_noise`` + ``canvas_geometry_noise`` + ``canvas_worker_vs_main``) and forces UTC + a
+  letterboxed window + a "Mozilla" WebGL vendor/renderer. Identified by ``browser.rfp_browser`` (that
+  conjunction; modern Tor/Mullvad no longer clamp cores to 2, so the WebGL tell — not cores — is the reliable
+  third leg). ``rfp_browser`` itself is an *environment* tell (corroborates, never convicts).
 
 Both are legitimate human browsers, so when a session positively identifies as one of them those farbling /
 blocked-readback artifacts are expected and dropped before scoring. A Chrome-claiming farbler with NO
@@ -28,10 +29,23 @@ from .models import MISSING, Contradiction, Layer, Session
 
 # Canvas/audio readback artifacts that a privacy browser produces BY DESIGN (Brave farbling, RFP blocking).
 # canvas_noise = perturbed/blocked 2D readback; audio_noise = per-render audio perturbation; readback_noise
-# = getChannelData vs copyFromChannel divergence — all three are the same privacy-feature footprint, so a
-# genuine Brave/Tor/Mullvad/RFP-Firefox user must not be convicted on any of them. (Camoufox, an anti-detect
-# TOOL, sets neither navigator.brave nor the RFP conjunction, so it is not exempted and stays caught.)
-_PRIVACY_FARBLING = frozenset({"br.canvas_noise", "br.audio_noise", "br.readback_noise"})
+# = getChannelData vs copyFromChannel divergence. v0.74.26 (GROUNDED on a real Mullvad Browser, see
+# corpus/calibration/privacy/mullvad.json): RFP's canvas randomization ALSO trips canvas_geometry_noise
+# (per-call DOMRect/getClientRects perturbation) and canvas_worker_vs_main (main and Worker OffscreenCanvas
+# get DIFFERENT per-call noise, so their pixels diverge) — the SAME privacy-feature footprint, both convicting
+# (artifact / coherence) and both FP on a real Tor/Mullvad. Stock (non-RFP) Firefox trips NONE of the five
+# (corpus/calibration/headful/firefox.json), so these are RFP-on artifacts, not a Gecko baseline. A genuine
+# Brave/Tor/Mullvad/RFP-Firefox user must not be convicted on any of them. (Camoufox, an anti-detect TOOL,
+# sets neither navigator.brave nor the RFP conjunction, so it is not exempted and stays caught.)
+_PRIVACY_FARBLING = frozenset(
+    {
+        "br.canvas_noise",
+        "br.audio_noise",
+        "br.readback_noise",
+        "br.canvas_geometry_noise",
+        "br.canvas_worker_vs_main",
+    }
+)
 
 
 def _privacy_browser(session: Session) -> str | None:
@@ -40,7 +54,7 @@ def _privacy_browser(session: Session) -> str | None:
     Genuineness matters: the farbling N/A is only granted to a real privacy browser, never to a bot that
     fakes the identity to get its farbling excused. Brave must have a native ``navigator.brave``
     (``is_brave`` and not ``brave_spoofed``); RFP is Firefox-only, so the conjunction is honored only on a
-    Gecko engine (a Chromium session claiming RFP letterboxing/UTC/2-core is itself incoherent).
+    Gecko engine (a Chromium session claiming RFP letterboxing/UTC/"Mozilla"-WebGL is itself incoherent).
     """
     if session.value(Layer.browser, "is_brave") is True and (session.value(Layer.browser, "brave_spoofed") is not True):
         return "Brave"

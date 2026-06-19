@@ -195,12 +195,48 @@ Mullvad/Tor user raises. Grounded it against a **real Brave** (default Shields) 
   `chrome_runtime_missing`) + the headless container's environment tells — never from a privacy feature.
 
 Locked by `test_calibration_methodology.test_real_brave_farbling_does_not_trip_the_canvas_or_audio_spoof_rules`
-(grounding, not a rule change → no ruleset bump). **Open data gap:** the Gecko-RFP side (Tor / Mullvad /
-LibreWolf) is **not in-fleet** — Playwright can't drive a stock Gecko-RFP build (needs Marionette/geckodriver,
-not Juggler), so a real Tor/Mullvad capture is the external-data-bound next source to ground `rfp_browser`
-(the `rfpUTC && rfpBox && rfpCores` identity that gates the same drops for Gecko). Until then the Gecko path
-rests on the in-fleet Firefox/camoufox captures (canvas stays engine-consistent, no `canvas_lie`) + the
-engine-level-RFP design argument, not a real RFP-browser capture.
+(grounding, not a rule change → no ruleset bump).
+
+### Gecko-RFP grounding — a real Mullvad Browser exposes a true FP (v0.74.26, 2026-06-19)
+
+The Gecko-RFP gap is now **closed** — and it was NOT a no-op like Brave. Real **Mullvad Browser 15.0.16**
+(Firefox 140 + resistFingerprinting) was driven through the live collector via **geckodriver + xvfb**
+(disproving the prior "Playwright can't drive Gecko-RFP → external-data-bound" note: geckodriver *can*, given
+`page_load_strategy=eager`, TRR off so the docker hostname resolves, and reading `ks_sid` from
+`document.cookie` since the cert-override blocks Selenium's cookie API). Fixture:
+`corpus/calibration/privacy/mullvad.json`. Findings:
+
+- **A real FP, unlike Brave.** Mullvad's RFP trips three CONVICTING rules by design: `br.canvas_noise`
+  (artifact), `br.canvas_geometry_noise` (artifact — its "deterministic in every real engine" claim is FALSE
+  for RFP, which perturbs `isPointInPath`), and `br.canvas_worker_vs_main` (coherence — RFP's per-call canvas
+  noise diverges main vs Worker). Stock non-RFP Firefox trips none, so these are RFP-on artifacts.
+- **Root cause: `rfp_browser` never identified Mullvad.** Its conjunction required `hardwareConcurrency <= 2`,
+  but modern Tor/Mullvad NO LONGER clamp cores (real Mullvad reports **4**). So the privacy-browser
+  applicability drops never applied. **Fix:** the reliable, RFP-exclusive leg is the WebGL UNMASKED
+  vendor+renderer both being literally `"Mozilla"`; the predicate is now `rfpGL && (rfpUTC || rfpBox ||
+  rfpCores)` (the letterbox check is timing-flaky — RFP letterboxes *after* the collector's early run — so it
+  can't be required). `_PRIVACY_FARBLING` extended to drop the geometry/worker canvas rules too. Grounded:
+  re-captured Mullvad now sets `rfp_browser=true` and the three rules drop. Locked by
+  `test_real_mullvad_rfp_farbling_does_not_trip_the_canvas_spoof_rules`.
+
+### ⬜ NEXT (pre-grounded): `br.engine_stack_vs_ua` false-fires on modern Firefox 122+
+
+The Mullvad capture surfaced a SECOND, broader FP — convicting and **not** privacy-specific. `engine_stack_vs_ua`
+treats `Error.captureStackTrace` as V8/JSC-only ("Firefox WITH it = spoof"), but **Firefox added
+`Error.captureStackTrace` natively in v122 (Jan 2024)**; real Mullvad (Firefox 140) reports it `=== "function"`,
+so the `firefox && hasV8Stack` arm fires on **every modern real Firefox / Tor / Mullvad** (coherence, w=0.7 →
+convicts). Our committed Firefox captures miss it because Playwright's Firefox is Juggler-patched and camoufox
+pins an older build (both report it `undefined`). The rule's own note ("a live Firefox 137 reports it
+undefined") was that patched build, not stock. **Fix (next iteration):** drop the `firefox` arm (the Chromium
+arm stays valid; a Chromium-faking-Firefox bot is still caught by `br.firefox_ua_nongecko`/`buildID`), AFTER a
+stock-Firefox-122+ capture confirms it isn't Mullvad-specific (RFP doesn't touch JS engine builtins, so the
+single real-Mullvad point + the public Firefox-122 fact already strongly indicate it — but a convicting-rule
+change earns its own confirming capture).
+
+### Open data gap (remaining)
+
+LibreWolf + a stock-modern-Firefox capture (for the `engine_stack` confirm above) are the next privacy/Gecko
+sources; both are now fetchable via the geckodriver path proven here, no longer external-data-bound.
 
 ## Shipped from this catalog
 

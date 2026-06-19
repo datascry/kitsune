@@ -135,3 +135,22 @@ def test_real_brave_farbling_does_not_trip_the_canvas_or_audio_spoof_rules() -> 
     # The privacy-feature-targeted rules must NOT convict a real privacy browser on its privacy feature:
     # canvas_lie stays silent (native toString), and is_brave drops audio_noise/readback_noise (applicability).
     assert fired.isdisjoint({"br.canvas_lie", "br.audio_noise", "br.readback_noise"}), fired
+
+
+def test_real_mullvad_rfp_farbling_does_not_trip_the_canvas_spoof_rules() -> None:
+    # corpus/calibration/privacy/mullvad.json is a REAL Mullvad Browser (Firefox-RFP) capture (geckodriver).
+    # v0.74.26: RFP perturbs the canvas readback AND the canvas geometry AND diverges main-vs-Worker canvas,
+    # tripping three CONVICTING rules; the fix identifies Mullvad as rfp_browser (via the "Mozilla" WebGL tell,
+    # since modern RFP no longer clamps cores) and drops all three. Pins that a real Mullvad is not convicted
+    # on its by-design farbling. (Driver tells — webdriver — and network-stack GREASE are out of scope.)
+    capture = json.loads((_PRIVACY / "mullvad.json").read_text())
+    browser = {s["kind"]: s["value"] for s in capture["signals"]["browser"]}
+    assert browser.get("rfp_browser") is True  # modern Mullvad is now identified (was the bug)
+    assert browser.get("ua_engine") == "firefox"
+    assert browser.get("canvas_noise") is True  # RFP really does farble — assertion below is not vacuous
+    assert browser.get("canvas_geometry_noise") is True
+    assert browser.get("canvas_worker_divergence") is True
+
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+    assert fired.isdisjoint({"br.canvas_noise", "br.canvas_geometry_noise", "br.canvas_worker_vs_main"}), fired

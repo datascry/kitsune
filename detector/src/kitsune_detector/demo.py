@@ -955,13 +955,23 @@ td code{font-size:12px;color:#0a3}
             sigs.push(S("browser", "timezone_inconsistent", true));
         }
         // resistFingerprinting (Tor Browser / Mullvad / RFP-Firefox) evades by making every user look
-        // IDENTICAL: it forces the timezone to UTC, letterboxes the content window to 200x100 multiples,
-        // and clamps hardwareConcurrency to 2. Each trait alone is common (a UK user, a round window, a
-        // 2-core VM); all three together is the RFP signature — so require the conjunction, not any one.
+        // IDENTICAL: it forces the timezone to UTC, letterboxes the content window to 200x100 multiples, and
+        // generalises the WebGL UNMASKED vendor AND renderer to literally "Mozilla" (an RFP-exclusive string
+        // — a normal browser reports the real GPU or "llvmpipe, or similar"). Each trait alone is common (a
+        // UK user, a round window); together they are the RFP signature — require the conjunction, not any
+        // one. v0.74.26 (GROUNDED on a real Mullvad Browser 15.0.16, corpus/calibration/privacy/mullvad.json):
+        // the RELIABLE, RFP-EXCLUSIVE tell is rfpGL — RFP generalises BOTH the WebGL UNMASKED vendor and
+        // renderer to literally "Mozilla", which no normal browser reports. It is required. The legacy legs
+        // are NOT: hardwareConcurrency<=2 is stale (modern Tor/Mullvad report 4), and the letterbox check is
+        // TIMING-FLAKY (RFP applies the 200x100 letterboxing AFTER the collector's early inline run, so
+        // innerHeight is not yet a clean multiple at probe time). So rfpGL is the gate and any ONE common RFP
+        // trait (UTC tz / letterboxed window / 2-core clamp) corroborates — rfpGL being RFP-exclusive means
+        // the corroborators cannot cause a false identification on a non-RFP browser.
         var rfpUTC = tz === "UTC";
         var rfpBox = window.innerWidth > 0 && window.innerWidth % 200 === 0 && window.innerHeight % 100 === 0;
         var rfpCores = (navigator.hardwareConcurrency || 99) <= 2;
-        if (rfpUTC && rfpBox && rfpCores) sigs.push(S("browser", "rfp_browser", true));
+        var rfpGL = wg.renderer === "Mozilla" && wg.vendor === "Mozilla";
+        if (rfpGL && (rfpUTC || rfpBox || rfpCores)) sigs.push(S("browser", "rfp_browser", true));
       }
     } catch (e) {}
     // --- v0.15.0 wave: media-capability gaps (audio fingerprint + media-device enumeration) ---

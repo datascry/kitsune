@@ -58,10 +58,19 @@ def test_real_rfp_browser_is_not_convicted() -> None:
     # A real Tor/Mullvad/RFP-Firefox user (Gecko): rfp_browser (now environment, corroborating) + the
     # RFP-blocked canvas (canvas_noise) would previously noisy-or to bot. Now rfp_browser corroborates and the
     # farbling is dropped, so the privacy browser caps at suspicious, never bot.
-    tor = _session(rfp_browser=True, canvas_noise=True, ua_engine="firefox")
+    # v0.74.26: grounded on a real Mullvad, RFP also trips canvas_geometry_noise (perturbed isPointInPath)
+    # and canvas_worker_vs_main (per-call canvas noise → main/Worker divergence) — all three are dropped.
+    tor = _session(
+        rfp_browser=True,
+        canvas_noise=True,
+        canvas_geometry_noise=True,
+        canvas_worker_divergence=True,
+        ua_engine="firefox",
+    )
     verdict = Detector().score(tor)
     assert verdict.label.value != "bot"
-    assert "br.canvas_noise" not in {c.rule_id for c in verdict.contradictions}
+    dropped = {"br.canvas_noise", "br.canvas_geometry_noise", "br.canvas_worker_vs_main"}
+    assert dropped.isdisjoint({c.rule_id for c in verdict.contradictions})
     # rfp_browser itself remains visible as a corroborating tell, but as environment it cannot convict alone.
     assert "br.rfp_browser" in {c.rule_id for c in verdict.contradictions}
     # An RFP-faking automation is still caught by its automation tells.
