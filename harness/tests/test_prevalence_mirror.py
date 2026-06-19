@@ -1,0 +1,35 @@
+# tests/test_prevalence_mirror — lock the turnkey prevalence pipeline: harness BUILDS the prior, detector SCORES it.
+# The two prevalence modules are duplicated mirrors; if they drift, a built prior would score differently than intended.
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import kitsune_detector.prevalence as dp
+
+import kitsune_harness.prevalence as hp
+from kitsune_harness.prevalence import build_prior, features_from_fingerprint
+
+_ENGINES = Path(__file__).resolve().parents[2] / "corpus" / "calibration" / "engines"
+
+
+def test_prevalence_factors_are_mirrored() -> None:
+    # The structural invariant both the builder (harness) and the scorer (detector) iterate. If one side's
+    # _FACTORS is edited without the other, a harness-built prior would be scored against the wrong factors.
+    assert hp._FACTORS == dp._FACTORS
+
+
+def test_harness_built_prior_scores_identically_in_the_detector() -> None:
+    # Build a prior the harness way (what `build_prior_from_dir`/`--build-prior-from-sessions` do), then assert
+    # the DETECTOR's log_prevalence returns bit-identical scores to the harness's on it. This is the turnkey
+    # pipeline's correctness invariant: an operator's real-traffic prior must score in the detector exactly as
+    # the builder intends — a silent mirror drift would make the second-source prior subtly wrong.
+    fingerprints = [json.loads(p.read_text()) for p in sorted(_ENGINES.glob("*.json"))]
+    feats = [features_from_fingerprint(fp) for fp in fingerprints]
+    prior = build_prior(feats)
+    # The training vectors plus a clearly-improbable joint (Windows UA + Apple GPU) — exercise both the
+    # in-distribution and the deep-tail paths through log_prevalence.
+    probes = [*feats, {"plat": "Windows", "gpu": "apple", "screen": "laptop-land", "color": 30, "cores": "5-8"}]
+    for features in probes:
+        assert hp.log_prevalence(features, prior) == dp.log_prevalence(features, prior), features
