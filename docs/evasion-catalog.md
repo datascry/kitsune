@@ -96,8 +96,18 @@ Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6*
 
 ### Coverage envelope (the threat-model ceiling, grounded 2026-06-19)
 
-Chaining the recent findings to their endpoint: a maximally-sophisticated fleet defeats BOTH the per-session
-layer AND coordination's per-cluster signals. A `fingerprint-injector`-class attacker injects DIVERSE real
+Each per-session layer is defeated by a specific, evaluated SOTA tool — the threat model is grounded in
+three white-boxes (above), one per layer, not asserted:
+
+| per-session layer | defeated by (white-boxed) | how | residual catch |
+|---|---|---|---|
+| **artifact** (toString/native-invariant) | **fingerprint-injector** | `new Proxy(<real native>)` + recursive `Function.prototype.toString` patch → preserves native invariants AND the `[native code]` string | — (defeated) |
+| **coherence** (TLS/H2/UA) | **Ulixee Hero** | real Chrome + Go-MITM replaying per-version TLS/H2/header templates | stale-template tells (`ch_ua_version_vs_ua`, `tls/quic_pq_keyshare_vs_ua`, `h2_header_order`) catch a LAGGING template |
+| **prevalence** (improbable joint) | **botright** | fresh self-scraped REAL fingerprint per session → probable even in a real-traffic prior | — (real values; reuse → coordination) |
+| **automation** (CDP/webdriver) | **patchright** | CDP-patched Playwright | `chrome_runtime_missing` (until faked → the Tier-3-blocked `chrome_runtime_authenticity` gap) |
+
+Chaining these to their endpoint: a maximally-sophisticated fleet defeats BOTH the per-session layer AND
+coordination's per-cluster signals. A `fingerprint-injector`-class attacker injects DIVERSE real
 fingerprints (clean Proxy-over-native injection — defeats the artifact + coherence layers; probable joints —
 clears the same-source prevalence model) over ONE clean stack (shared JA4) on patchright (defeats automation
 tells) behind residential proxies (distinct IPs, no datacenter IP-rep). That fleet's coordination shape —
