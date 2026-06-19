@@ -192,8 +192,12 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
     corpus = load_corpus(directory)
     detectors, fired, verdicts = coverage(detector, corpus)
     bots = sum(v.label.value == "bot" for v in verdicts.values())
+    ruleset_version = load_registry().ruleset_version
     print(f"# Kitsune detection matrix — {len(detectors)} rules vs {len(verdicts)} evaders\n")
-    print(f"_{bots}/{len(verdicts)} evaders caught (`bot`). Generated from the committed captures._\n")
+    print(
+        f"_{bots}/{len(verdicts)} evaders caught (`bot`). Generated from the committed captures "
+        f"at ruleset `{ruleset_version}`._\n"
+    )
     print(render_evaders(detectors, fired, verdicts))
     print(render_rule_catches(detectors, fired))
     print(render_categories(verdicts))
