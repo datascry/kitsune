@@ -320,6 +320,37 @@ DEMO_PAGE = """<!doctype html>
       } catch (err) { resolve(null); }
     });
   }
+  // Canvas realm coherence: identical 2D draw ops must hash the same on the main canvas and a Worker
+  // OffscreenCanvas. CW_DRAW (worker string) and mainCanvasHashCW's inline ops must stay byte-identical.
+  var CW_DRAW = "ctx.textBaseline='top';ctx.font='14px sans-serif';" +
+    "ctx.fillStyle='#069';ctx.fillRect(0,0,100,40);" +
+    "ctx.fillStyle='#f60';ctx.fillText('Kitsune-CW-7',2,2);" +
+    "ctx.strokeStyle='rgba(0,128,0,0.7)';ctx.beginPath();ctx.arc(40,20,15,0,7);ctx.stroke();";
+  function cwHash(d) { var h = 2166136261; for (var i = 0; i < d.length; i += 97) { h = ((h ^ (d[i] || 0)) * 16777619) >>> 0; } return h; }
+  function mainCanvasHashCW() {
+    try {
+      var c = document.createElement("canvas"); c.width = 100; c.height = 40;
+      var ctx = c.getContext("2d"); if (!ctx) return null;
+      ctx.textBaseline = "top"; ctx.font = "14px sans-serif";
+      ctx.fillStyle = "#069"; ctx.fillRect(0, 0, 100, 40);
+      ctx.fillStyle = "#f60"; ctx.fillText("Kitsune-CW-7", 2, 2);
+      ctx.strokeStyle = "rgba(0,128,0,0.7)"; ctx.beginPath(); ctx.arc(40, 20, 15, 0, 7); ctx.stroke();
+      return cwHash(ctx.getImageData(0, 0, 100, 40).data);
+    } catch (e) { return null; }
+  }
+  function workerCanvasHashCW() {
+    return new Promise(function (resolve) {
+      try {
+        var code = "var H=function(d){var h=2166136261;for(var i=0;i<d.length;i+=97){h=((h^(d[i]||0))*16777619)>>>0;}return h;};" +
+          "onmessage=function(){try{var c=new OffscreenCanvas(100,40);var ctx=c.getContext('2d');" +
+          CW_DRAW + "postMessage(H(ctx.getImageData(0,0,100,40).data));}catch(e){postMessage(null);}}";
+        var w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+        var t = setTimeout(function () { resolve(null); }, 1500);
+        w.onmessage = function (e) { clearTimeout(t); resolve(e.data); w.terminate(); };
+        w.postMessage(0);
+      } catch (err) { resolve(null); }
+    });
+  }
   // Installed fonts betray the real OS: a box's font stack is OS-specific (Windows ships Segoe UI /
   // Calibri, macOS ships Lucida Grande / Menlo, Linux ships DejaVu / Liberation). An anti-detect
   // browser can spoof the UA platform but not cheaply re-skin the host's installed fonts — so the
@@ -838,6 +869,11 @@ DEMO_PAGE = """<!doctype html>
     var wglr = await workerGlRenderer();
     if (wglr && wg.renderer && wglr !== wg.renderer) {
       sigs.push(S("browser", "webgl_worker_divergence", true));
+    }
+    var mch = mainCanvasHashCW();
+    var wch = await workerCanvasHashCW();
+    if (mch !== null && wch !== null && mch !== wch) {
+      sigs.push(S("browser", "canvas_worker_divergence", true));
     }
     // CSP was not enforced on a page that ships a strict img-src — the context bypassed CSP (only an
     // automation framework does this). Emitted in every mode: it is an automation tell, not behavioural.

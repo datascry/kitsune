@@ -37,6 +37,10 @@ const NATIVE_SPOOF = process.env.NATIVE_SPOOF === "1";
 // The fleet's human-mouse mode (bezier curves, eased velocity) is the negative control that must NOT trip
 // these, so this pair demonstrates the biomech rules discriminate scripted motion from human motion.
 const LINEAR_BOT = process.env.LINEAR_BOT === "1";
+// CANVAS_SPOOF: the canvas realm-isolation gap. A JS canvas-noise spoof perturbs the main realm's 2D
+// getImageData (and iframes) but never reaches Worker scope, so a Worker OffscreenCanvas renders clean →
+// canvas_worker_vs_main catches the realm the farble skipped. The canvas analog of WORKER_SPOOF.
+const CANVAS_SPOOF = process.env.CANVAS_SPOOF === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -83,8 +87,11 @@ const evading =
   WORKER_SPOOF ||
   IFRAME_SPOOF ||
   NATIVE_SPOOF ||
+  CANVAS_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = LINEAR_BOT
+const mode = CANVAS_SPOOF
+  ? "canvas-spoof"
+  : LINEAR_BOT
   ? "linear-bot"
   : NATIVE_SPOOF
   ? "native-spoof"
@@ -204,6 +211,18 @@ if (FLOOR_SPOOF) {
     };
     fake.toString = () => "function getParameter() { [native code] }";
     WebGLRenderingContext.prototype.getParameter = fake;
+  });
+} else if (CANVAS_SPOOF) {
+  // Main-realm-only canvas farble: perturb getImageData output on the 2D prototype (reaches the page and
+  // iframes) but never Worker scope, so a Worker OffscreenCanvas hashes clean → canvas_worker_vs_main.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const gid = CanvasRenderingContext2D.prototype.getImageData;
+    CanvasRenderingContext2D.prototype.getImageData = function (...a) {
+      const r = gid.apply(this, a);
+      for (let i = 0; i < r.data.length; i += 499) r.data[i] = r.data[i] ^ 1; // 1-bit per-session farble
+      return r;
+    };
   });
 } else if (evading) {
   await context.addInitScript(() => {

@@ -40,6 +40,7 @@ run_stealth "$OUT/floor-spoof.json" -e FLOOR_SPOOF=1 # red-team: fake the enviro
 run_stealth "$OUT/worker-spoof.json" -e WORKER_SPOOF=1 # red-team: main-realm-only spoof → br.worker_divergence
 run_stealth "$OUT/iframe-spoof.json" -e IFRAME_SPOOF=1 # red-team: top-frame-only spoof → br.iframe_divergence
 run_stealth "$OUT/native-spoof.json" -e NATIVE_SPOOF=1 # red-team: native-faking plain fn → br.native_invariant_violated
+run_stealth "$OUT/canvas-spoof.json" -e CANVAS_SPOOF=1 # red-team: main-realm canvas farble → br.canvas_worker_vs_main
 run_stealth "$OUT/linear-bot.json" -e LINEAR_BOT=1 # red-team: straight-line constant-velocity → bh.path_too_straight + bh.uniform_velocity
 run_stealth "$OUT/human-mouse.json" -e HUMAN_MOUSE=1 # negative control: curved/eased motion must NOT trip the biomech floor
 # OS spoof: a Windows UA over the Linux edge — caught by net.tcp_os_vs_ua (TCP/IP kernel vs claimed OS).
@@ -75,6 +76,7 @@ ARGS=(
   "worker-spoof=$OUT/worker-spoof.json"
   "iframe-spoof=$OUT/iframe-spoof.json"
   "native-spoof=$OUT/native-spoof.json"
+  "canvas-spoof=$OUT/canvas-spoof.json"
   "linear-bot=$OUT/linear-bot.json"
   "human-mouse=$OUT/human-mouse.json"
 )

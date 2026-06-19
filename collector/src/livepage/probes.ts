@@ -345,6 +345,71 @@ function workerGlRenderer(): Promise<string | null> {
   });
 }
 
+// Canvas realm coherence. The same 2D draw ops must hash identically on a main-thread canvas and a
+// Worker OffscreenCanvas (one rasterizer + font set). A JS canvas-noise spoof patches the main realm's
+// 2D context but cannot reach Worker scope, so the Worker renders clean. The draw is duplicated below —
+// CW_DRAW (string, for the Worker) and the inline ops in mainCanvasHashCW MUST stay byte-identical; a
+// minified build mangles function names so a shared fn.toString() into the Worker is unsafe.
+const CW_DRAW =
+  "ctx.textBaseline='top';ctx.font='14px sans-serif';" +
+  "ctx.fillStyle='#069';ctx.fillRect(0,0,100,40);" +
+  "ctx.fillStyle='#f60';ctx.fillText('Kitsune-CW-7',2,2);" +
+  "ctx.strokeStyle='rgba(0,128,0,0.7)';ctx.beginPath();ctx.arc(40,20,15,0,7);ctx.stroke();";
+
+function cwHash(d: Uint8ClampedArray): number {
+  let h = 2166136261;
+  for (let i = 0; i < d.length; i += 97) h = ((h ^ (d[i] ?? 0)) * 16777619) >>> 0;
+  return h;
+}
+
+function mainCanvasHashCW(): number | null {
+  try {
+    const c = document.createElement("canvas");
+    c.width = 100;
+    c.height = 40;
+    const ctx = c.getContext("2d");
+    if (ctx === null) return null;
+    // keep in sync with CW_DRAW
+    ctx.textBaseline = "top";
+    ctx.font = "14px sans-serif";
+    ctx.fillStyle = "#069";
+    ctx.fillRect(0, 0, 100, 40);
+    ctx.fillStyle = "#f60";
+    ctx.fillText("Kitsune-CW-7", 2, 2);
+    ctx.strokeStyle = "rgba(0,128,0,0.7)";
+    ctx.beginPath();
+    ctx.arc(40, 20, 15, 0, 7);
+    ctx.stroke();
+    return cwHash(ctx.getImageData(0, 0, 100, 40).data);
+  } catch {
+    return null;
+  }
+}
+
+function workerCanvasHashCW(): Promise<number | null> {
+  return new Promise((resolve) => {
+    try {
+      const code =
+        "var H=function(d){var h=2166136261;for(var i=0;i<d.length;i+=97){h=((h^(d[i]||0))*16777619)>>>0;}return h;};" +
+        "onmessage=function(){try{var c=new OffscreenCanvas(100,40);var ctx=c.getContext('2d');" +
+        CW_DRAW +
+        "postMessage(H(ctx.getImageData(0,0,100,40).data));}catch(e){postMessage(null);}}";
+      const w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+      const t = setTimeout(() => {
+        resolve(null);
+      }, 1500);
+      w.onmessage = (e: MessageEvent<number | null>): void => {
+        clearTimeout(t);
+        resolve(e.data);
+        w.terminate();
+      };
+      w.postMessage(0);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 /** A live in-browser collector: arm listeners now, snapshot the full signal set later via collect(). */
 export interface LiveCollector {
   collect(): Promise<SignalMap>;
@@ -956,6 +1021,14 @@ export function armCollector(): LiveCollector {
     const wglr = await workerGlRenderer();
     if (wglr && wg.renderer && wglr !== wg.renderer) {
       put("browser", "webgl_worker_divergence", true);
+    }
+    // Canvas realm coherence: the same draw must hash identically on the main canvas and a Worker
+    // OffscreenCanvas. A main-realm canvas-noise spoof cannot reach the Worker → divergence. Only fire
+    // when both hashes are present and differ (a missing capability is null → never fires).
+    const mch = mainCanvasHashCW();
+    const wch = await workerCanvasHashCW();
+    if (mch !== null && wch !== null && mch !== wch) {
+      put("browser", "canvas_worker_divergence", true);
     }
     if (!cspEnforced) put("browser", "csp_bypassed", true);
 
