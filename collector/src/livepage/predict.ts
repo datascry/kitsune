@@ -253,5 +253,11 @@ export function notApplicable(ruleId: string, pred: Prediction): string | null {
   if (BRAVE_FARBLING.has(ruleId) && pred.browser.startsWith("Brave")) {
     return "Brave farbles canvas/audio readback by design (its Shields privacy feature) — expected, not a bot signature";
   }
+  // Firefox (and every Gecko browser: Tor, Mullvad, Camoufox) generalises the WebGL renderer string
+  // ("…, or similar" / "llvmpipe, or similar") by default as a fingerprinting-resistance feature, so a real
+  // Firefox trips br.webgl_renderer_artifact — mirrors detector.applicability (grounded on a live FF137).
+  if (ruleId === "br.webgl_renderer_artifact" && pred.engine === "gecko") {
+    return "Firefox generalises the WebGL renderer string ('…, or similar') by design — a privacy feature, not a spoof";
+  }
   return null;
 }

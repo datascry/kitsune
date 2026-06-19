@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.9"
+ruleset_version: "0.74.10"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1086,8 +1086,8 @@ rules:
     status: active
     category: artifact
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Kitsune: headful Camoufox reports 'Intel(R) HD Graphics 400, or similar' — no real driver does"
+    last_validated: "2026-06-19"
+    source: "Kitsune: headful Camoufox reports 'Intel(R) HD Graphics 400, or similar'. v0.74.10: the ', or similar' suffix is NOT a fake-driver placeholder — it is Firefox's WebGL UNMASKED_RENDERER GENERALISATION, a fingerprinting-resistance feature ON BY DEFAULT in every Gecko browser (Firefox, Tor, Mullvad, Camoufox). GROUNDED on a live headful Firefox 137 (corpus/calibration/headful/firefox.json), which reports 'llvmpipe, or similar' and was the ONLY corpus session — evader or real — that tripped this rule (a pure-FP profile identical to the retired webgl_not_angle: zero evader catches, FPs a real browser). Since this is a convicting `artifact` rule, it convicted every real Firefox. Fix: detector.applicability drops it when ua_engine==firefox (the Gecko engine that legitimately produces the generalisation); the rule stays convicting for Chromium, which never emits that format, so naive placeholder/'generic renderer' spoofs on Blink are still caught. Camoufox detection is unaffected (caught by net.tcp_os_vs_ua / tls_grease / pointer_touch, not this rule). Mirrored in the live page's predict.notApplicable for the gecko engine."
 
   - id: br.engine_feature_vs_ua
     title: JS engine lacks an API its claimed Chrome version shipped — stale template

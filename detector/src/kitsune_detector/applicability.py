@@ -55,11 +55,21 @@ def not_applicable(rule_id: str, session: Session) -> str | None:
         who = _privacy_browser(session)
         if who is not None:
             return f"{who} farbles/blocks the canvas/audio readback by design — expected, not a bot signature"
+    # Firefox (and every Gecko browser: Tor, Mullvad, Camoufox) GENERALISES the WebGL UNMASKED_RENDERER
+    # string by default — "<gpu>, or similar" / "llvmpipe, or similar" — as a fingerprinting-resistance
+    # feature, NOT a spoof placeholder. A live headful Firefox 137 reports "llvmpipe, or similar" and trips
+    # br.webgl_renderer_artifact (the ", or similar" arm), which is a convicting `artifact` rule — so the
+    # rule false-fires on every real Firefox. The artifact pattern stays valid for Chromium (which never
+    # emits that format), so the rule is dropped only for the Gecko engine that legitimately produces it.
+    if rule_id == "br.webgl_renderer_artifact" and session.value(Layer.browser, "ua_engine") == "firefox":
+        return "Firefox generalises the WebGL renderer string ('…, or similar') by design — a privacy feature"
     return None
 
 
 def filter_applicable(contradictions: list[Contradiction], session: Session) -> list[Contradiction]:
     """Drop the contradictions that are not applicable to this session's identified browser."""
-    if session.value(Layer.browser, "is_brave") is MISSING and (session.value(Layer.browser, "rfp_browser") is MISSING):
-        return contradictions  # fast path: no privacy-browser context to apply
+    no_brave = session.value(Layer.browser, "is_brave") is MISSING
+    no_rfp = session.value(Layer.browser, "rfp_browser") is MISSING
+    if no_brave and no_rfp and session.value(Layer.browser, "ua_engine") != "firefox":
+        return contradictions  # fast path: no privacy-browser / Gecko context to apply
     return [c for c in contradictions if not_applicable(c.rule_id, session) is None]

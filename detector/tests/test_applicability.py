@@ -78,6 +78,20 @@ def test_rfp_conjunction_on_chromium_is_not_honored() -> None:
     assert "br.canvas_noise" in {c.rule_id for c in verdict.contradictions}
 
 
+def test_firefox_webgl_renderer_generalisation_is_not_an_artifact() -> None:
+    # Firefox generalises the WebGL renderer ("llvmpipe, or similar") by default — a privacy feature, not a
+    # spoof placeholder. A live headful FF137 trips br.webgl_renderer_artifact (an artifact/convicting rule),
+    # so it must be N/A for the Gecko engine. Grounded: corpus/calibration/headful/firefox.json.
+    ff = _session(webgl_renderer_artifact=True, ua_engine="firefox")
+    verdict = Detector().score(ff)
+    assert "br.webgl_renderer_artifact" not in {c.rule_id for c in verdict.contradictions}
+    # On Chromium (which never emits the "…, or similar" format) the same signal is a genuine spoof artifact.
+    chromium = _session(webgl_renderer_artifact=True, ua_engine="chromium")
+    cv = Detector().score(chromium)
+    assert "br.webgl_renderer_artifact" in {c.rule_id for c in cv.contradictions}
+    assert cv.label.value == "bot"  # artifact (weight 0.8) convicts on Blink
+
+
 def test_spoofed_brave_keeps_farbling_and_convicts() -> None:
     # A bot injecting a fake navigator.brave (non-native isBrave) to claim Brave: brave_spoofed fires AND the
     # genuineness guard withholds the farbling N/A, so canvas_noise/audio_noise still count. Doubly caught.

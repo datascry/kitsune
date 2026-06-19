@@ -22,7 +22,9 @@ const browser = await launcher.launch({ headless: false, args });
 const context = await browser.newContext({ ignoreHTTPSErrors: true });
 const page = await context.newPage();
 
-await page.goto(EDGE, { waitUntil: "load", timeout: 30000 });
+// domcontentloaded, NOT "load": the demo page's CSP blocks a probe <img>, so Firefox's load event never
+// settles and headful Firefox hangs on waitUntil:"load". DOMContentLoaded fires before the collector runs.
+await page.goto(EDGE, { waitUntil: "domcontentloaded", timeout: 30000 });
 // Move the mouse a little so the behavioral collector has real (xvfb-dispatched) pointer samples.
 for (let i = 0; i < 8; i++) await page.mouse.move(100 + i * 30, 120 + i * 17, { steps: 4 });
 await page.waitForTimeout(2500); // let the in-page collector POST its signals to /ingest

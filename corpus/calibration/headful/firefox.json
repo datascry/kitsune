@@ -1,0 +1,422 @@
+{
+ "schema_version": "0.1",
+ "session_id": "15c873afedaf7474f236c29c92460aa1",
+ "remote_ip": null,
+ "first_seen": "2026-06-19T09:12:50Z",
+ "last_seen": "2026-06-19T09:12:53Z",
+ "request_count": 24,
+ "signals": {
+  "network": [
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "accept_language_primary",
+    "value": "en",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "h2",
+    "value": "1:65536;2:0;4:131072;5:16384|12517377|0|m,p,a,s",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "h2_browser_hint",
+    "value": "firefox",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "h2_settings_hint",
+    "value": "firefox",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "ja3",
+    "value": "d87a30a5782a73a83c1544bb06332780",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "ja4",
+    "value": "t13d1717h2_5b57614c22b0_3cbfd9057e0d",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "ja4_browser_hint",
+    "value": "firefox",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "observed_ip",
+    "value": "172.22.0.4",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "quic_no_grease",
+    "value": true,
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "quic_observed",
+    "value": true,
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "tcp_kernel",
+    "value": "linux",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "tls_no_grease",
+    "value": true,
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "network",
+    "kind": "ua_kernel",
+    "value": "linux",
+    "source": "edge",
+    "observed_at": "2026-06-19T09:12:53Z"
+   }
+  ],
+  "browser": [
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "color_depth",
+    "value": 24,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "fp_hash",
+    "value": "1924c52b",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "hardware_concurrency",
+    "value": 12,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "media_devices_empty",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "mimetypes_empty",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "nav_language_primary",
+    "value": "en",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "nav_platform_os",
+    "value": "Linux",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "oscpu_os",
+    "value": "Linux",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "plugins_count",
+    "value": 0,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "productsub_render",
+    "value": "gecko",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "screen_resolution",
+    "value": "1280x720",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "ua_browser",
+    "value": "firefox",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "ua_engine",
+    "value": "firefox",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "ua_platform",
+    "value": "Linux",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "ua_render",
+    "value": "gecko",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "vendor_engine",
+    "value": "firefox",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "voices_empty",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "webdriver",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "webgl_renderer",
+    "value": "llvmpipe, or similar",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "webgl_renderer_artifact",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "webgl_software",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "webgl_vendor",
+    "value": "Mesa",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "browser",
+    "kind": "webgpu_absent",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   }
+  ],
+  "behavioral": [
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "coalesced_events_absent",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "mouse_entropy",
+    "value": 0.115039104981651,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "mouse_straightness",
+    "value": 0.9810315989512447,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "mouse_velocity_cv",
+    "value": 1.2487867565000486,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "pause_ratio",
+    "value": 0.03225806451612903,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "pointer_event_count",
+    "value": 32,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "power_law_exponent",
+    "value": -0.3164985082631803,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "submovement_count",
+    "value": 9,
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "15c873afedaf7474f236c29c92460aa1",
+    "layer": "behavioral",
+    "kind": "trace_hash",
+    "value": "2359a500",
+    "source": "collector",
+    "observed_at": "2026-06-19T09:12:52.682000Z"
+   }
+  ],
+  "reputation": []
+ }
+}

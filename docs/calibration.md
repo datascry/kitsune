@@ -259,3 +259,18 @@ browserforge (runtime probes the mapper omits) — the second source earning its
    A counter-check grounded the sibling rule too: `engine_stack_vs_ua`'s `firefox && captureStackTrace` arm
    is *safe* — a live Firefox 137 reports `captureStackTrace` undefined (SpiderMonkey has not shipped it), so
    that arm was left untouched. Acting on the unverified "Firefox added it" memory would have been the FP.
+3. **Found a third convicting FP: `webgl_renderer_artifact` on Firefox (fixed v0.74.10).** Once the Firefox
+   capture worked (it had hung on `waitUntil:"load"` — the CSP-blocked probe `<img>` never lets Firefox's
+   load event settle; `domcontentloaded` fixes it), a real headful Firefox 137 reported its WebGL renderer as
+   `"llvmpipe, or similar"` and tripped `br.webgl_renderer_artifact` — a convicting `artifact` rule (weight
+   0.8). But `", or similar"` is **Firefox's own WebGL renderer GENERALISATION**, a fingerprinting-resistance
+   feature ON BY DEFAULT in every Gecko browser (Firefox, Tor, Mullvad, Camoufox), not a fake-driver
+   placeholder. It was the **only** corpus session — evader or real — that tripped this rule (the exact
+   pure-FP profile of the retired `webgl_not_angle`). Fix: `detector.applicability` drops it when
+   `ua_engine==firefox`; the rule stays convicting on Blink (which never emits that format). Camoufox
+   detection is unaffected (it is caught by `tcp_os_vs_ua` / `tls_grease` / `pointer_touch`, not this rule).
+   _Deferred:_ the Firefox capture also tripped `net.tls_grease_vs_ua` / `net.quic_grease_vs_ua` (it sent no
+   TLS/QUIC GREASE), but Playwright's Firefox is a **patched build** whose network stack may not match real
+   Firefox — so the GREASE question needs a non-Playwright real-Firefox capture before acting, and was left
+   untouched (the same "don't act on a single questionable source" discipline as the `tcp_os_vs_ua` proxy
+   question).
