@@ -645,3 +645,13 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   (gofmt clean / go vet / `session`+`signal`+`tcpfp` tests pass), **collector** (tsc/eslint/prettier clean,
   100% on engine·predicates·scoring), and the live stack current (`task verify-deployed` → match at 0.74.24,
   threshold −9.4842). System comprehensively healthy; nothing to fix. No rule changed → no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.24 · periodic experimental-rule re-validation + prevalence LIVE-recall check.**
+  Both named experimental rules re-confirmed against the live fleet at 0.74.24: `net.h2_header_order_vs_ua`
+  fires on http2-naive (vanilla `KS_HTTP2=1` + Chrome UA → bot); `br.readback_noise` fires on
+  `audio-readback-spoof` (→ bot) AND does NOT fire on real Camoufox (engine-level audio = consistent — negative
+  intact). **Plus the key check for the v0.74.24 prevalence fix:** a LIVE `ios-ua-spoof` evader (Chromium under
+  an iOS-Safari UA → an improbable joint) still trips `br.fingerprint_improbable` at the deeper −9.484
+  threshold — so the cross-source-conservative threshold **preserved live recall of the randomizer/improbable-
+  joint attack** while it cut the FP over-flag (fpgen 5% → 0.8%). Both axes of the prevalence fix — fewer FPs,
+  same genuine catches — are now confirmed live, not just offline. No rule changed → no ruleset bump.
