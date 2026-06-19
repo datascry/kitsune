@@ -684,3 +684,26 @@ a signal real browsers do not share — the structural frontiers (network deviat
 confound; coordination/behavioural-over-time), which remain external-data-bound. Per-session per-browser
 detection is saturated; the productive in-sandbox work is keeping the gate trustworthy (this pass) + the
 generated catalogs current.
+
+## Structural-frontier validation pass — no FP-safe gap to build (0.74.32, 2026-06-19)
+
+At per-session saturation the loop says pivot to the structural frontiers (prevalence / coordination). This
+iteration audited both for an in-sandbox-buildable, FP-safe gap and found neither has one — documented so a
+future iteration does not re-derive it or ship an FP-prone signal:
+
+- **Prevalence GPU factor (the one remaining single-source factor).** `task prevalence-corroborate` (browserforge
+  vs fpgen/Scrapfly): GPU TVD = 0.08 (Windows, n=332) and 0.03 (macOS, n=128) — the two generators AGREE, so the
+  GPU factor is not over-fit the way the screen/cores factors were (which I coarsened). Caveat: fpgen is the SAME
+  Bayesian-network generator family, so this is cross-GENERATOR agreement, not real-traffic ground truth — the
+  factor still wants a Tier-3 real-device prior (external-data-bound). No change warranted.
+
+- **Coordination: the canvas-randomized cloned-profile fleet.** A fleet that clones ONE non-canvas profile
+  (identical hardware/platform) but RANDOMIZES canvas per instance (fp_hash differs) across distinct IPs falls
+  through every convicting coordination signal (no JS-paradox, no fp_collision, no JA4_c divergence, no
+  trace/shared-origin) and correctly grades `candidate`, never `fleet`. The tempting fix — a hardware-PROFILE
+  collision (identical screen/cores/GPU) — is NOT FP-safe: those traits are low-entropy (the modal config
+  collides by coincidence) AND "identical hardware + different fp_hash" is exactly a PRIVACY-BROWSER cohort
+  (Brave/Tor farble canvas), so convicting it would botnet-label real privacy users. The high-entropy fp_hash
+  collision is the right discriminator precisely because it avoids both. Locked by
+  `test_coordination.test_canvas_randomized_cloned_profile_fleet_caps_at_candidate` — the coordination analog of
+  the per-session EVADES mimics; catching it needs a signal a real cohort cannot share (external/structural data).

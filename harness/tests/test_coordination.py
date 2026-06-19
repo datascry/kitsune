@@ -86,6 +86,39 @@ def test_real_camoufox_two_node_cohort_is_candidate_not_fleet() -> None:
     assert v.cloned_fingerprint is None and v.cloned_trace is None and v.shared_real_ip is None
 
 
+def test_canvas_randomized_cloned_profile_fleet_caps_at_candidate() -> None:
+    # A KNOWN coordination evasion, locked here so a future change cannot "close" it FP-unsafely. A fleet that
+    # clones ONE non-canvas profile (identical hardware_concurrency + platform) but RANDOMIZES its canvas/audio
+    # per instance (so fp_hash differs) across distinct IPs falls through every convicting signal: no JS-paradox
+    # (traits identical, not divergent), no fp_collision (fp_hash differs), no JA4_c divergence, no trace/shared
+    # origin. It correctly grades `candidate`, NOT `fleet`.
+    #
+    # The tempting fix — a HARDWARE-PROFILE collision (identical screen/cores/GPU across distinct IPs) — is
+    # deliberately NOT built because it is not FP-safe: (a) those traits are LOW-entropy (1920x1080 + 8 cores +
+    # a common GPU is the modal config, so a real cohort collides by coincidence), and (b) "identical hardware
+    # but different fp_hash" is exactly a PRIVACY-BROWSER cohort (Brave/Tor farble canvas, so identical corporate
+    # laptops hash differently) — convicting it would botnet-label real privacy-browser users. The high-entropy
+    # fp_hash collision is the right discriminator precisely because it avoids both. This shape is the
+    # coordination analog of the per-session EVADES mimics: catching it needs a signal a real cohort cannot share.
+    cluster = [
+        (
+            f"clone{i}",
+            _sess(
+                f"clone{i}",
+                "t13d1517h2_8daaf6152771_v1",
+                hw=8,
+                plat="Windows",
+                observed_ip=f"5.5.5.{i}",
+                fp_hash=f"canvas{i}",
+            ),
+        )
+        for i in range(4)
+    ]
+    v = score_cluster("t13d1517h2_8daaf6152771", cluster)
+    assert v.label != "fleet", v.evidence  # the FP-safe boundary: no convicting signal, never a botnet verdict
+    assert v.cloned_fingerprint is None  # fp_hash differs per instance — the collision tell does not fire
+
+
 def _sess(
     name: str,
     ja4: str | None,
