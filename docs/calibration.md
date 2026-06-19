@@ -598,3 +598,15 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   it through `signals_from_fingerprint` would fabricate `vendor_vs_ua`/`oscpu_vs_ua` "FPs" that are mapper
   artifacts, not rule FPs. So fpgen corroborates the prevalence prior (done) but must NOT be used as a
   drop-in coherence FP source. No rule changed → no ruleset bump.
+
+- **2026-06-19 · ruleset 0.74.23 · periodic experimental-rule re-validation + post-fix regression sweep** —
+  live stack healthy at 0.74.23 (the `vendor_vs_ua` unknown-engine fix deployed). Both named experimental
+  rules re-confirmed against the live fleet: `net.h2_header_order_vs_ua` fires on http2-naive (vanilla
+  `KS_HTTP2=1` + Chrome UA → bot), `br.readback_noise` fires on `audio-readback-spoof` (→ bot) AND does NOT
+  fire on real Camoufox (engine-level audio = consistent — negative intact). Regenerating the matrix from the
+  committed captures changed **only** the ruleset stamp (`0.74.22 → 0.74.23`) — i.e. the `vendor_vs_ua`
+  unknown-engine narrowing caused **zero** verdict change on any committed capture (none carry an
+  unclassifiable-engine UA), confirming no regression. Also re-ran the coordination scenario eval:
+  **precision 100% / recall 100%** (the 6 legit-cohort FP-cases — corporate fp_collision, multi-version JA4_c
+  divergence, NAT shared-IP, etc. — all correctly cap at `candidate`, every fleet shape caught). Matrix +
+  scoreboard refreshed. No rule changed → no ruleset bump.
