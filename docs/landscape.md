@@ -1,8 +1,8 @@
 # landscape — Kitsune vs. the bot-detection field
 
 A survey of well-known bot-detection projects, test sites, and libraries, and an honest comparison of
-Kitsune's current detections (v0.53.0, 96 rules) against what they do. Grounded in current sources
-(2025–2026), not just the codebase.
+Kitsune's current detections (ruleset v0.70.0; 114 rules — 83 active, 30 experimental, 2 retired)
+against what they do. Grounded in current sources (2025–2026), not just the codebase.
 
 ## Who's out there
 

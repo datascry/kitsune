@@ -55,4 +55,8 @@ docker run --rm --network kitsune_default \
 
 Env flags: `KS_HEADFUL=1` runs headful in a virtual Xvfb display (vs the default headless);
 `KS_FAST=1` does an event-driven detection-only capture; `KS_REPEAT=N` captures N sessions from one
-browser launch (amortizes the cold-start — single-instance only, not for fleets).
+browser launch (amortizes the cold-start — single-instance only, not for fleets);
+`KS_BASELINE=1` runs *stock* Playwright Firefox (Camoufox's engine, no spoofing) as the control group,
+so rules that fire on it too are environment tells, not anti-detect tells; `KS_HARDENED=1` applies
+Camoufox config to close the spoof-specific tells the detector found (pin OS to Windows, re-enable
+WebRTC, pick a clean WebGL renderer), measuring what survives once an adversary fixes every known tell.

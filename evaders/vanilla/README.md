@@ -24,6 +24,10 @@ docker compose --profile evaders run --rm vanilla   # prints the verdict JSON
 Verified live: a real `session_id` threads socket → edge → detector → verdict; vanilla scores
 `0.00 / human`.
 
+`KS_UA=<ua>` fakes a browser User-Agent over plain httpx (no `Sec-Fetch-*` headers) — the classic
+UA-spoofing scripted-flood client, caught by the edge's `net.sec_fetch_vs_ua` HTTP-layer tell. The
+live scoreboard runs vanilla in this mode.
+
 ## Develop
 
 ```sh

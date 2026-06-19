@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 #: Kitsune's own detector, reachable locally.
 _OWN_DETECTOR_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "detector", "edge"})
 
-#: Public endpoints explicitly built for bot/fingerprint testing (see docs/architecture.md §11).
+#: Public endpoints explicitly built for bot/fingerprint testing (see docs/architecture.md §13).
 ALLOWED_TEST_HOSTS = frozenset(
     {
         "bot.sannysoft.com",

@@ -24,7 +24,7 @@ below them, on properties that are not part of the fingerprint it copies.
 ```sh
 docker compose up -d --build detector edge
 docker compose --profile evaders run --rm primp
-# override the impersonation profile: -e KS_IMPERSONATE=chrome_148
+# override the impersonation profile: -e KS_IMPERSONATE=chrome_146 (the default)
 ```
 
 Only ever points at Kitsune's own edge/detector (see `harness/.../allowlist.py`); never a third party.

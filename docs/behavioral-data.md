@@ -43,10 +43,15 @@ stream produces), grounded in the movement-science literature:
 2. **Loader** — `balabit.py`: parse Balabit CSV → `(x, y, t)`, split into aimed-movement segments on
    pauses; tested on a synthetic fixture (raw data fetched at use-time, never committed). ✅
 3. **Calibration** — extractor run over real Balabit movements → the human envelope (below). ✅
-4. **Detectors** *(done)* — `bh.power_law_violation` fires when a session's power-law exponent falls below
-   the human floor; the collector mirrors the live feature computation (as it already does for `fp_hash`).
-   `submovement_count` / `pause_ratio` are emitted but **ruleless** — the FP-floor is too low (below).
-   Validated against **real bot tools** (the stealth humanizer), never our own synthetic generator.
+4. **Detectors** *(done, gated)* — `bh.power_law_violation` fires when a session's power-law exponent
+   falls below the human floor. The detector's in-browser probe (`detector/demo.py`) mirrors
+   `biomech.py`'s feature computation client-side (as it already does for `fp_hash`); the standalone
+   `collector/` package emits only the entropy/shape features (`mouse_entropy`, `mouse_straightness`,
+   `mouse_velocity_cv`, `keystroke_entropy`, `pointer_event_count`) — the biomech features ride the demo
+   probe. The rule ships **`status: experimental`** (weight 0.55): the 10-user Balabit floor is a single
+   research corpus, so it stays corroborating-only until corroborated against broader/Tier-3 real-device
+   motion. `submovement_count` / `pause_ratio` are emitted but **ruleless** — the FP-floor is too low
+   (below). Validated against **real bot tools** (the stealth humanizer), never our own synthetic generator.
 
 ## Calibration result — the human movement envelope (all 10 users)
 

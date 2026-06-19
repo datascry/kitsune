@@ -282,6 +282,81 @@ that emerges: **environment tells must corroborate, not convict** — each has a
 but a real human almost never trips several at once, and noisy-or makes the combination decisive. Recall
 was unaffected throughout — every evader still scores `bot`.
 
+### The precision turn — measuring the FP rate, then gating conviction on it
+
+The precision *tests* above assert a handful of hand-built human profiles stay `human`. The harder
+question is the *rate*: across the real distribution of legitimate browsers, how often does the detector
+flag one? A calibration harness now answers it empirically (`docs/calibration.md`). It draws from
+[browserforge](https://github.com/daijro/browserforge) — a Bayesian network of **real** browser
+fingerprints, the same data anti-detect tools sample to look real — maps each one to the browser-layer
+signals a genuine browser would emit, and scores it. Any `suspicious`/`bot` on a real fingerprint is a
+false positive. The first run (500 fingerprints, v0.57.0) was sobering: **human 77% · suspicious 15% ·
+bot 8% — 23% of legitimate browsers flagged.** `br.media_devices_empty` alone drove most of it (18.2% —
+a real desktop with no webcam enumerates no devices), with `macos_dpr1`, `mimetypes_empty`, `no_plugins`,
+`no_pdfviewer` close behind. Every one is an *environment* tell — a stripped/headless capability gap that
+the long tail of ordinary humans (no-webcam desktops, non-Retina Macs, VMs) also trips, and noisy-or was
+amplifying a handful of them into a conviction. Recall testing never sees this; only calibration does.
+
+The fix is the precision lesson made structural — the **convicting-signal gate** (`detector/scoring.py`,
+v0.64.0). A `bot` *label* now requires at least one **convicting** contradiction — a positive bot
+signature in the `coherence`, `automation`, or `artifact` categories. The corroborating categories —
+`environment`, `behavioral`, `reputation` — still raise the score and can reach `suspicious`, but can no
+longer noisy-or their way to a conviction alone. Crucially the *score* stays a full monotonic noisy-or
+(every point still traces to evidence); only the *label* is gated, so the change is principled, not a
+fudge. Scored both ways over one 800-fingerprint corpus (the only honest before/after, since each run
+samples fresh): **19 environment-only `bot` false positives dropped to `suspicious` — a 31% cut in hard
+bot FPs — with the human rate unchanged and zero evader regression.** Re-scoring all 31 recorded evader
+sessions, every one still scores `bot` and every one carries a convicting signal: bots always trip one.
+The gate removes the false positives that were *only* the environment floor — precisely the floor a real
+VDI user or webcam-less desktop shares with a headless container — without touching a single real catch.
+This is the section's earlier observation (*environment tells must corroborate, not convict*) promoted
+from a per-rule weight tweak to a category-level invariant of the scorer.
+
+The same insight had a twin in the **coordination** detector, and it was a sharper embarrassment because
+the victim was a *real browser's user base*. The fleet labeler keyed on coordination signals and could
+reach `fleet` on volume and timing alone — so a popular real browser whose users happen to share a JA4
+prefix and arrive in a burst (a software-update wave, a link going viral) read as a botnet. The fix is
+the conviction gate applied to coordination: a `fleet` label now requires a **non-organic** signal — the
+JS-divergence paradox, JA4_c divergence, or a fingerprint collision across IPs — something a genuine
+same-build cohort cannot produce. Volume, timing lockstep, and IP spread still *escalate* a confirmed
+fleet (they drive the severity tier), but they can no longer convict one into existence. A homogeneous
+real-browser cohort now tops out at `candidate`, never `fleet` — the coordination analog of an
+environment-only session topping out at `suspicious`.
+
+### The prevalence model — scoring improbable-but-coherent fingerprints
+
+The calibration work exposed a *recall* gap as well as a precision one, and it is the deeper of the two.
+Coherence rules catch hard contradictions — UA says Windows, TCP says Linux — but they are binary, and a
+fingerprint generator can stay on the right side of every one. niespodd/BrowserForge-class tools sample a
+real-traffic *joint distribution*, so each field is individually valid and mutually consistent: no
+coherence rule fires, yet the *combination* is one no real user has (a Windows UA with an Apple GPU and a
+Mac screen, every field plausible in isolation). The principled counter is a **prevalence (likelihood)
+model** (`docs/prevalence-model.md`): score a fingerprint by how probable its field combination is under
+the real-traffic prior, and flag the deep tail. A prototype built a joint prior over `gpu_family |
+platform`, `screen | platform`, `colorDepth | platform`, and `cores` from 4000 real-distribution
+fingerprints and tested it on *scrambled* ones (a real fingerprint with its GPU and screen swapped in from
+another — each field valid, the joint improbable). On four fields alone it caught 46% of scrambled at a 5%
+real-flag threshold; the synthetic Windows+Apple+Mac joint scores `-23.5`, far below the real-engine
+captures' `-8.9 … -16.0`. The class works.
+
+But the prior is browserforge — one generated distribution, not measured traffic — so it ships
+**corroborating, by category, not just by weight** (v0.65.0). The rule `br.fingerprint_improbable`
+carries its own `prevalence` rule-category, deliberately excluded from the scorer's convicting set. After
+the convicting-signal gate, *category* decides whether a tell can unlock a `bot` label, and a single-source
+likelihood signal must not — so this is structural, not a low weight someone could later nudge up. The
+latent false positive it closes, grounded: a real-but-rare browser (an improbable-but-coherent joint) on a
+no-webcam desktop would have summed `prevalence_low` (0.25) ⊕ `media_devices_empty` (0.55) = 0.66 across
+the bot threshold, with *prevalence as the sole convicting signal* — convicting a legitimate browser on
+rarity alone. Now capped at `suspicious`. `task calibrate` confirms the human rate holds at 77%. The model
+is the only thing in the lab that scores a statistically-assembled fingerprint with no contradiction in
+it; making it constitutionally unable to convict is what lets it ship before its prior is corroborated
+against Tier-3 real traffic.
+
+The thread tying all three changes together — the bot gate, the fleet gate, the prevalence category — is
+one idea: **a signal that has an innocent lone explanation must not be allowed to convict alone, and the
+cleanest place to enforce that is the category system, not per-rule weights.** Precision stopped being a
+collection of weight tweaks and became a property of the scorer.
+
 ## The baseline control — separating spoofing from a stripped environment
 
 A detector that only fires on *headless-environment* tells is not detecting anti-detect spoofing — it is
@@ -623,6 +698,96 @@ Two layers it still cannot reach convict it anyway, and reading the source told 
   is a Playwright/Camoufox **Firefox-build** artifact (their bundled Firefox omits the GREASE a real Mozilla
   Firefox sends), not Camoufox-specific spoofing. It is a true tell against that automation-Firefox family,
   but attributing it to Camoufox's anti-detect layer would have been wrong; the control caught it.
+
+## Realm coherence — the spoof that forgets the second JavaScript scope
+
+Every per-session evasion so far has been a contest over a *value*: the renderer string, the timezone, the
+font metrics. The realm-coherence family is a different axis. A web page is not one JavaScript world — it
+is several: the main thread, a **Web Worker**, an **iframe**, an **OffscreenCanvas** in a worker. An
+anti-detect tool that injects its spoof with `addInitScript` / CDP `Page.addScriptToEvaluateOnNewDocument`
+patches the prototypes of the *main realm*. That patch does not cross into a freshly-spawned Worker's
+global scope or a dynamically-created iframe's `contentWindow` — they get a clean, un-patched copy of the
+runtime. So the tool that perfectly spoofs `navigator` on the main thread leaves the *same browser*
+reporting the real value one realm over. A single rasterizer, a single host clock, a single GPU — but two
+JavaScript scopes, and the spoof only reached one. The collector now reads both and the detector flags the
+disagreement: **one machine cannot answer the same question two ways.**
+
+The methodology was the same for every rule in the family, and it is the methodology lesson worth
+stating plainly: **ground the rule against a real browser first.** Before writing a divergence rule we
+confirmed a real (headless Chromium) browser reports the *identical* value in both realms — no spoof, no
+fire. Only then did we build a red-team evader that spoofs the main realm and forgets the second, and
+confirm it diverges. The evidence, not a guess, then sets each rule's status: active if a legitimate
+browser (and a legitimate emulation override) can never diverge, experimental if one plausibly can.
+
+The two foundational rules were the structural pair — the *context-isolation gap* itself:
+
+- **`br.worker_divergence`** (active, automation, 0.8) — `navigator` differs between the main thread and a
+  Blob Web Worker. The `worker-spoof` evader is its first live catch: a main-realm-only
+  `hardwareConcurrency` drop (`addInitScript`) never reaches the collector's Worker, which reads the real
+  value. Grounded: a real browser does not diverge.
+- **`br.iframe_divergence`** (active, automation, 0.8) — the sibling gap. A top-frame-only UA spoof
+  (guarded on `window.top === window`, the shape stealth scripts actually take) leaves a dynamically-created
+  same-origin iframe carrying the real `navigator`. The `iframe-spoof` evader catches it live — and trips
+  `worker_divergence` too, since the same prototype patch skips Worker scope as well.
+
+From that pair the family extended along the axes a sophisticated tool *does* spoof, each grounded against
+a real browser and shipped with the evader that exercises it:
+
+- **`br.timezone_worker_vs_main`** (**active**, coherence) — the geo-spoof analog. A residential-proxy bot
+  patches `Intl.DateTimeFormat` / `Date.getTimezoneOffset` in the main realm to match the proxy's country,
+  but the Worker reports the real host timezone. This one earned **active** status, and *why* is the
+  important part: timezone is a deterministic *process-level* setting with no hardware variability — a real
+  browser reports it identically in every realm, **and so does a legitimate CDP timezone override**
+  (`Emulation.setTimezoneOverride` reaches workers). Grounded both ways: real browser and CDP-override
+  browser show no divergence; a main-only `Intl`/`Date` spoof does. The `tz-spoof` evader catches it live.
+- **`br.languages_worker_vs_main`** (**experimental**, coherence) — the *language* half of the same
+  geo-spoof pair, and the instructive contrast. It fires identically in mechanism (main-realm
+  `navigator.languages` patch, real value in the Worker; the `lang-spoof` evader catches it live) — but it
+  ships **experimental, not active, and the same CDP test is exactly why.** A legitimate CDP locale
+  override (`context.locale`) does **not** propagate to the Worker (grounded: main `es-ES`, worker `en-US`
+  → diverges). So unlike timezone, a legitimate locale emulation produces the very divergence this rule
+  flags. The pair is the methodology lesson in a single experiment: *same idea, same test, opposite
+  status* — the evidence decided, not the intuition. Timezone earned active; languages did not.
+- **`br.webgl_worker_vs_main`** + **`br.canvas_worker_vs_main`** (both **experimental**, automation) — the
+  real-GPU pair. A `getParameter` GPU spoof patches the main realm's `WebGLRenderingContext.prototype`, or
+  a canvas-noise farble patches the main 2D context, but a Worker's `OffscreenCanvas` renders the same draw
+  ops cleanly — one physical GPU cannot render as two, one rasterizer cannot hash a draw two ways. The
+  `native-spoof` evader trips the WebGL one, `canvas-spoof` the canvas one, both live. Held **experimental**
+  for an honest reason: both are grounded only on *software* rendering (there is no GPU in the lab), and a
+  real-hardware browser whose Worker `OffscreenCanvas` takes a different render path *could* diverge
+  legitimately — so they stay corroborating until validated against a Tier-3 real-GPU device. Same
+  active-vs-experimental discipline as the timezone/languages split: the rule is only as active as its
+  grounding allows.
+
+### The escalation closure — `worker_constructor_tampered`, the meta-guard
+
+A family of divergence rules invites one obvious escalation: if the problem is that the spoof never reaches
+the Worker, **make it reach the Worker.** A tool can wrap `window.Worker` (and `OffscreenCanvas`) so that
+every worker it spawns is prefixed with the same spoof code — and then the Worker reports the *spoofed*
+value, and the entire divergence family goes silent. The `worker-wrap` evader does exactly this, and it
+*works*: against `worker-wrap`, `br.worker_divergence` no longer fires. The realm family, defeated.
+
+Except the escalation forces a structural lie one layer down, and that is the closure. A real browser's
+global `Worker` and `OffscreenCanvas` are *native* constructors — `toString()` contains `[native code]`,
+they are not user-constructable in the wrapped sense. A tool that wraps them to inject worker-scope spoof
+replaces them with a *plain function*. `br.worker_constructor_tampered` (**active**, artifact, 0.75) reads
+the constructor's nativeness and fires on the wrap. So `worker-wrap` is the proof: it **defeats**
+`worker_divergence` (the divergence is hidden) yet is **caught** by the constructor-integrity guard — its
+tells carry `br.worker_constructor_tampered` and *not* `br.worker_divergence`, the inverse of every other
+evader in the family. The only way to hide from the divergence rules is to tamper the Worker constructor,
+and tampering the Worker constructor is itself the tell. This is the `FLOOR_SPOOF` lesson from the
+environment floor, recapitulated one realm up: *the act of supplying what you lack is caught even when the
+value you supply is now coherent.* It ships active because it is FP-safe — browser extensions run in
+isolated worlds and do not replace these globals, so a non-native `Worker` constructor is an injection
+tool, not a real browser. (A wrap that *also* fakes the constructor's `toString` to `[native code]` is a
+rarer escalation, noted for a future prototype-constructor-identity check — the next rung, not yet climbed.)
+
+The whole arc is the coherence thesis applied to a new dimension. The earlier chapters flagged incoherence
+*across layers* — TLS vs UA, kernel vs UA, HTTP/2 vs JS. The realm family flags incoherence *across scopes
+within the JS layer itself*: the same browser, the same question, two answers. A tool can spoof one realm
+perfectly, and spoofing the second realm too forces it through the constructor-integrity guard. There is no
+realm in which the spoof is both present and native — which is the same shape, one level finer, as *there
+is no way to fake environment presence without the tampering tell.*
 
 ## The scripted-flood tier — three HTTP-header tells before any JS runs
 

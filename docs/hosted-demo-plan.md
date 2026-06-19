@@ -1,12 +1,23 @@
-# hosted-demo plan — running all 98 detections live against a visitor
+# hosted-demo plan — running the full ruleset live against a visitor
 
-The [GitHub Pages live page](https://datascry.github.io/kitsune/) evaluates the **71 client-evaluable**
-browser/behavioral rules against the visitor's own browser, entirely client-side. The remaining **26
-rules need the edge**: a browser cannot observe its own TLS/JA3/JA4, HTTP/2 (Akamai) fingerprint,
-QUIC/HTTP-3 ClientHello, TCP/IP (p0f) kernel, or its IP reputation — those are read from the *raw
-connection* by Kitsune's Go edge. To run the **full** verdict (incl. the cross-layer incoherence that is
-Kitsune's thesis) against a real visitor, the edge + detector must be **hosted publicly**. This is a
-deployment, not a static page. This doc is the plan; it is not yet greenlit.
+The [GitHub Pages live page](https://datascry.github.io/kitsune/) evaluates the **client-evaluable**
+browser/behavioral subset of the ruleset against the visitor's own browser, entirely client-side
+(currently ~86 of the 113 non-retired rules at v0.70.0 — the split is computed at render time from the
+`clientEvaluable` flag, not hardcoded). The remaining **edge-only rules** (~27) a browser cannot resolve:
+it cannot observe its own TLS/JA3/JA4, HTTP/2 (Akamai) fingerprint, QUIC/HTTP-3 ClientHello, TCP/IP
+(p0f) kernel, or its IP reputation — those are read from the *raw connection* by Kitsune's Go edge. To
+run the **full** verdict (incl. the cross-layer incoherence that is Kitsune's thesis) against a real
+visitor, the edge + detector must be **hosted publicly**. This is a deployment, not a static page. This
+doc is the plan; it is not yet greenlit.
+
+**Why this matters beyond a demo — it is the Tier-3 calibration path.** Kitsune's precision gate is
+trusted-but-verified calibration (`docs/prevalence-model.md`, `harness/README.md`): currently **Tier-1**
+(browserforge generated fingerprints, a single source) corroborated by **Tier-2** (real headless
+Chromium/Firefox/WebKit captures). The open gap is **Tier-3 — real *desktop* traffic** from real devices,
+which is what gates promotion of the experimental environment-tell and biomech rules (e.g.
+`bh.power_law_violation`) toward convicting weight. A hosted demo with an explicit opt-in capture is the
+project's stated route to that Tier-3 corpus — so this plan is also the calibration-data plan, not just a
+showcase.
 
 ## Why Pages can't do it
 
@@ -64,6 +75,12 @@ This is the only option that reliably preserves JA3/JA4 + QUIC + TCP.
    is already most of this. Add a healthcheck + restart policy + log rotation.
 5. **Abuse / cost guards** — the `/ingest` endpoint is public: rate-limit per IP, cap session store size
    + TTL, drop oversized payloads. The edge already validates contracts; add a request cap.
+6. **Tier-3 opt-in capture** — the calibration payoff. Behind an explicit, off-by-default consent toggle,
+   persist the *real-device* fingerprint + behavioral signals (not raw IPs) into the calibration corpus
+   format `browserforge_corpus.py --from-dir` already consumes (it loads "real-captured fingerprint JSONs"
+   as Tier-2/Tier-3 profiles). This turns demo traffic into the real-desktop second source that gates
+   promoting the experimental environment-tell and biomech rules. Consent + retention must be explicit
+   (see below); a visitor who only wants the verdict is never captured.
 
 ## Security & ethics
 
@@ -73,6 +90,9 @@ This is the only option that reliably preserves JA3/JA4 + QUIC + TCP.
 - **Privacy:** the hosted path means the visitor's signals (incl. a WebRTC-leaked public IP and a
   fingerprint hash) reach our server. The client-only Pages page keeps everything local. The hosted demo
   must carry a clear notice and retain nothing beyond the session TTL. Don't log raw IPs longer than needed.
+  The **Tier-3 opt-in capture** (work item 6) is a separate, stricter consent than running the verdict:
+  it is off by default, stores only the de-identified fingerprint/behavioral profile (never raw IPs), and
+  has its own stated retention. Capturing calibration data without that explicit opt-in is out of bounds.
 - **Exposure:** a public edge with raw-socket parsing is attack surface. The fuzz smokes (CI) cover the
   parsers; keep them green. Run the detector private.
 
@@ -81,6 +101,8 @@ This is the only option that reliably preserves JA3/JA4 + QUIC + TCP.
 - Domain + host (which provider, who owns the VM/billing)?
 - Same-origin (serve page from edge) vs Pages-origin + CORS? (recommend same-origin)
 - Acceptable data-retention window for the hosted `/ingest`?
+- Tier-3 capture: ship the opt-in calibration store with the first deploy, or run the demo verdict-only
+  first and add capture once consent/retention copy is settled?
 
 Until those are settled, the **client-only Pages page stands on its own** — it already matches the public
 JS-only detection field (CreepJS/sannysoft) and is honest about what needs the edge.

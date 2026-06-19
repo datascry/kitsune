@@ -14,6 +14,13 @@
 >
 > **Legend.** ⭐ = my top pick for that role · 🟢 **M0** = directly usable in Milestone 0 ·
 > 🔬 = study/reference, not a dependency · 📄 = paper/writeup · 🎯 = ethics-approved test endpoint.
+>
+> **Status (retrospective).** This is a pre-build Milestone-0 survey, kept for its prior-art map and
+> license watch-list. Its §0 *stack recommendation* (a Node/TS detector) was **not** the path taken:
+> Kitsune shipped a **Python detector + Python harness + Go edge + TypeScript collector** (see
+> `docs/architecture.md`). Read §0 as the reasoning at the time, not current architecture; the
+> project-by-project map in §1–§14 remains the useful, durable part. Star counts/licenses are as-surveyed
+> (2026-06) — re-verify before quoting or vendoring.
 
 ---
 
