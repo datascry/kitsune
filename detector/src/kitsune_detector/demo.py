@@ -808,6 +808,10 @@ DEMO_PAGE = """<!doctype html>
     // --- v0.13.0 wave: speech-synthesis voice coherence (OS-specific TTS, hard to spoof) ---
     try {
       if (window.speechSynthesis) {
+        // Re-read at send time: some real browsers populate voices async WITHOUT firing onvoiceschanged,
+        // so the arm-time grab can be stale-empty. Freshest getVoices() avoids a spurious voices_empty FP.
+        var _latest = speechSynthesis.getVoices() || [];
+        if (_latest.length > 0) _voices = _latest;
         if (_voices.length === 0) {
           sigs.push(S("browser", "voices_empty", true));  // no OS TTS — headless/container tell
         } else {

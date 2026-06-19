@@ -103,6 +103,16 @@ over-leverage guard working: never prune/down-weight on a single-source FP numbe
 FP rates (media_devices_empty etc.) still need a Tier-3 real-*desktop* source — a container is not a
 desktop, so neither browserforge nor headless engines settle those.
 
+**`media_devices_empty` (the top FP at ~18%) is largely a browserforge generation artifact, not real FP
+risk.** Generating 1500 browserforge fingerprints and bucketing the empty-`multimediaDevices` rate by
+platform: **macOS 47%**, Windows 3%, Linux 3%, Android 5% — the ~18% overall is almost entirely macOS. But a
+real Mac has a built-in microphone, speakers, and (usually) a camera, so `enumerateDevices()` is **never**
+empty there (it returns ≥1 entry per kind even without permission). browserforge simply under-populates
+macOS media devices; a real macOS browser does not trip the rule. So the headline number overstates the
+real-world FP — a third instance of the same single-source trap as the Intoli `platform` field and the
+prevalence screen factor. `media_devices_empty` stays a corroborating-only environment tell (the conviction
+gate already prevents it convicting); it is **not** a down-weight/prune candidate on this inflated number.
+
 **The guard is now an enforced gate, not a one-time check.** `test_real_engine_captures_trip_no_spurious_coherence`
 scores the three real-engine captures through the detector and pins the convicting (coherence/artifact)
 rules each may fire: **none** for Chromium and Firefox (a real engine is internally coherent), and only

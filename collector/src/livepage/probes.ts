@@ -992,6 +992,11 @@ export function armCollector(): LiveCollector {
     try {
       const synth = win()["speechSynthesis"] as SpeechSynthesis | undefined;
       if (synth) {
+        // Re-read at collection time: some real browsers populate voices asynchronously WITHOUT firing
+        // onvoiceschanged, so the arm-time grab can be stale-empty. Using the freshest getVoices() avoids a
+        // spurious voices_empty on a real browser whose voices simply loaded late (a real-browser FP).
+        const latest = synth.getVoices();
+        if (latest.length > 0) voices = latest;
         if (voices.length === 0) {
           put("browser", "voices_empty", true);
         } else {
