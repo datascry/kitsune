@@ -581,11 +581,14 @@ export function armCollector(): LiveCollector {
     if (/,\s*or similar|generic renderer|placeholder/i.test(wg.renderer)) {
       put("browser", "webgl_renderer_artifact", true);
     }
+    // OS hint ONLY from OS-exclusive GPU stacks: Direct3D=Windows, Metal/Apple=macOS, Mesa/GLX=Linux.
+    // Vulkan/OpenGL/SwiftShader/llvmpipe are cross-platform (a real Windows/macOS browser reports them via a
+    // non-default ANGLE backend or software rendering), so they imply no OS — no hint, to avoid the FP.
     const wo = /Direct3D|D3D[0-9]/i.test(wg.renderer)
       ? "Windows"
       : /Metal|Apple/i.test(wg.renderer)
         ? "macOS"
-        : /Vulkan|OpenGL|GLX|Mesa|SwiftShader|llvmpipe/i.test(wg.renderer)
+        : /Mesa|GLX/i.test(wg.renderer)
           ? "Linux"
           : "";
     const woOs = osForUa(wo);

@@ -92,7 +92,10 @@ def test_helpers_cover_all_branches() -> None:
     assert _vendor_engine("Other") == "other"
     assert _webgl_os("ANGLE (... Direct3D11 ...)") == "Windows"
     assert _webgl_os("ANGLE (... Metal ...)") == "macOS"
-    assert _webgl_os("ANGLE (... Vulkan ...)") == "Linux"
+    assert _webgl_os("Mesa Intel(R) UHD Graphics") == "Linux"  # Linux-specific stack
+    # Cross-platform GPU stacks imply NO OS (Windows/macOS report them via ANGLE/software too) — FP-safe.
+    assert _webgl_os("ANGLE (... Vulkan ... SwiftShader ...)") == ""
+    assert _webgl_os("ANGLE (Intel, ... OpenGL ...)") == ""
     assert _webgl_os("plain") == ""
     assert _nav_platform_os("MacIntel") == "macOS"
     assert _nav_platform_os("Win32") == "Windows"

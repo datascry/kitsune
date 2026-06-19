@@ -106,11 +106,15 @@ def _vendor_engine(vendor: str) -> str:
 
 
 def _webgl_os(renderer: str) -> str:
+    # OS hint ONLY from OS-exclusive GPU stacks (v0.74.4). Direct3D = Windows-only ANGLE backend; Metal/Apple
+    # = macOS-only; Mesa/GLX = Linux/X11 stacks Windows/macOS never use. Vulkan/OpenGL/SwiftShader/llvmpipe
+    # are CROSS-PLATFORM — a real Windows/macOS browser reports them via a non-default ANGLE backend or
+    # software rendering (VM/RDP/GPU-blacklist), so mapping them to Linux false-fired webgl_os_vs_ua.
     if re.search(r"Direct3D|D3D[0-9]", renderer, re.I):
         return "Windows"
     if re.search(r"Metal|Apple", renderer, re.I):
         return "macOS"
-    if re.search(r"Vulkan|OpenGL|GLX|Mesa|SwiftShader|llvmpipe", renderer, re.I):
+    if re.search(r"Mesa|GLX", renderer, re.I):
         return "Linux"
     return ""
 

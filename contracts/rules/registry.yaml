@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.3"
+ruleset_version: "0.74.4"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -664,7 +664,7 @@ rules:
     status: active
     added: "2026-06-18"
     last_validated: "2026-06-19"
-    source: "Kitsune: a spoofed GPU string (e.g. Direct3D on Linux) is self-inconsistent. v0.71.1: the OS hint is resolved to the device's OS FAMILY before comparison — under an Android UA a Linux/OpenGL-ES GPU hint is genuine (Android is Linux), so it no longer false-fires on real mobile."
+    source: "Kitsune: a spoofed GPU string (e.g. Direct3D on Linux) is self-inconsistent. v0.71.1: the OS hint is resolved to the device's OS FAMILY before comparison — under an Android UA a Linux/OpenGL-ES GPU hint is genuine (Android is Linux), so it no longer false-fires on real mobile. v0.74.4: the OS hint is now derived ONLY from OS-EXCLUSIVE GPU stacks (Direct3D=Windows, Metal=macOS, Mesa/GLX=Linux). Vulkan/OpenGL/SwiftShader/llvmpipe were dropped — they are CROSS-PLATFORM (a real Windows/macOS browser reports them via a non-default ANGLE backend or, commonly, software rendering on a VM/RDP/GPU-blacklisted host), so mapping them to Linux false-fired this convicting rule on real software-rendering Windows/macOS users (confirmed: a Windows+SwiftShader session scored bot; corroborated by the ~1.2% webgl_os_vs_ua FP on the browserforge source). The reliable OS-exclusive contradictions still convict (a Direct3D GPU under a Mac/Linux UA, a Metal GPU under a Windows UA); the Linux-container OS-spoofs that relied on the SwiftShader→Linux hint are still caught by the hard cross-layer tells (net.tcp_os_vs_ua, ua_platform_vs_ch_platform, cdp)."
 
   # --- v0.7.0: engine-agnostic OS coherence (the Camoufox counter) ---
 

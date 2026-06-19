@@ -485,11 +485,14 @@ DEMO_PAGE = """<!doctype html>
     // Anti-detect renderer-spoofing artifacts: real GPU driver strings are exact. Camoufox labels its
     // randomized GPU pick with ", or similar"; placeholder/vague renderers never come from real drivers.
     if (/,\\s*or similar|generic renderer|placeholder/i.test(wg.renderer)) sigs.push(S("browser", "webgl_renderer_artifact", true));
-    // The GPU API in the renderer string implies an OS (Direct3D=Windows, Metal=macOS) — a spoofed
-    // renderer often contradicts the platform (e.g. a Direct3D GPU on Linux).
+    // The GPU API in the renderer string implies an OS — but ONLY for the OS-exclusive stacks: Direct3D is
+    // Windows-only (ANGLE D3D backend), Metal/Apple is macOS-only, Mesa/GLX are Linux/X11 stacks Windows/macOS
+    // never use. Vulkan/OpenGL/SwiftShader/llvmpipe are CROSS-PLATFORM (a real Windows/macOS browser reports
+    // them too, via a non-default ANGLE backend or software rendering on a VM/RDP/GPU-blacklisted host), so
+    // they imply NO OS — mapping them to Linux false-fired webgl_os_vs_ua on real software-rendering users.
     var wo = /Direct3D|D3D[0-9]/i.test(wg.renderer) ? "Windows"
            : /Metal|Apple/i.test(wg.renderer) ? "macOS"
-           : /Vulkan|OpenGL|GLX|Mesa|SwiftShader|llvmpipe/i.test(wg.renderer) ? "Linux" : "";
+           : /Mesa|GLX/i.test(wg.renderer) ? "Linux" : "";
     wo = osForUa(wo);
     if (wo) sigs.push(S("browser", "webgl_os_hint", wo));
     if (/Chrome|Edg/.test(ua) && !window.chrome) sigs.push(S("browser", "chrome_object_missing", true));
