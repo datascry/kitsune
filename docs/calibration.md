@@ -407,3 +407,15 @@ committed captures still match live behaviour (no evader-tool or stack drift) at
   Cutting-edge drift sample: `nodriver`, `patchright` → bot. Matrix re-scored vs committed → NO DRIFT at
   0.74.21. Nothing changed (ruleset + evader images pinned); confirms the live deployment still behaves. No
   rule changed → no ruleset bump.
+
+- **2026-06-19 · network-layer grounding — Chrome JA4 validated against the FoxIO JA4 reference** — acting on
+  the "find more grounding sources" directive, cross-checked the edge's JA4 hint table
+  (`edge/internal/fingerprint/ja4_hints.json`) against an independent public source (FoxIO JA4 spec/docs). Our
+  Chrome cipher hash **`t13d1516h2_8daaf6152771` matches** the documented current-Chrome JA4
+  (`t13d1516h2_8daaf6152771_…`, "real Chrome 119 pattern") — confirming the TLS→browser ground truth for
+  `net.tls_vs_ua_browser` against a second source. The extension hash (JA4_c) legitimately varies by
+  config/version, which is exactly why the hint table prefix-matches on the STABLE cipher hash (JA4_a+JA4_b)
+  and tolerates the variable JA4_c — design validated. (The firefox `5b57614c22b0` / safari `723694b0fccc`
+  cipher hashes come from the live headful Firefox/WebKit captures; the full FoxIO DB file would broaden
+  per-version recall but is a deploy-time edge refresh — FP-safe either way, since an unhinted JA4 never
+  convicts.) No rule changed → no ruleset bump.
