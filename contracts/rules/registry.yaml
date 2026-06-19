@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.5"
+ruleset_version: "0.74.6"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1108,10 +1108,10 @@ rules:
     predicate: present
     weight: 0.55
     status: experimental
-    category: coherence
+    category: environment
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Modern desktop Chrome always reports 'ANGLE (vendor, renderer, backend)'; a bare GPU string under a Chromium UA is the common renderer spoof. Experimental — residual FP risk on legacy/non-ANGLE Chrome configs; needs broad real-browser validation across GPU/OS."
+    last_validated: "2026-06-19"
+    source: "Modern DESKTOP Chrome reports 'ANGLE (vendor, renderer, backend)'; a bare GPU string under a Chromium UA can be a renderer spoof. v0.74.6: category corrected coherence->ENVIRONMENT — 'always ANGLE' is FALSE for legacy/non-ANGLE Chrome configs (Linux Chrome with native GL reports a bare 'Mesa …' string; --use-gl=desktop / older builds / some Electron-Chromium do too). The rule's own prior note already flagged this residual FP, and the second source confirms it: webgl_not_angle was ~2.3% FP on browserforge (all legit non-ANGLE fingerprints) while catching ZERO evaders in the fleet — pure FP, no demonstrated detection value. So it must only CORROBORATE, never convict. Naive bare-renderer spoofs are still caught by br.webgl_renderer_artifact (placeholder/'or similar' strings) and the cross-layer GPU tells; a bare string now corroborates rather than convicting a real Linux Chrome."
 
   # --- v0.15.0: AudioContext fingerprint (absence = headless; per-render noise = farbling) ---
 
