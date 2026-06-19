@@ -1,6 +1,6 @@
 # detector/data/datacenter_cidrs — seed list of well-known datacenter/hosting CIDR blocks.
-# NON-EXHAUSTIVE seed for the IP-reputation producer; refresh from official sources per
-# docs/ip-reputation-data.md (cloud providers publish their ranges; firehol/client9-ipcat aggregate them).
+# NON-EXHAUSTIVE seed for the IP-reputation producer; refresh at deploy time with
+# `python -m kitsune_detector.ip_reputation_refresh` (pulls AWS + GCP ranges; see docs/ip-reputation-data.md).
 # One CIDR per line; '#' comments and blanks ignored.
 
 # AWS

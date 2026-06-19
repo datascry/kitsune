@@ -20,8 +20,13 @@ observed source IP against curated public lists and emits `reputation.asn_is_dat
   well-known hosting CIDRs (`datacenter_cidrs.txt`) so the producer works out of the box; the proxy list
   (`proxy_exit_cidrs.txt`) ships **empty** — real Tor/VPN exits are dynamic public IPs that go stale within
   hours, and RFC 5737 test ranges can't stand in (they're `is_private`). One CIDR per line; `#` comments.
-- **Never committed:** the full multi-thousand-CIDR lists. A refresh step (future) fetches them from the
-  sources above into the same seed format. The classifier is list-agnostic — populate and it just works.
+- **Never committed:** the full multi-thousand-CIDR lists. The refresh tool
+  `python -m kitsune_detector.ip_reputation_refresh`
+  (`detector/src/kitsune_detector/ip_reputation_refresh.py`) fetches them from the sources above into the
+  same seed format — run it at deploy time, not at commit. The classifier is list-agnostic: populate and
+  it just works. The fetch is injectable so the parse/normalise logic is unit-tested offline against the
+  real AWS/GCP/Tor payload shapes; a live run currently pulls ~11.6k datacenter (AWS + GCP) and ~1.2k Tor
+  CIDRs. Output stays uncommitted (stale-prone, large); the curated seeds remain the documented fallback.
 
 ## Behaviour & guarantees
 

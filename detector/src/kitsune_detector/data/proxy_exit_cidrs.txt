@@ -1,7 +1,7 @@
 # detector/data/proxy_exit — seed list of known proxy / VPN / Tor-exit CIDRs.
-# Tor exits and commercial-VPN/proxy egress IPs are DYNAMIC; this seed is illustrative. Refresh from the
-# live public sources documented in docs/ip-reputation-data.md (Tor bulk exit list; X4BNet/lists_vpn;
-# firehol anonymizers). One CIDR per line; '#' comments and blanks ignored.
+# Tor exits and commercial-VPN/proxy egress IPs are DYNAMIC; this seed is illustrative. Refresh at deploy
+# time: `python -m kitsune_detector.ip_reputation_refresh` pulls the live Tor bulk exit list into this
+# format (see docs/ip-reputation-data.md). One CIDR per line; '#' comments and blanks ignored.
 
 # Ships EMPTY: real Tor/VPN/proxy exits are public, dynamic IPs that must be fetched live (a static seed
 # would be stale within hours, and RFC 5737 test ranges are is_private so cannot stand in). The producer

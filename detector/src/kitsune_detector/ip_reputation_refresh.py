@@ -1,0 +1,149 @@
+# detector/ip_reputation_refresh — refresh the IP-reputation seed lists from authoritative public sources.
+# Fetches Tor exits + cloud-provider ranges into the data/*.txt seed format; run at deploy (output not committed).
+
+"""Refresh the IP-reputation feed (``data/datacenter_cidrs.txt`` / ``data/proxy_exit_cidrs.txt``).
+
+The committed seeds are illustrative — the datacenter list is a curated sample and the proxy/Tor-exit
+list ships empty, because real exits are dynamic public IPs that go stale within hours (see
+``docs/ip-reputation-data.md``). This is the documented refresh path: at deploy time an operator runs
+``python -m kitsune_detector.ip_reputation_refresh`` to pull live, authoritative ranges into the same
+one-CIDR-per-line seed format the producer (:mod:`kitsune_detector.ip_reputation`) already reads.
+
+Pure-stdlib (``urllib`` + ``json``), no paid API — in keeping with the self-contained lab. The fetch is
+injectable (:func:`refresh` takes a ``Fetcher``) so the parsing/normalisation is unit-tested hermetically;
+only the thin network/file-write shell touches the wire. Generated output is intentionally NOT committed:
+it is stale-prone and large, and the repo's curated seeds remain the documented fallback.
+"""
+
+from __future__ import annotations
+
+import ipaddress
+import json
+from collections.abc import Callable, Iterable
+from pathlib import Path
+
+TOR_BULK_EXIT_URL = "https://check.torproject.org/torbulkexitlist"
+AWS_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
+GCP_RANGES_URL = "https://www.gstatic.com/ipranges/cloud.json"
+
+_DATA = Path(__file__).parent / "data"
+_Net = ipaddress.IPv4Network | ipaddress.IPv6Network
+
+#: A function that fetches a URL and returns the body as text. Injected so tests stay offline.
+Fetcher = Callable[[str], str]
+
+
+def parse_tor_bulk_exit(text: str) -> list[str]:
+    """One IP per line → host CIDR (``/32`` IPv4, ``/128`` IPv6). Blanks, ``#`` comments, junk skipped."""
+    out: list[str] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        try:
+            addr = ipaddress.ip_address(line)
+        except ValueError:
+            continue
+        out.append(f"{line}/32" if addr.version == 4 else f"{line}/128")
+    return out
+
+
+def parse_aws_ranges(text: str) -> list[str]:
+    """AWS ``ip-ranges.json`` → ``prefixes[].ip_prefix`` + ``ipv6_prefixes[].ipv6_prefix``."""
+    doc = json.loads(text)
+    out: list[str] = []
+    if not isinstance(doc, dict):
+        return out
+    for key, field in (("prefixes", "ip_prefix"), ("ipv6_prefixes", "ipv6_prefix")):
+        entries = doc.get(key, [])
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if isinstance(entry, dict):
+                prefix = entry.get(field)
+                if isinstance(prefix, str):
+                    out.append(prefix)
+    return out
+
+
+def parse_gcp_ranges(text: str) -> list[str]:
+    """GCP ``cloud.json`` → ``prefixes[].ipv4Prefix`` / ``ipv6Prefix``."""
+    doc = json.loads(text)
+    out: list[str] = []
+    if not isinstance(doc, dict):
+        return out
+    entries = doc.get("prefixes", [])
+    if not isinstance(entries, list):
+        return out
+    for entry in entries:
+        if isinstance(entry, dict):
+            prefix = entry.get("ipv4Prefix") or entry.get("ipv6Prefix")
+            if isinstance(prefix, str):
+                out.append(prefix)
+    return out
+
+
+def normalize_cidrs(cidrs: Iterable[str]) -> list[str]:
+    """Validate, dedupe, and sort CIDRs (by version, then network address, then prefix). Junk dropped.
+
+    Provider granularity is preserved (no supernet collapse) so a future trie can index exact blocks.
+    """
+    nets: set[_Net] = set()
+    for cidr in cidrs:
+        try:
+            nets.add(ipaddress.ip_network(cidr, strict=False))
+        except ValueError:
+            continue
+    ordered = sorted(nets, key=lambda n: (n.version, int(n.network_address), n.prefixlen))
+    return [str(n) for n in ordered]
+
+
+def render_seed(title: str, note: str, cidrs: list[str]) -> str:
+    """Render the two-comment-line header + one-CIDR-per-line body the seed parser expects."""
+    lines = [f"# {title}", f"# {note}", ""]
+    lines.extend(cidrs)
+    return "\n".join(lines) + "\n"
+
+
+def refresh(fetch: Fetcher) -> dict[str, str]:
+    """Fetch every source via ``fetch`` and return ``{filename: rendered_seed_text}``.
+
+    Pure but for ``fetch`` — the orchestration is fully exercised in tests with an offline fetcher.
+    """
+    tor = normalize_cidrs(parse_tor_bulk_exit(fetch(TOR_BULK_EXIT_URL)))
+    datacenter = normalize_cidrs(
+        parse_aws_ranges(fetch(AWS_RANGES_URL)) + parse_gcp_ranges(fetch(GCP_RANGES_URL))
+    )
+    regen = (
+        "Regenerate: python -m kitsune_detector.ip_reputation_refresh "
+        "(output not committed — see docs/ip-reputation-data.md)."
+    )
+    return {
+        "proxy_exit_cidrs.txt": render_seed(
+            "detector/data/proxy_exit — GENERATED proxy/VPN/Tor-exit CIDRs (deploy-time; do not commit).",
+            f"Source: Tor bulk exit list ({len(tor)} entries). {regen}",
+            tor,
+        ),
+        "datacenter_cidrs.txt": render_seed(
+            "detector/data/datacenter_cidrs — GENERATED datacenter/hosting CIDRs (deploy-time; do not commit).",
+            f"Sources: AWS ip-ranges + GCP cloud.json ({len(datacenter)} entries). {regen}",
+            datacenter,
+        ),
+    }
+
+
+def _http_get(url: str) -> str:  # pragma: no cover - network IO shell
+    import urllib.request
+
+    with urllib.request.urlopen(url, timeout=30) as resp:
+        return str(resp.read().decode("utf-8"))
+
+
+def main(fetch: Fetcher = _http_get, out_dir: Path = _DATA) -> None:  # pragma: no cover - IO wrapper
+    for name, content in refresh(fetch).items():
+        (out_dir / name).write_text(content, encoding="utf-8")
+        print(f"wrote {out_dir / name} ({content.count(chr(10))} lines)")
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
