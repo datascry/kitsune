@@ -772,6 +772,12 @@ export function armCollector(): LiveCollector {
     if (uaEngine === "firefox" && typeof (nav() as { buildID?: unknown }).buildID !== "string") {
       put("browser", "firefox_ua_nongecko", true);
     }
+    // WebKit analog: window.GestureEvent is a WebKit-only global (every desktop/iOS Safari). Blink and Gecko
+    // lack it. A Safari UA without it is a non-WebKit faker — the negative-surface complement to
+    // apple_ua_nonwebkit (which keys on Blink APIs being present), robust to a window.chrome-removing spoof.
+    if (uaEngine === "safari" && typeof win()["GestureEvent"] !== "function") {
+      put("browser", "safari_ua_no_webkit_api", true);
+    }
     try {
       const u = undefined as unknown as { x: unknown };
       void u.x;

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.17"
+ruleset_version: "0.74.18"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1331,6 +1331,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS: V8-only Error.captureStackTrace; a Chrome UA without it (or a Firefox UA with it) is an engine spoof deeper than navigator.vendor"
+
+  - id: br.safari_ua_no_webkit_api
+    title: A UA claiming Safari lacks window.GestureEvent — a WebKit-only surface, so it is not WebKit
+    layers: [browser]
+    reads: [browser.safari_ua_no_webkit_api]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-06-19"
+    last_validated: "2026-06-19"
+    source: "The negative-surface complement to apple_ua_nonwebkit (which keys on Blink APIs PRESENT under a Safari UA). window.GestureEvent is a WebKit-ONLY global — the multi-touch gesture API present in every desktop and iOS Safari (since Safari 5), and in every iOS browser (all WebKit by Apple mandate). Blink (Chromium) and Gecko (Firefox) have NO window.GestureEvent. GROUNDED on the real-browser second source: a live Playwright WebKit reports typeof window.GestureEvent === 'function' while a live Chromium AND Firefox report 'undefined'. So a UA claiming Safari (uaEngine 'safari') WITHOUT window.GestureEvent is a non-WebKit engine faking Safari — the collector fires safari_ua_no_webkit_api only in that case. Complementary to apple_ua_nonwebkit and harder to evade: a spoof that DELETES window.chrome / navigator.userAgentData to beat that positive-API rule still cannot synthesise a real WebKit GestureEvent surface. FP-safe: every real Safari/iOS browser exposes GestureEvent → never fires on a real Safari; a real Chrome/Firefox has uaEngine chromium/firefox so the rule is gated off (unknown never fires). Live positive: the ios-ua-spoof evader (Playwright Chromium under an iPhone Safari UA) trips it. Browserforge calibration does not emit GestureEvent, so it cannot raise the legit flag rate."
 
   - id: br.firefox_ua_nongecko
     title: A UA claiming Firefox lacks navigator.buildID — a Gecko-only surface, so it is not Gecko

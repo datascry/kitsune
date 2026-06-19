@@ -670,6 +670,14 @@ DEMO_PAGE = """<!doctype html>
     // Error.captureStackTrace to beat engine_stack still cannot synthesise a real Gecko buildID surface.
     if (uaEngine === "firefox" && (typeof navigator.buildID !== "string" || !navigator.buildID))
       sigs.push(S("browser", "firefox_ua_nongecko", true));
+    // WebKit analog (negative-surface complement to apple_ua_nonwebkit): window.GestureEvent is a
+    // WebKit-ONLY global (the multi-touch gesture API, in every desktop + iOS Safari since Safari 5). Blink
+    // and Gecko have no GestureEvent (verified: a live Chromium/Firefox reports undefined, a live WebKit
+    // reports "function"). So a UA claiming Safari (uaEngine "safari") WITHOUT window.GestureEvent is a
+    // non-WebKit engine faking Safari — and unlike apple_ua_nonwebkit (which keys on Blink APIs PRESENT), a
+    // spoof that DELETES window.chrome/userAgentData to beat that rule still cannot synthesise GestureEvent.
+    if (uaEngine === "safari" && typeof window.GestureEvent !== "function")
+      sigs.push(S("browser", "safari_ua_no_webkit_api", true));
     // Engine error-message format — deeper than navigator.vendor or Error.captureStackTrace, because it
     // is the engine's own message generator (which JS-stealth tools do not rewrite). The same error reads
     // differently per engine: V8 "Cannot read properties of…", SpiderMonkey "can't access property…",

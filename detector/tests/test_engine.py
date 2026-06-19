@@ -299,6 +299,7 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         ([(Layer.browser, "csp_bypassed", True, Source.collector)], "br.csp_bypassed"),
         ([(Layer.browser, "honeypot_interacted", True, Source.collector)], "br.honeypot_interaction"),
         ([(Layer.browser, "firefox_ua_nongecko", True, Source.collector)], "br.firefox_ua_nongecko"),
+        ([(Layer.browser, "safari_ua_no_webkit_api", True, Source.collector)], "br.safari_ua_no_webkit_api"),
         ([(Layer.browser, "webrtc_unavailable", True, Source.collector)], "br.webrtc_unavailable"),
         ([(Layer.browser, "timezone_inconsistent", True, Source.collector)], "br.timezone_inconsistent"),
         ([(Layer.browser, "engine_stack_mismatch", True, Source.collector)], "br.engine_stack_vs_ua"),
