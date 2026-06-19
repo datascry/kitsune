@@ -1,4 +1,177 @@
-# detection-catalog — gaps from the blue-team enumeration fleet
+# detection-catalog — every detection rule Kitsune leverages, plus the open frontiers
+
+This catalog has two parts: a **complete, auto-generated registry of every rule** in the ruleset (below,
+regenerated from `contracts/rules/registry.yaml` by `task catalog` so it never drifts), followed by the
+curated **gap analysis and frontier log** — what is built, what is saturated, and what is blocked on external
+data. Start with the registry for "what does Kitsune detect today"; read the prose for "what's next and why."
+
+<!-- GENERATED:rules:start -->
+## Complete rule registry
+
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.30`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 90 active · 29 experimental · 3 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+
+### network layer (25)
+
+| rule | category | predicate | wt | status | what it catches |
+|---|---|---|---|---|---|
+| `net.accept_encoding_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but Accept-Encoding omits Brotli (scripted client) |
+| `net.accept_lang_vs_navigator` | coherence✦ | not_equal | 0.55 | active | HTTP Accept-Language contradicts the JS navigator.languages locale |
+| `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
+| `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
+| `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
+| `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
+| `net.h2_header_order_vs_ua` | coherence✦ | present | 0.6 | active | Chromium UA but the HTTP/2 regular-header order is not chromium-shaped (JA4H) |
+| `net.h2_settings_vs_order` | coherence✦ | not_equal | 0.6 | active | HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine |
+| `net.h2_unknown_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the HTTP/2 stack matches no known browser engine |
+| `net.h2_vs_tls_browser` | coherence✦ | not_equal | 0.55 | active | HTTP/2 fingerprint browser contradicts the TLS (JA4) browser |
+| `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
+| `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
+| `net.quic_grease_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the QUIC ClientHello has no GREASE |
+| `net.quic_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
+| `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
+| `net.tcp_os_vs_ua` | coherence✦ | not_equal | 0.7 | active | TCP/IP-stack OS kernel contradicts the OS the User-Agent claims |
+| `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but the TLS ClientHello has no GREASE |
+| `net.tls_os_vs_tcp_os` | coherence✦ | not_equal | 0.6 | experimental | JA4-implied OS contradicts TCP/IP-implied OS |
+| `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
+| `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
+| `net.webrtc_ip_vs_observed` | coherence✦ | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
+| `net.h2_continuation_flood` | automation✦ | present | 0.9 | active | HTTP/2 CONTINUATION flood (CVE-2024-27316) on this connection |
+| `net.h2_control_flood` | automation✦ | present | 0.9 | active | HTTP/2 control-frame flood (SETTINGS/PING — CVE-2019-9515/9512) |
+| `net.h2_rapid_reset` | automation✦ | present | 0.9 | active | HTTP/2 rapid-reset flood (CVE-2023-44487) on this connection |
+| `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
+
+### browser layer (103)
+
+| rule | category | predicate | wt | status | what it catches |
+|---|---|---|---|---|---|
+| `br.apple_ua_nonwebkit` | coherence✦ | present | 0.75 | active | A UA claiming Apple WebKit (Safari / any iOS browser) exposes a Blink-only structural API |
+| `br.canvas_worker_vs_main` | coherence✦ | present | 0.6 | experimental | Canvas pixel hash differs between the main thread and a Worker OffscreenCanvas |
+| `br.ch_he_version_vs_ua` | coherence✦ | present | 0.6 | experimental | UA-CH high-entropy Chrome version contradicts the UA-string version |
+| `br.engine_feature_vs_ua` | coherence✦ | present | 0.65 | active | JS engine lacks an API its claimed Chrome version shipped — stale template |
+| `br.engine_stack_vs_ua` | coherence✦ | present | 0.7 | active | JS-engine stack API (Error.stackTraceLimit = V8) contradicts the UA engine |
+| `br.error_engine_vs_ua` | coherence✦ | present | 0.75 | active | JS-engine error-message format contradicts the UA engine |
+| `br.firefox_ua_nongecko` | coherence✦ | present | 0.7 | active | A UA claiming Firefox lacks navigator.buildID — a Gecko-only surface, so it is not Gecko |
+| `br.font_os_vs_ua` | coherence✦ | not_equal | 0.75 | active | Installed fonts imply an OS that contradicts the UA platform |
+| `br.language_vs_languages` | coherence✦ | present | 0.6 | active | navigator.language disagrees with navigator.languages[0] (spec-invariant violation) |
+| `br.languages_worker_vs_main` | coherence✦ | present | 0.6 | experimental | navigator.languages differs between the main thread and a Web Worker |
+| `br.math_engine_vs_ua` | coherence | present | 0.7 | retired | JS Math float precision implies an engine that contradicts the UA |
+| `br.navplatform_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.platform implies an OS that contradicts the UA platform |
+| `br.oscpu_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.oscpu implies an OS that contradicts the UA platform |
+| `br.pointer_touch_incoherent` | coherence✦ | present | 0.7 | active | CSS coarse-pointer and navigator.maxTouchPoints disagree on touch |
+| `br.productsub_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.productSub render engine contradicts the UA |
+| `br.safari_ua_no_webkit_api` | coherence✦ | present | 0.7 | active | A UA claiming Safari lacks window.GestureEvent — a WebKit-only surface, so it is not WebKit |
+| `br.timezone_inconsistent` | coherence✦ | present | 0.6 | active | IANA timeZone and getTimezoneOffset() disagree (a real browser derives both from the OS) |
+| `br.timezone_offset_vs_intl` | coherence✦ | present | 0.65 | active | getTimezoneOffset disagrees with the Intl IANA timezone's actual offset |
+| `br.timezone_worker_vs_main` | coherence✦ | present | 0.7 | active | Timezone differs between the main thread and a Web Worker |
+| `br.ua_platform_vs_ch_platform` | coherence✦ | not_equal | 0.7 | active | navigator/UA platform contradicts Sec-CH-UA-Platform |
+| `br.vendor_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.vendor implies an engine that contradicts the UA |
+| `br.voice_os_vs_ua` | coherence✦ | not_equal | 0.75 | active | Installed TTS voices imply an OS that contradicts the UA platform |
+| `br.webgl_os_vs_ua` | coherence✦ | not_equal | 0.7 | active | WebGL renderer implies an OS that contradicts the UA platform |
+| `br.webgl_worker_vs_main` | coherence✦ | present | 0.6 | experimental | WebGL GPU renderer differs between the main thread and a Worker OffscreenCanvas |
+| `br.webgpu_vendor_vs_webgl` | coherence✦ | present | 0.75 | active | WebGPU adapter GPU family contradicts the WebGL renderer (spoofed renderer on real hardware) |
+| `net.accept_encoding_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but Accept-Encoding omits Brotli (scripted client) |
+| `net.accept_lang_vs_navigator` | coherence✦ | not_equal | 0.55 | active | HTTP Accept-Language contradicts the JS navigator.languages locale |
+| `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
+| `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
+| `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
+| `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
+| `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
+| `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
+| `net.quic_grease_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the QUIC ClientHello has no GREASE |
+| `net.quic_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
+| `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
+| `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but the TLS ClientHello has no GREASE |
+| `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
+| `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
+| `net.webrtc_ip_vs_observed` | coherence✦ | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
+| `br.automation_globals` | automation✦ | present | 0.6 | active | Automation-framework global or webdriver DOM attribute present |
+| `br.canvas_lie` | automation✦ | present | 0.7 | active | Canvas/WebGL API tampering detected (getter override) |
+| `br.cdc_artifacts` | automation✦ | present | 0.85 | active | Selenium / chromedriver automation artifacts in window/document |
+| `br.cdp_runtime_enabled` | automation✦ | present | 0.85 | active | CDP Runtime.enable detected (prototype-chain Proxy ownKeys trap) |
+| `br.ch_he_headless` | automation✦ | present | 0.85 | active | UA-Client-Hints high-entropy brand list reveals HeadlessChrome |
+| `br.chrome_runtime_missing` | automation | present | 0.6 | retired | window.chrome present but chrome.runtime missing |
+| `br.csp_bypassed` | automation✦ | present | 0.6 | active | Page CSP not enforced (setBypassCSP — an automation context, never a real browser) |
+| `br.electron_process` | automation✦ | present | 0.85 | active | Renderer exposes a Node process object — Electron / automation runtime |
+| `br.headless_ua` | automation✦ | present | 0.85 | active | User-Agent advertises a headless browser |
+| `br.honeypot_interaction` | automation✦ | present | 0.85 | active | Interacted with a honeypot bait element a human cannot reach (off-screen + aria-hidden + tabindex -1) |
+| `br.iframe_divergence` | automation✦ | present | 0.8 | active | navigator differs between the main document and an iframe |
+| `br.nav_property_spoofed` | automation✦ | present | 0.6 | active | A prototype-inherited navigator property (pdfViewerEnabled/mimeTypes) is an own property |
+| `br.no_chrome_object` | automation✦ | present | 0.7 | active | Chrome User-Agent but window.chrome is absent |
+| `br.notification_denied` | automation✦ | present | 0.4 | experimental | Notification.permission is denied by default (headless Chrome) |
+| `br.notification_getter_tampered` | automation✦ | present | 0.75 | active | Notification.permission getter is non-native (faked to beat the notification floor) |
+| `br.permissions_anomaly` | automation✦ | present | 0.7 | active | Notification.permission contradicts the Permissions API state |
+| `br.plugins_spoofed` | automation✦ | present | 0.6 | active | navigator.plugins is an own property (patched via defineProperty) |
+| `br.tostring_tampered` | automation✦ | present | 0.8 | active | A native function's toString no longer reads [native code] |
+| `br.webdriver_getter_tampered` | automation✦ | present | 0.85 | active | Navigator.prototype.webdriver getter is non-native (prototype patch) |
+| `br.webdriver_present` | automation✦ | present | 0.9 | active | navigator.webdriver is true |
+| `br.webdriver_spoofed` | automation✦ | present | 0.8 | active | navigator.webdriver is an own property (patched via defineProperty) |
+| `br.webgl_getparameter_tampered` | automation✦ | present | 0.8 | active | WebGLRenderingContext.getParameter is overridden (non-native toString) |
+| `br.worker_divergence` | automation✦ | present | 0.8 | active | navigator differs between the main thread and a Web Worker |
+| `br.audio_noise` | artifact✦ | present | 0.6 | active | AudioContext fingerprint differs across identical renders (per-render perturbation) |
+| `br.brave_spoofed` | artifact✦ | present | 0.7 | active | navigator.brave is present but faked (isBrave is not a native function) |
+| `br.canvas_geometry_noise` | artifact✦ | present | 0.6 | active | Canvas path geometry is non-deterministic (isPointInPath farbling, e.g. JShelter) |
+| `br.canvas_noise` | artifact✦ | present | 0.5 | active | Solid-fill canvas reads back perturbed (engine-level farbling, e.g. Brave) |
+| `br.domrect_invariant` | artifact✦ | present | 0.55 | active | getBoundingClientRect is non-deterministic or disagrees with getClientRects — geometry shim |
+| `br.font_mac_internal` | artifact✦ | present | 0.7 | experimental | macOS internal dot-prefixed system fonts are web-measurable (never on a real Mac) |
+| `br.measuretext_offscreen_vs` | artifact✦ | present | 0.6 | active | Canvas measureText differs between main and OffscreenCanvas — main-thread font hook |
+| `br.native_invariant_violated` | artifact✦ | present | 0.7 | active | A built-in method claims native but violates native-function invariants |
+| `br.readback_noise` | artifact✦ | present | 0.4 | experimental | AudioBuffer getChannelData and copyFromChannel disagree — readback noise shim |
+| `br.screen_impossible` | artifact✦ | present | 0.5 | active | Available screen area exceeds the physical screen (impossible geometry) |
+| `br.webgl_renderer_artifact` | artifact✦ | present | 0.8 | active | WebGL renderer string is an anti-detect spoofing placeholder, not a real driver |
+| `br.worker_constructor_tampered` | artifact✦ | present | 0.75 | active | Web Worker / OffscreenCanvas constructor is not native (worker-realm spoof injection) |
+| `br.adblock_present` | environment | present | 0.3 | experimental | A content blocker hides the ad bait element (Camoufox default-bundles uBlock Origin) |
+| `br.audio_missing` | environment | present | 0.5 | experimental | No OfflineAudioContext (audio stack absent) |
+| `br.codec_os_incoherent` | environment | present | 0.65 | experimental | Non-Linux UA cannot play H.264/AAC (proprietary codecs a real Windows/macOS has via OS) |
+| `br.color_depth_anomaly` | environment | present | 0.5 | active | screen.colorDepth is not a real-display value (24/30/32) |
+| `br.devicepixelratio_anomaly` | environment | present | 0.5 | active | window.devicePixelRatio is not a positive finite number |
+| `br.font_linux_leak` | environment | present | 0.7 | experimental | Linux metric-compatible fonts (Arimo/Cousine/Tinos) present under a non-Linux UA |
+| `br.hover_none_desktop` | environment | present | 0.6 | active | Non-mobile UA reports no hover capability (CSS hover:none) |
+| `br.languages_empty` | environment | present | 0.6 | active | navigator.languages is empty |
+| `br.low_hardware_concurrency` | environment | below_threshold | 0.5 | experimental | navigator.hardwareConcurrency implausibly low |
+| `br.macos_dpr1` | environment | present | 0.3 | experimental | macOS UA but devicePixelRatio is 1.0 (a modern Mac is Retina, dPR 2) |
+| `br.media_devices_empty` | environment | present | 0.55 | active | navigator.mediaDevices.enumerateDevices() is empty (no audio/video hardware) |
+| `br.mimetypes_empty` | environment | present | 0.5 | experimental | navigator.mimeTypes is empty |
+| `br.no_connection` | environment | present | 0.5 | active | Chromium UA but navigator.connection is absent |
+| `br.no_devicememory` | environment | present | 0.5 | experimental | Chromium UA but navigator.deviceMemory is undefined |
+| `br.no_pdfviewer` | environment | present | 0.5 | experimental | Chromium UA but pdfViewerEnabled is false |
+| `br.no_plugins` | environment | below_threshold | 0.4 | experimental | Desktop browser reports zero plugins |
+| `br.platform_empty` | environment | present | 0.6 | active | navigator.platform is empty |
+| `br.rfp_browser` | environment | present | 0.4 | active | resistFingerprinting signature (UTC + letterboxed window + 2-core, all at once) |
+| `br.screen_avail_invalid` | environment | present | 0.7 | active | screen.availWidth/Height exceeds the physical screen size |
+| `br.screen_zero` | environment | present | 0.7 | active | Screen or outer window dimensions are zero |
+| `br.voices_empty` | environment | present | 0.5 | experimental | No speech-synthesis voices (headless/container — a real desktop has OS TTS) |
+| `br.webgl2_missing` | environment | present | 0.4 | experimental | WebGL2 unsupported (headless software rendering) |
+| `br.webgl_not_angle` | environment | present | 0.55 | experimental | Chromium UA but the WebGL renderer is not ANGLE-wrapped — renderer spoof |
+| `br.webgl_software` | environment | present | 0.3 | active | WebGL renderer is software (SwiftShader / llvmpipe / Mesa) — headless tell |
+| `br.webgpu_webgl_vs` | environment | present | 0.7 | active | WebGL renderer claims a hardware GPU but WebGPU exposes no real adapter (spoofed renderer) |
+| `br.webrtc_unavailable` | environment | present | 0.6 | active | WebRTC gathers no ICE candidates (disabled/blocked) |
+| `br.fingerprint_improbable` | prevalence | present | 0.25 | experimental | Fingerprint joint (platform/gpu/screen/colour/cores) is improbable under the real-traffic prior |
+| `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
+
+### behavioral layer (7)
+
+| rule | category | predicate | wt | status | what it catches |
+|---|---|---|---|---|---|
+| `bh.input_entropy_floor` | behavioral | below_threshold | 0.6 | experimental | Mouse-movement entropy below the human floor |
+| `bh.keystroke_entropy_floor` | behavioral | below_threshold | 0.55 | experimental | Keystroke timing entropy below the human floor |
+| `bh.no_input_before_action` | behavioral | below_threshold | 0.5 | experimental | Action (submit/nav) with zero pointer events |
+| `bh.path_too_straight` | behavioral | above_threshold | 0.55 | active | Mouse path is unnaturally straight (start->end ~= total length) |
+| `bh.power_law_violation` | behavioral | below_threshold | 0.55 | experimental | Mouse motion violates the 2/3 power law (speed independent of curvature — synthetic path) |
+| `bh.synthetic_no_coalesced` | behavioral | present | 0.45 | active | Long pointer stream never coalesces (CDP-injected input, not hardware) |
+| `bh.uniform_velocity` | behavioral | below_threshold | 0.55 | active | Mouse moves at near-constant speed (low velocity CV) |
+
+### reputation layer (2)
+
+| rule | category | predicate | wt | status | what it catches |
+|---|---|---|---|---|---|
+| `rep.datacenter_asn` | reputation | present | 0.5 | active | Source IP belongs to a datacenter / hosting ASN |
+| `rep.known_proxy_exit` | reputation | present | 0.5 | active | Source IP is a known VPN / proxy / Tor exit |
+
+_✦ = a convicting category (can push a session to `bot`); all others corroborate only._
+
+<!-- GENERATED:rules:end -->
+
+## Provenance of the gap analysis
 
 A subagent fleet enumerated bot-detection techniques across CreepJS, FingerprintJS/BotD, stealth-plugin
 inverses, DataDome/Kasada/Cloudflare/Akamai/HUMAN, fingerprint surfaces, live production-JS reverse

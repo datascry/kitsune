@@ -97,6 +97,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.sapimouse_corpus"]
 
+  catalog:
+    desc: "Regenerate the complete rule registry in docs/detection-catalog.md from contracts/rules/registry.yaml"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.rule_catalog"]
+
   matrix:
     desc: "Refresh docs/matrix.md from the committed real captures against the current ruleset (no live run)"
     dir: harness
