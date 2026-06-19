@@ -98,6 +98,25 @@ automation tell or an unambiguous signal (cloned trace / shared origin); uncorro
 unambiguous signal). Only `trace_collision` and `shared_real_ip` remain solo-convicting — no real cohort,
 standardized or multi-version, can produce them.
 
+## Precision review complete — all four convicting signals
+
+The coordination detector's four convicting signals have now had a full FP-safety pass:
+
+| signal | benign twin (the FP risk) | status |
+|---|---|---|
+| `fp_collision` | a standardized corporate fleet (identical hardware hashes alike) | **corroboration-gated** |
+| `ja4c_divergent` | a multi-Chrome-version cohort (JA4_c varies across versions) | **corroboration-gated** |
+| `trace_collision` | — | **safe by construction**: the trace hash is high-entropy (≥12 points, exact integer-pixel FNV over the whole trajectory), so two real humans cannot coincidentally collide |
+| `shared_real_ip` | distinct users sharing a private `192.168.x` WebRTC IP | **safe by construction**: the collector emits only the srflx/PUBLIC WebRTC candidate (host/private candidates are excluded), so distinct real users each leak their OWN distinct public IP — they cannot share an origin (pinned by `test_distinct_public_ips_do_not_share_origin`) |
+
+The two *ambiguous* signals each have a benign twin a real cohort produces, so they convict only when
+corroborated (automation tell or an unambiguous signal). The two *unambiguous* signals have no benign twin —
+verified above, not just asserted. **Live re-validation (2026-06-19):** a fresh concurrent 3-instance cloned
+capture through the edge, scored under the new gates, → `fleet 1.00` (fp-collision corroborated by the stealth
+members' automation tells); the corroboration gating preserves the live conviction end-to-end. The single
+remaining open item for *both* ambiguous signals is the same: **IP reputation** (datacenter/proxy vs
+residential) is the true disambiguator, and it needs a real public/proxy egress source the sandbox lacks.
+
 ## The conviction gate (why the JS-divergence paradox cannot convict alone)
 
 A `fleet` *label* requires a **convicting** coordination signal — one a real diverse cohort cannot

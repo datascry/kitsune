@@ -332,6 +332,20 @@ def test_same_origin_behind_proxies() -> None:
     assert any("same-origin" in e for e in v.evidence)
 
 
+def test_distinct_public_ips_do_not_share_origin() -> None:
+    # FP guard for the shared_real_ip signal: a real cohort of distinct users each leaks its OWN public
+    # WebRTC IP (the collector emits only the srflx/PUBLIC candidate, never a shared private 192.168.x).
+    # Distinct WebRTC IPs across distinct observed IPs is the legit shape — shared_real_ip must stay None,
+    # so the signal cannot convict a real diverse cohort (it requires a genuinely shared public origin).
+    members = [
+        ("a", _sess("a", "X", 8, observed_ip="11.0.0.1", webrtc_ip="203.0.113.9", trace_hash="t_a")),
+        ("b", _sess("b", "X", 8, observed_ip="22.0.0.2", webrtc_ip="198.51.100.7", trace_hash="t_b")),
+    ]
+    v = score_cluster("X", members)
+    assert v.shared_real_ip is None
+    assert v.label != "fleet"  # no shared origin, no other convicting signal → not a fleet
+
+
 def test_severity_critical_on_burst() -> None:
     # A JA4_c-divergent fleet of 5 arriving within ~4s → high arrival rate → critical severity (separate
     # from the fleet-confidence score, which a 3-node fleet already maxes).
