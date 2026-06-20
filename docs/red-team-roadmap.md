@@ -190,3 +190,13 @@ evasion-catalog the living ledger. Modify REAL tools; ground every claim live; n
   Frontier (b): coherent UA-CH is legitimate (no FP-safe counter); the durable answer is the external-hardware-
   gated environment floor + coordination. **The catch-profile audit (iter-8→11) is complete:** 2 false EVADES
   assumptions refuted, 1 real headless evader built + generalized class-wide.
+- **iter-12 (2026-06-20): catch-profile audit COMPLETE — selenium-driverless grounded, no new finding.**
+  Grounded the last CDP-minimal tool live: `selenium-driverless` → `bot`, `br.headless_ua` alone (keeps the token,
+  sends Sec-CH-UA, no automation floor) — same pattern as nodriver/pydoll/undetected. Its isolated-world execution
+  produces NO per-session tell (confirms `br.isolated_world` is DEAD: the collector can't observe an isolated
+  world). So the full CDP-minimal catch profile is grounded: {nodriver, pydoll, undetected, selenium-driverless} →
+  `br.headless_ua`; {zendriver} → `net.h2_header_order_vs_ua`; ALL evade the convicting layer headless via the
+  coherent-UA-CH override (grounded on zendriver-uach + nodriver-uach). The audit thread (iter-8→12) is closed:
+  every EVADES/frontier claim grounded, 2 false assumptions refuted, 1 headless evader built + generalized.
+  **In-sandbox red-team comprehensively saturated** — all remaining frontiers are external-data-gated (real
+  hardware for the environment residual; real proxies for coordination IP-reputation).
