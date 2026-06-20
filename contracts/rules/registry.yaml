@@ -200,7 +200,7 @@ rules:
     status: active
     category: automation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
+    last_validated: "2026-06-20"
     source: "rebrowser-bot-detector bypassCsp; Playwright/Puppeteer setBypassCSP(true), unfixable by patches"
 
   - id: br.honeypot_interaction

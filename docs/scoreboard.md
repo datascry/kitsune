@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-20T00:27:26.543509+00:00`
+- generated: `2026-06-20T00:32:48.587391+00:00`
 - ruleset: `0.74.32`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -20,6 +20,7 @@
 | ch-ua-hardcoded | corpus | 1.00 | 0.98 | 0.00 | 0.00 | 0.98 | 1.00 | bot |
 | chrome-clone-1 | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 | chrome-clone-2 | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
+| csp-bypass | corpus | 0.50 | 1.00 | 0.55 | 0.00 | 0.50 | 1.00 | bot |
 | curl-http2 | corpus | 1.00 | 0.98 | 0.00 | 0.00 | 0.98 | 1.00 | bot |
 | curl-impersonate | corpus | 0.60 | 0.60 | 0.00 | 0.00 | 0.60 | 0.90 | bot |
 | domrect-spoof | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
@@ -83,6 +84,7 @@
 - **ch-ua-hardcoded** (bot): `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua`, `net.tls_grease_vs_ua`, `net.ch_ua_no_grease_brand`
 - **chrome-clone-1** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **chrome-clone-2** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
+- **csp-bypass** (bot): `net.quic_pq_keyshare_vs_ua`, `br.cdp_runtime_enabled`, `br.csp_bypassed`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webdriver_spoofed`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **curl-http2** (bot): `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua`, `net.tls_grease_vs_ua`
 - **curl-impersonate** (bot): `net.no_js_execution`
 - **domrect-spoof** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.domrect_invariant`, `br.media_devices_empty`

@@ -134,6 +134,12 @@ const CDC_LEAK = process.env.CDC_LEAK === "1";
 // signature). webdriver is hidden so the capture demonstrates the font coherence catch independent of the
 // automation tells.
 const FONT_OS_LEAK = process.env.FONT_OS_LEAK === "1";
+// CSP_BYPASS: the Playwright/Puppeteer setBypassCSP(true) tell (rebrowser-bot-detector). Automation drivers
+// disable Content-Security-Policy enforcement to inject their own scripts; a real browser cannot. The served
+// page carries `img-src 'none'`, so a real browser fires a securitypolicyviolation on the collector's probe
+// image (→ no signal), but a bypassCSP context silently swallows it → br.csp_bypassed. Set via the context
+// option below (the literal documented API the rule cites) — no page patching, the genuine signature.
+const CSP_BYPASS = process.env.CSP_BYPASS === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -201,8 +207,11 @@ const evading =
   DOMRECT_SPOOF ||
   CDC_LEAK ||
   FONT_OS_LEAK ||
+  CSP_BYPASS ||
   Boolean(SPOOF_UA);
-const mode = FONT_OS_LEAK
+const mode = CSP_BYPASS
+  ? "csp-bypass"
+  : FONT_OS_LEAK
   ? "font-os-leak"
   : CDC_LEAK
   ? "cdc-leak"
@@ -272,6 +281,8 @@ const browser = await chromium.launch({ headless: !HEADFUL, args: ["--no-sandbox
 const context = await browser.newContext({
   ignoreHTTPSErrors: true,
   ...(userAgent ? { userAgent } : {}),
+  // Disable CSP enforcement the way an automation driver injecting scripts does → br.csp_bypassed.
+  ...(CSP_BYPASS ? { bypassCSP: true } : {}),
   // Pin the HTTP Accept-Language so ACCEPT_LANG_SPOOF's JS-vs-header locale mismatch is deterministic.
   ...(ACCEPT_LANG_SPOOF ? { locale: "en-US" } : {}),
   // Route through a real proxy so the edge sees a real egress IP (turnkey live-proxy harness hook).
