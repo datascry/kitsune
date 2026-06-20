@@ -580,6 +580,22 @@ ground truth. No further in-sandbox rule-coverage work remains; the open frontie
 (per-connection QUIC attribution, IP-reputation of a diverse fleet, a Tier-3 real-traffic prevalence prior, the
 real-hardware environment floor) with their consumption infra built and waiting. No code change (a grounded audit).
 
+**COALESCED-LADDER terminus GROUNDED against the rapid-CDP escalation (iter-60, 2026-06-20).** Tested a genuinely
+new behavioral-synthesis hypothesis, not just re-confirmed a gap: the iter-19 finding that CDP mouse input trips
+`bh.synthetic_no_coalesced` was grounded on SLOW dispatch (zendriver's `_human_mouse` sleeps 18–68 ms between events
+— each lands in its own 16 ms frame, so none coalesce). But CDP events are `isTrusted=true`, and the browser coalesces
+pointermoves that arrive BETWEEN animation frames — so a RAPID burst (many CDP moves within one frame) might trigger
+browser-side coalescing of TRUSTED events, defeating both `synthetic_no_coalesced` AND `coalesced_untrusted` without
+real hardware. GROUNDED LIVE (Playwright CDP, headful via xvfb): fired a true non-awaited burst of 15
+`Input.dispatchMouseEvent` per frame over 25 frames → **212 pointermoves dispatched, `getCoalescedEvents().length`
+max = 0** for every one. CDP-injected events produce ZERO coalesced samples even in a dense burst — the browser does
+not coalesce them (they enter the input pipeline DOWNSTREAM of the raw-hardware-sample-batching stage where
+coalescing happens). So `bh.synthetic_no_coalesced` is ROBUST against rapid CDP dispatch; the hypothesis is REFUTED.
+This closes the last plausible in-sandbox attack on the coalesced ladder: its terminus ("only genuinely-trusted
+hardware-coalesced input passes") is now grounded against BOTH the fabricated-event rung (`coalesced_untrusted`,
+iter-4) AND the rapid-trusted-dispatch rung (this iter) — the behavioral-synthesis vein is decisively closed, real
+hardware input the only escape. No code change (a grounded refutation — the strongest behavioral-evasion probe to date).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
