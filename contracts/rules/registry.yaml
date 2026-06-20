@@ -26,7 +26,11 @@ rules:
     weight: 0.6
     # experimental: no live producer for tcp_os_hint yet — TCP/IP-stack fingerprinting needs raw-packet
     # capture (CAP_NET_RAW / AF_PACKET) the userspace edge does not have. The rule + logic are validated;
-    # it activates once a packet-capture sidecar emits tcp_os_hint.
+    # it activates once a packet-capture sidecar emits tcp_os_hint. CONFIRMED the ONLY active rule with no
+    # producer (producer-vs-reader audit 2026-06-20) — so it is currently INERT (never fires, no FP). BEFORE
+    # trusting it when the sidecar lands: GROUND tcp_os_hint's reliability on a real browser first — this is a
+    # CONVICTING coherence rule, and a convicting rule armed on an UNVALIDATED capture FPs (cf. the v0.74.32/34
+    # net.quic_*_vs_ua retirements, where a broken QUIC ClientHello capture mis-fired on real Chromium).
     status: experimental
     added: "2026-06-17"
     last_validated: "2026-06-17"
