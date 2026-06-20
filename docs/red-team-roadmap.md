@@ -530,6 +530,23 @@ itself works). NET: `voice_os_hint` cannot be emitted in-sandbox, so `br.voice_o
 Of the iter-39 trio of unlit-convicting rules, this one is grounded-external; `net.tls_os_vs_tcp_os` and
 `br.webgpu_vendor_vs_webgl` remain structurally-hard. No code change (a grounded negative result).
 
+**`net.tls_os_vs_tcp_os` — grounded as un-lightable NON-REDUNDANTLY in-sandbox (iter-57, 2026-06-20).** Tested the
+JA4-OS-hint path: the edge's `ja4_hints.json` has exactly one OS-mismatching-on-Linux entry — a Chrome JA4 with full
+hash `t13d1516h2_8daaf6152771_02713d6af862` hinted `os=windows`. To light the rule, a tool must forge that EXACT full
+JA4 on the Linux container so `ja4_os_hint=windows != tcp_os=linux`. GROUNDED: go-tls (uTLS) produces
+`t13d1516h2_8daaf6152771_`**`d8a2da3f94cd`** — same chrome cipher prefix but a DIFFERENT JA4_c, so it matches only the
+prefix entry (chrome, os="") and emits NO `ja4_os_hint` (confirmed). The windows-seed JA4_c `02713d6af862` is STALE
+(the `net.tls_vs_ua_browser` source confirms `d8a2da3f94cd` is current Chrome's), and more fundamentally a CHROME JA4
+is OS-INDEPENDENT (identical ciphers+extensions on Windows/Linux/macOS), so no tool can FP-safely make a Chrome JA4
+imply an OS — the windows seed entry is effectively dead. The ONLY genuinely OS-implying JA4s are Safari/WebKit
+(WebKit-the-browser = Apple-only), but a WebKit-engine tool on a Linux host (Playwright WebKit; go-tls HelloSafari)
+is ALREADY convicted by `net.tcp_os_vs_ua` (its macOS/iOS UA vs the Linux TCP stack) and `net.tls_vs_ua_browser`
+(its WebKit JA4 vs a non-Safari UA) — so adding a Safari→macOS hint would only fire `tls_os_vs_tcp_os` redundantly,
+catching nothing the existing tells miss (a Linux-coherent UA + Linux TCP + a macOS-implying TLS is self-contradictory
+and unbuildable). NET: `net.tls_os_vs_tcp_os` cannot be lit non-redundantly in-sandbox — grounded-confirmed the iter-39
+structurally-hard classification (Chrome JA4 = OS-independent; Apple JA4 = already-caught). Two of the iter-39 trio
+now grounded; only `br.webgpu_vendor_vs_webgl` remains untested. No code change (a grounded negative result).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
