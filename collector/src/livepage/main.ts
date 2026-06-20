@@ -2,6 +2,7 @@
 // Predicts the real browser, collects + enumerates this browser's fingerprint, evaluates rules
 // per-browser (excluding ones that don't apply, lowering false positives), renders the verdict.
 
+import { mountBehavioralPanel } from "./behavioral_panel.js";
 import { evaluate, type SignalMap, verdictFor } from "./engine.js";
 import { coherence, notApplicable, predict } from "./predict.js";
 import { armCollector } from "./probes.js";
@@ -159,6 +160,12 @@ async function main(): Promise<void> {
     verdict: verdictFor(applicable),
     rulesetVersion: registry.ruleset_version,
   });
+
+  // Behavioural layer is passive (its rules are floors a still visitor never trips), so the per-layer
+  // tables show nothing for it. Mount a live panel that surfaces the measured biomechanics against those
+  // floors as the visitor moves/types — and lets them run the same metric code over a scripted bot path.
+  const panelMount = document.getElementById("behavioral-panel");
+  if (panelMount !== null) mountBehavioralPanel(panelMount, collector, clientRules);
 }
 
 void main();

@@ -472,9 +472,33 @@ function workerTz(): Promise<{ tz: string; off: number } | null> {
   });
 }
 
+// Behavioural floor: judge the biomech rules only once there is this much GENUINE pointer motion. Below
+// it the rules resolve MISSING (scoring the absence of input as bot-like is a false positive). Exported so
+// the live behavioural panel and collect() agree on the same floor (no drift).
+export const BEHAVIOR_MIN_POINTERS = 15;
+// Keystroke cadence needs at least this many keys to be meaningful (else genuinely absent, not a floor).
+export const BEHAVIOR_MIN_KEYS = 4;
+
+/** A live read of the behavioural metrics as they stand right now — shown even below the motion floor,
+ *  so the visitor SEES the layer measuring (the per-layer tables only list a rule once it FIRES). */
+export interface BehavioralSnapshot {
+  pointerSamples: number;
+  keystrokes: number;
+  /** Enough genuine pointer motion to judge the mouse biomech rules (>= BEHAVIOR_MIN_POINTERS). */
+  enoughMotion: boolean;
+  /** Enough keystrokes to judge the keystroke-cadence rule (>= BEHAVIOR_MIN_KEYS). */
+  enoughKeys: boolean;
+  mouseEntropy: number;
+  mouseStraightness: number;
+  mouseVelocityCv: number;
+  keystrokeEntropy: number;
+}
+
 /** A live in-browser collector: arm listeners now, snapshot the full signal set later via collect(). */
 export interface LiveCollector {
   collect(): Promise<SignalMap>;
+  /** A live read of the current behavioural metrics — for the interactive panel; never mutates state. */
+  snapshotBehavioral(): BehavioralSnapshot;
 }
 
 /** Attach behavioural listeners and environment baits immediately; collect() snapshots everything. */
@@ -1274,7 +1298,6 @@ export function armCollector(): LiveCollector {
     // the mouse yet would trip — scoring the *absence* of input as bot-like is a false positive (the
     // detector demo omits this layer in ?fast for the same reason). Below the floor, emit nothing so
     // those rules resolve MISSING (do not fire). The page asks the visitor to move/type to populate it.
-    const BEHAVIOR_MIN_POINTERS = 15;
     if (pts.length >= BEHAVIOR_MIN_POINTERS) {
       put("behavioral", "mouse_entropy", mouseEntropy(pts));
       put("behavioral", "pointer_event_count", pointerEventCount(pts));
@@ -1290,9 +1313,23 @@ export function armCollector(): LiveCollector {
       if (coalescedUntrusted) put("browser", "coalesced_untrusted", true);
     }
     // Keystroke cadence only judged with enough keys to be meaningful (else genuinely absent, not a floor).
-    if (keys.length >= 4) put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
+    if (keys.length >= BEHAVIOR_MIN_KEYS)
+      put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
     return out;
   }
 
-  return { collect };
+  function snapshotBehavioral(): BehavioralSnapshot {
+    return {
+      pointerSamples: pts.length,
+      keystrokes: keys.length,
+      enoughMotion: pts.length >= BEHAVIOR_MIN_POINTERS,
+      enoughKeys: keys.length >= BEHAVIOR_MIN_KEYS,
+      mouseEntropy: mouseEntropy(pts),
+      mouseStraightness: pathStraightness(pts),
+      mouseVelocityCv: velocityCV(pts),
+      keystrokeEntropy: keystrokeEntropy(keys),
+    };
+  }
+
+  return { collect, snapshotBehavioral };
 }

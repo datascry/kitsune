@@ -17,6 +17,7 @@ export default defineConfig({
         "src/livepage/probes.ts",
         "src/livepage/render.ts",
         "src/livepage/main.ts",
+        "src/livepage/behavioral_panel.ts", // DOM glue (innerHTML/listeners/interval); pure logic → behavioral_metrics.ts
         "src/livepage/predict.ts", // feature-detection reads window/navigator/CSS/screen — DOM glue
       ],
       thresholds: { lines: 95, functions: 95, branches: 95, statements: 95 },

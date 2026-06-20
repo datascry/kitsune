@@ -471,3 +471,88 @@ footer {
   padding-top: 1rem;
   padding-bottom: 2.5rem;
 }
+
+/* Behavioral live panel — the interactive biomechanics layer. */
+.behavioral-panel {
+  border: 1.5px solid var(--line-bright);
+  background: var(--panel-2);
+  padding: 1rem 1.1rem;
+  margin: 1.5rem 0;
+}
+.bp-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0.3rem 0 0.6rem;
+}
+.bp-status .ok {
+  color: var(--jade);
+}
+.bp-status .wait {
+  color: var(--amber);
+}
+table.bp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6rem 0;
+  font-size: 0.82rem;
+}
+table.bp-table th,
+table.bp-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.bp-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.bp-title {
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+.bp-val,
+.bp-floor {
+  font-variant-numeric: tabular-nums;
+}
+.bp-floor {
+  color: var(--muted);
+}
+.bp-verdict {
+  white-space: nowrap;
+  font-weight: 700;
+}
+tr.bot .bp-verdict {
+  color: var(--fox);
+}
+tr.human .bp-verdict {
+  color: var(--jade);
+}
+tr.pending .bp-verdict {
+  color: var(--amber);
+  font-weight: 400;
+}
+tr.pending {
+  opacity: 0.6;
+}
+.bp-summary {
+  font-size: 0.8rem;
+  color: var(--ink);
+  margin: 0.5rem 0;
+}
+button.bp-demo {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line-bright);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+button.bp-demo:hover {
+  border-color: var(--fox);
+  color: var(--fox);
+}
