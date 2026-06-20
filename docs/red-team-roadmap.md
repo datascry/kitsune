@@ -517,6 +517,19 @@ disagrees — the naive WebGL override the fleet can produce trips `br.webgl_get
 change, no version bump — `br.pointer_touch_incoherent` is a pre-existing rule; this iteration restores its
 regression guard, it does not add detection.
 
+**`br.voice_os_vs_ua` — the "needs real OS voices" gate GROUNDED as un-lightable in-sandbox (iter-56, 2026-06-20).**
+The iter-39 audit ASSUMED `br.voice_os_vs_ua` was unlit because the container ships no TTS voices. Tested the obvious
+in-sandbox path to light it (the voice analog of the lit `font_os_vs_ua` leak): install REAL Linux voices in the
+evader container so `getVoices()` infers `voice_os_hint=Linux`, then spoof a Windows UA → `voice_os_hint != ua_platform`
+should fire. GROUNDED: installed `espeak-ng` + `speech-dispatcher`, configured the espeak output module, and verified
+the daemon sees the voices (`spd-say -L` lists Afrikaans/etc.) — yet Playwright Chromium (headful via xvfb) enumerates
+**ZERO** web `speechSynthesis` voices (`getVoices()` → `[]`). So the web-speech backend does not expose the
+speech-dispatcher voices to the page in this headless container — a Chromium limitation, not a config miss (speechd
+itself works). NET: `voice_os_hint` cannot be emitted in-sandbox, so `br.voice_os_vs_ua` is GENUINELY external-gated
+(needs a real desktop whose browser web-speech surfaces OS voices), now confirmed by experiment rather than assumed.
+Of the iter-39 trio of unlit-convicting rules, this one is grounded-external; `net.tls_os_vs_tcp_os` and
+`br.webgpu_vendor_vs_webgl` remain structurally-hard. No code change (a grounded negative result).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
