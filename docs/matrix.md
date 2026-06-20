@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 117 rules vs 70 evaders
+# Kitsune detection matrix — 117 rules vs 71 evaders
 
-_67/70 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
+_68/71 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -9,6 +9,7 @@ _67/70 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `accept-lang-spoof` | bot | 1.00 | 15/117 | `br.cdp_runtime_enabled`, `net.accept_lang_vs_navigator`, `br.headless_ua` +5 |
 | `audio-noise` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `audio-readback-spoof` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `azuretls` | bot | 1.00 | 4/117 | `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua`, `net.no_js_execution` +1 |
 | `baseline-firefox` | bot | 1.00 | 6/117 | `br.webdriver_present` |
 | `brave-fake` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `brave` | bot | 1.00 | 9/117 | `br.webdriver_present`, `br.headless_ua`, `br.canvas_noise` |
@@ -94,27 +95,27 @@ _67/70 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.ch_he_headless` | browser | automation | 35 |
 | `bh.keystroke_entropy_floor` | behavioral | behavioral | 32 |
 | `br.webdriver_getter_tampered` | browser | automation | 27 |
-| `net.no_js_execution` | network,browser | coherence | 14 |
-| `net.tcp_os_vs_ua` | network | coherence | 14 |
+| `net.no_js_execution` | network,browser | coherence | 15 |
+| `net.tcp_os_vs_ua` | network | coherence | 15 |
 | `br.webdriver_present` | browser | automation | 12 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 11 |
 | `bh.no_input_before_action` | behavioral | behavioral | 10 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
 | `br.hover_none_desktop` | browser | environment | 7 |
 | `br.navplatform_vs_ua` | browser | coherence | 7 |
+| `net.sec_fetch_vs_ua` | network,browser | coherence | 7 |
 | `br.webdriver_spoofed` | browser | automation | 6 |
 | `br.webgl2_missing` | browser | environment | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
-| `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
 | `bh.synthetic_no_coalesced` | behavioral | behavioral | 5 |
 | `br.ch_he_version_vs_ua` | browser | coherence | 5 |
 | `br.codec_os_incoherent` | browser | environment | 5 |
 | `br.font_linux_leak` | browser | environment | 5 |
 | `br.webrtc_unavailable` | browser | environment | 5 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
+| `net.h2_header_order_vs_ua` | network | coherence | 5 |
 | `br.tostring_tampered` | browser | automation | 4 |
-| `net.h2_header_order_vs_ua` | network | coherence | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
@@ -191,6 +192,7 @@ _67/70 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `accept-lang-spoof` | bot | 2 | 0 | 6 | 6 | 1 | 0 |
 | `audio-noise` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `audio-readback-spoof` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
+| `azuretls` | bot | 4 | 0 | 0 | 0 | 0 | 0 |
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
 | `brave-fake` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `brave` | bot | 0 | 1 | 2 | 4 | 2 | 0 |

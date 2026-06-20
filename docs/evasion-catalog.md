@@ -8,13 +8,14 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **70 exercised techniques** (67 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **17 evader tools**, **71 exercised techniques** (68 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
-### Fleet — the evader tools (16)
+### Fleet — the evader tools (17)
 
 | evader | lang | what it is |
 |---|---|---|
 | `agent` | Python | drive a remote Chromium with claude-chosen actions, read the verdict. |
+| `azuretls` | Go | drive azuretls-client (Go TLS/JA3 + HTTP/2 forger) through the edge. |
 | `brave` | TS/Node | drive Brave (farbling browser) through the edge and read the verdict. |
 | `camoufox` | Python | drive Camoufox (engine-level anti-detect Firefox) through the edge. |
 | `curl-impersonate` | Python | drive curl_cffi (curl-impersonate) through the edge and read the verdict. |
@@ -31,13 +32,14 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (70)
+### Techniques exercised — scored against the live ruleset (71)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
 | `accept-lang-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.languages_worker_vs_main`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.accept_lang_vs_navigator` |
 | `audio-noise` | bot | `br.audio_noise`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `audio-readback-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.readback_noise`, `br.webdriver_getter_tampered` |
+| `azuretls` | bot | `net.h2_header_order_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua` |
 | `baseline-firefox` | bot | `br.webdriver_present` |
 | `brave` | bot | `br.canvas_noise`, `br.headless_ua`, `br.webdriver_present` |
 | `brave-fake` | bot | `br.brave_spoofed`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |

@@ -59,9 +59,15 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    always untrusted; no in-sandbox way to forge a trusted event) → **external/real-device frontier.** Behavioral
    vein mapped: synthesis defeats the biomech floor; the coalesced residual is now a 4-rung ladder ending at
    real-hardware-input. `coalesce-proxy.json` frozen as the lit-capture for `br.coalesced_untrusted`.
-2. **[network] azuretls-client** (Go, `github.com/Noooste/azuretls-client`) — a current TLS/JA3 + HTTP/2 +
-   **HTTP/3 / QUIC** template forger. Exercises the QUIC layer (detector rules retired on a broken capture) and a
-   *current* template vs the deliberately-stale `go-tls`.
+2. **[network] azuretls-client** (Go) — ✅ **DONE iter-13: BUILT + grounded; the "redundant" inference was WRONG.**
+   Added `evaders/azuretls` (a real popular Go TLS/JA3+H2 library). I had repeatedly *asserted* it would be
+   redundant with primp (caught only by `net.no_js_execution`); grounded live it is caught by **FOUR** net tells —
+   `net.h2_header_order_vs_ua`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.no_js_execution`. So azuretls forges
+   the TLS/JA3 HANDSHAKE but NOT the HTTP request profile (no Sec-Fetch headers, non-Chromium h2 regular-header
+   order / no Sec-CH-UA) — the "spoof TLS, forget the HTTP layer" mistake, a network-layer cross-layer incoherence
+   on a real third-party tool. It is the LEAST-faithful network template in the fleet (more tells than
+   primp/curl-impersonate, which are caught only by `no_js_execution`). The H3/QUIC angle was moot — the edge is
+   h2, so azuretls negotiates h2. Validates the detector's network-coherence suite end-to-end. Capture frozen.
 3. **[network] JA4 profile rotation** — an evader that rotates between several realistic JA4 fingerprints over a
    session (the "too-random vs too-static" frontier JA4 normalization targets).
 4. **[fingerprint] real-value-reuse injection** (botright / apify fingerprint-injector class) — Proxy-over-native
@@ -200,3 +206,10 @@ evasion-catalog the living ledger. Modify REAL tools; ground every claim live; n
   every EVADES/frontier claim grounded, 2 false assumptions refuted, 1 headless evader built + generalized.
   **In-sandbox red-team comprehensively saturated** — all remaining frontiers are external-data-gated (real
   hardware for the environment residual; real proxies for coordination IP-reputation).
+- **iter-13 (2026-06-20): azuretls BUILT + grounded — another "redundant" inference REFUTED.** Built the
+  `evaders/azuretls` evader (real Go TLS/JA3+H2 library, the 17th fleet tool). I had asserted it redundant with
+  primp; grounded live it is caught by FOUR net tells (h2_header_order, sec_fetch, tcp_os, no_js_execution) — it
+  forges the TLS handshake but NOT the HTTP request profile (no Sec-Fetch, non-Chromium h2 order / no Sec-CH-UA),
+  the LEAST-faithful network template in the fleet. The audit lesson generalizes beyond EVADES claims to ANY
+  ungrounded inference — "redundant" was wrong twice (azuretls here; --headless=new earlier). Validates the
+  detector's network-coherence suite on a real third-party tool. Capture frozen.
