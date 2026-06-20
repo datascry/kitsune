@@ -16,6 +16,17 @@ saturated**: every single-tool Chromium evader hits the headless-environment flo
 realm-coherence spoof is caught. The detector's durable signals are the headless floor, cross-layer coherence
 (TLS/H2 ≠ UA), realm coherence, and the behavioral / coordination / prevalence frontiers.
 
+**Open axis (iters 15–16): WITHIN-SESSION coherence — the temporal axis the saturation analysis missed.** The
+detector's `ingest.merge` keeps only the *latest* signal per kind, so it was **blind to mid-session rotation of
+any session-invariant field**. A real client holds ONE identity for a session's lifetime; rotating it is the
+naive evasion's tell. Two members built & grounded: `net.ja4_unstable_within_session` (TLS-engine rotation, JA4_b,
+iter-15) and `net.ip_rotation_within_session` (rotating-proxy-pool, ≥3 distinct egress IPs, iter-16). Both are
+**reputation-free coherence** (no external data) — iter-16 specifically carves an in-sandbox-detectable CONVICTING
+signal out of what the catalog filed wholesale under the "external-gated IP frontier" (that gating is about IP
+*reputation*, residential-vs-datacenter — NOT the rotation *count*). Remaining candidates in the class (lower
+leverage / harder to ground in-sandbox): h2-fingerprint rotation, tcp_kernel (OS) rotation, raw-UA rotation (UA
+not currently edge-emitted). Cross-session rotation (per-identity) stays the coordination/prevalence frontier.
+
 **What the red-team has NOT exploited — the open veins:**
 - **Behavioral synthesis — the single least-explored frontier.** The fleet's only motion is basic bézier
   (`HUMAN_MOUSE`); it has never deployed a SOTA generator against the biomech floor (`bh.power_law_violation`,

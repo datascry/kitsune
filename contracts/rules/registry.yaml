@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.38"
+ruleset_version: "0.74.39"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -167,6 +167,18 @@ rules:
     added: "2026-06-20"
     last_validated: "2026-06-20"
     source: "Within-session TLS coherence — the temporal analog of the cross-layer JA4 tells. A real client speaks ONE TLS engine for a session's lifetime, so its JA4_b (the GREASE-free, sorted cipher-suite hash) is invariant across EVERY connection: transport (H2/H3), TLS resumption (0-RTT/PSK) and Chrome's per-connection extension+GREASE shuffle all leave the cipher list — hence JA4_b — untouched. Two distinct JA4_b under one ks_sid is therefore a single client rotating its TLS fingerprint mid-session (Chrome→Firefox→Safari cipher lists), which a real browser cannot do — the signature of a JA4-rotation evader defeating per-connection JA4 blocklists but forgetting that the SESSION correlates the rotation. The detector derives network.ja4_unstable in ingest.merge over the pre-collapse per-request JA4 history (the store otherwise keeps only the latest JA4 per kind — the architectural blind spot this rule closes); the flag is sticky once a rotation is seen. FP-safe by construction: JA4_b is GREASE-filtered and cipher-sorted (edge ja4.go ja4b), so no real browser varies it within a session; browserforge calibration carries no JA4 layer, so promotion cannot raise its legit-browser flag rate. GROUNDED LIVE 2026-06-20: the go-tls KS_ROTATE evader (uTLS rotating HelloChrome/HelloFirefox/HelloSafari/HelloEdge/HelloIOS across connections under one ks_sid) trips it; every single-engine evader (all 40+ Chrome impersonators + the headful real-browser captures, one JA4_b each) does NOT — zero FP. Caveat (documented, same class as net.tcp_os_vs_ua's proxy confound): a TLS-terminating forward proxy that re-originates a session's connections through different egress TLS stacks could in principle present >1 JA4_b; the lab edge is the first hop (sees the client directly), so the residual is an external-proxy edge case, not an in-fleet FP."
+
+  - id: net.ip_rotation_within_session
+    title: One session egressed from many distinct IPs (rotating proxy pool)
+    layers: [network]
+    reads: [network.ip_rotation]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "Within-session network-origin coherence — the rotating-proxy-pool signature, the dominant scraper evasion. A real short HTTP/cookie session egresses from ONE edge-observed IP; a residential/datacenter proxy pool rotates the exit IP per request, so one ks_sid is observed from many distinct source IPs. The detector derives network.ip_rotation in ingest when a session accumulates >= _IP_ROTATION_MIN (3) distinct observed_ip across requests (a running observed_ip_seen set survives the latest-per-kind merge collapse; flag is sticky). This is REPUTATION-FREE — it is a pure within-session coherence COUNT, needing no residential/datacenter classification (the external-data-gated half). FP-safe by a conservative threshold: a real client presents 1 IP, at most 2 across a wifi<->cellular handoff or a CGNAT pool's shared block; 3+ distinct egress IPs under one short session is not a real browser. browserforge calibration carries no network/IP layer, so promotion cannot raise its legit-browser flag rate. GROUNDED LIVE 2026-06-20: minted one ks_sid, then replayed the SAME cookie from 4 distinct container IPs on kitsune_default (curl over the edge reverse-proxy) -> the detector accumulated 4 distinct observed_ip and tripped this rule (label bot); every single-IP evader/capture in the fleet (one observed_ip) does NOT fire it — zero FP. Residual caveat (documented, same external-data class as net.tcp_os_vs_ua's proxy confound): a carrier doing aggressive per-connection public-IP pooling across 3+ addresses, or a client legitimately switching networks 3+ times within one short session, is a theoretical FP that real-traffic IP-reputation data (the gated half) would disambiguate; the rotation COUNT itself is in-sandbox-detectable and the threshold is set conservatively to avoid it. Catches the OS-diverse and same-OS proxy pools alike (it counts IPs, not TLS/OS), complementing net.ja4_unstable_within_session (TLS-engine rotation) and the cross-session coordination signals (shared_real_ip / fp_collision)."
 
   - id: br.ua_platform_vs_ch_platform
     title: navigator/UA platform contradicts Sec-CH-UA-Platform

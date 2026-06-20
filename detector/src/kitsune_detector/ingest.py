@@ -55,6 +55,58 @@ def _annotate_ja4_instability(network: list[Signal]) -> None:
     )
 
 
+#: A real short HTTP/cookie session egresses from ONE edge-observed IP (CGNAT and a wifi<->cellular
+#: handoff present at most 1-2); >=3 distinct egress IPs under one session id is a rotating proxy pool —
+#: the dominant scraper evasion. This is a reputation-free coherence count (no residential/datacenter
+#: data needed), conservative enough to spare every legitimate multi-IP case.
+_IP_ROTATION_MIN = 3
+
+
+def _annotate_ip_rotation(network: list[Signal]) -> None:
+    """Append a sticky ``ip_rotation`` signal when a session egresses from >=_IP_ROTATION_MIN distinct IPs.
+
+    The merge keeps only the latest ``observed_ip`` per kind, so a running set is persisted as
+    ``observed_ip_seen`` (a list) to count distinct egress IPs across ingests without disturbing the
+    singular ``observed_ip`` that other rules read. ``ip_rotation`` is sticky once tripped.
+    """
+    ips: set[str] = set()
+    for s in network:
+        if s.kind == "observed_ip" and isinstance(s.value, str):
+            ips.add(s.value)
+        elif s.kind == "observed_ip_seen" and isinstance(s.value, list):
+            ips.update(v for v in s.value if isinstance(v, str))
+    if not ips:
+        return
+    ref = next(s for s in network if s.kind in ("observed_ip", "observed_ip_seen"))
+    acc = next((s for s in network if s.kind == "observed_ip_seen"), None)
+    if acc is None:
+        network.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.network,
+                kind="observed_ip_seen",
+                value=sorted(ips),
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+    else:
+        acc.value = sorted(ips)
+    if len(ips) >= _IP_ROTATION_MIN and not any(s.kind == "ip_rotation" for s in network):
+        network.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.network,
+                kind="ip_rotation",
+                value=True,
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+
+
 def group_signals(signals: list[Signal]) -> list[Session]:
     """Group signals by ``session_id`` into ``Session`` objects, ordered by first appearance."""
     by_session: dict[str, list[Signal]] = defaultdict(list)
@@ -71,6 +123,7 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
     for sig in signals:
         groups.of(sig.layer).append(sig)
     _annotate_ja4_instability(groups.network)  # a single batch carrying >1 JA4 is already a rotation
+    _annotate_ip_rotation(groups.network)
 
     timestamps = [sig.observed_at for sig in signals]
     # request_count approximates distinct forwarded requests via edge-sourced signals.
@@ -103,12 +156,17 @@ def merge_sessions(existing: Session, new: Session) -> Session:
         ordered = sorted(latest.values(), key=lambda s: (s.observed_at, s.kind))
         groups.of(layer).extend(ordered)
 
-    # Within-session TLS coherence runs over the FULL pre-collapse history: the collapse keeps only the
-    # latest JA4 per kind, so a mid-session rotation is visible only across existing+new before merging.
+    # Within-session network coherence runs over the FULL pre-collapse history: the latest-per-kind
+    # collapse hides a mid-session rotation (and the running observed_ip_seen accumulator would collide),
+    # so derive these from existing+new, then carry the result into the collapsed group authoritatively.
     history = [*existing.signals.network, *new.signals.network]
     _annotate_ja4_instability(history)
-    if any(s.kind == "ja4_unstable" for s in history) and not any(s.kind == "ja4_unstable" for s in groups.network):
-        groups.network.append(next(s for s in history if s.kind == "ja4_unstable"))
+    _annotate_ip_rotation(history)
+    for kind in ("ja4_unstable", "ip_rotation", "observed_ip_seen"):
+        derived = next((s for s in history if s.kind == kind), None)
+        groups.network = [s for s in groups.network if s.kind != kind]
+        if derived is not None:
+            groups.network.append(derived)
 
     return Session(
         schema_version=SCHEMA_VERSION,

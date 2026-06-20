@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from kitsune_detector.ingest import group_signals, merge_sessions
-from kitsune_detector.models import MISSING, Layer, Source
+from kitsune_detector.models import MISSING, Layer, Signal, Source
 
 from .conftest import FIXED, make_signal
 
@@ -88,3 +88,40 @@ def test_ja4_flag_is_sticky_after_revert() -> None:
     back = make_signal("a", Layer.network, "ja4", _CHROME_JA4, source=Source.edge, at=FIXED + timedelta(seconds=4))
     merged = merge_sessions(flagged, group_signals([back])[0])
     assert merged.value(Layer.network, "ja4_unstable") is True
+
+
+# Within-session IP rotation: >=3 distinct egress IPs under one session id is a rotating proxy pool. The
+# running set is accumulated across ingests in observed_ip_seen (the merge keeps only the latest
+# observed_ip), and ip_rotation trips at the conservative threshold (a real short session has 1-2 IPs).
+def _ip_sig(ip: str, secs: int) -> Signal:
+    return make_signal("a", Layer.network, "observed_ip", ip, source=Source.edge, at=FIXED + timedelta(seconds=secs))
+
+
+def test_ip_rotation_flagged_across_three_ingests() -> None:
+    s = group_signals([_ip_sig("10.0.0.1", 0)])[0]
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.2", 1)])[0])
+    assert s.value(Layer.network, "ip_rotation") is MISSING  # only 2 distinct so far
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.3", 2)])[0])
+    assert s.value(Layer.network, "ip_rotation") is True
+    assert sorted(s.value(Layer.network, "observed_ip_seen")) == ["10.0.0.1", "10.0.0.2", "10.0.0.3"]
+
+
+def test_single_ip_session_is_not_rotation() -> None:
+    s = group_signals([_ip_sig("10.0.0.1", 0)])[0]
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.1", 1)])[0])
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.1", 2)])[0])
+    assert s.value(Layer.network, "ip_rotation") is MISSING
+
+
+def test_ip_rotation_is_sticky_after_revert() -> None:
+    s = group_signals([_ip_sig("10.0.0.1", 0)])[0]
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.2", 1)])[0])
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.3", 2)])[0])
+    s = merge_sessions(s, group_signals([_ip_sig("10.0.0.1", 3)])[0])  # revert to a seen IP
+    assert s.value(Layer.network, "ip_rotation") is True
+
+
+def test_ip_rotation_in_single_batch() -> None:
+    batch = [_ip_sig("10.0.0.1", 0), _ip_sig("10.0.0.2", 1), _ip_sig("10.0.0.3", 2)]
+    s = group_signals(batch)[0]
+    assert s.value(Layer.network, "ip_rotation") is True

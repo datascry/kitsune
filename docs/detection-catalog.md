@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.38`); regenerate with `task catalog`, do not edit by hand. **124 rules**: 91 active · 27 experimental · 6 retired; 82 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.39`); regenerate with `task catalog`, do not edit by hand. **125 rules**: 92 active · 27 experimental · 6 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (26)
+### network layer (27)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -25,6 +25,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.h2_unknown_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the HTTP/2 stack matches no known browser engine |
 | `net.h2_vs_tls_browser` | coherence✦ | not_equal | 0.55 | active | HTTP/2 fingerprint browser contradicts the TLS (JA4) browser |
 | `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
+| `net.ip_rotation_within_session` | coherence✦ | present | 0.7 | active | One session egressed from many distinct IPs (rotating proxy pool) |
 | `net.ja4_unstable_within_session` | coherence✦ | present | 0.8 | active | TLS engine (JA4_b cipher identity) changed within one session |
 | `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
 | `net.quic_grease_vs_ua` | coherence | present | 0.6 | retired | GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE |
