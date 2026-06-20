@@ -367,6 +367,26 @@ def test_ja4c_randomization_is_a_fleet() -> None:
     assert any("extensions/sig-algs divergent" in e for e in v.evidence)
 
 
+def test_multi_version_cohort_ja4c_divergence_is_not_convicted() -> None:
+    # FP guard (the ja4c twin of test_corporate_fleet_fp_collision_is_not_convicted): a normal cohort of
+    # clean Chrome users auto-updating at DIFFERENT rates diverges JA4_c (extensions/sig-algs shift across
+    # Chrome versions while the cipher prefix is stable) — the SAME shape as a per-launch TLS-randomizing
+    # fleet. But they are real browsers (no automation tell), each a distinct machine (distinct fp_hash) on
+    # its own residential IP (no datacenter/proxy reputation flag). The JA4_c divergence is AMBIGUOUS, so it
+    # must NOT convict them as a `fleet` (a botnet verdict on a multi-version real cohort); capped at candidate.
+    members = [
+        ("u1", _sess("u1", "t13d_aaaa_1111", 4, "Windows", offset_s=0, observed_ip="71.10.0.1", fp_hash="aa01")),
+        ("u2", _sess("u2", "t13d_aaaa_2222", 8, "Windows", offset_s=300, observed_ip="98.20.0.2", fp_hash="bb02")),
+        ("u3", _sess("u3", "t13d_aaaa_3333", 16, "MacIntel", offset_s=620, observed_ip="24.30.0.3", fp_hash="cc03")),
+        ("u4", _sess("u4", "t13d_aaaa_1111", 12, "Windows", offset_s=900, observed_ip="63.40.0.4", fp_hash="dd04")),
+    ]
+    v = score_cluster("t13d_aaaa", members)
+    assert v.ja4c_divergent is True  # the divergence IS detected
+    assert v.cloned_fingerprint is None and v.shared_real_ip is None  # no OTHER convicting signal
+    assert v.label != "fleet"  # but it does NOT convict — uncorroborated (clean, residential, distinct machines)
+    assert any("UNCORROBORATED" in e for e in v.evidence)
+
+
 def test_shared_full_ja4_not_divergent() -> None:
     # Members sharing the *full* JA4 (real same-build cohort) → no JA4_c divergence flag.
     v = score_cluster("p", [("a", _sess("a", "p_q_r", 8, "Windows")), ("b", _sess("b", "p_q_r", 8, "Windows"))])
