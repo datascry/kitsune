@@ -125,3 +125,44 @@ def test_ip_rotation_in_single_batch() -> None:
     batch = [_ip_sig("10.0.0.1", 0), _ip_sig("10.0.0.2", 1), _ip_sig("10.0.0.3", 2)]
     s = group_signals(batch)[0]
     assert s.value(Layer.network, "ip_rotation") is True
+
+
+# Within-session UA rotation: a real client sends ONE fixed User-Agent per session, so >=2 distinct
+# http_user_agent under one session id is a mid-session UA rotator (the same-engine build-string cycle
+# that keeps JA4/h2/OS coherent and slips past the cross-layer UA rules). Threshold is 2 — there is no
+# legitimate mid-session UA change, so the floor is stricter than ip_rotation's 3.
+_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{}.0.0.0 Safari/537.36"
+_CHROME_124 = _UA.format(124)
+_CHROME_125 = _UA.format(125)
+
+
+def _ua_sig(ua: str, secs: int) -> Signal:
+    at = FIXED + timedelta(seconds=secs)
+    return make_signal("a", Layer.network, "http_user_agent", ua, source=Source.edge, at=at)
+
+
+def test_ua_rotation_flagged_at_two_distinct() -> None:
+    s = group_signals([_ua_sig(_CHROME_124, 0)])[0]
+    assert s.value(Layer.network, "ua_rotation") is MISSING  # one UA so far
+    s = merge_sessions(s, group_signals([_ua_sig(_CHROME_125, 1)])[0])
+    assert s.value(Layer.network, "ua_rotation") is True  # same engine, different build -> rotation
+    assert sorted(s.value(Layer.network, "ua_seen")) == [_CHROME_124, _CHROME_125]
+
+
+def test_single_ua_session_is_not_rotation() -> None:
+    s = group_signals([_ua_sig(_CHROME_124, 0)])[0]
+    s = merge_sessions(s, group_signals([_ua_sig(_CHROME_124, 1)])[0])
+    s = merge_sessions(s, group_signals([_ua_sig(_CHROME_124, 2)])[0])
+    assert s.value(Layer.network, "ua_rotation") is MISSING
+
+
+def test_ua_rotation_is_sticky_after_revert() -> None:
+    s = group_signals([_ua_sig(_CHROME_124, 0)])[0]
+    s = merge_sessions(s, group_signals([_ua_sig(_CHROME_125, 1)])[0])
+    s = merge_sessions(s, group_signals([_ua_sig(_CHROME_124, 2)])[0])  # revert to a seen UA
+    assert s.value(Layer.network, "ua_rotation") is True
+
+
+def test_ua_rotation_in_single_batch() -> None:
+    s = group_signals([_ua_sig(_CHROME_124, 0), _ua_sig(_CHROME_125, 1)])[0]
+    assert s.value(Layer.network, "ua_rotation") is True

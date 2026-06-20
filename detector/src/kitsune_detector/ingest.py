@@ -107,6 +107,56 @@ def _annotate_ip_rotation(network: list[Signal]) -> None:
         )
 
 
+def _annotate_ua_rotation(network: list[Signal]) -> None:
+    """Append a sticky ``ua_rotation`` signal when a session sends >1 distinct HTTP User-Agent.
+
+    A real client presents ONE fixed User-Agent for the session's lifetime (the UA string is pinned per
+    browser build; changing it requires a restart, i.e. a new session). Two distinct ``http_user_agent``
+    under one session id is therefore a single client rotating its UA mid-session — the within-session
+    analog of ``ja4_unstable``/``ip_rotation``, and the tell that catches a SAME-ENGINE UA rotator
+    (cycling Chrome build strings) that keeps JA4/h2/OS coherent and slips past every cross-layer UA rule.
+    The merge keeps only the latest ``http_user_agent``, so a running set is persisted as ``ua_seen``;
+    ``ua_rotation`` is sticky once tripped. FP-safe: no real browser varies its UA within a session, and
+    browserforge calibration carries no network/UA layer, so promotion cannot raise its legit flag rate.
+    """
+    uas: set[str] = set()
+    for s in network:
+        if s.kind == "http_user_agent" and isinstance(s.value, str):
+            uas.add(s.value)
+        elif s.kind == "ua_seen" and isinstance(s.value, list):
+            uas.update(v for v in s.value if isinstance(v, str))
+    if not uas:
+        return
+    ref = next(s for s in network if s.kind in ("http_user_agent", "ua_seen"))
+    acc = next((s for s in network if s.kind == "ua_seen"), None)
+    if acc is None:
+        network.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.network,
+                kind="ua_seen",
+                value=sorted(uas),
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+    else:
+        acc.value = sorted(uas)
+    if len(uas) >= 2 and not any(s.kind == "ua_rotation" for s in network):
+        network.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.network,
+                kind="ua_rotation",
+                value=True,
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+
+
 def group_signals(signals: list[Signal]) -> list[Session]:
     """Group signals by ``session_id`` into ``Session`` objects, ordered by first appearance."""
     by_session: dict[str, list[Signal]] = defaultdict(list)
@@ -124,6 +174,7 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
         groups.of(sig.layer).append(sig)
     _annotate_ja4_instability(groups.network)  # a single batch carrying >1 JA4 is already a rotation
     _annotate_ip_rotation(groups.network)
+    _annotate_ua_rotation(groups.network)
 
     timestamps = [sig.observed_at for sig in signals]
     # request_count approximates distinct forwarded requests via edge-sourced signals.
@@ -162,7 +213,8 @@ def merge_sessions(existing: Session, new: Session) -> Session:
     history = [*existing.signals.network, *new.signals.network]
     _annotate_ja4_instability(history)
     _annotate_ip_rotation(history)
-    for kind in ("ja4_unstable", "ip_rotation", "observed_ip_seen"):
+    _annotate_ua_rotation(history)
+    for kind in ("ja4_unstable", "ip_rotation", "observed_ip_seen", "ua_rotation", "ua_seen"):
         derived = next((s for s in history if s.kind == kind), None)
         groups.network = [s for s in groups.network if s.kind != kind]
         if derived is not None:

@@ -119,6 +119,15 @@ func prepare(
 	if ip := clientIP(r); ip != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "observed_ip", ip, now))
 	}
+	// The raw User-Agent the HTTP stack sends on EVERY request — the network-layer client identity string.
+	// A real client presents ONE fixed UA for a session's lifetime (the UA is pinned per browser build; a
+	// version change requires a restart = a new session). The detector accumulates the distinct UAs under a
+	// ks_sid and flags a session that rotates its UA mid-stream — the within-session analog of the JA4/IP
+	// rotation tells, and the one that catches a SAME-ENGINE UA rotator (e.g. cycling Chrome build strings)
+	// that keeps JA4/h2/OS coherent and so slips past every cross-layer UA rule.
+	if ua := r.Header.Get("User-Agent"); ua != "" {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "http_user_agent", ua, now))
+	}
 	if secFetchMissing(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "sec_fetch_missing", true, now))
 	}

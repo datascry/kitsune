@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.42`); regenerate with `task catalog`, do not edit by hand. **127 rules**: 94 active · 27 experimental · 6 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.43`); regenerate with `task catalog`, do not edit by hand. **128 rules**: 95 active · 27 experimental · 6 retired; 84 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (28)
+### network layer (29)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -37,6 +37,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.tls_os_vs_tcp_os` | coherence✦ | not_equal | 0.6 | experimental | JA4-implied OS contradicts TCP/IP-implied OS |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
+| `net.ua_rotation_within_session` | coherence✦ | present | 0.7 | active | One session sent multiple distinct User-Agent strings (mid-session UA rotation) |
 | `net.h2_continuation_flood` | automation✦ | present | 0.9 | active | HTTP/2 CONTINUATION flood (CVE-2024-27316) on this connection |
 | `net.h2_control_flood` | automation✦ | present | 0.9 | active | HTTP/2 control-frame flood (SETTINGS/PING — CVE-2019-9515/9512) |
 | `net.h2_rapid_reset` | automation✦ | present | 0.9 | active | HTTP/2 rapid-reset flood (CVE-2023-44487) on this connection |

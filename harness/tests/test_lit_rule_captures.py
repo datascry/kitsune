@@ -36,6 +36,7 @@ _LIT = {
     "mobile-emulation": "br.fingerprint_improbable",
     "camoufox-touch-incoherent": "br.pointer_touch_incoherent",
     "datacenter-origin-proxied": "net.datacenter_origin_proxied",
+    "ua-rotation": "net.ua_rotation_within_session",
 }
 
 

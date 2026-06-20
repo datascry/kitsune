@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.42"
+ruleset_version: "0.74.43"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -179,6 +179,18 @@ rules:
     added: "2026-06-20"
     last_validated: "2026-06-20"
     source: "Within-session network-origin coherence — the rotating-proxy-pool signature, the dominant scraper evasion. A real short HTTP/cookie session egresses from ONE edge-observed IP; a residential/datacenter proxy pool rotates the exit IP per request, so one ks_sid is observed from many distinct source IPs. The detector derives network.ip_rotation in ingest when a session accumulates >= _IP_ROTATION_MIN (3) distinct observed_ip across requests (a running observed_ip_seen set survives the latest-per-kind merge collapse; flag is sticky). This is REPUTATION-FREE — it is a pure within-session coherence COUNT, needing no residential/datacenter classification (the external-data-gated half). FP-safe by a conservative threshold: a real client presents 1 IP, at most 2 across a wifi<->cellular handoff or a CGNAT pool's shared block; 3+ distinct egress IPs under one short session is not a real browser. browserforge calibration carries no network/IP layer, so promotion cannot raise its legit-browser flag rate. GROUNDED LIVE 2026-06-20: minted one ks_sid, then replayed the SAME cookie from 4 distinct container IPs on kitsune_default (curl over the edge reverse-proxy) -> the detector accumulated 4 distinct observed_ip and tripped this rule (label bot); every single-IP evader/capture in the fleet (one observed_ip) does NOT fire it — zero FP. Residual caveat (documented, same external-data class as net.tcp_os_vs_ua's proxy confound): a carrier doing aggressive per-connection public-IP pooling across 3+ addresses, or a client legitimately switching networks 3+ times within one short session, is a theoretical FP that real-traffic IP-reputation data (the gated half) would disambiguate; the rotation COUNT itself is in-sandbox-detectable and the threshold is set conservatively to avoid it. Catches the OS-diverse and same-OS proxy pools alike (it counts IPs, not TLS/OS), complementing net.ja4_unstable_within_session (TLS-engine rotation) and the cross-session coordination signals (shared_real_ip / fp_collision)."
+
+  - id: net.ua_rotation_within_session
+    title: One session sent multiple distinct User-Agent strings (mid-session UA rotation)
+    layers: [network]
+    reads: [network.ua_rotation]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "Within-session UA coherence — the third within-session-invariant rotation tell, the temporal completion of net.ja4_unstable_within_session (TLS engine) and net.ip_rotation_within_session (network origin). A real client presents ONE fixed User-Agent for a session's lifetime: the UA string is pinned per browser build, and changing it requires a process restart (a new session). The edge emits the raw http_user_agent on EVERY forwarded request; the detector accumulates the distinct UAs under a ks_sid in ingest (a running ua_seen set survives the latest-per-kind merge collapse) and derives a sticky network.ua_rotation when >=2 distinct UAs appear. CLOSES THE SAME-ENGINE GAP: a UA-rotating scraper that cycles Chrome→Firefox→Safari is already caught per-request by net.tls_vs_ua_browser (UA disagrees with the invariant JA4 engine), but one that rotates WITHIN an engine family — cycling Chrome BUILD strings (different versions, or Chrome-Win/Chrome-Mac/Chrome-Linux), the realistic 'look like many users on one proxy' tactic to dodge UA-keyed rate limits/blocklists — keeps JA4/h2/Sec-CH-UA coherent and slips past every cross-layer UA rule; this within-session count catches it regardless of engine because it compares the UA to ITSELF over time. Threshold >=2 (stricter than ip_rotation's 3): unlike IPs there is NO legitimate mid-session UA change — no UA analog of a CGNAT pool or wifi<->cellular handoff — so a single distinct extra UA is already impossible for a real browser. FP-safe by construction: browserforge calibration carries no network/UA layer, so promotion cannot raise its legit-browser flag rate, and the negative is grounded across the whole fleet (every single-UA evader/real-browser capture sends one http_user_agent -> no fire). GROUNDED LIVE 2026-06-20: minted one ks_sid via the edge, then replayed the SAME cookie through the edge reverse-proxy with three distinct same-engine Chrome UAs (Chrome 124/125/126 on Windows — identical engine/h2/OS) -> the detector accumulated 3 distinct http_user_agent and tripped this rule (label bot) with NO cross-layer UA rule firing (the same-engine rotation is invisible to tls_vs_ua_browser/h2_vs_ua_browser/ch_platform), proving the gap is real and this is the only tell that closes it; every single-UA session in the fleet does NOT fire it. Residual caveat (documented, same external-proxy class as net.ja4_unstable's): a UA-rewriting forward proxy fronting a real browser could present >1 UA, but the lab edge is the first hop (sees the client directly), so that residual is an external-proxy edge case, not an in-fleet FP."
 
   - id: br.ua_platform_vs_ch_platform
     title: navigator/UA platform contradicts Sec-CH-UA-Platform

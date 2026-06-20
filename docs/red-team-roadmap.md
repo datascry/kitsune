@@ -517,6 +517,30 @@ disagrees — the naive WebGL override the fleet can produce trips `br.webgl_get
 change, no version bump — `br.pointer_touch_incoherent` is a pre-existing rule; this iteration restores its
 regression guard, it does not add detection.
 
+**WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
+invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
+(v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
+for a session's lifetime (pinned per browser build; a version change requires a restart = a new session). A
+UA-rotating scraper that cycles Chrome→Firefox→Safari is already caught per-request by `net.tls_vs_ua_browser` (the UA
+disagrees with the invariant JA4 engine), but one that rotates WITHIN an engine family — cycling Chrome BUILD strings
+(124/125/126, or Chrome-Win/Mac/Linux), the realistic "look like many users on one proxy" tactic to dodge UA-keyed
+rate limits — keeps JA4/h2/Sec-CH-UA/OS coherent and **slips past every cross-layer UA rule**. Built the full stack:
+the **edge** now emits the raw `http_user_agent` on every forwarded request (mirroring `observed_ip`); the **detector
+ingest** accumulates the distinct UAs under a ks_sid in a running `ua_seen` set (surviving the latest-per-kind merge
+collapse, like `observed_ip_seen`) and derives a sticky `network.ua_rotation` at **>=2** distinct UAs (a stricter
+floor than ip_rotation's 3 — unlike IPs there is NO legitimate mid-session UA change, no CGNAT/handoff analog); and a
+new convicting rule **`net.ua_rotation_within_session`** (coherence, weight 0.7) reads it. GROUNDED LIVE: minted one
+ks_sid through the rebuilt edge, replayed the SAME cookie with three same-engine Chrome UAs (124/125/126 on Windows)
+→ the detector accumulated 3 distinct `http_user_agent`, derived `ua_rotation`, and tripped the rule (label `bot`) —
+and critically, with `net.tls_vs_ua_browser`/`net.h2_vs_ua_browser` STAYING QUIET, proving the same-engine rotation is
+invisible to the cross-layer UA rules and this within-session count is the only tell that closes it. Frozen as the
+`ua-rotation.json` lit-capture + a regression guard. `task calibrate` (browserforge, n=500): zero new FPs — the rule
+is absent from the re-tier table because browserforge fingerprints carry no network/UA-rotation layer, so promotion
+cannot raise the legit flag rate (same FP-safety class as its JA4/IP siblings). Edge `go vet`/tests + detector
+mypy/249 tests green. This **completes the within-session invariant-rotation triad** (TLS engine · network origin ·
+UA string); the residual is the same external-proxy edge case the JA4/IP rules carry (a UA-rewriting forward proxy
+fronting a real browser — but the lab edge is the first hop, so it is not an in-fleet FP).
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
