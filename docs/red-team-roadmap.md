@@ -547,6 +547,22 @@ and unbuildable). NET: `net.tls_os_vs_tcp_os` cannot be lit non-redundantly in-s
 structurally-hard classification (Chrome JA4 = OS-independent; Apple JA4 = already-caught). Two of the iter-39 trio
 now grounded; only `br.webgpu_vendor_vs_webgl` remains untested. No code change (a grounded negative result).
 
+**`br.webgpu_vendor_vs_webgl` — grounded un-lightable; the iter-39 trio is now FULLY characterized (iter-58,
+2026-06-20).** The rule reads `webgpu_vendor_mismatch`, which the collector emits only when BOTH `famGL =
+gpuFam(webgl_renderer)` and `famGPU = gpuFam(webgpu_adapter)` are present AND differ. GROUNDED on the real container
+fingerprint: the WebGL renderer is `ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device …))` → `gpuFam()` returns `""`
+(SwiftShader matches none of the nvidia/intel/amd/apple/mobile families), so `famGL` is EMPTY and the
+`famGL && famGPU && famGL!==famGPU` guard is false — `webgpu_vendor_mismatch` can NEVER fire in-sandbox regardless of
+the WebGPU adapter (which is `webgpu_absent` anyway with no real GPU). To make `famGL` non-empty a tool must spoof the
+WebGL renderer to a real GPU family, which trips `br.webgl_getparameter_tampered` (the getParameter override's
+non-native toString) or, via a Proxy-over-native, `br.webgl_worker_divergence` (the worker OffscreenCanvas reports the
+real SwiftShader) FIRST — exactly the iter-39 prediction. So the rule needs a GPU-equipped target, grounded not
+assumed. ⇒ **The iter-39 unlit-convicting-rule trio is now FULLY GROUNDED**: `br.voice_os_vs_ua` (no web voices even
+with espeak+speechd), `net.tls_os_vs_tcp_os` (Chrome JA4 is OS-independent / Apple JA4 redundant-caught), and
+`br.webgpu_vendor_vs_webgl` (SwiftShader → empty GPU family) are ALL un-lightable in-sandbox and external/hardware-gated
+— every active convicting rule is now either LIT (has a live positive + regression guard) or grounded-external. The
+detector's convicting-rule coverage is fully characterized. No code change (a grounded negative result).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
