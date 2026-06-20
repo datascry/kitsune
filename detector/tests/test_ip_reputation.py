@@ -96,3 +96,21 @@ def test_residential_webrtc_origin_is_clean() -> None:
     fired = {c.rule_id for c in det.score(_session_with_webrtc("11.0.0.10", "8.8.4.4")).contradictions}
     assert "rep.webrtc_origin_datacenter" not in fired  # webrtc origin is residential
     assert "rep.datacenter_asn" in fired  # observed (VPN) is datacenter
+
+
+def test_datacenter_origin_behind_residential_proxy_convicts() -> None:
+    # Cross-layer: datacenter WebRTC origin (the real cloud VM) hidden behind a non-datacenter proxy → convicts.
+    det = Detector(ip_reputation=_rep())
+    v = det.score(_session_with_webrtc("8.8.4.4", "11.0.0.20"))  # observed clean, webrtc datacenter
+    fired = {c.rule_id for c in v.contradictions}
+    assert "net.datacenter_origin_proxied" in fired
+    assert v.label.value == "bot"  # coherence → convicting
+
+
+def test_cloud_desktop_direct_user_is_not_convicted() -> None:
+    # FP-safety: a cloud-desktop user connects FROM the datacenter (observed_ip datacenter too) → the cross-layer
+    # rule must NOT fire (no hiding); they are only corroborated by rep.datacenter_asn / rep.webrtc_origin_datacenter.
+    det = Detector(ip_reputation=_rep())
+    fired = {c.rule_id for c in det.score(_session_with_webrtc("11.0.0.5", "11.0.0.20")).contradictions}
+    assert "net.datacenter_origin_proxied" not in fired
+    assert "rep.datacenter_asn" in fired  # observed_ip is datacenter

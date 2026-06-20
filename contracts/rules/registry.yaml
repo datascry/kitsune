@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.41"
+ruleset_version: "0.74.42"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -321,6 +321,18 @@ rules:
     added: "2026-06-20"
     last_validated: "2026-06-20"
     source: "The WebRTC leak reveals the REAL machine running the browser (the srflx public IP), distinct from observed_ip (the proxy/VPN a client connects through). The detector already classifies observed_ip's reputation (rep.datacenter_asn), but a cloud bot HIDES behind a residential proxy — its observed_ip is clean (residential) while its WebRTC leaks its DATACENTER origin (the cloud VM). This rule classifies the LEAKED origin: a datacenter WebRTC origin is the cloud-bot-behind-residential-proxy tell that rep.datacenter_asn (observed_ip only) cannot see. KEY FP-SAFETY vs the per-session webrtc leak (net.webrtc_ip_vs_observed, demoted to corroborating because a VPN user leaks too): a real VPN user's WebRTC leaks their RESIDENTIAL home IP (not datacenter), so this rule does NOT fire on them — it is the reputation of the ORIGIN, not merely that it differs. Corroborating (category reputation), not convicting: the residual FP is a real user running the browser ON a datacenter machine (cloud desktop / remote browser / a dev VM) — rare but real, so it corroborates rather than convicts (matching rep.datacenter_asn's stance on the observed_ip half). GROUNDED LIVE 2026-06-20 (iter-33): local STUN configured to report a PUBLIC IP from the committed data/datacenter_cidrs.txt + an HTTP CONNECT proxy → camoufox's observed_ip = residential-looking proxy while webrtc_public_ip = the datacenter origin → the rule fired (and rep.datacenter_asn on observed_ip did NOT — the exact cloud-bot-hidden-behind-residential-proxy shape). browserforge/intoli calibration carry no WebRTC layer so this never fires there."
+
+  - id: net.datacenter_origin_proxied
+    title: WebRTC reveals a datacenter machine hidden behind a non-datacenter connection
+    layers: [network, browser, reputation]
+    reads: [network.datacenter_origin_proxied]
+    predicate: present
+    weight: 0.8
+    status: active
+    category: coherence
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "The cross-layer thesis applied to IP reputation: the REAL machine running the browser is in a DATACENTER (WebRTC-leaked srflx origin classifies datacenter) yet it CONNECTS through a NON-datacenter (residential) IP (observed_ip classifies not-datacenter) — a datacenter machine HIDING behind a residential proxy. This is the dominant commercial-scraping pattern (a cloud VM on AWS/GCP fronted by a residential proxy pool) that defeats observed_ip reputation: rep.datacenter_asn sees only the clean residential proxy. The detector derives network.datacenter_origin_proxied in _with_derived when webrtc_public_ip is datacenter AND observed_ip is NOT datacenter. CONVICTING (coherence) where the sibling rep.webrtc_origin_datacenter is only corroborating, because the extra `observed_ip not datacenter` clause removes the one real FP: a cloud-desktop / remote-browser user (browser on a cloud VM) connects DIRECTLY from the datacenter, so their observed_ip is ALSO datacenter → this rule does NOT fire on them (they are caught corroboratively by rep.datacenter_asn instead). A datacenter machine connecting via a residential IP has no legitimate explanation — only a bot hides a cloud VM behind a residential proxy. A real VPN user leaks their RESIDENTIAL home origin (not datacenter) → never fires. GROUNDED LIVE 2026-06-20 (iter-34): local STUN reporting 52.0.0.1 (committed AWS CIDR) + an HTTP CONNECT proxy → camoufox observed_ip = clean proxy (not datacenter), webrtc_public_ip = 52.0.0.1 (datacenter) → this rule FIRED (label bot) while rep.datacenter_asn did NOT. browserforge/intoli calibration carry no WebRTC layer so this never fires there; a real cloud-desktop-direct user (observed_ip datacenter) is unit-tested to NOT fire it."
 
   # --- v0.2.0: deepened coverage ---
 

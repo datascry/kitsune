@@ -71,8 +71,10 @@ class Detector:
         if session.signals.browser and prevalence.is_improbable(session):
             browser_add.append(mk(Layer.browser, kind="prevalence_low", value=True))
         ip = session.value(Layer.network, "observed_ip")
+        observed_is_dc: bool | None = None
         if ip is not MISSING:
             is_dc, is_px = self._iprep.classify(str(ip))
+            observed_is_dc = is_dc
             if is_dc:
                 rep_add.append(mk(Layer.reputation, kind="asn_is_datacenter", value=True))
             if is_px:
@@ -87,6 +89,13 @@ class Detector:
             wr_dc, _ = self._iprep.classify(str(webrtc_ip))
             if wr_dc:
                 rep_add.append(mk(Layer.reputation, kind="webrtc_origin_datacenter", value=True))
+                # Cross-layer contradiction: the real machine is in a datacenter (WebRTC origin) but it connects
+                # through a NON-datacenter (residential) IP — a datacenter machine HIDDEN behind a residential
+                # proxy, the dominant commercial-scraping pattern (cloud VM + residential proxy) that evades
+                # observed_ip reputation. FP-safe to convict: a real cloud-desktop user connects FROM the
+                # datacenter (observed_ip is datacenter too → not this), so only a hiding bot matches.
+                if observed_is_dc is False:
+                    net_add.append(mk(Layer.network, kind="datacenter_origin_proxied", value=True))
         if not net_add and not rep_add and not browser_add:
             return session
         update: dict[str, list[Signal]] = {}

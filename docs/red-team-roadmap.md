@@ -400,6 +400,27 @@ unaffected (no WebRTC layer); detector 243 green, mypy clean. `webrtc-origin-dat
 first NEW convicting-class detection surface the in-sandbox WebRTC infra unlocked — the leaked-origin reputation, a
 distinct IP from the proxy, catching the residential-proxy disguise the observed_ip rules cannot see.**
 
+**CONVICTING upgrade: `net.datacenter_origin_proxied` — the cross-layer thesis applied to IP-rep (iter-34, v0.74.42).**
+iter-33's `rep.webrtc_origin_datacenter` had to be corroborating because a cloud-desktop user (browser on a cloud VM,
+DIRECT) also leaks a datacenter WebRTC origin. The FP-safe CONVICTING refinement adds one clause — `observed_ip is NOT
+datacenter` — making it the cross-layer contradiction: **the real machine is in a DATACENTER (WebRTC origin) yet it
+CONNECTS through a NON-datacenter (residential) IP** — a datacenter VM HIDING behind a residential proxy, the dominant
+commercial-scraping pattern (cloud VM + residential proxy pool) that defeats `observed_ip` reputation entirely
+(`rep.datacenter_asn` sees only the clean proxy). The `observed_ip not datacenter` clause removes the one real FP:
+a cloud-desktop user connects FROM the datacenter (observed_ip datacenter too → does NOT fire; caught corroboratively
+by `rep.datacenter_asn` instead). A datacenter machine reached via a residential IP has no legitimate explanation. The
+detector derives `network.datacenter_origin_proxied` in `_with_derived` (webrtc datacenter AND observed not-datacenter)
+→ a convicting coherence rule. GROUNDED LIVE (STUN reports `52.0.0.1` AWS CIDR + HTTP CONNECT proxy → camoufox
+observed_ip=clean proxy, webrtc=datacenter → **label bot**, `net.datacenter_origin_proxied` convicts while
+`rep.datacenter_asn` stays quiet). Unit tests: the hiding bot convicts; a cloud-desktop-DIRECT user (observed_ip
+datacenter) does NOT fire it. Calibration unaffected (no WebRTC layer); detector 245 green, mypy clean.
+`datacenter-origin-proxied.json` frozen + lit-test guard. **So the WebRTC red-team work (iters 30-34) yielded the
+in-sandbox grounding of all 3 durable coordination signals + TWO new detections (`rep.webrtc_origin_datacenter`
+corroborating, `net.datacenter_origin_proxied` convicting) that catch the cloud-VM-behind-residential-proxy the
+observed_ip reputation rules are structurally blind to.** The residual external gate narrows further: a bot that
+runs on a RESIDENTIAL machine (real residential device) OR routes WebRTC through its residential proxy (SOCKS-UDP)
+leaks no datacenter origin — that needs real residential-device infra, genuinely external.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.41`); regenerate with `task catalog`, do not edit by hand. **126 rules**: 93 active · 27 experimental · 6 retired; 82 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.42`); regenerate with `task catalog`, do not edit by hand. **127 rules**: 94 active · 27 experimental · 6 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (27)
+### network layer (28)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -20,6 +20,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
 | `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
+| `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
 | `net.h2_header_order_vs_ua` | coherence✦ | present | 0.6 | active | Chromium UA but the HTTP/2 regular-header order is not chromium-shaped (JA4H) |
 | `net.h2_settings_vs_order` | coherence✦ | not_equal | 0.6 | active | HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine |
 | `net.h2_unknown_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the HTTP/2 stack matches no known browser engine |
@@ -42,7 +43,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (104)
+### browser layer (105)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -77,6 +78,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
 | `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
+| `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
 | `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
 | `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
 | `net.quic_grease_vs_ua` | coherence | present | 0.6 | retired | GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE |
@@ -163,10 +165,11 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.synthetic_no_coalesced` | behavioral | present | 0.45 | active | Long pointer stream never coalesces (CDP-injected input, not hardware) |
 | `bh.uniform_velocity` | behavioral | below_threshold | 0.55 | active | Mouse moves at near-constant speed (low velocity CV) |
 
-### reputation layer (3)
+### reputation layer (4)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
+| `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
 | `rep.datacenter_asn` | reputation | present | 0.5 | active | Source IP belongs to a datacenter / hosting ASN |
 | `rep.known_proxy_exit` | reputation | present | 0.5 | active | Source IP is a known VPN / proxy / Tor exit |
 | `rep.webrtc_origin_datacenter` | reputation | present | 0.6 | active | WebRTC-leaked real origin IP belongs to a datacenter / hosting ASN |
