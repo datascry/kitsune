@@ -56,6 +56,20 @@ func Client(helloID utls.ClientHelloID) *http.Client {
 // (a Chrome TLS fingerprint under a Go HTTP/2 stack). Uses NewClientConn to drive h2 directly over the
 // uTLS conn, sidestepping the uTLS/net-http2 ConnectionState type mismatch.
 func RoundTripH2(ctx context.Context, helloID utls.ClientHelloID, req *http.Request) (*http.Response, error) {
+	return RoundTripH2With(ctx, helloID, &http2.Transport{}, req)
+}
+
+// RoundTripH2With is RoundTripH2 over a CALLER-SUPPLIED http2.Transport. The transport's exported knobs
+// (MaxReadFrameSize -> SETTINGS_MAX_FRAME_SIZE, MaxHeaderListSize -> SETTINGS_MAX_HEADER_LIST_SIZE,
+// MaxDecoderHeaderTableSize -> SETTINGS_HEADER_TABLE_SIZE) change the SETTINGS frame the client sends, so
+// distinct transports yield distinct edge h2 fingerprints over an IDENTICAL uTLS ClientHello (one JA4) —
+// the lever for h2-fingerprint within-session rotation: pin the TLS engine, rotate the h2 stack.
+func RoundTripH2With(
+	ctx context.Context,
+	helloID utls.ClientHelloID,
+	tr *http2.Transport,
+	req *http.Request,
+) (*http.Response, error) {
 	addr := req.URL.Host
 	if req.URL.Port() == "" {
 		addr = net.JoinHostPort(req.URL.Hostname(), "443")
@@ -64,7 +78,7 @@ func RoundTripH2(ctx context.Context, helloID utls.ClientHelloID, req *http.Requ
 	if err != nil {
 		return nil, err
 	}
-	cc, err := (&http2.Transport{}).NewClientConn(conn)
+	cc, err := tr.NewClientConn(conn)
 	if err != nil {
 		conn.Close()
 		return nil, err

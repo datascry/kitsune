@@ -55,6 +55,37 @@ def _annotate_ja4_instability(network: list[Signal]) -> None:
     )
 
 
+def _annotate_h2_instability(network: list[Signal]) -> None:
+    """Append a sticky ``h2_unstable`` signal when a session's network signals carry >1 distinct h2 fingerprint.
+
+    The edge's ``h2`` is the Akamai HTTP/2 fingerprint — SETTINGS + WINDOW_UPDATE + PRIORITY + the request
+    PSEUDO-header order, all connection-preface choices fixed per browser build (the pseudo-header order is
+    request-type-invariant; the regular header order is NOT in the string). So a real client emits ONE h2
+    fingerprint for the session's lifetime, the same way JA4_b is its TLS-engine identity. Two distinct ``h2``
+    under one session id is a single client rotating its HTTP/2 stack mid-session — distinct from JA4 rotation
+    (a tool can pin one TLS ClientHello, hence one JA4_b, yet vary its h2 SETTINGS), so this catches the h2
+    rotator that slips past ``ja4_unstable``. Sticky once tripped; FP-safe (no real browser varies its h2
+    preface within a session, and browserforge calibration carries no network layer).
+    """
+    if any(s.kind == "h2_unstable" for s in network):
+        return
+    distinct = {s.value for s in network if s.kind == "h2" and isinstance(s.value, str)}
+    if len(distinct) <= 1:
+        return
+    ref = next(s for s in network if s.kind == "h2")
+    network.append(
+        Signal(
+            schema_version=ref.schema_version,
+            session_id=ref.session_id,
+            layer=Layer.network,
+            kind="h2_unstable",
+            value=True,
+            source=ref.source,
+            observed_at=max(s.observed_at for s in network if s.kind == "h2"),
+        )
+    )
+
+
 #: A real short HTTP/cookie session egresses from ONE edge-observed IP (CGNAT and a wifi<->cellular
 #: handoff present at most 1-2); >=3 distinct egress IPs under one session id is a rotating proxy pool —
 #: the dominant scraper evasion. This is a reputation-free coherence count (no residential/datacenter
@@ -284,6 +315,7 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
     for sig in signals:
         groups.of(sig.layer).append(sig)
     _annotate_ja4_instability(groups.network)  # a single batch carrying >1 JA4 is already a rotation
+    _annotate_h2_instability(groups.network)  # ...likewise >1 h2 fingerprint in one batch
     _annotate_ip_rotation(groups.network)
     _annotate_ua_rotation(groups.network)
     _annotate_fp_rotation(groups.browser)
@@ -325,9 +357,10 @@ def merge_sessions(existing: Session, new: Session) -> Session:
     # so derive these from existing+new, then carry the result into the collapsed group authoritatively.
     history = [*existing.signals.network, *new.signals.network]
     _annotate_ja4_instability(history)
+    _annotate_h2_instability(history)
     _annotate_ip_rotation(history)
     _annotate_ua_rotation(history)
-    for kind in ("ja4_unstable", "ip_rotation", "observed_ip_seen", "ua_rotation", "ua_seen"):
+    for kind in ("ja4_unstable", "h2_unstable", "ip_rotation", "observed_ip_seen", "ua_rotation", "ua_seen"):
         derived = next((s for s in history if s.kind == kind), None)
         groups.network = [s for s in groups.network if s.kind != kind]
         if derived is not None:

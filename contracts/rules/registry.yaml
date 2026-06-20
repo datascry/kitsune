@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.48"
+ruleset_version: "0.74.49"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -167,6 +167,18 @@ rules:
     added: "2026-06-20"
     last_validated: "2026-06-20"
     source: "Within-session TLS coherence — the temporal analog of the cross-layer JA4 tells. A real client speaks ONE TLS engine for a session's lifetime, so its JA4_b (the GREASE-free, sorted cipher-suite hash) is invariant across EVERY connection: transport (H2/H3), TLS resumption (0-RTT/PSK) and Chrome's per-connection extension+GREASE shuffle all leave the cipher list — hence JA4_b — untouched. Two distinct JA4_b under one ks_sid is therefore a single client rotating its TLS fingerprint mid-session (Chrome→Firefox→Safari cipher lists), which a real browser cannot do — the signature of a JA4-rotation evader defeating per-connection JA4 blocklists but forgetting that the SESSION correlates the rotation. The detector derives network.ja4_unstable in ingest.merge over the pre-collapse per-request JA4 history (the store otherwise keeps only the latest JA4 per kind — the architectural blind spot this rule closes); the flag is sticky once a rotation is seen. FP-safe by construction: JA4_b is GREASE-filtered and cipher-sorted (edge ja4.go ja4b), so no real browser varies it within a session; browserforge calibration carries no JA4 layer, so promotion cannot raise its legit-browser flag rate. GROUNDED LIVE 2026-06-20: the go-tls KS_ROTATE evader (uTLS rotating HelloChrome/HelloFirefox/HelloSafari/HelloEdge/HelloIOS across connections under one ks_sid) trips it; every single-engine evader (all 40+ Chrome impersonators + the headful real-browser captures, one JA4_b each) does NOT — zero FP. Caveat (documented, same class as net.tcp_os_vs_ua's proxy confound): a TLS-terminating forward proxy that re-originates a session's connections through different egress TLS stacks could in principle present >1 JA4_b; the lab edge is the first hop (sees the client directly), so the residual is an external-proxy edge case, not an in-fleet FP."
+
+  - id: net.h2_unstable_within_session
+    title: HTTP/2 fingerprint (SETTINGS preface) changed within one session
+    layers: [network]
+    reads: [network.h2_unstable]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "Within-session HTTP/2 coherence — the FOURTH member of the within-session network-invariant rotation family (net.ja4_unstable_within_session = TLS engine, net.ip_rotation_within_session = network origin, net.ua_rotation_within_session = UA string; this = the HTTP/2 stack), and DISTINCT from JA4 rotation. The edge's network.h2 is the Akamai HTTP/2 fingerprint — SETTINGS frame + WINDOW_UPDATE increment + PRIORITY frames + the request PSEUDO-header order (edge fingerprint/h2.go String()) — all connection-PREFACE choices a client's HTTP/2 stack makes ONCE per connection and holds fixed per browser build (the pseudo-header order is request-type-invariant; the regular header order is deliberately NOT in the string). So a real client emits ONE h2 fingerprint for the session's lifetime, the HTTP/2 analog of its invariant JA4_b. Two distinct network.h2 under one ks_sid is a single client rotating its HTTP/2 stack mid-session. CRITICALLY NON-REDUNDANT with ja4_unstable: a tool can pin ONE TLS ClientHello (one JA4_b — the uTLS HelloChrome profile) yet vary its h2 SETTINGS across connections (different MAX_FRAME_SIZE / MAX_HEADER_LIST_SIZE → a different SETTINGS frame), so JA4 stays constant and ja4_unstable never fires while the h2 fingerprint rotates — the gap this rule closes. The detector derives network.h2_unstable in ingest over the pre-collapse per-request h2 history (the store otherwise keeps only the latest h2 per kind — the same merge-collapse blind spot as JA4/IP/UA); sticky once tripped. FP-safe by construction: the h2 String is a connection-preface invariant (a real browser sends the identical SETTINGS/window/priority/pseudo-order on every connection in a session), and browserforge calibration carries no network layer, so promotion cannot raise its legit-browser flag rate (same class as its JA4/IP/UA siblings). GROUNDED LIVE 2026-06-20: the go-tls KS_H2ROTATE evader opened 3 connections under ONE ks_sid, each with the SAME uTLS HelloChrome ClientHello (one JA4_b — ja4_unstable stays QUIET, proving the gap is distinct from TLS rotation) but a DIFFERENT http2.Transport SETTINGS profile (default / big-frame / small-frame) → the detector accumulated 3 distinct network.h2 and tripped this rule (label bot); the single-connection go-tls (one h2 fingerprint) and every single-h2 evader/real-browser capture do NOT fire it — zero FP. Residual caveat (documented, same external-proxy class as net.ja4_unstable's): an HTTP/2-terminating forward proxy that re-frames a session's connections through different h2 stacks could present >1 h2 fingerprint, but the lab edge is the first hop (sees the client directly), so that residual is an external-proxy edge case, not an in-fleet FP."
 
   - id: net.ip_rotation_within_session
     title: One session egressed from many distinct IPs (rotating proxy pool)

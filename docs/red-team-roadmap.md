@@ -23,9 +23,12 @@ naive evasion's tell. Two members built & grounded: `net.ja4_unstable_within_ses
 iter-15) and `net.ip_rotation_within_session` (rotating-proxy-pool, ≥3 distinct egress IPs, iter-16). Both are
 **reputation-free coherence** (no external data) — iter-16 specifically carves an in-sandbox-detectable CONVICTING
 signal out of what the catalog filed wholesale under the "external-gated IP frontier" (that gating is about IP
-*reputation*, residential-vs-datacenter — NOT the rotation *count*). Remaining candidates in the class (lower
-leverage / harder to ground in-sandbox): h2-fingerprint rotation, tcp_kernel (OS) rotation, raw-UA rotation (UA
-not currently edge-emitted). Cross-session rotation (per-identity) stays the coordination/prevalence frontier.
+*reputation*, residential-vs-datacenter — NOT the rotation *count*). UA-string rotation followed (iter-40), the
+hardware-fingerprint (iter-41) and trace-replay (iter-42) members carried the axis to the browser + behavioral
+layers, and **h2-fingerprint rotation is now BUILT (iter-61, v0.74.49)** — completing the network rotation quad
+(TLS engine · origin IP · UA string · h2 stack). Remaining candidate (lower leverage, NOT in-sandbox-groundable):
+tcp_kernel (OS) rotation — every container shares one Linux host, so the TCP/IP OS cannot rotate without
+multiple real hosts. Cross-session rotation (per-identity) stays the coordination/prevalence frontier.
 
 **What the red-team has NOT exploited — the open veins:**
 - **Behavioral synthesis — the single least-explored frontier.** The fleet's only motion is basic bézier
@@ -940,6 +943,33 @@ CONCLUSION: the Proxy-over-native escalation thread is EXHAUSTIVELY mapped and c
 rung; all four backstops are lit-test-guarded. No new gap, no code change (a grounded confirmation, ticking off the
 audit). The artifact layer's robustness is not the shallow toString checks (Proxy-defeatable) but the realm-coherence
 + data-invariant + structural-identity backstops behind them.
+
+**WITHIN-SESSION H2-STACK ROTATION — completed the network rotation quad (iter-61, 2026-06-20, v0.74.49).** The
+within-session invariant-rotation family had TLS-engine (JA4_b, iter-15), origin-IP (iter-16) and UA-string (iter-40)
+members on the network layer, but the FOURTH network invariant — the **HTTP/2 stack** — had no rotation tell, and was
+the last unbuilt candidate the saturation analysis flagged. A real client speaks ONE h2 stack for a session's
+lifetime: the edge's `network.h2` is the Akamai fingerprint (SETTINGS + WINDOW_UPDATE + PRIORITY + the request
+PSEUDO-header order — all connection-PREFACE choices fixed per browser build; the regular header order is request-
+varying and deliberately NOT in the string), so it is a within-session invariant like JA4_b. **The gap is DISTINCT
+from JA4 rotation, not redundant:** a tool can pin ONE uTLS ClientHello (one JA4_b) yet vary its h2 SETTINGS across
+connections, so JA4 stays constant and `ja4_unstable` never fires while the h2 fingerprint rotates — the merge-collapse
+blind spot (`ingest` keeps only the latest h2 per kind) hid it. RED-TEAM: added the **`KS_H2ROTATE`** mode to the
+go-tls evader (`forge.RoundTripH2With` takes a caller-supplied `http2.Transport`; the mode opens 3 connections under
+one ks_sid with the SAME `HelloChrome` ClientHello but DIFFERENT `MaxReadFrameSize`/`MaxHeaderListSize` → 3 distinct
+SETTINGS frames → 3 distinct edge h2 fingerprints). BLUE-TEAM: the detector derives a sticky `network.h2_unstable`
+in `ingest` over the pre-collapse per-request h2 history (mirroring `_annotate_ja4_instability`); new rule
+**`net.h2_unstable_within_session`** (coherence, convicting, w0.7). GROUNDED LIVE on 0.74.49: the KS_H2ROTATE evader
+→ `bot` 0.988 with `net.h2_unstable_within_session` firing **while `net.ja4_unstable_within_session` stays QUIET**
+(one JA4_b — proving the h2 gap is invisible to the TLS-rotation tell); the single-connection base go-tls (one h2 fp)
+does NOT fire it — zero FP. `task calibrate` (browserforge n=500): `h2_unstable` ABSENT from the re-tier table (the
+prior carries no network layer), same FP-safety class as its JA4/IP/UA siblings. Edge `go vet` clean, detector 260
+tests + ingest guards green, lit-capture `go-tls-h2-rotate.json` + a lit-test guard frozen. **This COMPLETES the
+within-session network invariant-rotation quad** (TLS engine · origin IP · UA string · h2 stack), and across both
+layers (network quad + browser fingerprint + behavioral trace-replay) the within-session-coherence axis is now
+fully built. Residual: the same external-proxy edge case its siblings carry (an h2-terminating forward proxy
+re-framing a session), and the remaining axis candidate `tcp_kernel` rotation is NOT in-sandbox-groundable (all
+containers share one Linux host). The pivot to external-data frontiers (IP-reputation / real-traffic prevalence /
+real hardware) stands.
 
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record

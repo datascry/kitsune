@@ -32,6 +32,7 @@ _LIT = {
     "coalesce-proxy": "br.coalesced_untrusted",
     "apify-fp-inject": "br.worker_divergence",
     "go-tls-rotate": "net.ja4_unstable_within_session",
+    "go-tls-h2-rotate": "net.h2_unstable_within_session",
     "ip-rotation": "net.ip_rotation_within_session",
     "mobile-emulation": "br.fingerprint_improbable",
     "camoufox-touch-incoherent": "br.pointer_touch_incoherent",

@@ -18,6 +18,7 @@ import (
 	gotls "github.com/datascry/kitsune/evaders/go-tls"
 	"github.com/quic-go/quic-go"
 	utls "github.com/refraction-networking/utls"
+	"golang.org/x/net/http2"
 )
 
 // quicProbe sends a single naive non-browser QUIC v1 Initial to the edge's UDP port, eliciting the edge's
@@ -162,6 +163,69 @@ func rotateJA4(target string) {
 	fmt.Println("__KS__" + string(out))
 }
 
+// rotateH2 drives several connections under ONE ks_sid, each forging the SAME Chrome ClientHello (one
+// JA4_b — the TLS engine never changes) but a DIFFERENT HTTP/2 SETTINGS profile (distinct MaxReadFrameSize
+// / MaxHeaderListSize → distinct SETTINGS frame → distinct edge h2 Akamai fingerprint). A real client
+// speaks ONE h2 stack for the session's lifetime (its SETTINGS/window/priority are fixed per browser
+// build), so this within-session h2 rotation is incoherent in a way the JA4-rotation tell CANNOT see (JA4
+// stays constant). The red-team move that exercises net.h2_unstable_within_session.
+func rotateH2(target string) {
+	detector := os.Getenv("KITSUNE_DETECTOR")
+	if detector == "" {
+		detector = "http://detector:8080"
+	}
+	// Three distinct h2 stacks under the SAME uTLS Chrome hello: the SETTINGS values differ → distinct h2 fps.
+	profiles := []struct {
+		name string
+		tr   *http2.Transport
+	}{
+		{"h2-default", &http2.Transport{}},
+		{"h2-bigframe", &http2.Transport{MaxReadFrameSize: 1 << 20, MaxHeaderListSize: 1 << 18}},
+		{"h2-smallframe", &http2.Transport{MaxReadFrameSize: 1 << 14, MaxHeaderListSize: 1 << 13}},
+	}
+	var sid string
+	for i, p := range profiles {
+		req, err := http.NewRequest(http.MethodGet, target, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		browserHeaders(req)
+		if sid != "" {
+			req.AddCookie(&http.Cookie{Name: "ks_sid", Value: sid})
+		}
+		resp, err := gotls.RoundTripH2With(context.Background(), utls.HelloChrome_Auto, p.tr, req)
+		if err != nil {
+			log.Printf("conn %d (%s) error: %v", i, p.name, err)
+			continue
+		}
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck
+		resp.Body.Close()
+		if sid == "" {
+			for _, c := range resp.Cookies() {
+				if c.Name == "ks_sid" {
+					sid = c.Value
+				}
+			}
+		}
+		log.Printf("conn %d h2=%s -> %s (sid=%s)", i, p.name, resp.Status, sid)
+	}
+	if sid == "" {
+		log.Fatal("no ks_sid minted")
+	}
+	vr, err := http.Get(detector + "/verdict/" + sid) //nolint:noctx
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var verdict map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&verdict); err != nil {
+		log.Fatal(err)
+	}
+	verdict["mode"] = "go-tls-h2-rotate"
+	out, _ := json.Marshal(verdict) //nolint:errcheck
+	fmt.Println("__KS__" + string(out))
+}
+
 func main() {
 	target := os.Getenv("KITSUNE_EDGE")
 	if target == "" {
@@ -169,6 +233,10 @@ func main() {
 	}
 	if os.Getenv("KS_ROTATE") == "1" {
 		rotateJA4(target)
+		return
+	}
+	if os.Getenv("KS_H2ROTATE") == "1" {
+		rotateH2(target)
 		return
 	}
 	if os.Getenv("KS_QUIC") == "1" {

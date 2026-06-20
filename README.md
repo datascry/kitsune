@@ -57,11 +57,11 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**125 live rules** (98 active · 27 experimental; 6 retired, ruleset `0.74.48`) — each a small predicate over the correlated session. **87 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**126 live rules** (99 active · 27 experimental; 6 retired, ruleset `0.74.49`) — each a small predicate over the correlated session. **88 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
-| **coherence** | 48 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
+| **coherence** | 49 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
 | **automation** | 24 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 15 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
 | **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |
@@ -104,7 +104,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**85 of 94 evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `0.74.48`). The remaining 9 are pinned to `suspicious` by the conviction gate — the headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every *convicting* rule and leaves only corroborating tells, which can never reach `bot` alone.
+**86 of 95 evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `0.74.49`). The remaining 9 are pinned to `suspicious` by the conviction gate — the headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every *convicting* rule and leaves only corroborating tells, which can never reach `bot` alone.
 
 | Evader | Network | Browser | Behavioral | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|

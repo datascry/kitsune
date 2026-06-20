@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.48`); regenerate with `task catalog`, do not edit by hand. **131 rules**: 98 active · 27 experimental · 6 retired; 87 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.49`); regenerate with `task catalog`, do not edit by hand. **132 rules**: 99 active · 27 experimental · 6 retired; 88 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (29)
+### network layer (30)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -24,6 +24,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.h2_header_order_vs_ua` | coherence✦ | present | 0.6 | active | Chromium UA but the HTTP/2 regular-header order is not chromium-shaped (JA4H) |
 | `net.h2_settings_vs_order` | coherence✦ | not_equal | 0.6 | active | HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine |
 | `net.h2_unknown_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the HTTP/2 stack matches no known browser engine |
+| `net.h2_unstable_within_session` | coherence✦ | present | 0.7 | active | HTTP/2 fingerprint (SETTINGS preface) changed within one session |
 | `net.h2_vs_tls_browser` | coherence✦ | not_equal | 0.55 | active | HTTP/2 fingerprint browser contradicts the TLS (JA4) browser |
 | `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
 | `net.ip_rotation_within_session` | coherence✦ | present | 0.7 | active | One session egressed from many distinct IPs (rotating proxy pool) |

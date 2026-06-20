@@ -90,6 +90,44 @@ def test_ja4_flag_is_sticky_after_revert() -> None:
     assert merged.value(Layer.network, "ja4_unstable") is True
 
 
+# Within-session h2 stability: distinct Akamai h2 fingerprints (SETTINGS preface) under one session id is
+# an HTTP/2-stack rotation a real client cannot do — net.h2_unstable_within_session's read signal. Distinct
+# from JA4: the same TLS engine (one JA4_b) can front different h2 SETTINGS profiles.
+_H2_CHROME = "1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p"
+_H2_BIGFRAME = "1:65536;2:0;4:6291456;5:1048576;6:262144|15663105|0|m,a,s,p"  # extra SETTINGS_MAX_FRAME_SIZE
+
+
+def test_merge_flags_h2_rotation_across_ingests() -> None:
+    a = make_signal("a", Layer.network, "h2", _H2_CHROME, source=Source.edge, at=FIXED)
+    b = make_signal("a", Layer.network, "h2", _H2_BIGFRAME, source=Source.edge, at=FIXED + timedelta(seconds=2))
+    merged = merge_sessions(group_signals([a])[0], group_signals([b])[0])
+    assert merged.value(Layer.network, "h2_unstable") is True
+
+
+def test_single_h2_session_is_not_instability() -> None:
+    # A real browser sends the identical h2 preface on every connection — one distinct h2 must NOT flag.
+    a = make_signal("a", Layer.network, "h2", _H2_CHROME, source=Source.edge, at=FIXED)
+    b = make_signal("a", Layer.network, "h2", _H2_CHROME, source=Source.edge, at=FIXED + timedelta(seconds=2))
+    merged = merge_sessions(group_signals([a])[0], group_signals([b])[0])
+    assert merged.value(Layer.network, "h2_unstable") is MISSING
+
+
+def test_h2_rotation_in_single_batch_is_flagged() -> None:
+    a = make_signal("a", Layer.network, "h2", _H2_CHROME, source=Source.edge, at=FIXED)
+    b = make_signal("a", Layer.network, "h2", _H2_BIGFRAME, source=Source.edge, at=FIXED + timedelta(seconds=1))
+    session = group_signals([a, b])[0]
+    assert session.value(Layer.network, "h2_unstable") is True
+
+
+def test_h2_flag_is_sticky_after_revert() -> None:
+    a = make_signal("a", Layer.network, "h2", _H2_CHROME, source=Source.edge, at=FIXED)
+    b = make_signal("a", Layer.network, "h2", _H2_BIGFRAME, source=Source.edge, at=FIXED + timedelta(seconds=2))
+    flagged = merge_sessions(group_signals([a])[0], group_signals([b])[0])
+    back = make_signal("a", Layer.network, "h2", _H2_CHROME, source=Source.edge, at=FIXED + timedelta(seconds=4))
+    merged = merge_sessions(flagged, group_signals([back])[0])
+    assert merged.value(Layer.network, "h2_unstable") is True
+
+
 # Within-session IP rotation: >=3 distinct egress IPs under one session id is a rotating proxy pool. The
 # running set is accumulated across ingests in observed_ip_seen (the merge keeps only the latest
 # observed_ip), and ip_rotation trips at the conservative threshold (a real short session has 1-2 IPs).
