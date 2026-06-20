@@ -63,26 +63,40 @@ func main() {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		// cap-style: also demand a browser-execution (realm) proof when instrumented (env or ?instrumented=1).
+		if os.Getenv("POW_INSTRUMENTED") == "1" || r.URL.Query().Get("instrumented") == "1" {
+			c.Instrumented = true
+		}
 		store.Issue(c)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(c)
 	})
 	mux.HandleFunc("/verify", func(w http.ResponseWriter, r *http.Request) {
-		var c pow.Challenge
-		var sol pow.Solution
 		var body struct {
 			pow.Challenge
+			pow.RealmProof
 			Counters []uint64 `json:"counters"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		c, sol = body.Challenge, pow.Solution{Counters: body.Counters}
-		token, ok := pow.CheckSolution(secret, c, sol)
+		c, sol := body.Challenge, pow.Solution{Counters: body.Counters}
+		// The gate decides instrumented from what it ISSUED (the nonce store), not the client's claim, so a
+		// client cannot opt out of the realm proof by flipping the flag.
+		_, instrumented, known := store.Peek(c.Nonce)
+		var token string
+		var ok bool
+		if instrumented {
+			token, ok = pow.CheckInstrumented(secret, c, sol, body.RealmProof)
+		} else {
+			token, ok = pow.CheckSolution(secret, c, sol)
+		}
 		// Single-use: the nonce must be outstanding at >= the claimed difficulty, then it is consumed.
-		if ok {
+		if ok && known {
 			ok = store.Redeem(c.Nonce, c.Difficulty)
+		} else {
+			ok = false
 		}
 		w.Header().Set("Content-Type", "application/json")
 		resp := map[string]any{"ok": ok}

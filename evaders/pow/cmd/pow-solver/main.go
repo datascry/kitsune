@@ -70,6 +70,15 @@ func solveLive(gate, class string) {
 		"count": c.Count, "mem_kib": c.MemKiB, "time_cost": c.TimeCost,
 		"counters": sol.Counters,
 	}
+	// cap-style instrumented gate: it demands a browser realm proof we cannot produce (no browser). FORGE=1
+	// shows the proof is CLIENT-ASSERTED and forgeable — submit two equal fabricated hashes and pass anyway;
+	// without FORGE the naive no-browser solver submits nothing and is correctly blocked.
+	forged := false
+	if c.Instrumented && os.Getenv("FORGE") == "1" {
+		out["realm_main"] = "forged0000deadbeef"
+		out["realm_worker"] = "forged0000deadbeef"
+		forged = true
+	}
 	payload, _ := json.Marshal(out)
 	vr, err := http.Post(gate+"/verify", "application/json", bytes.NewReader(payload)) //nolint:noctx
 	if err != nil {
@@ -86,6 +95,7 @@ func solveLive(gate, class string) {
 	rec := map[string]any{
 		"mode": "pow-solver", "class": string(c.Class), "difficulty": c.Difficulty,
 		"evals": evals, "solve_ms": solveMs, "passed": got.OK, "has_token": got.Token != "",
+		"instrumented": c.Instrumented, "forged_realm_proof": forged,
 	}
 	j, _ := json.Marshal(rec)
 	fmt.Println("__KS__" + string(j))

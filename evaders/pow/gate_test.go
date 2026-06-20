@@ -30,6 +30,40 @@ func TestNonceStoreIsSingleUse(t *testing.T) {
 	}
 }
 
+func TestInstrumentedBlocksNaiveButNotForgery(t *testing.T) {
+	secret := []byte("test-secret")
+	c, err := Mint(ClassHashcash, 12, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Instrumented = true
+	sol, _ := Solve(c)
+	// Naive no-browser solver: no realm proof → blocked (this is the win over a raw PoW gate).
+	if _, ok := CheckInstrumented(secret, c, sol, RealmProof{}); ok {
+		t.Fatal("instrumented gate accepted a solve with no realm proof")
+	}
+	// A main-realm-only spoof: realms diverge → blocked.
+	if _, ok := CheckInstrumented(secret, c, sol, RealmProof{Main: "a", Worker: "b"}); ok {
+		t.Fatal("instrumented gate accepted a divergent realm proof")
+	}
+	// Forging solver: two EQUAL fabricated hashes → passes. A client-asserted proof is forgeable, so robust
+	// instrumentation must be server-OBSERVED (Kitsune's collector), not client-submitted.
+	if _, ok := CheckInstrumented(secret, c, sol, RealmProof{Main: "x", Worker: "x"}); !ok {
+		t.Fatal("forged equal realm proof should pass a client-side check (the grounded weakness)")
+	}
+}
+
+func TestNonceStoreRemembersInstrumented(t *testing.T) {
+	s := NewNonceStore()
+	c, _ := Mint(ClassHashcash, 8, 0, 0, 0)
+	c.Instrumented = true
+	s.Issue(c)
+	_, instrumented, ok := s.Peek(c.Nonce)
+	if !ok || !instrumented {
+		t.Fatal("Peek should report the issued instrumented flag")
+	}
+}
+
 func TestRedeemRejectsUnknownAndDowngrade(t *testing.T) {
 	s := NewNonceStore()
 	if s.Redeem("never-issued", 20) {

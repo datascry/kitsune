@@ -40,6 +40,8 @@ type Challenge struct {
 	Count      int    `json:"count,omitempty"`
 	MemKiB     uint32 `json:"mem_kib,omitempty"`
 	TimeCost   uint32 `json:"time_cost,omitempty"`
+	// Instrumented marks a cap-style challenge that also demands a client-asserted browser realm proof.
+	Instrumented bool `json:"instrumented,omitempty"`
 }
 
 // Solution carries one solving counter per puzzle (length 1 for single-puzzle classes, Count for many-small).

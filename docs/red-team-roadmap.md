@@ -218,11 +218,11 @@ in `evaders/pow/` (a self-contained gate + solver, license-isolated). Backlog:
    challenge + HMAC pass token + single-use nonce) and a red native (no-browser) SHA-256/Argon2id solver, modelling
    the catalogued classes (`docs/catalog.md §6`): `hashcash` (anubis), `many-small` (friendlycaptcha), `memory-hard`
    (altcha). See the iter entry below.
-2. **NEXT — the on-thesis rung: `cap`-style instrumented PoW + a coherence tell.** Fuse the PoW with a
-   browser-instrumentation challenge (server-emitted JS the client must execute and echo a realm-coherent result),
-   then a blue-team signal that convicts a solver which computed the hash but ran NO real browser (the absence/
-   incoherence of the instrumentation result) — folding PoW into Kitsune's existing realm/coherence thesis. THIS is
-   where PoW becomes a discriminator rather than a cost speed-bump.
+2. ✅ **GROUNDED iter-63: instrumented PoW collapses to Kitsune's existing coherence layer.** Built the cap-style
+   instrumented gate (PoW + a client-asserted browser realm proof) and grounded that a CLIENT-submitted proof is
+   forgeable — so the robust discriminator must be SERVER-OBSERVED (the collector), which Kitsune already has. No new
+   rule. See the iter entry below. **Vein D is mapped: raw PoW = cost only (iter-62); instrumented PoW = the existing
+   passive coherence layer behind a cost+browser-requirement front-end (iter-63).**
 
 ## New tools to add to the fleet (cutting edge, researched)
 `azuretls-client` (TLS+H2+H3 forger — ✅ DONE iter-13; H3 path moot, edge sniffs QUIC but doesn't serve it) ·
@@ -1005,6 +1005,29 @@ ran the challenge JS (a realm/coherence signal), not the hash — queued as Vein
 rule, no version bump — this maps a new vein and builds its testbed; the blue-team detection comes when the instrumented
 rung exposes an FP-safe coherence tell). go vet/gofmt/test green; license-isolated (only dep `golang.org/x/crypto/argon2`,
 BSD); compose `pow` profile + `evaders/pow/README.md` frozen.
+
+**INSTRUMENTED PoW collapses to the existing coherence layer — Vein D mapped to its terminus (iter-63, 2026-06-20).**
+The on-thesis rung: make PoW a DISCRIMINATOR (not just a cost) by fusing it with a `cap`-style browser-instrumentation
+challenge. Built it — the gate now issues an `instrumented` challenge demanding a browser **realm proof** (the hash of
+a nonce'd canvas/realm draw computed in the MAIN thread AND a WORKER; a real browser produces two EQUAL non-trivial
+hashes, a main-realm-only spoof diverges), tracked per-nonce so a client cannot opt out. GROUNDED LIVE (docker): the
+NAIVE native solver — which beat every RAW PoW class in iter-62 — is now **BLOCKED** by the instrumented gate
+(`passed=false`: no browser, no realm proof submitted). BUT the same solver with `FORGE=1` submits two EQUAL
+FABRICATED hashes (`realm_main == realm_worker == "forged…"`) and **PASSES** (`passed=true, has_token=true`) — because
+the proof is CLIENT-ASSERTED, and a no-browser client can trivially echo a self-consistent pair. **Grounded
+conclusion:** a client-submitted browser proof adds NO bot resistance; the only robust instrumentation is
+SERVER-OBSERVED — the verifier must INDEPENDENTLY witness the browser realm, which is exactly what Kitsune's collector
+does (the detector sees the worker/main divergence itself, not a client claim). So instrumented PoW reduces to
+**PoW ⊗ Kitsune's existing browser-coherence layer**: a no-browser PoW solver routed through the edge is the same
+no-JS-client class already convicted by `net.no_js_execution` (grounded across the whole network fleet —
+vanilla/go-tls/primp/azuretls), and a main-realm spoof is caught by `br.worker_divergence`/`worker_source_rewritten`.
+PoW contributes only a COST + browser-REQUIREMENT front-end; the DISCRIMINATOR is the passive coherence detector that
+already exists. **Also considered + rejected (FP-risky, not built):** a server-side `pow_solve_time vs claimed_engine`
+coherence rule (a native solver clears a hash ~10–50× faster than a browser's JS/WASM) — defeated because real-device
+CPU variance (~10×) swamps the native-vs-JS ratio AND the client controls the solve path (solves natively, submits the
+answer), so solve-time is not reliably the JS path's time. **⇒ Vein D is fully mapped and closed in-sandbox: PoW is an
+orthogonal cost/volumetric front-end, NOT a new convicting signal for a coherence detector; no detector rule, no
+version bump.** go vet/gofmt/test green; `evaders/pow` README + roadmap updated.
 
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record

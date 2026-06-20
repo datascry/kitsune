@@ -16,9 +16,13 @@ permissive `golang.org/x/crypto/argon2`).
 | `many-small` | friendlycaptcha | N independent low-difficulty hashcash puzzles (variance reduction) | **cheap** (same hash rate) |
 | `memory-hard` | altcha | Argon2id (memory-bound) | **~8000× costlier per eval** (~240/s) — levels CPU vs browser |
 
-The `cap`-class (PoW **fused** with a browser-instrumentation challenge) is the on-thesis rung: its tell is
-whether a *real browser ran the challenge JS* — a coherence signal, not a hash a headless solver can
-brute-force. Documented as the next blue-team build in `docs/red-team-roadmap.md` (Vein D).
+The `cap`-class — PoW **fused** with a browser-instrumentation challenge — is the on-thesis rung. The gate
+serves it with `POW_INSTRUMENTED=1` (or `?instrumented=1`): it additionally demands a **realm proof** (a
+nonce'd canvas/realm hash from the main thread AND a Worker, which a real browser produces equal). Grounded
+(iter-63): it blocks the naive no-browser solver, but `FORGE=1` defeats it by echoing two equal fabricated
+hashes — a *client-asserted* proof is forgeable. So robust instrumentation must be **server-observed**
+(Kitsune's collector, where the detector independently witnesses the worker realm). See `docs/red-team-roadmap.md`
+Vein D.
 
 ## Run
 
@@ -35,10 +39,14 @@ docker run --rm --network kitsune_default -e POW_GATE=http://pow-gate:8090 -e PO
 `POW_CLASS` ∈ {`hashcash`,`many-small`,`memory-hard`}; `POW_ROUNDS=N` hammers the gate (the fleet-cost
 angle); the gate reads `POW_DIFFICULTY` / `?class=` / `?difficulty=`.
 
-## Finding (grounded 2026-06-20)
+## Findings (grounded 2026-06-20)
 
-The native no-browser solver **passes every class and redeems the token** — a raw PoW gate is a volumetric
-*cost* mechanism, not a bot/human discriminator, so it adds **no coherence signal** to Kitsune's passive
-detector. Class choice changes only the cost: SHA-256 classes hand a native scraper an ~8000× speed edge;
-the memory-hard class erases it (the right choice for a raw gate) but still admits the bot. The durable,
-on-thesis signal is the `cap`-style instrumentation coherence, not the PoW itself.
+- **Raw PoW (iter-62):** the native no-browser solver **passes every class and redeems the token** — a raw
+  PoW gate is a volumetric *cost* mechanism, not a bot/human discriminator. Class choice changes only cost:
+  SHA-256 classes hand a native scraper an ~8000× speed edge; memory-hard erases it but still admits the bot.
+- **Instrumented PoW (iter-63):** the `cap`-style realm-proof gate blocks the *naive* no-browser solver, but
+  a *forging* solver (`FORGE=1`, two equal fabricated hashes) passes — a client-asserted browser proof is
+  forgeable. Robust instrumentation must be **server-observed** = Kitsune's collector.
+- **Conclusion:** PoW is an orthogonal cost/volumetric front-end; the real discriminator is Kitsune's
+  existing passive coherence layer (`net.no_js_execution` for a no-browser solver; `br.worker_divergence`
+  for a main-realm spoof). PoW adds no new convicting signal — Vein D mapped and closed in-sandbox.
