@@ -107,6 +107,7 @@ tasks:
     dir: harness
     cmds:
       - uv run python -m kitsune_harness.readme_stats
+      - uv run python -m kitsune_harness.readme_redteam
       - uv run python -m kitsune_harness.rule_catalog
       - uv run python -m kitsune_harness.evasion_catalog
       - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
@@ -120,6 +121,7 @@ tasks:
       # is a hard CI failure: regenerate, then git-diff. (scoreboard.md carries a timestamp, so it is regenerated
       # by `task docs` + the Pages deploy but not strictly gated.)
       - uv run python -m kitsune_harness.readme_stats --check
+      - uv run python -m kitsune_harness.readme_redteam --check
       - uv run python -m kitsune_harness.rule_catalog --check
       - uv run python -m kitsune_harness.evasion_catalog --check
       - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md

@@ -101,18 +101,23 @@ detector — scripted TLS-mimicry (`curl-impersonate`, `primp`, `go-tls`/uTLS), 
 CDP-leak patches (`patchright`, `rebrowser`), CDP-native drivers (`nodriver`, `zendriver`, `pydoll`),
 isolated-world Selenium (`undetected`, `selenium-driverless`), the engine-level frontier (`Camoufox`),
 farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth harness that demonstrates
-each realm-coherence evasion. **All currently score `bot`** ([live matrix](docs/matrix.md)):
+each realm-coherence evasion.
 
-```
-| Evader          | Network | Browser | Behavioral | Incoh. | Score | Label |
-|-----------------|---------|---------|------------|--------|-------|-------|
-| vanilla (httpx) | 0.99    | 0.98    | 0.00       | 0.98   | 1.00  | bot   |
-| camoufox        | 0.95    | 1.00    | 0.75       | 0.84   | 1.00  | bot   |
-| patchright      | 0.00    | 1.00    | 0.00       | 0.00   | 1.00  | bot   |
-| nodriver        | 0.60    | 1.00    | 0.80       | 0.60   | 1.00  | bot   |
-| tz-spoof        | 0.00    | 1.00    | 0.55       | 0.00   | 1.00  | bot   |  ← geo-spoof, caught in the Worker realm
-| worker-wrap     | 0.00    | 1.00    | 0.55       | 0.00   | 1.00  | bot   |  ← the realm escalation, caught by the constructor guard
-```
+<!-- GENERATED:readme-redteam:start -->
+**85 of 94 evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `0.74.48`). The remaining 9 are pinned to `suspicious` by the conviction gate — the headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every *convicting* rule and leaves only corroborating tells, which can never reach `bot` alone.
+
+| Evader | Network | Browser | Behavioral | Incoh. | Score | Label |
+|---|---|---|---|---|---|---|
+| `vanilla` | 0.99 | 0.98 | 0.00 | 0.98 | 1.00 | bot |
+| `curl-impersonate` | 0.60 | 0.60 | 0.00 | 0.60 | 0.90 | bot |
+| `nodriver` | 0.00 | 0.99 | 0.80 | 0.00 | 1.00 | bot |
+| `patchright` | 0.00 | 1.00 | 0.00 | 0.00 | 1.00 | bot |
+| `camoufox` | 0.95 | 0.84 | 0.00 | 0.84 | 1.00 | bot |
+| `tz-spoof` | 0.00 | 1.00 | 0.55 | 0.00 | 1.00 | bot |
+| `worker-wrap` | 0.00 | 1.00 | 0.55 | 0.00 | 1.00 | bot |
+| `camoufox-headful` | 0.00 | 0.95 | 0.00 | 0.00 | 0.95 | suspicious |
+
+<!-- GENERATED:readme-redteam:end -->
 
 ## The structural frontiers
 
