@@ -8,9 +8,9 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **86 exercised techniques** (77 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **87 exercised techniques** (78 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
-### Fleet — the evader tools (19)
+### Fleet — the evader tools (20)
 
 | evader | lang | what it is |
 |---|---|---|
@@ -23,6 +23,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `firefox-os-spoof` | TS/Node | a Firefox bot that fakes its UA OS but forgets navigator.oscpu. |
 | `go-tls` | Go | forge a real-browser TLS ClientHello with uTLS. |
 | `h2-rapid-reset` | Go | HTTP/2 frame-abuse floods against the edge (rapid-reset / continuation / control). |
+| `mobile-emulation` | TS/Node | a desktop Chromium emulating an Android phone (Playwright Pixel 5 device). |
 | `nodriver` | Python | drive nodriver (undetected-chromedriver successor) through the edge. |
 | `playwright-extra` | TS/Node | drive playwright-extra + puppeteer-extra-plugin-stealth through the edge. |
 | `primp` | Python | drive one request through the edge with a browser-impersonating TLS stack. |
@@ -34,7 +35,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (86)
+### Techniques exercised — scored against the live ruleset (87)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -91,6 +92,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `linear-bot` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `max-stealth` | bot | `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_spoofed` |
 | `measuretext-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.measuretext_offscreen_vs`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
+| `mobile-emulation` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.font_os_vs_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `naive-tz-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.timezone_inconsistent`, `br.timezone_offset_vs_intl`, `br.timezone_worker_vs_main`, `br.webdriver_getter_tampered` |
 | `native-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.native_invariant_violated`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.webgl_worker_vs_main` |
 | `nodriver` | bot | `br.headless_ua` |

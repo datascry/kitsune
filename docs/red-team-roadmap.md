@@ -481,6 +481,23 @@ EVADES** (`camoufox-headful`, `camoufox-linux`, `camoufox-linux-coherent`, `camo
   hardware) → build the blocked detections; OR a genuinely-new anti-detect tool appears to white-box. Not further
   in-sandbox grinding of the rotation-family / cosmetic-tweak kind. No detector change, no version bump this iter.
 
+**NEW SURFACE — mobile emulation, comprehensively caught (iter-38, 2026-06-20).** The all-desktop fleet had never
+tested the MOBILE surface. Added `mobile-emulation` (the 20th fleet tool): a desktop Chromium running Playwright's
+Pixel 5 device (Android Chrome UA + `hasTouch` + `isMobile` + a mobile viewport) — coherent UA-engine (Chromium UA,
+not an iPhone/Safari mismatch). Grounded live → `bot` 1.0, caught SIX convicting ways, and crucially the cross-layer
+thesis HOLDS for mobile: a mobile UA over a desktop host cannot hide its real OS. Beyond the automation floor
+(`webdriver`/`cdp_runtime`/`permissions`/`no_chrome`) + `ch_he_headless`, it trips **`br.font_os_vs_ua`** (Android UA
+but Linux container fonts — convicting) and corroboratively `br.codec_os_incoherent` (codecs vs Android),
+`br.font_linux_leak`, `br.webgl_software` (desktop SwiftShader, not a mobile GPU), and **`br.fingerprint_improbable`**
+— the prevalence model's FIRST live-evader positive: the mobile-UA + desktop-GPU/screen/cores joint is improbable
+even under the same-source browserforge prior (browserforge would never generate a Pixel-5-with-desktop-GPU). So no
+mobile-coherence gap exists — the detector catches a desktop-emulating-mobile across fonts/codecs/GPU + prevalence +
+the automation floor. A COHERENT mobile evader needs real mobile hardware (real Adreno/Mali GPU, Android fonts) →
+the same external-hardware frontier as desktop. `mobile-emulation.json` frozen + lit-test guard on
+`br.fingerprint_improbable` (it had no prior live positive — this validates the prevalence model fires on a real
+incoherent-joint attack, distinct from its documented same-source blindness to a CLEAN browserforge injection). No
+new detection (existing rules), no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
