@@ -131,6 +131,7 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
   const client = rules.filter((r) => r.clientEvaluable);
   const edge = rules.filter((r) => !r.clientEvaluable);
   const naRules = client.filter((r) => naReasons.has(r.id));
+  const layerCount = new Set(rules.flatMap((r) => r.layers)).size;
 
   const layerScoreHtml = LAYER_ORDER.map((l) => scoreBar(l, verdict.layers[l])).join("");
 
@@ -168,6 +169,14 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
     .join("");
 
   root.innerHTML = `
+    <section class="hero">
+      <div class="hero-stat"><strong>${rules.length}</strong><span>detection rules</span></div>
+      <div class="hero-stat"><strong>${layerCount}</strong><span>coherence layers</span></div>
+      <div class="hero-stat"><strong>${client.length}</strong><span>ran in your browser</span></div>
+      <div class="hero-stat"><strong>${edge.length}</strong><span>need the edge</span></div>
+      <p class="hero-note">Every rule is cross-layer coherence-as-data — the same registry the server-side
+        detector evaluates, ruleset ${esc(rulesetVersion)}.</p>
+    </section>
     <section class="verdict verdict-${verdict.label}">
       <div class="label">${esc(verdict.label.toUpperCase())}</div>
       <div class="score">bot-likelihood ${pct(verdict.score)}</div>

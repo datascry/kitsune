@@ -144,6 +144,41 @@ h3 .count {
 }
 
 /* Verdict — a bordered forensic stamp, colour = result. */
+/* Hero capability banner — leads the page with the full detection breadth (the MVP value prop). */
+.hero {
+  border: 1.5px solid var(--line-bright);
+  background: var(--panel-2);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.hero-stat strong {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--fox);
+}
+.hero-stat span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hero-note {
+  flex: 1 1 14rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  align-self: center;
+}
+
 .verdict {
   border: 1.5px solid var(--line-bright);
   padding: 1.25rem 1.5rem;
