@@ -79,6 +79,16 @@ const WORKER_PROXY = process.env.WORKER_PROXY === "1";
 // It still rewrites the worker source (a new blob URL) to inject the spoof, which is the data signature the
 // source-URL-coherence check (worker_source_rewritten) catches regardless of how the constructor is disguised.
 const WORKER_PROXY_FIX = process.env.WORKER_PROXY_FIX === "1";
+// WORKER_CDP: the rung BEYOND the source-rewrite/constructor ladder. WORKER_WRAP/PROXY/PROXY_FIX all reach worker
+// scope by rewriting the worker SOURCE (caught by worker_source_rewritten) or wrapping the Worker constructor
+// (caught by worker_constructor_tampered). This injects the same hardwareConcurrency spoof into worker scope via the
+// CDP worker channel (Playwright page.on("worker") -> worker.evaluate) — the worker runs the page's OWN unmodified
+// blob (self.location.href matches → worker_source_rewritten SILENT) and window.Worker stays native (→
+// worker_constructor_tampered SILENT), yet the worker's navigator is patched to AGREE with main (→ worker_divergence
+// SILENT). The test: can a CDP-level worker injection defeat ALL THREE realm guards at once? The residual is then
+// only the AUTOMATION floor (CDP itself → br.cdp_runtime_enabled) — i.e. the realm ladder's terminus is CDP, which a
+// non-CDP JS injector cannot reach and a CDP tool already trips on the automation layer.
+const WORKER_CDP = process.env.WORKER_CDP === "1";
 // NAIVE_TZ_SPOOF: the one-field geo-spoof. Patch ONLY Intl.resolvedOptions().timeZone (claim a proxy-
 // matching zone) and forget Date.getTimezoneOffset — the offset then contradicts the claimed zone →
 // br.timezone_offset_vs_intl. The canonical incomplete timezone spoof.
@@ -342,6 +352,8 @@ const mode = UACH_COHERENT
   ? "worker-proxy"
   : WORKER_PROXY_FIX
   ? "worker-proxy-fix"
+  : WORKER_CDP
+  ? "worker-cdp"
   : LANG_SPOOF
   ? "lang-spoof"
   : TZ_SPOOF
@@ -445,6 +457,14 @@ if (FLOOR_SPOOF) {
   // Spoof navigator in the MAIN realm only — the lazy hardware/UA spoof. hardwareConcurrency is dropped
   // to 2 and the UA is rewritten in-page; both patches live on the main thread and its iframes but never
   // reach Worker global scope, so the collector's Blob worker reports the real values → worker_divergence.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
+  });
+} else if (WORKER_CDP) {
+  // Spoof main-realm hardwareConcurrency=2 (like WORKER_SPOOF). The worker-scope half is injected via the CDP
+  // worker channel below (page.on("worker")), NOT a source rewrite or constructor wrap — so worker_source_rewritten
+  // and worker_constructor_tampered stay silent while the worker is patched to agree with main.
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
     Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
@@ -847,6 +867,21 @@ if (FLOOR_SPOOF) {
 }
 
 const page = await context.newPage();
+if (WORKER_CDP) {
+  // Inject the worker-scope hardwareConcurrency spoof via the CDP worker channel: Playwright surfaces each
+  // dedicated Worker as it is created, and worker.evaluate() runs in worker global scope (over CDP) WITHOUT
+  // rewriting the worker source or wrapping window.Worker. Patch hardwareConcurrency to 2 so the collector's
+  // workerNav reads 2 == the main spoof → worker_divergence stays silent, with the source URL + Worker ctor
+  // both untouched. (A race vs the worker's own navigator read; the collector posts to the worker after
+  // creation, so the patch generally lands first.)
+  page.on("worker", (worker) => {
+    worker
+      .evaluate(() => {
+        Object.defineProperty(navigator, "hardwareConcurrency", { get: () => 2, configurable: true });
+      })
+      .catch(() => {});
+  });
+}
 if (UACH_COHERENT) {
   // The PROPER cross-layer UA override: CDP Network.setUserAgentOverride sets the UA string, the Sec-CH-UA
   // request headers, AND navigator.userAgentData (getHighEntropyValues) to ONE coherent Linux-Chrome identity.

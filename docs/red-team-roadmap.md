@@ -735,6 +735,28 @@ token), so full per-connection attribution + a confirmed real-Chrome QUIC GREASE
 prerequisites for reviving the convicting QUIC rules. Edge `go vet` + full test suite green; no detector change, no
 version bump.
 
+**REALM worker-injection ladder — CDP-channel rung pressure-tested, ladder confirmed CLOSED (iter-49,
+2026-06-20).** Genuinely pivoted off QUIC. The realm-coherence ladder catches a main-only navigator spoof
+(`worker_divergence`) and its two known escalations to reach worker scope — source-rewrite (`worker_source_rewritten`,
+iter-44) and constructor-wrap (`worker_constructor_tampered`, iter-43). The one UNTESTED rung was the CDP worker
+CHANNEL: inject the worker-scope spoof via `page.on("worker") -> worker.evaluate` (Playwright's CDP path), which
+rewrites NO source and wraps NO constructor — could it defeat all three guards at once? Built stealth `WORKER_CDP`
+(main `hardwareConcurrency=2` spoof + the CDP worker-channel injection of the same) and GROUNDED LIVE: (1) under plain
+Playwright **`worker_divergence` STILL FIRES** — the CDP `worker.evaluate` injection LOSES the navigator-read race
+(the collector's worker reads `navigator.hardwareConcurrency` via in-process `postMessage` before the slower CDP
+round-trip patches it), so the worker reports the real value ≠ the main spoof → caught; residual = the automation
+floor (`cdp_runtime_enabled`/`permissions_anomaly`/`webdriver_getter_tampered`). (2) Under patchright the
+`page.on("worker")` manipulation breaks the in-page collector → `net.no_js_execution` (the documented patchright
+collector self-defeat — no browser layer at all, so no clean worker measurement). CONCLUSION: the realm
+worker-injection ladder is CLOSED — every path to worker scope is caught: source-rewrite → `worker_source_rewritten`,
+ctor-wrap → `worker_constructor_tampered`, and the CDP channel either loses the navigator-read race (`worker_divergence`
+holds) + trips the automation floor, or self-defeats the collector under a CDP-stealth tool. Only a raw
+`Target.setAutoAttach{waitForDebuggerOnStart}` injection could win the race, and that still requires CDP (automation
+floor) — no non-CDP injector can reach worker scope without rewriting source or wrapping the ctor. A confirming
+negative result: the new `worker-cdp` mode is a permanent pressure-test (like `linear-bot`), `worker_divergence` is
+already lit (apify-fp-inject), so no new rule/capture/version bump. Reinforces the in-sandbox saturation call — the
+strongest novel worker-realm evasion mechanism does not open a blind spot.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
