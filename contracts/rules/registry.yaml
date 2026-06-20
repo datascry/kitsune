@@ -404,7 +404,7 @@ rules:
     status: active
     category: automation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
+    last_validated: "2026-06-20"
     source: "CVE-2019-9515 (SETTINGS flood) / CVE-2019-9512 (PING flood) — control-frame amplification DoS"
 
   - id: br.headless_ua

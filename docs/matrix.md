@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 118 rules vs 63 evaders
+# Kitsune detection matrix — 118 rules vs 64 evaders
 
-_60/63 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
+_61/64 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -33,6 +33,7 @@ _60/63 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `full-stealth` | bot | 1.00 | 17/118 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +8 |
 | `go-tls` | bot | 0.99 | 3/118 | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
 | `h2-continuation-flood` | bot | 0.99 | 2/118 | `net.h2_continuation_flood`, `net.no_js_execution` |
+| `h2-control-flood` | bot | 0.99 | 2/118 | `net.h2_control_flood`, `net.no_js_execution` |
 | `h2-rapid-reset` | bot | 0.99 | 2/118 | `net.h2_rapid_reset`, `net.no_js_execution` |
 | `honeypot` | bot | 1.00 | 16/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.honeypot_interaction` +5 |
 | `http2-naive` | bot | 1.00 | 7/118 | `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.tcp_os_vs_ua` +4 |
@@ -70,7 +71,7 @@ _60/63 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | suspicious | 0.99 | 7/118 | — |
 
-## Per-rule coverage — 100/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 101/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
@@ -88,9 +89,9 @@ _60/63 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.ch_he_headless` | browser | automation | 33 |
 | `bh.keystroke_entropy_floor` | behavioral | behavioral | 29 |
 | `br.webdriver_getter_tampered` | browser | automation | 24 |
+| `net.no_js_execution` | network,browser | coherence | 13 |
 | `net.tcp_os_vs_ua` | network | coherence | 13 |
 | `br.webdriver_present` | browser | automation | 12 |
-| `net.no_js_execution` | network,browser | coherence | 12 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
@@ -172,6 +173,7 @@ _60/63 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.ch_ua_mobile_vs_ua` | network,browser | coherence | 1 |
 | `net.ch_ua_no_grease_brand` | network | artifact | 1 |
 | `net.h2_continuation_flood` | network | automation | 1 |
+| `net.h2_control_flood` | network | automation | 1 |
 | `net.h2_rapid_reset` | network | automation | 1 |
 | `net.h2_vs_tls_browser` | network | coherence | 1 |
 
@@ -206,6 +208,7 @@ _60/63 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `full-stealth` | bot | 4 | 0 | 7 | 5 | 1 | 0 |
 | `go-tls` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `h2-continuation-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
+| `h2-control-flood` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `h2-rapid-reset` | bot | 1 | 0 | 1 | 0 | 0 | 0 |
 | `honeypot` | bot | 0 | 0 | 8 | 6 | 2 | 0 |
 | `http2-naive` | bot | 7 | 0 | 0 | 0 | 0 | 0 |
@@ -243,16 +246,15 @@ _60/63 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 18/118 rules catch nothing yet
+## Coverage gaps — 17/118 rules catch nothing yet
 
 **Evaded** (2) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
 
-**Unexercised** (16) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (15) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `rep.datacenter_asn`
-- `net.h2_control_flood`
 - `rep.known_proxy_exit`
 - `br.languages_empty`
 - `br.screen_zero`

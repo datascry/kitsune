@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **63 exercised techniques** (60 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **64 exercised techniques** (61 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (16)
 
@@ -20,7 +20,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `curl-impersonate` | Python | drive curl_cffi (curl-impersonate) through the edge and read the verdict. |
 | `firefox-os-spoof` | TS/Node | a Firefox bot that fakes its UA OS but forgets navigator.oscpu. |
 | `go-tls` | Go | forge a real-browser TLS ClientHello with uTLS. |
-| `h2-rapid-reset` | Go | HTTP/2 Rapid Reset (CVE-2023-44487) flood against the edge. |
+| `h2-rapid-reset` | Go | HTTP/2 frame-abuse floods against the edge (rapid-reset / continuation / control). |
 | `nodriver` | Python | drive nodriver (undetected-chromedriver successor) through the edge. |
 | `primp` | Python | drive one request through the edge with a browser-impersonating TLS stack. |
 | `pydoll` | Python | drive pydoll (async CDP-native, no webdriver) through the edge and read the verdict. |
@@ -31,7 +31,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (63)
+### Techniques exercised — scored against the live ruleset (64)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -62,6 +62,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `full-stealth` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.notification_denied`, `br.permissions_anomaly`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_os_vs_ua`, `br.webgl_worker_vs_main`, `net.ch_ua_version_vs_ua` |
 | `go-tls` | bot | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
 | `h2-continuation-flood` | bot | `net.h2_continuation_flood`, `net.no_js_execution` |
+| `h2-control-flood` | bot | `net.h2_control_flood`, `net.no_js_execution` |
 | `h2-rapid-reset` | bot | `net.h2_rapid_reset`, `net.no_js_execution` |
 | `honeypot` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.honeypot_interaction`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `http2-naive` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |

