@@ -348,6 +348,25 @@ Kitsune catches
 everything up to that maximal bar — a high bar most bots do not reach — and the residual frontier is
 honestly external-data-bound.
 
+## Active-challenge (PoW) posture — explored and mapped to its terminus (iters 62-63, 2026-06-20)
+
+Kitsune is a PASSIVE coherence detector; PoW is an ACTIVE challenge (a different posture). Built a
+self-contained PoW arms-race testbed (`evaders/pow/`: a blue gate + a red native no-browser solver) modelling
+the catalogued families (`docs/catalog.md §6`) as distinct classes — `hashcash` (anubis), `many-small`
+(friendlycaptcha), `memory-hard` (altcha/Argon2id). Grounded findings:
+
+- **Raw PoW is a volumetric COST, not a discriminator.** The native solver beats every class and redeems the
+  token. Class choice changes only cost: SHA-256 classes hand a native scraper an ~8000× speed edge over a
+  browser's JS/WASM; the memory-hard (Argon2id) class erases that edge (~240 evals/s) but still admits the bot.
+- **Instrumented (cap-style) PoW collapses to the EXISTING coherence layer.** A gate demanding a client-asserted
+  browser realm proof (main-vs-Worker canvas hash) blocks the naive solver but is forged by a solver echoing two
+  EQUAL fabricated hashes — a client-asserted proof carries no bot resistance. Robust instrumentation must be
+  SERVER-OBSERVED, which is exactly Kitsune's collector: a no-browser PoW solver routed through the edge is the
+  same no-JS class already convicted by `net.no_js_execution`; a main-realm spoof by `br.worker_divergence`.
+- **Net:** PoW adds only a cost + browser-requirement FRONT-END; it yields no new FP-safe convicting signal for a
+  coherence detector (a `pow_solve_time vs claimed_engine` rule was considered and rejected — CPU variance swamps
+  the native-vs-JS ratio and the client controls the solve path). The discriminator already exists. No rule shipped.
+
 ## Known red-team-fleet limitation: patchright configs self-defeat the collector (2026-06-19)
 
 Grounded finding while characterising the thinnest-caught cutting-edge config. The patchright-engine
