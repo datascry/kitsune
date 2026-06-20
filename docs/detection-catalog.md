@@ -291,9 +291,17 @@ signal would be a strawman — they keep their unit tests (logic proven) and are
 
 **Per-session validation is therefore complete; the lit-capture campaign is CLOSED.** Future iterations pivot
 to the structural frontiers, both confirmed external-data-bound: the prevalence second prior needs real-device
-gpu/cores data, and the coordination shape-signals (`fp_collision`, `trace_collision` via fleet-cloned,
-`shared_real_ip` via fleet-proxy) are already demonstrated in-sandbox — only the IP-reputation half (`rep.*`)
-needs real residential-proxy egress. The experimental rules re-validate live as of v0.74.32
+gpu/cores data, and the coordination shape-signals (`fp_collision` via fleet-cloned, `trace_collision` via
+fleet-replay, `shared_real_ip` via fleet-proxy) are already grounded END-TO-END on real concurrent-container
+captures (distinct docker IPs) — only the IP-reputation half (`rep.*`) needs real residential-proxy egress.
+**v0.74.32: `trace_collision` grounded on a real fleet** (corpus/fleet-replay rt1/2/3, stealth
+`REPLAY_TRACE=1`): three instances inject one RECORDED pointer path via synthetic mousemove events, so the
+collector hashes an IDENTICAL `trace_hash` across 3 distinct IPs → `fleet`. **Lesson (the reverted
+keystroke_collision):** a clone-collision hash is only sound over an EXACTLY-REPRODUCIBLE value — render output
+(`fp_hash`) or integer coordinates (`trace_hash`) — never over TIMING; a keystroke/scroll *timing* hash varies
+run-to-run under ms-scheduler jitter (empirically: 3 concurrent containers → 3 distinct keystroke_hashes but 1
+shared trace_hash), so it cannot ground and was removed. Before any new `*_collision`, run the same evader from
+>= 2 concurrent containers and confirm the hash is byte-identical. The experimental rules re-validate live as of v0.74.32
 (`br.readback_noise` fires via stealth `AUDIO_READBACK_SPOOF=1`; `net.h2_header_order_vs_ua`, now active, stays
 guarded by its 3 committed non-Chrome-h2 captures). Deployed detector == committed ruleset 0.74.32 (no stale deploy).
 

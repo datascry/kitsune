@@ -71,6 +71,23 @@ def test_real_cloned_fingerprint_fleet_is_convicted() -> None:
     assert v.ja4c_divergent is False  # convicted by the collision, not per-launch TLS randomization
 
 
+def test_real_replay_trace_fleet_is_convicted() -> None:
+    # Ground the TRACE-collision convicting path on a REAL captured fleet (previously only synthetic). Three
+    # instances of the stealth evader's REPLAY_TRACE mode, run CONCURRENTLY through the live edge (distinct
+    # container IPs), each injected the SAME recorded pointer trajectory via synthetic mousemove events, so the
+    # collector hashed an IDENTICAL trace_hash across all 3. This is the empirical proof the reverted
+    # keystroke_collision lacked: a COORDINATE-based clone hash (rounded x,y) IS byte-identical across a real
+    # fleet — unlike a TIMING hash, which ms-scheduler jitter perturbs (rt vs the 3-distinct keystroke_hash that
+    # killed keystroke_collision). rt1/rt2/rt3 must score `fleet` with the trace collision firing.
+    verdicts = score_corpus(load_corpus(_repo_corpus("fleet-replay")))
+    assert len(verdicts) == 1
+    v = verdicts[0]
+    assert sorted(v.members) == ["rt1", "rt2", "rt3"]
+    assert v.label == "fleet"
+    assert v.cloned_trace is not None  # one trace_hash across distinct IPs — reproducible on REAL output
+    assert v.distinct_observed_ips == 3
+
+
 def test_real_camoufox_two_node_cohort_is_candidate_not_fleet() -> None:
     # Trusted-but-verified: the synthetic scenarios assume camoufox randomizes its JA4_c per launch, but the
     # REAL camoufox capture (cf1/cf2) shows STABLE JA4_c and homogeneous JS — indistinguishable from two real

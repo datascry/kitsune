@@ -121,6 +121,13 @@ const CANVAS_LIE = process.env.CANVAS_LIE === "1";
 // reads of an unchanged element differ — breaking the determinism invariant → br.domrect_invariant. A real
 // engine's getBoundingClientRect is deterministic.
 const DOMRECT_SPOOF = process.env.DOMRECT_SPOOF === "1";
+// REPLAY_TRACE: a behavioural-replay fleet. Inject a byte-identical RECORDED pointer trajectory via synthetic
+// mousemove events with exact clientX/clientY, so every instance produces the SAME trace_hash. trace_hash is
+// COORDINATE-based (hashes rounded x,y, not timing), hence exactly reproducible across machines — unlike a
+// timing hash, which ms-scheduler jitter perturbs (see the reverted keystroke_collision). Run as a fleet
+// across distinct IPs, this is the canned-trajectory replay coordination._trace_collision catches: a tool
+// that randomises its fingerprint per instance yet reuses one recorded "humanised" path.
+const REPLAY_TRACE = process.env.REPLAY_TRACE === "1";
 // CDC_LEAK: the canonical Selenium/ChromeDriver artifact. An UN-patched chromedriver injects its sentinel
 // globals ($cdc_asdjflasutopfhvcZLmcfl_* arrays) onto document — the exact default that
 // undetected-chromedriver/nodriver exist to rename away. Inject the canonical key the collector probes for
@@ -223,8 +230,11 @@ const evading =
   CSP_BYPASS ||
   AUDIO_NOISE ||
   SCREEN_IMPOSSIBLE ||
+  REPLAY_TRACE ||
   Boolean(SPOOF_UA);
-const mode = SCREEN_IMPOSSIBLE
+const mode = REPLAY_TRACE
+  ? "replay-trace"
+  : SCREEN_IMPOSSIBLE
   ? "screen-impossible"
   : AUDIO_NOISE
   ? "audio-noise"
@@ -643,7 +653,23 @@ if (FLOOR_SPOOF) {
 const page = await context.newPage();
 await page.goto(EDGE, { waitUntil: "load" });
 const human = HUMAN_MOUSE || MAX_STEALTH;
-if (HONEYPOT) {
+if (REPLAY_TRACE) {
+  // Replay one RECORDED pointer path via synthetic mousemove events with exact clientX/clientY. The collector
+  // captures these coordinates verbatim, so every instance hashes to the SAME trace_hash (>= 12 points). No
+  // page.mouse.move (which the browser would coalesce/perturb run-to-run) — exact dispatch is the only way to
+  // reproduce a byte-identical trace, faithfully modelling a record-and-replay behavioural-clone tool.
+  await page.evaluate(() => {
+    const path = [
+      [120, 140], [168, 158], [216, 152], [264, 188], [312, 176], [360, 214], [408, 198],
+      [456, 236], [504, 220], [552, 262], [600, 248], [648, 286], [612, 322], [540, 308],
+      [468, 344], [396, 330], [324, 366],
+    ];
+    for (const [x, y] of path) {
+      window.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y, bubbles: true }));
+    }
+  });
+  await page.waitForTimeout(2500); // let the collector capture + post
+} else if (HONEYPOT) {
   // Naive form-spammer: enumerate the DOM and fill every text input + dispatch a click on every link. A
   // human reaches only the visible page; this blindly trips the off-screen aria-hidden honeypot bait (input
   // email_confirm / link #ks-hp) → br.honeypot_interaction. dispatchEvent (not .click()) and value-set never
