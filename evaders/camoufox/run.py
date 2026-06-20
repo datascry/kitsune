@@ -74,7 +74,13 @@ def _capture(browser: object) -> dict[str, object]:
             page.goto(EDGE, wait_until="load")
             for i in range(24):
                 page.mouse.move(100 + i * 7, 120 + (i % 5) * 12)
-            page.wait_for_timeout(2000)
+            # Wait for the collector's POST marker (body[data-ks='sent']), not a flat 2s — headless Camoufox's
+            # collector posts later than 2s, which silently yielded 0 browser signals (a measurement bug that
+            # made headless Camoufox look caught by net.no_js_execution; see camoufox-linux). Keeps the mouse.
+            try:
+                page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+            except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
+                page.wait_for_timeout(2000)
         cookie = next((c for c in context.cookies() if c["name"] == "ks_sid"), None)
     finally:
         context.close()

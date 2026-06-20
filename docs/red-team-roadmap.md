@@ -268,21 +268,24 @@ natively with no JS tamper) — **this precisely locates WHY Camoufox exists and
 Firefox does not**: coherent Gecko is one engine-level webdriver patch away from clean, and that patch is exactly
 Camoufox's value-add. `firefox-coherent.json` frozen; all existing rules → no new detection, no version bump.
 
-**NEW EVADES (lowest-bar yet): Linux-pinned HEADLESS Camoufox — iter-24 (2026-06-20).** The iter-23 inference
-("engine-Gecko is one webdriver-patch from clean") was GROUNDED by closing the loop on Camoufox, and it CORRECTS
-the catalog's "only camoufox-HEADFUL EVADES" framing. Two artifacts had hidden it: (1) the non-FAST capture's
-fixed 2s wait was too short for headless Camoufox's collector POST → 0 browser signals → caught by
-`net.no_js_execution` (a measurement bug, not a real catch — `KS_FAST=1` waits for `body[data-ks='sent']` and the
-collector posts fine); (2) Camoufox RANDOMIZES its OS profile, often picking Windows/macOS on the Linux host →
-`net.tcp_os_vs_ua` (the sole convicting tell once the collector posts). Added `KS_LINUX=1` (pin `os="linux"`,
-coherent with the host) + `KS_FAST=1`: grounded live → **`suspicious` 0.946, CONVICTING NONE — EVADES, HEADLESS,
-no xvfb.** Camoufox patches `navigator.webdriver=false` at the ENGINE level (no `webdriver_present`, no
-`webdriver_getter_tampered` — exactly the firefox-coherent holdout), speaks no CDP, has no headless token, and with
-a Linux profile is OS-coherent → the residual is environment-only (`webgl2_missing` / `voices_empty` /
-`media_devices_empty` / `webrtc_unavailable`), all external-hardware-gated (a real GPU-less headless Linux box
-shares them — no FP-safe counter, frontier (b)). **Significance: the per-session evasion bar is LOWER than
-documented — headless Camoufox + a Linux profile suffices, no headful/xvfb.** `camoufox-linux.json` frozen (5th
-EVADES); no new detection (residual FP-unsafe to convict), no version bump.
+**Linux-pinned Camoufox — iter-24 claim REFUTED + corrected iter-25 (2026-06-20).** iter-24 claimed headless
+Camoufox EVADES (lowest-bar). **WRONG — it was a `?fast` under-probing artifact.** `KS_FAST=1` adds `?fast`, which
+makes the detector's DEMO collector run a REDUCED probe set that SKIPS `pointer_touch_incoherent` (and others) — a
+testing affordance, not the production collector. Re-grounded under the FULL collector (`KS_LINUX=1` non-FAST, with
+a wait-for-`body[data-ks='sent']` fix replacing the too-short 2s wait that had silently dropped browser signals):
+**headless Camoufox-Linux is CAUGHT by `br.pointer_touch_incoherent`.** Mechanism (white-boxed): Camoufox emulates
+`navigator.maxTouchPoints` per its device profile but does NOT spoof the CSS `@media (pointer)` query — in HEADLESS
+that query reflects the real pointerless container (coarse/none) and disagrees with the emulated touch profile →
+the coherence tell fires. **Headful resolves it** (xvfb provides a real fine-pointer → coherent): re-verified live,
+coherent-Linux **camoufox-HEADFUL** under the full collector → CONVICTING none, **EVADES** (the established
+headful EVADES HOLDS). FP-safe: stock headless Playwright Firefox (`firefox-coherent`) does NOT emit the signal
+(coherent) — so `br.pointer_touch_incoherent` is a real catch specific to Camoufox's headless profile emulation, and
+it KEEPS the per-session evasion bar at HEADFUL. iter-24's "bar is lower" was the artifact, not a finding. The
+`camoufox-linux.json` capture is re-frozen under the full collector (now shows the `pointer_touch_incoherent`
+catch); EVADES set back to 4 (`camoufox-headful`, `patchright-headful`, `zendriver-uach`, `zendriver-uach-behave`).
+No new detection (existing rule), no version bump. **Lessons: (1) NEVER ground an EVADES with `?fast` — it
+under-probes; use the full collector. (2) Firefox/Camoufox synthetic mouse via Playwright DOES trip
+`bh.synthetic_no_coalesced` (resolves the iter-19 open question — Gecko does not escape it).**
 
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
