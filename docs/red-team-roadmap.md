@@ -147,3 +147,12 @@ evasion-catalog the living ledger. Modify REAL tools; ground every claim live; n
 - Network: `azuretls-client` (Noooste); JA4 normalization (FoxIO); HTTP/2 + H3 fingerprinting (Scrapfly).
 - Landscape: anti-detect benchmarks 2026 (techinz/browsers-benchmark; ianlpaterson.com); Castle.io anti-detect
   framework evolution; "browser-patch beats JS-injection" + "Gecko engine diversity" (scrapewise/proxies.sx).
+
+## Grounded corrections (live grounding refutes a documented assumption)
+- **iter-8 (2026-06-20): the `--headless=new` EVADES frontier is REFUTED.** The catalog assumed stock Chrome's
+  new-headless is token-less, so the CDP-minimal class (nodriver/pydoll/selenium-driverless/undetected) would
+  EVADE. Installed real **stock Google Chrome 149** and read the UA via CDP `/json/version`: `--headless=new`,
+  `--headless=old`, and bare `--headless` ALL report `HeadlessChrome/149.0.0.0`. nodriver+stock-Chrome-new-headless
+  scored **bot** via `br.headless_ua`. So `br.headless_ua` is **robust, not fragile** — no EVADES class opens; the
+  token removal never shipped through Chrome 149. Lesson: an ungrounded catalog assumption was FALSE — the loop's
+  "ground every claim live" discipline is load-bearing.
