@@ -16,8 +16,16 @@ COPY package.json ./
 # These are unpinned and can pull a playwright-core needing a different Chromium revision than the base
 # image bakes in, so explicitly install the matching browser for each driver.
 # Pin all three to 1.52 so they share the base image's Chromium revision. 1.52 is the ceiling here:
-# rebrowser-playwright tops out at 1.52.0 (no 1.55+), so bumping playwright past it would reintroduce
-# the Chromium-revision mismatch this pin exists to prevent. patchright brings its own browser.
+# rebrowser-playwright tops out at 1.52.0 (no 1.55+, confirmed on the npm registry 2026-06-20), so bumping
+# playwright past it would reintroduce the Chromium-revision mismatch this pin exists to prevent. patchright
+# brings its own browser.
+# KNOWN/ACCEPTED CVE: this pin holds playwright at 1.52.0, which Dependabot flags for CVE-2025-59288
+# (GHSA-7mvr-c777-76hp: `playwright install` fetches browser binaries without verifying SSL-cert authenticity;
+# patched in 1.55.1). NOT remediable by a bump — rebrowser-playwright's 1.52.0 ceiling forces the trio to one
+# shared Chromium revision. Exposure is build-time-only (the vulnerable path is browser DOWNLOAD during
+# `docker build`, over Microsoft's CDN) on an in-sandbox red-team evader that runs solely against Kitsune's own
+# detector + the harness allow-list — never production. Accepted as tolerable; do not re-investigate per-push
+# (this analysis is the answer). Revisit if rebrowser-playwright ever publishes >=1.55.1.
 RUN npm install --silent --no-audit --no-fund \
       playwright@1.52.0 patchright rebrowser-playwright@1.52.0 \
     && (npx playwright install chromium || true) \
