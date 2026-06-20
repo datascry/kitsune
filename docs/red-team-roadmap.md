@@ -820,6 +820,29 @@ version-bumped 0.74.47→0.74.48. Residual (next rung, documented): a fake using
 structural lie. The Brave-identity genuineness ladder now mirrors the worker-ctor ladder (shallow toString → Proxy
 escalation → structural-identity invariant the Proxy can't forge).
 
+**SYSTEMATIC Proxy-over-native AUDIT — the escalation thread is closed (iter-53, 2026-06-20).** iters 43/52 each
+found a shallow `[native code]` toString check defeated by `new Proxy(nativeFn, {…})` (worker-ctor, brave-identity).
+This iteration audited EVERY such check in the collector (demo.py + probes.ts) for the same vulnerability, and
+GROUNDED each escalation's backstop against the committed Proxy-over-native captures. Result — every Proxy escalation
+that defeats the shallow artifact-layer checks is caught by a ROBUST backstop the Proxy cannot forge: (1) FINGERPRINT
+spoofs (`apify-fp-inject`, Proxy-over-native on the whole navigator/WebGL) → **realm coherence** (`worker_divergence`
++ `languages_worker_vs_main` + `webgl_worker_vs_main` — the worker realm sees the un-injected real values); (2) the
+BEHAVIORAL residual (`coalesce-proxy`, Proxy `getCoalescedEvents`) → the **`isTrusted` data invariant**
+(`br.coalesced_untrusted` — a constructed event is untrusted, which the Proxy cannot change); (3) CANVAS (`canvas-spoof`)
+→ **`canvas_worker_vs_main`** (the worker OffscreenCanvas renders unpatched); (4) BRAVE identity (`brave-fake-proxy`)
+→ **`br.brave_spoofed`** (iter-52's `Object.getPrototypeOf === Object.prototype` structural invariant). The shallow
+toString checks (`function_tostring_tampered`, `canvas_lie`, `webgl_getparameter_tampered`, `webdriver_getter_tampered`)
+are each Proxy-defeatable in isolation, but the convicting verdict survives via these backstops; the env-only tells
+(`voices_empty`/`media_devices_empty`) are corroborating, so defeating them changes no label. The two privacy-browser
+EXEMPTION gates: brave was the unique cheap-to-fake one (a fake `navigator.brave` is a plain Object — structurally
+detectable, now hardened); the RFP gate (`rfpGL` = WebGL vendor+renderer both natively "Mozilla" + UTC/letterbox/2-core)
+is OBSERVABLE-OUTPUT-DEFINED — a real RFP/Tor browser produces it natively, so a perfect mimic is correctly
+indistinguishable from a real Tor USER (no genuineness check is possible OR desirable — adding one would FP real Tor).
+CONCLUSION: the Proxy-over-native escalation thread is EXHAUSTIVELY mapped and closed — brave was the last exploitable
+rung; all four backstops are lit-test-guarded. No new gap, no code change (a grounded confirmation, ticking off the
+audit). The artifact layer's robustness is not the shallow toString checks (Proxy-defeatable) but the realm-coherence
++ data-invariant + structural-identity backstops behind them.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
