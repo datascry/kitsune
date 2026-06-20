@@ -206,19 +206,18 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     sig("ua_platform", plat)
     sig("ua_engine", engine)
     sig("ua_render", "gecko" if engine == "firefox" else "webkit")
-    # vendor_engine drives br.vendor_vs_ua. Abstain (don't emit it) in two cases: (1) iOS, where vendor
-    # follows the browser BRAND while the engine is always WebKit, so the axes decouple legitimately (see
-    # _is_ios); (2) an UNCLASSIFIABLE UA engine ("other" — e.g. a bare "AppleWebKit (KHTML, like Gecko)"
-    # macOS WKWebView UA with no browser token), where comparing a vendor against an unknown engine would
-    # convict on "unknown" — the principle is unknown never fires. A classifiable engine still fires (a
-    # macOS Safari UA reporting vendor "Google Inc." stays ua_engine=safari → caught).
-    # `... or ""` normalises a NULL/absent vendor to the empty string. Real Firefox reports
-    # navigator.vendor === "" (→ vendor_engine "firefox", coherent), but browserforge represents that as
-    # `None`; str(None) == "None" would map to "other" and FALSELY trip br.vendor_vs_ua on every Firefox
-    # fingerprint — a mapper artifact the real collector never produces (firefox-stock.json: vendor_engine
-    # "firefox"). Matching the collector's `vendor === "" ? "firefox"` keeps the calibration FP gate faithful.
-    if not _is_ios(ua) and engine != "other":
-        sig("vendor_engine", _vendor_engine(str(nav.get("vendor") or "")))
+    # vendor_engine drives br.vendor_vs_ua. Abstain (don't emit it) in three cases — "unknown never fires":
+    # (1) iOS, where vendor follows the browser BRAND while the engine is always WebKit, so the axes decouple
+    # legitimately (see _is_ios); (2) an UNCLASSIFIABLE UA engine ("other"); (3) the source did NOT provide a
+    # vendor (None) — a real browser ALWAYS has navigator.vendor (a string; "" on Firefox), so an ABSENT vendor
+    # means the SOURCE omitted it (fpgen nulls vendor), NOT that the browser has an empty one. The empty STRING
+    # "" is Firefox's real value (→ vendor_engine "firefox", coherent) and IS emitted; `None` abstains. Each
+    # source represents vendor faithfully (browserforge maps Firefox's empty vendor to "" in _fingerprint_to_dict;
+    # fpgen leaves the key out). Conflating None with "" mapped absent-vendor Chrome fps to "firefox" → a false
+    # br.vendor_vs_ua on 88% of fpgen fps; abstaining on None fixes it for every source.
+    vendor = nav.get("vendor")
+    if vendor is not None and not _is_ios(ua) and engine != "other":
+        sig("vendor_engine", _vendor_engine(str(vendor)))
     sig("hardware_concurrency", int(nav.get("hardwareConcurrency", 0) or 0))
     # Desktop-only tells (mirror the collector): a real desktop browser ships a standardized 5 plugins / 2
     # mimeTypes / pdfViewerEnabled=true, so a zero there is a stripped-browser signature — but every real

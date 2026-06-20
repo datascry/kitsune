@@ -34,7 +34,10 @@ def _fingerprint_to_dict(fp: Any) -> dict[str, Any]:
             "languages": list(nav.languages or []),
             "hardwareConcurrency": nav.hardwareConcurrency,
             "deviceMemory": getattr(nav, "deviceMemory", None),
-            "vendor": getattr(nav, "vendor", ""),
+            # browserforge represents Firefox's real navigator.vendor === "" as None; normalise it to the
+            # empty STRING here so the mapper sees Firefox's true value (→ vendor_engine "firefox", coherent)
+            # rather than an ABSENT vendor (which the mapper abstains on). Chrome/Safari fps carry a real brand.
+            "vendor": getattr(nav, "vendor", "") or "",
             "productSub": getattr(nav, "productSub", ""),
             "oscpu": getattr(nav, "oscpu", None),
             "maxTouchPoints": getattr(nav, "maxTouchPoints", 0),

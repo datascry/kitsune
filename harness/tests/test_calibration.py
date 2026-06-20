@@ -126,27 +126,45 @@ def test_coherent_real_chrome_scores_human() -> None:
     assert "webgl_software" not in k and "ch_he_headless" not in k and "media_devices_empty" not in k
 
 
-def test_firefox_null_vendor_maps_to_firefox_not_other() -> None:
-    # Mapper-fidelity regression: real Firefox reports navigator.vendor === "" (→ vendor_engine "firefox",
-    # coherent), but browserforge represents that as `None`. The mapper must normalise None → "" so it does
-    # NOT map to "other" and FALSELY trip br.vendor_vs_ua on every Firefox fingerprint (the collector never
-    # does — firefox-stock.json emits vendor_engine "firefox"). Grounds the calibration FP gate's fidelity.
-    firefox = {
+def _ff_nav(vendor_present: bool) -> dict[str, object]:
+    nav: dict[str, object] = {
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
+        "platform": "Win32",
+        "languages": ["en-US"],
+        "hardwareConcurrency": 8,
+    }
+    if vendor_present:
+        nav["vendor"] = ""  # Firefox's REAL navigator.vendor (empty string, present)
+    return {"navigator": nav, "screen": {"width": 1920, "height": 1080, "colorDepth": 24, "devicePixelRatio": 1}}
+
+
+def test_firefox_empty_string_vendor_maps_to_firefox_not_other() -> None:
+    # Mapper fidelity: real Firefox reports navigator.vendor === "" (the empty STRING) -> vendor_engine
+    # "firefox", coherent. The collector emits it (firefox-stock.json: vendor_engine "firefox"), so the mapper
+    # must too. Browserforge's _fingerprint_to_dict maps Firefox's None to "" so this case is exercised.
+    sigs = signals_from_fingerprint(_ff_nav(vendor_present=True), "ff", NOW)
+    assert _kinds(sigs).get("vendor_engine") == "firefox"  # not "other"
+    assert "br.vendor_vs_ua" not in {c.rule_id for c in Detector().ingest_and_score(sigs)[0].contradictions}
+
+
+def test_absent_vendor_abstains_and_never_trips_vendor_vs_ua() -> None:
+    # A source that OMITS navigator.vendor (None / absent — fpgen does this) must make the mapper ABSTAIN, not
+    # fabricate a vendor_engine. A real browser ALWAYS has navigator.vendor, so an absent vendor is "unknown",
+    # not an empty one. Conflating None with "" mapped absent-vendor Chrome fps to "firefox" -> a false
+    # br.vendor_vs_ua on 88% of fpgen fingerprints; abstaining on None fixes it. ("unknown never fires".)
+    chrome_no_vendor = {
         "navigator": {
-            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",  # noqa: E501
             "platform": "Win32",
             "languages": ["en-US"],
             "hardwareConcurrency": 8,
-            "vendor": None,  # browserforge's representation of Firefox's empty navigator.vendor
+            # no "vendor" key — the source did not provide it
         },
         "screen": {"width": 1920, "height": 1080, "colorDepth": 24, "devicePixelRatio": 1},
     }
-    sigs = signals_from_fingerprint(firefox, "ff", NOW)
-    k = _kinds(sigs)
-    assert k.get("ua_engine") == "firefox"
-    assert k.get("vendor_engine") == "firefox"  # not "other"
-    fired = {c.rule_id for c in Detector().ingest_and_score(sigs)[0].contradictions}
-    assert "br.vendor_vs_ua" not in fired
+    sigs = signals_from_fingerprint(chrome_no_vendor, "c", NOW)
+    assert "vendor_engine" not in _kinds(sigs)  # abstain — do not fabricate
+    assert "br.vendor_vs_ua" not in {c.rule_id for c in Detector().ingest_and_score(sigs)[0].contradictions}
 
 
 def test_non_chromium_ua_emits_no_client_hint_signals_even_with_stray_userAgentData() -> None:
