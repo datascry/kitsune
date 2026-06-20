@@ -38,10 +38,16 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    collector's native-tamper list (`demo.py` + `probes.ts`) → the plain-function COALESCE_SPOOF override is now
    caught by `br.tostring_tampered` (convicting automation). Grounded live: COALESCE_SPOOF fires it, HUMAN_MOUSE +
    plain STEALTH (native) do NOT (FP-safe); 0 new browserforge FPs. So the red-team traded a corroborating tell
-   for a convicting one — **blue wins this round.** NEXT red-team escalation: a **Proxy-over-native** coalesce
-   patch (`new Proxy(realGCE, …)` preserving the native toString) to defeat `br.tostring_tampered`, which then
-   needs the deeper `br.native_invariant_violated` check (and if that's also beaten → a coalesced-COHERENCE check
-   on the fabricated batch's timestamps/coords, or → coordination). The ladder is live.
+   for a convicting one — **blue wins this round.** **Red-team escalation LANDED iter-3: `COALESCE_PROXY`** —
+   wraps the real `getCoalescedEvents` in `new Proxy(realGCE, {apply})` (the fingerprint-injector technique). The
+   Proxy inherits the native invariants + `[native code]` toString, so grounded live it defeats ALL THREE:
+   `br.tostring_tampered` ✗, `br.native_invariant_violated` ✗, AND `bh.synthetic_no_coalesced` ✗ — the whole
+   per-session artifact layer is beaten on the coalesced surface. **Exposed gap (Proxy-PROOF):** the fabricated
+   `PointerEvent`s are constructed at read-time, so their `timeStamp`s come AFTER the parent pointermove event,
+   whereas real coalesced events are intermediate samples gathered BEFORE dispatch (`timeStamp <= e.timeStamp`,
+   monotonic). → **NEXT blue-team move (iter-4): a coalesced-COHERENCE check** — emit a tell when any coalesced
+   event's `timeStamp` exceeds its parent's (a data-coherence check the Proxy cannot fix). If a future red-team
+   then forges coherent timestamps too, the fake is genuinely good → coordination/external frontier. Ladder live.
 2. **[network] azuretls-client** (Go, `github.com/Noooste/azuretls-client`) — a current TLS/JA3 + HTTP/2 +
    **HTTP/3 / QUIC** template forger. Exercises the QUIC layer (detector rules retired on a broken capture) and a
    *current* template vs the deliberately-stale `go-tls`.

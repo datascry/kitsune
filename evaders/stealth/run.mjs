@@ -129,6 +129,14 @@ const DOMRECT_SPOOF = process.env.DOMRECT_SPOOF === "1";
 // (corroborating) coalesced tell. NB: it patches a prototype method the detector's native-tamper list does NOT
 // yet cover (demo.py toStringTampered omits getCoalescedEvents) — a red-team move that exposes a blue-team gap.
 const COALESCE_SPOOF = process.env.COALESCE_SPOOF === "1";
+// COALESCE_PROXY: the escalation of COALESCE_SPOOF after the blue-team added getCoalescedEvents to the
+// native-tamper list (v0.74.36). Instead of a plain-function override (caught by br.tostring_tampered), wrap the
+// real native getCoalescedEvents in `new Proxy(realGCE, {apply})` — the fingerprint-injector technique. A
+// Proxy-over-native inherits the target's invariants: its toString forwards to the native source ([native code],
+// so br.tostring_tampered stays quiet), and it is non-constructable with no own prototype (so
+// br.native_invariant_violated stays quiet). It still fabricates the coalesced batch, so bh.synthetic_no_coalesced
+// is also beaten — the whole per-session artifact layer is defeated, leaving only a coalesced-COHERENCE check.
+const COALESCE_PROXY = process.env.COALESCE_PROXY === "1";
 // REPLAY_TRACE: a behavioural-replay fleet. Inject a byte-identical RECORDED pointer trajectory via synthetic
 // mousemove events with exact clientX/clientY, so every instance produces the SAME trace_hash. trace_hash is
 // COORDINATE-based (hashes rounded x,y, not timing), hence exactly reproducible across machines — unlike a
@@ -240,8 +248,11 @@ const evading =
   SCREEN_IMPOSSIBLE ||
   REPLAY_TRACE ||
   COALESCE_SPOOF ||
+  COALESCE_PROXY ||
   Boolean(SPOOF_UA);
-const mode = COALESCE_SPOOF
+const mode = COALESCE_PROXY
+  ? "coalesce-proxy"
+  : COALESCE_SPOOF
   ? "coalesce-spoof"
   : REPLAY_TRACE
   ? "replay-trace"
@@ -593,6 +604,46 @@ if (FLOOR_SPOOF) {
         py = cy;
         return out;
       };
+    }
+  });
+} else if (COALESCE_PROXY) {
+  // Proxy-over-native escalation: wrap the REAL getCoalescedEvents in a Proxy so the override keeps the native
+  // toString ([native code]) and native invariants (non-constructable, no own prototype) — defeating
+  // br.tostring_tampered AND br.native_invariant_violated — while still fabricating the coalesced batch to beat
+  // bh.synthetic_no_coalesced. The only blue-team response left is a coherence check on the fabricated batch.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    if (typeof PointerEvent !== "undefined" && PointerEvent.prototype.getCoalescedEvents) {
+      const realGCE = PointerEvent.prototype.getCoalescedEvents;
+      let px = null,
+        py = null;
+      PointerEvent.prototype.getCoalescedEvents = new Proxy(realGCE, {
+        apply(target, thisArg, args) {
+          const real = Reflect.apply(target, thisArg, args);
+          const cx = thisArg.clientX,
+            cy = thisArg.clientY;
+          if (real && real.length > 1) {
+            px = cx;
+            py = cy;
+            return real;
+          }
+          const n = 3 + (Math.abs(Math.round(cx + cy)) % 4);
+          const out = [];
+          if (px !== null) {
+            for (let i = 1; i <= n; i++) {
+              const f = i / (n + 1);
+              out.push(
+                new PointerEvent("pointermove", { clientX: px + (cx - px) * f, clientY: py + (cy - py) * f, bubbles: true }),
+              );
+            }
+          } else {
+            out.push(thisArg);
+          }
+          px = cx;
+          py = cy;
+          return out;
+        },
+      });
     }
   });
 } else if (DOMRECT_SPOOF) {
