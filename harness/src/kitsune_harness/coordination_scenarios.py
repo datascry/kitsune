@@ -12,9 +12,14 @@ caught). It is the closest non-blocked approximation of the live proxy/coordinat
 scenarios stand in for residential-proxy traffic the lab cannot capture.
 
 The discriminating principle under test is the conviction gate: a real diverse cohort on one browser build
-shares a JA4 and has divergent JS and distinct IPs (the paradox + spread), so those cannot convict alone;
-only a signal a real cohort cannot produce — per-launch JA4_c randomization, a fingerprint collision, a
-pointer-trace collision, or a shared WebRTC origin behind distinct proxies — may label `fleet`.
+shares a JA4 and has divergent JS and distinct IPs (the paradox + spread), so those cannot convict alone.
+A `fleet` label needs a CONVICTING signal, which split two ways: UNAMBIGUOUS solo-convict signals a real
+cohort cannot produce (a pointer-trace collision; a shared WebRTC origin behind distinct proxies), and
+AMBIGUOUS signals a real cohort CAN produce — a fingerprint collision (a standardized corporate fleet hashes
+alike) and JA4_c divergence (a multi-browser-VERSION cohort ships different extension/sig-alg sets; GROUNDED
+2026-06-20: real Camoufox does NOT randomize JA4_c per launch — concurrent launches emit an identical JA4_c,
+so the fleet-ja4c-randomizer scenario synthesises the divergence) — which convict only when corroborated by an
+unambiguous signal, a per-session automation tell, or an IP-reputation flag.
 """
 
 from __future__ import annotations
@@ -183,9 +188,10 @@ def scenarios() -> list[Scenario]:
         Scenario(
             "fleet-ja4c-randomizer",
             True,
-            "Camoufox-style: shared cipher prefix but per-launch JA4_c randomization, diverse JS, distinct IPs, "
-            "AUTOMATED (webdriver) — the automation tell corroborates the divergence as per-launch randomization, "
-            "not a benign multi-Chrome-version cohort (which also diverges JA4_c)",
+            "uTLS-style fingerprint randomizer: shared cipher prefix but per-launch JA4_c randomization (NOT "
+            "Camoufox — real Camoufox emits a stable JA4_c per config, grounded 2026-06-20), diverse JS, distinct "
+            "IPs, AUTOMATED (webdriver) — the automation tell corroborates the JA4_c divergence as a fleet, not a "
+            "benign multi-browser-version cohort (which also diverges JA4_c, hence the corroboration gate)",
             [
                 (
                     f"c{i}",

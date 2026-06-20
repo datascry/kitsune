@@ -53,7 +53,13 @@ _LOCKSTEP_WINDOW_S = 120.0  # sessions sharing a JA4 all arriving within this wi
 _LOCKSTEP_BONUS = 0.12  # tightens confidence; kept < the fleet threshold so the JS paradox stays primary
 # JA4_c (extensions + signature algorithms) divergence under a shared cipher-suite prefix. JA4 *sorts*
 # extensions specifically to be robust to Chrome's order shuffling, so a varying JA4_c means the actual
-# extension/sig-alg set is being manipulated per launch — an anti-detect TLS tell (Camoufox does this).
+# extension/sig-alg set differs across the cluster. GROUNDED 2026-06-20: this is NOT per-launch randomization
+# by Camoufox — 2 concurrent Camoufox launches (+ the committed cf1/cf2 and the 3 camoufox-* captures) all
+# emit an IDENTICAL JA4_c per config, so a real Camoufox FLEET does NOT diverge. The signal is produced by a
+# multi-VERSION cohort (different Chrome/Firefox builds ship different extension/sig-alg sets) or a uTLS-style
+# fingerprint randomizer — both REAL, which is exactly why ja4c_divergent is AMBIGUOUS (corroboration-gated):
+# a benign mix of auto-update states diverges JA4_c too. (The fleet-ja4c-randomizer scenario + rp1/rp2 synthesise
+# the divergence by combining the two real Camoufox-config JA4_c values; no single fleet tool produces it live.)
 _JA4C_BONUS = 0.30
 # The *complement* of the JS-divergence paradox. A randomizing fleet (Camoufox) varies its JS to fake
 # distinct users; a native anti-detect browser (BotBrowser) does the opposite — it clones ONE fingerprint
