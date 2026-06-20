@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.36"
+ruleset_version: "0.74.37"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -511,6 +511,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "PointerEvent.getCoalescedEvents(); CDP Input.dispatchMouseEvent emits discrete events"
+
+  - id: br.coalesced_untrusted
+    title: A coalesced pointer batch contains an untrusted (constructor-built) event — fabricated coalescing
+    layers: [browser]
+    reads: [browser.coalesced_untrusted]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: artifact
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "v0.74.37. The Proxy-over-native counter (red-team COALESCE_PROXY): after the getCoalescedEvents native-tamper check (v0.74.36) was added, a bot wraps the real getCoalescedEvents in new Proxy(realGCE,{apply}) — keeping the function native (toString/invariant clean, beating br.tostring_tampered + br.native_invariant_violated) — yet fabricates the coalesced batch to beat bh.synthetic_no_coalesced. But getCoalescedEvents must return the UA's OWN native samples, which are ALWAYS isTrusted (hardware AND CDP-dispatched events are trusted); a constructor-built `new PointerEvent()` is isTrusted=false. So an untrusted event inside a length>1 coalesced batch is impossible for a real browser → a hard fabrication artifact. The Proxy keeps the FUNCTION native but cannot forge trusted DATA. Grounded live: COALESCE_PROXY fires it; HUMAN_MOUSE + plain STEALTH (real CDP events, isTrusted=true, or length<=1) do NOT — FP-safe. Convicting (artifact). Next red-team rung needs genuinely-trusted coalesced events = real hardware input (external frontier)."
 
   # --- v0.4.0: lie-detection (catches how an evasion was applied) ---
 

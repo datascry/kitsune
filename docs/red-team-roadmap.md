@@ -45,9 +45,17 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    per-session artifact layer is beaten on the coalesced surface. **Exposed gap (Proxy-PROOF):** the fabricated
    `PointerEvent`s are constructed at read-time, so their `timeStamp`s come AFTER the parent pointermove event,
    whereas real coalesced events are intermediate samples gathered BEFORE dispatch (`timeStamp <= e.timeStamp`,
-   monotonic). → **NEXT blue-team move (iter-4): a coalesced-COHERENCE check** — emit a tell when any coalesced
-   event's `timeStamp` exceeds its parent's (a data-coherence check the Proxy cannot fix). If a future red-team
-   then forges coherent timestamps too, the fake is genuinely good → coordination/external frontier. Ladder live.
+   monotonic). **Blue-team counter LANDED iter-4 (v0.74.37): `br.coalesced_untrusted`** (artifact,
+   convicting). The data-coherence check the Proxy cannot fix: `getCoalescedEvents()` must return the UA's OWN
+   native samples, which are ALWAYS `isTrusted` (hardware AND CDP-dispatched events are trusted); a
+   constructor-built `new PointerEvent()` is `isTrusted=false`. So an untrusted event inside a length>1 coalesced
+   batch is a hard fabrication artifact. Grounded live: COALESCE_PROXY + COALESCE_SPOOF fire it; HUMAN_MOUSE +
+   plain STEALTH (real CDP events / length<=1) do NOT (FP-safe); 0 calibration FPs. The Proxy keeps the FUNCTION
+   native but cannot forge trusted DATA — **blue wins the round.** **COALESCED LADDER TERMINUS:** the next red-team
+   rung needs genuinely-trusted coalesced events, which only real hardware input produces (`new PointerEvent()` is
+   always untrusted; no in-sandbox way to forge a trusted event) → **external/real-device frontier.** Behavioral
+   vein mapped: synthesis defeats the biomech floor; the coalesced residual is now a 4-rung ladder ending at
+   real-hardware-input. `coalesce-proxy.json` frozen as the lit-capture for `br.coalesced_untrusted`.
 2. **[network] azuretls-client** (Go, `github.com/Noooste/azuretls-client`) — a current TLS/JA3 + HTTP/2 +
    **HTTP/3 / QUIC** template forger. Exercises the QUIC layer (detector rules retired on a broken capture) and a
    *current* template vs the deliberately-stale `go-tls`.

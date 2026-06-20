@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.36`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 89 active · 27 experimental · 6 retired; 80 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.37`); regenerate with `task catalog`, do not edit by hand. **123 rules**: 90 active · 27 experimental · 6 retired; 81 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (25)
 
@@ -40,7 +40,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.h2_rapid_reset` | automation✦ | present | 0.9 | active | HTTP/2 rapid-reset flood (CVE-2023-44487) on this connection |
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 
-### browser layer (103)
+### browser layer (104)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -111,6 +111,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.brave_spoofed` | artifact✦ | present | 0.7 | active | navigator.brave is present but faked (isBrave is not a native function) |
 | `br.canvas_geometry_noise` | artifact✦ | present | 0.6 | active | Canvas path geometry is non-deterministic (isPointInPath farbling, e.g. JShelter) |
 | `br.canvas_noise` | artifact✦ | present | 0.5 | active | Solid-fill canvas reads back perturbed (engine-level farbling, e.g. Brave) |
+| `br.coalesced_untrusted` | artifact✦ | present | 0.7 | active | A coalesced pointer batch contains an untrusted (constructor-built) event — fabricated coalescing |
 | `br.domrect_invariant` | artifact✦ | present | 0.55 | active | getBoundingClientRect is non-deterministic or disagrees with getClientRects — geometry shim |
 | `br.font_mac_internal` | artifact✦ | present | 0.7 | experimental | macOS internal dot-prefixed system fonts are web-measurable (never on a real Mac) |
 | `br.measuretext_offscreen_vs` | artifact✦ | present | 0.6 | active | Canvas measureText differs between main and OffscreenCanvas — main-thread font hook |

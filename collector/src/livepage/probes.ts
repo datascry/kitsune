@@ -460,6 +460,7 @@ export function armCollector(): LiveCollector {
   const keys: number[] = [];
   let ptrMoves = 0;
   let coalescedMax = 0;
+  let coalescedUntrusted = false;
   let cspEnforced = false;
   let voices: SpeechSynthesisVoice[] = [];
 
@@ -475,6 +476,10 @@ export function armCollector(): LiveCollector {
       try {
         const c = e.getCoalescedEvents();
         if (c.length > coalescedMax) coalescedMax = c.length;
+        // A real coalesced batch is the UA's own native (always-trusted) samples; an untrusted, constructor-built
+        // event inside a length>1 batch is a fabricated getCoalescedEvents override (COALESCE_PROXY) — caught
+        // even through a Proxy-over-native, which keeps the function native but cannot forge trusted data.
+        if (c.length > 1 && c.some((ev) => ev != null && ev.isTrusted === false)) coalescedUntrusted = true;
       } catch {
         /* ignore */
       }
@@ -1240,6 +1245,9 @@ export function armCollector(): LiveCollector {
       if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
         put("behavioral", "coalesced_events_absent", true);
       }
+      // A coalesced batch carrying an untrusted (constructor-built) event is fabricated coalescing — caught
+      // even through a Proxy-over-native getCoalescedEvents override (v0.74.37).
+      if (coalescedUntrusted) put("browser", "coalesced_untrusted", true);
     }
     // Keystroke cadence only judged with enough keys to be meaningful (else genuinely absent, not a floor).
     if (keys.length >= 4) put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));

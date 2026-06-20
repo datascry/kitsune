@@ -61,12 +61,23 @@ td code{font-size:12px;color:#0a3}
   // human-like curved path) arrives one discrete event at a time and never coalesces. A long pointer
   // stream that never coalesces, on an engine that supports it, is an injected-input tell that survives
   // even a bot which has defeated the path-straightness and velocity behavioral checks.
-  var ptrMoves = 0, coalescedMax = 0;
+  var ptrMoves = 0, coalescedMax = 0, coalescedUntrusted = false;
   var coalescedSupported = typeof PointerEvent !== "undefined" && "getCoalescedEvents" in PointerEvent.prototype;
   if (coalescedSupported) {
     addEventListener("pointermove", function (e) {
       ptrMoves++;
-      try { var c = e.getCoalescedEvents(); if (c && c.length > coalescedMax) coalescedMax = c.length; } catch (err) {}
+      try {
+        var c = e.getCoalescedEvents();
+        if (c && c.length > coalescedMax) coalescedMax = c.length;
+        // A real coalesced batch is the UA's OWN native samples — every entry isTrusted (hardware and even
+        // CDP-dispatched events are trusted). A length>1 batch containing an UNTRUSTED (constructor-built) event
+        // is fabricated: a getCoalescedEvents override faking coalescing to beat synthetic_no_coalesced, betrayed
+        // by the injected events' isTrusted=false. Defeats Proxy-over-native — the Proxy keeps the function native
+        // (toString/invariant clean) but cannot forge trusted DATA; new PointerEvent() is always untrusted.
+        if (c && c.length > 1) {
+          for (var ci = 0; ci < c.length; ci++) { if (c[ci] && c[ci].isTrusted === false) { coalescedUntrusted = true; break; } }
+        }
+      } catch (err) {}
     });
   }
   // Keystroke timing: a real typist has variable inter-key intervals (digraph latencies differ); a script
@@ -1144,6 +1155,9 @@ td code{font-size:12px;color:#0a3}
       if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
         sigs.push(S("behavioral", "coalesced_events_absent", true));
       }
+      // A coalesced batch carrying an untrusted (constructor-built) event is fabricated — a hard artifact a
+      // real browser never produces, even through a Proxy-over-native getCoalescedEvents override.
+      if (coalescedUntrusted) sigs.push(S("browser", "coalesced_untrusted", true));
     }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
       .then(function (r) { return r.json(); })
