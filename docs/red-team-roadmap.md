@@ -382,6 +382,24 @@ still capped at `candidate` (a real standardized-hardware cohort hashes alike). 
 complete and grounded both ways:** leak it (HTTP proxy + WebRTC direct) → `shared_real_ip` convicts (iter-31);
 block it → `candidate`, external-gated (iter-32). No detector change, no version bump.
 
+**NEW DETECTION: `rep.webrtc_origin_datacenter` — the WebRTC leak exposes a blue-team blind spot (iter-33, v0.74.41).**
+Grounding the WebRTC leak (iters 30-32) surfaced a real gap: the detector classifies ONLY `observed_ip`'s reputation
+(`rep.datacenter_asn`), never the WebRTC-leaked origin. But the leaked `webrtc_public_ip` is the REAL machine running
+the browser — a cloud bot HIDES behind a residential proxy (clean `observed_ip`) while its WebRTC leaks its DATACENTER
+origin (the cloud VM). So `rep.datacenter_asn` (observed_ip only) MISSES the cloud-bot-behind-residential-proxy. Built
+the detection: `detector._with_derived` now also classifies `webrtc_public_ip` → `reputation.webrtc_origin_datacenter`
+→ the new rule. **KEY FP-SAFETY** (vs the demoted per-session `net.webrtc_ip_vs_observed`): it is the REPUTATION of the
+origin, not merely that it differs — a real VPN user leaks their RESIDENTIAL home IP (never datacenter), so the rule
+does NOT fire on them. Corroborating (category reputation, not convicting): the residual FP is a real user running the
+browser ON a datacenter machine (cloud desktop / remote browser / dev VM) — rare but real, so it corroborates (matching
+`rep.datacenter_asn`'s stance). GROUNDED LIVE: local STUN configured to report `52.0.0.1` (the committed AWS
+datacenter CIDR) + an HTTP CONNECT proxy → camoufox `observed_ip`=clean proxy, `webrtc_public_ip`=52.0.0.1 →
+**`rep.webrtc_origin_datacenter` FIRED while `rep.datacenter_asn` did NOT** (the exact cloud-bot-hidden shape). Unit
+tests: datacenter origin behind a clean proxy fires; a residential WebRTC origin (VPN user) does NOT. Calibration
+unaffected (no WebRTC layer); detector 243 green, mypy clean. `webrtc-origin-datacenter.json` frozen. **This is the
+first NEW convicting-class detection surface the in-sandbox WebRTC infra unlocked — the leaked-origin reputation, a
+distinct IP from the proxy, catching the residential-proxy disguise the observed_ip rules cannot see.**
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

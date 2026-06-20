@@ -77,6 +77,16 @@ class Detector:
                 rep_add.append(mk(Layer.reputation, kind="asn_is_datacenter", value=True))
             if is_px:
                 rep_add.append(mk(Layer.reputation, kind="is_proxy_exit", value=True))
+        # The WebRTC-leaked origin is the REAL machine running the browser (vs observed_ip = the proxy a bot
+        # hides behind). A cloud bot behind a residential proxy has a clean observed_ip but leaks its DATACENTER
+        # origin via WebRTC; a real user's machine is residential (a VPN user leaks their residential home IP).
+        # So classify the leaked origin: a datacenter WebRTC origin is the cloud-bot-behind-residential-proxy
+        # tell the observed_ip rules miss. (Corroborating — cloud-desktop/remote-browser users are a rare FP.)
+        webrtc_ip = session.value(Layer.browser, "webrtc_public_ip")
+        if webrtc_ip is not MISSING:
+            wr_dc, _ = self._iprep.classify(str(webrtc_ip))
+            if wr_dc:
+                rep_add.append(mk(Layer.reputation, kind="webrtc_origin_datacenter", value=True))
         if not net_add and not rep_add and not browser_add:
             return session
         update: dict[str, list[Signal]] = {}

@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.40`); regenerate with `task catalog`, do not edit by hand. **125 rules**: 92 active · 27 experimental · 6 retired; 82 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.41`); regenerate with `task catalog`, do not edit by hand. **126 rules**: 93 active · 27 experimental · 6 retired; 82 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (27)
 
@@ -163,12 +163,13 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.synthetic_no_coalesced` | behavioral | present | 0.45 | active | Long pointer stream never coalesces (CDP-injected input, not hardware) |
 | `bh.uniform_velocity` | behavioral | below_threshold | 0.55 | active | Mouse moves at near-constant speed (low velocity CV) |
 
-### reputation layer (2)
+### reputation layer (3)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `rep.datacenter_asn` | reputation | present | 0.5 | active | Source IP belongs to a datacenter / hosting ASN |
 | `rep.known_proxy_exit` | reputation | present | 0.5 | active | Source IP is a known VPN / proxy / Tor exit |
+| `rep.webrtc_origin_datacenter` | reputation | present | 0.6 | active | WebRTC-leaked real origin IP belongs to a datacenter / hosting ASN |
 
 _✦ = a convicting category (can push a session to `bot`); all others corroborate only._
 

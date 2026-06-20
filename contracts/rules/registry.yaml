@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.40"
+ruleset_version: "0.74.41"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -309,6 +309,18 @@ rules:
     added: "2026-06-17"
     last_validated: "2026-06-18"
     source: "Producer: detector IP-CIDR classifier (ip_reputation.py) over curated cloud/hosting ranges; cf. iptoasn.com / MaxMind GeoLite2-ASN. See docs/ip-reputation-data.md"
+
+  - id: rep.webrtc_origin_datacenter
+    title: WebRTC-leaked real origin IP belongs to a datacenter / hosting ASN
+    layers: [reputation]
+    reads: [reputation.webrtc_origin_datacenter]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: reputation
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "The WebRTC leak reveals the REAL machine running the browser (the srflx public IP), distinct from observed_ip (the proxy/VPN a client connects through). The detector already classifies observed_ip's reputation (rep.datacenter_asn), but a cloud bot HIDES behind a residential proxy — its observed_ip is clean (residential) while its WebRTC leaks its DATACENTER origin (the cloud VM). This rule classifies the LEAKED origin: a datacenter WebRTC origin is the cloud-bot-behind-residential-proxy tell that rep.datacenter_asn (observed_ip only) cannot see. KEY FP-SAFETY vs the per-session webrtc leak (net.webrtc_ip_vs_observed, demoted to corroborating because a VPN user leaks too): a real VPN user's WebRTC leaks their RESIDENTIAL home IP (not datacenter), so this rule does NOT fire on them — it is the reputation of the ORIGIN, not merely that it differs. Corroborating (category reputation), not convicting: the residual FP is a real user running the browser ON a datacenter machine (cloud desktop / remote browser / a dev VM) — rare but real, so it corroborates rather than convicts (matching rep.datacenter_asn's stance on the observed_ip half). GROUNDED LIVE 2026-06-20 (iter-33): local STUN configured to report a PUBLIC IP from the committed data/datacenter_cidrs.txt + an HTTP CONNECT proxy → camoufox's observed_ip = residential-looking proxy while webrtc_public_ip = the datacenter origin → the rule fired (and rep.datacenter_asn on observed_ip did NOT — the exact cloud-bot-hidden-behind-residential-proxy shape). browserforge/intoli calibration carry no WebRTC layer so this never fires there."
 
   # --- v0.2.0: deepened coverage ---
 
