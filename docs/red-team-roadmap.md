@@ -452,6 +452,35 @@ the WebRTC frontier's residual is genuinely external.** `camoufox-socks-webrtc.j
 webrtc_unavailable residual). No detector change, no version bump. The WebRTC/IP-rep arc (iters 30-36) is complete:
 the leaked-origin reputation is a robust convicting surface, and the only escape is real residential infra.
 
+## Comprehensive saturation — full-corpus regression validation (iter-37, 2026-06-20, ruleset 0.74.42)
+
+Re-scored ALL 86 `corpus/sessions/*.json` against the current ruleset to verify the ~20 rules added across iters
+15-34 (within-session rotation: `ja4_unstable`/`ip_rotation`; WebRTC: `webrtc_ip_vs_observed`; IP-rep cross-layer:
+`rep.webrtc_origin_datacenter`/`net.datacenter_origin_proxied`; the coalesced ladder; engine/realm tells) caused
+NO regression: **77 `bot`, 9 `suspicious`, 0 `human`** — every previously-convicted capture still convicts, and no
+known evader regressed to a clean verdict. The 9 `suspicious` are the saturated EVADES set: **7 genuine per-session
+EVADES** (`camoufox-headful`, `camoufox-linux`, `camoufox-linux-coherent`, `camoufox-hardened`, `patchright-headful`,
+`zendriver-uach`, `zendriver-uach-behave` — all engine-coherent with a residual that is 100% external-hardware-gated)
++ **2 WebRTC demonstrations** (`webrtc-leak` — per-session ambiguous with a VPN user, convicted at scale by
+`shared_real_ip`; `camoufox-socks-webrtc` — the SOCKS counter degraded to `webrtc_unavailable`).
+
+**SATURATION STATEMENT (in-sandbox evasion + detection are comprehensively mapped):**
+- **Per-session**: saturated. 7 EVADES all reduce to one recipe (engine-spoof + coherent OS profile + maxTouchPoints
+  pin); residual = the external-hardware-gated environment floor (`webgl2_missing`/`voices_empty`/`media_devices_empty`)
+  + `synthetic_no_coalesced` (the coalesced ladder's real-hardware terminus).
+- **Engine axis** (Chromium/WebKit/Gecko), **behavioral** (mouse/keystroke/coalesced), **within-session rotation**
+  (JA4/IP), **coordination** (`fp_collision`/`trace_collision`/`shared_real_ip` all real-grounded + the maximal-fleet
+  boundary), and the **WebRTC/IP-rep cross-layer frontier** (the leaked-origin reputation, both counters grounded):
+  all mapped and grounded LIVE.
+- **The single remaining convicting frontier is real IP-reputation / residential-hardware data** — a bot that runs
+  engine-coherent on RESIDENTIAL hardware, blocks/SOCKS-routes WebRTC, and fronts with a residential proxy is
+  indistinguishable from a residential user without real datacenter-vs-residential ASN data (in-sandbox `observed_ip`
+  is always private 172.x → classified clean; verified against `ip_reputation.py` + the edge's TCP-source `clientIP`).
+  Likewise the prevalence model needs a Tier-3 real-traffic prior. Both genuinely external.
+- **Productive moves from here:** an operator supplies that external data (IP-rep / real-traffic prevalence / real
+  hardware) → build the blocked detections; OR a genuinely-new anti-detect tool appears to white-box. Not further
+  in-sandbox grinding of the rotation-family / cosmetic-tweak kind. No detector change, no version bump this iter.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
