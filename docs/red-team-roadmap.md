@@ -64,9 +64,11 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
 4. **[fingerprint] real-value-reuse injection** (botright / apify fingerprint-injector class) — Proxy-over-native
    injection of real-sampled `(gpu, screen, cores, …)` joints; attacks the artifact + prevalence layers head-on
    (the white-boxed limit of per-session prevalence).
-5. **[environment] stock-Chrome `--headless=new`** — a real Chrome binary (NOT Playwright's bundled Chromium,
-   which still reports HeadlessChrome) driving a CDP-minimal tool → drops the last headless UA token; the whole
-   CDP-minimal class joins the EVADES frontier.
+5. **[environment] stock-Chrome `--headless=new`** — ❌ **REFUTED iter-8 (grounded live).** The hypothesis was
+   that a stock Chrome binary's new-headless drops the HeadlessChrome UA token → the CDP-minimal class EVADES.
+   Installed real stock Chrome 149: `--headless=new`/`--headless=old`/`--headless` ALL report
+   `HeadlessChrome/149.0.0.0` (token removal never shipped through 149); nodriver+stock-Chrome-new-headless →
+   **bot** via `br.headless_ua`. So `br.headless_ua` HOLDS — no EVADES class. See "Grounded corrections" below.
 
 ### Vein A.5 — DONE iter-5: coherent UA-CH (`UACH_COHERENT`)
 Grounded the frontier (2026-06-20): `MAX_STEALTH`-headless is NOT close to EVADES — its browser layer has 0
