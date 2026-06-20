@@ -269,19 +269,33 @@ lightable by a faithful evader (the electron-leak / stale-engine pattern):
 | `br.measuretext_offscreen_vs` | artifact | ✅ **lit v0.74.22** (stealth `MEASURETEXT_SPOOF=1`) | farble main-thread `measureText` only (offscreen stays real → divergence) |
 | `br.canvas_lie` | automation | ✅ **lit v0.74.22** (stealth `CANVAS_LIE=1`) | override `HTMLCanvasElement.prototype.toDataURL` with a non-native fn (toString lacks `[native code]`) |
 | `br.domrect_invariant` | artifact | ✅ **lit v0.74.22** (stealth `DOMRECT_SPOOF=1`) | per-call DOMRect noise shim breaks the getBoundingClientRect determinism invariant |
-| `br.audio_noise`, `br.automation_globals`, `br.cdc_artifacts`, `br.csp_bypassed`, `br.font_os_vs_ua`, `br.screen_impossible`, `br.voice_os_vs_ua`, `br.webgpu_vendor_vs_webgl`, `net.h2_control_flood`, `net.h2_settings_vs_order` | mixed | unit-tested (logic proven), no live capture | a faithful evader would add a live positive, lower priority |
+| `br.cdc_artifacts` | automation | ✅ **lit v0.74.32** (stealth `CDC_LEAK=1`) | inject the canonical un-patched-chromedriver `$cdc_asdjflasutopfhvcZLmcfl_*` globals onto `document` |
+| `br.font_os_vs_ua` | coherence | ✅ **lit v0.74.32** (stealth `FONT_OS_LEAK=1`) | Windows UA while the real Linux host fonts (DejaVu/Noto baked into the image) leak through |
+| `br.csp_bypassed` | automation | ✅ **lit v0.74.32** (stealth `CSP_BYPASS=1`) | context `bypassCSP:true` swallows the served `img-src 'none'` violation a real browser fires |
+| `br.audio_noise` | artifact | ✅ **lit v0.74.32** (stealth `AUDIO_NOISE=1`) | perturb `AudioBuffer.getChannelData` per-call so two identical OfflineAudioContext renders diverge |
+| `br.screen_impossible` | artifact | ✅ **lit v0.74.32** (stealth `SCREEN_IMPOSSIBLE=1`) | spoof `Screen.prototype` so avail > physical (impossible geometry) |
+| `net.h2_control_flood` | automation | ✅ **lit v0.74.32** (h2-rapid-reset `KS_MODE=controlflood`) | spam 150 SETTINGS+PING frames → edge ControlFrameFlood (>=100) |
+| `net.h2_settings_vs_order` | coherence | ✅ **lit v0.74.32** (h2-rapid-reset `KS_MODE=settingssplit`) | Chromium SETTINGS profile + Firefox pseudo-header order (half-spoofed stack) |
+| `br.voice_os_vs_ua`, `br.webgpu_vendor_vs_webgl` | coherence | ⛔ hardware-blocked, un-groundable in-sandbox | needs real OS TTS voices / a real GPU (headless `getVoices()`=0; software WebGPU vendor is unrecognised by `gpuFam()`) — see [[unexercised-active-rules-need-live-positives]] |
 
 Reproduce the audit: score `corpus/sessions/*.json` through `Detector().score()` and diff the fired rule_ids
-against the active-convicting set. **The no-test/no-capture liability class is now EMPTY** (v0.74.22): every
-active convicting rule has either a live positive or a unit test proving its logic. The five lit rules were
-then **captured as committed `corpus/sessions` fixtures** (electron-leak, stale-engine, measuretext-spoof,
-canvas-lie, domrect-spoof) — so they appear in the matrix/scoreboard and are guarded by
-`test_lit_rule_captures.py` (each capture must still trip its target rule). This dropped fire-on-zero-captures
-from 15 → 9; the remaining 9 all have unit tests (logic proven). Per-session validation is therefore complete
-— future iterations pivot to the structural frontiers, both confirmed external-data-bound this iteration:
-the prevalence second prior needs real-device gpu/cores data, and the coordination shape-signals
-(`fp_collision`, `trace_collision` via fleet-cloned, `shared_real_ip` via fleet-proxy) are already
-demonstrated in-sandbox — only the IP-reputation half (`rep.*`) needs real residential-proxy egress.
+against the active-convicting set. **The no-test/no-capture liability class is EMPTY** (v0.74.22) and the
+**fire-on-zero-captures liability is now down to 2 hardware-blocked rules** (v0.74.32). The v0.74.22 set of 5
+(electron-leak, stale-engine, measuretext-spoof, canvas-lie, domrect-spoof) was extended across v0.74.32 with
+**7 more live captures** (cdc-leak, font-os-leak, csp-bypass, audio-noise, screen-impossible, h2-control-flood,
+h2-settings-split) — each run LIVE through the edge→detector and frozen as a committed `corpus/sessions`
+fixture guarded by `test_lit_rule_captures.py` (each capture must still trip its target rule and verdict bot).
+This dropped fire-on-zero-captures 15 → 9 → **2**. The 2 remaining (`br.voice_os_vs_ua`,
+`br.webgpu_vendor_vs_webgl`) are blocked on real audio/GPU hardware the sandbox cannot provide, and faking the
+signal would be a strawman — they keep their unit tests (logic proven) and are left un-lit by design.
+
+**Per-session validation is therefore complete; the lit-capture campaign is CLOSED.** Future iterations pivot
+to the structural frontiers, both confirmed external-data-bound: the prevalence second prior needs real-device
+gpu/cores data, and the coordination shape-signals (`fp_collision`, `trace_collision` via fleet-cloned,
+`shared_real_ip` via fleet-proxy) are already demonstrated in-sandbox — only the IP-reputation half (`rep.*`)
+needs real residential-proxy egress. The experimental rules re-validate live as of v0.74.32
+(`br.readback_noise` fires via stealth `AUDIO_READBACK_SPOOF=1`; `net.h2_header_order_vs_ua`, now active, stays
+guarded by its 3 committed non-Chrome-h2 captures). Deployed detector == committed ruleset 0.74.32 (no stale deploy).
 
 ### Producer-vs-reader audit — no dead rules (whole ruleset, 2026-06-19)
 
