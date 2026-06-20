@@ -146,6 +146,24 @@ def test_prevalence_never_flags_a_real_browser_capture() -> None:
         assert "br.fingerprint_improbable" not in fired, f"{path.stem}: prevalence single-source FP regressed"
 
 
+def test_real_privacy_browsers_no_coherence_or_artifact_fp() -> None:
+    # Pin the privacy-browser FP fixes (v0.74.26-27) on the REAL captures — NOT covered by the chromium/firefox
+    # test. Mullvad (Firefox-RFP) once tripped br.canvas_lie (RFP canvas farble) + br.engine_stack_vs_ua (modern
+    # Gecko switched Error.captureStackTrace -> stackTraceLimit), and a real Brave's canvas farble must NOT trip
+    # br.canvas_lie (it is engine-level = native). A privacy browser is a LEGIT user: it may trip AUTOMATION
+    # (webdriver, from the geckodriver capture) but NO browser-layer coherence/artifact rule. browserforge cannot
+    # model RFP/farbling, so this real-capture path is the only guard against a new canvas/RFP rule re-FPing them.
+    for browser in ("brave", "mullvad"):
+        capture = json.loads((_PRIVACY / f"{browser}.json").read_text())
+        signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+        by_category: dict[RuleCategory, set[str]] = {}
+        for contradiction in Detector().ingest_and_score(signals)[0].contradictions:
+            if contradiction.rule_id.startswith("br."):
+                by_category.setdefault(contradiction.category, set()).add(contradiction.rule_id)
+        assert by_category.get(RuleCategory.coherence, set()) == set(), (browser, by_category)
+        assert by_category.get(RuleCategory.artifact, set()) == set(), (browser, by_category)
+
+
 def test_real_edge_chromium_family_not_a_tls_or_h2_browser_contradiction() -> None:
     # corpus/calibration/headful/msedge.json: REAL Microsoft Edge 149. Edge is Chromium, so its TLS/HTTP-2
     # stack hints 'chrome' while ua_browser is 'edge'. v0.74.30 (not_equal_browser predicate): a literal
