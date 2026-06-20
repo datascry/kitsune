@@ -613,6 +613,24 @@ hardware-coalesced input passes") is now grounded against BOTH the fabricated-ev
 iter-4) AND the rapid-trusted-dispatch rung (this iter) — the behavioral-synthesis vein is decisively closed, real
 hardware input the only escape. No code change (a grounded refutation — the strongest behavioral-evasion probe to date).
 
+**COALESCED terminus GROUNDED against X11/XTEST + uinput — the OTHER injection path (iter-64, 2026-06-20).** iter-60
+grounded the terminus against CDP dispatch (which enters DOWNSTREAM of the browser's coalescing stage). The untested
+path was OS/X11-level input — XTEST/uinput enter UPSTREAM, where real hardware does, so a high-rate burst MIGHT coalesce
+into trusted batches and defeat both `bh.synthetic_no_coalesced` AND `br.coalesced_untrusted` WITHOUT real hardware
+(which would mean the "real-hardware-only" terminus is wrong). Built a probe (`evaders/xtest-coalesce/`): Xvfb + a
+headful browser + python-xlib XTEST injecting 15 motions/frame × 50 frames, reading `getCoalescedEvents()`. GROUNDED
+(both engines): `XTEST_RESULT engine=chromium max_coalesced=0 any_untrusted=False count=51` and `engine=firefox
+max_coalesced=0 … count=17` — XTEST motion arrives **trusted but with ZERO coalesced samples**, because X11 **motion
+compression** collapses the burst to one position per frame BEFORE the browser's coalescing stage. So XTEST still trips
+`bh.synthetic_no_coalesced` (coalescedMax ≤ 1) — no evasion. The stronger uinput (kernel evdev) path is
+ARCHITECTURALLY EXCLUDED under Xvfb: a virtual X server has no evdev/libinput input driver, so a uinput mouse never
+reaches the browser; producing coalesced events needs **Xorg + libinput** reading a high-rate device — a
+real-hardware-like display stack. **⇒ The coalesced terminus is now grounded against THREE injection mechanisms (CDP
+downstream / XTEST motion-compressed / uinput-architecturally-excluded), not just CDP — tightening, not just
+re-asserting, the "needs a real input stack" claim.** No EVADES, no detector change, no version bump (a grounded
+negative that refines the terminus); `evaders/xtest-coalesce/{probe.py,README.md}` frozen as a reproducible
+pressure-test.
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
