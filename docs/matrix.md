@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 126 rules vs 95 evaders
+# Kitsune detection matrix — 126 rules vs 96 evaders
 
-_86/95 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.49`._
+_86/96 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.49`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -15,6 +15,7 @@ _86/95 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `brave-fake-proxy` | bot | 1.00 | 14/126 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `brave-fake` | bot | 1.00 | 14/126 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `brave` | bot | 1.00 | 8/126 | `br.webdriver_present`, `br.headless_ua` |
+| `camoufox-hardened-behave` | suspicious | 0.97 | 5/126 | — |
 | `camoufox-hardened` | suspicious | 0.99 | 6/126 | — |
 | `camoufox-headful` | suspicious | 0.95 | 4/126 | — |
 | `camoufox-linux-coherent` | suspicious | 0.99 | 6/126 | — |
@@ -106,8 +107,8 @@ _86/95 evaders caught (`bot`). Generated from the committed captures at ruleset 
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 75 |
-| `br.voices_empty` | browser | environment | 73 |
+| `br.media_devices_empty` | browser | environment | 76 |
+| `br.voices_empty` | browser | environment | 74 |
 | `br.webgl_software` | browser | environment | 54 |
 | `br.mimetypes_empty` | browser | environment | 49 |
 | `br.no_plugins` | browser | environment | 49 |
@@ -123,11 +124,11 @@ _86/95 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `bh.input_entropy_floor` | behavioral | behavioral | 18 |
 | `net.tcp_os_vs_ua` | network | coherence | 18 |
 | `bh.no_input_before_action` | behavioral | behavioral | 16 |
+| `br.webgl2_missing` | browser | environment | 16 |
+| `bh.synthetic_no_coalesced` | behavioral | behavioral | 15 |
 | `br.webdriver_present` | browser | automation | 15 |
-| `br.webgl2_missing` | browser | environment | 15 |
-| `bh.synthetic_no_coalesced` | behavioral | behavioral | 14 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 13 |
-| `br.webrtc_unavailable` | browser | environment | 11 |
+| `br.webrtc_unavailable` | browser | environment | 12 |
 | `br.hover_none_desktop` | browser | environment | 9 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 9 |
 | `br.navplatform_vs_ua` | browser | coherence | 8 |
@@ -232,6 +233,7 @@ _86/95 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `brave-fake-proxy` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `brave-fake` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `brave` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
+| `camoufox-hardened-behave` | suspicious | 0 | 0 | 0 | 4 | 1 | 0 |
 | `camoufox-hardened` | suspicious | 0 | 0 | 0 | 4 | 2 | 0 |
 | `camoufox-headful` | suspicious | 0 | 0 | 0 | 4 | 0 | 0 |
 | `camoufox-linux-coherent` | suspicious | 0 | 0 | 0 | 4 | 2 | 0 |

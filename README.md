@@ -104,7 +104,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**86 of 95 evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `0.74.49`). The remaining 9 are pinned to `suspicious` by the conviction gate — the headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every *convicting* rule and leaves only corroborating tells, which can never reach `bot` alone.
+**86 of 96 evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `0.74.49`). The remaining 10 are pinned to `suspicious` by the conviction gate — the headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every *convicting* rule and leaves only corroborating tells, which can never reach `bot` alone.
 
 | Evader | Network | Browser | Behavioral | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|

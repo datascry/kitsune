@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **95 exercised techniques** (86 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **96 exercised techniques** (86 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (20)
 
@@ -35,7 +35,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (95)
+### Techniques exercised — scored against the live ruleset (96)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -50,6 +50,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `brave-fake-proxy` | bot | `br.brave_spoofed`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `camoufox` | bot | `net.no_js_execution`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `camoufox-hardened` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
+| `camoufox-hardened-behave` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-headful` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-linux` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-linux-coherent` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
@@ -366,6 +367,42 @@ the catalogued families (`docs/catalog.md §6`) as distinct classes — `hashcas
 - **Net:** PoW adds only a cost + browser-requirement FRONT-END; it yields no new FP-safe convicting signal for a
   coherence detector (a `pow_solve_time vs claimed_engine` rule was considered and rejected — CPU variance swamps
   the native-vs-JS ratio and the client controls the solve path). The discriminator already exists. No rule shipped.
+
+## Cross-layer tool COMBINATIONS — the stack space (the fleet's flat technique list obscures it)
+
+Real adversaries do not run one tool — they STACK an engine-spoof + a UA/network coherence fix + behavioral
+synthesis + a fingerprint strategy + a proxy/WebRTC posture into ONE coherent identity. The auto-generated
+registry above lists each capture flat; this matrix makes the **combination space** explicit — which layers each
+grounded stack composes, and what it converges on. A bot mixes one choice per column.
+
+| Stack (capture) | engine | UA/net coherence | behavioral | fingerprint | proxy | WebRTC | verdict | residual (why) |
+|---|---|---|---|---|---|---|---|---|
+| `zendriver-uach-behave` | Chromium (CDP-stealth) | UA-CH override | synthesis | engine-native | — | direct | **EVADES** (suspicious) | coalesced + env — external-hardware |
+| `camoufox-hardened-behave` | Gecko (engine-level) | native-coherent | synthesis | engine-native | — | keep | **EVADES** (suspicious) | coalesced + env — external-hardware |
+| `patchright-headful` | Chromium (CDP-stealth) | native (headful) | basic | engine-native | — | direct | **EVADES** (suspicious) | coalesced + env — external-hardware |
+| `camoufox-socks-webrtc` | Gecko | native-coherent | basic | engine-native | SOCKS5 | proxy-routed | **EVADES** (suspicious) | `webrtc_unavailable` + env — external |
+| `camoufox-hardened` + `KS_PROXY` fleet | Gecko | native-coherent | jittered | engine-native | HTTP | **leak** | `fleet` at scale | `shared_real_ip` (WebRTC origin) — needs the leak |
+| `apify-fp-inject` (+`KS_TRACE`) | Chromium | UA-CH coherent | replay | **INJECTED** (Proxy-over-native) | — | direct | **bot** | `worker_divergence` — injection is MAIN-realm only |
+
+**What the matrix shows (grounded, not asserted):**
+- **The maximal corners CONVERGE.** Both engine families (Chromium `zendriver-uach-behave`, Gecko
+  `camoufox-hardened-behave`) reach the SAME terminus: every *convicting* tell defeated, residual = behavioral
+  `bh.synthetic_no_coalesced` (synthetic input never coalesces — neither CDP nor Gecko's Playwright mouse, the
+  [[coalesced ladder]] terminus) + the environment floor (`webgl2`/`voices`/`media_devices`/`webrtc`), ALL
+  external-hardware-gated. Behavioral synthesis closes the biomech floor (`power_law`/`straightness`/
+  `uniform_velocity`/`input_entropy`/`keystroke_entropy`) in BOTH — verified live on `camoufox-hardened-behave`.
+- **Only ONE combination ADDS detectability:** main-realm fingerprint INJECTION (`apify-fp-inject`) manufactures
+  `worker_divergence` the un-injected browser never had — stacking it is self-defeating (the thesis demo).
+- **The proxy/WebRTC column is the ONLY convicting axis left, and it is external:** a proxied fleet is caught at
+  scale solely by the WebRTC `shared_real_ip` leak (grounded `fleet-webrtc-leak`); block/SOCKS-route WebRTC and it
+  drops to `candidate`, convictable only by real residential-vs-datacenter IP-reputation (the external-data gate).
+- **Mutually-exclusive columns** (why some combinations don't exist): a no-JS network template (azuretls/primp/
+  go-tls/curl-impersonate) CANNOT carry a browser, so the network-forger tools never stack with an engine — they
+  are a separate class caught wholesale by `net.no_js_execution`. So the stack space is browser-engine-rooted.
+
+⇒ The combination space is fully explored at its corners: the cross-layer-coherent identity is achievable, and
+EVERY maximal stack lands on the external-hardware/IP-reputation terminus. No in-sandbox combination opens a new
+convicting gap; `camoufox-hardened-behave` (iter-66) grounded the last untried corner (Gecko + behavioral synthesis).
 
 ## Known red-team-fleet limitation: patchright configs self-defeat the collector (2026-06-19)
 

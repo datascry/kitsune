@@ -68,7 +68,12 @@ TOUCH = os.environ.get("KS_TOUCH") == "1"
 # the session, launch 2 reuses the cookie. The session ends up carrying two hardware_concurrency values -> the
 # within-session analog of the JA4/IP/UA network-rotation triad, on the browser layer.
 FPROTATE = os.environ.get("KS_FPROTATE") == "1"
-MODE = (
+# KS_BEHAVE=1: behavioral synthesis — a variable-velocity curved mouse path + varied-cadence keystrokes (the
+# Gecko analog of zendriver's KS_BEHAVE). Composes with KS_HARDENED/KS_LINUX to ground the GECKO maximal stack
+# (engine-spoof + coherent OS + behavioral synthesis) — the cross-layer-coherent identity, the STACK vein's
+# Gecko corner that the Chromium zendriver-uach-behave already covers.
+BEHAVE = os.environ.get("KS_BEHAVE") == "1"
+_BASE_MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
     else "camoufox-headful" if HEADFUL
@@ -79,6 +84,7 @@ MODE = (
     else "camoufox-linux" if LINUX
     else "camoufox"
 )
+MODE = _BASE_MODE + ("-behave" if BEHAVE else "")
 HARDENED_KW: dict[str, object] = {
     "os": "linux",  # coherent with the Linux host: dodges the macOS dpr/font tells AND net.tcp_os_vs_ua
     "block_webrtc": False,  # keep WebRTC → avoid webrtc_unavailable
@@ -88,6 +94,33 @@ HARDENED_KW: dict[str, object] = {
 }
 
 
+def _synth_behavior(page: object) -> None:
+    """Behavioral synthesis (KS_BEHAVE): a variable-velocity curved mouse path + varied-cadence keystrokes.
+
+    Richer than the fixed-step jitter: each segment uses a random step count and a skewed inter-move delay
+    (the sigma-lognormal-ish timing that clears the biomech floor), and a typed phrase exercises the keystroke
+    floor. Real motion varies per session, so this also avoids the self-inflicted trace_collision (iter-29).
+    """
+    x, y = 140.0, 160.0
+    for _seg in range(6):
+        tx = 120 + random.randint(0, 700)
+        ty = 140 + random.randint(0, 400)
+        steps = random.randint(6, 14)
+        for s in range(steps):
+            t = (s + 1) / steps
+            # ease-in-out curve + perpendicular wobble → non-straight, non-constant-velocity
+            ease = t * t * (3 - 2 * t)
+            x = x + (tx - x) * ease * 0.5 + random.uniform(-3, 3)
+            y = y + (ty - y) * ease * 0.5 + random.uniform(-3, 3)
+            page.mouse.move(x, y)  # type: ignore[attr-defined]
+            page.wait_for_timeout(random.choice([6, 9, 12, 16, 24, 40]))  # type: ignore[attr-defined]
+    # Keystroke synthesis: varied inter-key delays + occasional think-pause (clears bh.keystroke_entropy_floor).
+    for ch in "the quick brown fox":
+        key = "Space" if ch == " " else f"Key{ch.upper()}"
+        page.keyboard.press(key)  # type: ignore[attr-defined]
+        page.wait_for_timeout(random.choice([55, 80, 95, 120, 150, 240]))  # type: ignore[attr-defined]
+
+
 def _capture(browser: object) -> dict[str, object]:
     context = browser.new_context(ignore_https_errors=True)  # type: ignore[attr-defined]
     try:
@@ -95,6 +128,13 @@ def _capture(browser: object) -> dict[str, object]:
         if FAST:
             page.goto(EDGE + ("&fast" if "?" in EDGE else "?fast"), wait_until="load")
             page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+        elif BEHAVE:
+            page.goto(EDGE, wait_until="load")
+            _synth_behavior(page)
+            try:
+                page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+            except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
+                page.wait_for_timeout(2000)
         else:
             page.goto(EDGE, wait_until="load")
             # Per-instance RANDOM jitter on the pointer path: the trace_hash is coordinate-based (rounded x,y),

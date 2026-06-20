@@ -646,6 +646,26 @@ coalesced` holds for every non-privileged software path; defeating it needs a pr
 environment/hardware frontier, now grounded by the privilege requirement itself.** No EVADES, no code change, no
 version bump (the decisive negative closing the behavioral-synthesis vein).
 
+**CROSS-LAYER COMBINATION MATRIX — grounded the last untried stack corner + made the stack space explicit (iter-66,
+2026-06-20).** Operator observation: the catalog was missing tool COMBINATIONS (the fleet's technique list is flat —
+it obscures which cross-layer stacks have been composed). Two parts: (1) RED-TEAM — built the GECKO maximal stack's
+missing corner. The Chromium maximal stack `zendriver-uach-behave` (engine + UA-CH + behavioral synthesis) was
+grounded (iter-19), but the Gecko analog had no behavioral-synthesis mode — camoufox only did a basic jittered path.
+Added camoufox `KS_BEHAVE` (variable-velocity curved motion + varied-cadence keystrokes) and grounded
+`camoufox-hardened-behave` LIVE: **suspicious 0.9703, CONVICTING NONE — EVADES**, residual = `bh.synthetic_no_coalesced`
+(Gecko's synthetic mouse still doesn't coalesce — confirming the coalesced terminus for Gecko, closing the iter-19
+open question) + the environment floor (`webgl2`/`voices`/`media_devices`/`webrtc`), ALL external-hardware-gated. The
+behavioral synthesis defeats the biomech floor (`power_law`/`straightness`/`uniform_velocity`/`input_entropy`/
+`keystroke_entropy`) in BOTH engine families. (2) LEDGER — added a **cross-layer combination matrix** to
+`docs/evasion-catalog.md` mapping each grounded stack to the layers it composes (engine × UA/net × behavioral ×
+fingerprint × proxy × WebRTC) + its verdict + residual. GROUNDED FINDING: the maximal corners CONVERGE — both engine
+families reach the identical external-hardware/IP-reputation terminus; only main-realm fingerprint INJECTION (apify)
+ADDS detectability (`worker_divergence`); the proxy/WebRTC column is the only convicting axis left and it is external
+(`shared_real_ip`); and the no-JS network-template tools cannot stack with a browser (mutually exclusive — caught
+wholesale by `net.no_js_execution`). So the combination space is fully explored at its corners with no new in-sandbox
+convicting gap. `camoufox-hardened-behave.json` frozen; evasion-catalog + matrix + scoreboard regenerated; no detector
+change, no version bump (an EVADES that converges on the documented terminus).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA

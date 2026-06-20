@@ -8,6 +8,7 @@ from kitsune_harness.evasion_catalog import (
     _EVADERS,
     _SESSIONS,
     _START,
+    _evader_main,
     generate_evasion_md,
     main,
     render_into,
@@ -16,8 +17,10 @@ from kitsune_harness.evasion_catalog import (
 
 def test_registry_lists_every_evader_and_technique() -> None:
     md = generate_evasion_md()
-    # Every evader directory appears in the fleet table.
-    for evader_dir in (p for p in _EVADERS.iterdir() if p.is_dir()):
+    # Every evader directory WITH A RECOGNIZED MAIN SCRIPT appears in the fleet table. Dirs without one are
+    # self-contained research that does not drive the detector (the `pow` PoW arms-race testbed, the
+    # `xtest-coalesce` behavioural probe) — the generator skips them, so the test mirrors that criterion.
+    for evader_dir in (p for p in _EVADERS.iterdir() if p.is_dir() and _evader_main(p) is not None):
         assert f"`{evader_dir.name}`" in md, f"{evader_dir.name} missing from the fleet table"
     # Every captured corpus session appears as an exercised technique.
     for session in _SESSIONS.glob("*.json"):
