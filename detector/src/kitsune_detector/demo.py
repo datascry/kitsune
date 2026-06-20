@@ -340,12 +340,16 @@ td code{font-size:12px;color:#0a3}
       // getVoices/enumerateDevices included so a tool faking the environment floor (spoofing voices or
       // media devices to beat voices_empty/media_devices_empty) is caught by the override's non-native
       // toString — a real browser never replaces these. See the FLOOR_SPOOF evader.
+      // getCoalescedEvents added (v0.74.36): a bot that fakes coalesced pointer batches to beat
+      // bh.synthetic_no_coalesced (the COALESCE_SPOOF evader) overrides PointerEvent.prototype.getCoalescedEvents
+      // with a non-native function — a real browser's is native. Catches that behavioural-residual spoof here.
       var fns = [Function.prototype.toString, HTMLCanvasElement.prototype.toDataURL,
                  HTMLCanvasElement.prototype.toBlob,
                  CanvasRenderingContext2D.prototype.getImageData,
                  navigator.permissions && navigator.permissions.query,
                  window.speechSynthesis && speechSynthesis.getVoices,
-                 navigator.mediaDevices && navigator.mediaDevices.enumerateDevices];
+                 navigator.mediaDevices && navigator.mediaDevices.enumerateDevices,
+                 (typeof PointerEvent !== "undefined") && PointerEvent.prototype.getCoalescedEvents];
       for (var i = 0; i < fns.length; i++) {
         if (fns[i] && fns[i].toString().indexOf("[native code]") < 0) return true;
       }

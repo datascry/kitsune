@@ -34,9 +34,14 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    **`bh.synthetic_no_coalesced`** (synthetic input → `getCoalescedEvents().length <= 1`; real hardware batches
    intermediate samples). ✅ **DEFEATED iter-1 by the new `COALESCE_SPOOF` stealth mode** — patches
    `getCoalescedEvents` to fabricate distinct interpolated intermediate samples (length > 1), and the tell goes
-   quiet live. **Exposed blue-team gap:** the detector's native-tamper list (`demo.py` toStringTampered) does NOT
-   include `getCoalescedEvents`, so the plain-function override is uncaught → NEXT blue-team move is to add it
-   (`br.function_tostring_tampered`), after which the red-team escalates to a Proxy-over-native coalesce patch.
+   quiet live. **Blue-team counter LANDED iter-2 (v0.74.36):** added `getCoalescedEvents` to the
+   collector's native-tamper list (`demo.py` + `probes.ts`) → the plain-function COALESCE_SPOOF override is now
+   caught by `br.tostring_tampered` (convicting automation). Grounded live: COALESCE_SPOOF fires it, HUMAN_MOUSE +
+   plain STEALTH (native) do NOT (FP-safe); 0 new browserforge FPs. So the red-team traded a corroborating tell
+   for a convicting one — **blue wins this round.** NEXT red-team escalation: a **Proxy-over-native** coalesce
+   patch (`new Proxy(realGCE, …)` preserving the native toString) to defeat `br.tostring_tampered`, which then
+   needs the deeper `br.native_invariant_violated` check (and if that's also beaten → a coalesced-COHERENCE check
+   on the fabricated batch's timestamps/coords, or → coordination). The ladder is live.
 2. **[network] azuretls-client** (Go, `github.com/Noooste/azuretls-client`) — a current TLS/JA3 + HTTP/2 +
    **HTTP/3 / QUIC** template forger. Exercises the QUIC layer (detector rules retired on a broken capture) and a
    *current* template vs the deliberately-stale `go-tls`.

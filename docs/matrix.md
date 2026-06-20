@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 116 rules vs 66 evaders
+# Kitsune detection matrix — 116 rules vs 67 evaders
 
-_63/66 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.35`._
+_64/67 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.36`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -23,6 +23,7 @@ _63/66 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `ch-ua-hardcoded` | bot | 1.00 | 6/116 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
 | `chrome-clone-1` | bot | 1.00 | 13/116 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
 | `chrome-clone-2` | bot | 1.00 | 13/116 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
+| `coalesce-spoof` | bot | 1.00 | 14/116 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `csp-bypass` | bot | 1.00 | 14/116 | `br.cdp_runtime_enabled`, `br.csp_bypassed`, `br.headless_ua` +4 |
 | `curl-http2` | bot | 1.00 | 7/116 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua` +4 |
 | `curl-impersonate` | bot | 0.90 | 1/116 | `net.no_js_execution` |
@@ -77,19 +78,19 @@ _63/66 evaders caught (`bot`). Generated from the committed captures at ruleset 
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 51 |
-| `br.voices_empty` | browser | environment | 50 |
-| `br.webgl_software` | browser | environment | 42 |
-| `br.mimetypes_empty` | browser | environment | 39 |
-| `br.no_plugins` | browser | environment | 39 |
-| `br.permissions_anomaly` | browser | automation | 38 |
-| `br.no_chrome_object` | browser | automation | 36 |
-| `br.no_pdfviewer` | browser | environment | 36 |
-| `br.headless_ua` | browser | automation | 34 |
-| `br.cdp_runtime_enabled` | browser | automation | 33 |
-| `br.ch_he_headless` | browser | automation | 33 |
-| `bh.keystroke_entropy_floor` | behavioral | behavioral | 29 |
-| `br.webdriver_getter_tampered` | browser | automation | 24 |
+| `br.media_devices_empty` | browser | environment | 52 |
+| `br.voices_empty` | browser | environment | 51 |
+| `br.webgl_software` | browser | environment | 43 |
+| `br.mimetypes_empty` | browser | environment | 40 |
+| `br.no_plugins` | browser | environment | 40 |
+| `br.permissions_anomaly` | browser | automation | 39 |
+| `br.no_chrome_object` | browser | automation | 37 |
+| `br.no_pdfviewer` | browser | environment | 37 |
+| `br.headless_ua` | browser | automation | 35 |
+| `br.cdp_runtime_enabled` | browser | automation | 34 |
+| `br.ch_he_headless` | browser | automation | 34 |
+| `bh.keystroke_entropy_floor` | behavioral | behavioral | 30 |
+| `br.webdriver_getter_tampered` | browser | automation | 25 |
 | `net.no_js_execution` | network,browser | coherence | 14 |
 | `net.tcp_os_vs_ua` | network | coherence | 14 |
 | `br.webdriver_present` | browser | automation | 12 |
@@ -108,10 +109,10 @@ _63/66 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.codec_os_incoherent` | browser | environment | 5 |
 | `br.font_linux_leak` | browser | environment | 5 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
+| `br.tostring_tampered` | browser | automation | 4 |
 | `br.webrtc_unavailable` | browser | environment | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
-| `br.tostring_tampered` | browser | automation | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
 | `br.webgpu_webgl_vs` | browser | environment | 3 |
@@ -200,6 +201,7 @@ _63/66 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `ch-ua-hardcoded` | bot | 5 | 1 | 0 | 0 | 0 | 0 |
 | `chrome-clone-1` | bot | 0 | 0 | 5 | 6 | 2 | 0 |
 | `chrome-clone-2` | bot | 0 | 0 | 5 | 6 | 2 | 0 |
+| `coalesce-spoof` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
 | `csp-bypass` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
 | `curl-http2` | bot | 7 | 0 | 0 | 0 | 0 | 0 |
 | `curl-impersonate` | bot | 1 | 0 | 0 | 0 | 0 | 0 |
