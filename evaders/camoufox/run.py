@@ -28,10 +28,12 @@ HEADFUL = os.environ.get("KS_HEADFUL") == "1"
 # same pipeline — the control group. Rules that fire on the baseline too are environment/headless tells;
 # rules that fire only on Camoufox are genuine anti-detect-spoofing tells. Keeps the detector honest.
 BASELINE = os.environ.get("KS_BASELINE") == "1"
-# KS_HARDENED=1: red-team the detector's own findings — apply Camoufox config to fix the spoof-specific
-# tells Kitsune discovered (pin OS to Windows to avoid the macOS-only dPR/font tells, re-enable WebRTC to
-# avoid webrtc_unavailable, set a clean WebGL renderer with no ", or similar" artifact). Measures what the
-# detector still catches once an adversary closes every per-session tell it knows about.
+# KS_HARDENED=1: red-team the detector's own findings — apply Camoufox config to close every per-session tell
+# Kitsune discovered. CORRECTED iter-28: the old config pinned os="windows" to dodge the macOS dpr/font tells,
+# but Windows-on-a-Linux-host self-inflicts net.tcp_os_vs_ua (grounded live, it was the sole convicting tell).
+# os="linux" dodges the macOS tells too AND is coherent with the host (no tcp_os). Also pin maxTouchPoints=0 to
+# kill the ~7% pointer_touch flake, and keep WebRTC on to avoid webrtc_unavailable. (The old comment cited
+# webgl_renderer_artifact as "unavoidable" — stale: that rule is dropped for the Gecko engine since v0.74.10.)
 HARDENED = os.environ.get("KS_HARDENED") == "1"
 # KS_MACOS=1: pin Camoufox to a macOS profile. Camoufox's bundled fonts.json `mac` list contains 49
 # dot-prefixed internal system fonts (`.Aqua Kana`, `.Apple Color Emoji UI`, …) that a real Mac hides from
@@ -61,10 +63,11 @@ MODE = (
     else "camoufox"
 )
 HARDENED_KW: dict[str, object] = {
-    "os": "windows",  # avoid macOS-draw tells (macos_dpr1, font_mac_internal)
-    "block_webrtc": False,  # re-enable WebRTC → avoid webrtc_unavailable
-    # Note: webgl_config can only PICK from Camoufox's webgl_data.db, and every renderer in it carries the
-    # ", or similar" suffix — so webgl_renderer_artifact is unavoidable via config (a fundamental tell).
+    "os": "linux",  # coherent with the Linux host: dodges the macOS dpr/font tells AND net.tcp_os_vs_ua
+    "block_webrtc": False,  # keep WebRTC → avoid webrtc_unavailable
+    "config": {"navigator.maxTouchPoints": 0},  # coherent desktop → kill the ~7% pointer_touch_incoherent flake
+    # NB: br.webgl_renderer_artifact (the ", or similar" Firefox WebGL generalisation) does NOT apply to Gecko —
+    # detector.applicability drops it for ua_engine==firefox since v0.74.10, so it is NOT a Camoufox tell.
 }
 
 

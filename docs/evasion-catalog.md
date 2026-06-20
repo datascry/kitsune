@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **82 exercised techniques** (76 convicted `bot`, 6 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **82 exercised techniques** (75 convicted `bot`, 7 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (19)
 
@@ -47,7 +47,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `brave` | bot | `br.canvas_noise`, `br.headless_ua`, `br.webdriver_present` |
 | `brave-fake` | bot | `br.brave_spoofed`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `camoufox` | bot | `net.no_js_execution`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
-| `camoufox-hardened` | bot | `br.pointer_touch_incoherent` |
+| `camoufox-hardened` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-headful` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-linux` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-linux-coherent` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |

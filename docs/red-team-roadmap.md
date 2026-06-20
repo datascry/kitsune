@@ -295,6 +295,20 @@ camoufox-linux, camoufox-linux-coherent, patchright-headful, zendriver-uach, zen
 wrong explanations (`?fast` under-probing; "bar stays headful") by inferring from a single flaky run instead of
 reading `demo.py` and measuring the rate.**
 
+**Fixed the SELF-DEFEATING camoufox-hardened config — iter-28 (2026-06-20).** `KS_HARDENED` is meant to be the
+"close every per-session tell" config, but it pinned `os="windows"` (to dodge the macOS dpr/font tells) on a Linux
+host → grounded live, it self-inflicted **`net.tcp_os_vs_ua`** (Windows UA vs Linux TCP) as its SOLE convicting
+tell — i.e. the "hardened" build was WORSE than plain `camoufox-linux-coherent`. Its comment also cited
+`br.webgl_renderer_artifact` as "unavoidable" — STALE: that rule (the `", or similar"` Firefox WebGL
+generalisation) is dropped by `detector.applicability` for `ua_engine==firefox` since v0.74.10, so it is NOT a
+Camoufox tell at all. Corrected `HARDENED_KW` to the coherent recipe (`os="linux"` — dodges the macOS tells AND
+`tcp_os`; `config={"navigator.maxTouchPoints": 0}` — kills the ~7% pointer_touch flake; keep WebRTC on). Grounded
+live under the full collector → **CONVICTING NONE, EVADES**, residual corroborating-only (behavioral
+`synthetic_no_coalesced`/`power_law`; environment `webgl2/voices/media/webrtc`). NB `webrtc_unavailable` persists
+despite `block_webrtc=False` — in-sandbox WebRTC gathers no ICE candidates (no STUN), so the tell is
+external-gated regardless (the config is correct for real infra). `camoufox-hardened.json` re-frozen (now EVADES).
+EVADES set = 7. No new detection, no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
