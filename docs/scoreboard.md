@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-20T00:51:02.562136+00:00`
+- generated: `2026-06-20T00:58:57.790159+00:00`
 - ruleset: `0.74.32`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -34,6 +34,7 @@
 | h2-continuation-flood | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
 | h2-control-flood | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
 | h2-rapid-reset | corpus | 0.96 | 0.60 | 0.00 | 0.00 | 0.60 | 0.99 | bot |
+| h2-settings-split | corpus | 0.84 | 0.60 | 0.00 | 0.00 | 0.60 | 0.96 | bot |
 | honeypot | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 | http2-naive | corpus | 1.00 | 0.98 | 0.00 | 0.00 | 0.98 | 1.00 | bot |
 | human-mouse | corpus | 0.00 | 1.00 | 0.45 | 0.00 | 0.00 | 1.00 | bot |
@@ -101,6 +102,7 @@
 - **h2-continuation-flood** (bot): `net.h2_continuation_flood`, `net.no_js_execution`
 - **h2-control-flood** (bot): `net.h2_control_flood`, `net.no_js_execution`
 - **h2-rapid-reset** (bot): `net.h2_rapid_reset`, `net.no_js_execution`
+- **h2-settings-split** (bot): `net.h2_settings_vs_order`, `net.no_js_execution`
 - **honeypot** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.honeypot_interaction`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.ch_he_headless`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
 - **http2-naive** (bot): `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua`, `net.tls_grease_vs_ua`
 - **human-mouse** (bot): `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.synthetic_no_coalesced`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`

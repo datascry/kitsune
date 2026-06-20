@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **64 exercised techniques** (61 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **65 exercised techniques** (62 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (16)
 
@@ -31,7 +31,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (64)
+### Techniques exercised — scored against the live ruleset (65)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -64,6 +64,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `h2-continuation-flood` | bot | `net.h2_continuation_flood`, `net.no_js_execution` |
 | `h2-control-flood` | bot | `net.h2_control_flood`, `net.no_js_execution` |
 | `h2-rapid-reset` | bot | `net.h2_rapid_reset`, `net.no_js_execution` |
+| `h2-settings-split` | bot | `net.h2_settings_vs_order`, `net.no_js_execution` |
 | `honeypot` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.honeypot_interaction`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `http2-naive` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `human-mouse` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |

@@ -368,7 +368,7 @@ rules:
     weight: 0.6
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
+    last_validated: "2026-06-20"
     source: "Akamai h2 SETTINGS profile vs pseudo-header order (half-spoofed h2 stack)"
 
   - id: net.h2_rapid_reset

@@ -27,6 +27,7 @@ _LIT = {
     "audio-noise": "br.audio_noise",
     "screen-impossible": "br.screen_impossible",
     "h2-control-flood": "net.h2_control_flood",
+    "h2-settings-split": "net.h2_settings_vs_order",
 }
 
 

@@ -45,6 +45,7 @@ func main() {
 	edge := env("KITSUNE_EDGE", "https://edge:8443/")
 	detector := env("KITSUNE_DETECTOR", "http://detector:8080")
 	floods := 150
+	mode := env("KS_MODE", "rapidreset")
 
 	u, err := url.Parse(edge)
 	if err != nil {
@@ -65,7 +66,20 @@ func main() {
 	}
 	fr := http2.NewFramer(conn, conn)
 	fr.ReadMetaHeaders = hpack.NewDecoder(4096, nil)
-	if err := fr.WriteSettings(); err != nil {
+	// KS_MODE=settingssplit forges a HALF-spoofed h2 stack: the SETTINGS preface carries Chromium's profile
+	// ({1,4,6}, no MAX_FRAME_SIZE=5 → SettingsBrowser()=chrome) while the request pseudo-header order below is
+	// Firefox's (m,p,a,s → Browser()=firefox). The two engine reads of one connection disagree →
+	// net.h2_settings_vs_order. A real browser's SETTINGS and header order always name the SAME engine.
+	if mode == "settingssplit" {
+		err = fr.WriteSettings(
+			http2.Setting{ID: http2.SettingHeaderTableSize, Val: 65536},
+			http2.Setting{ID: http2.SettingInitialWindowSize, Val: 6291456},
+			http2.Setting{ID: http2.SettingMaxHeaderListSize, Val: 262144},
+		)
+	} else {
+		err = fr.WriteSettings()
+	}
+	if err != nil {
 		panic(err)
 	}
 
@@ -74,9 +88,16 @@ func main() {
 	writeReq := func(stream uint32, cookie string) {
 		hb.Reset()
 		_ = enc.WriteField(hpack.HeaderField{Name: ":method", Value: "GET"})
-		_ = enc.WriteField(hpack.HeaderField{Name: ":path", Value: "/"})
-		_ = enc.WriteField(hpack.HeaderField{Name: ":scheme", Value: "https"})
-		_ = enc.WriteField(hpack.HeaderField{Name: ":authority", Value: u.Hostname()})
+		if mode == "settingssplit" {
+			// Firefox pseudo-header order: method, path, authority, scheme (m,p,a,s).
+			_ = enc.WriteField(hpack.HeaderField{Name: ":path", Value: "/"})
+			_ = enc.WriteField(hpack.HeaderField{Name: ":authority", Value: u.Hostname()})
+			_ = enc.WriteField(hpack.HeaderField{Name: ":scheme", Value: "https"})
+		} else {
+			_ = enc.WriteField(hpack.HeaderField{Name: ":path", Value: "/"})
+			_ = enc.WriteField(hpack.HeaderField{Name: ":scheme", Value: "https"})
+			_ = enc.WriteField(hpack.HeaderField{Name: ":authority", Value: u.Hostname()})
+		}
 		if cookie != "" {
 			_ = enc.WriteField(hpack.HeaderField{Name: "cookie", Value: "ks_sid=" + cookie})
 		}
@@ -107,9 +128,13 @@ func main() {
 
 	// 2. The flood. KS_MODE=continuation runs the CVE-2024-27316 shape (one open HEADERS followed by a
 	// stream of empty CONTINUATION frames); KS_MODE=controlflood runs the 2019 control-frame floods
-	// (CVE-2019-9515 SETTINGS / CVE-2019-9512 PING); the default is the CVE-2023-44487 rapid reset.
+	// (CVE-2019-9515 SETTINGS / CVE-2019-9512 PING); KS_MODE=settingssplit is no flood at all (the
+	// half-spoofed h2 stack was already captured at mint time); the default is the CVE-2023-44487 rapid reset.
 	sent := 0
-	if env("KS_MODE", "rapidreset") == "controlflood" {
+	if mode == "settingssplit" {
+		// No frame abuse — the SETTINGS/header-order engine mismatch is in the connection preface + first
+		// request, already fingerprinted. Fall through to the completing request and verdict read.
+	} else if mode == "controlflood" {
 		// Spam empty SETTINGS and (non-ACK) PING frames — a real client sends one preface SETTINGS and rarely
 		// a PING, never hundreds. The edge's ControlFrameFlood (Settings+Pings >= 100) trips → net.h2_control_flood.
 		for i := 0; i < floods; i++ {
@@ -124,7 +149,7 @@ func main() {
 			}
 			sent++
 		}
-	} else if env("KS_MODE", "rapidreset") == "continuation" {
+	} else if mode == "continuation" {
 		// HEADERS on stream 3 without END_HEADERS, then empty CONTINUATION frames; the last sets
 		// END_HEADERS so the (otherwise valid, empty-continued) request completes and a handler runs.
 		hb.Reset()
@@ -162,7 +187,7 @@ func main() {
 	}
 
 	// 4. Read the detector's verdict for the session.
-	verdict := map[string]any{"flood_frames_sent": sent, "mode": env("KS_MODE", "rapidreset")}
+	verdict := map[string]any{"flood_frames_sent": sent, "mode": mode}
 	if resp, err := readVerdict(detector, sid); err == nil {
 		verdict["verdict"] = resp
 	} else {
