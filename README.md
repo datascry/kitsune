@@ -56,18 +56,22 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 
 ## What it detects
 
-**114 rules** (83 active, 30 experimental), each a small predicate over the correlated session, grouped
-by detection class:
+<!-- GENERATED:readme-stats:start -->
+**125 live rules** (98 active · 27 experimental; 6 retired, ruleset `0.74.48`) — each a small predicate over the correlated session. **87 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
-| Class | Rules | What it catches |
-|---|---:|---|
-| **coherence** | 45 | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
-| **automation** | 25 | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
-| **environment** | 19 | stripped/headless capability gaps (corroborating only — see precision) |
-| **artifact** | 14 | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
-| **behavioral** | 7 | mouse biomechanics — path straightness, velocity CV, entropy floors |
-| **reputation** | 2 | datacenter ASN / known proxy exit |
-| **prevalence** | 1 | statistically-improbable-but-coherent fingerprints |
+| Class | Rules | Convicts? | What it catches |
+|---|---:|:--:|---|
+| **coherence** | 48 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
+| **automation** | 24 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
+| **artifact** | 15 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
+| **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |
+| **behavioral** | 7 | — | mouse/keystroke biomechanics — path straightness, velocity CV, entropy floors |
+| **reputation** | 4 | — | datacenter ASN / known proxy exit / WebRTC-leaked origin |
+| **prevalence** | 1 | — | statistically-improbable-but-coherent fingerprints |
+
+_✦ convicting · — corroborating-only. The conviction gate means corroborating signals can never reach `bot` alone._
+
+<!-- GENERATED:readme-stats:end -->
 
 A distinctive capability is the **realm-coherence family**: anti-detect tools spoof the main JS realm but
 systematically forget *other* realms. Kitsune compares `navigator`, timezone, languages, the WebGL

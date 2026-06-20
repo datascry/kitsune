@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from kitsune_detector.contracts import contracts_dir
 from kitsune_detector.detector import Detector
 from kitsune_detector.models import Session
@@ -12,8 +14,18 @@ from kitsune_harness.report import (
     evaluable_detectors,
     render_categories,
     render_evaders,
+    render_matrix,
     render_rule_catches,
 )
+
+_ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_committed_matrix_is_fresh() -> None:
+    # docs/matrix.md must match a fresh render of the committed corpus — `task docs` keeps it current,
+    # and this gate (in the harness CI job) fails the build if a rule/capture change left it stale.
+    committed = (_ROOT / "docs" / "matrix.md").read_text()
+    assert committed == render_matrix(str(_ROOT / "corpus" / "sessions")), "docs/matrix.md is stale — run `task docs`"
 
 
 def _examples() -> list[tuple[str, Session]]:

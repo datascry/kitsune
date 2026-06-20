@@ -181,27 +181,35 @@ def render_categories(verdicts: dict[str, Verdict]) -> str:
     return "\n".join(rows) + "\n"
 
 
-def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
-    import sys
+def render_matrix(directory: str | None = None) -> str:
+    """Render the complete detection-matrix doc (docs/matrix.md) as a deterministic string.
 
+    No per-run timestamp — only the ruleset version + corpus-derived counts — so the committed doc can be
+    gated against a fresh render (the freshness unit test / ``task docs:check``).
+    """
     from .corpus import DEFAULT_CORPUS, load_corpus
 
-    argv = sys.argv[1:] if argv is None else argv
-    directory = argv[0] if argv else DEFAULT_CORPUS
     detector = Detector()
-    corpus = load_corpus(directory)
+    corpus = load_corpus(directory or DEFAULT_CORPUS)
     detectors, fired, verdicts = coverage(detector, corpus)
     bots = sum(v.label.value == "bot" for v in verdicts.values())
     ruleset_version = load_registry().ruleset_version
-    print(f"# Kitsune detection matrix — {len(detectors)} rules vs {len(verdicts)} evaders\n")
-    print(
+    return (
+        f"# Kitsune detection matrix — {len(detectors)} rules vs {len(verdicts)} evaders\n\n"
         f"_{bots}/{len(verdicts)} evaders caught (`bot`). Generated from the committed captures "
-        f"at ruleset `{ruleset_version}`._\n"
+        f"at ruleset `{ruleset_version}`._\n\n"
+        f"{render_evaders(detectors, fired, verdicts)}\n"
+        f"{render_rule_catches(detectors, fired)}\n"
+        f"{render_categories(verdicts)}\n"
+        f"{render_gaps(detectors, fired, corpus_signal_kinds(corpus))}"
     )
-    print(render_evaders(detectors, fired, verdicts))
-    print(render_rule_catches(detectors, fired))
-    print(render_categories(verdicts))
-    print(render_gaps(detectors, fired, corpus_signal_kinds(corpus)), end="")
+
+
+def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI
+    import sys
+
+    argv = sys.argv[1:] if argv is None else argv
+    sys.stdout.write(render_matrix(argv[0] if argv else None))
 
 
 if __name__ == "__main__":  # pragma: no cover

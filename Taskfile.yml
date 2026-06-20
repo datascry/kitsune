@@ -102,6 +102,29 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.sapimouse_corpus"]
 
+  docs:
+    desc: "Regenerate ALL auto-generated docs (README stats, rule + evasion catalogs, evader matrix, scoreboard) from source"
+    dir: harness
+    cmds:
+      - uv run python -m kitsune_harness.readme_stats
+      - uv run python -m kitsune_harness.rule_catalog
+      - uv run python -m kitsune_harness.evasion_catalog
+      - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
+      - uv run python -m kitsune_harness > ../docs/scoreboard.md
+
+  docs:check:
+    desc: "CI gate: fail if any committed auto-generated doc (README stats, catalogs, matrix) drifted from its source"
+    dir: harness
+    cmds:
+      # The marker-spliced + matrix docs are deterministic (registry/corpus-derived, no timestamps), so a drift
+      # is a hard CI failure: regenerate, then git-diff. (scoreboard.md carries a timestamp, so it is regenerated
+      # by `task docs` + the Pages deploy but not strictly gated.)
+      - uv run python -m kitsune_harness.readme_stats --check
+      - uv run python -m kitsune_harness.rule_catalog --check
+      - uv run python -m kitsune_harness.evasion_catalog --check
+      - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
+      - git -C .. diff --exit-code -- docs/matrix.md || (echo "docs/matrix.md is STALE — run 'task docs'" >&2; exit 1)
+
   catalog:
     desc: "Regenerate the complete rule registry in docs/detection-catalog.md from contracts/rules/registry.yaml"
     dir: harness
@@ -126,6 +149,7 @@ tasks:
     desc: Run the full local pipeline
     cmds:
       - task: headers
+      - task: docs:check
       - task: detector
       - task: harness
       - task: edge
