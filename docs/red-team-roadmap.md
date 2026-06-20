@@ -421,6 +421,19 @@ observed_ip reputation rules are structurally blind to.** The residual external 
 runs on a RESIDENTIAL machine (real residential device) OR routes WebRTC through its residential proxy (SOCKS-UDP)
 leaks no datacenter origin — that needs real residential-device infra, genuinely external.
 
+**Ledger consolidated + the precise external residual GROUNDED — iter-35 (2026-06-20).** Updated the
+evasion-catalog's stale strategic-gaps #2 + coverage-envelope (they still said the coordination/WebRTC/IP-rep
+frontier was "Still BLOCKED" — wrong after iters 30-34 grounded it via a local STUN + proxy). Grounded the exact
+external boundary the residual now rests on: a maximally-evasive cloud bot that BLOCKS WebRTC — `camoufox-hardened`
+(per-session EVADES) + `KS_NOWEBRTC` + a non-datacenter (residential-looking) HTTP proxy — scores **`suspicious`,
+CONVICTING NONE, EVADES per-session**; its residual is 100% corroborating + external-hardware/data-gated
+(`bh.synthetic_no_coalesced`; `br.webgl2_missing`/`voices_empty`/`media_devices_empty`; `br.webrtc_unavailable` the
+cost of blocking WebRTC). So the ONLY thing that would convict it is real residential-vs-datacenter IP-reputation on
+the proxy (in-sandbox `observed_ip` is always private 172.x → classified clean) OR it leaking via WebRTC (which it
+blocked). **That is the precise, grounded saturation boundary: a cloud bot that runs engine-coherent, blocks WebRTC,
+and fronts with a residential proxy is indistinguishable from a residential user without real IP-reputation data —
+the single remaining external gate.** No code change (consolidation + boundary grounding); no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

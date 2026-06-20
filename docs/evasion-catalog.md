@@ -263,11 +263,24 @@ tell.
    edge→detector stack, not just frozen corpora. Demonstrated end-to-end on the live detector: the in-sandbox
    stealth fleet (11 sessions, shared Chromium JA4, divergent JS, distinct fps) correctly grades `candidate`
    (FP-safe — a real Chrome user base shares JA4), and the Camoufox cluster grades `candidate` with
-   per-launch JA4_c divergence "pending IP reputation". *Still BLOCKED:* real residential/proxy egress is the
-   only live test of the IP-reputation disambiguator (`rep.*`), `net.webrtc_ip_vs_observed` (STUN-blocked,
-   see detection-catalog), and the proxy-topology signals — the thing that would CONVICT that Camoufox
-   cluster instead of capping it at `candidate`. The consumer is ready for that traffic the moment a
-   proxy-fleet harness (ethics-gated to the allow-list edge) can generate it.
+   per-launch JA4_c divergence "pending IP reputation". **UPDATE iters 30-34 (2026-06-20) — the WebRTC /
+   coordination / IP-reputation frontier is NO LONGER blocked in-sandbox; it was grounded by standing up a local
+   STUN server + an HTTP CONNECT proxy on `kitsune_default` (the catalog's "STUN-blocked" assumption was wrong —
+   the gate was no UDP EGRESS to a *public* STUN, trivially replaced by a *local* one). What was grounded LIVE:
+   (1) `net.webrtc_ip_vs_observed` — the per-session proxied-WebRTC leak fired (its first positive), then was
+   DEMOTED coherence→reputation (FP-unsafe per-session: a split-tunnel VPN user shows the same shape); (2)
+   `coordination.shared_real_ip` — a 3-proxy camoufox fleet sharing one leaked origin convicted `fleet` (the
+   FP-safe convicting version; all three durable coordination signals fp/trace/shared_real_ip now real-captured);
+   (3) the maximal-evasive-fleet boundary + its WebRTC counter (block WebRTC → `candidate`, `webrtc_unavailable`
+   the corroborating cost); (4) TWO NEW DETECTIONS the WebRTC leak exposed — `rep.webrtc_origin_datacenter`
+   (corroborating) and the convicting **`net.datacenter_origin_proxied`** (the cross-layer thesis on IP-rep: a
+   DATACENTER WebRTC origin hidden behind a NON-datacenter connection = the cloud-VM-behind-residential-proxy
+   pattern that defeats `observed_ip` reputation, which `rep.datacenter_asn` is structurally blind to). Also
+   established: `br.webrtc_unavailable` is a no-STUN-egress SANDBOX artifact (corroborating), not a real tell.
+   **The residual external gate has NARROWED to a single thing:** distinguishing a real RESIDENTIAL device from a
+   residential PROXY for a session that does NOT leak its origin (WebRTC blocked or routed through a residential
+   SOCKS, or the bot running on genuinely residential hardware) — that needs real residential-vs-datacenter
+   IP-reputation data, genuinely external (in-sandbox `observed_ip` is always private 172.x → classified clean).
 
 ### Coverage envelope (the threat-model ceiling, grounded 2026-06-19)
 
@@ -289,7 +302,13 @@ tells) behind residential proxies (distinct IPs, no datacenter IP-rep). That fle
 **shared JA4 + divergent JS + distinct residential IPs** — is *identical to a real diverse cohort on one
 browser build*, so the conviction gate correctly does NOT label it `fleet` (no `fp_collision` on diverse fps,
 no abnormal `ja4c_divergent`, no automation/IP-rep corroboration, no unambiguous signal). Verified against
-`score_cluster`'s gate logic.
+`score_cluster`'s gate logic. **REFINED iters 31-34: that fleet only evades if it ALSO suppresses the WebRTC
+leak.** If its WebRTC reaches a STUN (the production default), the leaked srflx origin is the REAL machine — so a
+single-origin fleet trips `shared_real_ip` (grounded live), and a cloud-VM origin trips the convicting
+`net.datacenter_origin_proxied` even per-session (the residential proxy hides `observed_ip`, but the WebRTC origin
+betrays the datacenter machine). To stay at `candidate` the fleet must block WebRTC (→ `webrtc_unavailable`
+corroboration) or route WebRTC through its residential proxy (SOCKS-UDP) or run on genuinely residential hardware
+— i.e. the LAST mile is real residential infra, not a datacenter VM behind a residential HTTP proxy.
 
 So the genuinely **durable** signals are the ones a fleet must actively SUPPRESS and a real cohort never
 emits: `shared_real_ip` (the WebRTC real-IP leak behind diverse proxies) and `trace_collision` (a reused
