@@ -166,3 +166,39 @@ def test_ua_rotation_is_sticky_after_revert() -> None:
 def test_ua_rotation_in_single_batch() -> None:
     s = group_signals([_ua_sig(_CHROME_124, 0), _ua_sig(_CHROME_125, 1)])[0]
     assert s.value(Layer.network, "ua_rotation") is True
+
+
+# Within-session BROWSER-fingerprint rotation: a re-randomising anti-detect browser (Camoufox randomises the
+# fingerprint per LAUNCH) reusing one cookie presents >1 distinct value on a hardware-invariant field. The
+# browser-layer analog of ja4/ip/ua rotation; tracked fields cannot change without a new browser process.
+def _fp_sig(kind: str, value: object, secs: int) -> Signal:
+    at = FIXED + timedelta(seconds=secs)
+    return make_signal("a", Layer.browser, kind, value, source=Source.collector, at=at)
+
+
+def test_fp_rotation_flagged_on_divergent_hardware_concurrency() -> None:
+    s = group_signals([_fp_sig("hardware_concurrency", 4, 0)])[0]
+    assert s.value(Layer.browser, "fp_unstable") is MISSING  # one fingerprint so far
+    s = merge_sessions(s, group_signals([_fp_sig("hardware_concurrency", 16, 5)])[0])
+    assert s.value(Layer.browser, "fp_unstable") is True
+    assert s.value(Layer.browser, "fp_seen")["hardware_concurrency"] == ["16", "4"]
+
+
+def test_fp_rotation_flagged_on_divergent_webgl_renderer() -> None:
+    s = group_signals([_fp_sig("webgl_renderer", "ANGLE (Intel)", 0)])[0]
+    s = merge_sessions(s, group_signals([_fp_sig("webgl_renderer", "ANGLE (NVIDIA)", 5)])[0])
+    assert s.value(Layer.browser, "fp_unstable") is True
+
+
+def test_stable_fingerprint_is_not_rotation() -> None:
+    s = group_signals([_fp_sig("hardware_concurrency", 8, 0)])[0]
+    s = merge_sessions(s, group_signals([_fp_sig("hardware_concurrency", 8, 5)])[0])
+    s = merge_sessions(s, group_signals([_fp_sig("webgl_vendor", "Google Inc.", 10)])[0])
+    assert s.value(Layer.browser, "fp_unstable") is MISSING
+
+
+def test_fp_rotation_is_sticky_after_revert() -> None:
+    s = group_signals([_fp_sig("hardware_concurrency", 4, 0)])[0]
+    s = merge_sessions(s, group_signals([_fp_sig("hardware_concurrency", 16, 5)])[0])
+    s = merge_sessions(s, group_signals([_fp_sig("hardware_concurrency", 4, 10)])[0])  # revert
+    assert s.value(Layer.browser, "fp_unstable") is True

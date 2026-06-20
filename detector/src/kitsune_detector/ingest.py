@@ -157,6 +157,64 @@ def _annotate_ua_rotation(network: list[Signal]) -> None:
         )
 
 
+#: Browser-fingerprint fields that are HARDWARE/OS-invariant for a session's lifetime — a real client's CPU, GPU
+#: and OS do not change without a new browser process (a new session). A re-randomising anti-detect browser
+#: (Camoufox randomises these per LAUNCH) that restarts mid-crawl while reusing one cookie presents >1 distinct
+#: value here. screen_resolution/color_depth are deliberately EXCLUDED — a real user can resize a window or move it
+#: to another monitor mid-session, so those are not FP-safe within-session invariants.
+_FP_INVARIANT_FIELDS = ("hardware_concurrency", "webgl_renderer", "webgl_vendor", "nav_platform_os")
+
+
+def _annotate_fp_rotation(browser: list[Signal]) -> None:
+    """Append a sticky ``fp_unstable`` signal when a session presents >1 distinct value on any hardware-invariant
+    browser-fingerprint field — the browser-layer analog of ja4/ip/ua rotation.
+
+    The merge keeps only the latest signal per kind, so the running per-field seen-sets are persisted as ``fp_seen``
+    (a dict field->sorted list) to survive the collapse. ``fp_unstable`` is sticky once tripped. FP-safe: no real
+    browser changes its CPU/GPU/OS mid-session, and browserforge calibration samples one fingerprint per session
+    (one value per field), so promotion cannot raise its legit-browser flag rate.
+    """
+    seen: dict[str, set[str]] = {}
+    for s in browser:
+        if s.kind == "fp_seen" and isinstance(s.value, dict):
+            for k, v in s.value.items():
+                if isinstance(v, list):
+                    seen.setdefault(k, set()).update(str(x) for x in v)
+        elif s.kind in _FP_INVARIANT_FIELDS:
+            seen.setdefault(s.kind, set()).add(str(s.value))
+    if not seen:
+        return
+    ref = next(s for s in browser if s.kind in _FP_INVARIANT_FIELDS or s.kind == "fp_seen")
+    payload = {k: sorted(v) for k, v in seen.items()}
+    acc = next((s for s in browser if s.kind == "fp_seen"), None)
+    if acc is None:
+        browser.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.browser,
+                kind="fp_seen",
+                value=payload,
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+    else:
+        acc.value = payload
+    if any(len(v) >= 2 for v in seen.values()) and not any(s.kind == "fp_unstable" for s in browser):
+        browser.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.browser,
+                kind="fp_unstable",
+                value=True,
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+
+
 def group_signals(signals: list[Signal]) -> list[Session]:
     """Group signals by ``session_id`` into ``Session`` objects, ordered by first appearance."""
     by_session: dict[str, list[Signal]] = defaultdict(list)
@@ -175,6 +233,7 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
     _annotate_ja4_instability(groups.network)  # a single batch carrying >1 JA4 is already a rotation
     _annotate_ip_rotation(groups.network)
     _annotate_ua_rotation(groups.network)
+    _annotate_fp_rotation(groups.browser)
 
     timestamps = [sig.observed_at for sig in signals]
     # request_count approximates distinct forwarded requests via edge-sourced signals.
@@ -219,6 +278,16 @@ def merge_sessions(existing: Session, new: Session) -> Session:
         groups.network = [s for s in groups.network if s.kind != kind]
         if derived is not None:
             groups.network.append(derived)
+
+    # The browser-layer analog: a re-randomising anti-detect browser reusing one cookie diverges its
+    # hardware-invariant fingerprint fields across page loads; derive over the full pre-collapse browser history.
+    browser_history = [*existing.signals.browser, *new.signals.browser]
+    _annotate_fp_rotation(browser_history)
+    for kind in ("fp_unstable", "fp_seen"):
+        derived = next((s for s in browser_history if s.kind == kind), None)
+        groups.browser = [s for s in groups.browser if s.kind != kind]
+        if derived is not None:
+            groups.browser.append(derived)
 
     return Session(
         schema_version=SCHEMA_VERSION,

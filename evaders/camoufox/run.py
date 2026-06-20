@@ -60,11 +60,20 @@ NOTOUCH = os.environ.get("KS_NOTOUCH") == "1"
 # is the deterministic lit-record for that convicting rule (the coherence tell that keeps headless Camoufox at
 # the headful bar unless maxTouchPoints is pinned to 0 — the inverse of KS_NOTOUCH).
 TOUCH = os.environ.get("KS_TOUCH") == "1"
+# KS_FPROTATE=1: the within-session BROWSER-fingerprint rotation attack. Camoufox's defining feature is per-LAUNCH
+# fingerprint randomization; a scraper that restarts the browser mid-crawl while REUSING one site cookie (ks_sid)
+# therefore presents DIVERGENT hardware-invariant fingerprints under ONE session — a single client whose CPU/GPU
+# "changed", which no real browser does. This mode runs TWO Camoufox launches (distinct hardwareConcurrency, the
+# deterministic stand-in for Camoufox's per-launch randomisation of that field) sharing one ks_sid: launch 1 mints
+# the session, launch 2 reuses the cookie. The session ends up carrying two hardware_concurrency values -> the
+# within-session analog of the JA4/IP/UA network-rotation triad, on the browser layer.
+FPROTATE = os.environ.get("KS_FPROTATE") == "1"
 MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
     else "camoufox-headful" if HEADFUL
     else "camoufox-macos" if MACOS
+    else "camoufox-fp-rotation" if FPROTATE
     else "camoufox-touch-incoherent" if (LINUX and TOUCH)
     else "camoufox-linux-coherent" if (LINUX and NOTOUCH)
     else "camoufox-linux" if LINUX
@@ -126,9 +135,53 @@ def _run_baseline() -> None:
             browser.close()
 
 
+def _capture_to_sid(browser: object, sid: str | None) -> str:
+    """One page load through the edge; inject ``sid`` if given (cookie reuse), return the session id."""
+    context = browser.new_context(ignore_https_errors=True)  # type: ignore[attr-defined]
+    try:
+        if sid is not None:
+            context.add_cookies([{"name": "ks_sid", "value": sid, "url": EDGE}])
+        page = context.new_page()
+        page.goto(EDGE, wait_until="load")
+        try:
+            page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+        except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
+            page.wait_for_timeout(2000)
+        cookie = next((c for c in context.cookies() if c["name"] == "ks_sid"), None)
+    finally:
+        context.close()
+    if cookie is None:
+        raise SystemExit("no ks_sid cookie")
+    return str(cookie["value"])
+
+
+def _run_fprotate() -> None:
+    """Two Camoufox launches (divergent hardwareConcurrency) sharing ONE ks_sid — within-session fp rotation.
+
+    The UA is PINNED identical across both launches (the sophisticated re-randomiser keeps its network identity —
+    IP/JA4/UA — stable, since rotating those is separately caught) so the ONLY divergence is the browser
+    fingerprint, isolating br.fingerprint_unstable_within_session as the sole catch.
+    """
+    ua = "Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0"
+    pin_ua = {"general.useragent.override": ua}
+    # Launch 1: a fresh random profile, hardwareConcurrency pinned to 4 — mints the session.
+    with Camoufox(headless=True, os="linux", firefox_user_prefs=pin_ua, config={"navigator.hardwareConcurrency": 4}) as b1:  # type: ignore[arg-type]
+        sid = _capture_to_sid(b1, None)
+    # Launch 2: a SECOND fresh Camoufox (Camoufox re-randomises per launch), hardwareConcurrency pinned to 16,
+    # REUSING the ks_sid cookie — so one session now carries two distinct hardware_concurrency values.
+    with Camoufox(headless=True, os="linux", firefox_user_prefs=pin_ua, config={"navigator.hardwareConcurrency": 16}) as b2:  # type: ignore[arg-type]
+        _capture_to_sid(b2, sid)
+    with urllib.request.urlopen(f"{DETECTOR}/verdict/{sid}") as resp:
+        verdict: dict[str, object] = json.load(resp)
+    print("__KS__" + json.dumps({"mode": MODE, "session_id": sid, **verdict}), flush=True)
+
+
 def main() -> None:
     if BASELINE:
         _run_baseline()
+        return
+    if FPROTATE:
+        _run_fprotate()
         return
     kwargs: dict[str, object] = {"headless": "virtual" if HEADFUL else True}
     if HARDENED:

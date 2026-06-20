@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.43`); regenerate with `task catalog`, do not edit by hand. **128 rules**: 95 active · 27 experimental · 6 retired; 84 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.44`); regenerate with `task catalog`, do not edit by hand. **129 rules**: 96 active · 27 experimental · 6 retired; 85 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (29)
 
@@ -44,7 +44,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (105)
+### browser layer (106)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -54,6 +54,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.engine_feature_vs_ua` | coherence✦ | present | 0.65 | active | JS engine lacks an API its claimed Chrome version shipped — stale template |
 | `br.engine_stack_vs_ua` | coherence✦ | present | 0.7 | active | JS-engine stack API (Error.stackTraceLimit = V8) contradicts the UA engine |
 | `br.error_engine_vs_ua` | coherence✦ | present | 0.75 | active | JS-engine error-message format contradicts the UA engine |
+| `br.fingerprint_unstable_within_session` | coherence✦ | present | 0.7 | active | One session presented divergent hardware-invariant browser fingerprints (re-randomising anti-detect browser) |
 | `br.firefox_ua_nongecko` | coherence✦ | present | 0.7 | active | A UA claiming Firefox lacks navigator.buildID — a Gecko-only surface, so it is not Gecko |
 | `br.font_os_vs_ua` | coherence✦ | not_equal | 0.75 | active | Installed fonts imply an OS that contradicts the UA platform |
 | `br.language_vs_languages` | coherence✦ | present | 0.6 | active | navigator.language disagrees with navigator.languages[0] (spec-invariant violation) |

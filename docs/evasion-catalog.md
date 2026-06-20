@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **89 exercised techniques** (80 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **90 exercised techniques** (81 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (20)
 
@@ -35,7 +35,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (89)
+### Techniques exercised — scored against the live ruleset (90)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -74,6 +74,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `firefox-os-spoof` | bot | `br.navplatform_vs_ua`, `br.oscpu_vs_ua`, `br.webdriver_present`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `floor-spoof` | bot | `br.nav_property_spoofed`, `br.notification_getter_tampered`, `br.tostring_tampered`, `br.webdriver_getter_tampered` |
 | `font-os-leak` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.font_os_vs_ua`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` |
+| `fp-rotation` | bot | `br.fingerprint_unstable_within_session` |
 | `full-stealth` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.permissions_anomaly`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_os_vs_ua`, `br.webgl_worker_vs_main`, `net.ch_ua_version_vs_ua` |
 | `go-tls` | bot | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
 | `go-tls-rotate` | bot | `net.h2_unknown_vs_ua`, `net.ja4_unstable_within_session`, `net.no_js_execution`, `net.tls_grease_vs_ua`, `net.tls_pq_keyshare_vs_ua` |

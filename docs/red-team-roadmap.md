@@ -541,6 +541,33 @@ mypy/249 tests green. This **completes the within-session invariant-rotation tri
 UA string); the residual is the same external-proxy edge case the JA4/IP rules carry (a UA-rewriting forward proxy
 fronting a real browser — but the lab edge is the first hop, so it is not an in-fleet FP).
 
+**WITHIN-SESSION FINGERPRINT ROTATION — carried the axis to the BROWSER layer (iter-41, 2026-06-20, v0.74.44).**
+The within-session invariant-rotation axis was complete on the NETWORK layer (TLS engine · origin IP · UA string)
+but had nothing on the BROWSER layer — yet the **defining feature of an anti-detect browser** (Camoufox, and the
+GoLogin/Multilogin profile-randomisers) is per-LAUNCH fingerprint randomisation. A scraper that restarts the browser
+mid-crawl while REUSING one site cookie therefore presents DIVERGENT hardware-invariant fingerprints under ONE
+`ks_sid` — a single client whose CPU/GPU/OS "changed", impossible without a new process (= a new session). The same
+architectural blind spot as JA4/IP/UA: `ingest.merge` keeps only the latest signal per kind, so it was blind to
+mid-session browser-fingerprint divergence. RED-TEAM: built the camoufox **`KS_FPROTATE`** mode — two Camoufox
+launches (distinct `hardwareConcurrency`, the deterministic stand-in for Camoufox's natural per-launch
+randomisation) sharing one ks_sid, with the **UA PINNED identical** across both (the sophisticated re-randomiser
+keeps its network identity stable, since rotating IP/JA4/UA is separately caught). BLUE-TEAM: the detector now
+accumulates per-field seen-sets over the pre-collapse browser history (`fp_seen`, surviving the merge collapse like
+`observed_ip_seen`) and derives a sticky `browser.fp_unstable` when ANY hardware-invariant field
+(`hardware_concurrency`, `webgl_renderer`, `webgl_vendor`, `nav_platform_os` — `screen_resolution`/`color_depth`
+EXCLUDED as a real user can resize/move a window) shows >=2 distinct values; new rule
+**`br.fingerprint_unstable_within_session`** (coherence/convicting, w0.7). GROUNDED LIVE: the two-launch evader →
+`fp_seen={hardware_concurrency:[16,4], nav_platform_os:[Linux]}`, `fp_unstable` derived, label `bot` with
+**`br.fingerprint_unstable_within_session` the SOLE convicting tell** (UA pinned, so `net.ua_rotation` correctly
+stays quiet — proving the fp rule catches the re-randomiser that keeps its network identity stable, which the
+network triad misses; residual is corroborating behavioral+environment only). `task calibrate` (browserforge n=500):
+0 new FPs — the rule is absent from the re-tier table because calibration samples ONE fingerprint per session (no
+within-session-divergence axis), same FP-safety class as its network siblings. detector mypy+253 tests, harness 202
+tests, lit-guard on `fp-rotation.json`, check_headers all green; no edge change (browser-layer only). **This completes
+the within-session invariant-rotation axis across BOTH layers** (network: TLS/IP/UA · browser: hardware fingerprint)
+— the four-plus things a real client holds invariant for a session's lifetime. The residual is the same cross-session
+frontier (a fresh cookie per identity defeats all within-session correlation → coordination/prevalence, external).
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
