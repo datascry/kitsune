@@ -136,6 +136,26 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
     assert engine.evaluate(bot_session) == []
 
 
+def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -> None:
+    # The test above checks the skip MECHANISM with a SYNTHETIC rule. This pins the COMMITTED registry's
+    # specific retirements against an accidental un-retirement re-introducing a FIXED FP: emit each retired
+    # present-predicate rule's read-signal=True and assert it does NOT fire. Covers notification_denied
+    # (block-notifications users), quic_grease_vs_ua + quic_pq_keyshare_vs_ua (broken QUIC ClientHole capture),
+    # chrome_runtime_missing (every real Chrome) — each retired BECAUSE it convicted a real browser.
+    ruleset = load_registry()
+    engine = CoherenceEngine(ruleset)
+    checked = 0
+    for rule in ruleset.rules:
+        if rule.status != "retired" or rule.predicate != "present" or len(rule.reads) != 1:
+            continue
+        layer_name, kind = rule.reads[0].split(".", 1)
+        session = group_signals([make_signal("s", Layer(layer_name), kind, True, source=Source.collector)])[0]
+        fired = {c.rule_id for c in engine.evaluate(session)}
+        assert rule.id not in fired, f"{rule.id} fired despite status=retired — accidental un-retirement?"
+        checked += 1
+    assert checked >= 3, f"expected several retired present-predicate rules, only checked {checked}"
+
+
 @pytest.mark.parametrize(
     ("signals_spec", "rule_id"),
     [
