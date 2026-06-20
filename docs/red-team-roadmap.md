@@ -498,6 +498,25 @@ the same external-hardware frontier as desktop. `mobile-emulation.json` frozen +
 incoherent-joint attack, distinct from its documented same-source blindness to a CLEAN browserforge injection). No
 new detection (existing rules), no version bump.
 
+**UNLIT-RULE AUDIT — restored a lost lit-capture (iter-39, 2026-06-20).** With the in-sandbox evasion surface
+saturated, pivoted from "find a new EVADES" to "which convicting rules have NO live-evader positive proving they
+fire?" — a regression-coverage frontier, not a new-coverage one. Audited all 121 active rules against the lit-capture
+corpus: 15 convicting rules had no committed capture, 4 of them structurally lightable by the fleet. One,
+**`br.pointer_touch_incoherent`**, had SILENTLY lost its guard — the iter-27 `KS_NOTOUCH` counter (pin
+`maxTouchPoints=0`) was the right red-team move but it also removed the only capture that *lit* the rule, since
+Camoufox's incoherent touch-desktop is a ~7%-per-launch RANDOM flake (not deterministically reproducible). Added the
+inverse flag **`KS_TOUCH=1`** (Camoufox `config={"navigator.maxTouchPoints": 5}` on a Linux-pinned desktop → touch JS
+but fine CSS pointer → the deterministic incoherence) and mode `camoufox-touch-incoherent`. Grounded live → `bot`,
+`br.pointer_touch_incoherent` the SOLE convicting tell. Froze `camoufox-touch-incoherent.json` + a lit-test guard so
+the rule can't silently lose coverage again. The 3 remaining unlit-convicting rules are structurally-hard/external,
+NOT regressions: `net.tls_os_vs_tcp_os` (JA4 rarely OS-hints, so the TLS-OS field is usually absent — needs a tool
+that forges a mismatched TLS-OS, which none do); `br.voice_os_vs_ua` (the container ships no TTS voices → the prior
+tell is `br.voices_empty`, never reaching the OS-vs-UA compare — needs a host with real OS voices); and
+`br.webgpu_vendor_vs_webgl` (needs a CLEAN WebGL→real-GPU spoof *plus* a software-WebGPU adapter whose vendor
+disagrees — the naive WebGL override the fleet can produce trips `br.webgl_getparameter_tampered` first). No detector
+change, no version bump — `br.pointer_touch_incoherent` is a pre-existing rule; this iteration restores its
+regression guard, it does not add detection.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

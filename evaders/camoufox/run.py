@@ -54,11 +54,18 @@ LINUX = os.environ.get("KS_LINUX") == "1"
 # CSS-pointer-media leak (br.pointer_touch_incoherent) — with KS_LINUX this turns the otherwise-caught headless
 # Camoufox into an EVADES under the FULL collector (no xvfb). See main().
 NOTOUCH = os.environ.get("KS_NOTOUCH") == "1"
+# KS_TOUCH=1: force navigator.maxTouchPoints>0 on a DESKTOP profile — the INCOHERENT touch-desktop that trips
+# br.pointer_touch_incoherent (maxTouchPoints says touch, but the CSS @media(any-pointer:coarse) Camoufox does
+# NOT spoof says fine pointer). This is what Camoufox's default randomiser produces ~7% of launches; forcing it
+# is the deterministic lit-record for that convicting rule (the coherence tell that keeps headless Camoufox at
+# the headful bar unless maxTouchPoints is pinned to 0 — the inverse of KS_NOTOUCH).
+TOUCH = os.environ.get("KS_TOUCH") == "1"
 MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
     else "camoufox-headful" if HEADFUL
     else "camoufox-macos" if MACOS
+    else "camoufox-touch-incoherent" if (LINUX and TOUCH)
     else "camoufox-linux-coherent" if (LINUX and NOTOUCH)
     else "camoufox-linux" if LINUX
     else "camoufox"
@@ -157,6 +164,10 @@ def main() -> None:
         # touch and the default fine pointer, cssTouch==jsTouch==false → the tell goes quiet. The red-team counter
         # to the CSS-pointer-media leak — grounded under the FULL collector (no ?fast, which under-probes).
         kwargs["config"] = {"navigator.maxTouchPoints": 0}
+    if TOUCH:
+        # Force the incoherent touch-desktop (maxTouchPoints > 0 but Camoufox leaves the CSS pointer fine) → the
+        # deterministic lit-record for br.pointer_touch_incoherent.
+        kwargs["config"] = {"navigator.maxTouchPoints": 5}
     with Camoufox(**kwargs) as browser:  # type: ignore[arg-type]
         for _ in range(REPEAT):
             verdict = _capture(browser)
