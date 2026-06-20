@@ -254,6 +254,20 @@ hardware (closing the OS axis) AND would still need to hide webdriver + forge a 
 Safari on a real Mac, the external-hardware frontier. `webkit-safari-coherent.json` frozen; all existing rules →
 no new detection, no version bump.
 
+**Coherent-Gecko is the THINNEST-caught stock engine — iter-23 (2026-06-20).** The Gecko analog of the WebKit
+grounding, but Firefox-on-Linux IS OS-coherent (unlike Safari⟹Mac), so it isolates the engine axis cleanly. Added
+`firefox-coherent` (`KS_COHERENT=1`: a real LINUX Firefox UA on the Linux host). Grounded live → caught by a
+**SINGLE convicting tell, `br.webdriver_present`** — no `cdp_runtime_enabled` (Gecko speaks no CDP), no
+`headless_ua` (no token), no OS-incoherence (Linux UA + Linux host + Linux oscpu all agree). Far cleaner than
+Chromium (many tells) or WebKit (6). **That single tell is a ROBUST 2-rung ladder, grounded:** (a) stock →
+`br.webdriver_present` (Playwright sets `navigator.webdriver=true`); (b) the native `dom.webdriver.enabled` pref is
+OVERRIDDEN by Playwright's automation (still `webdriver_present` — grounded, the pref does nothing); (c) a JS
+redefine (`KS_HIDEWD=1`) hides `webdriver_present` but makes the getter non-native → `br.webdriver_getter_tampered`
+fires instead. So the webdriver tell is escapable only by an ENGINE-LEVEL patch (Camoufox sets `webdriver=false`
+natively with no JS tamper) — **this precisely locates WHY Camoufox exists and EVADES while stock Playwright
+Firefox does not**: coherent Gecko is one engine-level webdriver patch away from clean, and that patch is exactly
+Camoufox's value-add. `firefox-coherent.json` frozen; all existing rules → no new detection, no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
