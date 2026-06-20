@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-20T06:59:15.145548+00:00`
+- generated: `2026-06-20T07:10:03.882106+00:00`
 - ruleset: `0.74.37`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -73,6 +73,7 @@
 | webkit-ua-spoof | corpus | 0.99 | 1.00 | 0.80 | 0.00 | 0.88 | 1.00 | bot |
 | worker-spoof | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
 | worker-wrap | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
+| zendriver-uach | corpus | 0.00 | 0.97 | 0.80 | 0.00 | 0.00 | 0.99 | suspicious |
 | zendriver | corpus | 0.60 | 0.97 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 
 ## Why
@@ -145,4 +146,5 @@
 - **webkit-ua-spoof** (bot): `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `br.webdriver_present`, `bh.power_law_violation`, `net.tcp_os_vs_ua`, `bh.path_too_straight`, `br.no_chrome_object`, `br.webgl_os_vs_ua`, `br.navplatform_vs_ua`, `br.vendor_vs_ua`, `br.no_connection`, `br.no_devicememory`, `br.webgl_not_angle`, `br.fingerprint_improbable`, `br.media_devices_empty`, `br.error_engine_vs_ua`, `net.tls_grease_vs_ua`
 - **worker-spoof** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.worker_divergence`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.voices_empty`, `br.media_devices_empty`
 - **worker-wrap** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.worker_constructor_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.voices_empty`, `br.media_devices_empty`
+- **zendriver-uach** (suspicious): `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.webgl_software`, `br.hover_none_desktop`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **zendriver** (bot): `net.h2_header_order_vs_ua`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.webgl_software`, `br.hover_none_desktop`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`

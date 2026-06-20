@@ -168,3 +168,14 @@ evasion-catalog the living ledger. Modify REAL tools; ground every claim live; n
   non-Chromium regular-header order, whereas real Chrome (chrome-stable/firefox/msedge, FP-clean for this rule) sends
   the trio. zendriver hides the headless UA token (unlike nodriver) but leaks at the network/Client-Hints layer.
   Re-captured `zendriver.json`; EVADES frontier 3→2. FP-safe (real browsers don't trip it).
+- **iter-10 (2026-06-20): zendriver → a HEADLESS evader of the convicting layer (red-team WIN).** Grounded the
+  CDP-minimal class live: `nodriver`/`pydoll`/`undetected` are each caught by `br.headless_ua` alone (they keep the
+  HeadlessChrome token + send Sec-CH-UA), but `zendriver` is caught by `net.h2_header_order_vs_ua` alone — it HIDES
+  the token (its built-in stealth) but the UA override CLEARS the Sec-CH-UA hints (a textbook single-layer-stealth-
+  forgot-the-network-layer incoherence, a third-party live demo of the thesis). zendriver already avoids the
+  automation floor (no `cdp_runtime_enabled`/`no_chrome_object`/`permissions_anomaly`, unlike patchright-headless),
+  so fixing that ONE cross-layer tell makes it evade. Added `KS_UACH=1` to the zendriver evader (CDP
+  `Network.setUserAgentOverride` + full `userAgentMetadata` → coherent Sec-CH-UA); grounded live `zendriver-uach`
+  scores **suspicious, ZERO convicting tells** — the FIRST and ONLY **headless** evader of the convicting layer (no
+  xvfb, unlike camoufox-headful/patchright-headful). **Frontier (b):** a coherent UA-CH is legitimate (no FP-safe
+  counter); residual is external-hardware-gated environment + behavioural corroboration. EVADES frontier now **3**.

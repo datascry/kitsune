@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **69 exercised techniques** (67 convicted `bot`, 2 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **70 exercised techniques** (67 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (16)
 
@@ -31,7 +31,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (69)
+### Techniques exercised — scored against the live ruleset (70)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -104,6 +104,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `worker-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.worker_divergence` |
 | `worker-wrap` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.worker_constructor_tampered` |
 | `zendriver` | bot | `net.h2_header_order_vs_ua` |
+| `zendriver-uach` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 
 <!-- GENERATED:evasion:end -->
 

@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 117 rules vs 69 evaders
+# Kitsune detection matrix — 117 rules vs 70 evaders
 
-_67/69 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
+_67/70 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -74,15 +74,16 @@ _67/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `webkit-ua-spoof` | bot | 1.00 | 18/117 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
 | `worker-spoof` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `worker-wrap` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `zendriver-uach` | suspicious | 0.99 | 7/117 | — |
 | `zendriver` | bot | 1.00 | 8/117 | `net.h2_header_order_vs_ua` |
 
 ## Per-rule coverage — 102/117 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 54 |
-| `br.voices_empty` | browser | environment | 53 |
-| `br.webgl_software` | browser | environment | 45 |
+| `br.media_devices_empty` | browser | environment | 55 |
+| `br.voices_empty` | browser | environment | 54 |
+| `br.webgl_software` | browser | environment | 46 |
 | `br.mimetypes_empty` | browser | environment | 42 |
 | `br.no_plugins` | browser | environment | 42 |
 | `br.permissions_anomaly` | browser | automation | 41 |
@@ -96,11 +97,11 @@ _67/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.no_js_execution` | network,browser | coherence | 14 |
 | `net.tcp_os_vs_ua` | network | coherence | 14 |
 | `br.webdriver_present` | browser | automation | 12 |
-| `bh.input_entropy_floor` | behavioral | behavioral | 10 |
-| `bh.no_input_before_action` | behavioral | behavioral | 9 |
+| `bh.input_entropy_floor` | behavioral | behavioral | 11 |
+| `bh.no_input_before_action` | behavioral | behavioral | 10 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
+| `br.hover_none_desktop` | browser | environment | 7 |
 | `br.navplatform_vs_ua` | browser | coherence | 7 |
-| `br.hover_none_desktop` | browser | environment | 6 |
 | `br.webdriver_spoofed` | browser | automation | 6 |
 | `br.webgl2_missing` | browser | environment | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
@@ -110,9 +111,9 @@ _67/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.ch_he_version_vs_ua` | browser | coherence | 5 |
 | `br.codec_os_incoherent` | browser | environment | 5 |
 | `br.font_linux_leak` | browser | environment | 5 |
+| `br.webrtc_unavailable` | browser | environment | 5 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
 | `br.tostring_tampered` | browser | automation | 4 |
-| `br.webrtc_unavailable` | browser | environment | 4 |
 | `net.h2_header_order_vs_ua` | network | coherence | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
@@ -255,6 +256,7 @@ _67/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `webkit-ua-spoof` | bot | 9 | 0 | 2 | 4 | 2 | 0 |
 | `worker-spoof` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
 | `worker-wrap` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
+| `zendriver-uach` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 | `zendriver` | bot | 1 | 0 | 0 | 5 | 2 | 0 |
 
 ## Coverage gaps — 15/117 rules catch nothing yet
