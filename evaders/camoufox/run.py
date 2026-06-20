@@ -39,11 +39,20 @@ HARDENED = os.environ.get("KS_HARDENED") == "1"
 # the faithful tell for the (until now unexercised) `br.font_mac_internal` rule. HARDENED pins Windows
 # precisely to dodge this; this mode does the opposite to LIGHT it.
 MACOS = os.environ.get("KS_MACOS") == "1"
+# KS_LINUX=1: pin Camoufox to a LINUX OS profile, COHERENT with the Linux container host. By default Camoufox
+# RANDOMIZES the OS, often picking Windows/macOS → a non-Linux UA on a Linux TCP/IP stack → net.tcp_os_vs_ua
+# (the sole convicting tell on headless Camoufox once the collector posts). Pinning Linux makes UA-OS == TCP-OS,
+# so that tell goes quiet. Camoufox already patches navigator.webdriver at the ENGINE level (no webdriver_present,
+# no webdriver_getter_tampered — the holdout that catches stock Playwright Firefox, see firefox-coherent) and
+# speaks no CDP, so a Linux-pinned headless Camoufox should EVADE the convicting layer with NO xvfb — the
+# lowest-bar EVADES (residual = the external-hardware-gated environment floor only).
+LINUX = os.environ.get("KS_LINUX") == "1"
 MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
     else "camoufox-headful" if HEADFUL
     else "camoufox-macos" if MACOS
+    else "camoufox-linux" if LINUX
     else "camoufox"
 )
 HARDENED_KW: dict[str, object] = {
@@ -99,6 +108,8 @@ def main() -> None:
         kwargs.update(HARDENED_KW)
     if MACOS:
         kwargs["os"] = "macos"
+    if LINUX:
+        kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
     with Camoufox(**kwargs) as browser:  # type: ignore[arg-type]
         for _ in range(REPEAT):
             verdict = _capture(browser)

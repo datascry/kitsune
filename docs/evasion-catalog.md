@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **80 exercised techniques** (76 convicted `bot`, 4 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **81 exercised techniques** (76 convicted `bot`, 5 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (19)
 
@@ -34,7 +34,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (80)
+### Techniques exercised — scored against the live ruleset (81)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -49,6 +49,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `camoufox` | bot | `net.no_js_execution`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `camoufox-hardened` | bot | `br.pointer_touch_incoherent` |
 | `camoufox-headful` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
+| `camoufox-linux` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-macos` | bot | `br.font_mac_internal`, `net.tcp_os_vs_ua` |
 | `canvas-geometry-spoof` | bot | `br.canvas_geometry_noise`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `canvas-lie` | bot | `br.canvas_lie`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.webdriver_getter_tampered` |

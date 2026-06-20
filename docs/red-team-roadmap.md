@@ -268,6 +268,22 @@ natively with no JS tamper) — **this precisely locates WHY Camoufox exists and
 Firefox does not**: coherent Gecko is one engine-level webdriver patch away from clean, and that patch is exactly
 Camoufox's value-add. `firefox-coherent.json` frozen; all existing rules → no new detection, no version bump.
 
+**NEW EVADES (lowest-bar yet): Linux-pinned HEADLESS Camoufox — iter-24 (2026-06-20).** The iter-23 inference
+("engine-Gecko is one webdriver-patch from clean") was GROUNDED by closing the loop on Camoufox, and it CORRECTS
+the catalog's "only camoufox-HEADFUL EVADES" framing. Two artifacts had hidden it: (1) the non-FAST capture's
+fixed 2s wait was too short for headless Camoufox's collector POST → 0 browser signals → caught by
+`net.no_js_execution` (a measurement bug, not a real catch — `KS_FAST=1` waits for `body[data-ks='sent']` and the
+collector posts fine); (2) Camoufox RANDOMIZES its OS profile, often picking Windows/macOS on the Linux host →
+`net.tcp_os_vs_ua` (the sole convicting tell once the collector posts). Added `KS_LINUX=1` (pin `os="linux"`,
+coherent with the host) + `KS_FAST=1`: grounded live → **`suspicious` 0.946, CONVICTING NONE — EVADES, HEADLESS,
+no xvfb.** Camoufox patches `navigator.webdriver=false` at the ENGINE level (no `webdriver_present`, no
+`webdriver_getter_tampered` — exactly the firefox-coherent holdout), speaks no CDP, has no headless token, and with
+a Linux profile is OS-coherent → the residual is environment-only (`webgl2_missing` / `voices_empty` /
+`media_devices_empty` / `webrtc_unavailable`), all external-hardware-gated (a real GPU-less headless Linux box
+shares them — no FP-safe counter, frontier (b)). **Significance: the per-session evasion bar is LOWER than
+documented — headless Camoufox + a Linux profile suffices, no headful/xvfb.** `camoufox-linux.json` frozen (5th
+EVADES); no new detection (residual FP-unsafe to convict), no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
