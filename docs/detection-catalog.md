@@ -296,6 +296,20 @@ This dropped fire-on-zero-captures 15 → 9 → **2**. The 2 remaining (`br.voic
 `br.webgpu_vendor_vs_webgl`) are blocked on real audio/GPU hardware the sandbox cannot provide, and faking the
 signal would be a strawman — they keep their unit tests (logic proven) and are left un-lit by design.
 
+**Producer-side complement of the audit (2026-06-20): every emitted signal is consumed or context-only — no
+collector work produces a missed FP-safe convicting opportunity.** Constraint #6 checks the CONSUMER side (no
+rule reads a never-produced signal). The inverse is the producer side: diff the signals the collector/edge
+EMIT (`demo.py` `S(...)` + edge `Network(...)` + `probes.ts` `put(...)`, 141 kinds) against the signals rules
+`reads:`. The 18 emitted-but-unread signals are ALL legitimately non-convicting: coordination inputs
+(`fp_hash`/`trace_hash`/`ja4`, consumed harness-side), prevalence-prior inputs
+(`screen_resolution`/`webgl_renderer`/`webgl_vendor`, plus `color_depth` deliberately DROPPED as a
+single-source FP), applicability/context (`is_brave`, `brand`), derived-hint raws (`ja3`/`h2`/`quic_observed`
+feed the `*_hint` signals rules actually read — or, for QUIC, the retired rules), and environmental WebGPU
+context (`webgpu_absent`/`webgpu_no_adapter` — a GPU-less machine, FP-prone to convict, correctly unused;
+`webgpu_vendor`/`webgpu_fallback` feed the derived `webgpu_*_mismatch`). So the collector↔ruleset mapping is
+complete in BOTH directions: no convicting rule is unproducible, and no emitted signal is an un-built FP-safe
+convicting tell. Reproduce: regex the emitters vs the registry `reads:` and classify the difference.
+
 Beyond the active set, the audit also lit one **experimental** convicting rule, `br.font_mac_internal`
 (v0.74.35, camoufox `KS_MACOS=1`): a faithful white-box capture grounded against Camoufox's own bundled
 `fonts.json` rather than a synthesized signal. The other two never-fired experimental net rules were probed
