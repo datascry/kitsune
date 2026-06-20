@@ -13,6 +13,12 @@ layers, not just bad signals.** Start with [`docs/architecture.md`](docs/archite
   trailer, not in PR descriptions or metadata, anywhere. This explicitly means **do not add the
   default `Co-Authored-By: Claude … <…@anthropic.com>` trailer** — omit it entirely.
 - Set it before committing: `git config user.name datascry && git config user.email datascry@users.noreply.github.com`.
+- **One accepted exception — the release automation.** Releases are cut by the release-please GitHub
+  Action, whose `chore(main): release …` commit is authored by `github-actions[bot]`. Merging that
+  release PR (as datascry) is the sanctioned release path, so that single bot-authored release commit
+  is permitted. This carve-out is **only** for release-please's own release commit — every other
+  commit (features, fixes, docs, tests, applying a dependency/bot PR locally) stays datascry-only, and
+  you must still never set a non-datascry author/committer on a commit you make yourself.
 
 ### Ethics — enforced in code
 
