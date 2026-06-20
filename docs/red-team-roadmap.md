@@ -779,6 +779,26 @@ a per-session realm tell. `worker-cdp-pause` is a permanent pressure-test; no re
 no new detection, no version bump. The realm-injection vein is now EXHAUSTIVELY mapped — racy CDP loses, paused CDP
 wins-but-trips-automation, non-CDP is caught by source/ctor.
 
+**FP-REGRESSION VALIDATION — surfaced + fixed a stale Brave capture masking the privacy-browser FP-safety
+(iter-51, 2026-06-20).** At saturation, pivoted from evasion to the INVERSE failure: after 11 iterations of new
+rules (ua/fp/trace rotation, worker_source_rewritten, the tee TTL), does any REAL browser get mis-convicted? Scored
+every real-engine ground-truth capture for a coherence/artifact FP. Three flagged; two are CORRECT catches, not FPs
+(`webkit-safari-coherent`: Playwright WebKit on a Linux host faking a macOS Safari UA → genuinely incoherent OS/TLS
+layer; `playwright-extra-coherent`: the documented main-realm-only spoof → worker divergence). The third was real: the
+fleet capture `corpus/sessions/brave.json` was convicted by **`br.canvas_noise`** (artifact, convicting) — a privacy
+browser farbles canvas BY DESIGN, so this would FP the entire real-Brave user population. ROOT CAUSE: the capture is
+STALE — it predates the collector's `is_brave` signal, so the `detector.applicability` privacy-browser guard (which
+drops `canvas_noise`/`audio_noise` for a GENUINE Brave, `is_brave && !brave_spoofed`) didn't recognize it. GROUNDED
+LIVE: re-ran the real Brave evader through the current collector → `is_brave=True`, `brave_spoofed=None`,
+`canvas_noise=True`, yet `br.canvas_noise` does NOT fire (correctly N/A'd) — the FP-safety holds; the convictions are
+purely the automation floor (`webdriver_present`/`headless_ua`, correct for an AUTOMATED Brave; a real non-automated
+Brave user trips neither → clean). Re-froze `corpus/sessions/brave.json` from the fresh capture, correcting the
+corpus. (The dedicated privacy FP-safety test already used the separate, current `corpus/calibration/privacy/brave.json`
+— it was passing; this fixes the FLEET capture that a full-corpus regression would otherwise read as a real-Brave FP.)
+NET: zero real coherence/artifact FPs across the comprehensive ruleset; one stale capture corrected; the
+privacy-browser FP-safety re-grounded against the current collector. detector 256 + harness + lit-tests green, no
+detector change, no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
