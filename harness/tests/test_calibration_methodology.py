@@ -128,6 +128,34 @@ def test_real_nonautomated_chrome_trips_no_browser_layer_conviction() -> None:
     assert "net.h2_header_order_vs_ua" not in all_fired, all_fired
 
 
+def _net_layer_convictions(path: Path) -> set[str]:
+    capture = json.loads(path.read_text())
+    signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+    verdict = Detector().ingest_and_score(signals)[0]
+    convicting = {RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact}
+    return {c.rule_id for c in verdict.contradictions if c.rule_id.startswith("net.") and c.category in convicting}
+
+
+def test_real_chromium_gecko_captures_trip_no_network_coherence_fp() -> None:
+    # The NETWORK-layer counterpart of the browser-layer guards above — and the only FP check for the `net.*`
+    # convicting category that browserforge is STRUCTURALLY BLIND to (it generates browser fingerprints, never
+    # network signals; see the ~21-of-56 calibration-coverage note). The headful/privacy captures DO flow real
+    # browser traffic through the edge, so they are the lab's only ground truth that a `net.*` coherence rule
+    # does not false-fire on a real browser. Real Chromium + Gecko families (Chrome, Chromium, Edge, Firefox,
+    # Brave, Mullvad) must trip ZERO net-layer convicting rules: their TLS/h2/TCP stack is the genuine browser
+    # stack, coherent with their own UA. Without this, a new net.* rule that mis-reads real Chrome's h2/TLS
+    # (cf. the v0.74.34 quic_pq retirement, an unvalidated-capture FP) would pass CI silently.
+    # WebKit is EXCLUDED: corpus/calibration/headful/webkit.json is Playwright-WebKit on Linux, NOT real Safari —
+    # it legitimately trips net.h2_unknown_vs_ua / net.tcp_os_vs_ua / net.tls_grease_vs_ua (a patched Linux stack
+    # under a macOS-Safari UA), a documented known artifact (docs/calibration.md) that needs a real macOS Safari
+    # to ground, not an FP to fix here.
+    captures = [p for p in sorted(_HEADFUL.glob("*.json")) + sorted(_PRIVACY.glob("*.json")) if p.stem != "webkit"]
+    assert captures, "no real captures found"
+    for path in captures:
+        fired = _net_layer_convictions(path)
+        assert fired == set(), f"{path.stem}: net.* convicting rule false-fired on a real browser: {fired}"
+
+
 def test_prevalence_never_flags_a_real_browser_capture() -> None:
     # Guard the prevalence single-source FP class on the REAL captures (the GPU 'other' fix, v0.74.33). Real
     # Firefox/Mullvad report UNCLASSIFIABLE WebGL renderers ("llvmpipe, or similar" / "Mozilla") that
