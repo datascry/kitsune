@@ -228,6 +228,18 @@ patchright). So the OG stealth baseline is FAR more detectable than the fleet's 
 this is caught 6 ways), and is a live demonstration that naive stealth evasions ADD incoherence. All six are
 existing rules → no new detection, no version bump. `playwright-extra.json` frozen.
 
+**Root cause white-boxed + hardened — iter-21.** The `tcp_os_vs_ua` is not incidental: the `user-agent-override`
+evasion defaults to **`maskLinux: true`**, which on a Linux host REWRITES the UA platform to `Windows NT 10.0`
+while the TCP/IP stack stays Linux — a GUARANTEED `net.tcp_os_vs_ua` on the exact servers scrapers run (the
+plugin's own README admits unmasking "makes detection very easy", but masking creates a WORSE cross-layer tell).
+Generalizable: every default-config puppeteer-extra-plugin-stealth deployment on Linux self-inflicts it. Hardened
+it live (`KS_COHERENT_UA=1` → `maskLinux:false`): `tcp_os_vs_ua` GOES QUIET, but the residual is **structural and
+irreducible for JS-injection stealth** — `br.cdp_runtime_enabled` (can't hide the CDP transport, only patchright
+does), `br.ch_he_headless` (fixes the UA string but NOT the Sec-CH-UA high-entropy brand list — still
+HeadlessChrome), and `br.worker_divergence`×3 (main-realm-only spoofs). So even OPTIMALLY configured the most
+popular stealth plugin is caught 5 ways, none config-hardenable. `playwright-extra-coherent.json` frozen. No new
+detection (existing rules); no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
