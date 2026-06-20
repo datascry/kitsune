@@ -49,7 +49,7 @@ allow-list.
 | `detector/` | Python | Session correlation, coherence engine, scoring, store, `/ingest`. |
 | `harness/` | Python | Scenario runner + reproducible scoreboard; ethics allow-list. |
 | `edge/` | Go | Raw ClientHello → JA3/JA4, HTTP/2 + QUIC/HTTP-3 + TCP/IP fingerprints, session minting, signal forwarding. |
-| `collector/` | TypeScript | In-browser fingerprint + behavioral signal collection. |
+| `collector/` | TypeScript | In-browser signal collection — a **focused production** page script (`src/index.ts`→`collect.ts`) + a **full self-test** page (`src/livepage/`). NB: the detector serves its OWN full inline collector (`detector/…/demo.py`), which is the authoritative full suite rules are validated against. Three collectors, distinct jobs — see [`docs/architecture.md`](docs/architecture.md) §3. |
 | `evaders/` | Py/TS/Go | Red-team ladder of real anti-detect tools/browsers (camoufox, nodriver, zendriver, pydoll, selenium-driverless, undetected, primp, curl-impersonate, go-tls, brave, stealth, h2-rapid-reset, vanilla, agent). |
 | `docs/adr/` | — | MADR architecture decision records. |
 

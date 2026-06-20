@@ -112,6 +112,24 @@ The evader fleet spans all three languages because the real tools do: Python (va
 > language would put a layer in the wrong ecosystem — and would make the evader fleet fake instead of
 > real. The discipline that makes it safe: the contracts are the *only* coupling, and they are versioned.
 
+> **Three browser-side collectors — know which is which (they are NOT interchangeable).** "The collector"
+> is really **three** implementations of the in-page probe suite, with distinct jobs and signal coverage:
+> - **`collector/src/index.ts` → `collect.ts`** — the **production** page script. A *deliberately focused*
+>   set: the cheap high-confidence automation tells (`webdriver`, `cdp_runtime_enabled`, `ua_is_headless`,
+>   `canvas_lie`, `webdriver_spoofed`), the coordination signals (`fp_hash`, `trace_hash`), and behavioral
+>   features. POSTs `Signal`s to `/ingest`. The heavy full probe suite is intentionally NOT run on every
+>   page load — for a production deployment the browser-coherence gap is covered by the **edge's** network
+>   coherence (JA4/h2/TLS-vs-UA), which needs no JS.
+> - **`collector/src/livepage/`** — a standalone **self-test page** (CreepJS / sannysoft-style). Runs the
+>   *full* probe suite client-side **and** evaluates the coherence rules in the browser to render a local
+>   verdict; it does **not** POST. For white-box probing of an anti-detect tool.
+> - **`detector/…/demo.py`** — the detector's **served inline collector** (JS embedded in Python). The
+>   *full* probe suite, served at `/` and exercised by the live stack + every evader capture, POSTing to
+>   `/ingest`. **This is the authoritative full collector that rules are developed and validated against.**
+>   `livepage` is meant to mirror it but can lag — for authoritative white-boxing, use the live stack /
+>   `demo.py`, not the self-test page. (So "the detector mirrors the collector" in §10 means demo.py
+>   reproduces the production-collector signal shape, not that the detector itself collects in production.)
+
 ---
 
 ## 4. Data model
