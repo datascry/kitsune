@@ -130,7 +130,9 @@ function toStringTampered(): boolean {
     const md = navigator.mediaDevices as { enumerateDevices?: unknown } | undefined;
     // getCoalescedEvents (v0.74.36): a COALESCE_SPOOF bot overrides it with a non-native fn to fake coalesced
     // pointer batches (beating bh.synthetic_no_coalesced); a real browser's is native.
-    const pe = win()["PointerEvent"] as { prototype?: { getCoalescedEvents?: unknown } } | undefined;
+    const pe = win()["PointerEvent"] as
+      | { prototype?: { getCoalescedEvents?: unknown } }
+      | undefined;
     const fns = [
       Function.prototype.toString,
       HTMLCanvasElement.prototype.toDataURL,
@@ -312,7 +314,14 @@ function webrtcProbe(): Promise<RtcResult> {
     }
   });
 }
-type WorkerNav = { ua: string; hw: number; plat: string; lang: string; href: string; expectedHref: string };
+type WorkerNav = {
+  ua: string;
+  hw: number;
+  plat: string;
+  lang: string;
+  href: string;
+  expectedHref: string;
+};
 function workerNav(): Promise<WorkerNav | null> {
   return new Promise((resolve) => {
     try {
@@ -493,7 +502,8 @@ export function armCollector(): LiveCollector {
         // A real coalesced batch is the UA's own native (always-trusted) samples; an untrusted, constructor-built
         // event inside a length>1 batch is a fabricated getCoalescedEvents override (COALESCE_PROXY) — caught
         // even through a Proxy-over-native, which keeps the function native but cannot forge trusted data.
-        if (c.length > 1 && c.some((ev) => ev != null && ev.isTrusted === false)) coalescedUntrusted = true;
+        if (c.length > 1 && c.some((ev) => ev != null && ev.isTrusted === false))
+          coalescedUntrusted = true;
       } catch {
         /* ignore */
       }
