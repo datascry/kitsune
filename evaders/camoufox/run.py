@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import urllib.request
 
 from camoufox.sync_api import Camoufox
@@ -80,8 +81,13 @@ def _capture(browser: object) -> dict[str, object]:
             page.wait_for_selector("body[data-ks='sent']", timeout=8000)
         else:
             page.goto(EDGE, wait_until="load")
+            # Per-instance RANDOM jitter on the pointer path: the trace_hash is coordinate-based (rounded x,y),
+            # so a FIXED path makes a FLEET of instances emit one identical trace_hash → coordination._trace_
+            # collision convicts the whole fleet `fleet` even though their fingerprints diverge (grounded iter-29).
+            # Real bots vary their motion per session; jitter (distinct per container process) defeats the
+            # self-inflicted trace collision so the fleet is only catchable by the external shared_real_ip leak.
             for i in range(24):
-                page.mouse.move(100 + i * 7, 120 + (i % 5) * 12)
+                page.mouse.move(100 + i * 7 + random.randint(-18, 18), 120 + (i % 5) * 12 + random.randint(-18, 18))
             # Wait for the collector's POST marker (body[data-ks='sent']), not a flat 2s — headless Camoufox's
             # collector posts later than 2s, which silently yielded 0 browser signals (a measurement bug that
             # made headless Camoufox look caught by net.no_js_execution; see camoufox-linux). Keeps the mouse.

@@ -309,6 +309,25 @@ despite `block_webrtc=False` — in-sandbox WebRTC gathers no ICE candidates (no
 external-gated regardless (the config is correct for real infra). `camoufox-hardened.json` re-frozen (now EVADES).
 EVADES set = 7. No new detection, no version bump.
 
+**Coordination boundary GROUNDED with the maximal evader — + a real red-team fix — iter-29 (2026-06-20).** Set out
+to confirm (expected `candidate`) that the strongest per-session EVADES (`camoufox-hardened`) is not convictable at
+scale. **The expectation was WRONG (recurring lesson):** a 3-instance camoufox-hardened fleet (diverse `fp_hash`,
+distinct IPs) graded **`fleet` (1.0)** via **`cloned_trace`** — the camoufox evader's mouse sim used FIXED
+coordinates (`page.mouse.move(100 + i*7, 120 + (i%5)*12)`), so every instance emitted ONE identical `trace_hash` →
+`coordination._trace_collision` convicted the whole fleet despite divergent fingerprints. A live demonstration that
+`trace_collision` catches the fp-randomizing fleet (the catalog's central durable-signal claim, here self-inflicted
+by a naive evader). **Red-team counter (the fix):** per-instance random jitter on the pointer path (distinct per
+container process) → diverse `trace_hash` → `trace_collision` defeated. Re-grounded live: the jittered fleet grades
+**`candidate` (0.87)** — `cloned_trace=None`, `cloned_fingerprint=None`, `shared_real_ip=None`. So the truly-maximal
+evasive fleet (diverse fp + diverse trace + distinct IPs + shared engine JA4) is **NOT convictable in-sandbox** — a
+real diverse cohort on one browser build produces the identical shape, so the gate correctly caps it at `candidate`;
+the only signal that would convict it is `shared_real_ip` (the WebRTC real-IP leak behind proxies), which is
+external-gated (the collector's STUN is unreachable in-sandbox → no `srflx` candidate → no `webrtc_public_ip`).
+**This is the definitive per-session→coordination boundary, grounded with the strongest evader: per-session
+saturated, the in-sandbox coordination tells (`fp_collision`/`trace_collision`) catch the NAIVE fleet, and the
+maximal evasive fleet is external-data-bound (IP-reputation / WebRTC leak).** Fixed the camoufox evader's
+self-inflicted trace collision; no detector change (`trace_collision` works as designed), no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
