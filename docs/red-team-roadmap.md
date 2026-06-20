@@ -83,10 +83,30 @@ patchright (CDP layer, kills `cdp_runtime_enabled`) + headful (kills `no_chrome_
 behavioral synthesis = the full cross-layer coherent identity → next, Vein B.
 
 ### Vein B — STACK tools across layers (the cross-layer-coherence attack)
-1. **Full-stack coherent evader:** Camoufox (real Gecko engine) + a current network template (azuretls / primp) +
-   SOTA behavioral + proxy egress → one identity coherent across TLS, H2/H3, JS, behavior, and IP. Measure it
-   against the cross-layer-incoherence thesis and the EVADES frontier.
-2. **patchright + current-template + human behavioral** — the Chromium analog of the above.
+**GROUNDED iter-6 (2026-06-20) — the cross-layer-coherent stack already exists and EVADES the entire convicting
+layer.** `patchright-headful` IS the stack capstone (patchright = CDP stealth, kills `cdp_runtime_enabled` +
+`webdriver_getter_tampered`; headful = real display, kills `no_chrome_object` + `permissions_anomaly`; the
+headful Chromium UA is already coherent so the UA-CH tells stay quiet — `UACH_COHERENT` would be redundant on it).
+Scored through the live 0.74.37 detector: **`suspicious` 0.926, ZERO convicting tells.** Its residual is 100%
+**corroborating** and 100% **external-hardware-gated**: `bh.synthetic_no_coalesced` (needs real hardware mouse →
+[[the coalesced ladder]] terminus), `br.webgl2_missing` (needs a real GPU), `br.voices_empty` (needs real OS TTS),
+`br.media_devices_empty` (needs real media devices). Faking any of the environment ones trips the tamper check
+(`getVoices`/`enumerateDevices` are in the native-tamper list; spoofed WebGL2 → `native_invariant`), and having
+them for real needs hardware — so the residual is **irreducible in-sandbox.**
+
+**⇒ PER-SESSION RED-TEAM EVASION IS SATURATED in-sandbox.** The cross-layer-coherent identity defeats every
+*convicting* tell; the detector's only remaining hold is environment **corroboration** that is external-hardware-
+gated (symmetric with the blue-team's external-data frontier — neither side can advance per-session without real
+hardware). This validates the core thesis from the red side: coherence across layers is achievable, so the durable
+detector signal is **NOT per-session** but **coordination (bots-at-scale)** + a **real-traffic prevalence prior**.
+**PIVOT (matches the standing loop clause):** future iterations go to the cross-layer/external frontiers —
+(1) a real-hardware/real-device capture to test the environment residual + ground the coalesced/voice/webgl
+coherence checks; (2) the live proxy/coordination harness (`task coordination-live` is wired) with real residential
+egress for the IP-reputation half. Both are external-data-gated; the consumption infra is built and waiting.
+
+*(Original backlog, now subsumed by the capstone above: Camoufox/patchright + current-template + behavioral +
+proxy — the network + behavioral layers add nothing the capstone doesn't already show, and the proxy/IP half is
+the external-gated coordination frontier.)*
 
 ### Vein C — MODIFY a tool (white-box → enhance the anti-detect feature)
 1. **Push the 3 EVADERS.** White-box exactly *why* `camoufox-headful` / `patchright-headful` / `zendriver`
