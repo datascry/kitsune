@@ -368,6 +368,20 @@ shared origin → `len(webrtc) > 1` → no fire). No detector change (signal is 
 **The coordination frontier is now FULLY grounded in-sandbox; the only residual external gate is real IP-reputation
 to convict a SINGLE proxied session that does NOT leak via WebRTC.**
 
+**Red-team COUNTER to `shared_real_ip` GROUNDED — the WebRTC arms race closes — iter-32 (2026-06-20).** Added
+`KS_NOWEBRTC=1` to the camoufox evader (`block_webrtc=True`) — a real anti-detect tool disables WebRTC precisely to
+stop the IP leak. Ran the same 3-proxy fleet (distinct `observed_ip`) WITH the reachable local STUN, to prove the
+block works rather than relying on the no-STUN artifact: every session had `webrtc_public_ip` **ABSENT** (despite
+the STUN being reachable) + `webrtc_unavailable` true. The live coordination consumer graded the fleet
+**`candidate`** — `shared_real_ip=None` (no shared origin to leak). So **blocking WebRTC defeats `shared_real_ip`**,
+trading the convicting coordination signal for the corroborating-only `webrtc_unavailable` — the fully-evasive
+proxied fleet (diverse fp + jittered trace + distinct proxies + WebRTC blocked) is genuinely external-data-bound
+(only real IP-reputation would convict it). Minor wrinkle observed: 2/3 camoufox launches chance-collided on
+`fp_hash` → an UNCORROBORATED `fp_collision` (camoufox's per-launch fp randomisation is not perfectly diverse) —
+still capped at `candidate` (a real standardized-hardware cohort hashes alike). **The WebRTC arms race is now
+complete and grounded both ways:** leak it (HTTP proxy + WebRTC direct) → `shared_real_ip` convicts (iter-31);
+block it → `candidate`, external-gated (iter-32). No detector change, no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

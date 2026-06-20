@@ -128,6 +128,12 @@ def main() -> None:
         kwargs.update(HARDENED_KW)
     if MACOS:
         kwargs["os"] = "macos"
+    if os.environ.get("KS_NOWEBRTC") == "1":
+        # The red-team COUNTER to coordination.shared_real_ip: block WebRTC so the proxied fleet leaks NO origin
+        # IP → no webrtc_public_ip → no same-origin signal → the fleet drops from `fleet` to `candidate`. The cost
+        # is the corroborating br.webrtc_unavailable (a real anti-detect tool disables WebRTC for exactly this
+        # IP-leak reason). Grounded WITH a reachable STUN to prove the block works (not the no-STUN artifact).
+        kwargs["block_webrtc"] = True
     proxy = os.environ.get("KS_PROXY")
     if proxy:
         # Route HTTPS through an HTTP CONNECT proxy → the edge sees the PROXY's IP as observed_ip. WebRTC's UDP
