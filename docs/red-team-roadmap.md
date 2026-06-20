@@ -631,6 +631,21 @@ re-asserting, the "needs a real input stack" claim.** No EVADES, no detector cha
 negative that refines the terminus); `evaders/xtest-coalesce/{probe.py,README.md}` frozen as a reproducible
 pressure-test.
 
+**COALESCED terminus — the final rung (Xorg-dummy + uinput) is PRIVILEGE-gated, completing the characterization
+(iter-65, 2026-06-20).** iter-64 left one decisive follow-up: does a SOFTWARE-only real-input stack — Xorg with the
+dummy video driver + libinput reading a `/dev/uinput` kernel device — produce trusted coalesced events WITHOUT real
+hardware (which would defeat the terminus)? Attempting it established the gate precisely: creating the uinput virtual
+device requires `--privileged` + host `/dev/input` passthrough (the new event node lands on the host devtmpfs, and
+`/dev/uinput` is a privileged device), i.e. weakening container isolation — which the sandbox correctly refuses, and
+which a normal SCRAPER CONTAINER also does not have. There is NO unprivileged path to inject kernel-level input
+(uinput is privileged by design), so the only mechanism that yields trusted coalesced events (kernel device → libinput
+→ real-input X server → browser) is unavailable to the realistic bot threat model (an unprivileged container). **⇒ The
+coalesced ladder is now FULLY characterized across its terminus: CDP (downstream, 0 coalesced) · XTEST/X11
+(motion-compressed, 0) · uinput-under-Xvfb (no evdev driver) · Xorg+uinput (privileged-host-gated). `bh.synthetic_no_
+coalesced` holds for every non-privileged software path; defeating it needs a privileged real-input stack = the
+environment/hardware frontier, now grounded by the privilege requirement itself.** No EVADES, no code change, no
+version bump (the decisive negative closing the behavioral-synthesis vein).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
