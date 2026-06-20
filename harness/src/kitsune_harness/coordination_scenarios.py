@@ -41,6 +41,7 @@ def _session(
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
     trace_hash: str | None = None,
+    keystroke_hash: str | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
 ) -> Session:
@@ -66,6 +67,8 @@ def _session(
         sigs.append(mk(Layer.browser, "fp_hash", fp_hash))
     if trace_hash is not None:
         sigs.append(mk(Layer.behavioral, "trace_hash", trace_hash))
+    if keystroke_hash is not None:
+        sigs.append(mk(Layer.behavioral, "keystroke_hash", keystroke_hash))
     return group_signals(sigs)[0]
 
 
@@ -314,6 +317,29 @@ def scenarios() -> list[Scenario]:
             "proxies fronting one origin: diverse JS, distinct proxy IPs, ONE shared WebRTC-leaked real IP",
             [
                 (f"p{i}", _session(f"p{i}", _CHROME, hw=4 + i * 4, observed_ip=_ip(i), webrtc_ip="198.51.100.9"))
+                for i in range(3)
+            ],
+        )
+    )
+    out.append(
+        Scenario(
+            "fleet-cloned-keystroke",
+            True,
+            "credential-stuffing fleet: distinct fps, NO mouse trace, one recorded typing cadence replayed "
+            "across distinct IPs (each instance types a different secret at the same rhythm)",
+            [
+                (
+                    f"k{i}",
+                    _session(
+                        f"k{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash=f"ks{i}",
+                        keystroke_hash="canned-cadence",
+                    ),
+                )
                 for i in range(3)
             ],
         )

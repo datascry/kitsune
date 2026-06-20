@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   keystrokeEntropy,
+  keystrokeHash,
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
@@ -31,6 +32,32 @@ describe("traceHash", () => {
     const a = path(0);
     const b = a.map((s) => ({ ...s, t: s.t * 13 + 5 }));
     expect(traceHash(a)).toBe(traceHash(b));
+  });
+});
+
+describe("keystrokeHash", () => {
+  // Absolute keydown timestamps; the hash keys on the inter-key INTERVALS, not the absolute times.
+  const times = (base: number): number[] => [
+    base,
+    base + 90,
+    base + 320,
+    base + 410,
+    base + 700,
+    base + 760,
+    base + 1300,
+    base + 1480,
+  ];
+
+  it("returns null below the keystroke floor", () => {
+    expect(keystrokeHash([0, 90, 320, 410])).toBeNull();
+  });
+  it("is identical for the same cadence regardless of start time (a replayed rhythm collides)", () => {
+    expect(keystrokeHash(times(0))).toBe(keystrokeHash(times(5000)));
+  });
+  it("differs for distinct cadences (real users never collide)", () => {
+    expect(keystrokeHash(times(0))).not.toBe(
+      keystrokeHash([0, 100, 250, 470, 600, 900, 1200, 1700]),
+    );
   });
 });
 

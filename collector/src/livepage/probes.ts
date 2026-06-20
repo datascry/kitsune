@@ -3,6 +3,7 @@
 
 import {
   keystrokeEntropy,
+  keystrokeHash,
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
@@ -1239,6 +1240,8 @@ export function armCollector(): LiveCollector {
     }
     // Keystroke cadence only judged with enough keys to be meaningful (else genuinely absent, not a floor).
     if (keys.length >= 4) put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
+    const kh = keystrokeHash(keys);
+    if (kh !== null) put("behavioral", "keystroke_hash", kh);
     return out;
   }
 
