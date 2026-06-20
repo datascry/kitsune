@@ -1,6 +1,6 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-20T03:10:05.323673+00:00`
+- generated: `2026-06-20T04:18:08.245362+00:00`
 - ruleset: `0.74.35`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
@@ -13,6 +13,7 @@
 | brave | corpus | 0.00 | 1.00 | 0.80 | 0.00 | 0.00 | 1.00 | bot |
 | camoufox-hardened | corpus | 0.00 | 0.98 | 0.00 | 0.00 | 0.00 | 0.98 | bot |
 | camoufox-headful | corpus | 0.00 | 0.95 | 0.00 | 0.00 | 0.00 | 0.95 | suspicious |
+| camoufox-macos | corpus | 0.70 | 0.99 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | camoufox | corpus | 0.95 | 0.84 | 0.00 | 0.00 | 0.84 | 1.00 | bot |
 | canvas-geometry-spoof | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
 | canvas-lie | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
@@ -81,6 +82,7 @@
 - **brave** (bot): `br.webdriver_present`, `bh.input_entropy_floor`, `bh.no_input_before_action`, `br.headless_ua`, `br.webgl_software`, `br.no_connection`, `br.voices_empty`, `br.media_devices_empty`, `br.canvas_noise`
 - **camoufox-hardened** (bot): `br.webgl2_missing`, `br.pointer_touch_incoherent`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
 - **camoufox-headful** (suspicious): `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.webrtc_unavailable`
+- **camoufox-macos** (bot): `net.tcp_os_vs_ua`, `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`, `br.macos_dpr1`, `br.font_mac_internal`, `br.webrtc_unavailable`
 - **camoufox** (bot): `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.tls_grease_vs_ua`
 - **canvas-geometry-spoof** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.voices_empty`, `br.media_devices_empty`, `br.canvas_geometry_noise`
 - **canvas-lie** (bot): `br.cdp_runtime_enabled`, `br.canvas_lie`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.tostring_tampered`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.voices_empty`, `br.media_devices_empty`

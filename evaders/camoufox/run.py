@@ -33,10 +33,17 @@ BASELINE = os.environ.get("KS_BASELINE") == "1"
 # avoid webrtc_unavailable, set a clean WebGL renderer with no ", or similar" artifact). Measures what the
 # detector still catches once an adversary closes every per-session tell it knows about.
 HARDENED = os.environ.get("KS_HARDENED") == "1"
+# KS_MACOS=1: pin Camoufox to a macOS profile. Camoufox's bundled fonts.json `mac` list contains 49
+# dot-prefixed internal system fonts (`.Aqua Kana`, `.Apple Color Emoji UI`, …) that a real Mac hides from
+# web font enumeration; the macOS profile naively exposes the whole list, so they become web-measurable —
+# the faithful tell for the (until now unexercised) `br.font_mac_internal` rule. HARDENED pins Windows
+# precisely to dodge this; this mode does the opposite to LIGHT it.
+MACOS = os.environ.get("KS_MACOS") == "1"
 MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
     else "camoufox-headful" if HEADFUL
+    else "camoufox-macos" if MACOS
     else "camoufox"
 )
 HARDENED_KW: dict[str, object] = {
@@ -90,6 +97,8 @@ def main() -> None:
     kwargs: dict[str, object] = {"headless": "virtual" if HEADFUL else True}
     if HARDENED:
         kwargs.update(HARDENED_KW)
+    if MACOS:
+        kwargs["os"] = "macos"
     with Camoufox(**kwargs) as browser:  # type: ignore[arg-type]
         for _ in range(REPEAT):
             verdict = _capture(browser)

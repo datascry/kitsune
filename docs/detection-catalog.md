@@ -282,6 +282,7 @@ lightable by a faithful evader (the electron-leak / stale-engine pattern):
 | `br.screen_impossible` | artifact | ✅ **lit v0.74.32** (stealth `SCREEN_IMPOSSIBLE=1`) | spoof `Screen.prototype` so avail > physical (impossible geometry) |
 | `net.h2_control_flood` | automation | ✅ **lit v0.74.32** (h2-rapid-reset `KS_MODE=controlflood`) | spam 150 SETTINGS+PING frames → edge ControlFrameFlood (>=100) |
 | `net.h2_settings_vs_order` | coherence | ✅ **lit v0.74.32** (h2-rapid-reset `KS_MODE=settingssplit`) | Chromium SETTINGS profile + Firefox pseudo-header order (half-spoofed stack) |
+| `br.font_mac_internal` | artifact (experimental) | ✅ **lit v0.74.35** (camoufox `KS_MACOS=1`) | pin Camoufox to a macOS profile — its bundled `fonts.json` `mac` list exposes 49 dot-prefixed internal fonts (`.Aqua Kana`, `.Apple Color Emoji UI`) a real Mac hides from web enumeration (white-box grounded against the tool's own source; 0 browserforge FPs incl. its macOS fingerprints) |
 | `br.voice_os_vs_ua`, `br.webgpu_vendor_vs_webgl` | coherence | ⛔ hardware-blocked, un-groundable in-sandbox | needs real OS TTS voices / a real GPU (headless `getVoices()`=0; software WebGPU vendor is unrecognised by `gpuFam()`) — see [[unexercised-active-rules-need-live-positives]] |
 
 Reproduce the audit: score `corpus/sessions/*.json` through `Detector().score()` and diff the fired rule_ids
@@ -295,7 +296,13 @@ This dropped fire-on-zero-captures 15 → 9 → **2**. The 2 remaining (`br.voic
 `br.webgpu_vendor_vs_webgl`) are blocked on real audio/GPU hardware the sandbox cannot provide, and faking the
 signal would be a strawman — they keep their unit tests (logic proven) and are left un-lit by design.
 
-**Per-session validation is therefore complete; the lit-capture campaign is CLOSED.** Future iterations pivot
+Beyond the active set, the audit also lit one **experimental** convicting rule, `br.font_mac_internal`
+(v0.74.35, camoufox `KS_MACOS=1`): a faithful white-box capture grounded against Camoufox's own bundled
+`fonts.json` rather than a synthesized signal. Two experimental net rules stay un-lit but are groundable, not
+hardware-blocked — `net.webrtc_ip_vs_observed` (needs a proxied session with a STUN leak) and
+`net.tls_os_vs_tcp_os` (a TLS-OS/TCP-OS split; carries an FP caveat) — left as candidate captures, not strawmen.
+
+**Per-session validation of the active set is complete; the lit-capture campaign is CLOSED for active rules.** Future iterations pivot
 to the structural frontiers, both confirmed external-data-bound: the prevalence second prior needs real-device
 gpu/cores data, and the coordination shape-signals (`fp_collision` via fleet-cloned, `trace_collision` via
 fleet-replay, `shared_real_ip` via fleet-proxy) are already grounded END-TO-END on real concurrent-container

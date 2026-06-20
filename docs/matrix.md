@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 116 rules vs 65 evaders
+# Kitsune detection matrix — 116 rules vs 66 evaders
 
-_62/65 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.35`._
+_63/66 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.35`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -14,6 +14,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `brave` | bot | 1.00 | 9/116 | `br.webdriver_present`, `br.headless_ua`, `br.canvas_noise` |
 | `camoufox-hardened` | bot | 0.98 | 5/116 | `br.pointer_touch_incoherent` |
 | `camoufox-headful` | suspicious | 0.95 | 4/116 | — |
+| `camoufox-macos` | bot | 1.00 | 7/116 | `net.tcp_os_vs_ua`, `br.font_mac_internal` |
 | `camoufox` | bot | 1.00 | 3/116 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.tls_grease_vs_ua` |
 | `canvas-geometry-spoof` | bot | 1.00 | 14/116 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `canvas-lie` | bot | 1.00 | 15/116 | `br.cdp_runtime_enabled`, `br.canvas_lie`, `br.headless_ua` +5 |
@@ -72,12 +73,12 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 1.00 | 14/116 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `zendriver` | suspicious | 0.99 | 7/116 | — |
 
-## Per-rule coverage — 100/116 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 101/116 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 50 |
-| `br.voices_empty` | browser | environment | 49 |
+| `br.media_devices_empty` | browser | environment | 51 |
+| `br.voices_empty` | browser | environment | 50 |
 | `br.webgl_software` | browser | environment | 42 |
 | `br.mimetypes_empty` | browser | environment | 39 |
 | `br.no_plugins` | browser | environment | 39 |
@@ -90,7 +91,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `bh.keystroke_entropy_floor` | behavioral | behavioral | 29 |
 | `br.webdriver_getter_tampered` | browser | automation | 24 |
 | `net.no_js_execution` | network,browser | coherence | 14 |
-| `net.tcp_os_vs_ua` | network | coherence | 13 |
+| `net.tcp_os_vs_ua` | network | coherence | 14 |
 | `br.webdriver_present` | browser | automation | 12 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
@@ -98,6 +99,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.navplatform_vs_ua` | browser | coherence | 7 |
 | `br.hover_none_desktop` | browser | environment | 6 |
 | `br.webdriver_spoofed` | browser | automation | 6 |
+| `br.webgl2_missing` | browser | environment | 6 |
 | `br.webgl_os_vs_ua` | browser | coherence | 6 |
 | `net.accept_encoding_vs_ua` | network,browser | coherence | 6 |
 | `net.sec_fetch_vs_ua` | network,browser | coherence | 6 |
@@ -105,15 +107,14 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.ch_he_version_vs_ua` | browser | coherence | 5 |
 | `br.codec_os_incoherent` | browser | environment | 5 |
 | `br.font_linux_leak` | browser | environment | 5 |
-| `br.webgl2_missing` | browser | environment | 5 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
+| `br.webrtc_unavailable` | browser | environment | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
 | `br.tostring_tampered` | browser | automation | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
 | `br.webgpu_webgl_vs` | browser | environment | 3 |
-| `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.h2_header_order_vs_ua` | network | coherence | 3 |
 | `net.h2_unknown_vs_ua` | network | coherence | 3 |
 | `net.tls_vs_ua_browser` | network,browser | coherence | 3 |
@@ -121,6 +122,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.canvas_noise` | browser | artifact | 2 |
 | `br.fingerprint_improbable` | browser | prevalence | 2 |
 | `br.languages_worker_vs_main` | browser | coherence | 2 |
+| `br.macos_dpr1` | browser | environment | 2 |
 | `br.no_connection` | browser | environment | 2 |
 | `br.timezone_inconsistent` | browser | coherence | 2 |
 | `br.timezone_offset_vs_intl` | browser | coherence | 2 |
@@ -147,11 +149,11 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.engine_feature_vs_ua` | browser | coherence | 1 |
 | `br.engine_stack_vs_ua` | browser | coherence | 1 |
 | `br.firefox_ua_nongecko` | browser | coherence | 1 |
+| `br.font_mac_internal` | browser | artifact | 1 |
 | `br.font_os_vs_ua` | browser | coherence | 1 |
 | `br.honeypot_interaction` | browser | automation | 1 |
 | `br.iframe_divergence` | browser | automation | 1 |
 | `br.language_vs_languages` | browser | coherence | 1 |
-| `br.macos_dpr1` | browser | environment | 1 |
 | `br.measuretext_offscreen_vs` | browser | artifact | 1 |
 | `br.native_invariant_violated` | browser | artifact | 1 |
 | `br.nav_property_spoofed` | browser | automation | 1 |
@@ -189,6 +191,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `brave` | bot | 0 | 1 | 2 | 4 | 2 | 0 |
 | `camoufox-hardened` | bot | 1 | 0 | 0 | 4 | 0 | 0 |
 | `camoufox-headful` | suspicious | 0 | 0 | 0 | 4 | 0 | 0 |
+| `camoufox-macos` | bot | 1 | 1 | 0 | 5 | 0 | 0 |
 | `camoufox` | bot | 3 | 0 | 0 | 0 | 0 | 0 |
 | `canvas-geometry-spoof` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `canvas-lie` | bot | 0 | 0 | 8 | 6 | 1 | 0 |
@@ -247,12 +250,12 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `zendriver` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 16/116 rules catch nothing yet
+## Coverage gaps — 15/116 rules catch nothing yet
 
 **Evaded** (1) — reads present in the corpus, but every sample passed:
 - `br.low_hardware_concurrency`
 
-**Unexercised** (15) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (14) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `rep.datacenter_asn`
 - `rep.known_proxy_exit`
@@ -264,7 +267,6 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 - `br.voice_os_vs_ua`
 - `br.audio_missing`
 - `br.adblock_present`
-- `br.font_mac_internal`
 - `net.webrtc_ip_vs_observed`
 - `br.webgpu_vendor_vs_webgl`
 - `br.rfp_browser`

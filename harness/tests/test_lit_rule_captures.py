@@ -28,6 +28,7 @@ _LIT = {
     "screen-impossible": "br.screen_impossible",
     "h2-control-flood": "net.h2_control_flood",
     "h2-settings-split": "net.h2_settings_vs_order",
+    "camoufox-macos": "br.font_mac_internal",
 }
 
 
