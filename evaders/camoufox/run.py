@@ -47,11 +47,16 @@ MACOS = os.environ.get("KS_MACOS") == "1"
 # speaks no CDP, so a Linux-pinned headless Camoufox should EVADE the convicting layer with NO xvfb — the
 # lowest-bar EVADES (residual = the external-hardware-gated environment floor only).
 LINUX = os.environ.get("KS_LINUX") == "1"
+# KS_NOTOUCH=1: pin navigator.maxTouchPoints=0 (coherent desktop). The red-team counter to the headless
+# CSS-pointer-media leak (br.pointer_touch_incoherent) — with KS_LINUX this turns the otherwise-caught headless
+# Camoufox into an EVADES under the FULL collector (no xvfb). See main().
+NOTOUCH = os.environ.get("KS_NOTOUCH") == "1"
 MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
     else "camoufox-headful" if HEADFUL
     else "camoufox-macos" if MACOS
+    else "camoufox-linux-coherent" if (LINUX and NOTOUCH)
     else "camoufox-linux" if LINUX
     else "camoufox"
 )
@@ -116,6 +121,13 @@ def main() -> None:
         kwargs["os"] = "macos"
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
+    if NOTOUCH:
+        # Camoufox's randomized profile sets navigator.maxTouchPoints > 0 (a touch device) but does NOT make the
+        # CSS @media(any-pointer: coarse) query match → HEADLESS trips br.pointer_touch_incoherent (the catch that
+        # otherwise keeps the bar at headful, iter-25). Pin a coherent DESKTOP profile (maxTouchPoints=0): with no
+        # touch and the default fine pointer, cssTouch==jsTouch==false → the tell goes quiet. The red-team counter
+        # to the CSS-pointer-media leak — grounded under the FULL collector (no ?fast, which under-probes).
+        kwargs["config"] = {"navigator.maxTouchPoints": 0}
     with Camoufox(**kwargs) as browser:  # type: ignore[arg-type]
         for _ in range(REPEAT):
             verdict = _capture(browser)

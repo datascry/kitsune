@@ -287,6 +287,21 @@ No new detection (existing rule), no version bump. **Lessons: (1) NEVER ground a
 under-probes; use the full collector. (2) Firefox/Camoufox synthetic mouse via Playwright DOES trip
 `bh.synthetic_no_coalesced` (resolves the iter-19 open question — Gecko does not escape it).**
 
+**Red-team COUNTER: headless Camoufox EVADES once the touch leak is fixed — iter-26 (2026-06-20).** White-boxed the
+exact iter-25 catch (`demo.py`: `pointer_touch_incoherent` fires when `matchMedia("(any-pointer: coarse)").matches
+!== (navigator.maxTouchPoints > 0)`) and found the root cause: Camoufox's randomized profile sets
+`maxTouchPoints > 0` (it also trips `maxtouch_desktop`) but leaves the CSS pointer fine-only → mismatch in
+headless. The counter is a coherent DESKTOP profile: `KS_NOTOUCH=1` passes Camoufox `config={"navigator.maxTouchPoints":
+0}` → no touch + fine pointer → `cssTouch == jsTouch == false` → the tell goes quiet. **Grounded under the FULL
+collector (no `?fast` this time): `camoufox-linux-coherent` → suspicious 0.9866, CONVICTING NONE — EVADES, HEADLESS,
+no xvfb.** So iter-24's conclusion (the bar is below headful) is RIGHT after all — but it needed a real red-team
+move (fix the CSS-pointer-media leak), which iter-24 never did (`?fast` merely HID the probe; iter-25 exposed it;
+iter-26 fixes it). Residual = corroborating only (`bh.synthetic_no_coalesced` + naive-path `bh.power_law_violation`;
+environment `webgl2/voices/media/webrtc`), all external-hardware-gated — frontier (b), no FP-safe counter (a
+coherent maxTouchPoints=0 + fine-pointer desktop is exactly what a real headless Linux server browser presents).
+`camoufox-linux-coherent.json` frozen (5th EVADES, the lowest-bar one: headless, no xvfb). The plain `camoufox-linux`
+capture stays the lit-record of the `pointer_touch_incoherent` catch. No new detection, no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
