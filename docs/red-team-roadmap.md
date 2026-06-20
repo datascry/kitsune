@@ -108,6 +108,20 @@ egress for the IP-reputation half. Both are external-data-gated; the consumption
 proxy — the network + behavioral layers add nothing the capstone doesn't already show, and the proxy/IP half is
 the external-gated coordination frontier.)*
 
+**Coordination capstone — GROUNDED LIVE iter-7 (2026-06-20).** After per-session saturation, demonstrated the
+durable answer end-to-end with `kitsune_harness.live_coordination` against the running detector's real session
+store (32 accumulated red-team sessions): the live consumer graded my DIVERSE evader modes (divergent
+fingerprints) as `candidate` — correctly NOT convicting (a real diverse cohort produces the same shape, FP-safe
+boundary). Then launched 3 **identical** STEALTH clones (deterministic SwiftShader → one fp_hash `bf779223` across
+3 distinct container IPs): the Chromium JA4 cluster FLIPPED `candidate → fleet` (score 1.0, `cloned_fingerprint`
+set) via the `fp_collision` convicting signal, while the camoufox cluster (per-launch-randomized fp) stayed
+`candidate`. So the live coordination harness convicts a cloned fleet and spares a diverse cohort — exactly the
+thesis: **per-session is defeatable, but bots-at-scale leak a shared signature below the spoofing layer.** The ONE
+remaining gap is convicting a *diverse/randomized* fleet (no fp/trace collision) — which is genuinely ambiguous
+with a real cohort and needs **IP-reputation (residential vs datacenter), the external-data half.** RED-TEAM LOOP
+CONVERGED in-sandbox: per-session saturated, coordination's in-sandbox half (clone tells) grounded live, the
+convicting frontiers (IP-rep, real-traffic prevalence, real-hardware environment) all external-data-gated.
+
 ### Vein C — MODIFY a tool (white-box → enhance the anti-detect feature)
 1. **Push the 3 EVADERS.** White-box exactly *why* `camoufox-headful` / `patchright-headful` / `zendriver`
    escape, and whether the residual (capability tells, coordination) can be closed too — i.e. make a fully-clean
