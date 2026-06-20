@@ -165,6 +165,15 @@ with a real cohort and needs **IP-reputation (residential vs datacenter), the ex
 CONVERGED in-sandbox: per-session saturated, coordination's in-sandbox half (clone tells) grounded live, the
 convicting frontiers (IP-rep, real-traffic prevalence, real-hardware environment) all external-data-gated.
 
+**Durable `trace_collision` ISOLATED + grounded live — iter-17 (2026-06-20).** iter-7 grounded `fp_collision`
+(identical-fp clones); the `fleet-replay` rt1/2/3 fixture grounded `trace_collision` but its members share one
+deterministic `fp_hash`, so it CO-FIRES with `fp_collision` and never proved the durable claim. Closed that gap:
+a new `apify-fp-inject KS_TRACE=1` mode (the botright/multilogin pattern — distinct injected fingerprint per
+instance + ONE replayed canned trace) ran live as a 3-node fleet; the live coordination consumer graded it
+`fleet` (1.0) via **`cloned_trace` alone, `cloned_fingerprint=None`** — the fp-randomising fleet that DEFEATS
+`fp_collision` is still convicted by the behavioural-clone signal. First live isolated proof of the catalog's
+central durable-signal claim; frozen `corpus/fleet-randfp-trace/ft1-3` + regression test. No detector change.
+
 ### Vein C — MODIFY a tool (white-box → enhance the anti-detect feature)
 1. **Push the 2 EVADERS** (`camoufox-headful` / `patchright-headful` — `zendriver` REFUTED iter-9, it's caught by
    `net.h2_header_order_vs_ua`). White-box exactly *why* they escape, and whether the residual (capability tells,

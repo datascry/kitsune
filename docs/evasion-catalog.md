@@ -285,7 +285,24 @@ behavioural script) — the two UNAMBIGUOUS solo-convicting coordination signals
 statistics** (per-JA4 traffic shape / rate vs a real-traffic baseline), which need the same Tier-3 real-traffic
 data the prevalence second-prior does. Implication for prioritisation: `shared_real_ip` + `trace_collision`
 are the highest-value coordination signals (they alone catch the fully-evasive fleet, if it leaks); the
-ambiguous `fp_collision`/`ja4c_divergent` signals only catch *less* sophisticated fleets. Kitsune catches
+ambiguous `fp_collision`/`ja4c_divergent` signals only catch *less* sophisticated fleets.
+
+> **`trace_collision` ISOLATED + GROUNDED LIVE (iter-17, 2026-06-20).** The claim "`trace_collision` catches the
+> fp-randomising fleet that defeats `fp_collision`" was, until now, only proven by synthetic fixtures and the
+> `fleet-replay` rt1/2/3 capture — but rt1/2/3 are stealth clones with an IDENTICAL `fp_hash`, so their
+> `trace_collision` CO-FIRES with `fp_collision` and never isolated the durable case. Built the isolation: a new
+> `apify-fp-inject` `KS_TRACE=1` mode = the botright/multilogin pattern — fingerprint-generator samples a DISTINCT
+> fingerprint per instance (distinct `fp_hash`) while every instance replays ONE canned pointer trajectory (shared
+> `trace_hash`). Ran 3 instances concurrently through the live edge (distinct container IPs); the live coordination
+> consumer (`live_coordination` → `score_corpus`) graded them **`fleet` (1.0) with `cloned_trace=e1a50028` and
+> `cloned_fingerprint=None`** — convicted by the behavioural-clone signal ALONE, the fp-collision path defeated by
+> per-instance randomisation. Evidence: "cipher suites identical but JS divergent across members" + "identical
+> pointer trace across 3 distinct source IPs". Frozen `corpus/fleet-randfp-trace/ft1-3` + a regression test
+> asserting `cloned_trace is not None and cloned_fingerprint is None`. This is the first live, isolated proof that
+> the durable signal catches the fingerprint-randomising fleet — no detector change (the signal already worked);
+> the contribution is grounding the catalog's central claim with a real evader.
+
+Kitsune catches
 everything up to that maximal bar — a high bar most bots do not reach — and the residual frontier is
 honestly external-data-bound.
 

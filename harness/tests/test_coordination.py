@@ -88,6 +88,25 @@ def test_real_replay_trace_fleet_is_convicted() -> None:
     assert v.distinct_observed_ips == 3
 
 
+def test_randomized_fp_shared_trace_fleet_convicted_by_trace_alone() -> None:
+    # The DURABLE case the catalog's threat model rests on, grounded live for the first time WITH ISOLATION.
+    # The fleet-replay rt1/2/3 fixture co-fires fp_collision (stealth's deterministic fp_hash is identical), so
+    # it never proved trace_collision catches what fp_collision CANNOT. This fleet does: three apify
+    # fingerprint-injector instances (KS_TRACE=1) run concurrently through the live edge each sampled a DISTINCT
+    # fingerprint (distinct fp_hash → fp_collision defeated) yet replayed the SAME canned pointer trajectory
+    # (one trace_hash). The botright/multilogin pattern: randomise the fingerprint per instance, reuse one
+    # behavioural script. ft1/2/3 must score `fleet` via the TRACE collision ALONE — cloned_fingerprint stays
+    # None — proving the behavioural-clone signal convicts the fp-randomising fleet that defeats fp_collision.
+    verdicts = score_corpus(load_corpus(_repo_corpus("fleet-randfp-trace")))
+    assert len(verdicts) == 1
+    v = verdicts[0]
+    assert sorted(v.members) == ["ft1", "ft2", "ft3"]
+    assert v.label == "fleet"
+    assert v.cloned_trace is not None  # the convicting signal
+    assert v.cloned_fingerprint is None  # ISOLATION: fp_collision is defeated by per-instance fp randomisation
+    assert v.distinct_observed_ips == 3
+
+
 def test_real_camoufox_two_node_cohort_is_candidate_not_fleet() -> None:
     # Trusted-but-verified: the synthetic scenarios assume camoufox randomizes its JA4_c per launch, but the
     # REAL camoufox capture (cf1/cf2) shows STABLE JA4_c and homogeneous JS — indistinguishable from two real
