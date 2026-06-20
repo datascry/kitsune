@@ -563,6 +563,23 @@ with espeak+speechd), `net.tls_os_vs_tcp_os` (Chrome JA4 is OS-independent / App
 — every active convicting rule is now either LIT (has a live positive + regression guard) or grounded-external. The
 detector's convicting-rule coverage is fully characterized. No code change (a grounded negative result).
 
+**EXPERIMENTAL-TIER architecture grounded — `status` is a maturity LABEL, not a scoring gate (iter-59,
+2026-06-20).** Audited the 27 `status: experimental` rules. KEY FINDING (grounded): the detector does NOT filter
+rules by `status` — `contracts`/`scoring`/`detector` carry no status check, so experimental rules are SCORED and
+CONVICT exactly like active ones (verified live: `apify-fp-inject` is labelled `bot` with `br.languages_worker_vs_main`
++ `br.webgl_worker_vs_main` — both `experimental` — in its contradictions). Consequences: (1) promoting a validated
+experimental rule to `active` is COSMETIC (maturity metadata only; the verdict is unchanged), so it is not worth a
+version bump on its own — left as-is to avoid presuming on the team's promotion criterion (the catalog shows
+promotion has historically required a SECOND independent source, e.g. `net.h2_header_order_vs_ua` v0.74.13). (2) Since
+experimental coherence/artifact rules convict, they were ALREADY covered by the iter-51 FP-regression over the
+real-browser captures — which found ZERO coherence/artifact FPs (experimental rules included). So the whole convicting
+surface (active + experimental) is FP-clean on the grounded real-engine captures. ⇒ THE DETECTOR'S RULE LAYER IS NOW
+FULLY CHARACTERIZED: every convicting rule (active or experimental) is either LIT (live positive + regression guard)
+or grounded-external (the iter-39 trio: real OS-voices / GPU hardware), and none false-fires on the real-browser
+ground truth. No further in-sandbox rule-coverage work remains; the open frontiers are all external-data/hardware-gated
+(per-connection QUIC attribution, IP-reputation of a diverse fleet, a Tier-3 real-traffic prevalence prior, the
+real-hardware environment floor) with their consumption infra built and waiting. No code change (a grounded audit).
+
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin
 (v0.74.39); the third invariant — the **User-Agent string** — had no rotation tell. A real client sends ONE fixed UA
