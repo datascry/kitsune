@@ -757,6 +757,28 @@ negative result: the new `worker-cdp` mode is a permanent pressure-test (like `l
 already lit (apify-fp-inject), so no new rule/capture/version bump. Reinforces the in-sandbox saturation call — the
 strongest novel worker-realm evasion mechanism does not open a blind spot.
 
+**REALM ladder terminus, definitively grounded — the PAUSED worker-CDP injection wins (iter-50, 2026-06-20).**
+iter-49 left one claim ungrounded: that "only a raw `Target.setAutoAttach{waitForDebuggerOnStart}` injection could
+win the race." Grounded it. Built stealth `WORKER_CDP_PAUSE` — pause every worker BEFORE it runs any code
+(`Target.setAutoAttach` waitForDebuggerOnStart, raw CDP via `Target.sendMessageToTarget`/flatten:false through
+Playwright's CDPSession), inject the `hardwareConcurrency` spoof into worker scope, then resume — so the spoof lands
+before the collector's `workerNav` reads `navigator`. GROUNDED LIVE: **`worker_divergence` is SILENT and ALL THREE
+realm guards fire NONE** (the raw CDP worked cleanly in Playwright — no auto-attach conflict). So a paused-worker CDP
+injection DEFEATS the entire realm-coherence family at once (worker patched coherently; source NOT rewritten →
+`worker_source_rewritten` silent; ctor native → `worker_constructor_tampered` silent). It is caught here ONLY by the
+AUTOMATION floor (`cdp_runtime_enabled`/`headless_ua`/`permissions_anomaly`/`no_chrome_object`/`webdriver_getter_tampered`).
+DEFINITIVE TERMINUS (refining iter-49, which was correct only for the RACY `worker.evaluate` channel): the realm
+guards are robust against NON-CDP JS injectors (which cannot pause a worker → must rewrite source or wrap the ctor →
+caught), but a CDP injector defeats them all via the paused channel — and pays for it with the automation floor,
+since `Target.setAutoAttach` IS CDP. The only residual gap is HYPOTHETICAL and external-class: a clean-CDP tool (no
+automation floor, like zendriver) doing a FULL dual-realm paused injection of a spoofed fingerprint would evade the
+realm guards AND the automation floor — but such a coherently-injected worker is indistinguishable from a real
+coherent browser (no FP-safe per-session counter exists), so it collapses to the SAME saturation terminus as every
+per-session EVADER: the durable answer is coordination (bots-at-scale) + the external environment/hardware floor, not
+a per-session realm tell. `worker-cdp-pause` is a permanent pressure-test; no realm rule fires on it (nothing to lit),
+no new detection, no version bump. The realm-injection vein is now EXHAUSTIVELY mapped — racy CDP loses, paused CDP
+wins-but-trips-automation, non-CDP is caught by source/ctor.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

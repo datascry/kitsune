@@ -89,6 +89,10 @@ const WORKER_PROXY_FIX = process.env.WORKER_PROXY_FIX === "1";
 // only the AUTOMATION floor (CDP itself → br.cdp_runtime_enabled) — i.e. the realm ladder's terminus is CDP, which a
 // non-CDP JS injector cannot reach and a CDP tool already trips on the automation layer.
 const WORKER_CDP = process.env.WORKER_CDP === "1";
+// WORKER_CDP_PAUSE: the DEFINITIVE version of WORKER_CDP that pauses the worker before it runs any code
+// (Target.setAutoAttach waitForDebuggerOnStart) and injects the spoof BEFORE the navigator read — closing the
+// race the plain worker.evaluate channel loses (iter-49). Grounds whether worker_divergence is race-defeatable.
+const WORKER_CDP_PAUSE = process.env.WORKER_CDP_PAUSE === "1";
 // NAIVE_TZ_SPOOF: the one-field geo-spoof. Patch ONLY Intl.resolvedOptions().timeZone (claim a proxy-
 // matching zone) and forget Date.getTimezoneOffset — the offset then contradicts the claimed zone →
 // br.timezone_offset_vs_intl. The canonical incomplete timezone spoof.
@@ -352,6 +356,8 @@ const mode = UACH_COHERENT
   ? "worker-proxy"
   : WORKER_PROXY_FIX
   ? "worker-proxy-fix"
+  : WORKER_CDP_PAUSE
+  ? "worker-cdp-pause"
   : WORKER_CDP
   ? "worker-cdp"
   : LANG_SPOOF
@@ -461,10 +467,10 @@ if (FLOOR_SPOOF) {
     Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
     Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
   });
-} else if (WORKER_CDP) {
+} else if (WORKER_CDP || WORKER_CDP_PAUSE) {
   // Spoof main-realm hardwareConcurrency=2 (like WORKER_SPOOF). The worker-scope half is injected via the CDP
-  // worker channel below (page.on("worker")), NOT a source rewrite or constructor wrap — so worker_source_rewritten
-  // and worker_constructor_tampered stay silent while the worker is patched to agree with main.
+  // worker channel below, NOT a source rewrite or constructor wrap — so worker_source_rewritten and
+  // worker_constructor_tampered stay silent while the worker is patched to agree with main.
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
     Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
@@ -881,6 +887,33 @@ if (WORKER_CDP) {
       })
       .catch(() => {});
   });
+}
+if (WORKER_CDP_PAUSE) {
+  // The DEFINITIVE worker-CDP injection that iter-49 left ungrounded: pause every worker BEFORE it runs any code
+  // (Target.setAutoAttach waitForDebuggerOnStart), inject the hardwareConcurrency spoof into worker scope, THEN
+  // resume — so the spoof lands before the collector's workerNav reads navigator (no race). Still rewrites NO
+  // source and wraps NO constructor → tests whether worker_divergence is race-defeatable (which would make
+  // worker_source_rewritten the robust catch). Raw CDP via Target.sendMessageToTarget (flatten:false) so the
+  // child worker session is reachable through Playwright's CDPSession.
+  const cdp = await context.newCDPSession(page);
+  const SPOOF = "Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 2},configurable:true});";
+  cdp.on("Target.attachedToTarget", async ({ sessionId, targetInfo }) => {
+    try {
+      if (targetInfo.type === "worker" || targetInfo.type === "shared_worker") {
+        await cdp.send("Target.sendMessageToTarget", {
+          sessionId,
+          message: JSON.stringify({ id: 1, method: "Runtime.evaluate", params: { expression: SPOOF } }),
+        });
+      }
+      await cdp.send("Target.sendMessageToTarget", {
+        sessionId,
+        message: JSON.stringify({ id: 2, method: "Runtime.runIfWaitingForDebugger" }),
+      });
+    } catch (e) {
+      /* a conflict with Playwright's own auto-attach is itself a grounded result */
+    }
+  });
+  await cdp.send("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: false });
 }
 if (UACH_COHERENT) {
   // The PROPER cross-layer UA override: CDP Network.setUserAgentOverride sets the UA string, the Sec-CH-UA
