@@ -228,8 +228,14 @@ tells is what flags real browsers) — i.e. low-fp coherence/automation/artifact
 
 ## Open frontiers — what external data unblocks each (operator menu, 2026-06-20)
 
-Per-session detection is **saturated** and every real-browser FP a sandbox can surface is fixed (8 fixes,
-v0.74.26–0.74.32; all runnable engine families clean — see [[real-browser-capture-profiles]]). Every genuinely
+Per-session detection is **saturated** and every real-browser FP a sandbox can surface is fixed (11 fixes,
+v0.74.26–0.74.35; all runnable engine families clean — see [[real-browser-capture-profiles]]). The last three
+were found by **reading the emitter** — auditing how each convicting rule's read-signal is produced, then asking
+what real-user state yields the same signal: the prevalence GPU `other` bucket false-flagged real Firefox/Mullvad
+(v0.74.33), `net.quic_pq_keyshare_vs_ua` rode the same broken QUIC capture as the retired `quic_grease`
+(v0.74.34), and `br.notification_denied` fired on real "block notifications" users (v0.74.35, superseded by the
+FP-safe `permissions_anomaly`). All 11 are now pinned by CI regression guards against accidental un-retirement and
+real-capture re-flagging. Every genuinely
 unbuilt gap above is now classified, and each converges on ONE external data source the sandbox cannot generate.
 This is the operator's menu — provide a source, unlock the detections:
 
