@@ -687,6 +687,37 @@ rules STAY retired, confirmed with the search narrowed and the reassembly hypoth
 `quic_chrome_test.go` multi-packet reassembly guard is the permanent green artifact. No detector change, no version
 bump (a test + a refuted hypothesis, not a rule).
 
+**QUIC FP — root cause identified as PER-IP CROSS-ATTRIBUTION; the thread closes (iter-47, 2026-06-20).** iter-46
+eliminated reassembly; this iteration captured a REAL Chrome QUIC hello to disambiguate the remaining two causes
+(rule-premise-wrong-for-QUIC vs cross-attribution). Built `harness/tools/chrome_quic_capture.mjs` — stock headful
+Chromium (QUIC enabled, no spoofs) that navigates repeatedly so Chrome attempts h3 after the edge's `Alt-Svc`
+advert. Findings, all grounded live: (1) on the long-running edge a real-Chrome session showed `quic_no_grease=true`
+— BUT this is SUSPECT: the QUIC tee buffers Initials per `ip:port` and NEVER expires them, so a Chromium session
+reusing a bridge IP that earlier hosted a non-GREASE QUIC client (e.g. a prior go-tls run) gets the STALE Initial
+back from `FingerprintByIP`. (2) On a freshly-recreated edge (empty tee), **7 opportunistic real-Chrome capture
+attempts captured NOTHING** — Chrome's h3 race is too timing-opportunistic to land reliably in a capture window. (3)
+The capturer + reassembly DEMONSTRABLY work: the deterministic `go-tls KS_QUIC` probe on the same fresh edge captured
++ parsed cleanly (`ciphers=[1303 1301 1302]`, no GREASE — a correct true-NEGATIVE for the Go stack). CONCLUSION: the
+`quic_no_grease=true` on the committed real-Chromium captures (nodriver/zendriver/etc.) is almost certainly **per-IP
+cross-attribution** — a stale non-browser QUIC Initial at a reused bridge IP misattributed to a later Chromium h2
+session — NOT a parser bug (refuted iter-46) and NOT real-Chrome-lacks-GREASE (unprovable: a confirmed-fresh real
+Chrome QUIC capture is not reliably reproducible in-sandbox). The convicting QUIC rules STAY retired; the precise
+revival prerequisite is now pinned: **per-CONNECTION attribution** (the cross-protocol TCP-h2 ⇄ UDP-QUIC join is
+inherently IP-based with no shared connection token, so this needs either a QUIC tee TTL + a confirmed real-Chrome
+positive, or a connection-ID-carrying correlation the current first-hop edge cannot synthesize). QUIC thread closed
+across iters 45-47: client built, reassembly proven, FP root-caused to attribution, revival blocked on a structural
+cross-protocol-attribution gap. `chrome_quic_capture.mjs` committed as the reproducible real-Chrome QUIC harness. No
+detector change, no version bump.
+
+**⇒ IN-SANDBOX EVASION IS SATURATED — the convicting frontiers are now ALL external-data/structural-gated.** Five
+iterations (within-session triad · realm-injection ladder · QUIC) closed every remaining in-sandbox in-leverage vein.
+The standing residuals are, with their precise gates: QUIC GREASE conviction (per-connection attribution + a real
+Chrome QUIC positive — structural); IP-reputation conviction of a diverse fleet (residential-vs-datacenter data —
+external); a Tier-3 real-traffic prevalence prior (external); and the environment floor (real GPU/TTS/media hardware
+— external). Per the loop's standing clause, future iterations pivot to these external/cross-layer frontiers (the
+consumption infra — `fleet_capture.sh` proxies, `coordination-live`, the prevalence model — is built and waiting on
+the external inputs) rather than grinding cosmetic in-sandbox tweaks.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
