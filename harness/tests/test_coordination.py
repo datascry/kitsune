@@ -130,7 +130,6 @@ def _sess(
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
     trace_hash: str | None = None,
-    keystroke_hash: str | None = None,
     webdriver: bool = False,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
@@ -155,8 +154,6 @@ def _sess(
         sigs.append(mk(Layer.browser, "fp_hash", fp_hash, Source.collector))
     if trace_hash is not None:
         sigs.append(mk(Layer.behavioral, "trace_hash", trace_hash, Source.collector))
-    if keystroke_hash is not None:
-        sigs.append(mk(Layer.behavioral, "keystroke_hash", keystroke_hash, Source.collector))
     return group_signals(sigs)[0]
 
 
@@ -292,35 +289,6 @@ def test_trace_collision_same_ip_is_benign() -> None:
     ]
     v = score_cluster("X", members)
     assert v.cloned_trace is None
-    assert v.label == "candidate"
-
-
-def test_keystroke_collision_fleet_is_caught() -> None:
-    # The form-abuse / credential-stuffing shape: each instance has a DISTINCT fingerprint (no fp-collision),
-    # homogeneous JS (no paradox), and NO mouse trace at all (it types, never moves the pointer) — but the SAME
-    # recorded inter-key cadence is replayed across DISTINCT IPs. Keystroke dynamics are a human biometric, so
-    # identical cadence across sources convicts where fp-collision, paradox AND trace-collision all stay silent.
-    members = [
-        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.1.1.1", fp_hash="aaaa", keystroke_hash="beef")),
-        ("b", _sess("b", "X", 8, "Windows", observed_ip="2.2.2.2", fp_hash="bbbb", keystroke_hash="beef")),
-        ("c", _sess("c", "X", 8, "Windows", observed_ip="3.3.3.3", fp_hash="cccc", keystroke_hash="beef")),
-    ]
-    v = score_cluster("X", members)
-    assert v.label == "fleet"
-    assert v.cloned_keystroke == "beef"
-    assert v.cloned_trace is None  # no pointer trace — trace-collision did NOT fire
-    assert v.cloned_fingerprint is None  # distinct fps — fp-collision did NOT fire
-    assert any("replayed recorded typing rhythm" in e for e in v.evidence)
-
-
-def test_keystroke_collision_same_ip_is_benign() -> None:
-    # Identical keystroke cadence from ONE IP is one machine repeating itself — not a fleet (needs distinct IPs).
-    members = [
-        ("a", _sess("a", "X", 8, "Windows", observed_ip="9.9.9.9", keystroke_hash="beef")),
-        ("b", _sess("b", "X", 8, "Windows", observed_ip="9.9.9.9", keystroke_hash="beef")),
-    ]
-    v = score_cluster("X", members)
-    assert v.cloned_keystroke is None
     assert v.label == "candidate"
 
 

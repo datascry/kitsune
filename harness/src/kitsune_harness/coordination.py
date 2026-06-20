@@ -87,7 +87,6 @@ class FleetVerdict:
     distinct_observed_ips: int = 0  # distinct source IPs across the cluster (proxy spread)
     cloned_fingerprint: str | None = None  # one high-entropy fp_hash shared across distinct IPs (reuse)
     cloned_trace: str | None = None  # one pointer-trajectory trace_hash shared across distinct IPs (replay)
-    cloned_keystroke: str | None = None  # one inter-key timing keystroke_hash shared across distinct IPs (replay)
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
     arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
@@ -170,34 +169,17 @@ def _trace_collision(sessions: list[Session]) -> tuple[str, int] | None:
     trace_hash from distinct sources is one tool replaying a canned "humanised" trajectory across the fleet.
     Catches a fleet that clones *behaviour* even when each instance has a distinct fingerprint. Returns
     ``(hash, distinct_ip_count)`` for the widest such collision, else ``None``."""
-    return _ip_spanning_collision(sessions, Layer.behavioral, "trace_hash")
-
-
-def _keystroke_collision(sessions: list[Session]) -> tuple[str, int] | None:
-    """A ``keystroke_hash`` (inter-key TIMING sequence) shared by members spanning >= 2 *distinct* observed
-    IPs — the keystroke analog of ``_trace_collision``. Keystroke dynamics are biometrically unique, so an
-    identical cadence across distinct sources is one tool replaying a recorded human typing rhythm. Catches
-    the credential-stuffing / form-abuse fleet that TYPES (rather than moving the mouse) and so leaves no
-    trace_hash; because the hash is timing-only, members typing DIFFERENT secrets at the same replayed cadence
-    still collide. Returns ``(hash, distinct_ip_count)`` for the widest collision, else ``None``."""
-    return _ip_spanning_collision(sessions, Layer.behavioral, "keystroke_hash")
-
-
-def _ip_spanning_collision(sessions: list[Session], layer: Layer, kind: str) -> tuple[str, int] | None:
-    """The shared cloned-identity primitive: the widest ``(hash, distinct_ip_count)`` for a ``layer.kind``
-    value byte-identical across >= 2 *distinct* observed IPs (one IP = one machine over many sessions =
-    benign). Backs the behavioural trace / keystroke collision tells."""
     by_hash: dict[str, set[str]] = {}
     for session in sessions:
-        h = session.value(layer, kind)
+        th = session.value(Layer.behavioral, "trace_hash")
         ip = session.value(Layer.network, "observed_ip")
-        if h is MISSING or ip is MISSING:
+        if th is MISSING or ip is MISSING:
             continue
-        by_hash.setdefault(str(h), set()).add(str(ip))
+        by_hash.setdefault(str(th), set()).add(str(ip))
     best: tuple[str, int] | None = None
-    for h, ips in by_hash.items():
+    for th, ips in by_hash.items():
         if len(ips) >= 2 and (best is None or len(ips) > best[1]):
-            best = (h, len(ips))
+            best = (th, len(ips))
     return best
 
 
@@ -294,19 +276,6 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
             f"source IPs — replayed canned trajectory (two real users never trace the same path)"
         )
 
-    # Keystroke-collision: the typing analog of the trace collision. An identical inter-key timing cadence
-    # across distinct source IPs is one recorded human typing-rhythm replayed fleet-wide — it convicts a
-    # credential-stuffing / form-abuse fleet that types but never moves the mouse (so trace_collision misses
-    # it), even when each instance randomises its fingerprint and types a different secret.
-    keystroke_collision = _keystroke_collision(sessions)
-    cloned_keystroke = keystroke_collision[0] if keystroke_collision else None
-    if keystroke_collision is not None:
-        score += _FP_COLLISION_BONUS
-        evidence.append(
-            f"identical keystroke cadence `{keystroke_collision[0]}` across {keystroke_collision[1]} distinct "
-            f"source IPs — replayed recorded typing rhythm (keystroke dynamics are biometrically unique)"
-        )
-
     span = _first_seen_span(sessions)
     if span is not None and span <= _LOCKSTEP_WINDOW_S:
         score += _LOCKSTEP_BONUS
@@ -344,10 +313,6 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     # UNAMBIGUOUS — no real cohort, however standardized, can produce these:
     #   - trace_collision: an identical pointer trajectory across distinct IPs (two real users never trace the
     #     same path — it is one canned/replayed "humanised" path).
-    #   - keystroke_collision: an identical inter-key timing cadence across distinct IPs. Unlike fp_collision
-    #     (a MACHINE property — identical hardware hashes alike, so a standardized corporate fleet is benign),
-    #     keystroke cadence is a HUMAN BIOMETRIC: identical hardware cannot make two different people type
-    #     alike, so a cross-IP match is always one recorded human rhythm replayed — a credential-stuffing fleet.
     #   - shared_real_ip: distinct proxy IPs fronting ONE WebRTC-leaked origin.
     #
     # AMBIGUOUS — a real cohort CAN produce these, so they convict only when corroborated:
@@ -365,7 +330,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     # ambiguous cluster caps at `candidate` for operator review — the disambiguator is IP reputation
     # (datacenter/proxy = bot, residential = legit), the still-blocked coordination half. The JS-divergence
     # paradox, IP spread and lockstep stay corroborating-only (a real diverse cohort produces them too).
-    unambiguous = trace_collision is not None or keystroke_collision is not None or shared_real_ip is not None
+    unambiguous = trace_collision is not None or shared_real_ip is not None
     # Corroboration = an unambiguous signal, a per-session automation tell, OR an IP-reputation flag
     # (datacenter/proxy/Tor exit). The IP-reputation flag is the production disambiguator: a bot fleet runs on
     # datacenter/proxy infrastructure (flagged), a corporate / multi-version real cohort on residential IPs
@@ -412,7 +377,6 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
         distinct_observed_ips=distinct_observed,
         cloned_fingerprint=cloned_fingerprint,
         cloned_trace=cloned_trace,
-        cloned_keystroke=cloned_keystroke,
         shared_real_ip=shared_real_ip,
         request_volume=request_volume,
         arrival_rate_per_min=arrival_rate,

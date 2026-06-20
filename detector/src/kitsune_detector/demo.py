@@ -282,17 +282,6 @@ td code{font-size:12px;color:#0a3}
     for (var i = 0; i < p.length; i++) { mix(Math.round(p[i].x)); mix(Math.round(p[i].y)); }
     return (h >>> 0).toString(16);
   }
-  // Stable hash of the inter-keystroke TIMING sequence (intervals in ms, key identity excluded). Keystroke
-  // dynamics are biometrically unique, so an identical keystroke_hash across distinct IPs is one tool replaying
-  // a recorded human cadence (the keystroke analog of traceHash; coordination._keystroke_collision reads it).
-  // Timing-only so a credential-stuffing fleet typing different secrets at the same replayed cadence collides.
-  function keystrokeHash(k) {
-    if (k.length < 8) return null;
-    var h = 2166136261;
-    function mix(n) { h = ((h ^ (n & 0xffff)) * 16777619) >>> 0; }
-    for (var i = 1; i < k.length; i++) { mix(Math.round(k[i] - k[i-1])); }
-    return (h >>> 0).toString(16);
-  }
   // --- biomechanics (mirror of kitsune_harness.biomech; calibrated vs Balabit, see docs/behavioral-data.md) ---
   function speeds(p) {
     var s = [];
@@ -1147,8 +1136,6 @@ td code{font-size:12px;color:#0a3}
         if (th !== null) sigs.push(S("behavioral", "trace_hash", th));
       }
       if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
-      var kh = keystrokeHash(keys);
-      if (kh !== null) sigs.push(S("behavioral", "keystroke_hash", kh));
       // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.
       if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
         sigs.push(S("behavioral", "coalesced_events_absent", true));

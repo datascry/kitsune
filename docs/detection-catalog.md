@@ -291,17 +291,9 @@ signal would be a strawman — they keep their unit tests (logic proven) and are
 
 **Per-session validation is therefore complete; the lit-capture campaign is CLOSED.** Future iterations pivot
 to the structural frontiers, both confirmed external-data-bound: the prevalence second prior needs real-device
-gpu/cores data, and the coordination shape-signals (`fp_collision`, `trace_collision`, `keystroke_collision`
-via fleet-cloned, `shared_real_ip` via fleet-proxy) are already demonstrated in-sandbox — only the IP-reputation
-half (`rep.*`) needs real residential-proxy egress. **v0.74.32 added `keystroke_collision`** (harness
-`coordination._keystroke_collision`): an identical inter-key TIMING cadence (`keystroke_hash`, the collector's
-keystroke analog of `trace_hash`) byte-identical across distinct source IPs. It is UNAMBIGUOUS (solo-convict)
-because keystroke cadence is a HUMAN BIOMETRIC — unlike `fp_collision` (a machine property a standardized
-corporate fleet shares benignly), identical hardware cannot make two different people type alike, so a cross-IP
-match is always one recorded human rhythm replayed: the credential-stuffing / form-abuse fleet that types but
-never moves the mouse (so `trace_collision` misses it). Grounded: `keystroke_hash` emits live (real typing
-session) and is coordination-only (no per-session rule → cannot FP a single browser); a same-IP cadence match
-stays benign (needs ≥2 distinct IPs). The experimental rules re-validate live as of v0.74.32
+gpu/cores data, and the coordination shape-signals (`fp_collision`, `trace_collision` via fleet-cloned,
+`shared_real_ip` via fleet-proxy) are already demonstrated in-sandbox — only the IP-reputation half (`rep.*`)
+needs real residential-proxy egress. The experimental rules re-validate live as of v0.74.32
 (`br.readback_noise` fires via stealth `AUDIO_READBACK_SPOOF=1`; `net.h2_header_order_vs_ua`, now active, stays
 guarded by its 3 committed non-Chrome-h2 captures). Deployed detector == committed ruleset 0.74.32 (no stale deploy).
 

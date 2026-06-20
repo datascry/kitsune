@@ -95,25 +95,6 @@ export function traceHash(samples: PointerSample[]): string | null {
 }
 
 /**
- * Stable hash of the inter-keystroke TIMING sequence (intervals in ms, key identity excluded). Keystroke
- * dynamics are biometrically unique — two REAL users never share an interval sequence — so an identical
- * keystroke_hash across distinct sessions is one tool replaying a recorded "humanised" cadence (the keystroke
- * analog of traceHash). Timing-only (not key codes) so a credential-stuffing fleet typing DIFFERENT secrets
- * with the SAME replayed cadence still collides. Null below an entropy floor (too few keys to be unique).
- */
-export function keystrokeHash(times: number[]): string | null {
-  if (times.length < 8) return null;
-  let h = 2166136261;
-  const mix = (n: number): void => {
-    h = ((h ^ (n & 0xffff)) * 16777619) >>> 0;
-  };
-  for (let i = 1; i < times.length; i++) {
-    mix(Math.round(times[i]! - times[i - 1]!));
-  }
-  return (h >>> 0).toString(16);
-}
-
-/**
  * Normalised Shannon entropy of inter-keystroke intervals, in [0, 1].
  * Constant cadence (scripted typing) -> ~0; varied human cadence -> high.
  */
