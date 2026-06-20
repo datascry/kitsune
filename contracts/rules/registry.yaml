@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.33"
+ruleset_version: "0.74.34"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -122,14 +122,11 @@ rules:
     reads: [network.quic_no_pq_keyshare]
     predicate: present
     weight: 0.5
-    # experimental, same as the TCP analog net.tls_pq_keyshare_vs_ua: catches a QUIC stack pinned to a
-    # pre-2025 Chrome template (GREASE present but no MLKEM); a current quic-go/Go-1.24 stack ships PQ, and
-    # the rule only sees QUIC when the client attempts it at the edge.
-    status: experimental
+    status: retired
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Chrome 131+ sends X25519MLKEM768 in its QUIC ClientHello (TLS 1.3 over QUIC); a stale template lags it — the QUIC analog of net.tls_pq_keyshare_vs_ua"
+    last_validated: "2026-06-20"
+    source: "Chrome 131+ sends X25519MLKEM768 in its QUIC ClientHello (TLS 1.3 over QUIC); a stale template lags it — the QUIC analog of net.tls_pq_keyshare_vs_ua. v0.74.34 RETIRED: this reads `quic_no_pq_keyshare` from the SAME QUIC ClientHello capture that got the sibling net.quic_grease_vs_ua retired (v0.74.32) as BROKEN — and it is WORSE for PQ. GROUNDED 2026-06-20 by running a clean headful Chromium AND patchright-headful live: both trip it (quic_no_pq_keyshare=True alongside the known-bad quic_no_grease=True), i.e. the capture reports no-PQ on a Chromium QUIC hello. The capture's three documented failures all apply: (1) the partial-reassembly parse is UNRELIABLE — and PQ is exactly the case it breaks on, because an MLKEM768 key share makes the ClientHello EXCEED one packet (edge quic.go notes this), so a real Chrome 131+ QUIC hello WITH PQ is multi-packet and its keyshare lands in a fragment the opportunistic capture misses → false quic_no_pq_keyshare → a CONVICTING coherence FP on the most current real Chrome (experimental does NOT help — an experimental coherence rule still convicts; only retire stops it firing). (2) per-IP FingerprintByIP attribution → a NAT cross-attribution FP in production. (3) cannot be GROUNDED in-sandbox against a confirmed real-Chrome-QUIC-WITH-PQ positive (chrome-stable never attempted QUIC; the only QUIC hellos captured are the broken sandbox ones). NO detection loss: all 5 committed corpus sessions that tripped it keep many other convicting tells (cdp_runtime_enabled/webdriver/headless_ua/etc.) — verified. The only thing it 'caught' is patchright-headful, a documented per-session EVADES mimic; convicting it via a broken-QUIC artifact that FPs on real Chrome is strictly worse than its honest EVADES state (it needs structural/coordination detection, not this). The TLS analog net.tls_pq_keyshare_vs_ua is UNAFFECTED — it reads the RELIABLE TLS ClientHello capture, not the broken QUIC one. REVIVE together with net.quic_grease_vs_ua when the QUIC capture is per-CONNECTION-attributed (not per-IP) with full multi-packet CRYPTO reassembly, grounded against a real Chromium QUIC PQ positive."
 
   - id: net.h2_unknown_vs_ua
     title: Modern-browser UA but the HTTP/2 stack matches no known browser engine

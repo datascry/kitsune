@@ -36,7 +36,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
 | `accept-lang-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.languages_worker_vs_main`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.accept_lang_vs_navigator` |
-| `audio-noise` | bot | `br.audio_noise`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.quic_pq_keyshare_vs_ua` |
+| `audio-noise` | bot | `br.audio_noise`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `audio-readback-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.readback_noise`, `br.webdriver_getter_tampered` |
 | `baseline-firefox` | bot | `br.webdriver_present` |
 | `brave` | bot | `br.canvas_noise`, `br.headless_ua`, `br.webdriver_present` |
@@ -47,11 +47,11 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `canvas-geometry-spoof` | bot | `br.canvas_geometry_noise`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `canvas-lie` | bot | `br.canvas_lie`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.webdriver_getter_tampered` |
 | `canvas-spoof` | bot | `br.canvas_noise`, `br.canvas_worker_vs_main`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.webdriver_getter_tampered` |
-| `cdc-leak` | bot | `br.cdc_artifacts`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present`, `net.quic_pq_keyshare_vs_ua` |
+| `cdc-leak` | bot | `br.cdc_artifacts`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `ch-ua-hardcoded` | bot | `net.accept_encoding_vs_ua`, `net.ch_ua_no_grease_brand`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `chrome-clone-1` | bot | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `chrome-clone-2` | bot | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
-| `csp-bypass` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.csp_bypassed`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_spoofed`, `net.quic_pq_keyshare_vs_ua` |
+| `csp-bypass` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.csp_bypassed`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_spoofed` |
 | `curl-http2` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `curl-impersonate` | bot | `net.no_js_execution` |
 | `domrect-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.domrect_invariant`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
@@ -86,7 +86,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
 | `rebrowser` | bot | `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `renderer-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_renderer_artifact`, `br.webgl_worker_vs_main` |
-| `screen-impossible` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.screen_impossible`, `br.webdriver_getter_tampered`, `net.quic_pq_keyshare_vs_ua` |
+| `screen-impossible` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.screen_impossible`, `br.webdriver_getter_tampered` |
 | `selenium-driverless` | bot | `br.headless_ua` |
 | `spoof-ua` | bot | `br.ch_he_headless`, `br.engine_stack_vs_ua`, `br.error_engine_vs_ua`, `br.firefox_ua_nongecko`, `br.notification_denied`, `br.permissions_anomaly`, `br.productsub_vs_ua`, `br.vendor_vs_ua`, `br.webdriver_spoofed`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.tls_vs_ua_browser` |
 | `stale-engine` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.engine_feature_vs_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.ch_ua_version_vs_ua` |

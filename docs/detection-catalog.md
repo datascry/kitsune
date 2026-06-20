@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.33`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 89 active · 29 experimental · 4 retired; 82 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.34`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 89 active · 28 experimental · 5 retired; 81 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (25)
 
@@ -27,7 +27,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
 | `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
 | `net.quic_grease_vs_ua` | coherence | present | 0.6 | retired | GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE |
-| `net.quic_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
+| `net.quic_pq_keyshare_vs_ua` | coherence | present | 0.5 | retired | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
 | `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
 | `net.tcp_os_vs_ua` | coherence✦ | not_equal | 0.7 | active | TCP/IP-stack OS kernel contradicts the OS the User-Agent claims |
 | `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
@@ -78,7 +78,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
 | `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
 | `net.quic_grease_vs_ua` | coherence | present | 0.6 | retired | GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE |
-| `net.quic_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
+| `net.quic_pq_keyshare_vs_ua` | coherence | present | 0.5 | retired | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
 | `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
 | `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
