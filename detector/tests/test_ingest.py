@@ -202,3 +202,32 @@ def test_fp_rotation_is_sticky_after_revert() -> None:
     s = merge_sessions(s, group_signals([_fp_sig("hardware_concurrency", 16, 5)])[0])
     s = merge_sessions(s, group_signals([_fp_sig("hardware_concurrency", 4, 10)])[0])  # revert
     assert s.value(Layer.browser, "fp_unstable") is True
+
+
+# Within-session trace replay: the SAME non-null pointer trace_hash on >=2 page loads under one session is a
+# record-and-replay bot (a real human never reproduces a path). The inverse of the rotation rules — invariance
+# of something that must vary — and convicting (category coherence), unlike the corroborating biomech floor.
+def _trace_sig(value: str, secs: int) -> Signal:
+    at = FIXED + timedelta(seconds=secs)
+    return make_signal("a", Layer.behavioral, "trace_hash", value, source=Source.collector, at=at)
+
+
+def test_trace_replay_flagged_on_repeated_trace() -> None:
+    s = group_signals([_trace_sig("deadbeef", 0)])[0]
+    assert s.value(Layer.behavioral, "trace_replay") is MISSING  # one load so far
+    s = merge_sessions(s, group_signals([_trace_sig("deadbeef", 30)])[0])  # SAME path replayed
+    assert s.value(Layer.behavioral, "trace_replay") is True
+
+
+def test_distinct_traces_are_not_replay() -> None:
+    s = group_signals([_trace_sig("aaaa1111", 0)])[0]
+    s = merge_sessions(s, group_signals([_trace_sig("bbbb2222", 30)])[0])  # human: every load differs
+    s = merge_sessions(s, group_signals([_trace_sig("cccc3333", 60)])[0])
+    assert s.value(Layer.behavioral, "trace_replay") is MISSING
+
+
+def test_trace_replay_is_sticky_after_variation() -> None:
+    s = group_signals([_trace_sig("deadbeef", 0)])[0]
+    s = merge_sessions(s, group_signals([_trace_sig("deadbeef", 30)])[0])  # replay -> flagged
+    s = merge_sessions(s, group_signals([_trace_sig("feed5678", 60)])[0])  # later varies
+    assert s.value(Layer.behavioral, "trace_replay") is True

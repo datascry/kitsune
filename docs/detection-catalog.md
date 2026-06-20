@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.44`); regenerate with `task catalog`, do not edit by hand. **129 rules**: 96 active · 27 experimental · 6 retired; 85 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.45`); regenerate with `task catalog`, do not edit by hand. **130 rules**: 97 active · 27 experimental · 6 retired; 86 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (29)
 
@@ -155,10 +155,11 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (7)
+### behavioral layer (8)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
+| `bh.trace_replay_within_session` | coherence✦ | present | 0.65 | active | One session replayed an identical pointer trajectory across page loads (record-and-replay bot) |
 | `bh.input_entropy_floor` | behavioral | below_threshold | 0.6 | experimental | Mouse-movement entropy below the human floor |
 | `bh.keystroke_entropy_floor` | behavioral | below_threshold | 0.55 | experimental | Keystroke timing entropy below the human floor |
 | `bh.no_input_before_action` | behavioral | below_threshold | 0.5 | experimental | Action (submit/nav) with zero pointer events |

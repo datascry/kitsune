@@ -215,6 +215,59 @@ def _annotate_fp_rotation(browser: list[Signal]) -> None:
         )
 
 
+def _annotate_trace_replay(behavioral: list[Signal]) -> None:
+    """Append a sticky ``trace_replay`` signal when one session emits the SAME pointer ``trace_hash`` on >1 page load.
+
+    The within-session analog of coordination's cross-session ``trace_collision``: a ``trace_hash`` is a coordinate-
+    quantised pointer-trajectory shape (null below a 12-point movement floor, so trivial/no-motion loads cannot
+    collide). A real human never reproduces a path — every page load traces differently — so an INVARIANT trace_hash
+    across two loads under one session id is a record-and-replay bot injecting one canned "humanised" trajectory.
+    The merge keeps only the latest trace_hash, so the per-hash set of distinct page-load timestamps is persisted as
+    ``trace_seen`` (a dict hash->sorted timestamp list, surviving the collapse); ``trace_replay`` is sticky once a
+    hash recurs on >=2 distinct timestamps. FP-safe by construction (no real motion repeats byte-for-byte) and
+    browserforge calibration carries no behavioral trace, so promotion cannot raise its legit-browser flag rate.
+    """
+    seen: dict[str, set[str]] = {}
+    for s in behavioral:
+        if s.kind == "trace_seen" and isinstance(s.value, dict):
+            for h, ts in s.value.items():
+                if isinstance(ts, list):
+                    seen.setdefault(h, set()).update(str(t) for t in ts)
+        elif s.kind == "trace_hash" and isinstance(s.value, str):
+            seen.setdefault(s.value, set()).add(s.observed_at.isoformat())
+    if not seen:
+        return
+    ref = next(s for s in behavioral if s.kind in ("trace_hash", "trace_seen"))
+    payload = {h: sorted(ts) for h, ts in seen.items()}
+    acc = next((s for s in behavioral if s.kind == "trace_seen"), None)
+    if acc is None:
+        behavioral.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.behavioral,
+                kind="trace_seen",
+                value=payload,
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+    else:
+        acc.value = payload
+    if any(len(ts) >= 2 for ts in seen.values()) and not any(s.kind == "trace_replay" for s in behavioral):
+        behavioral.append(
+            Signal(
+                schema_version=ref.schema_version,
+                session_id=ref.session_id,
+                layer=Layer.behavioral,
+                kind="trace_replay",
+                value=True,
+                source=ref.source,
+                observed_at=ref.observed_at,
+            )
+        )
+
+
 def group_signals(signals: list[Signal]) -> list[Session]:
     """Group signals by ``session_id`` into ``Session`` objects, ordered by first appearance."""
     by_session: dict[str, list[Signal]] = defaultdict(list)
@@ -234,6 +287,7 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
     _annotate_ip_rotation(groups.network)
     _annotate_ua_rotation(groups.network)
     _annotate_fp_rotation(groups.browser)
+    _annotate_trace_replay(groups.behavioral)
 
     timestamps = [sig.observed_at for sig in signals]
     # request_count approximates distinct forwarded requests via edge-sourced signals.
@@ -288,6 +342,15 @@ def merge_sessions(existing: Session, new: Session) -> Session:
         groups.browser = [s for s in groups.browser if s.kind != kind]
         if derived is not None:
             groups.browser.append(derived)
+
+    # Within-session behavioral coherence: a record-and-replay bot emits the same trace_hash across page loads.
+    behavioral_history = [*existing.signals.behavioral, *new.signals.behavioral]
+    _annotate_trace_replay(behavioral_history)
+    for kind in ("trace_replay", "trace_seen"):
+        derived = next((s for s in behavioral_history if s.kind == kind), None)
+        groups.behavioral = [s for s in groups.behavioral if s.kind != kind]
+        if derived is not None:
+            groups.behavioral.append(derived)
 
     return Session(
         schema_version=SCHEMA_VERSION,

@@ -153,6 +153,12 @@ const UACH_COHERENT = process.env.UACH_COHERENT === "1";
 // across distinct IPs, this is the canned-trajectory replay coordination._trace_collision catches: a tool
 // that randomises its fingerprint per instance yet reuses one recorded "humanised" path.
 const REPLAY_TRACE = process.env.REPLAY_TRACE === "1";
+// REPLAY_TWICE: the WITHIN-session variant of REPLAY_TRACE. Instead of one path per instance across a fleet
+// (cross-session trace_collision), do TWO page loads in ONE context (the ks_sid cookie persists) replaying the
+// IDENTICAL recorded path — so one session emits the SAME trace_hash on both loads. A real human's motion differs
+// every page, so an invariant trace_hash across loads under one session is a record-and-replay bot: the
+// within-session analog of trace_collision (bh.trace_replay_within_session).
+const REPLAY_TWICE = process.env.REPLAY_TWICE === "1";
 // KEYSTROKE_HUMAN: the keystroke analog of HUMAN_MOUSE. The naive path types at a FIXED delay (uniform
 // inter-key interval → entropy ~0 → bh.keystroke_entropy_floor); HUMAN_MOUSE merely types too little to be
 // judged (keyEntropy returns 1 below 4 keys). NO fleet evader has DEFEATED the keystroke floor by typing with
@@ -274,7 +280,7 @@ const mode = UACH_COHERENT
   : COALESCE_SPOOF
   ? "coalesce-spoof"
   : REPLAY_TRACE
-  ? "replay-trace"
+  ? (REPLAY_TWICE ? "replay-trace-twice" : "replay-trace")
   : KEYSTROKE_HUMAN
   ? "keystroke-human"
   : SCREEN_IMPOSSIBLE
@@ -815,17 +821,27 @@ if (REPLAY_TRACE) {
   // captures these coordinates verbatim, so every instance hashes to the SAME trace_hash (>= 12 points). No
   // page.mouse.move (which the browser would coalesce/perturb run-to-run) — exact dispatch is the only way to
   // reproduce a byte-identical trace, faithfully modelling a record-and-replay behavioural-clone tool.
-  await page.evaluate(() => {
-    const path = [
-      [120, 140], [168, 158], [216, 152], [264, 188], [312, 176], [360, 214], [408, 198],
-      [456, 236], [504, 220], [552, 262], [600, 248], [648, 286], [612, 322], [540, 308],
-      [468, 344], [396, 330], [324, 366],
-    ];
-    for (const [x, y] of path) {
-      window.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y, bubbles: true }));
-    }
-  });
+  const replayPath = () =>
+    page.evaluate(() => {
+      const path = [
+        [120, 140], [168, 158], [216, 152], [264, 188], [312, 176], [360, 214], [408, 198],
+        [456, 236], [504, 220], [552, 262], [600, 248], [648, 286], [612, 322], [540, 308],
+        [468, 344], [396, 330], [324, 366],
+      ];
+      for (const [x, y] of path) {
+        window.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y, bubbles: true }));
+      }
+    });
+  await replayPath();
   await page.waitForTimeout(2500); // let the collector capture + post
+  if (REPLAY_TWICE) {
+    // A SECOND page load in the same context (ks_sid cookie persists) replaying the IDENTICAL path → one
+    // session emits the same trace_hash twice. A real human never reproduces a path; this is the
+    // within-session record-and-replay tell (bh.trace_replay_within_session).
+    await page.goto(EDGE, { waitUntil: "load" });
+    await replayPath();
+    await page.waitForTimeout(2500);
+  }
 } else if (HONEYPOT) {
   // Naive form-spammer: enumerate the DOM and fill every text input + dispatch a click on every link. A
   // human reaches only the visible page; this blindly trips the off-screen aria-hidden honeypot bait (input

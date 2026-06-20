@@ -568,6 +568,31 @@ the within-session invariant-rotation axis across BOTH layers** (network: TLS/IP
 — the four-plus things a real client holds invariant for a session's lifetime. The residual is the same cross-session
 frontier (a fresh cookie per identity defeats all within-session correlation → coordination/prevalence, external).
 
+**WITHIN-SESSION TRACE REPLAY — the behavioral-layer member, by the INVERSE principle (iter-42, 2026-06-20,
+v0.74.45).** The within-session-coherence axis had network (TLS/IP/UA) + browser (fingerprint) rotation members, all
+catching ROTATION of something that must stay INVARIANT. The behavioral layer needed the INVERSE: catching
+INVARIANCE of something that must VARY. A real human never reproduces a pointer path — every page load traces
+differently — so the SAME `trace_hash` (the collector's coordinate-quantised trajectory shape, null below a 12-point
+floor) on >=2 page loads under one `ks_sid` is a record-and-replay bot injecting one canned 'humanised' trajectory:
+the within-session analog of coordination's cross-session `trace_collision`. RED-TEAM: added the stealth
+**`REPLAY_TWICE`** mode — two page loads in one context (the ks_sid cookie persists) replaying the IDENTICAL recorded
+17-point path. BLUE-TEAM: the detector accumulates per-hash distinct page-load timestamps over the pre-collapse
+behavioral history (`trace_seen`, surviving the merge collapse) and derives a sticky `behavioral.trace_replay` when
+any trace_hash recurs on >=2 timestamps; new rule **`bh.trace_replay_within_session`**. CRUCIALLY it is **category
+coherence (CONVICTING), not the corroborating biomech floor** — unlike a power-law/straightness threshold (which can
+fire on real short motion), a byte-identical *repeated* trajectory is structurally impossible for human hardware, so
+it convicts without the FP risk that keeps every other behavioral tell corroborating-only. This is the first
+CONVICTING behavioral-layer signal. GROUNDED LIVE: the two-load replay evader → `trace_seen={e1a50028:[t1,t2]}`,
+`trace_replay` derived, rule fired (label `bot`); a single-load REPLAY_TRACE and varied-motion modes (distinct trace
+per load) do NOT fire — zero FP. `task calibrate` (browserforge n=500): 0 new FPs (calibration carries no behavioral
+trace), the rule absent from the re-tier table. detector mypy+256 tests, harness 203 tests, lit-guard on
+`trace-replay.json`, check_headers all green; no edge change. Residual: a bot that VARIES its replayed path per load
+defeats this (distinct trace_hash) — but varied motion is exactly what the biomech floor + coalesced ladder already
+pressure, so the record-and-replay shortcut closes without opening a gap. **The within-session-coherence axis is now
+complete across all THREE layers** — network (TLS/IP/UA rotation) · browser (fingerprint rotation) · behavioral
+(trace replay) — both principles (rotation of invariants, invariance of variants). The residual stays the
+cross-session frontier (fresh cookie per identity → coordination/prevalence, external-data-gated).
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.44"
+ruleset_version: "0.74.45"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -179,6 +179,18 @@ rules:
     added: "2026-06-20"
     last_validated: "2026-06-20"
     source: "Within-session network-origin coherence — the rotating-proxy-pool signature, the dominant scraper evasion. A real short HTTP/cookie session egresses from ONE edge-observed IP; a residential/datacenter proxy pool rotates the exit IP per request, so one ks_sid is observed from many distinct source IPs. The detector derives network.ip_rotation in ingest when a session accumulates >= _IP_ROTATION_MIN (3) distinct observed_ip across requests (a running observed_ip_seen set survives the latest-per-kind merge collapse; flag is sticky). This is REPUTATION-FREE — it is a pure within-session coherence COUNT, needing no residential/datacenter classification (the external-data-gated half). FP-safe by a conservative threshold: a real client presents 1 IP, at most 2 across a wifi<->cellular handoff or a CGNAT pool's shared block; 3+ distinct egress IPs under one short session is not a real browser. browserforge calibration carries no network/IP layer, so promotion cannot raise its legit-browser flag rate. GROUNDED LIVE 2026-06-20: minted one ks_sid, then replayed the SAME cookie from 4 distinct container IPs on kitsune_default (curl over the edge reverse-proxy) -> the detector accumulated 4 distinct observed_ip and tripped this rule (label bot); every single-IP evader/capture in the fleet (one observed_ip) does NOT fire it — zero FP. Residual caveat (documented, same external-data class as net.tcp_os_vs_ua's proxy confound): a carrier doing aggressive per-connection public-IP pooling across 3+ addresses, or a client legitimately switching networks 3+ times within one short session, is a theoretical FP that real-traffic IP-reputation data (the gated half) would disambiguate; the rotation COUNT itself is in-sandbox-detectable and the threshold is set conservatively to avoid it. Catches the OS-diverse and same-OS proxy pools alike (it counts IPs, not TLS/OS), complementing net.ja4_unstable_within_session (TLS-engine rotation) and the cross-session coordination signals (shared_real_ip / fp_collision)."
+
+  - id: bh.trace_replay_within_session
+    title: One session replayed an identical pointer trajectory across page loads (record-and-replay bot)
+    layers: [behavioral]
+    reads: [behavioral.trace_replay]
+    predicate: present
+    weight: 0.65
+    status: active
+    category: coherence
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "Within-session BEHAVIORAL coherence — the within-session analog of coordination's cross-session trace_collision, and the INVERSE of the invariant-rotation axis (it catches INVARIANCE of something that must VARY, where the rotation rules catch rotation of something that must stay invariant). trace_hash is the collector's coordinate-quantised pointer-trajectory shape (FNV over rounded x,y; null below a 12-point movement floor, so trivial/no-motion loads emit no hash and cannot collide). A real human NEVER reproduces a path — every page load traces differently — so the SAME non-null trace_hash on >=2 page loads under ONE ks_sid is a record-and-replay bot injecting one canned 'humanised' trajectory (the botright/multilogin pattern, but within a single reused session rather than across a fleet). The detector accumulates per-hash distinct page-load timestamps over the pre-collapse behavioral history in ingest (trace_seen, surviving the latest-per-kind merge collapse) and derives a sticky behavioral.trace_replay when any trace_hash recurs on >=2 timestamps. CATEGORY coherence (convicting), NOT the corroborating behavioral biomech floor: unlike a power-law/straightness threshold (which can fire on real short motion), a byte-identical repeated trajectory is structurally impossible for human hardware, so it convicts without the FP risk that keeps the biomech tells corroborating-only. FP-safe by construction (no real motion repeats byte-for-byte across loads) and browserforge calibration carries no behavioral trace, so promotion cannot raise its legit-browser flag rate. GROUNDED LIVE 2026-06-20: the stealth REPLAY_TRACE + REPLAY_TWICE evader did two page loads in one context (cookie persists) replaying the identical 17-point recorded path; the detector accumulated the one trace_hash on 2 distinct timestamps, derived trace_replay, and the rule fired (label bot). A single-load REPLAY_TRACE (one trace_hash) and the human-mouse / varied-motion modes (distinct trace per load) do NOT fire it — zero FP. Residual: a bot that VARIES its replayed path per page load defeats this (distinct trace_hash) — but varied motion is exactly what the biomech floor + coalesced ladder already pressure, so the record-and-replay shortcut is closed without opening a gap. Complements the within-session network/browser rotation rules: this is the behavioral-layer member of the within-session-coherence axis."
 
   - id: br.fingerprint_unstable_within_session
     title: One session presented divergent hardware-invariant browser fingerprints (re-randomising anti-detect browser)
