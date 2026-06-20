@@ -268,39 +268,32 @@ natively with no JS tamper) — **this precisely locates WHY Camoufox exists and
 Firefox does not**: coherent Gecko is one engine-level webdriver patch away from clean, and that patch is exactly
 Camoufox's value-add. `firefox-coherent.json` frozen; all existing rules → no new detection, no version bump.
 
-**Linux-pinned Camoufox — iter-24 claim REFUTED + corrected iter-25 (2026-06-20).** iter-24 claimed headless
-Camoufox EVADES (lowest-bar). **WRONG — it was a `?fast` under-probing artifact.** `KS_FAST=1` adds `?fast`, which
-makes the detector's DEMO collector run a REDUCED probe set that SKIPS `pointer_touch_incoherent` (and others) — a
-testing affordance, not the production collector. Re-grounded under the FULL collector (`KS_LINUX=1` non-FAST, with
-a wait-for-`body[data-ks='sent']` fix replacing the too-short 2s wait that had silently dropped browser signals):
-**headless Camoufox-Linux is CAUGHT by `br.pointer_touch_incoherent`.** Mechanism (white-boxed): Camoufox emulates
-`navigator.maxTouchPoints` per its device profile but does NOT spoof the CSS `@media (pointer)` query — in HEADLESS
-that query reflects the real pointerless container (coarse/none) and disagrees with the emulated touch profile →
-the coherence tell fires. **Headful resolves it** (xvfb provides a real fine-pointer → coherent): re-verified live,
-coherent-Linux **camoufox-HEADFUL** under the full collector → CONVICTING none, **EVADES** (the established
-headful EVADES HOLDS). FP-safe: stock headless Playwright Firefox (`firefox-coherent`) does NOT emit the signal
-(coherent) — so `br.pointer_touch_incoherent` is a real catch specific to Camoufox's headless profile emulation, and
-it KEEPS the per-session evasion bar at HEADFUL. iter-24's "bar is lower" was the artifact, not a finding. The
-`camoufox-linux.json` capture is re-frozen under the full collector (now shows the `pointer_touch_incoherent`
-catch); EVADES set back to 4 (`camoufox-headful`, `patchright-headful`, `zendriver-uach`, `zendriver-uach-behave`).
-No new detection (existing rule), no version bump. **Lessons: (1) NEVER ground an EVADES with `?fast` — it
-under-probes; use the full collector. (2) Firefox/Camoufox synthetic mouse via Playwright DOES trip
-`bh.synthetic_no_coalesced` (resolves the iter-19 open question — Gecko does not escape it).**
+**Headless Camoufox EVADES (lowest-bar) — iters 24-27, fully resolved 2026-06-20.** Net result: **headless
+Camoufox + a Linux profile EVADES the convicting layer (no xvfb)** — the per-session bar IS below headful. The path
+here was messy and is worth recording as a methodology lesson (TWO wrong intermediate corrections):
+- iter-24 grounded headless camoufox-linux EVADES (correct) but with `KS_FAST=1`.
+- iter-25 saw ONE non-FAST run trip `br.pointer_touch_incoherent`, wrongly blamed `?fast` "under-probing" and
+  declared the bar stays at headful. **Both wrong.** White-boxing `demo.py` settles it: `?fast` skips ONLY the
+  behavioral layer + shortens the send timer (line 1135/1173); it does NOT touch the browser-layer
+  `pointer_touch_incoherent` probe. The real cause is **Camoufox's per-launch RANDOM `navigator.maxTouchPoints`** —
+  it occasionally (measured ~1/14 ≈ 7% of launches) picks `maxTouchPoints > 0` (a touch device) on a desktop while
+  the CSS `@media(any-pointer:coarse)` stays false → `matchMedia("(any-pointer: coarse)").matches !==
+  (maxTouchPoints>0)` → the tell fires (also `maxtouch_desktop`). So plain headless camoufox-linux EVADES the COMMON
+  case (~93%) and self-inflicts a FLAKY `pointer_touch_incoherent` catch the rare unlucky launch.
+- iter-26/27 — the deterministic fix: `KS_NOTOUCH=1` passes Camoufox `config={"navigator.maxTouchPoints": 0}` (a
+  coherent fine-pointer desktop) → the tell can never fire → `camoufox-linux-coherent` EVADES every launch. Grounded
+  under the FULL collector: suspicious ~0.987, CONVICTING NONE, headless, no xvfb.
 
-**Red-team COUNTER: headless Camoufox EVADES once the touch leak is fixed — iter-26 (2026-06-20).** White-boxed the
-exact iter-25 catch (`demo.py`: `pointer_touch_incoherent` fires when `matchMedia("(any-pointer: coarse)").matches
-!== (navigator.maxTouchPoints > 0)`) and found the root cause: Camoufox's randomized profile sets
-`maxTouchPoints > 0` (it also trips `maxtouch_desktop`) but leaves the CSS pointer fine-only → mismatch in
-headless. The counter is a coherent DESKTOP profile: `KS_NOTOUCH=1` passes Camoufox `config={"navigator.maxTouchPoints":
-0}` → no touch + fine pointer → `cssTouch == jsTouch == false` → the tell goes quiet. **Grounded under the FULL
-collector (no `?fast` this time): `camoufox-linux-coherent` → suspicious 0.9866, CONVICTING NONE — EVADES, HEADLESS,
-no xvfb.** So iter-24's conclusion (the bar is below headful) is RIGHT after all — but it needed a real red-team
-move (fix the CSS-pointer-media leak), which iter-24 never did (`?fast` merely HID the probe; iter-25 exposed it;
-iter-26 fixes it). Residual = corroborating only (`bh.synthetic_no_coalesced` + naive-path `bh.power_law_violation`;
-environment `webgl2/voices/media/webrtc`), all external-hardware-gated — frontier (b), no FP-safe counter (a
-coherent maxTouchPoints=0 + fine-pointer desktop is exactly what a real headless Linux server browser presents).
-`camoufox-linux-coherent.json` frozen (5th EVADES, the lowest-bar one: headless, no xvfb). The plain `camoufox-linux`
-capture stays the lit-record of the `pointer_touch_incoherent` catch. No new detection, no version bump.
+Residual on both = corroborating only (`bh.synthetic_no_coalesced` — Gecko's Playwright mouse does NOT escape it,
+resolving the iter-19 question; naive-path `bh.power_law_violation`; environment `webgl2/voices/media/webrtc`), all
+external-hardware-gated → frontier (b), no FP-safe counter (a `maxTouchPoints=0` + fine-pointer desktop is exactly
+a real headless Linux server browser). `camoufox-linux.json` (common EVADES) + `camoufox-linux-coherent.json`
+(deterministic EVADES) frozen. `br.pointer_touch_incoherent` stays a valid FP-safe catch for the ~7% naive-camoufox
+flake (stock Firefox is coherent). No new detection, no version bump. **EVADES set is 6: camoufox-headful,
+camoufox-linux, camoufox-linux-coherent, patchright-headful, zendriver-uach, zendriver-uach-behave.**
+**METHODOLOGY LESSON: verify a proposed mechanism against the collector SOURCE before committing it — I shipped two
+wrong explanations (`?fast` under-probing; "bar stays headful") by inferring from a single flaky run instead of
+reading `demo.py` and measuring the rate.**
 
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
