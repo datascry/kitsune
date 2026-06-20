@@ -718,6 +718,23 @@ external); a Tier-3 real-traffic prevalence prior (external); and the environmen
 consumption infra — `fleet_capture.sh` proxies, `coordination-live`, the prevalence model — is built and waiting on
 the external inputs) rather than grinding cosmetic in-sandbox tweaks.
 
+**QUIC tee TTL — remediated the in-sandbox-fixable half of the revival blocker (iter-48, 2026-06-20).** iter-47
+root-caused the `quic_no_grease` FP to per-IP cross-attribution: the QUIC tee buffered Initials per `ip:port` and
+NEVER expired them, so a session reusing a recycled bridge IP inherited a STALE Initial from an earlier, unrelated
+client (and the map grew without bound — a memory leak). Fixed the fixable (temporal) half: each tee entry is now
+timestamped and expires after a 60 s TTL (`quicTeeTTL`) — a client's QUIC Initial and the h2 request it correlates
+to occur seconds apart within one session, so 60 s preserves legit correlation while purging stale entries before
+they can mis-attribute, and bounds memory. Grounded: a deterministic unit test (injectable clock — a fresh entry is
+returned, the same entry past the TTL is NOT and is purged) + a LIVE check that a dedicated `go-tls KS_QUIC` client
+still correlates (`quic_observed=True` within the window). This does NOT revive the retired rules or change any
+verdict (the rules read no signal for conviction) — it is edge signal-hygiene that removes the stale-buffer
+cross-attribution and the memory leak, and advances the documented revival prerequisite. The RESIDUAL structural half
+stays external/unfixed: a fresh non-browser QUIC client and a browser h2 session at the same IP WITHIN the 60 s window
+would still cross-attribute — the cross-protocol TCP-h2 ⇄ UDP-QUIC join is inherently IP-based (no shared connection
+token), so full per-connection attribution + a confirmed real-Chrome QUIC GREASE positive remain the external
+prerequisites for reviving the convicting QUIC rules. Edge `go vet` + full test suite green; no detector change, no
+version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

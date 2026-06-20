@@ -16,12 +16,36 @@ import (
 	"github.com/datascry/kitsune/edge/internal/signal"
 )
 
+// quicTeeTTL bounds how long a captured Initial stays attributable. A client's QUIC Initial and the h2
+// request it correlates to occur within the same short browsing session (seconds apart); a far longer window
+// only invites cross-attribution — a later session reusing the source IP (a recycled NAT/bridge address)
+// would otherwise inherit a STALE Initial from an earlier, unrelated client. The TTL also bounds memory: the
+// old per-IP map grew without limit (every source IP ever seen retained forever).
+const quicTeeTTL = 60 * time.Second
+
+// teeEntry is the captured Initial fragments for one source address plus when they were last seen, so stale
+// entries (from a since-departed client whose IP was later recycled) can be expired before mis-attribution.
+type teeEntry struct {
+	pkts [][]byte
+	seen time.Time
+}
+
 // quicInitialTee wraps a UDP PacketConn and stashes the QUIC v1 Initial datagrams (long header, type 00)
-// seen from each source address, so the ClientHello they carry can be reassembled and fingerprinted.
+// seen from each source address, so the ClientHello they carry can be reassembled and fingerprinted. Entries
+// expire after quicTeeTTL so a stale Initial from a since-departed client cannot mis-attribute to a later
+// session that recycled its source IP.
 type quicInitialTee struct {
 	net.PacketConn
 	mu       sync.Mutex
-	initials map[string][][]byte
+	initials map[string]*teeEntry
+	now      func() time.Time // injectable clock for tests; defaults to time.Now
+}
+
+func (t *quicInitialTee) clock() time.Time {
+	if t.now != nil {
+		return t.now()
+	}
+	return time.Now()
 }
 
 func (t *quicInitialTee) ReadFrom(p []byte) (int, net.Addr, error) {
@@ -29,18 +53,46 @@ func (t *quicInitialTee) ReadFrom(p []byte) (int, net.Addr, error) {
 	if err == nil && n > 0 && p[0]&0xc0 == 0xc0 && p[0]&0x30 == 0x00 { // long header, fixed bit, Initial
 		t.mu.Lock()
 		key := addr.String()
-		if len(t.initials[key]) < 8 { // a hello fragments across a few Initials; cap to bound memory
-			t.initials[key] = append(t.initials[key], append([]byte(nil), p[:n]...))
+		e := t.initials[key]
+		if e == nil {
+			e = &teeEntry{}
+			t.initials[key] = e
 		}
+		if len(e.pkts) < 8 { // a hello fragments across a few Initials; cap to bound memory
+			e.pkts = append(e.pkts, append([]byte(nil), p[:n]...))
+		}
+		e.seen = t.clock()
 		t.mu.Unlock()
 	}
 	return n, addr, err
 }
 
-func (t *quicInitialTee) fingerprint(addr string) (*fingerprint.ClientHello, error) {
+// take expires every entry older than the TTL (bounding memory + killing stale cross-attribution from a
+// recycled source IP) and returns the fragments of the first FRESH entry whose address satisfies pred, or nil.
+func (t *quicInitialTee) take(pred func(host, port string) bool) [][]byte {
 	t.mu.Lock()
-	pkts := t.initials[addr]
-	t.mu.Unlock()
+	defer t.mu.Unlock()
+	cutoff := t.clock().Add(-quicTeeTTL)
+	var found [][]byte
+	for addr, e := range t.initials {
+		if e.seen.Before(cutoff) {
+			delete(t.initials, addr) // expired: purge before it can mis-attribute to a recycled IP
+			continue
+		}
+		if found == nil {
+			if host, port, err := net.SplitHostPort(addr); err == nil && pred(host, port) {
+				found = e.pkts
+			}
+		}
+	}
+	return found
+}
+
+func (t *quicInitialTee) fingerprint(addr string) (*fingerprint.ClientHello, error) {
+	pkts := t.take(func(host, port string) bool { return net.JoinHostPort(host, port) == addr })
+	if pkts == nil {
+		return nil, fingerprint.ErrNotQUICInitial
+	}
 	return fingerprint.ParseQUICInitials(pkts)
 }
 
@@ -59,7 +111,7 @@ func NewQUICCapturer(addr string, cert *tls.Certificate) (*QUICCapturer, error) 
 	if err != nil {
 		return nil, err
 	}
-	tee := &quicInitialTee{PacketConn: udp, initials: map[string][][]byte{}}
+	tee := &quicInitialTee{PacketConn: udp, initials: map[string]*teeEntry{}}
 	ln, err := quic.Listen(tee, &tls.Config{
 		Certificates: []tls.Certificate{*cert},
 		NextProtos:   []string{"h3"},
@@ -94,15 +146,7 @@ func (c *QUICCapturer) Fingerprint(addr string) (*fingerprint.ClientHello, error
 // FingerprintByIP returns the QUIC ClientHello captured from any port at source IP ip — the request
 // arrives over TCP from the same IP on a different port than the client's QUIC socket, so we match on IP.
 func (c *QUICCapturer) FingerprintByIP(ip string) (*fingerprint.ClientHello, error) {
-	c.tee.mu.Lock()
-	var pkts [][]byte
-	for addr, ps := range c.tee.initials {
-		if host, _, err := net.SplitHostPort(addr); err == nil && host == ip {
-			pkts = ps
-			break
-		}
-	}
-	c.tee.mu.Unlock()
+	pkts := c.tee.take(func(host, _ string) bool { return host == ip })
 	if pkts == nil {
 		return nil, fingerprint.ErrNotQUICInitial
 	}

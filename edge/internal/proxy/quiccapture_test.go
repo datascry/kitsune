@@ -79,6 +79,29 @@ func TestQUICCapturerFingerprintsClientHello(t *testing.T) {
 	}
 }
 
+// TestQUICTeeTTLExpiresStaleInitials guards the cross-attribution fix: a captured Initial older than the TTL
+// must NOT be returned (and is purged), so a later session that recycled the source IP cannot inherit a stale
+// hello from a since-departed client — the root cause of the quic_no_grease false positive (see roadmap).
+func TestQUICTeeTTLExpiresStaleInitials(t *testing.T) {
+	clk := time.Now()
+	tee := &quicInitialTee{initials: map[string]*teeEntry{}, now: func() time.Time { return clk }}
+	// A Chrome-class GREASE-less Initial-ish blob is irrelevant here — take() works on raw fragments by age.
+	tee.initials["10.0.0.7:51000"] = &teeEntry{pkts: [][]byte{{0x01, 0x02}}, seen: clk}
+
+	// Fresh: within the TTL, take() returns it.
+	if got := tee.take(func(host, _ string) bool { return host == "10.0.0.7" }); got == nil {
+		t.Fatal("fresh entry within TTL should be returned")
+	}
+	// Advance past the TTL: the same entry is now stale → not returned, and purged from the map.
+	clk = clk.Add(quicTeeTTL + time.Second)
+	if got := tee.take(func(host, _ string) bool { return host == "10.0.0.7" }); got != nil {
+		t.Error("stale entry past TTL must not be returned (cross-attribution to a recycled IP)")
+	}
+	if _, ok := tee.initials["10.0.0.7:51000"]; ok {
+		t.Error("stale entry must be purged from the tee (bounds memory)")
+	}
+}
+
 func TestQUICTells(t *testing.T) {
 	const chromeUA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 	greased := &fingerprint.ClientHello{CipherSuites: []uint16{0x0a0a, 0x1301}} // 0x0a0a is a GREASE value
