@@ -76,6 +76,7 @@ function surfaces(signals: SignalMap, fp: Record<string, string>): Surface[] {
       "worker_divergence",
       "iframe_divergence",
       "worker_constructor_tampered",
+      "worker_source_rewritten",
       "languages_worker_divergence",
     ]),
   ];

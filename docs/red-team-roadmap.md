@@ -618,6 +618,29 @@ redefines `RealWorker.prototype.constructor` back to itself restores the round-t
 prototype's constructor data property, the deeper escalation. The realm-coherence ladder mirrors the coalesced ladder
 (plain wrap → Proxy-over-native → data/identity invariant the Proxy can't forge): blue wins this rung.
 
+**REALM-COHERENCE LADDER — the FUNDAMENTAL catch, ending the constructor-disguise sub-ladder (iter-44, 2026-06-20,
+v0.74.47).** iter-43 closed the bare Proxy-Worker rung with a constructor-identity invariant and documented the next
+rung: a Proxy that ALSO repairs `RealWorker.prototype.constructor`. RED-TEAM played it — stealth **`WORKER_PROXY_FIX`**
+adds `Object.defineProperty(RealWorker.prototype, "constructor", {value: proxy})` so the round-trip
+`C.prototype.constructor === C` holds again; GROUNDED LIVE on 0.74.46 it defeats BOTH invariants of
+`worker_constructor_tampered` (toString reflects `[native code]`, identity repaired) AND `worker_divergence` — a clean
+EVADES on the worker-realm surface, one rung above iter-43. Rather than chase the constructor disguise further (each
+rung is a more contrived structural tell), BLUE-TEAM built the FUNDAMENTAL catch that ends the sub-ladder: a new rule
+**`br.worker_source_rewritten`** that convicts the injection by its unavoidable DATA signature instead of the
+constructor's structure. A real `new Worker(url)` runs in a global whose `self.location.href` EQUALS the blob URL the
+page passed; to inject ANY worker-scope spoof a tool MUST rewrite the source into a NEW blob, so the worker loads from
+a different url → `href != passed url`. The collector captures the URL it passes, has the worker report
+`self.location.href`, and fires on mismatch (demo.py + collector probes.ts). GROUNDED LIVE on 0.74.47: it catches ALL
+THREE injection variants — `WORKER_WRAP` (plain wrap), `WORKER_PROXY` (Proxy), and `WORKER_PROXY_FIX` (Proxy + ctor
+repair, which defeats `worker_constructor_tampered`) — because all three rewrite the source; plain `STEALTH` and real
+Chromium (worker runs the page's own blob unchanged → href == passed url) do NOT — FP-safe. `task calibrate`
+(browserforge n=500): 0 new FPs (worker source URL is not in the prior). This is the better primitive: it catches the
+injection's GOAL (worker-scope code change), not the METHOD (constructor wrap), so no constructor disguise escapes it.
+detector 256 tests, collector typecheck/lint/test, harness 205 tests, lit-guard on `worker-proxy-fix.json`,
+check_headers all green. Residual (next rung, documented): the injected worker code could ALSO override
+`WorkerLocation.prototype.href` to echo the original url — but that leaves a non-native `WorkerLocation.href` in worker
+scope, a further self-incriminating tamper. Realm-coherence worker-injection ladder: blue holds the high ground.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

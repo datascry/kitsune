@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.46"
+ruleset_version: "0.74.47"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -799,6 +799,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS / rebrowser: main-thread spoofs and some engine-level browsers leak in workers"
+
+  - id: br.worker_source_rewritten
+    title: Web Worker ran from a different source than the page passed (worker-scope spoof injection)
+    layers: [browser]
+    reads: [browser.worker_source_rewritten]
+    predicate: present
+    weight: 0.75
+    status: active
+    category: artifact
+    added: "2026-06-20"
+    last_validated: "2026-06-20"
+    source: "The FUNDAMENTAL realm-coherence catch — it convicts worker-scope spoof injection by its DATA signature rather than the constructor's structural tells, so it is robust to the entire Worker-constructor-disguise ladder. A real `new Worker(url)` runs in a WorkerGlobalScope whose self.location.href EQUALS the blob URL the page passed; to inject a spoof into worker scope a tool MUST rewrite the worker source (prepend the navigator override + importScripts the original), which produces a NEW blob URL, so the worker is constructed from a different url → self.location.href != the passed url. The collector captures the URL it passes, has the worker report self.location.href, and fires on mismatch. This catches WORKER_WRAP (plain-function wrap), WORKER_PROXY (Proxy-over-native, toString reflects '[native code]') AND WORKER_PROXY_FIX (Proxy + prototype.constructor repair, which defeats BOTH invariants of br.worker_constructor_tampered) — all three rewrite the source, none can keep the same URL while changing the code. v0.74.47 GROUNDED LIVE: WORKER_PROXY_FIX defeats worker_divergence + worker_constructor_tampered (the prior rung) but trips this; WORKER_WRAP and WORKER_PROXY also trip it; plain STEALTH and real Chromium (worker runs the page's own blob unchanged → href == passed url) do NOT — FP-safe. FP-safe ACTIVE by construction: a real browser, a legit CDP override and an extension (isolated world, does not wrap window.Worker) all leave the worker's source URL equal to the one the page created. Residual (next rung, documented): the injected worker code could ALSO override WorkerLocation.prototype.href to echo the original url — but that leaves a non-native WorkerLocation.href in worker scope, a further self-incriminating tamper. Complements br.worker_constructor_tampered (which catches the constructor disguise directly); this catches the injection's unavoidable consequence."
 
   - id: br.worker_constructor_tampered
     title: Web Worker / OffscreenCanvas constructor is not native (worker-realm spoof injection)

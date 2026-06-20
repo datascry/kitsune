@@ -379,12 +379,26 @@ td code{font-size:12px;color:#0a3}
   function workerNav() {
     return new Promise(function (resolve) {
       try {
+        // The worker also reports its OWN self.location.href — for a real `new Worker(url)` that EQUALS the
+        // blob URL the page passed. A tool that injects worker-scope spoofs (WORKER_WRAP / WORKER_PROXY /
+        // the Proxy+constructor-fix escalation) must rewrite the source into a NEW blob, so the worker is
+        // constructed from a DIFFERENT url → href != passed url. The data signature of worker-source rewriting,
+        // robust no matter how the Worker constructor is disguised (the constructor-identity check can be
+        // defeated by repairing prototype.constructor; the URL the worker actually loaded cannot be faked
+        // without ALSO patching WorkerLocation in worker scope — a further, self-incriminating tamper).
         var code = 'onmessage=function(){postMessage({ua:navigator.userAgent,' +
           'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
-          'lang:(navigator.languages||[]).join(",")})}';
-        var w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
+          'lang:(navigator.languages||[]).join(","),href:self.location.href})}';
+        var u = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
+        var w = new Worker(u);
         var t = setTimeout(function () { resolve(null); }, 1500);
-        w.onmessage = function (e) { clearTimeout(t); resolve(e.data); w.terminate(); };
+        w.onmessage = function (e) {
+          clearTimeout(t);
+          var d = e.data || {};
+          d.expectedHref = u;
+          resolve(d);
+          w.terminate();
+        };
         w.postMessage(0);
       } catch (err) { resolve(null); }
     });
@@ -1096,6 +1110,13 @@ td code{font-size:12px;color:#0a3}
     if (wn && (wn.ua !== navigator.userAgent || wn.hw !== navigator.hardwareConcurrency ||
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))) {
       sigs.push(S("browser", "worker_divergence", true));
+    }
+    // Worker source-URL coherence: a real `new Worker(url)` runs in a global whose self.location.href EQUALS
+    // the blob URL the page passed; a tool injecting worker-scope spoofs must rewrite the source into a new
+    // blob → href differs. The data signature of worker-source rewriting, robust to any constructor disguise
+    // (Proxy, prototype.constructor repair) — the injection cannot keep the same URL while changing the code.
+    if (wn && wn.href && wn.expectedHref && wn.href !== wn.expectedHref) {
+      sigs.push(S("browser", "worker_source_rewritten", true));
     }
     // Language realm coherence: navigator.languages must agree across the main thread and a Worker; a
     // main-realm geo-spoof of navigator.languages never reaches Worker scope.

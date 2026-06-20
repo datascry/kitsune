@@ -40,6 +40,7 @@ _LIT = {
     "fp-rotation": "br.fingerprint_unstable_within_session",
     "trace-replay": "bh.trace_replay_within_session",
     "worker-proxy": "br.worker_constructor_tampered",
+    "worker-proxy-fix": "br.worker_source_rewritten",
 }
 
 

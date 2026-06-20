@@ -72,6 +72,13 @@ const WORKER_WRAP = process.env.WORKER_WRAP === "1";
 // the worker-scope spoof (importScripts of the original blob behind the hardwareConcurrency override). So it beats
 // worker_divergence AND worker_constructor_tampered at once — the COALESCE_PROXY pattern applied to the Worker ctor.
 const WORKER_PROXY = process.env.WORKER_PROXY === "1";
+// WORKER_PROXY_FIX: the rung above WORKER_PROXY (the escalation the v0.74.46 br.worker_constructor_tampered
+// source itself flagged as the residual). The Proxy wrap defeats the toString check, but v0.74.46 added the
+// constructor-identity round-trip C.prototype.constructor === C, which the bare Proxy breaks. This ALSO redefines
+// RealWorker.prototype.constructor back to the Proxy, so the round-trip holds again — defeating BOTH invariants.
+// It still rewrites the worker source (a new blob URL) to inject the spoof, which is the data signature the
+// source-URL-coherence check (worker_source_rewritten) catches regardless of how the constructor is disguised.
+const WORKER_PROXY_FIX = process.env.WORKER_PROXY_FIX === "1";
 // NAIVE_TZ_SPOOF: the one-field geo-spoof. Patch ONLY Intl.resolvedOptions().timeZone (claim a proxy-
 // matching zone) and forget Date.getTimezoneOffset — the offset then contradicts the claimed zone →
 // br.timezone_offset_vs_intl. The canonical incomplete timezone spoof.
@@ -261,6 +268,7 @@ const evading =
   LANG_SPOOF ||
   WORKER_WRAP ||
   WORKER_PROXY ||
+  WORKER_PROXY_FIX ||
   NAIVE_TZ_SPOOF ||
   AUDIO_READBACK_SPOOF ||
   LANG_LIST_SPOOF ||
@@ -332,6 +340,8 @@ const mode = UACH_COHERENT
   ? "worker-wrap"
   : WORKER_PROXY
   ? "worker-proxy"
+  : WORKER_PROXY_FIX
+  ? "worker-proxy-fix"
   : LANG_SPOOF
   ? "lang-spoof"
   : TZ_SPOOF
@@ -599,6 +609,27 @@ if (FLOOR_SPOOF) {
         return Reflect.construct(target, [url, ...args.slice(1)]);
       },
     });
+  });
+} else if (WORKER_PROXY_FIX) {
+  // The Proxy escalation PLUS the constructor-identity repair: after wrapping window.Worker in a Proxy, redefine
+  // RealWorker.prototype.constructor back to the Proxy so C.prototype.constructor === C holds again — defeating
+  // BOTH the toString and the prototype-identity invariants of worker_constructor_tampered. It still rewrites the
+  // worker source (a fresh blob URL) to inject the spoof, so the worker's self.location.href no longer matches the
+  // URL the page passed — the data signature worker_source_rewritten catches no matter how the ctor is disguised.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
+    const RealWorker = window.Worker;
+    const SPOOF = "Object.defineProperty(self.navigator,'hardwareConcurrency',{get:function(){return 2}});";
+    const proxy = new Proxy(RealWorker, {
+      construct(target, args) {
+        const wrapped = SPOOF + "importScripts('" + args[0] + "');";
+        const url = URL.createObjectURL(new Blob([wrapped], { type: "application/javascript" }));
+        return Reflect.construct(target, [url, ...args.slice(1)]);
+      },
+    });
+    window.Worker = proxy;
+    Object.defineProperty(RealWorker.prototype, "constructor", { value: proxy, configurable: true, writable: true });
   });
 } else if (NAIVE_TZ_SPOOF) {
   // One-field geo-spoof: patch only Intl.resolvedOptions().timeZone, leave Date.getTimezoneOffset real, so

@@ -312,24 +312,24 @@ function webrtcProbe(): Promise<RtcResult> {
     }
   });
 }
-function workerNav(): Promise<{ ua: string; hw: number; plat: string; lang: string } | null> {
+type WorkerNav = { ua: string; hw: number; plat: string; lang: string; href: string; expectedHref: string };
+function workerNav(): Promise<WorkerNav | null> {
   return new Promise((resolve) => {
     try {
+      // The worker also reports self.location.href — for a real `new Worker(url)` it EQUALS the blob URL the
+      // page passed. A tool injecting worker-scope spoofs must rewrite the source into a new blob → href differs.
       const code =
         "onmessage=function(){postMessage({ua:navigator.userAgent," +
         'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
-        'lang:(navigator.languages||[]).join(",")})}';
-      const w = new Worker(
-        URL.createObjectURL(new Blob([code], { type: "application/javascript" })),
-      );
+        'lang:(navigator.languages||[]).join(","),href:self.location.href})}';
+      const u = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
+      const w = new Worker(u);
       const t = setTimeout(() => {
         resolve(null);
       }, 1500);
-      w.onmessage = (
-        e: MessageEvent<{ ua: string; hw: number; plat: string; lang: string }>,
-      ): void => {
+      w.onmessage = (e: MessageEvent<Omit<WorkerNav, "expectedHref">>): void => {
         clearTimeout(t);
-        resolve(e.data);
+        resolve({ ...e.data, expectedHref: u });
         w.terminate();
       };
       w.postMessage(0);
@@ -1171,6 +1171,12 @@ export function armCollector(): LiveCollector {
         (wn.plat && navigator.platform && wn.plat !== navigator.platform))
     ) {
       put("browser", "worker_divergence", true);
+    }
+    // Worker source-URL coherence: a real `new Worker(url)` runs in a global whose self.location.href EQUALS
+    // the blob URL the page passed; injecting worker-scope spoofs requires rewriting the source into a new
+    // blob → href differs. The data signature of worker-source rewriting, robust to any constructor disguise.
+    if (wn && wn.href && wn.expectedHref && wn.href !== wn.expectedHref) {
+      put("browser", "worker_source_rewritten", true);
     }
     // Language realm coherence: navigator.languages must agree across the main thread and a Worker. A
     // residential-proxy geo-spoof patches navigator.languages in the main realm to match the proxy's
