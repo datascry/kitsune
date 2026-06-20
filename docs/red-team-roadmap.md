@@ -8,7 +8,10 @@ lab research, never a third-party/production site, never weaken the allow-list.
 ## Where the red-team stands (researched 2026-06-20)
 
 16 tools, 66 techniques, **63 caught / 3 evade** (`camoufox-headful`, `patchright-headful`, `zendriver` — all
-escape via engine-level / CDP-patched spoofing with no headless tell). The per-session **JS-patch layer is
+escape via engine-level / CDP-patched spoofing with no headless tell). *(Corrected iter-9: `zendriver` is NOT an
+evader — grounded live it is caught by `net.h2_header_order_vs_ua` (its CDP nav sends no Sec-CH-UA trio + a
+non-Chromium regular-header order, while real Chrome does); the frozen capture was stale. Frontier is now **2
+evade**: `camoufox-headful`, `patchright-headful`.)* The per-session **JS-patch layer is
 saturated**: every single-tool Chromium evader hits the headless-environment floor, and every cross-layer or
 realm-coherence spoof is caught. The detector's durable signals are the headless floor, cross-layer coherence
 (TLS/H2 ≠ UA), realm coherence, and the behavioral / coordination / prevalence frontiers.
@@ -125,9 +128,10 @@ CONVERGED in-sandbox: per-session saturated, coordination's in-sandbox half (clo
 convicting frontiers (IP-rep, real-traffic prevalence, real-hardware environment) all external-data-gated.
 
 ### Vein C — MODIFY a tool (white-box → enhance the anti-detect feature)
-1. **Push the 3 EVADERS.** White-box exactly *why* `camoufox-headful` / `patchright-headful` / `zendriver`
-   escape, and whether the residual (capability tells, coordination) can be closed too — i.e. make a fully-clean
-   evader, then see what (if anything) the blue-team can still FP-safely do.
+1. **Push the 2 EVADERS** (`camoufox-headful` / `patchright-headful` — `zendriver` REFUTED iter-9, it's caught by
+   `net.h2_header_order_vs_ua`). White-box exactly *why* they escape, and whether the residual (capability tells,
+   coordination) can be closed too — i.e. make a fully-clean evader, then see what (if anything) the blue-team can
+   still FP-safely do. (Both remaining evaders are headful + external-hardware-gated per the iter-6 stack capstone.)
 2. **Harden a stealth mode** to silence a remaining convicting tell (e.g. the `br.chrome_runtime_missing`
    patchright-headless residual) — white-box the gap, patch it, confirm the tell goes quiet without a new artifact.
 
@@ -158,3 +162,9 @@ evasion-catalog the living ledger. Modify REAL tools; ground every claim live; n
   scored **bot** via `br.headless_ua`. So `br.headless_ua` is **robust, not fragile** — no EVADES class opens; the
   token removal never shipped through Chrome 149. Lesson: an ungrounded catalog assumption was FALSE — the loop's
   "ground every claim live" discipline is load-bearing.
+- **iter-9 (2026-06-20): the `zendriver` EVADES claim is REFUTED.** The catalog marked zendriver `suspicious`/EVADES
+  from a stale frozen capture. Grounded live (2/2 runs): zendriver scores **bot**, convicted by
+  `net.h2_header_order_vs_ua` — its CDP-driven Chrome navigation emits NO Sec-CH-UA trio (`ch_ua_browser=None`) and a
+  non-Chromium regular-header order, whereas real Chrome (chrome-stable/firefox/msedge, FP-clean for this rule) sends
+  the trio. zendriver hides the headless UA token (unlike nodriver) but leaks at the network/Client-Hints layer.
+  Re-captured `zendriver.json`; EVADES frontier 3→2. FP-safe (real browsers don't trip it).

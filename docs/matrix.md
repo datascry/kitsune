@@ -1,6 +1,6 @@
 # Kitsune detection matrix — 117 rules vs 69 evaders
 
-_66/69 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
+_67/69 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -74,7 +74,7 @@ _66/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `webkit-ua-spoof` | bot | 1.00 | 18/117 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
 | `worker-spoof` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `worker-wrap` | bot | 1.00 | 14/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `zendriver` | suspicious | 0.99 | 7/117 | — |
+| `zendriver` | bot | 1.00 | 8/117 | `net.h2_header_order_vs_ua` |
 
 ## Per-rule coverage — 102/117 rules catch ≥1 evader (rest in Gaps)
 
@@ -113,12 +113,12 @@ _66/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
 | `br.tostring_tampered` | browser | automation | 4 |
 | `br.webrtc_unavailable` | browser | environment | 4 |
+| `net.h2_header_order_vs_ua` | network | coherence | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
 | `br.webgpu_webgl_vs` | browser | environment | 3 |
-| `net.h2_header_order_vs_ua` | network | coherence | 3 |
 | `net.h2_unknown_vs_ua` | network | coherence | 3 |
 | `net.tls_vs_ua_browser` | network,browser | coherence | 3 |
 | `bh.power_law_violation` | behavioral | behavioral | 2 |
@@ -255,7 +255,7 @@ _66/69 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `webkit-ua-spoof` | bot | 9 | 0 | 2 | 4 | 2 | 0 |
 | `worker-spoof` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
 | `worker-wrap` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
-| `zendriver` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
+| `zendriver` | bot | 1 | 0 | 0 | 5 | 2 | 0 |
 
 ## Coverage gaps — 15/117 rules catch nothing yet
 
