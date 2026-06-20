@@ -993,7 +993,7 @@ rules:
     weight: 0.75
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
+    last_validated: "2026-06-20"
     source: "CreepJS / fingerprintjs: OS-specific font stacks betray a spoofed UA platform"
 
   # --- v0.12.0: cross-API device/media coherence (CSS matchMedia vs JS APIs) ---

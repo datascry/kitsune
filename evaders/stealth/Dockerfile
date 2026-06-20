@@ -3,6 +3,14 @@
 
 FROM mcr.microsoft.com/playwright:v1.52.0-jammy
 WORKDIR /app
+# Genuine, ubiquitous Linux desktop font families (DejaVu + Noto, alongside the base image's Liberation).
+# This makes the container a faithful Linux DESKTOP rather than a font-bare headless box, so the collector's
+# real canvas font probe classifies the host as Linux — the precondition for the FONT_OS_LEAK scenario (a
+# Linux desktop scraper spoofing a Windows UA leaks its real Linux fonts → br.font_os_vs_ua). Harmless to
+# every other mode: under their coherent Linux UA a Linux font hint is correct, so nothing false-fires.
+RUN apt-get update -qq \
+    && apt-get install -y -qq --no-install-recommends fonts-dejavu-core fonts-noto-core \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 # playwright (baseline) + patchright + rebrowser-playwright (two CDP-patched anti-detect drop-ins).
 # These are unpinned and can pull a playwright-core needing a different Chromium revision than the base

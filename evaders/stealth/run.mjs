@@ -127,6 +127,13 @@ const DOMRECT_SPOOF = process.env.DOMRECT_SPOOF === "1";
 // → br.cdc_artifacts (an active automation rule with no prior live positive, because every captured evader
 // already suppresses it). A real browser carries no such global, so the `present` rule never fires on one.
 const CDC_LEAK = process.env.CDC_LEAK === "1";
+// FONT_OS_LEAK: the OS-font coherence tell (CreepJS / fingerprintjs). A scraper on a real Linux desktop
+// spoofs a Windows UA, but its installed font set is still the host's Linux families (DejaVu / Liberation /
+// Noto — baked into this image). The collector's canvas font probe classifies the host as Linux while the UA
+// claims Windows → br.font_os_vs_ua. No font tampering: the real fonts leak through the UA lie (the genuine
+// signature). webdriver is hidden so the capture demonstrates the font coherence catch independent of the
+// automation tells.
+const FONT_OS_LEAK = process.env.FONT_OS_LEAK === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -165,7 +172,11 @@ const LINUX_CHROME_UA =
 
 const userAgent =
   SPOOF_UA ||
-  (MAX_STEALTH || FULL || FLOOR_SPOOF || STALE_ENGINE ? LINUX_CHROME_UA : STEALTH ? CHROME_UA : undefined);
+  (MAX_STEALTH || FULL || FLOOR_SPOOF || STALE_ENGINE
+    ? LINUX_CHROME_UA
+    : STEALTH || FONT_OS_LEAK
+      ? CHROME_UA // FONT_OS_LEAK claims Windows while the real host fonts stay Linux
+      : undefined);
 const evading =
   STEALTH ||
   FULL ||
@@ -189,8 +200,11 @@ const evading =
   CANVAS_LIE ||
   DOMRECT_SPOOF ||
   CDC_LEAK ||
+  FONT_OS_LEAK ||
   Boolean(SPOOF_UA);
-const mode = CDC_LEAK
+const mode = FONT_OS_LEAK
+  ? "font-os-leak"
+  : CDC_LEAK
   ? "cdc-leak"
   : DOMRECT_SPOOF
   ? "domrect-spoof"
@@ -516,6 +530,13 @@ if (FLOOR_SPOOF) {
     Object.defineProperty(document, "$cdc_asdjflasutopfhvcZLmcfl_Symbol", { value: [], configurable: true });
     // The collector probes the bare prefix key too; expose it so `"$cdc_asdjflasutopfhvcZLmcfl_" in document`.
     Object.defineProperty(document, "$cdc_asdjflasutopfhvcZLmcfl_", { value: {}, configurable: true });
+  });
+} else if (FONT_OS_LEAK) {
+  // Only hide webdriver — the font OS-lie is carried entirely by the real (untouched) host fonts measured
+  // under the spoofed Windows UA, so no font/canvas patching is needed (that would be the strawman). This
+  // isolates br.font_os_vs_ua as the coherence catch even when the basic automation tell is suppressed.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
   });
 } else if (MEASURETEXT_SPOOF) {
   // Realm-incomplete font spoof: perturb measureText on the main-thread CanvasRenderingContext2D only. The

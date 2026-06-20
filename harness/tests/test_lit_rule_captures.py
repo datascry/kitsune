@@ -22,6 +22,7 @@ _LIT = {
     "canvas-lie": "br.canvas_lie",
     "domrect-spoof": "br.domrect_invariant",
     "cdc-leak": "br.cdc_artifacts",
+    "font-os-leak": "br.font_os_vs_ua",
 }
 
 
