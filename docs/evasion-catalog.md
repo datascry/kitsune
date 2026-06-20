@@ -114,10 +114,20 @@ and ruleset.
 
 > The fleet already spans every OSS anti-detect *family*, and the conclusion is structural: per-session
 > evasion loses to the environment floor + coordination. New evaders should buy **new test surface**, not
-> another tool that hits the same floor. **The single biggest detection gap: no prevalence/likelihood
-> model** — Kitsune flags hard contradictions but cannot score "improbable-but-not-impossible" joint
-> field combinations (the niespodd/BrowserForge frontier). **The single biggest test gap: no live proxy
-> harness** — 6 coordination + 2 IP-reputation rules are scored only synthetically.
+> another tool that hits the same floor. **UPDATE (v0.74.33, 2026-06-20):** both headline gaps below are now
+> partially closed — what remains of each is external-data-bound, not unbuilt.
+> **Prevalence/likelihood model — BUILT** (`br.fingerprint_improbable`, v0.74.19+): it scores the
+> "improbable-but-not-impossible" joint (gpu/screen/cores conditioned on platform) the niespodd/BrowserForge
+> frontier exploits. Residual gap: the prior is browserforge-SINGLE-SOURCE so the rule is corroborating-only
+> (weight 0.25, experimental); all four factors are single-source-FP-hardened (colour dropped, screen/cores
+> coarsened, gpu 'other'→abstain v0.74.33), and promoting it to convicting needs a real-traffic Tier-3 prior
+> (`build_prior_from_sessions`), not new model code.
+> **Coordination CLONE/REPLAY tells — GROUNDED END-TO-END** on real concurrent-container captures (distinct
+> docker IPs): `fp_collision` (fleet-cloned cn1-3), `trace_collision` (fleet-replay rt1-3, v0.74.32),
+> `shared_real_ip` + JA4_c (fleet-proxy rp1-3). Residual gap: only the IP-REPUTATION half
+> (`rep.datacenter_asn` / `rep.known_proxy_exit` / `net.webrtc_ip_vs_observed`) is still synthetic-only — it
+> needs real residential-proxy egress (container IPs are private 172.x, not ASN-classifiable). Per-session
+> detection is otherwise SATURATED and FP-clean (validated across browserforge + Intoli 4000 + real captures).
 
 Counts: already-have **19**, add-as-evader **6**, frontier **9**, white-box **6**, research **9**.
 
@@ -179,7 +189,7 @@ tell.
 |---|---|---|---|
 | **Real-hardware headful deployment (non-container, passth** | high | br.webgl_software, br.webgl2_missing, br.voices_empty, br.voice_os_vs_ua, br.med | Run any anti-detect browser headful on a real machine with a real GPU, OS speech voices, a |
 | **DMTG / diffusion + GAN mouse-trajectory synthesis (entr** | high | bh.path_too_straight, bh.uniform_velocity, bh.input_entropy_floor, bh.power_law_ | Generates mouse paths via diffusion (DMTG) or GAN reproducing slow initiation, 2/3 power-l |
-| **Prevalence/likelihood evasion — statistically-improbabl** | high | NOTHING in the registry — every Kitsune rule is a hard not_equal/present/thresho | A generator (BrowserForge/Scrapfly) samples a field combo that violates no hard coherence  |
+| **Prevalence/likelihood evasion — statistically-improbable joint** | ✅ ADDRESSED (corroborating) | `br.fingerprint_improbable` (the prevalence/likelihood model, v0.74.19+) now scores the improbable gpu/screen/cores-given-platform joint that violates no hard coherence rule — exactly this frontier. It is corroborating-only (browserforge single-source, weight 0.25) and all factors are single-source-FP-hardened; a generator sampling a PROBABLE real joint still evades it BY DESIGN (improbability is the wrong lens for real-value reuse — that is caught by automation tells + coordination collision at scale). Fully convicting needs a real-traffic Tier-3 prior. | A generator (BrowserForge/Scrapfly) samples a field combo that violates no hard coherence rule but is improbable in real traffic — now flagged by the prevalence prior's p1-tail. |
 | **Real-OS-cursor injection (xdotool / bezmouse / pyHM dri** | medium | bh.synthetic_no_coalesced (the structural exit findings.md relied on — real hard | Drives the real OS cursor so events are OS-trusted (isTrusted=true) and flow through the r |
 | **Current-template impersonator over QUIC/HTTP-3 (rnet/cu** | medium | net.quic_grease_vs_ua (stays silent on a correct QUIC hello), net.tls_pq_keyshar | A network-only client shipping a CURRENT browser template AND speaking HTTP/3 with a brows |
 | **JA4H regular-header-order forgery (curl-impersonate / primp / go-tls)** | confirmed-defeated (re-validated live 2026-06-19) | net.h2_header_order_vs_ua (experimental), net.h2_engine_unknown | Live iter-8 fleet run, **re-confirmed on the live detector+edge stack (2026-06-19)**: every chromium-claiming HTTP-impersonation stack already replicates Chrome's *regular* header order (sec-ch-ua before user-agent), so the edge never emits `h2_header_order_non_chromium` and the rule yields zero positives; the only non-Chromium stack in the fleet (httpx/vanilla) speaks HTTP/1.1, so it has no h2 order to mismatch. The read signal is genuinely never produced by the chromium-IMPERSONATION fleet — header-order detection needs a non-Chromium h2 stack to bite. **RESOLVED v0.74.12 — the missing non-Chromium h2 stack now exists: the `http2-naive` evader (vanilla `KS_HTTP2=1` + Chrome `KS_UA`, httpx over HTTP/2) emits a non-Chrome regular-header order + no Sec-CH-UA group under a Chrome UA, so the edge emits `h2_header_order_non_chromium` and `net.h2_header_order_vs_ua` fires — its FIRST live positive.** The rule is correct and capable, not dead: it catches the naive h2 scraper that fakes a Chrome UA without replicating Chrome's on-wire order (where curl-impersonate/primp/go-tls defeat it by replicating). **PROMOTED experimental→active v0.74.13** after a SECOND independent non-Chrome h2 stack corroborated — plain `curl --http2` (nghttp2/C, `corpus/sessions/curl-http2.json`) with a Chrome UA also trips it (distinct h2 SETTINGS from httpx). Two non-Chrome stacks fire it; the real-Chrome negative is grounded across the headful Chromium capture AND all 40+ Chrome evaders/impersonators. Residual caveat: a real Chrome behind an enterprise h2-reserialising proxy could trip it (same class as tcp_os_vs_ua's proxy confound) — documented, edge case. |
