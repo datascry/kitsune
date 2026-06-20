@@ -298,11 +298,22 @@ signal would be a strawman — they keep their unit tests (logic proven) and are
 
 Beyond the active set, the audit also lit one **experimental** convicting rule, `br.font_mac_internal`
 (v0.74.35, camoufox `KS_MACOS=1`): a faithful white-box capture grounded against Camoufox's own bundled
-`fonts.json` rather than a synthesized signal. Two experimental net rules stay un-lit but are groundable, not
-hardware-blocked — `net.webrtc_ip_vs_observed` (needs a proxied session with a STUN leak) and
-`net.tls_os_vs_tcp_os` (a TLS-OS/TCP-OS split; carries an FP caveat) — left as candidate captures, not strawmen.
+`fonts.json` rather than a synthesized signal. The other two never-fired experimental net rules were probed
+this round (2026-06-20) and are **both external-resource-blocked in-sandbox, NOT quick captures** (the prior
+"groundable" note was optimistic — corrected here after a live producer test):
+- `net.webrtc_ip_vs_observed` ⛔ **STUN-blocked.** `webrtc_public_ip` is set only from a `typ srflx` STUN
+  candidate; a live Chromium probe in-sandbox gathers host candidates but **no srflx** (STUN UDP egress is
+  blocked, while TCP egress works), so the signal never populates and the rule cannot fire. Faking the srflx IP
+  would be a strawman. Same external-network-blocked class as `voice_os`.
+- `net.tls_os_vs_tcp_os` ⛔ **no producer (inert by design).** `tcp_os_hint` needs raw-packet capture
+  (CAP_NET_RAW/AF_PACKET) the userspace edge lacks; the registry comment confirms it is the only active rule
+  with no producer and **explicitly defers arming it** until a capture sidecar lands AND `tcp_os_hint` is
+  FP-grounded on real browsers (it is a convicting coherence rule — cf. the quic retirements). Not force-lit.
 
-**Per-session validation of the active set is complete; the lit-capture campaign is CLOSED for active rules.** Future iterations pivot
+**Per-session validation is complete; the lit-capture campaign is now fully exhausted in-sandbox** — every
+convicting rule (active + experimental) either has a live positive OR is provably external-resource-blocked
+(real GPU / real audio / STUN UDP egress / a raw-packet-capture sidecar), each with the evidence recorded
+above. Future iterations pivot
 to the structural frontiers, both confirmed external-data-bound: the prevalence second prior needs real-device
 gpu/cores data, and the coordination shape-signals (`fp_collision` via fleet-cloned, `trace_collision` via
 fleet-replay, `shared_real_ip` via fleet-proxy) are already grounded END-TO-END on real concurrent-container
