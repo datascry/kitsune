@@ -101,7 +101,7 @@ rules:
     status: active
     category: artifact
     added: "2026-06-18"
-    last_validated: "2026-06-18"
+    last_validated: "2026-06-20"
     source: "CreepJS / bot.sannysoft.com: screen.availWidth/Height can never exceed screen.width/height on a real device; avail > total is a spoofed/sloppily-randomised screen lie (both logical px, no zoom/dpr confound)"
 
   - id: net.quic_grease_vs_ua

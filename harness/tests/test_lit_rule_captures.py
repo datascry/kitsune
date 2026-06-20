@@ -25,6 +25,7 @@ _LIT = {
     "font-os-leak": "br.font_os_vs_ua",
     "csp-bypass": "br.csp_bypassed",
     "audio-noise": "br.audio_noise",
+    "screen-impossible": "br.screen_impossible",
 }
 
 

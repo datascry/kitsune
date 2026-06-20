@@ -147,6 +147,12 @@ const CSP_BYPASS = process.env.CSP_BYPASS === "1";
 // faked, so the detector's per-browser N/A does not apply and it convicts as a Chrome-claiming farbler — a
 // real Brave/Tor user is dropped by applicability, but a bot wearing a plain-Chrome identity is not.
 const AUDIO_NOISE = process.env.AUDIO_NOISE === "1";
+// SCREEN_IMPOSSIBLE: the sloppily-randomised screen lie (CreepJS / bot.sannysoft.com). A tool that
+// independently randomises screen.width/height and screen.availWidth/Height can slip into avail > total —
+// physically impossible, because the taskbar/dock only ever SHRINKS the available area below the physical
+// screen. Spoof avail bigger than the physical size → br.screen_impossible. A real device always has
+// avail <= total, so the rule never fires on one (both are logical px — no zoom/DPR confound).
+const SCREEN_IMPOSSIBLE = process.env.SCREEN_IMPOSSIBLE === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -216,8 +222,11 @@ const evading =
   FONT_OS_LEAK ||
   CSP_BYPASS ||
   AUDIO_NOISE ||
+  SCREEN_IMPOSSIBLE ||
   Boolean(SPOOF_UA);
-const mode = AUDIO_NOISE
+const mode = SCREEN_IMPOSSIBLE
+  ? "screen-impossible"
+  : AUDIO_NOISE
   ? "audio-noise"
   : CSP_BYPASS
   ? "csp-bypass"
@@ -573,6 +582,17 @@ if (FLOOR_SPOOF) {
       for (let i = 0; i < d.length; i++) d[i] += (Math.random() - 0.5) * 1e-6; // per-render farble noise
       return d;
     };
+  });
+} else if (SCREEN_IMPOSSIBLE) {
+  // Independently spoof the screen metrics so the available area exceeds the physical screen (avail > total),
+  // the canonical sloppy-randomiser slip. Defined on Screen.prototype so the collector's screen.* reads see
+  // the lie. A real device can only ever have avail <= total.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Screen.prototype, "width", { get: () => 1280, configurable: true });
+    Object.defineProperty(Screen.prototype, "height", { get: () => 720, configurable: true });
+    Object.defineProperty(Screen.prototype, "availWidth", { get: () => 1920, configurable: true });
+    Object.defineProperty(Screen.prototype, "availHeight", { get: () => 1080, configurable: true });
   });
 } else if (MEASURETEXT_SPOOF) {
   // Realm-incomplete font spoof: perturb measureText on the main-thread CanvasRenderingContext2D only. The

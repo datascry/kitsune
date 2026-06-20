@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 118 rules vs 62 evaders
+# Kitsune detection matrix — 118 rules vs 63 evaders
 
-_59/62 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
+_60/63 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -55,6 +55,7 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `quic-no-grease` | bot | 1.00 | 4/118 | `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua` +1 |
 | `rebrowser` | bot | 1.00 | 11/118 | `br.webdriver_present`, `br.headless_ua`, `br.permissions_anomaly` +2 |
 | `renderer-spoof` | bot | 1.00 | 19/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
+| `screen-impossible` | bot | 1.00 | 17/118 | `br.screen_impossible`, `net.quic_pq_keyshare_vs_ua`, `br.cdp_runtime_enabled` +6 |
 | `selenium-driverless` | bot | 1.00 | 7/118 | `br.headless_ua` |
 | `spoof-ua` | bot | 1.00 | 18/118 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +9 |
 | `stale-engine` | bot | 1.00 | 16/118 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +6 |
@@ -69,24 +70,24 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | suspicious | 0.99 | 7/118 | — |
 
-## Per-rule coverage — 98/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 100/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 49 |
-| `br.voices_empty` | browser | environment | 48 |
-| `br.webgl_software` | browser | environment | 41 |
-| `br.mimetypes_empty` | browser | environment | 38 |
-| `br.no_plugins` | browser | environment | 38 |
-| `br.notification_denied` | browser | automation | 37 |
-| `br.permissions_anomaly` | browser | automation | 37 |
-| `br.no_chrome_object` | browser | automation | 35 |
-| `br.no_pdfviewer` | browser | environment | 35 |
-| `br.headless_ua` | browser | automation | 33 |
-| `br.cdp_runtime_enabled` | browser | automation | 32 |
-| `br.ch_he_headless` | browser | automation | 32 |
-| `bh.keystroke_entropy_floor` | behavioral | behavioral | 28 |
-| `br.webdriver_getter_tampered` | browser | automation | 23 |
+| `br.media_devices_empty` | browser | environment | 50 |
+| `br.voices_empty` | browser | environment | 49 |
+| `br.webgl_software` | browser | environment | 42 |
+| `br.mimetypes_empty` | browser | environment | 39 |
+| `br.no_plugins` | browser | environment | 39 |
+| `br.notification_denied` | browser | automation | 38 |
+| `br.permissions_anomaly` | browser | automation | 38 |
+| `br.no_chrome_object` | browser | automation | 36 |
+| `br.no_pdfviewer` | browser | environment | 36 |
+| `br.headless_ua` | browser | automation | 34 |
+| `br.cdp_runtime_enabled` | browser | automation | 33 |
+| `br.ch_he_headless` | browser | automation | 33 |
+| `bh.keystroke_entropy_floor` | behavioral | behavioral | 29 |
+| `br.webdriver_getter_tampered` | browser | automation | 24 |
 | `net.tcp_os_vs_ua` | network | coherence | 13 |
 | `br.webdriver_present` | browser | automation | 12 |
 | `net.no_js_execution` | network,browser | coherence | 12 |
@@ -105,6 +106,7 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.font_linux_leak` | browser | environment | 5 |
 | `br.webgl2_missing` | browser | environment | 5 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
+| `net.quic_pq_keyshare_vs_ua` | network,browser | coherence | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
 | `br.fingerprint_improbable` | browser | prevalence | 3 |
@@ -115,7 +117,6 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.h2_header_order_vs_ua` | network | coherence | 3 |
 | `net.h2_unknown_vs_ua` | network | coherence | 3 |
-| `net.quic_pq_keyshare_vs_ua` | network,browser | coherence | 3 |
 | `net.tls_vs_ua_browser` | network,browser | coherence | 3 |
 | `bh.power_law_violation` | behavioral | behavioral | 2 |
 | `br.canvas_noise` | browser | artifact | 2 |
@@ -162,6 +163,8 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.productsub_vs_ua` | browser | coherence | 1 |
 | `br.readback_noise` | browser | artifact | 1 |
 | `br.safari_ua_no_webkit_api` | browser | coherence | 1 |
+| `br.screen_avail_invalid` | browser | environment | 1 |
+| `br.screen_impossible` | browser | artifact | 1 |
 | `br.webgl_renderer_artifact` | browser | artifact | 1 |
 | `br.worker_constructor_tampered` | browser | artifact | 1 |
 | `net.accept_lang_vs_navigator` | network,browser | coherence | 1 |
@@ -225,6 +228,7 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `quic-no-grease` | bot | 4 | 0 | 0 | 0 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 5 | 6 | 0 | 0 |
 | `renderer-spoof` | bot | 1 | 1 | 8 | 7 | 1 | 0 |
+| `screen-impossible` | bot | 1 | 1 | 7 | 7 | 1 | 0 |
 | `selenium-driverless` | bot | 0 | 0 | 1 | 4 | 2 | 0 |
 | `spoof-ua` | bot | 8 | 0 | 4 | 5 | 1 | 0 |
 | `stale-engine` | bot | 3 | 0 | 6 | 6 | 1 | 0 |
@@ -239,22 +243,20 @@ _59/62 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 20/118 rules catch nothing yet
+## Coverage gaps — 18/118 rules catch nothing yet
 
 **Evaded** (2) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
 
-**Unexercised** (18) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (16) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
-- `br.screen_impossible`
 - `rep.datacenter_asn`
 - `net.h2_control_flood`
 - `rep.known_proxy_exit`
 - `br.languages_empty`
 - `br.screen_zero`
 - `br.platform_empty`
-- `br.screen_avail_invalid`
 - `br.color_depth_anomaly`
 - `br.devicepixelratio_anomaly`
 - `br.voice_os_vs_ua`

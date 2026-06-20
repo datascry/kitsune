@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **62 exercised techniques** (59 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **16 evader tools**, **63 exercised techniques** (60 convicted `bot`, 3 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (16)
 
@@ -31,7 +31,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (62)
+### Techniques exercised — scored against the live ruleset (63)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -84,6 +84,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
 | `rebrowser` | bot | `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `renderer-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_renderer_artifact`, `br.webgl_worker_vs_main` |
+| `screen-impossible` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.screen_impossible`, `br.webdriver_getter_tampered`, `net.quic_pq_keyshare_vs_ua` |
 | `selenium-driverless` | bot | `br.headless_ua` |
 | `spoof-ua` | bot | `br.ch_he_headless`, `br.engine_stack_vs_ua`, `br.error_engine_vs_ua`, `br.firefox_ua_nongecko`, `br.notification_denied`, `br.permissions_anomaly`, `br.productsub_vs_ua`, `br.vendor_vs_ua`, `br.webdriver_spoofed`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.tls_vs_ua_browser` |
 | `stale-engine` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.engine_feature_vs_ua`, `br.no_chrome_object`, `br.notification_denied`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `net.ch_ua_version_vs_ua` |
