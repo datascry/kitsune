@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **82 exercised techniques** (75 convicted `bot`, 7 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **83 exercised techniques** (75 convicted `bot`, 8 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (19)
 
@@ -34,7 +34,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (82)
+### Techniques exercised — scored against the live ruleset (83)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -115,6 +115,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `vanilla` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `webkit-safari-coherent` | bot | `br.font_os_vs_ua`, `br.navplatform_vs_ua`, `br.webdriver_present`, `net.h2_unknown_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `webkit-ua-spoof` | bot | `br.error_engine_vs_ua`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.vendor_vs_ua`, `br.webdriver_present`, `br.webgl_os_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_unknown_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua`, `net.tls_vs_ua_browser` |
+| `webrtc-leak` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `worker-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.worker_divergence` |
 | `worker-wrap` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.worker_constructor_tampered` |
 | `zendriver` | bot | `net.h2_header_order_vs_ua` |

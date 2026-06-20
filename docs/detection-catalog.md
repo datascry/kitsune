@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.39`); regenerate with `task catalog`, do not edit by hand. **125 rules**: 92 active · 27 experimental · 6 retired; 83 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.40`); regenerate with `task catalog`, do not edit by hand. **125 rules**: 92 active · 27 experimental · 6 retired; 82 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (27)
 
@@ -36,11 +36,11 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.tls_os_vs_tcp_os` | coherence✦ | not_equal | 0.6 | experimental | JA4-implied OS contradicts TCP/IP-implied OS |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
-| `net.webrtc_ip_vs_observed` | coherence✦ | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `net.h2_continuation_flood` | automation✦ | present | 0.9 | active | HTTP/2 CONTINUATION flood (CVE-2024-27316) on this connection |
 | `net.h2_control_flood` | automation✦ | present | 0.9 | active | HTTP/2 control-frame flood (SETTINGS/PING — CVE-2019-9515/9512) |
 | `net.h2_rapid_reset` | automation✦ | present | 0.9 | active | HTTP/2 rapid-reset flood (CVE-2023-44487) on this connection |
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
+| `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
 ### browser layer (104)
 
@@ -85,7 +85,6 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
-| `net.webrtc_ip_vs_observed` | coherence✦ | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.automation_globals` | automation✦ | present | 0.6 | active | Automation-framework global or webdriver DOM attribute present |
 | `br.canvas_lie` | automation✦ | present | 0.7 | active | Canvas/WebGL API tampering detected (getter override) |
 | `br.cdc_artifacts` | automation✦ | present | 0.85 | active | Selenium / chromedriver automation artifacts in window/document |
@@ -149,6 +148,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.webgpu_webgl_vs` | environment | present | 0.7 | active | WebGL renderer claims a hardware GPU but WebGPU exposes no real adapter (spoofed renderer) |
 | `br.webrtc_unavailable` | environment | present | 0.6 | active | WebRTC gathers no ICE candidates (disabled/blocked) |
 | `br.fingerprint_improbable` | prevalence | present | 0.25 | experimental | Fingerprint joint (platform/gpu/screen/colour/cores) is improbable under the real-traffic prior |
+| `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
 ### behavioral layer (7)

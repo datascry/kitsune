@@ -328,6 +328,27 @@ saturated, the in-sandbox coordination tells (`fp_collision`/`trace_collision`) 
 maximal evasive fleet is external-data-bound (IP-reputation / WebRTC leak).** Fixed the camoufox evader's
 self-inflicted trace collision; no detector change (`trace_collision` works as designed), no version bump.
 
+**WebRTC real-IP leak GROUNDED in-sandbox + the rule demoted FP-safe — iter-30 (2026-06-20, v0.74.40).** Pivoted to
+the last durable convicting signal the catalog filed under "external/STUN-gated": `net.webrtc_ip_vs_observed` (the
+proxied-bot WebRTC leak), which had NEVER had a live positive. First verified the gating: a container on
+kitsune_default resolves `stun.l.google.com` but has NO UDP egress (STUN times out) → so `br.webrtc_unavailable` is
+a **no-STUN-egress sandbox artifact, not a real tell**. Then BUILT the missing infra: a minimal local STUN server +
+an HTTP CONNECT proxy on kitsune_default, DNS-overrode the collector's STUN to the local one (`--add-host`), added
+`KS_PROXY` to the camoufox evader. Grounded LIVE: camoufox's HTTPS routed through the proxy (`observed_ip`=proxy)
+while its WebRTC UDP went direct to the STUN (`webrtc_public_ip`=real container IP) → **the two differ → the rule
+fired (its first live positive)** — the cross-layer thesis end-to-end (hide the IP at the network layer, leak it at
+the browser layer; an HTTP CONNECT proxy cannot carry WebRTC's UDP). With the STUN reachable, `webrtc_unavailable`
+also went quiet (srflx candidate gathered) — confirming it's a sandbox artifact. **FP-safety fix (the red-team win
+exposed it):** per-session this is NOT FP-safe — a real split-tunnel-VPN user whose WebRTC isn't tunnelled shows the
+IDENTICAL shape (real IP ≠ VPN connection IP), undisambiguable from a proxied bot without IP reputation. So DEMOTED
+`coherence → reputation` (convicting → corroborating, v0.74.40); the FP-safe CONVICTING version is the coordination
+signal `shared_real_ip` (MANY sessions sharing ONE leaked origin = a single-machine fleet; a diverse VPN cohort
+leaks DISTINCT origins). Re-grounded post-demotion: the proxied-leak session now scores `suspicious` (corroborated,
+CONVICTING none). `webrtc-leak.json` frozen; calibration unaffected (no WebRTC layer); detector 241 green. The
+red-team COUNTER to the leak: block WebRTC (→ the corroborating `webrtc_unavailable`) or use a SOCKS proxy that
+carries the WebRTC UDP. This closes the WebRTC frontier's in-sandbox-groundable half; the residual external gate is
+real IP-reputation (datacenter-vs-residential), which `shared_real_ip` needs to convict a single proxied session.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

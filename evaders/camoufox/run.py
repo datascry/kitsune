@@ -128,6 +128,12 @@ def main() -> None:
         kwargs.update(HARDENED_KW)
     if MACOS:
         kwargs["os"] = "macos"
+    proxy = os.environ.get("KS_PROXY")
+    if proxy:
+        # Route HTTPS through an HTTP CONNECT proxy → the edge sees the PROXY's IP as observed_ip. WebRTC's UDP
+        # cannot traverse an HTTP proxy, so its STUN srflx reveals the REAL origin IP → net.webrtc_ip_vs_observed
+        # (the proxied-bot WebRTC leak; a fleet sharing one origin → coordination shared_real_ip).
+        kwargs["proxy"] = {"server": proxy}
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
     if NOTOUCH:

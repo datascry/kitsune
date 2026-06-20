@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.39"
+ruleset_version: "0.74.40"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1335,10 +1335,10 @@ rules:
     predicate: not_equal
     weight: 0.85
     status: experimental
-    category: coherence
+    category: reputation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "The proxied-bot tell: HTTP routed through a residential proxy, but WebRTC STUN leaks the real IP"
+    last_validated: "2026-06-20"
+    source: "The proxied-bot tell: HTTP routed through a proxy, but WebRTC STUN leaks the real IP (webrtc_public_ip != observed_ip). GROUNDED LIVE 2026-06-20 (iter-29/30, its FIRST live positive — previously STUN-blocked in-sandbox): stood up a local STUN server + an HTTP CONNECT proxy on kitsune_default, DNS-overrode the collector's stun.l.google.com to the local STUN, and routed camoufox's HTTPS through the proxy while its WebRTC UDP went direct → webrtc_public_ip=<real container IP> != observed_ip=<proxy IP> → the rule fired (the cross-layer thesis: hide the IP at the network layer, leak it at the browser layer; an HTTP CONNECT proxy cannot carry WebRTC's UDP, forcing the direct leak). DEMOTED coherence->reputation (convicting->corroborating) at the same time: per-session this is NOT FP-safe — a real user behind a split-tunnel VPN whose WebRTC is not routed through the tunnel shows the IDENTICAL shape (webrtc real IP != VPN connection IP), and per-session there is no in-sandbox way to disambiguate bot-behind-datacenter-proxy from user-behind-residential-VPN (that needs IP reputation, the external-data frontier). The FP-SAFE CONVICTING version is the coordination signal coordination.shared_real_ip — MANY sessions across distinct proxy IPs sharing ONE leaked WebRTC origin is a single-machine fleet (a diverse VPN-user cohort leaks DISTINCT origins), which a per-session rule cannot see. So this rule corroborates (a strong proxied-egress signal) and shared_real_ip convicts. Also grounded: br.webrtc_unavailable is a no-STUN-EGRESS artifact, not a real tell — with a reachable STUN the WebRTC probe gathers a srflx candidate and webrtc_unavailable goes quiet (the in-sandbox container has no UDP egress to a public STUN). browserforge/intoli calibration carry no WebRTC layer, so this never fires there."
 
   # --- v0.21.0: timezone consistency (CreepJS "timezone lie") ---
 
