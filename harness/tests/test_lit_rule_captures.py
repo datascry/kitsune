@@ -21,6 +21,7 @@ _LIT = {
     "measuretext-spoof": "br.measuretext_offscreen_vs",
     "canvas-lie": "br.canvas_lie",
     "domrect-spoof": "br.domrect_invariant",
+    "cdc-leak": "br.cdc_artifacts",
 }
 
 

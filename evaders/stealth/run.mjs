@@ -121,6 +121,12 @@ const CANVAS_LIE = process.env.CANVAS_LIE === "1";
 // reads of an unchanged element differ — breaking the determinism invariant → br.domrect_invariant. A real
 // engine's getBoundingClientRect is deterministic.
 const DOMRECT_SPOOF = process.env.DOMRECT_SPOOF === "1";
+// CDC_LEAK: the canonical Selenium/ChromeDriver artifact. An UN-patched chromedriver injects its sentinel
+// globals ($cdc_asdjflasutopfhvcZLmcfl_* arrays) onto document — the exact default that
+// undetected-chromedriver/nodriver exist to rename away. Inject the canonical key the collector probes for
+// → br.cdc_artifacts (an active automation rule with no prior live positive, because every captured evader
+// already suppresses it). A real browser carries no such global, so the `present` rule never fires on one.
+const CDC_LEAK = process.env.CDC_LEAK === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -182,8 +188,11 @@ const evading =
   MEASURETEXT_SPOOF ||
   CANVAS_LIE ||
   DOMRECT_SPOOF ||
+  CDC_LEAK ||
   Boolean(SPOOF_UA);
-const mode = DOMRECT_SPOOF
+const mode = CDC_LEAK
+  ? "cdc-leak"
+  : DOMRECT_SPOOF
   ? "domrect-spoof"
   : CANVAS_LIE
   ? "canvas-lie"
@@ -493,6 +502,20 @@ if (FLOOR_SPOOF) {
       const n = (Math.random() - 0.5) * 0.01; // sub-pixel per-call noise
       return new DOMRect(r.x + n, r.y + n, r.width, r.height);
     };
+  });
+} else if (CDC_LEAK) {
+  // Un-patched ChromeDriver tell: a real Selenium chromedriver injects its sentinel arrays onto document
+  // under the canonical $cdc_asdjflasutopfhvcZLmcfl_ prefix (the hardcoded default that
+  // undetected-chromedriver/nodriver specifically rename to hide). Recreate that exact global so the
+  // collector's cdc-key probe (k in window || k in document) trips → br.cdc_artifacts. webdriver is left at
+  // its real automation value — a naive chromedriver does not even hide that — so this is the honest baseline
+  // anti-detect tools improve on, not a contrived single-tell session.
+  await context.addInitScript(() => {
+    Object.defineProperty(document, "$cdc_asdjflasutopfhvcZLmcfl_Array", { value: [], configurable: true });
+    Object.defineProperty(document, "$cdc_asdjflasutopfhvcZLmcfl_Promise", { value: [], configurable: true });
+    Object.defineProperty(document, "$cdc_asdjflasutopfhvcZLmcfl_Symbol", { value: [], configurable: true });
+    // The collector probes the bare prefix key too; expose it so `"$cdc_asdjflasutopfhvcZLmcfl_" in document`.
+    Object.defineProperty(document, "$cdc_asdjflasutopfhvcZLmcfl_", { value: {}, configurable: true });
   });
 } else if (MEASURETEXT_SPOOF) {
   // Realm-incomplete font spoof: perturb measureText on the main-thread CanvasRenderingContext2D only. The

@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 118 rules vs 58 evaders
+# Kitsune detection matrix — 118 rules vs 59 evaders
 
-_55/58 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
+_56/59 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -17,6 +17,7 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `canvas-geometry-spoof` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `canvas-lie` | bot | 1.00 | 16/118 | `br.cdp_runtime_enabled`, `br.canvas_lie`, `br.headless_ua` +6 |
 | `canvas-spoof` | bot | 1.00 | 17/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
+| `cdc-leak` | bot | 1.00 | 16/118 | `net.quic_pq_keyshare_vs_ua`, `br.webdriver_present`, `br.cdp_runtime_enabled` +6 |
 | `ch-ua-hardcoded` | bot | 1.00 | 6/118 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
 | `chrome-clone-1` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
 | `chrome-clone-2` | bot | 1.00 | 14/118 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
@@ -65,27 +66,27 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | suspicious | 0.99 | 7/118 | — |
 
-## Per-rule coverage — 93/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 95/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 45 |
-| `br.voices_empty` | browser | environment | 44 |
-| `br.webgl_software` | browser | environment | 37 |
-| `br.mimetypes_empty` | browser | environment | 34 |
-| `br.no_plugins` | browser | environment | 34 |
-| `br.notification_denied` | browser | automation | 33 |
-| `br.permissions_anomaly` | browser | automation | 33 |
-| `br.no_chrome_object` | browser | automation | 31 |
-| `br.no_pdfviewer` | browser | environment | 31 |
-| `br.headless_ua` | browser | automation | 30 |
-| `br.cdp_runtime_enabled` | browser | automation | 28 |
-| `br.ch_he_headless` | browser | automation | 28 |
-| `bh.keystroke_entropy_floor` | behavioral | behavioral | 25 |
+| `br.media_devices_empty` | browser | environment | 46 |
+| `br.voices_empty` | browser | environment | 45 |
+| `br.webgl_software` | browser | environment | 38 |
+| `br.mimetypes_empty` | browser | environment | 35 |
+| `br.no_plugins` | browser | environment | 35 |
+| `br.notification_denied` | browser | automation | 34 |
+| `br.permissions_anomaly` | browser | automation | 34 |
+| `br.no_chrome_object` | browser | automation | 32 |
+| `br.no_pdfviewer` | browser | environment | 32 |
+| `br.headless_ua` | browser | automation | 31 |
+| `br.cdp_runtime_enabled` | browser | automation | 29 |
+| `br.ch_he_headless` | browser | automation | 29 |
+| `bh.keystroke_entropy_floor` | behavioral | behavioral | 26 |
 | `br.webdriver_getter_tampered` | browser | automation | 21 |
+| `br.webdriver_present` | browser | automation | 12 |
 | `net.no_js_execution` | network,browser | coherence | 12 |
 | `net.tcp_os_vs_ua` | network | coherence | 12 |
-| `br.webdriver_present` | browser | automation | 11 |
 | `bh.input_entropy_floor` | behavioral | behavioral | 10 |
 | `bh.no_input_before_action` | behavioral | behavioral | 9 |
 | `net.tls_grease_vs_ua` | network,browser | coherence | 9 |
@@ -133,6 +134,7 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.canvas_geometry_noise` | browser | artifact | 1 |
 | `br.canvas_lie` | browser | automation | 1 |
 | `br.canvas_worker_vs_main` | browser | coherence | 1 |
+| `br.cdc_artifacts` | browser | automation | 1 |
 | `br.domrect_invariant` | browser | artifact | 1 |
 | `br.electron_process` | browser | automation | 1 |
 | `br.engine_feature_vs_ua` | browser | coherence | 1 |
@@ -162,6 +164,7 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.h2_continuation_flood` | network | automation | 1 |
 | `net.h2_rapid_reset` | network | automation | 1 |
 | `net.h2_vs_tls_browser` | network | coherence | 1 |
+| `net.quic_pq_keyshare_vs_ua` | network,browser | coherence | 1 |
 
 ## Detection class — coherence/artifact = spoofing caught; environment/automation = headless too
 
@@ -178,6 +181,7 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `canvas-geometry-spoof` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `canvas-lie` | bot | 0 | 0 | 9 | 6 | 1 | 0 |
 | `canvas-spoof` | bot | 1 | 1 | 8 | 6 | 1 | 0 |
+| `cdc-leak` | bot | 1 | 0 | 8 | 6 | 1 | 0 |
 | `ch-ua-hardcoded` | bot | 5 | 1 | 0 | 0 | 0 | 0 |
 | `chrome-clone-1` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
 | `chrome-clone-2` | bot | 0 | 0 | 6 | 6 | 2 | 0 |
@@ -226,17 +230,16 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 25/118 rules catch nothing yet
+## Coverage gaps — 23/118 rules catch nothing yet
 
 **Evaded** (3) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
 - `br.font_os_vs_ua`
 
-**Unexercised** (22) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (20) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.screen_impossible`
-- `net.quic_pq_keyshare_vs_ua`
 - `br.csp_bypassed`
 - `rep.datacenter_asn`
 - `net.h2_control_flood`
@@ -244,7 +247,6 @@ _55/58 evaders caught (`bot`). Generated from the committed captures at ruleset 
 - `br.languages_empty`
 - `br.screen_zero`
 - `br.platform_empty`
-- `br.cdc_artifacts`
 - `br.screen_avail_invalid`
 - `br.color_depth_anomaly`
 - `br.devicepixelratio_anomaly`

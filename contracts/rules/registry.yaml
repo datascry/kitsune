@@ -955,7 +955,7 @@ rules:
     status: active
     category: automation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
+    last_validated: "2026-06-20"
     source: "fpscanner / Sannysoft: $cdc_, __webdriver, _phantom, __nightmare keys"
 
   - id: br.webgl2_missing
