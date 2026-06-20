@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 from kitsune_detector.ingest import group_signals, merge_sessions
-from kitsune_detector.models import Layer, Source
+from kitsune_detector.models import MISSING, Layer, Source
 
 from .conftest import FIXED, make_signal
 
@@ -47,3 +47,44 @@ def test_merge_keeps_latest_per_kind() -> None:
     new = make_signal("a", Layer.browser, "ua_browser", "firefox", at=FIXED + timedelta(seconds=5))
     merged = merge_sessions(group_signals([old])[0], group_signals([new])[0])
     assert merged.value(Layer.browser, "ua_browser") == "firefox"
+
+
+# Within-session JA4 stability: distinct JA4_b (cipher identity) under one session id is a TLS-engine
+# rotation a real client cannot do — net.ja4_unstable_within_session's read signal (derived in ingest).
+_CHROME_JA4 = "t13d1516h2_8daaf6152771_d8a2da3f94cd"
+_FIREFOX_JA4 = "t13d1715h2_5b57614c22b0_5c2c66f702b0"  # distinct JA4_b (Gecko cipher list)
+_CHROME_JA4_RESHUFFLED = "t13d1516h2_8daaf6152771_aaaaaaaaaaaa"  # same JA4_b, different JA4_c (ext shuffle)
+
+
+def test_merge_flags_ja4_rotation_across_ingests() -> None:
+    c = make_signal("a", Layer.network, "ja4", _CHROME_JA4, source=Source.edge, at=FIXED)
+    f = make_signal("a", Layer.network, "ja4", _FIREFOX_JA4, source=Source.edge, at=FIXED + timedelta(seconds=2))
+    merged = merge_sessions(group_signals([c])[0], group_signals([f])[0])
+    assert merged.value(Layer.network, "ja4_unstable") is True
+
+
+def test_ja4_extension_reshuffle_is_not_instability() -> None:
+    # Chrome reshuffles extensions per connection (JA4_c varies) but keeps its cipher list (JA4_b) — must
+    # NOT flag, or every real Chrome session would convict. FP-safety of the JA4_b stability key.
+    c1 = make_signal("a", Layer.network, "ja4", _CHROME_JA4, source=Source.edge, at=FIXED)
+    at2 = FIXED + timedelta(seconds=2)
+    c2 = make_signal("a", Layer.network, "ja4", _CHROME_JA4_RESHUFFLED, source=Source.edge, at=at2)
+    merged = merge_sessions(group_signals([c1])[0], group_signals([c2])[0])
+    assert merged.value(Layer.network, "ja4_unstable") is MISSING
+
+
+def test_ja4_rotation_in_single_batch_is_flagged() -> None:
+    c = make_signal("a", Layer.network, "ja4", _CHROME_JA4, source=Source.edge, at=FIXED)
+    f = make_signal("a", Layer.network, "ja4", _FIREFOX_JA4, source=Source.edge, at=FIXED + timedelta(seconds=1))
+    session = group_signals([c, f])[0]
+    assert session.value(Layer.network, "ja4_unstable") is True
+
+
+def test_ja4_flag_is_sticky_after_revert() -> None:
+    # Rotate Chrome→Firefox (flagged), then revert to Chrome — the flag must persist (sticky).
+    c = make_signal("a", Layer.network, "ja4", _CHROME_JA4, source=Source.edge, at=FIXED)
+    f = make_signal("a", Layer.network, "ja4", _FIREFOX_JA4, source=Source.edge, at=FIXED + timedelta(seconds=2))
+    flagged = merge_sessions(group_signals([c])[0], group_signals([f])[0])
+    back = make_signal("a", Layer.network, "ja4", _CHROME_JA4, source=Source.edge, at=FIXED + timedelta(seconds=4))
+    merged = merge_sessions(flagged, group_signals([back])[0])
+    assert merged.value(Layer.network, "ja4_unstable") is True

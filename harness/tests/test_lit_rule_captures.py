@@ -31,6 +31,7 @@ _LIT = {
     "camoufox-macos": "br.font_mac_internal",
     "coalesce-proxy": "br.coalesced_untrusted",
     "apify-fp-inject": "br.worker_divergence",
+    "go-tls-rotate": "net.ja4_unstable_within_session",
 }
 
 

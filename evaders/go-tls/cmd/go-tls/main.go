@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -35,10 +36,74 @@ func browserHeaders(r *http.Request) {
 	h.Set("Upgrade-Insecure-Requests", "1")
 }
 
+// rotateJA4 drives several connections under ONE ks_sid, each forging a DIFFERENT TLS engine's
+// ClientHello (Chromium / Gecko / WebKit have distinct cipher lists → distinct JA4_b). A real client
+// speaks one TLS engine for the session's lifetime, so this within-session rotation is incoherent — the
+// red-team move that exercises net.ja4_unstable_within_session. Reports the live detector verdict.
+func rotateJA4(target string) {
+	detector := os.Getenv("KITSUNE_DETECTOR")
+	if detector == "" {
+		detector = "http://detector:8080"
+	}
+	hellos := []struct {
+		name string
+		id   utls.ClientHelloID
+	}{
+		{"chrome", utls.HelloChrome_Auto},   // Chromium ciphers
+		{"firefox", utls.HelloFirefox_Auto}, // Gecko ciphers (distinct JA4_b)
+		{"safari", utls.HelloSafari_Auto},   // WebKit ciphers (distinct JA4_b)
+	}
+	var sid string
+	for i, h := range hellos {
+		req, err := http.NewRequest(http.MethodGet, target, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		browserHeaders(req)
+		if sid != "" {
+			req.AddCookie(&http.Cookie{Name: "ks_sid", Value: sid})
+		}
+		resp, err := gotls.RoundTripH2(context.Background(), h.id, req)
+		if err != nil {
+			log.Printf("conn %d (%s) error: %v", i, h.name, err)
+			continue
+		}
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck
+		resp.Body.Close()
+		if sid == "" {
+			for _, c := range resp.Cookies() {
+				if c.Name == "ks_sid" {
+					sid = c.Value
+				}
+			}
+		}
+		log.Printf("conn %d hello=%s -> %s (sid=%s)", i, h.name, resp.Status, sid)
+	}
+	if sid == "" {
+		log.Fatal("no ks_sid minted")
+	}
+	vr, err := http.Get(detector + "/verdict/" + sid) //nolint:noctx
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var verdict map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&verdict); err != nil {
+		log.Fatal(err)
+	}
+	verdict["mode"] = "go-tls-rotate"
+	out, _ := json.Marshal(verdict) //nolint:errcheck
+	fmt.Println("__KS__" + string(out))
+}
+
 func main() {
 	target := os.Getenv("KITSUNE_EDGE")
 	if target == "" {
 		target = "https://localhost:8443/healthz"
+	}
+	if os.Getenv("KS_ROTATE") == "1" {
+		rotateJA4(target)
+		return
 	}
 	req, err := http.NewRequest(http.MethodGet, target, nil)
 	if err != nil {

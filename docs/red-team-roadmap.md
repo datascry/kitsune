@@ -68,8 +68,20 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    on a real third-party tool. It is the LEAST-faithful network template in the fleet (more tells than
    primp/curl-impersonate, which are caught only by `no_js_execution`). The H3/QUIC angle was moot — the edge is
    h2, so azuretls negotiates h2. Validates the detector's network-coherence suite end-to-end. Capture frozen.
-3. **[network] JA4 profile rotation** — an evader that rotates between several realistic JA4 fingerprints over a
-   session (the "too-random vs too-static" frontier JA4 normalization targets).
+3. **[network] JA4 profile rotation** — ✅ **BUILT + GROUNDED + BLUE-TEAM COUNTER LANDED iter-15 (2026-06-20).**
+   Added the `go-tls KS_ROTATE` mode: uTLS rotates HelloChrome→HelloFirefox→HelloSafari (Chromium/Gecko/WebKit —
+   distinct cipher lists → distinct JA4_b) across connections under ONE `ks_sid`. **Exposed an architectural blind
+   spot:** the detector's `ingest.merge` kept only the *latest* JA4 per kind, so within-session TLS-engine rotation
+   was invisible — a red-team win that revealed a real blue-team gap. **Closed it FP-safely:** the detector now
+   derives `network.ja4_unstable` over the pre-collapse per-request JA4 history (sticky once seen), and the new rule
+   **`net.ja4_unstable_within_session`** (coherence, convicting, w0.8, v0.74.38) fires on >1 distinct **JA4_b** — the
+   GREASE-free, cipher-sorted engine identity, invariant for a real client across transport (H2/H3), TLS resumption
+   and Chrome's per-connection extension/GREASE shuffle. Grounded live: the rotation evader → `bot` 0.9998 (rule
+   fires); single-engine go-tls (one JA4_b) → rule silent (FP-safe); browserforge calibration carries no JA4 → 0 FP.
+   So the "too-random vs too-static" frontier collapses on the *within-session* axis: rotating JA4 to dodge
+   per-connection blocklists is self-defeating once the session correlates the rotation. The residual is the
+   *cross-session* axis (rotate JA4 per identity) → coordination/prevalence, the external-data frontier. Capture
+   `go-tls-rotate.json` frozen + lit-test guard.
 4. **[fingerprint] real-value-reuse injection** (apify fingerprint-injector class) — ✅ **BUILT + GROUNDED iter-14
    (2026-06-20).** Created the `apify-fp-inject` evader (18th fleet tool): `fingerprint-generator` samples a real
    Linux-Chrome joint, `newInjectedContext` injects it via Proxy-over-native. **The white-boxed "defeats the
