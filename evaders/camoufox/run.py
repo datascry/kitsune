@@ -140,6 +140,14 @@ def main() -> None:
         # cannot traverse an HTTP proxy, so its STUN srflx reveals the REAL origin IP → net.webrtc_ip_vs_observed
         # (the proxied-bot WebRTC leak; a fleet sharing one origin → coordination shared_real_ip).
         kwargs["proxy"] = {"server": proxy}
+    socks = os.environ.get("KS_SOCKS")
+    if socks:
+        # The COUNTER to the WebRTC leak (net.datacenter_origin_proxied / net.webrtc_ip_vs_observed): a SOCKS5
+        # proxy carries UDP, so route BOTH HTTPS and WebRTC through it (media.peerconnection.ice.proxy_only) →
+        # the STUN srflx shows the SOCKS proxy's IP, equal to observed_ip → no leak, and the proxy's reputation
+        # (residential) — not the real machine's (datacenter) — is what the WebRTC reveals. The do-it-right bot.
+        kwargs["proxy"] = {"server": socks}
+        kwargs["firefox_user_prefs"] = {"media.peerconnection.ice.proxy_only": True}
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
     if NOTOUCH:

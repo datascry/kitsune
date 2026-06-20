@@ -434,6 +434,24 @@ blocked). **That is the precise, grounded saturation boundary: a cloud bot that 
 and fronts with a residential proxy is indistinguishable from a residential user without real IP-reputation data —
 the single remaining external gate.** No code change (consolidation + boundary grounding); no version bump.
 
+**SOCKS WebRTC counter GROUNDED — it degrades to `webrtc_unavailable`; the WebRTC arms race CLOSES — iter-36
+(2026-06-20).** The one ungrounded red-team capability left: route WebRTC through a residential SOCKS5 proxy (which
+carries UDP, unlike an HTTP CONNECT proxy) so the srflx shows the PROXY's IP (residential) instead of the real
+datacenter machine — evading `net.datacenter_origin_proxied` WITHOUT the `webrtc_unavailable` cost. Built it
+(`KS_SOCKS` on the camoufox evader: `proxy=socks5://…` + Camoufox `firefox_user_prefs media.peerconnection.ice.
+proxy_only=true` to force WebRTC through the SOCKS) and grounded it against a real `gost` SOCKS5 proxy + the
+source-reporting STUN. **Result: the counter FAILS to produce a clean residential srflx — `webrtc_public_ip` is
+ABSENT, `br.webrtc_unavailable` fires.** HTTP routes through the SOCKS fine (observed_ip = gost, TCP works), but
+Firefox gathers NO UDP srflx candidate through SOCKS (`proxy_only` forces WebRTC through the SOCKS, and Firefox does
+not do UDP STUN over SOCKS5-UDP) → it degrades to the SAME outcome as blocking WebRTC: `suspicious`, CONVICTING NONE,
+EVADES per-session, residual all external-hardware-gated (`webrtc_unavailable` + `synthetic_no_coalesced` +
+environment). **So a proxied bot has NO in-sandbox-achievable way to obtain a clean residential WebRTC origin: it
+either LEAKS its real origin direct (datacenter → caught by `net.datacenter_origin_proxied`/`shared_real_ip`) or
+gets `webrtc_unavailable` (block OR SOCKS-degrade). A clean residential srflx requires real residential HARDWARE —
+the WebRTC frontier's residual is genuinely external.** `camoufox-socks-webrtc.json` frozen (EVADES via the
+webrtc_unavailable residual). No detector change, no version bump. The WebRTC/IP-rep arc (iters 30-36) is complete:
+the leaked-origin reputation is a robust convicting surface, and the only escape is real residential infra.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
