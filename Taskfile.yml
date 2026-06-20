@@ -77,6 +77,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.coordination_scenarios"]
 
+  coordination-live:
+    desc: "Run coordination grading against the LIVE detector's session store (set KITSUNE_DETECTOR)"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.live_coordination {{.CLI_ARGS}}"]
+
   calibrate-intoli:
     desc: "Corroborate the calibration against a second real-traffic source (Intoli user-agents dataset)"
     dir: harness

@@ -234,10 +234,18 @@ tell.
    the whole per-session fingerprint+coherence layer; only the driver's network/automation tells (defeatable
    by patchright + a high-fidelity network stack, per the white-box findings above) and ultimately
    **coordination** remain. This is the quantified case for the second prior + the coordination frontier.
-2. **Live proxy/coordination harness.** The durable bots-at-scale signal (coordination + IP reputation)
-   is currently exercised only by a synthetic fleet. A real residential/proxy-fleet harness (ethics-gated
-   to the allow-list edge) is the only live test of `rep.*`, `net.webrtc_ip_vs_observed`, and the six
-   proxy-topology coordination signals.
+2. **Live proxy/coordination harness.** The durable bots-at-scale signal (coordination + IP reputation).
+   *Live wiring DONE (2026-06-20):* `kitsune_harness.live_coordination` (`task coordination-live`) pulls the
+   RUNNING detector's real session store over the HTTP contract (`/scoreboard` → `/session/{id}`) and grades
+   its JA4 clusters through the same `score_corpus` path — so coordination now runs against the live
+   edge→detector stack, not just frozen corpora. Demonstrated end-to-end on the live detector: the in-sandbox
+   stealth fleet (11 sessions, shared Chromium JA4, divergent JS, distinct fps) correctly grades `candidate`
+   (FP-safe — a real Chrome user base shares JA4), and the Camoufox cluster grades `candidate` with
+   per-launch JA4_c divergence "pending IP reputation". *Still BLOCKED:* real residential/proxy egress is the
+   only live test of the IP-reputation disambiguator (`rep.*`), `net.webrtc_ip_vs_observed` (STUN-blocked,
+   see detection-catalog), and the proxy-topology signals — the thing that would CONVICT that Camoufox
+   cluster instead of capping it at `candidate`. The consumer is ready for that traffic the moment a
+   proxy-fleet harness (ethics-gated to the allow-list edge) can generate it.
 
 ### Coverage envelope (the threat-model ceiling, grounded 2026-06-19)
 
