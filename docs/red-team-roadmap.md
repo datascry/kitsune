@@ -179,3 +179,14 @@ evasion-catalog the living ledger. Modify REAL tools; ground every claim live; n
   scores **suspicious, ZERO convicting tells** — the FIRST and ONLY **headless** evader of the convicting layer (no
   xvfb, unlike camoufox-headful/patchright-headful). **Frontier (b):** a coherent UA-CH is legitimate (no FP-safe
   counter); residual is external-hardware-gated environment + behavioural corroboration. EVADES frontier now **3**.
+- **iter-11 (2026-06-20): the WHOLE CDP-minimal class evades headless with a coherent UA-CH override (class-wide,
+  grounded).** Generalized the iter-10 win: `nodriver` + the same coherent UA-CH override (CDP
+  `setUserAgentOverride` removing the HeadlessChrome token + sending a coherent Sec-CH-UA) → grounded live
+  `suspicious`, ZERO convicting tells — EVADES, exactly like zendriver-uach. So the entire CDP-minimal class
+  (nodriver/pydoll/undetected/zendriver) — each caught by a SINGLE convicting tell (`br.headless_ua` or
+  `net.h2_header_order_vs_ua`), none with an automation floor — ALL evade the convicting layer HEADLESS with one
+  legitimate coherent-UA fix. **Refines iter-8:** `br.headless_ua` holds against `--headless=new` (token persists)
+  but is DEFEATED by an explicit coherent UA override — it is NOT a robust catch for the CDP-minimal class.
+  Frontier (b): coherent UA-CH is legitimate (no FP-safe counter); the durable answer is the external-hardware-
+  gated environment floor + coordination. **The catch-profile audit (iter-8→11) is complete:** 2 false EVADES
+  assumptions refuted, 1 real headless evader built + generalized class-wide.
