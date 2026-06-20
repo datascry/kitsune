@@ -936,6 +936,8 @@ if (WORKER_CDP_PAUSE) {
 if (UACH_COHERENT) {
   // The PROPER cross-layer UA override: CDP Network.setUserAgentOverride sets the UA string, the Sec-CH-UA
   // request headers, AND navigator.userAgentData (getHighEntropyValues) to ONE coherent Linux-Chrome identity.
+  // The version (136) matches the pinned base-image Chromium (playwright 1.52.0 — see the Dockerfile pin), so
+  // the override is fully coherent with the real engine; it stays current as long as that pin holds.
   const cdp = await context.newCDPSession(page);
   await cdp.send("Network.setUserAgentOverride", {
     userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",

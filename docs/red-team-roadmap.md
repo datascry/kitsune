@@ -779,23 +779,24 @@ a per-session realm tell. `worker-cdp-pause` is a permanent pressure-test; no re
 no new detection, no version bump. The realm-injection vein is now EXHAUSTIVELY mapped — racy CDP loses, paused CDP
 wins-but-trips-automation, non-CDP is caught by source/ctor.
 
-**ENGINE-BUMP RE-VALIDATION — the playwright→Chromium-140 dependency bump is red-team-safe (iter-54, 2026-06-20).**
-A maintenance sprint bumped the Playwright-based evaders (stealth/apify/playwright-extra) from v1.52 to v1.55.1 —
-i.e. the engine advanced from Chromium ~126 to **Chromium 140**. Rather than assume the fleet still behaves,
-re-grounded it: rebuilt the stealth image (clean, exit 0 — the bump BUILDS, not just "the base image exists") and ran
-it live. FINDINGS: (1) the detector's Chrome-version-coherence gates are LOWER-BOUNDS (`chromeUAExpectsPQ` >= 131,
-`Promise.withResolvers` >= 121) — forward-compatible, so a current Chromium 140 satisfies them with no false-positive,
-and the automation-floor catches (`cdp_runtime_enabled`/`webdriver_spoofed`/`permissions_anomaly`) are
-version-independent. (2) Plain STEALTH (which spoofs a `Windows / Chrome 125` UA) now trips MORE tells on the
-Chromium-140 engine — `net.ch_ua_version_vs_ua` + `br.ch_he_version_vs_ua` (the real Sec-CH-UA/high-entropy version is
-140, the spoofed UA says 125 → a wider, correctly-convicted mismatch) on top of the pre-existing OS-mismatch tells
-(`net.tcp_os_vs_ua`/`br.font_os_vs_ua`, Windows UA on a Linux host). These are CORRECT catches, not FPs: the
-version tells are RELATIVE comparisons (UA-version vs CH-version) with no stale absolute expectation, so a coherent
-real Chrome 140 (UA=140/CH=140) does not trip them. NET: the engine advance only WIDENS the cross-layer incoherence
-the detector already convicts — a live demonstration of the thesis on a current engine; the bump is fully red-team-safe
-(builds, forward-compatible detector, fleet correctly caught), no detector change, no version bump. (The committed
-1.52-era stealth corpus captures are now engine-stale but remain correctly-`bot` frozen regression baselines;
-refreshing them is optional hygiene, not a correctness fix.)
+**PLAYWRIGHT-BUMP CORRECTION — reverted an ineffective bump that contradicted a documented accepted-CVE pin
+(iter-54→55, 2026-06-20).** A maintenance sprint bumped the Playwright evaders' package.json + base image to
+v1.55.1 to clear the dependabot playwright CVE (GHSA-7mvr-c777-76hp). GROUNDING IT EXPOSED THE BUMP AS WRONG: each
+evader Dockerfile EXPLICITLY pins `npm install playwright@1.52.0` (overriding package.json), with a documented
+rationale — `rebrowser-playwright` tops out at 1.52.0, so all three drivers must share ONE Chromium revision, and
+the CVE is **accepted as build-time-only** (the vulnerable path is the browser DOWNLOAD during `docker build` over
+Microsoft's CDN, on an in-sandbox evader that runs only against Kitsune's own detector + the allow-list). So the
+package.json/base-image bump was INEFFECTIVE — `browser.version()` confirmed the engine is still **Chromium
+136.0.7103.25** (playwright 1.52's), not the assumed 140 — and the earlier note's "Chromium 140" claim was wrong.
+Reverted all three evaders to the deliberate 1.52.0 / v1.52.0-jammy state (the go circl/utls bumps in the same sprint
+were legitimate and KEPT — no such pin). The dependabot playwright alerts (#22/#25/#26) correctly REMAIN open as the
+documented accepted risk; `b860811`'s "Closes #22-#31" over-claimed (only the go alerts closed). Re-grounded
+post-revert: plain STEALTH (naive `Windows/Chrome-125` partial UA spoof) is correctly caught (`net.ch_ua_version_vs_ua`
++ `net.tcp_os_vs_ua` etc. — the spoofed 125 vs real 136/Linux mismatch), and `UACH_COHERENT` (complete CDP override to
+the matching Chrome 136) still cleanly EVADES the UA layer (residual = automation floor), exactly as documented.
+LESSON: a "security fix" must be GROUNDED (verify the running version), and a documented accepted-risk pin must be
+read before bumping — the detector's version-coherence gates are forward-compatible lower-bounds regardless. No
+detector change, no version bump.
 
 **FP-REGRESSION VALIDATION — surfaced + fixed a stale Brave capture masking the privacy-browser FP-safety
 (iter-51, 2026-06-20).** At saturation, pivoted from evasion to the INVERSE failure: after 11 iterations of new
