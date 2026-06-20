@@ -349,6 +349,25 @@ red-team COUNTER to the leak: block WebRTC (→ the corroborating `webrtc_unavai
 carries the WebRTC UDP. This closes the WebRTC frontier's in-sandbox-groundable half; the residual external gate is
 real IP-reputation (datacenter-vs-residential), which `shared_real_ip` needs to convict a single proxied session.
 
+**`shared_real_ip` GROUNDED on a REAL WebRTC-leak fleet — iter-31 (2026-06-20).** The FP-safe CONVICTING version of
+the iter-30 leak, previously tested only synthetically. Built the single-machine-behind-many-proxies shape: a local
+STUN that reports ONE fixed origin IP (`203.0.113.7`, simulating one machine) + 3 HTTP CONNECT proxies, then ran 3
+camoufox-hardened instances each via a DISTINCT proxy. Result: 3 sessions, distinct `observed_ip` (the 3 proxies) +
+ONE shared `webrtc_public_ip` (the origin) + shared camoufox JA4. The live coordination consumer graded them
+**`fleet` (1.0) via `shared_real_ip` ALONE** — `cloned_fingerprint=None`, `cloned_trace=None` (diverse fps + jittered
+traces, so neither collision fires): "3 proxy IPs front one real IP `203.0.113.7` (WebRTC) — same-origin fleet."
+**So the iter-29 maximal evasive fleet (diverse fp + diverse trace + distinct proxy IPs) that graded `candidate` is
+CONVICTED the moment it leaks ONE shared WebRTC origin** — the durable signal working as designed. FP-safe: a
+diverse real-user cohort behind proxies leaks DISTINCT home origins (`len(webrtc) > 1`), never one, so
+`shared_real_ip` only fires on a true single-machine fleet. **All THREE durable convicting coordination signals are
+now grounded with REAL captures through the live stack: `fp_collision` (iter-7), `trace_collision` (iter-17/29),
+`shared_real_ip` (iter-31).** Frozen `corpus/fleet-webrtc-leak/wr1-3` + a regression test (`fleet` via shared_real_ip
+alone). Red-team COUNTER to `shared_real_ip`: block WebRTC (→ the corroborating `webrtc_unavailable`) or route each
+session's WebRTC through its OWN per-session SOCKS proxy (so every session's WebRTC shows its proxy IP, not the
+shared origin → `len(webrtc) > 1` → no fire). No detector change (signal is FP-safe + works), no version bump.
+**The coordination frontier is now FULLY grounded in-sandbox; the only residual external gate is real IP-reputation
+to convict a SINGLE proxied session that does NOT leak via WebRTC.**
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

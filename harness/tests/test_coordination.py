@@ -88,6 +88,24 @@ def test_real_replay_trace_fleet_is_convicted() -> None:
     assert v.distinct_observed_ips == 3
 
 
+def test_real_webrtc_leak_fleet_convicted_by_shared_origin() -> None:
+    # shared_real_ip grounded on a REAL WebRTC leak (previously only synthetic fixtures). Three camoufox
+    # instances, each routing HTTPS through a DISTINCT HTTP CONNECT proxy (distinct observed_ip) while their
+    # WebRTC UDP went direct to a local STUN that reports ONE shared origin IP — the single-machine-behind-many-
+    # proxies shape. Diverse fingerprints + jittered traces (no fp/trace collision), so the ONLY convicting
+    # coordination signal is shared_real_ip: 3 proxy IPs fronting one WebRTC-leaked origin. wr1/2/3 must score
+    # `fleet` via shared_real_ip alone — the FP-safe convicting version of the per-session (corroborating-only)
+    # net.webrtc_ip_vs_observed leak (a diverse VPN-user cohort leaks DISTINCT origins, never one).
+    verdicts = score_corpus(load_corpus(_repo_corpus("fleet-webrtc-leak")))
+    assert len(verdicts) == 1
+    v = verdicts[0]
+    assert sorted(v.members) == ["wr1", "wr2", "wr3"]
+    assert v.label == "fleet"
+    assert v.shared_real_ip is not None  # the convicting signal
+    assert v.cloned_fingerprint is None and v.cloned_trace is None  # isolation: shared origin alone
+    assert v.distinct_observed_ips == 3
+
+
 def test_randomized_fp_shared_trace_fleet_convicted_by_trace_alone() -> None:
     # The DURABLE case the catalog's threat model rests on, grounded live for the first time WITH ISOLATION.
     # The fleet-replay rt1/2/3 fixture co-fires fp_collision (stealth's deterministic fp_hash is identical), so
