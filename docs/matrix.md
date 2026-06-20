@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 117 rules vs 68 evaders
+# Kitsune detection matrix — 117 rules vs 69 evaders
 
-_65/68 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
+_66/69 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.37`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -68,6 +68,7 @@ _65/68 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `stealth-patched` | bot | 1.00 | 19/117 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +7 |
 | `tls-stale-template` | bot | 1.00 | 6/117 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
 | `tz-spoof` | bot | 1.00 | 16/117 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
+| `uach-coherent` | bot | 1.00 | 11/117 | `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.no_chrome_object` +1 |
 | `undetected` | bot | 1.00 | 7/117 | `br.headless_ua` |
 | `vanilla` | bot | 1.00 | 5/117 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
 | `webkit-ua-spoof` | bot | 1.00 | 18/117 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
@@ -79,19 +80,19 @@ _65/68 evaders caught (`bot`). Generated from the committed captures at ruleset 
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 53 |
-| `br.voices_empty` | browser | environment | 52 |
-| `br.webgl_software` | browser | environment | 44 |
-| `br.mimetypes_empty` | browser | environment | 41 |
-| `br.no_plugins` | browser | environment | 41 |
-| `br.permissions_anomaly` | browser | automation | 40 |
-| `br.no_chrome_object` | browser | automation | 38 |
-| `br.no_pdfviewer` | browser | environment | 38 |
+| `br.media_devices_empty` | browser | environment | 54 |
+| `br.voices_empty` | browser | environment | 53 |
+| `br.webgl_software` | browser | environment | 45 |
+| `br.mimetypes_empty` | browser | environment | 42 |
+| `br.no_plugins` | browser | environment | 42 |
+| `br.permissions_anomaly` | browser | automation | 41 |
+| `br.no_chrome_object` | browser | automation | 39 |
+| `br.no_pdfviewer` | browser | environment | 39 |
+| `br.cdp_runtime_enabled` | browser | automation | 36 |
 | `br.headless_ua` | browser | automation | 36 |
-| `br.cdp_runtime_enabled` | browser | automation | 35 |
 | `br.ch_he_headless` | browser | automation | 35 |
-| `bh.keystroke_entropy_floor` | behavioral | behavioral | 31 |
-| `br.webdriver_getter_tampered` | browser | automation | 26 |
+| `bh.keystroke_entropy_floor` | behavioral | behavioral | 32 |
+| `br.webdriver_getter_tampered` | browser | automation | 27 |
 | `net.no_js_execution` | network,browser | coherence | 14 |
 | `net.tcp_os_vs_ua` | network | coherence | 14 |
 | `br.webdriver_present` | browser | automation | 12 |
@@ -248,6 +249,7 @@ _65/68 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `stealth-patched` | bot | 5 | 0 | 5 | 8 | 1 | 0 |
 | `tls-stale-template` | bot | 6 | 0 | 0 | 0 | 0 | 0 |
 | `tz-spoof` | bot | 3 | 0 | 6 | 6 | 1 | 0 |
+| `uach-coherent` | bot | 0 | 0 | 4 | 6 | 1 | 0 |
 | `undetected` | bot | 0 | 0 | 1 | 4 | 2 | 0 |
 | `vanilla` | bot | 5 | 0 | 0 | 0 | 0 | 0 |
 | `webkit-ua-spoof` | bot | 9 | 0 | 2 | 4 | 2 | 0 |

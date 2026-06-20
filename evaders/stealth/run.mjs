@@ -137,6 +137,15 @@ const COALESCE_SPOOF = process.env.COALESCE_SPOOF === "1";
 // br.native_invariant_violated stays quiet). It still fabricates the coalesced batch, so bh.synthetic_no_coalesced
 // is also beaten — the whole per-session artifact layer is defeated, leaving only a coalesced-COHERENCE check.
 const COALESCE_PROXY = process.env.COALESCE_PROXY === "1";
+// UACH_COHERENT: the cross-layer UA move done RIGHT. The naive UA spoof rewrites navigator.userAgent (the string)
+// but leaves the Sec-CH-UA request headers + navigator.userAgentData (getHighEntropyValues) at the real values →
+// net.ch_ua_version_vs_ua (header version != UA-string version) + br.ch_he_headless (the high-entropy brand list
+// still names HeadlessChrome). This mode instead uses the PROPER mechanism — CDP Network.setUserAgentOverride with
+// a full userAgentMetadata — so the UA string, the Sec-CH-UA headers, AND getHighEntropyValues are set coherently
+// to one Linux-Chrome identity (no HeadlessChrome, matching versions). Defeats net.ch_ua_version_vs_ua +
+// br.ch_he_headless + br.headless_ua in one coherent move, with NO JS-patch artifact. Plain Playwright so the
+// collector still runs (unlike the patchright configs that self-defeat into net.no_js_execution).
+const UACH_COHERENT = process.env.UACH_COHERENT === "1";
 // REPLAY_TRACE: a behavioural-replay fleet. Inject a byte-identical RECORDED pointer trajectory via synthetic
 // mousemove events with exact clientX/clientY, so every instance produces the SAME trace_hash. trace_hash is
 // COORDINATE-based (hashes rounded x,y, not timing), hence exactly reproducible across machines — unlike a
@@ -249,8 +258,11 @@ const evading =
   REPLAY_TRACE ||
   COALESCE_SPOOF ||
   COALESCE_PROXY ||
+  UACH_COHERENT ||
   Boolean(SPOOF_UA);
-const mode = COALESCE_PROXY
+const mode = UACH_COHERENT
+  ? "uach-coherent"
+  : COALESCE_PROXY
   ? "coalesce-proxy"
   : COALESCE_SPOOF
   ? "coalesce-spoof"
@@ -606,6 +618,12 @@ if (FLOOR_SPOOF) {
       };
     }
   });
+} else if (UACH_COHERENT) {
+  // Just hide webdriver in-page; the coherent UA identity is set via CDP below (no JS string-rewrite, so no
+  // Sec-CH-UA / getHighEntropyValues mismatch). Isolates the cross-layer UA-CH coherence as the move.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+  });
 } else if (COALESCE_PROXY) {
   // Proxy-over-native escalation: wrap the REAL getCoalescedEvents in a Proxy so the override keeps the native
   // toString ([native code]) and native invariants (non-constructable, no own prototype) — defeating
@@ -753,6 +771,34 @@ if (FLOOR_SPOOF) {
 }
 
 const page = await context.newPage();
+if (UACH_COHERENT) {
+  // The PROPER cross-layer UA override: CDP Network.setUserAgentOverride sets the UA string, the Sec-CH-UA
+  // request headers, AND navigator.userAgentData (getHighEntropyValues) to ONE coherent Linux-Chrome identity.
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Network.setUserAgentOverride", {
+    userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    userAgentMetadata: {
+      brands: [
+        { brand: "Chromium", version: "136" },
+        { brand: "Google Chrome", version: "136" },
+        { brand: "Not.A/Brand", version: "99" },
+      ],
+      fullVersionList: [
+        { brand: "Chromium", version: "136.0.0.0" },
+        { brand: "Google Chrome", version: "136.0.0.0" },
+        { brand: "Not.A/Brand", version: "99.0.0.0" },
+      ],
+      fullVersion: "136.0.0.0",
+      platform: "Linux",
+      platformVersion: "6.5.0",
+      architecture: "x86",
+      model: "",
+      mobile: false,
+      bitness: "64",
+      wow64: false,
+    },
+  });
+}
 await page.goto(EDGE, { waitUntil: "load" });
 const human = HUMAN_MOUSE || MAX_STEALTH;
 if (REPLAY_TRACE) {

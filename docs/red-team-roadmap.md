@@ -68,6 +68,20 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    which still reports HeadlessChrome) driving a CDP-minimal tool → drops the last headless UA token; the whole
    CDP-minimal class joins the EVADES frontier.
 
+### Vein A.5 — DONE iter-5: coherent UA-CH (`UACH_COHERENT`)
+Grounded the frontier (2026-06-20): `MAX_STEALTH`-headless is NOT close to EVADES — its browser layer has 0
+signals (the patchright **collector self-defeat** → `net.no_js_execution`), so its "clean" browser layer is
+illusory. The real per-session UA tell is the naive UA-string spoof forgetting the network/UA-CH layers. Built
+`UACH_COHERENT`: a CDP `Network.setUserAgentOverride` with full `userAgentMetadata` sets the UA string + Sec-CH-UA
+headers + `getHighEntropyValues` to ONE coherent Linux-Chrome identity. Grounded live — defeats **all three** UA
+tells at once (`net.ch_ua_version_vs_ua` ✗, `br.ch_he_headless` ✗, `br.headless_ua` ✗), collector still runs.
+**This is frontier (b), not a blue-team gap:** a coherent UA-CH is legitimate (a real Chrome's is identical), so
+the detector correctly cannot FP-safely fire on it — the residual catch is the **automation floor**
+(`br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.webdriver_getter_tampered`), which
+still convicts. Capture frozen as `uach-coherent.json`. **Opens the STACK:** UACH_COHERENT (UA layer) +
+patchright (CDP layer, kills `cdp_runtime_enabled`) + headful (kills `no_chrome_object`/`permissions_anomaly`) +
+behavioral synthesis = the full cross-layer coherent identity → next, Vein B.
+
 ### Vein B — STACK tools across layers (the cross-layer-coherence attack)
 1. **Full-stack coherent evader:** Camoufox (real Gecko engine) + a current network template (azuretls / primp) +
    SOTA behavioral + proxy egress → one identity coherent across TLS, H2/H3, JS, behavior, and IP. Measure it
