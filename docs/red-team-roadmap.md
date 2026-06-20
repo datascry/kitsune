@@ -593,6 +593,31 @@ complete across all THREE layers** — network (TLS/IP/UA rotation) · browser (
 (trace replay) — both principles (rotation of invariants, invariance of variants). The residual stays the
 cross-session frontier (fresh cookie per identity → coordination/prevalence, external-data-gated).
 
+**REALM-COHERENCE LADDER — the Proxy-Worker rung, red→blue in one iteration (iter-43, 2026-06-20, v0.74.46).**
+Per-session/within-session/coordination-in-sandbox are saturated, so this iteration pushed the one in-sandbox vein
+with real DEPTH left: realm coherence. The fleet's main-realm spoofs are caught by `br.worker_divergence`; the
+worker-realm escalation (`WORKER_WRAP`: wrap `window.Worker` to inject the spoof into worker scope) defeats
+worker_divergence but its plain-function wrap is caught by `br.worker_constructor_tampered` (toString lacks
+`[native code]`). The rule's OWN source had deferred the next rung — *"a wrap that also fakes its toString to
+'[native code]' is a rarer escalation — a future prototype-constructor-identity check."* RED-TEAM: built the stealth
+**`WORKER_PROXY`** mode — the COALESCE_PROXY pattern applied to the Worker constructor: `window.Worker = new
+Proxy(RealWorker, {construct})`. A Proxy over a native ctor REFLECTS the target's `[native code]` toString (defeating
+the toString check) while the construct trap still injects the worker-scope spoof via `importScripts` of the original
+blob (defeating worker_divergence). GROUNDED LIVE on 0.74.45: WORKER_PROXY tripped **NEITHER** worker_divergence NOR
+worker_constructor_tampered — a clean EVADES on the worker-realm surface (WORKER_WRAP control still tripped
+worker_constructor_tampered). BLUE-TEAM (same iteration, the deferred check): extended the collector's `ctorTampered`
+(demo.py + collector probes.ts) with the second FP-safe invariant — the constructor-identity round-trip
+`C.prototype.constructor === C`, which a Proxy cannot preserve (its `.prototype` forwards to the REAL ctor whose
+`.constructor` is the real ctor, not the Proxy). GROUNDED LIVE on 0.74.46: WORKER_PROXY now trips
+worker_constructor_tampered, WORKER_WRAP still trips it (via toString), and plain STEALTH + real Chromium (native
+ctors, identity intact) trip NEITHER — FP-safe. `task calibrate` (browserforge n=500): 0 new FPs (no worker signals
+in the prior). No new rule — the existing `br.worker_constructor_tampered` signal now fires in the Proxy case too;
+broadened collector logic, version bump. detector 256 tests, collector typecheck/lint/test, harness 204 tests,
+lit-guard on `worker-proxy.json`, check_headers all green. Residual (next rung, documented): a Proxy that ALSO
+redefines `RealWorker.prototype.constructor` back to itself restores the round-trip — but that rewrites a native
+prototype's constructor data property, the deeper escalation. The realm-coherence ladder mirrors the coalesced ladder
+(plain wrap → Proxy-over-native → data/identity invariant the Proxy can't forge): blue wins this rung.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

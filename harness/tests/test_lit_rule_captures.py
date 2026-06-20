@@ -39,6 +39,7 @@ _LIT = {
     "ua-rotation": "net.ua_rotation_within_session",
     "fp-rotation": "br.fingerprint_unstable_within_session",
     "trace-replay": "bh.trace_replay_within_session",
+    "worker-proxy": "br.worker_constructor_tampered",
 }
 
 

@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.45"
+ruleset_version: "0.74.46"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -809,8 +809,8 @@ rules:
     status: active
     category: artifact
     added: "2026-06-19"
-    last_validated: "2026-06-19"
-    source: "The escalation guard for the realm-coherence family (worker_divergence, timezone/languages/webgl/canvas_worker_vs_main). Those rules observe a Web Worker, which a tool can only defeat by wrapping window.Worker / OffscreenCanvas to inject its spoof into worker scope — but a real browser's global Worker and OffscreenCanvas are native (toString contains '[native code]'); a wrapped one is a plain function. Grounded headless: real Chromium's Worker/OffscreenCanvas are native (no fire); a window.Worker wrap is caught. FP-safe ACTIVE: extensions run in isolated worlds and do not replace these globals, so a non-native Worker constructor is an injection tool, not a real browser. (A wrap that also fakes its toString to '[native code]' is a rarer escalation — a future prototype-constructor-identity check.)"
+    last_validated: "2026-06-20"
+    source: "The escalation guard for the realm-coherence family (worker_divergence, timezone/languages/webgl/canvas_worker_vs_main). Those rules observe a Web Worker, which a tool can only defeat by wrapping window.Worker / OffscreenCanvas to inject its spoof into worker scope — but a real browser's global Worker and OffscreenCanvas are native; a wrapped one is not. The collector's ctorTampered now applies TWO FP-safe invariants: (1) toString must contain '[native code]' — a plain-function wrap (stealth WORKER_WRAP) fails this; (2) the constructor-identity round-trip C.prototype.constructor === C must hold — a `new Proxy(Worker, {construct})` (stealth WORKER_PROXY) defeats (1) because a Proxy over a native ctor REFLECTS the target's '[native code]' toString, but it cannot defeat (2): the Proxy's .prototype forwards to the REAL ctor's prototype whose .constructor is the real ctor, not the Proxy, so the round-trip breaks. v0.74.46 GROUNDED LIVE: stealth WORKER_PROXY does the COALESCE_PROXY pattern on the Worker ctor — it injects the hardwareConcurrency spoof into worker scope via the construct trap (defeating worker_divergence) AND its toString shows '[native code]' (defeating invariant 1), so before this iteration it tripped NEITHER worker_divergence NOR worker_constructor_tampered (a clean EVADES on the worker-realm surface, exactly the 'future prototype-constructor-identity check' this rule's source had deferred); with invariant (2) added, WORKER_PROXY now trips worker_constructor_tampered while WORKER_WRAP still trips it via invariant (1), and real Chromium + plain STEALTH (native, identity intact) trip NEITHER. FP-safe ACTIVE by spec: every real native constructor satisfies prototype.constructor === itself, extensions run in isolated worlds and do not replace these globals, and a legit CDP override does not wrap them — so a tampered Worker/OffscreenCanvas constructor is an injection tool, not a real browser. Residual (next rung): a Proxy that ALSO redefines RealWorker.prototype.constructor back to the Proxy restores the round-trip — a deeper escalation that itself rewrites a native prototype's constructor data property, the future rung."
 
   - id: br.languages_worker_vs_main
     title: navigator.languages differs between the main thread and a Web Worker

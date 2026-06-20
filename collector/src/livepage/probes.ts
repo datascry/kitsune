@@ -74,6 +74,20 @@ function nativeToString(fn: unknown): boolean {
     return true;
   }
 }
+// A native constructor is tampered if its toString is non-native (plain wrap) OR its constructor-identity
+// round-trip is broken (C.prototype.constructor !== C) — the latter catches a `new Proxy(C, {construct})`
+// whose reflected toString still shows "[native code]". FP-safe: every real native ctor satisfies the round-trip.
+function ctorTampered(c: unknown): boolean {
+  if (typeof c !== "function") return false;
+  if (nativeToString(c)) return true;
+  try {
+    const proto = (c as { prototype?: { constructor?: unknown } }).prototype;
+    if (proto && proto.constructor !== c) return true;
+  } catch {
+    return true;
+  }
+  return false;
+}
 function canvasLie(): boolean {
   return nativeToString(HTMLCanvasElement.prototype.toDataURL);
 }
@@ -639,8 +653,10 @@ export function armCollector(): LiveCollector {
     // languages/webgl/canvas_worker_vs_main) all observe a Web Worker, which a tool can only defeat by
     // wrapping window.Worker / OffscreenCanvas to inject its spoof into worker scope. A real browser's
     // global Worker and OffscreenCanvas are native; a wrapped one is a plain function (toString lacks
-    // "[native code]"). This closes the escalation path for the entire realm-coherence family.
-    if (nativeToString(win()["Worker"]) || nativeToString(win()["OffscreenCanvas"])) {
+    // "[native code]") OR a `new Proxy(Worker, {construct})` whose toString reflects the native target's
+    // "[native code]" but breaks the constructor-identity round-trip (C.prototype.constructor === C, which a
+    // Proxy/wrapper cannot preserve). This closes the escalation path for the entire realm-coherence family.
+    if (ctorTampered(win()["Worker"]) || ctorTampered(win()["OffscreenCanvas"])) {
       put("browser", "worker_constructor_tampered", true);
     }
     // Electron process leak: a renderer exposing a Node `process` is an Electron/automation runtime.

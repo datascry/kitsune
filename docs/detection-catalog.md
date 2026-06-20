@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.45`); regenerate with `task catalog`, do not edit by hand. **130 rules**: 97 active · 27 experimental · 6 retired; 86 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.46`); regenerate with `task catalog`, do not edit by hand. **130 rules**: 97 active · 27 experimental · 6 retired; 86 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (29)
 

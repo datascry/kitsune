@@ -64,6 +64,14 @@ const LANG_SPOOF = process.env.LANG_SPOOF === "1";
 // thread, defeating worker_divergence. But the wrapped Worker constructor is no longer native, so
 // br.worker_constructor_tampered catches the realm the spoof had to compromise to hide.
 const WORKER_WRAP = process.env.WORKER_WRAP === "1";
+// WORKER_PROXY: the ESCALATION of WORKER_WRAP that the worker_constructor_tampered rule's own source defers
+// as "a future prototype-constructor-identity check". WORKER_WRAP defeats worker_divergence but its plain-function
+// wrap is caught by ctorTampered (toString lacks "[native code]"). This wraps window.Worker in a
+// `new Proxy(RealWorker, {construct})` instead: a Proxy over a native ctor REFLECTS the target's toString, so
+// `proxy.toString()` shows "[native code]" — defeating the toString check — while the construct trap still injects
+// the worker-scope spoof (importScripts of the original blob behind the hardwareConcurrency override). So it beats
+// worker_divergence AND worker_constructor_tampered at once — the COALESCE_PROXY pattern applied to the Worker ctor.
+const WORKER_PROXY = process.env.WORKER_PROXY === "1";
 // NAIVE_TZ_SPOOF: the one-field geo-spoof. Patch ONLY Intl.resolvedOptions().timeZone (claim a proxy-
 // matching zone) and forget Date.getTimezoneOffset — the offset then contradicts the claimed zone →
 // br.timezone_offset_vs_intl. The canonical incomplete timezone spoof.
@@ -252,6 +260,7 @@ const evading =
   TZ_SPOOF ||
   LANG_SPOOF ||
   WORKER_WRAP ||
+  WORKER_PROXY ||
   NAIVE_TZ_SPOOF ||
   AUDIO_READBACK_SPOOF ||
   LANG_LIST_SPOOF ||
@@ -321,6 +330,8 @@ const mode = UACH_COHERENT
     ? "naive-tz-spoof"
     : WORKER_WRAP
   ? "worker-wrap"
+  : WORKER_PROXY
+  ? "worker-proxy"
   : LANG_SPOOF
   ? "lang-spoof"
   : TZ_SPOOF
@@ -569,6 +580,25 @@ if (FLOOR_SPOOF) {
       return new RealWorker(URL.createObjectURL(new Blob([wrapped], { type: "application/javascript" })), opts);
     };
     window.Worker.prototype = RealWorker.prototype;
+  });
+} else if (WORKER_PROXY) {
+  // The Proxy escalation: same worker-scope injection as WORKER_WRAP, but window.Worker is a
+  // `new Proxy(RealWorker, {construct})` — a Proxy over a native constructor reflects the target's toString, so
+  // `window.Worker.toString()` reports "[native code]" and the ctorTampered toString check no longer fires. The
+  // construct trap rewrites the worker source to apply the same hardwareConcurrency override behind importScripts,
+  // so the worker AGREES with the main thread (worker_divergence stays quiet). Beats both realm-coherence guards.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    Object.defineProperty(Navigator.prototype, "hardwareConcurrency", { get: () => 2, configurable: true });
+    const RealWorker = window.Worker;
+    const SPOOF = "Object.defineProperty(self.navigator,'hardwareConcurrency',{get:function(){return 2}});";
+    window.Worker = new Proxy(RealWorker, {
+      construct(target, args) {
+        const wrapped = SPOOF + "importScripts('" + args[0] + "');";
+        const url = URL.createObjectURL(new Blob([wrapped], { type: "application/javascript" }));
+        return Reflect.construct(target, [url, ...args.slice(1)]);
+      },
+    });
   });
 } else if (NAIVE_TZ_SPOOF) {
   // One-field geo-spoof: patch only Intl.resolvedOptions().timeZone, leave Date.getTimezoneOffset real, so

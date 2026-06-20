@@ -594,7 +594,17 @@ td code{font-size:12px;color:#0a3}
     // its spoof into worker scope — but a real browser's global Worker/OffscreenCanvas are native; a
     // wrapped one's toString lacks "[native code]". Closes the escalation path for the whole family.
     try {
-      function ctorTampered(c) { return typeof c === "function" && c.toString().indexOf("[native code]") < 0; }
+      function ctorTampered(c) {
+        if (typeof c !== "function") return false;
+        if (c.toString().indexOf("[native code]") < 0) return true; // plain-function wrap (WORKER_WRAP)
+        // Proxy-over-native escalation (WORKER_PROXY): a `new Proxy(Worker, {construct})` REFLECTS the native
+        // target's toString → "[native code]" (so the check above misses it) but cannot preserve the
+        // constructor-identity round-trip. A real native ctor satisfies C.prototype.constructor === C; a Proxy's
+        // .prototype forwards to the REAL ctor's prototype whose .constructor is the real ctor, not the Proxy →
+        // identity breaks. FP-safe by spec (every native constructor's prototype.constructor is itself).
+        try { if (c.prototype && c.prototype.constructor !== c) return true; } catch (e) { return true; }
+        return false;
+      }
       if (ctorTampered(self.Worker) || ctorTampered(self.OffscreenCanvas)) {
         sigs.push(S("browser", "worker_constructor_tampered", true));
       }
