@@ -70,6 +70,16 @@ not currently edge-emitted). Cross-session rotation (per-identity) stays the coo
    always untrusted; no in-sandbox way to forge a trusted event) → **external/real-device frontier.** Behavioral
    vein mapped: synthesis defeats the biomech floor; the coalesced residual is now a 4-rung ladder ending at
    real-hardware-input. `coalesce-proxy.json` frozen as the lit-capture for `br.coalesced_untrusted`.
+   **KEYSTROKE axis closed — iter-18 (2026-06-20).** The mouse floor was the only behavioral synthesis grounded;
+   `bh.keystroke_entropy_floor` had NO evader defeating it by synthesis — the naive path types at a FIXED 95ms
+   (entropy ~0 → trips it) and HUMAN_MOUSE merely types <4 keys (keyEntropy returns 1, unjudged). Built the
+   `KEYSTROKE_HUMAN` stealth mode (the keystroke analog of HUMAN_MOUSE): presses a phrase with per-key delays from
+   a skewed lognormal-ish spread + rare think-pauses. Grounded live: `keystroke_entropy = 0.935` (≫ 0.15 floor) →
+   `bh.keystroke_entropy_floor` SILENT, while the naive fixed-delay control still trips it. So the keystroke floor
+   is now a grounded two-sided arms race like the mouse floor: it catches fixed-delay typing, passes human-like
+   varied timing (FP-safe by design — real humans vary digraph latencies). Corroborating-only, so the verdict stays
+   bot via the convicting headless tells; no detector change. `keystroke-human.json` frozen. **Behavioral synthesis
+   is now fully mapped (mouse + keystroke + coalesced ladder); the only behavioral residual is real-hardware input.**
 2. **[network] azuretls-client** (Go) — ✅ **DONE iter-13: BUILT + grounded; the "redundant" inference was WRONG.**
    Added `evaders/azuretls` (a real popular Go TLS/JA3+H2 library). I had repeatedly *asserted* it would be
    redundant with primp (caught only by `net.no_js_execution`); grounded live it is caught by **FOUR** net tells —

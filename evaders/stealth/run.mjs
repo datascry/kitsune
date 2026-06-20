@@ -153,6 +153,12 @@ const UACH_COHERENT = process.env.UACH_COHERENT === "1";
 // across distinct IPs, this is the canned-trajectory replay coordination._trace_collision catches: a tool
 // that randomises its fingerprint per instance yet reuses one recorded "humanised" path.
 const REPLAY_TRACE = process.env.REPLAY_TRACE === "1";
+// KEYSTROKE_HUMAN: the keystroke analog of HUMAN_MOUSE. The naive path types at a FIXED delay (uniform
+// inter-key interval → entropy ~0 → bh.keystroke_entropy_floor); HUMAN_MOUSE merely types too little to be
+// judged (keyEntropy returns 1 below 4 keys). NO fleet evader has DEFEATED the keystroke floor by typing with
+// human-like VARIED digraph latencies. This mode does: it presses a phrase with per-key delays drawn from a
+// skewed lognormal-ish spread + rare think-pauses, so the inter-key interval entropy clears the human floor.
+const KEYSTROKE_HUMAN = process.env.KEYSTROKE_HUMAN === "1";
 // CDC_LEAK: the canonical Selenium/ChromeDriver artifact. An UN-patched chromedriver injects its sentinel
 // globals ($cdc_asdjflasutopfhvcZLmcfl_* arrays) onto document — the exact default that
 // undetected-chromedriver/nodriver exist to rename away. Inject the canonical key the collector probes for
@@ -256,6 +262,7 @@ const evading =
   AUDIO_NOISE ||
   SCREEN_IMPOSSIBLE ||
   REPLAY_TRACE ||
+  KEYSTROKE_HUMAN ||
   COALESCE_SPOOF ||
   COALESCE_PROXY ||
   UACH_COHERENT ||
@@ -268,6 +275,8 @@ const mode = UACH_COHERENT
   ? "coalesce-spoof"
   : REPLAY_TRACE
   ? "replay-trace"
+  : KEYSTROKE_HUMAN
+  ? "keystroke-human"
   : SCREEN_IMPOSSIBLE
   ? "screen-impossible"
   : AUDIO_NOISE
@@ -846,6 +855,18 @@ if (REPLAY_TRACE) {
     // A longer fixed interval keeps dispatch jitter a small fraction of dt, so velocity CV stays under the
     // uniform_velocity floor (0.08) — at 20ms the ~few-ms jitter alone pushed CV to ~0.19.
     await page.waitForTimeout(75);
+  }
+} else if (KEYSTROKE_HUMAN) {
+  // Type a phrase pressing each key after a HUMAN-LIKE varied delay: a skewed lognormal-ish base (fast common
+  // digraphs ~60ms up to ~310ms) plus rare longer think-pauses (word boundaries). The spread of inter-key
+  // intervals lifts the log-bucketed Shannon entropy above the human floor (0.15) — unlike the naive path's
+  // fixed 95ms (entropy ~0). Keydowns bubble to the collector's window listener, so no input field is needed.
+  const phrase = "the quick brown fox jumps over the lazy dog";
+  for (const ch of phrase) {
+    await page.keyboard.type(ch);
+    const base = 40 + Math.round(Math.exp(Math.random() * 2.2) * 30); // ~70..310ms, skewed toward fast keys
+    const pause = Math.random() < 0.15 ? 180 + Math.round(Math.random() * 240) : 0; // rare think-pause
+    await page.waitForTimeout(base + pause);
   }
 } else if (human) {
   // Human-like curved moves between random targets — the behavioral evasion frontier (mouse only, to
