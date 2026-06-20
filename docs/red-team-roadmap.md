@@ -779,6 +779,24 @@ a per-session realm tell. `worker-cdp-pause` is a permanent pressure-test; no re
 no new detection, no version bump. The realm-injection vein is now EXHAUSTIVELY mapped — racy CDP loses, paused CDP
 wins-but-trips-automation, non-CDP is caught by source/ctor.
 
+**ENGINE-BUMP RE-VALIDATION — the playwright→Chromium-140 dependency bump is red-team-safe (iter-54, 2026-06-20).**
+A maintenance sprint bumped the Playwright-based evaders (stealth/apify/playwright-extra) from v1.52 to v1.55.1 —
+i.e. the engine advanced from Chromium ~126 to **Chromium 140**. Rather than assume the fleet still behaves,
+re-grounded it: rebuilt the stealth image (clean, exit 0 — the bump BUILDS, not just "the base image exists") and ran
+it live. FINDINGS: (1) the detector's Chrome-version-coherence gates are LOWER-BOUNDS (`chromeUAExpectsPQ` >= 131,
+`Promise.withResolvers` >= 121) — forward-compatible, so a current Chromium 140 satisfies them with no false-positive,
+and the automation-floor catches (`cdp_runtime_enabled`/`webdriver_spoofed`/`permissions_anomaly`) are
+version-independent. (2) Plain STEALTH (which spoofs a `Windows / Chrome 125` UA) now trips MORE tells on the
+Chromium-140 engine — `net.ch_ua_version_vs_ua` + `br.ch_he_version_vs_ua` (the real Sec-CH-UA/high-entropy version is
+140, the spoofed UA says 125 → a wider, correctly-convicted mismatch) on top of the pre-existing OS-mismatch tells
+(`net.tcp_os_vs_ua`/`br.font_os_vs_ua`, Windows UA on a Linux host). These are CORRECT catches, not FPs: the
+version tells are RELATIVE comparisons (UA-version vs CH-version) with no stale absolute expectation, so a coherent
+real Chrome 140 (UA=140/CH=140) does not trip them. NET: the engine advance only WIDENS the cross-layer incoherence
+the detector already convicts — a live demonstration of the thesis on a current engine; the bump is fully red-team-safe
+(builds, forward-compatible detector, fleet correctly caught), no detector change, no version bump. (The committed
+1.52-era stealth corpus captures are now engine-stale but remain correctly-`bot` frozen regression baselines;
+refreshing them is optional hygiene, not a correctness fix.)
+
 **FP-REGRESSION VALIDATION — surfaced + fixed a stale Brave capture masking the privacy-browser FP-safety
 (iter-51, 2026-06-20).** At saturation, pivoted from evasion to the INVERSE failure: after 11 iterations of new
 rules (ua/fp/trace rotation, worker_source_rewritten, the tee TTL), does any REAL browser get mis-convicted? Scored
