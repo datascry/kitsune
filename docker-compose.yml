@@ -66,3 +66,25 @@ services:
       KITSUNE_EDGE: "https://edge:8443/healthz"
     depends_on: [edge]
     profiles: ["evaders"]
+
+  # PoW arms-race testbed — the BLUE gate (long-running target). `--profile pow up pow-gate`.
+  pow-gate:
+    build:
+      context: .
+      dockerfile: evaders/pow/Dockerfile
+    environment:
+      POW_ADDR: "0.0.0.0:8090"
+      POW_DIFFICULTY: "20"
+    profiles: ["pow"]
+
+  # PoW native (no-browser) solver — the RED evader; beats the gate and redeems the token.
+  pow-solver:
+    build:
+      context: .
+      dockerfile: evaders/pow/Dockerfile
+    entrypoint: ["/pow-solver"]
+    environment:
+      POW_GATE: "http://pow-gate:8090"
+      POW_CLASS: "hashcash"
+    depends_on: [pow-gate]
+    profiles: ["pow"]

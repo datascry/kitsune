@@ -210,6 +210,20 @@ central durable-signal claim; frozen `corpus/fleet-randfp-trace/ft1-3` + regress
 2. **Harden a stealth mode** to silence a remaining convicting tell (e.g. the `br.chrome_runtime_missing`
    patchright-headless residual) — white-box the gap, patch it, confirm the tell goes quiet without a new artifact.
 
+### Vein D — ACTIVE PoW challenge (new posture: challenge vs observe)
+The one genuinely-new, self-contained vein once passive per-session evasion saturated (raised by the operator
+2026-06-20). PoW is an ACTIVE challenge — orthogonal to Kitsune's passive coherence detector — so the testbed lives
+in `evaders/pow/` (a self-contained gate + solver, license-isolated). Backlog:
+1. ✅ **STARTED iter-62: multi-class PoW testbed + native solver.** Built `evaders/pow` — a blue gate (anubis-style
+   challenge + HMAC pass token + single-use nonce) and a red native (no-browser) SHA-256/Argon2id solver, modelling
+   the catalogued classes (`docs/catalog.md §6`): `hashcash` (anubis), `many-small` (friendlycaptcha), `memory-hard`
+   (altcha). See the iter entry below.
+2. **NEXT — the on-thesis rung: `cap`-style instrumented PoW + a coherence tell.** Fuse the PoW with a
+   browser-instrumentation challenge (server-emitted JS the client must execute and echo a realm-coherent result),
+   then a blue-team signal that convicts a solver which computed the hash but ran NO real browser (the absence/
+   incoherence of the instrumentation result) — folding PoW into Kitsune's existing realm/coherence thesis. THIS is
+   where PoW becomes a discriminator rather than a cost speed-bump.
+
 ## New tools to add to the fleet (cutting edge, researched)
 `azuretls-client` (TLS+H2+H3 forger — ✅ DONE iter-13; H3 path moot, edge sniffs QUIC but doesn't serve it) ·
 `ghost-cursor` + `PHC-mouse-movement-gen` + DMTG (behavioral — synthetic mouse trips `bh.synthetic_no_coalesced`
@@ -970,6 +984,27 @@ fully built. Residual: the same external-proxy edge case its siblings carry (an 
 re-framing a session), and the remaining axis candidate `tcp_kernel` rotation is NOT in-sandbox-groundable (all
 containers share one Linux host). The pivot to external-data frontiers (IP-reputation / real-traffic prevalence /
 real hardware) stands.
+
+**PoW ARMS-RACE TESTBED — multi-class gate + native solver, the cost asymmetry GROUNDED (iter-62, 2026-06-20).**
+Operator-requested new vein ("add PoW, all types of defense and evasions"). Built `evaders/pow/` as a self-contained
+PoW arms-race testbed (NOT wired into the passive detector — PoW is an active challenge, a different posture): a BLUE
+gate (`cmd/pow-gate` — anubis-style challenge endpoint, HMAC-signed pass token, single-use+anti-downgrade nonce
+store) and a RED native no-browser solver (`cmd/pow-solver`), modelling the catalogued PoW families (`docs/catalog.md
+§6`) as DISTINCT work-function classes to evade: `hashcash` (anubis — SHA-256 leading-zero-bits), `many-small`
+(friendlycaptcha — N independent low-difficulty hashcash puzzles, variance reduction), and `memory-hard` (altcha —
+Argon2id, memory-bound). GROUNDED LIVE (docker, kitsune_default): the native solver **beats EVERY class end-to-end
+and redeems the pass token** (`passed=true, has_token=true` for all three). Measured cost asymmetry (BENCH sweep):
+SHA-256 classes run at **~2.0M evals/s** (hashcash d20 ~233k evals/114ms, d22 ~557k/269ms; many-small 16×12 ~87k/42ms),
+while `memory-hard` Argon2id (8 MiB) runs at **~240 evals/s — ~8000× costlier per eval**. FINDINGS (honest):
+(1) a raw PoW gate of ANY class is a volumetric COST mechanism, NOT a bot/human discriminator — the no-browser solver
+passes, so PoW alone adds ZERO coherence signal to Kitsune's passive detector (off-thesis); (2) class choice changes
+only the COST: the SHA-256 classes hand a native scraper an ~8000× speed edge over a browser's WASM, while altcha's
+memory-hard class erases that edge (memory-bound — the right choice for a raw gate) but STILL admits the bot at equal
+cost; (3) the durable, on-thesis class is `cap`-style **instrumented** PoW, where the tell is whether a REAL BROWSER
+ran the challenge JS (a realm/coherence signal), not the hash — queued as Vein D #2. Edge/detector unchanged (no
+rule, no version bump — this maps a new vein and builds its testbed; the blue-team detection comes when the instrumented
+rung exposes an FP-safe coherence tell). go vet/gofmt/test green; license-isolated (only dep `golang.org/x/crypto/argon2`,
+BSD); compose `pow` profile + `evaders/pow/README.md` frozen.
 
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
