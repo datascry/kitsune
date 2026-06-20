@@ -128,6 +128,24 @@ def test_real_nonautomated_chrome_trips_no_browser_layer_conviction() -> None:
     assert "net.h2_header_order_vs_ua" not in all_fired, all_fired
 
 
+def test_prevalence_never_flags_a_real_browser_capture() -> None:
+    # Guard the prevalence single-source FP class on the REAL captures (the GPU 'other' fix, v0.74.33). Real
+    # Firefox/Mullvad report UNCLASSIFIABLE WebGL renderers ("llvmpipe, or similar" / "Mozilla") that
+    # browserforge under-generates, which once tripped br.fingerprint_improbable on gpu='other' ALONE — a
+    # convicting-CATEGORY-blind FP (prevalence is corroborating, but it still raises the legit flag rate).
+    # test_prevalence.test_unclassified_gpu_abstains... pins the abstain LOGIC on synthetic renderers; THIS
+    # pins it on the actual captures, so a future prior/feature change that re-FPs a real browser fails CI.
+    # browserforge / Intoli / the fresh captures are all BLIND to the unclassifiable-renderer path — only these
+    # real Gecko/privacy captures exercise it, so without this guard the regression is uncatchable.
+    captures = sorted(_HEADFUL.glob("*.json")) + sorted(_PRIVACY.glob("*.json"))
+    assert captures, "no real captures found"
+    for path in captures:
+        capture = json.loads(path.read_text())
+        signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
+        fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
+        assert "br.fingerprint_improbable" not in fired, f"{path.stem}: prevalence single-source FP regressed"
+
+
 def test_real_edge_chromium_family_not_a_tls_or_h2_browser_contradiction() -> None:
     # corpus/calibration/headful/msedge.json: REAL Microsoft Edge 149. Edge is Chromium, so its TLS/HTTP-2
     # stack hints 'chrome' while ua_browser is 'edge'. v0.74.30 (not_equal_browser predicate): a literal
