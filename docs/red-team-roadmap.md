@@ -666,6 +666,27 @@ iteration adds the QUIC client the fleet lacked + the ground-truth diagnosis, no
 `go-tls-quic.json` corpus record is a deferred follow-up — it carries no lit-guard value while the QUIC rules stay
 retired, so it is archival only; the real next move is the uquic-grounded parser fix above.)
 
+**QUIC parser — pursued the revival path; reassembly REFUTED as the FP cause, revival narrowed (iter-46,
+2026-06-20).** Followed iter-45's documented next move: forge a Chrome-class QUIC hello (refraction-networking
+**uquic** `QUICChrome_115`: multi-Initial, post-quantum, GREASE) as ground truth to fix + revive the retired
+`net.quic_no_grease_vs_ua`. Added a dependency-grounded edge unit test (`quic_chrome_test.go`, runs in the
+golang:alpine container — no flaky live-docker) feeding uquic's Chrome hello through the edge's own
+`ParseQUICInitials`. TWO grounded findings: (1) **the multi-packet reassembly WORKS** — a 7-packet Chrome-class
+hello recovers in full: all 3 TLS 1.3 ciphers, the `key_share` (0x0033) and `supported_versions` (0x002b)
+extensions, and the h3 ALPN. This **REFUTES the retirement's central hypothesis** that the "multi-packet CRYPTO
+reassembly is unreliable and misses the key share" — it does not. (2) **uquic is NOT faithful ground truth for the
+GREASE check**: its QUIC Chrome parrot injects GREASE only as `VERSION_GREASE` (a value inside supported_versions),
+GREASE QUIC transport parameters, and the GREASE QUIC bit — NEVER a GREASE cipher or GREASE extension-TYPE, which is
+exactly what `HasGREASE()` inspects (cipher list `[1301 1302 1303]`, zero GREASE cipher/ext-type). So a faithful
+Chrome-QUIC tool legitimately recovers GREASE-free under `HasGREASE`, and cannot validate a `quic_no_grease` fix
+(real Chrome's BoringSSL DOES add a GREASE cipher/extension; uquic's parrot omits it). NET: the FP cause is NOT
+reassembly (eliminated) — it is either (a) real Chrome QUIC genuinely lacks a cipher/ext-type GREASE so the rule's
+premise is wrong FOR QUIC, or (b) per-IP cross-attribution — BOTH require a real Chrome QUIC capture to disambiguate
+(the sandbox can't faithfully produce one; uquic is unfaithful for this surface, now grounded). The convicting QUIC
+rules STAY retired, confirmed with the search narrowed and the reassembly hypothesis eliminated. The
+`quic_chrome_test.go` multi-packet reassembly guard is the permanent green artifact. No detector change, no version
+bump (a test + a refuted hypothesis, not a rule).
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
