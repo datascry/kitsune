@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.34"
+ruleset_version: "0.74.35"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -915,11 +915,11 @@ rules:
     reads: [browser.notification_denied]
     predicate: present
     weight: 0.4
-    status: experimental
+    status: retired
     category: automation
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Headless Chrome defaults Notification.permission to denied"
+    last_validated: "2026-06-20"
+    source: "Headless Chrome defaults Notification.permission to denied. v0.74.35 RETIRED — FP-prone + redundant. The collector emits notification_denied on Notification.permission==='denied' ALONE (demo.py:794, no gate), so a REAL user with Chrome's global 'block notifications' setting (chrome://settings, a common privacy choice — denied on every origin) trips this CONVICTING automation rule, raising the legit-browser flag rate. permission==='denied' cannot distinguish headless's DEFAULT-denied from a user's CHOSEN-denied. The FP-SAFE headless tell is br.permissions_anomaly, which fires on the INCONSISTENCY (Notification.permission==='denied' but the Permissions API reports a different state — the headless artifact, demo.py:357-359); a real block-notifications user is CONSISTENTLY denied on both, so permissions_anomaly correctly stays silent — and notification_denied firing there is exactly the FP. ZERO detection loss: all 38 committed sessions that tripped it ALSO fire br.permissions_anomaly + 3-14 other convicting tells (none solo). The calibration sources (browserforge/Intoli/fresh real captures) are all BLIND to notification permission, so this FP was uncatchable by the FP gate — found by reading the emitter (the standing 'prove the methodology / never act on a single-source number' discipline). The collector still emits the signal (harmless orphan, like the retired quic_* signals)."
 
   # --- v0.10.0 wave: more lie-detection ---
 

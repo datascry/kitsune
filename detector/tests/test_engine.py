@@ -263,7 +263,9 @@ def test_engine_skips_retired_rules(bot_session: Session) -> None:
         # normal pages); covered by test_engine_skips_retired_rules + the methodology guard on real Chrome.
         ([(Layer.browser, "mimetypes_empty", True, Source.collector)], "br.mimetypes_empty"),
         ([(Layer.browser, "chrome_no_devicememory", True, Source.collector)], "br.no_devicememory"),
-        ([(Layer.browser, "notification_denied", True, Source.collector)], "br.notification_denied"),
+        # br.notification_denied retired v0.74.35 (FP on real "block notifications" users: permission==denied
+        # alone can't tell headless default from a user's choice; the FP-safe headless tell is permissions_anomaly
+        # which keys on the denied/Permissions-API inconsistency). Covered by test_engine_skips_retired_rules.
         ([(Layer.browser, "platform_empty", True, Source.collector)], "br.platform_empty"),
         (
             [

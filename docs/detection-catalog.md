@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.34`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 89 active · 28 experimental · 5 retired; 81 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.35`); regenerate with `task catalog`, do not edit by hand. **122 rules**: 89 active · 27 experimental · 6 retired; 80 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (25)
 
@@ -97,7 +97,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.iframe_divergence` | automation✦ | present | 0.8 | active | navigator differs between the main document and an iframe |
 | `br.nav_property_spoofed` | automation✦ | present | 0.6 | active | A prototype-inherited navigator property (pdfViewerEnabled/mimeTypes) is an own property |
 | `br.no_chrome_object` | automation✦ | present | 0.7 | active | Chrome User-Agent but window.chrome is absent |
-| `br.notification_denied` | automation✦ | present | 0.4 | experimental | Notification.permission is denied by default (headless Chrome) |
+| `br.notification_denied` | automation | present | 0.4 | retired | Notification.permission is denied by default (headless Chrome) |
 | `br.notification_getter_tampered` | automation✦ | present | 0.75 | active | Notification.permission getter is non-native (faked to beat the notification floor) |
 | `br.permissions_anomaly` | automation✦ | present | 0.7 | active | Notification.permission contradicts the Permissions API state |
 | `br.plugins_spoofed` | automation✦ | present | 0.6 | active | navigator.plugins is an own property (patched via defineProperty) |
