@@ -37,6 +37,7 @@ sbom*.json
 # Compiled Go evader binaries (produced by `go build` run outside Docker)
 /evaders/h2-rapid-reset/h2rapidreset
 /evaders/go-tls/go-tls
+/evaders/azuretls/azuretls-evader
 
 # pnpm content-addressable store (created when running pnpm in-tree)
 .pnpm-store/
