@@ -5,16 +5,82 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"time"
 
 	gotls "github.com/datascry/kitsune/evaders/go-tls"
+	"github.com/quic-go/quic-go"
 	utls "github.com/refraction-networking/utls"
 )
+
+// quicProbe sends a single naive non-browser QUIC v1 Initial to the edge's UDP port, eliciting the edge's
+// QUIC ClientHello capture. Go's crypto/tls does NOT GREASE its hello (unlike Chrome/Safari), and pinning
+// the curve to classical X25519 omits the post-quantum X25519MLKEM768 a current Chrome QUIC hello carries —
+// so this is a STALE non-browser QUIC template under a Chrome UA, the QUIC analog of the fleet's h2/TLS
+// impersonation gap. The handshake fails on the self-signed cert, but the Initial is captured regardless
+// (the edge tees Initials before handshake completion). Best-effort: any error is fine, the packet is sent.
+func quicProbe(addr string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	cfg := &tls.Config{
+		InsecureSkipVerify: true, //nolint:gosec // lab edge self-signed cert
+		NextProtos:         []string{"h3"},
+		CurvePreferences:   []tls.CurveID{tls.X25519, tls.CurveP256}, // classical only: no PQ key share (stale template)
+	}
+	conn, err := quic.DialAddr(ctx, addr, cfg, &quic.Config{})
+	if err == nil {
+		_ = conn.CloseWithError(0, "")
+	}
+}
+
+// quicMode sends the naive QUIC Initial, then mints a session over h2 from the SAME source IP (the edge
+// correlates the captured QUIC hello to the h2 request by IP), and prints the full verdict so the QUIC tells
+// (quic_observed / quic_no_grease / quic_no_pq_keyshare) are visible.
+func quicMode(target, detector string) {
+	if u, err := url.Parse(target); err == nil && u.Host != "" {
+		quicProbe(u.Host)
+	}
+	req, err := http.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	browserHeaders(req)
+	resp, err := gotls.RoundTripH2(context.Background(), utls.HelloChrome_Auto, req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck
+	resp.Body.Close()
+	var sid string
+	for _, c := range resp.Cookies() {
+		if c.Name == "ks_sid" {
+			sid = c.Value
+		}
+	}
+	if sid == "" {
+		log.Fatal("no ks_sid minted")
+	}
+	vr, err := http.Get(detector + "/verdict/" + sid) //nolint:noctx
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var verdict map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&verdict); err != nil {
+		log.Fatal(err)
+	}
+	verdict["mode"] = "go-tls-quic"
+	verdict["session_id"] = sid
+	out, _ := json.Marshal(verdict) //nolint:errcheck
+	fmt.Println("__KS__" + string(out))
+}
 
 // browserHeaders makes the request look like a real Chrome navigation, so the only residual tells are
 // the layers uTLS does NOT forge: the ClientHello's own fidelity (GREASE / post-quantum key share), the
@@ -103,6 +169,14 @@ func main() {
 	}
 	if os.Getenv("KS_ROTATE") == "1" {
 		rotateJA4(target)
+		return
+	}
+	if os.Getenv("KS_QUIC") == "1" {
+		detector := os.Getenv("KITSUNE_DETECTOR")
+		if detector == "" {
+			detector = "http://detector:8080"
+		}
+		quicMode(target, detector)
 		return
 	}
 	req, err := http.NewRequest(http.MethodGet, target, nil)

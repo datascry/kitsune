@@ -3,6 +3,7 @@ module github.com/datascry/kitsune/evaders/go-tls
 go 1.26
 
 require (
+	github.com/quic-go/quic-go v0.60.0
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.56.0
 )

@@ -641,6 +641,31 @@ check_headers all green. Residual (next rung, documented): the injected worker c
 `WorkerLocation.prototype.href` to echo the original url — but that leaves a non-native `WorkerLocation.href` in worker
 scope, a further self-incriminating tamper. Realm-coherence worker-injection ladder: blue holds the high ground.
 
+**QUIC/H3 — the fleet's FIRST QUIC client, and the retired-rule revival path made concrete (iter-45, 2026-06-20).**
+The roadmap had twice dismissed the QUIC vein as "edge is h2-only, H3 moot" — STALE and WRONG: the edge runs a real
+`quic.Listen` UDP capturer (`edge/internal/proxy/quiccapture.go`), advertises `Alt-Svc: h3`, and fingerprints client
+QUIC Initials (`quic_observed` / `quic_no_grease` / `quic_no_pq_keyshare` via `quicTells`). BUT the fleet had NO QUIC
+client to exercise it, and both convicting QUIC rules (`net.quic_no_grease_vs_ua` v0.74.32, `net.quic_no_pq_keyshare`
+v0.74.34) were RETIRED as the capture FPs on real Chromium. RED-TEAM (the prompt's "azuretls H3/QUIC current-template
+forging" vein): built the fleet's first QUIC client — **`go-tls KS_QUIC`** (quic-go: a naive non-browser QUIC v1
+Initial, classical-curve `CurvePreferences` so NO post-quantum key share, Go crypto/tls so NO GREASE — a stale
+non-browser template under a Chrome UA) then mints over h2 from the same IP. GROUNDED LIVE: the edge captured the
+Initial and correctly emitted `quic_observed=True` + `quic_no_grease=True` for the dedicated client — DIRECTLY
+REFUTING the retirement's "forced-QUIC over the self-signed edge never captured" note (a dedicated client with a
+unique container IP and a single-packet Initial captures cleanly). HONEST FINDING: the convicting rules STAY RETIRED.
+Re-confirmed the FP live — the committed real-Chromium captures (`nodriver`, `zendriver-uach`, `coalesce-proxy`,
+`trace-replay`, all real Chromium engines that DO GREASE QUIC) carry `quic_no_grease=True`, a parser FALSE POSITIVE:
+the edge's multi-packet CRYPTO reassembly mis-reads a real Chromium QUIC hello as no-GREASE. Reviving the rule on the
+broken parser would convict every real Chromium on a bug → not FP-safe. CONCRETE REVIVAL PATH (the next move, no
+longer abstract): forge a CURRENT-Chrome QUIC hello (refraction-networking/**uquic**, WITH GREASE + PQ) as KNOWN
+ground truth → reproduce the FP deterministically → fix `edge/internal/fingerprint/quic.go` reassembly until the
+uquic-Chrome hello reads GREASE-present (rule silent) and the bare-Go hello reads GREASE-absent (rule fires) → revive
+FP-safe, grounded against both. The per-IP attribution NAT-FP remains the documented external residual (same class as
+`net.tcp_os_vs_ua`'s proxy confound; the lab edge is the first hop). No detector change, no version bump — this
+iteration adds the QUIC client the fleet lacked + the ground-truth diagnosis, not a rule. (Freezing a
+`go-tls-quic.json` corpus record is a deferred follow-up — it carries no lit-guard value while the QUIC rules stay
+retired, so it is archival only; the real next move is the uquic-grounded parser fix above.)
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an
