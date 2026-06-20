@@ -240,6 +240,20 @@ HeadlessChrome), and `br.worker_divergence`×3 (main-realm-only spoofs). So even
 popular stealth plugin is caught 5 ways, none config-hardenable. `playwright-extra-coherent.json` frozen. No new
 detection (existing rules); no version bump.
 
+**Coherent-WebKit engine profile GROUNDED — iter-22 (2026-06-20).** The fleet had only `webkit-ua-spoof` (WebKit +
+a CHROME UA → caught by the TLS/JA4 engine mismatch). Grounded the COHERENT case (`KS_COHERENT=1`: WebKit + a real
+Safari UA, so `net.tls_vs_ua_browser` stays quiet) to map WebKit's evasion axes. Result `bot` 1.0, caught SIX ways
+with a clean split: (1) **WebKit DOES evade the Chromium automation floor** — `br.cdp_runtime_enabled` and
+`br.headless_ua` do NOT fire (WebKit speaks no CDP, carries no HeadlessChrome token), the one engine-axis WebKit
+wins; BUT (2) **the Safari⟹macOS⟹not-a-Linux-server incoherence is caught across THREE layers** —
+`net.tcp_os_vs_ua` (Mac UA vs Linux TCP/IP), `br.navplatform_vs_ua` (JS `navigator.platform`), `br.font_os_vs_ua`
+(Linux fonts under a Mac UA); and (3) **Playwright-WebKit artifacts leak** — `br.webdriver_present` (Playwright
+WebKit leaves `navigator.webdriver=true`, unlike the stealth Chromium tools), `net.h2_unknown_vs_ua` +
+`net.tls_grease_vs_ua` (its h2/TLS are not real-Safari's). So a WebKit bot can only be coherent on REAL Mac
+hardware (closing the OS axis) AND would still need to hide webdriver + forge a real-Safari TLS/h2 — i.e. real
+Safari on a real Mac, the external-hardware frontier. `webkit-safari-coherent.json` frozen; all existing rules →
+no new detection, no version bump.
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

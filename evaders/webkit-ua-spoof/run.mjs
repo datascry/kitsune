@@ -14,10 +14,19 @@ const DETECTOR = process.env.KITSUNE_DETECTOR || "http://detector:8080";
 // A desktop Chrome UA while the engine is WebKit — the TLS/JA4 stays WebKit's.
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
+// KS_COHERENT=1: the COHERENT WebKit evader — a real Safari UA on the real WebKit engine (ja4_browser_hint ==
+// ua_browser == safari, so net.tls_vs_ua_browser stays quiet). Grounds WebKit's engine-axis catch profile: it
+// does NOT speak CDP (so br.cdp_runtime_enabled should not fire, unlike every Chromium evader) and carries no
+// HeadlessChrome token. The STRUCTURAL catch is the OS axis: a Safari UA necessarily claims macOS, but the host
+// is a Linux container, so the TCP/IP fingerprint betrays it (net.tcp_os_vs_ua) — WebKit evasion cannot be
+// OS-coherent on Linux infra (Safari ⟹ Mac ⟹ not a Linux server). That residual is real-Mac-hardware-gated.
+const COHERENT = process.env.KS_COHERENT === "1";
+const SAFARI_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
 
 // WebKit rejects chromium args (--no-sandbox); launch bare. ignoreHTTPSErrors accepts the edge's cert.
 const browser = await playwright.webkit.launch({ headless: true });
-const context = await browser.newContext({ ignoreHTTPSErrors: true, userAgent: CHROME_UA });
+const context = await browser.newContext({ ignoreHTTPSErrors: true, userAgent: COHERENT ? SAFARI_UA : CHROME_UA });
 const page = await context.newPage();
 
 await page.goto(EDGE, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -27,6 +36,6 @@ await page.waitForTimeout(3000); // let the in-page collector POST (1.2s timer +
 const sid = (await context.cookies()).find((c) => c.name === "ks_sid")?.value;
 if (!sid) throw new Error("no ks_sid cookie — edge did not mint a session");
 const verdict = await (await fetch(`${DETECTOR}/verdict/${sid}`)).json();
-console.log("__KS__" + JSON.stringify({ mode: "webkit-ua-spoof", sid, ...verdict }));
+console.log("__KS__" + JSON.stringify({ mode: COHERENT ? "webkit-safari-coherent" : "webkit-ua-spoof", sid, ...verdict }));
 
 await browser.close();
