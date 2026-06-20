@@ -26,10 +26,17 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
 ## Backlog (prioritized) — the loop draws ONE move per iteration
 
 ### Vein A — BUILD a missing evasion feature
-1. **[behavioral · highest value] SOTA mouse/keystroke synthesis.** Integrate a sigma-lognormal / Fitts'-law /
-   diffusion generator (ghost-cursor; PHC-mouse-movement-gen; DMTG, arXiv:2410.18233) as a stealth evader mode
-   and drive it through the edge → attack the biomech floor. The detector's behavioral rules are the live,
-   SapiMouse-grounded frontier; defeating them (or failing to) is the most informative red-team move available.
+1. **[behavioral] SOTA mouse/keystroke synthesis.** ⚠ **PARTLY CLOSED — grounded iter-1 (2026-06-20).** The
+   biomech floor is ALREADY defeated by the fleet's existing bézier humanizer (`HUMAN_MOUSE`): run live, it trips
+   NONE of `bh.power_law_violation` (β≈0.45 ≫ the 0.05 floor — the 2/3 power law), `bh.path_too_straight`,
+   `bh.uniform_velocity`, `bh.input_entropy_floor`. So a SOTA generator (sigma-lognormal / DMTG) is NOT the open
+   vein the external research implied — bézier already passes. The SOLE behavioral residual is
+   **`bh.synthetic_no_coalesced`** (synthetic input → `getCoalescedEvents().length <= 1`; real hardware batches
+   intermediate samples). ✅ **DEFEATED iter-1 by the new `COALESCE_SPOOF` stealth mode** — patches
+   `getCoalescedEvents` to fabricate distinct interpolated intermediate samples (length > 1), and the tell goes
+   quiet live. **Exposed blue-team gap:** the detector's native-tamper list (`demo.py` toStringTampered) does NOT
+   include `getCoalescedEvents`, so the plain-function override is uncaught → NEXT blue-team move is to add it
+   (`br.function_tostring_tampered`), after which the red-team escalates to a Proxy-over-native coalesce patch.
 2. **[network] azuretls-client** (Go, `github.com/Noooste/azuretls-client`) — a current TLS/JA3 + HTTP/2 +
    **HTTP/3 / QUIC** template forger. Exercises the QUIC layer (detector rules retired on a broken capture) and a
    *current* template vs the deliberately-stale `go-tls`.

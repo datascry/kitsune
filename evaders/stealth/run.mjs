@@ -121,6 +121,14 @@ const CANVAS_LIE = process.env.CANVAS_LIE === "1";
 // reads of an unchanged element differ — breaking the determinism invariant → br.domrect_invariant. A real
 // engine's getBoundingClientRect is deterministic.
 const DOMRECT_SPOOF = process.env.DOMRECT_SPOOF === "1";
+// COALESCE_SPOOF: the behavioural residual the bezier humanizer (HUMAN_MOUSE) cannot reach. Synthetic
+// CDP/Playwright pointer input dispatches DISCRETE pointermove events, so getCoalescedEvents() returns
+// length<=1 — whereas real hardware movement is sampled faster than events dispatch, batching the intermediate
+// samples (length>1). The collector flags coalescedMax<=1 over >=20 moves → bh.synthetic_no_coalesced. This
+// patches PointerEvent.prototype.getCoalescedEvents to fabricate plausible intermediate samples, defeating the
+// (corroborating) coalesced tell. NB: it patches a prototype method the detector's native-tamper list does NOT
+// yet cover (demo.py toStringTampered omits getCoalescedEvents) — a red-team move that exposes a blue-team gap.
+const COALESCE_SPOOF = process.env.COALESCE_SPOOF === "1";
 // REPLAY_TRACE: a behavioural-replay fleet. Inject a byte-identical RECORDED pointer trajectory via synthetic
 // mousemove events with exact clientX/clientY, so every instance produces the SAME trace_hash. trace_hash is
 // COORDINATE-based (hashes rounded x,y, not timing), hence exactly reproducible across machines — unlike a
@@ -231,8 +239,11 @@ const evading =
   AUDIO_NOISE ||
   SCREEN_IMPOSSIBLE ||
   REPLAY_TRACE ||
+  COALESCE_SPOOF ||
   Boolean(SPOOF_UA);
-const mode = REPLAY_TRACE
+const mode = COALESCE_SPOOF
+  ? "coalesce-spoof"
+  : REPLAY_TRACE
   ? "replay-trace"
   : SCREEN_IMPOSSIBLE
   ? "screen-impossible"
@@ -543,6 +554,46 @@ if (FLOOR_SPOOF) {
     HTMLCanvasElement.prototype.toDataURL = function (...a) {
       return orig.apply(this, a);
     };
+  });
+} else if (COALESCE_SPOOF) {
+  // Defeat bh.synthetic_no_coalesced: patch getCoalescedEvents to return FABRICATED intermediate samples so
+  // coalescedMax > 1 (what real high-rate hardware movement produces). Plain automation dispatches single
+  // pointermove events; this is the behavioural residual a humanized-motion bot still leaks. The samples are
+  // distinct interpolated points (between the previous and current position), not a naive repeat — so the fake
+  // survives a coalesced-coherence check, not just the length check. webdriver is hidden so the capture
+  // isolates the coalesced tell. The patch overrides a prototype method the detector does NOT tamper-check.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    if (typeof PointerEvent !== "undefined" && PointerEvent.prototype.getCoalescedEvents) {
+      const realGCE = PointerEvent.prototype.getCoalescedEvents;
+      let px = null,
+        py = null;
+      PointerEvent.prototype.getCoalescedEvents = function () {
+        const real = realGCE.call(this);
+        const cx = this.clientX,
+          cy = this.clientY;
+        if (real && real.length > 1) {
+          px = cx;
+          py = cy;
+          return real; // genuine coalesced batch — pass through unchanged
+        }
+        const n = 3 + (Math.abs(Math.round(cx + cy)) % 4); // 3..6, a plausible high-rate batch
+        const out = [];
+        if (px !== null) {
+          for (let i = 1; i <= n; i++) {
+            const f = i / (n + 1);
+            out.push(
+              new PointerEvent("pointermove", { clientX: px + (cx - px) * f, clientY: py + (cy - py) * f, bubbles: true }),
+            );
+          }
+        } else {
+          out.push(this);
+        }
+        px = cx;
+        py = cy;
+        return out;
+      };
+    }
   });
 } else if (DOMRECT_SPOOF) {
   // DOMRect-fingerprint farble: add per-call sub-pixel noise to getBoundingClientRect, so two reads of an
