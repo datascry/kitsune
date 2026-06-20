@@ -1,0 +1,14 @@
+{
+  "name": "@kitsune/playwright-extra",
+  "version": "0.1.0",
+  "description": "playwright-extra + puppeteer-extra-plugin-stealth evader: the ubiquitous JS-injection stealth baseline.",
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.52.0",
+    "playwright-extra": "4.3.6",
+    "puppeteer-extra-plugin-stealth": "2.11.2"
+  }
+}

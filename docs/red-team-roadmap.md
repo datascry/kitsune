@@ -208,9 +208,25 @@ central durable-signal claim; frozen `corpus/fleet-randfp-trace/ft1-3` + regress
    patchright-headless residual) — white-box the gap, patch it, confirm the tell goes quiet without a new artifact.
 
 ## New tools to add to the fleet (cutting edge, researched)
-`azuretls-client` (TLS+H2+H3 forger) · `ghost-cursor` + `PHC-mouse-movement-gen` + DMTG (behavioral) ·
-CloakBrowser · playwright-extra (the ~20-patch baseline). Browser-patch (C++-level) tools beat JS-injection
-tools, and Gecko engine diversity (Camoufox) evades Chrome-specific behavioral models — favor those.
+`azuretls-client` (TLS+H2+H3 forger — ✅ DONE iter-13; H3 path moot, edge sniffs QUIC but doesn't serve it) ·
+`ghost-cursor` + `PHC-mouse-movement-gen` + DMTG (behavioral — synthetic mouse trips `bh.synthetic_no_coalesced`
+regardless of trajectory, see iter-19, so confirmatory) · CloakBrowser · **playwright-extra (✅ DONE iter-20).**
+Browser-patch (C++-level) tools beat JS-injection tools, and Gecko engine diversity (Camoufox) evades
+Chrome-specific behavioral models — favor those.
+
+**playwright-extra + puppeteer-extra-plugin-stealth — GROUNDED iter-20 (2026-06-20).** Added the ubiquitous
+~17-evasion JS-injection stealth baseline (the 19th fleet tool). White-box: its `webgl.vendor` uses
+`replaceWithProxy` (Proxy-over-native, defeats the artifact layer like apify), adds `chrome.runtime/app/loadTimes`,
+hides `navigator.webdriver`, mocks plugins/codecs. **Grounded live → `bot` 1.0, caught SIX ways — and it SELF-INFLICTS
+the cross-layer-incoherence thesis:** (1) `net.tcp_os_vs_ua` — its `user-agent-override` evasion rewrites the
+platform to **Windows** while the container's TCP/IP stack is **Linux** (`ua_kernel=windows` vs `tcp_kernel=linux`):
+the textbook "spoof the UA, forget the network layer" mistake, live, from the world's most-deployed stealth tool;
+(2) `br.ch_he_headless` — it de-`Headless`'d the UA string but NOT the Sec-CH-UA high-entropy brand list (the
+UACH-coherent lesson); (3) `br.worker_divergence` + `languages_worker_vs_main` + `webgl_worker_vs_main` — its spoofs
+are MAIN-realm only (same blind spot as apify); (4) `br.cdp_runtime_enabled` — JS-stealth does NOT hide CDP (unlike
+patchright). So the OG stealth baseline is FAR more detectable than the fleet's modern tools (patchright EVADES;
+this is caught 6 ways), and is a live demonstration that naive stealth evasions ADD incoherence. All six are
+existing rules → no new detection, no version bump. `playwright-extra.json` frozen.
 
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record

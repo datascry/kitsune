@@ -8,9 +8,9 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **18 evader tools**, **76 exercised techniques** (72 convicted `bot`, 4 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **19 evader tools**, **77 exercised techniques** (73 convicted `bot`, 4 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
-### Fleet — the evader tools (18)
+### Fleet — the evader tools (19)
 
 | evader | lang | what it is |
 |---|---|---|
@@ -24,6 +24,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `go-tls` | Go | forge a real-browser TLS ClientHello with uTLS. |
 | `h2-rapid-reset` | Go | HTTP/2 frame-abuse floods against the edge (rapid-reset / continuation / control). |
 | `nodriver` | Python | drive nodriver (undetected-chromedriver successor) through the edge. |
+| `playwright-extra` | TS/Node | drive playwright-extra + puppeteer-extra-plugin-stealth through the edge. |
 | `primp` | Python | drive one request through the edge with a browser-impersonating TLS stack. |
 | `pydoll` | Python | drive pydoll (async CDP-native, no webdriver) through the edge and read the verdict. |
 | `selenium-driverless` | Python | drive selenium-driverless through the edge and read the verdict. |
@@ -33,7 +34,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (76)
+### Techniques exercised — scored against the live ruleset (77)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -91,6 +92,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `os-spoof` | bot | `br.cdp_runtime_enabled`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_spoofed`, `br.webgl_os_vs_ua`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` |
 | `patchright` | bot | `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly` |
 | `patchright-headful` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
+| `playwright-extra` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.languages_worker_vs_main`, `br.webgl_worker_vs_main`, `br.worker_divergence`, `net.tcp_os_vs_ua` |
 | `primp` | bot | `net.no_js_execution`, `net.tcp_os_vs_ua` |
 | `pydoll` | bot | `br.headless_ua` |
 | `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
