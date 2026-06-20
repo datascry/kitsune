@@ -1455,7 +1455,7 @@ rules:
     category: coherence
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "HTTP compression fingerprint; browsers advertise br/zstd over HTTPS, httpx/requests do not"
+    source: "HTTP compression fingerprint; browsers advertise br/zstd over HTTPS, httpx/requests do not. Gated on isModernBrowserUA (a legit non-browser client with no browser UA never fires — only a UA-FAKING scripted client does). Known edge case (emitter audit 2026-06-20): a real browser behind an enterprise TLS-inspection proxy that re-originates the request and normalises Accept-Encoding to gzip,deflate strips Brotli → fires — the SAME enterprise-proxy re-origination confound as net.tcp_os_vs_ua (and the TLS/h2 re-origination FPs); such a proxy re-writes ALL the network layers, so the corporate user trips several net.* tells at once, indistinguishable from a TLS-forging bot. Niche; convicting is the conservative choice. See the docs/evasion-catalog.md frontier 'TLS-inspection-proxy / enterprise re-origination false-positive'."
 
   - id: net.tls_grease_vs_ua
     title: UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE
