@@ -1,7 +1,7 @@
 # evaders/stealth/Dockerfile — prebuilt Playwright image so the live run skips per-run npm install.
 # Playwright is baked into a layer; editing run.mjs only re-copies the last layer (fast rebuild).
 
-FROM mcr.microsoft.com/playwright:v1.52.0-jammy
+FROM mcr.microsoft.com/playwright:v1.55.1-jammy
 WORKDIR /app
 # Genuine, ubiquitous Linux desktop font families (DejaVu + Noto, alongside the base image's Liberation).
 # This makes the container a faithful Linux DESKTOP rather than a font-bare headless box, so the collector's

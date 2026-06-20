@@ -5,13 +5,12 @@ go 1.26
 require (
 	github.com/quic-go/quic-go v0.60.0
 	github.com/refraction-networking/uquic v0.0.6
-	github.com/refraction-networking/utls v1.6.6
+	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.56.0
 )
 
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/gaukas/clienthellod v0.4.2 // indirect
 	github.com/gaukas/godicttls v0.0.4 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
