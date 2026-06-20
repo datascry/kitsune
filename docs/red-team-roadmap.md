@@ -147,6 +147,21 @@ Scored through the live 0.74.37 detector: **`suspicious` 0.926, ZERO convicting 
 (`getVoices`/`enumerateDevices` are in the native-tamper list; spoofed WebGL2 → `native_invariant`), and having
 them for real needs hardware — so the residual is **irreducible in-sandbox.**
 
+**HEADLESS capstone GROUNDED + behavioral synthesis STACKED — iter-19 (2026-06-20).** `patchright-headful` is
+headful (xvfb, flaky); the reliable maximal stack is **`zendriver-uach-behave`** — the clean-per-session headless
+evader (`zendriver` + `KS_UACH` coherent UA-CH: no automation floor, no `headless_ua`) with behavioral synthesis
+(`KS_BEHAVE`: a curved, varied-timing mouse path via CDP `Input.dispatchMouseEvent`, events the kernel marks
+`isTrusted`) STACKED on. Re-grounded live at 0.74.39: `zendriver-uach` alone EVADES (CONVICTING none, suspicious
+0.995) with residual = behavioral (`bh.input_entropy_floor` + `bh.no_input_before_action`, from sending ZERO
+input) + environment. Stacking `KS_BEHAVE` **defeats both input tells** — but **reveals `bh.synthetic_no_coalesced`**
+(CDP-injected events are discrete; real hardware batches coalesced intermediate samples). So the behavioral residual
+does NOT vanish — it **MOVES from input-absence tells to [[the coalesced ladder]] terminus**, whose only escape is
+real-hardware trusted-coalesced input. Net: `zendriver-uach-behave` scores `suspicious` 0.986, **CONVICTING none**,
+residual = `bh.synthetic_no_coalesced` + `br.webgl_software` / `br.voices_empty` / `br.media_devices_empty` /
+`br.hover_none_desktop` / `br.webrtc_unavailable` — **every tell external-hardware-gated.** This is the precise,
+grounded saturation boundary: no in-sandbox move closes any residual (synthetic input → coalesced terminus; faking
+environment → tamper check; real values → real hardware). `zendriver-uach-behave.json` frozen. No detector change.
+
 **⇒ PER-SESSION RED-TEAM EVASION IS SATURATED in-sandbox.** The cross-layer-coherent identity defeats every
 *convicting* tell; the detector's only remaining hold is environment **corroboration** that is external-hardware-
 gated (symmetric with the blue-team's external-data frontier — neither side can advance per-session without real
