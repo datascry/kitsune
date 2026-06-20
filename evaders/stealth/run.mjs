@@ -140,6 +140,13 @@ const FONT_OS_LEAK = process.env.FONT_OS_LEAK === "1";
 // image (→ no signal), but a bypassCSP context silently swallows it → br.csp_bypassed. Set via the context
 // option below (the literal documented API the rule cites) — no page patching, the genuine signature.
 const CSP_BYPASS = process.env.CSP_BYPASS === "1";
+// AUDIO_NOISE: the JShelter / Brave-style audio-fingerprint farble (CreepJS). A real engine's
+// OfflineAudioContext render is bit-deterministic, so the collector renders the same graph twice and any
+// difference is injected per-render noise. Perturb the AudioBuffer readback with independent per-call noise →
+// the two renders diverge → br.audio_noise. Crucially NO privacy-browser identity (navigator.brave / RFP) is
+// faked, so the detector's per-browser N/A does not apply and it convicts as a Chrome-claiming farbler — a
+// real Brave/Tor user is dropped by applicability, but a bot wearing a plain-Chrome identity is not.
+const AUDIO_NOISE = process.env.AUDIO_NOISE === "1";
 
 // A cubic Bézier point — humans move in curves, not straight lines or perfect sines.
 function bezier(p0, p1, p2, p3, t) {
@@ -208,8 +215,11 @@ const evading =
   CDC_LEAK ||
   FONT_OS_LEAK ||
   CSP_BYPASS ||
+  AUDIO_NOISE ||
   Boolean(SPOOF_UA);
-const mode = CSP_BYPASS
+const mode = AUDIO_NOISE
+  ? "audio-noise"
+  : CSP_BYPASS
   ? "csp-bypass"
   : FONT_OS_LEAK
   ? "font-os-leak"
@@ -548,6 +558,21 @@ if (FLOOR_SPOOF) {
   // isolates br.font_os_vs_ua as the coherence catch even when the basic automation tell is suppressed.
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+  });
+} else if (AUDIO_NOISE) {
+  // Perturb the AudioBuffer readback with independent per-call noise so two identical OfflineAudioContext
+  // renders diverge → br.audio_noise. A real engine returns bit-identical samples on every render. No
+  // navigator.brave / RFP identity → convicts as a plain-Chrome farbler (privacy browsers are dropped by
+  // applicability). The readback_noise rule is untouched: that compares getChannelData vs copyFromChannel in
+  // ONE render; here both readbacks would agree within a render — only ACROSS renders do the sums differ.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const gcd = AudioBuffer.prototype.getChannelData;
+    AudioBuffer.prototype.getChannelData = function (...a) {
+      const d = gcd.apply(this, a);
+      for (let i = 0; i < d.length; i++) d[i] += (Math.random() - 0.5) * 1e-6; // per-render farble noise
+      return d;
+    };
   });
 } else if (MEASURETEXT_SPOOF) {
   // Realm-incomplete font spoof: perturb measureText on the main-thread CanvasRenderingContext2D only. The

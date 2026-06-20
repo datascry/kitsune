@@ -24,6 +24,7 @@ _LIT = {
     "cdc-leak": "br.cdc_artifacts",
     "font-os-leak": "br.font_os_vs_ua",
     "csp-bypass": "br.csp_bypassed",
+    "audio-noise": "br.audio_noise",
 }
 
 

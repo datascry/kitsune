@@ -1,12 +1,13 @@
-# Kitsune detection matrix — 118 rules vs 61 evaders
+# Kitsune detection matrix — 118 rules vs 62 evaders
 
-_58/61 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
+_59/62 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
 | Evader | verdict | score | fired | convicting tells |
 |---|---|---|---:|---|
 | `accept-lang-spoof` | bot | 1.00 | 16/118 | `br.cdp_runtime_enabled`, `net.accept_lang_vs_navigator`, `br.headless_ua` +6 |
+| `audio-noise` | bot | 1.00 | 16/118 | `net.quic_pq_keyshare_vs_ua`, `br.cdp_runtime_enabled`, `br.headless_ua` +6 |
 | `audio-readback-spoof` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `baseline-firefox` | bot | 1.00 | 6/118 | `br.webdriver_present` |
 | `brave-fake` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
@@ -68,24 +69,24 @@ _58/61 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 1.00 | 15/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +5 |
 | `zendriver` | suspicious | 0.99 | 7/118 | — |
 
-## Per-rule coverage — 97/118 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 98/118 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
-| `br.media_devices_empty` | browser | environment | 48 |
-| `br.voices_empty` | browser | environment | 47 |
-| `br.webgl_software` | browser | environment | 40 |
-| `br.mimetypes_empty` | browser | environment | 37 |
-| `br.no_plugins` | browser | environment | 37 |
-| `br.notification_denied` | browser | automation | 36 |
-| `br.permissions_anomaly` | browser | automation | 36 |
-| `br.no_chrome_object` | browser | automation | 34 |
-| `br.no_pdfviewer` | browser | environment | 34 |
-| `br.headless_ua` | browser | automation | 32 |
-| `br.cdp_runtime_enabled` | browser | automation | 31 |
-| `br.ch_he_headless` | browser | automation | 31 |
-| `bh.keystroke_entropy_floor` | behavioral | behavioral | 27 |
-| `br.webdriver_getter_tampered` | browser | automation | 22 |
+| `br.media_devices_empty` | browser | environment | 49 |
+| `br.voices_empty` | browser | environment | 48 |
+| `br.webgl_software` | browser | environment | 41 |
+| `br.mimetypes_empty` | browser | environment | 38 |
+| `br.no_plugins` | browser | environment | 38 |
+| `br.notification_denied` | browser | automation | 37 |
+| `br.permissions_anomaly` | browser | automation | 37 |
+| `br.no_chrome_object` | browser | automation | 35 |
+| `br.no_pdfviewer` | browser | environment | 35 |
+| `br.headless_ua` | browser | automation | 33 |
+| `br.cdp_runtime_enabled` | browser | automation | 32 |
+| `br.ch_he_headless` | browser | automation | 32 |
+| `bh.keystroke_entropy_floor` | behavioral | behavioral | 28 |
+| `br.webdriver_getter_tampered` | browser | automation | 23 |
 | `net.tcp_os_vs_ua` | network | coherence | 13 |
 | `br.webdriver_present` | browser | automation | 12 |
 | `net.no_js_execution` | network,browser | coherence | 12 |
@@ -114,6 +115,7 @@ _58/61 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.webrtc_unavailable` | browser | environment | 3 |
 | `net.h2_header_order_vs_ua` | network | coherence | 3 |
 | `net.h2_unknown_vs_ua` | network | coherence | 3 |
+| `net.quic_pq_keyshare_vs_ua` | network,browser | coherence | 3 |
 | `net.tls_vs_ua_browser` | network,browser | coherence | 3 |
 | `bh.power_law_violation` | behavioral | behavioral | 2 |
 | `br.canvas_noise` | browser | artifact | 2 |
@@ -128,10 +130,10 @@ _58/61 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `br.worker_divergence` | browser | automation | 2 |
 | `net.ch_ua_vs_ua_browser` | network,browser | coherence | 2 |
 | `net.h2_vs_ua_browser` | network,browser | coherence | 2 |
-| `net.quic_pq_keyshare_vs_ua` | network,browser | coherence | 2 |
 | `net.tls_pq_keyshare_vs_ua` | network,browser | coherence | 2 |
 | `bh.uniform_velocity` | behavioral | behavioral | 1 |
 | `br.apple_ua_nonwebkit` | browser | coherence | 1 |
+| `br.audio_noise` | browser | artifact | 1 |
 | `br.automation_globals` | browser | automation | 1 |
 | `br.brave_spoofed` | browser | artifact | 1 |
 | `br.canvas_geometry_noise` | browser | artifact | 1 |
@@ -175,6 +177,7 @@ _58/61 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | Evader | verdict | coherence | artifact | automation | environment | behavioral | reputation |
 |---|---|---|---|---|---|---|---|
 | `accept-lang-spoof` | bot | 2 | 0 | 7 | 6 | 1 | 0 |
+| `audio-noise` | bot | 1 | 1 | 7 | 6 | 1 | 0 |
 | `audio-readback-spoof` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
 | `brave-fake` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
@@ -236,13 +239,13 @@ _58/61 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `worker-wrap` | bot | 0 | 1 | 7 | 6 | 1 | 0 |
 | `zendriver` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 21/118 rules catch nothing yet
+## Coverage gaps — 20/118 rules catch nothing yet
 
 **Evaded** (2) — reads present in the corpus, but every sample passed:
 - `net.h2_settings_vs_order`
 - `br.low_hardware_concurrency`
 
-**Unexercised** (19) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (18) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `br.screen_impossible`
 - `rep.datacenter_asn`
@@ -256,7 +259,6 @@ _58/61 evaders caught (`bot`). Generated from the committed captures at ruleset 
 - `br.devicepixelratio_anomaly`
 - `br.voice_os_vs_ua`
 - `br.audio_missing`
-- `br.audio_noise`
 - `br.adblock_present`
 - `br.font_mac_internal`
 - `net.webrtc_ip_vs_observed`

@@ -1145,7 +1145,7 @@ rules:
     status: active
     category: artifact
     added: "2026-06-18"
-    last_validated: "2026-06-19"
+    last_validated: "2026-06-20"
     source: "CreepJS: a real engine is deterministic; per-render noise is farbling/anti-detect injection. v0.73.3: per-browser N/A — a privacy browser farbles/blocks audio by design (Brave Shields via browser.is_brave; Tor/Mullvad/RFP-Firefox via browser.rfp_browser), so the detector drops this artifact (detector.applicability) rather than convict a real privacy-browser user; a Chrome-claiming farbler with no such identity still convicts, and a privacy-browser-faking bot is caught by its automation tells."
 
   - id: br.readback_noise

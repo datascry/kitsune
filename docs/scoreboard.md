@@ -1,11 +1,12 @@
 # Kitsune scoreboard
 
-- generated: `2026-06-20T00:32:48.587391+00:00`
+- generated: `2026-06-20T00:37:45.221012+00:00`
 - ruleset: `0.74.32`
 
 | Evader | Ver | Network | Browser | Behavioral | Reputation | Incoh. | Score | Label |
 |---|---|---|---|---|---|---|---|---|
 | accept-lang-spoof | corpus | 0.55 | 1.00 | 0.55 | 0.00 | 0.55 | 1.00 | bot |
+| audio-noise | corpus | 0.50 | 1.00 | 0.55 | 0.00 | 0.50 | 1.00 | bot |
 | audio-readback-spoof | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
 | baseline-firefox | corpus | 0.00 | 1.00 | 0.00 | 0.00 | 0.00 | 1.00 | bot |
 | brave-fake | corpus | 0.00 | 1.00 | 0.55 | 0.00 | 0.00 | 1.00 | bot |
@@ -70,6 +71,7 @@
 ## Why
 
 - **accept-lang-spoof** (bot): `br.cdp_runtime_enabled`, `net.accept_lang_vs_navigator`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.languages_worker_vs_main`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`
+- **audio-noise** (bot): `net.quic_pq_keyshare_vs_ua`, `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.audio_noise`, `br.media_devices_empty`
 - **audio-readback-spoof** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.readback_noise`, `br.media_devices_empty`
 - **baseline-firefox** (bot): `br.webdriver_present`, `br.no_plugins`, `br.mimetypes_empty`, `br.webgl2_missing`, `br.voices_empty`, `br.media_devices_empty`
 - **brave-fake** (bot): `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless`, `bh.keystroke_entropy_floor`, `br.webgl_software`, `br.permissions_anomaly`, `br.no_chrome_object`, `br.no_plugins`, `br.webdriver_getter_tampered`, `br.no_pdfviewer`, `br.mimetypes_empty`, `br.notification_denied`, `br.voices_empty`, `br.media_devices_empty`, `br.brave_spoofed`
