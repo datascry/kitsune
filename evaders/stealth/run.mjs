@@ -115,6 +115,13 @@ const CANVAS_GEOMETRY_SPOOF = process.env.CANVAS_GEOMETRY_SPOOF === "1";
 // N/A) — but a real Brave's navigator.brave.isBrave is NATIVE; the injected one is a plain function →
 // br.brave_spoofed (and the genuineness guard withholds the N/A).
 const BRAVE_FAKE = process.env.BRAVE_FAKE === "1";
+// BRAVE_FAKE_PROXY: the ESCALATION of BRAVE_FAKE. The brave_spoofed genuineness check only verifies isBrave is a
+// function whose toString contains "[native code]" — the shallow check a `new Proxy(nativeFn, {apply})` defeats (a
+// Proxy over a native fn REFLECTS the target's "[native code]" toString AND the apply trap returns Brave's
+// Promise<true>). So a fake-Brave bot using a Proxy isBrave passes the genuineness guard → its canvas/audio farbling
+// gets the privacy-browser N/A → it escapes the canvas_noise/audio_noise artifact tells (the COALESCE_PROXY pattern
+// applied to the Brave identity). Tests whether the genuineness check is Proxy-defeatable like worker_constructor was.
+const BRAVE_FAKE_PROXY = process.env.BRAVE_FAKE_PROXY === "1";
 // RENDERER_SPOOF: a naive GPU-masking spoof — patch WebGL getParameter so the UNMASKED_RENDERER reports a
 // generic placeholder ("Generic Renderer") to hide the real/SwiftShader GPU. Under a Chromium UA (which
 // never generalises its renderer the way Firefox does) the placeholder string trips br.webgl_renderer_artifact.
@@ -288,6 +295,7 @@ const evading =
   LANG_LIST_SPOOF ||
   CANVAS_GEOMETRY_SPOOF ||
   BRAVE_FAKE ||
+  BRAVE_FAKE_PROXY ||
   ELECTRON_LEAK ||
   STALE_ENGINE ||
   MEASURETEXT_SPOOF ||
@@ -340,6 +348,8 @@ const mode = UACH_COHERENT
   ? "honeypot"
   : RENDERER_SPOOF
   ? "renderer-spoof"
+  : BRAVE_FAKE_PROXY
+  ? "brave-fake-proxy"
   : BRAVE_FAKE
   ? "brave-fake"
   : CANVAS_GEOMETRY_SPOOF
@@ -554,6 +564,14 @@ if (FLOOR_SPOOF) {
       value: { isBrave: () => Promise.resolve(true) },
       configurable: true,
     });
+  });
+} else if (BRAVE_FAKE_PROXY) {
+  // The Proxy escalation: isBrave is a `new Proxy(nativeFn, {apply})` whose toString REFLECTS the native target's
+  // "[native code]" (defeating the shallow brave_spoofed check) while the apply trap returns Brave's Promise<true>.
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false, configurable: true });
+    const isBrave = new Proxy(Date.now, { apply: () => Promise.resolve(true) }); // Date.now: a native fn target
+    Object.defineProperty(navigator, "brave", { value: { isBrave }, configurable: true });
   });
 } else if (RENDERER_SPOOF) {
   // Naive GPU-masking: patch WebGL getParameter so the UNMASKED_RENDERER (0x9246) reports a generic

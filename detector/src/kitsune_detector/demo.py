@@ -528,12 +528,17 @@ td code{font-size:12px;color:#0a3}
     // trips webdriver/CDP/etc., so this cannot help a bot escape.
     if (navigator.brave) {
       sigs.push(S("browser", "is_brave", true));
-      // A real Brave's navigator.brave.isBrave is a NATIVE function. A bot that injects navigator.brave to
-      // exploit the privacy-browser farbling N/A typically has a plain (non-native) isBrave, or none at all.
-      // Flag the fake — a convicting artifact that closes the spoof-the-identity-to-suppress-farbling hole.
+      // A real Brave's navigator.brave.isBrave is a NATIVE function AND navigator.brave is a genuine platform
+      // object (the Web IDL `Brave` interface — its [[Prototype]] is the Brave interface prototype). A bot that
+      // injects navigator.brave to exploit the privacy-browser farbling N/A lives on a PLAIN `{isBrave}` object
+      // whose prototype IS Object.prototype — whether isBrave is a plain function (toString != "[native code]")
+      // OR a `new Proxy(nativeFn, {apply})` that REFLECTS the native "[native code]" toString (defeating the
+      // shallow check alone). The plain-object check catches the Proxy escalation the toString check misses; a
+      // real Brave is never a plain object, so it stays exempt (FP-safe).
       try {
         var _ib = navigator.brave.isBrave;
-        if (typeof _ib !== "function" || _ib.toString().indexOf("[native code]") < 0)
+        if (typeof _ib !== "function" || _ib.toString().indexOf("[native code]") < 0 ||
+            Object.getPrototypeOf(navigator.brave) === Object.prototype)
           sigs.push(S("browser", "brave_spoofed", true));
       } catch (e) { sigs.push(S("browser", "brave_spoofed", true)); }
     }

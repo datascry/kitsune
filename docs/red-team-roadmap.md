@@ -799,6 +799,27 @@ NET: zero real coherence/artifact FPs across the comprehensive ruleset; one stal
 privacy-browser FP-safety re-grounded against the current collector. detector 256 + harness + lit-tests green, no
 detector change, no version bump.
 
+**BRAVE genuineness check — Proxy escalation closed (iter-52, 2026-06-20, v0.74.48).** The iter-51 Brave
+FP-regression surfaced an adjacent RED-TEAM gap: the applicability guard excuses a genuine Brave's canvas/audio
+farbling (`is_brave && !brave_spoofed`), and the `brave_spoofed` genuineness check was only the shallow `isBrave`
+toString `[native code]` test — the exact check the COALESCE_PROXY pattern defeats. RED-TEAM: built stealth
+`BRAVE_FAKE_PROXY` — `navigator.brave.isBrave = new Proxy(nativeFn, {apply})` whose toString REFLECTS the native
+`[native code]` and whose apply trap returns Brave's `Promise<true>`. GROUNDED LIVE on 0.74.47: `BRAVE_FAKE` (plain
+fn) trips `brave_spoofed`, but `BRAVE_FAKE_PROXY` does NOT — `is_brave=True`, `brave_spoofed=None` → the fake-Brave
+bot would get its farbling N/A'd and ESCAPE `canvas_noise`/`audio_noise` (the relevant evasion for a canvas-farbling
+coordination-evading fleet that randomises its fingerprint per session to defeat `fp_collision`). BLUE-TEAM: hardened
+the genuineness check (demo.py + collector probes.ts) with a structural invariant the Proxy cannot fake — a real
+Brave's `navigator.brave` is a Web IDL `Brave` platform object (its `[[Prototype]]` is the Brave interface
+prototype), whereas BOTH fakes live on a PLAIN `{isBrave}` object, so `Object.getPrototypeOf(navigator.brave) ===
+Object.prototype` flags them. GROUNDED LIVE on 0.74.48: `BRAVE_FAKE_PROXY` AND `BRAVE_FAKE` both trip
+`brave_spoofed`; a REAL Brave (live evader, genuine platform object) does NOT — FP-safe (keeps its farbling N/A).
+`task calibrate` (browserforge n=500): 0 new FPs (brave_spoofed absent from the re-tier table). Frozen
+`brave-fake-proxy.json` + lit-test guard. detector 256 + collector typecheck/lint/test + harness 26 lit green;
+version-bumped 0.74.47→0.74.48. Residual (next rung, documented): a fake using `Object.create(nonObjectProto,
+{isBrave})` would defeat the plain-object check — but that fabricates a non-Brave interface prototype, a deeper
+structural lie. The Brave-identity genuineness ladder now mirrors the worker-ctor ladder (shallow toString → Proxy
+escalation → structural-identity invariant the Proxy can't forge).
+
 ## Arms-race discipline (every iteration)
 Run the enhanced/stacked/modified evader **live against the detector** (docker, `kitsune_default` net); record
 its verdict + which tells it now evades vs still trips. A new EVADES result is either **(a)** answerable by an

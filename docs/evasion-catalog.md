@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **93 exercised techniques** (84 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **94 exercised techniques** (85 convicted `bot`, 9 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (20)
 
@@ -35,7 +35,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (93)
+### Techniques exercised — scored against the live ruleset (94)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -45,8 +45,9 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `audio-readback-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.readback_noise`, `br.webdriver_getter_tampered` |
 | `azuretls` | bot | `net.h2_header_order_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua` |
 | `baseline-firefox` | bot | `br.webdriver_present` |
-| `brave` | bot | `br.canvas_noise`, `br.headless_ua`, `br.webdriver_present` |
+| `brave` | bot | `br.headless_ua`, `br.webdriver_present` |
 | `brave-fake` | bot | `br.brave_spoofed`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
+| `brave-fake-proxy` | bot | `br.brave_spoofed`, `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `camoufox` | bot | `net.no_js_execution`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `camoufox-hardened` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |
 | `camoufox-headful` | suspicious | ⚠ **EVADES** (suspicious) — no convicting tell |

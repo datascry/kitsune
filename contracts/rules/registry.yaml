@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.47"
+ruleset_version: "0.74.48"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1663,5 +1663,5 @@ rules:
     status: active
     category: artifact
     added: "2026-06-19"
-    last_validated: "2026-06-19"
-    source: "Closes the evasion opened by the privacy-browser farbling N/A (detector.applicability / live-page notApplicable drop canvas_noise/audio_noise for a session that identifies as Brave). A bot could inject navigator.brave to claim Brave and get its farbling excused — but a REAL Brave's navigator.brave.isBrave is a NATIVE function (toString contains '[native code]'), whereas an injected one is a plain JS function (or absent, or throws). The collector fires this only when navigator.brave exists AND isBrave is non-native — a real Brave never trips it (extensions run in isolated worlds and do not replace the page's navigator.brave). Convicting artifact: a faked Brave identity is an anti-detect injection, never a stock browser. The applicability filter also requires is_brave AND NOT brave_spoofed before excusing the farbling, so a spoofed Brave keeps its farbling tells too."
+    last_validated: "2026-06-20"
+    source: "Closes the evasion opened by the privacy-browser farbling N/A (detector.applicability / live-page notApplicable drop canvas_noise/audio_noise for a session that identifies as Brave). A bot could inject navigator.brave to claim Brave and get its farbling excused — but a REAL Brave's navigator.brave.isBrave is a NATIVE function (toString contains '[native code]') AND navigator.brave is a genuine platform object (the Web IDL `Brave` interface, whose [[Prototype]] is the Brave interface prototype). The collector fires this when navigator.brave exists AND EITHER isBrave is non-native OR navigator.brave is a plain Object (Object.getPrototypeOf === Object.prototype). v0.74.48 PROXY-ESCALATION FIX (GROUNDED): the original check was only the isBrave toString — defeated by the COALESCE_PROXY pattern (stealth BRAVE_FAKE_PROXY: isBrave = new Proxy(nativeFn,{apply}) REFLECTS the native '[native code]' toString and the apply trap returns Brave's Promise<true>, so brave_spoofed stayed silent and the fake-Brave bot escaped canvas_noise — grounded live before the fix). The added plain-object check catches it: both the plain-function fake and the Proxy fake live on a plain `{isBrave}` object, while a real Brave's navigator.brave is never a plain object. GROUNDED LIVE 2026-06-20: BRAVE_FAKE (plain fn) and BRAVE_FAKE_PROXY (Proxy fn) both trip brave_spoofed; a REAL Brave (live brave evader, navigator.brave a genuine platform object) does NOT — FP-safe (a real Brave keeps its farbling N/A). Convicting artifact: a faked Brave identity is an anti-detect injection, never a stock browser; extensions run in isolated worlds and do not replace the page's navigator.brave. The applicability filter requires is_brave AND NOT brave_spoofed before excusing the farbling, so a spoofed Brave keeps its farbling tells too. Residual (next rung, documented): a fake using Object.create(nonObjectProto, {isBrave}) would defeat the plain-object check — but that fabricates a non-Brave interface prototype, a deeper structural lie."

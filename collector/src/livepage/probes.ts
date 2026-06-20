@@ -543,14 +543,22 @@ export function armCollector(): LiveCollector {
     put("browser", "ua_browser", uaBrowser(ua));
     put("browser", "ua_platform", uaPlat);
 
-    // Brave identity + spoof check. A real Brave's navigator.brave.isBrave is a NATIVE function; a bot that
-    // injects navigator.brave to exploit the privacy-browser farbling N/A has a plain (non-native) isBrave.
+    // Brave identity + spoof check. A real Brave's navigator.brave.isBrave is a NATIVE function AND
+    // navigator.brave is a genuine platform object (Web IDL `Brave` interface). A bot that injects
+    // navigator.brave to exploit the privacy-browser farbling N/A lives on a PLAIN `{isBrave}` object — whether
+    // isBrave is a plain function OR a `new Proxy(nativeFn,{apply})` reflecting the native "[native code]"
+    // toString. The plain-object check (prototype === Object.prototype) catches the Proxy escalation; a real
+    // Brave is never a plain object, so it stays exempt (FP-safe).
     const brave = (nav() as { brave?: { isBrave?: unknown } }).brave;
     if (brave) {
       put("browser", "is_brave", true);
       try {
         const ib = brave.isBrave;
-        if (typeof ib !== "function" || !ib.toString().includes("[native code]")) {
+        if (
+          typeof ib !== "function" ||
+          !ib.toString().includes("[native code]") ||
+          Object.getPrototypeOf(brave) === Object.prototype
+        ) {
           put("browser", "brave_spoofed", true);
         }
       } catch {
