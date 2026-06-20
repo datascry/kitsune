@@ -36,7 +36,19 @@ _DATA = Path(__file__).parent / "data"
 _FACTORS: tuple[tuple[str, str | None], ...] = (("gpu", "plat"), ("screen", "plat"), ("cores", None))
 
 
-def _gpu_family(renderer: str) -> str:
+def _gpu_family(renderer: str) -> str | None:
+    """Classify a WebGL renderer into a known GPU family, or None when it does not match one.
+
+    None means "GPU family UNKNOWN" → the prevalence joint abstains (unknown never fires), NOT a deep-tail
+    penalty. The old catch-all "other" bucket was a single-source FP landmine of the same class as the dropped
+    colour factor: browserforge generates concrete vendor strings and rarely produces an unclassifiable
+    renderer, so P(gpu='other'|plat) is tiny in the prior — yet REAL browsers legitimately report
+    unclassifiable renderers (Firefox software-rendering generalises to "llvmpipe, or similar"; Mullvad/RFP
+    generalises to "Mozilla"), so a real Firefox/Mullvad user took the 'other' eps-floor penalty and tripped
+    br.fingerprint_improbable (GROUNDED: corpus/calibration headful firefox/firefox-stock + privacy mullvad all
+    flagged improbable on gpu='other' alone). The bias is uncorroborable in-sandbox (no Tier-3 real GPU data),
+    so per the standing 'never act on a single-source number' rule an unclassified GPU abstains. A spoof that
+    masks its renderer to a generic string (renderer-spoof) is caught by br.webgl_renderer_artifact instead."""
     r = renderer.lower()
     if re.search(r"nvidia|geforce|rtx|gtx", r):
         return "nvidia"
@@ -50,7 +62,7 @@ def _gpu_family(renderer: str) -> str:
         return "mobile"
     if "swiftshader" in r:
         return "swiftshader"
-    return "other"
+    return None
 
 
 def _screen_bucket(res: str) -> str | None:

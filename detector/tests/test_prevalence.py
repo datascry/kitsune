@@ -40,7 +40,11 @@ def test_gpu_family_branches() -> None:
     assert f("ANGLE (AMD, Radeon)") == "amd"
     assert f("Adreno (TM) 640") == "mobile"
     assert f("ANGLE (Google, SwiftShader)") == "swiftshader"
-    assert f("Some Unknown GPU") == "other"
+    # An unclassifiable renderer is UNKNOWN, not a deep-tail bucket → None so the joint abstains (the FP fix:
+    # real Firefox "llvmpipe, or similar" / Mullvad-RFP "Mozilla" no longer trip br.fingerprint_improbable).
+    assert f("Some Unknown GPU") is None
+    assert f("llvmpipe, or similar") is None  # real Firefox software-render generalization
+    assert f("Mozilla") is None  # real Mullvad / RFP renderer generalization
 
 
 def test_screen_bucket() -> None:
@@ -61,6 +65,17 @@ def test_common_clears_improbable_fires() -> None:
     # a common real macOS/Apple combo is not improbable
     assert prevalence.is_improbable(_fp("macOS", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8)) is False
     # coherent fields, improbable joint: a Windows UA with an Apple GPU + a Mac screen — no real user
+    assert prevalence.is_improbable(_fp("Windows", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8)) is True
+
+
+def test_unclassified_gpu_abstains_real_firefox_mullvad_not_improbable() -> None:
+    # FP fix (GROUNDED on real captures): an UNCLASSIFIABLE WebGL renderer is GPU-family UNKNOWN, so the joint
+    # abstains rather than taking the old "other" eps-floor penalty. Real Firefox software-rendering reports
+    # "llvmpipe, or similar" and Mullvad/RFP reports "Mozilla" — both map to no known family. With an otherwise
+    # common Linux + small-screen + 8-core vector they must NOT fire (they did, on gpu='other', before the fix).
+    assert prevalence.is_improbable(_fp("Linux", "llvmpipe, or similar", "1280x720", 24, 12)) is False
+    assert prevalence.is_improbable(_fp("Linux", "Mozilla", "1280x720", 24, 4)) is False
+    # The recognized-family improbable joint is unaffected — a genuinely improbable known GPU still fires.
     assert prevalence.is_improbable(_fp("Windows", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8)) is True
 
 

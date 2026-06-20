@@ -88,7 +88,11 @@ def features_from_fingerprint(fp: dict[str, Any]) -> Features:
         else "?"
     )
     r = str(vc.get("renderer", "")).lower()
-    gpu = (
+    # None = GPU family UNKNOWN → the prevalence joint abstains (unknown never fires). Kept in sync with
+    # kitsune_detector.prevalence._gpu_family: the old "other" catch-all was a single-source FP (real
+    # Firefox/Mullvad report unclassifiable renderers — "llvmpipe, or similar" / "Mozilla" — that browserforge
+    # under-generates, so they took the eps-floor penalty and falsely tripped br.fingerprint_improbable).
+    gpu: str | None = (
         "nvidia"
         if re.search(r"nvidia|geforce|rtx|gtx", r)
         else "apple"
@@ -101,7 +105,7 @@ def features_from_fingerprint(fp: dict[str, Any]) -> Features:
         if re.search(r"adreno|mali|powervr", r)
         else "swiftshader"
         if "swiftshader" in r
-        else "other"
+        else None
     )
     return {
         "plat": plat,

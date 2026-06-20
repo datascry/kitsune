@@ -1,6 +1,6 @@
 # Kitsune detection matrix — 118 rules vs 65 evaders
 
-_62/65 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.32`._
+_62/65 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.33`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -56,7 +56,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `pydoll` | bot | 1.00 | 7/118 | `br.headless_ua` |
 | `quic-no-grease` | bot | 1.00 | 4/118 | `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua` +1 |
 | `rebrowser` | bot | 1.00 | 11/118 | `br.webdriver_present`, `br.headless_ua`, `br.permissions_anomaly` +2 |
-| `renderer-spoof` | bot | 1.00 | 19/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
+| `renderer-spoof` | bot | 1.00 | 18/118 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +7 |
 | `screen-impossible` | bot | 1.00 | 17/118 | `br.screen_impossible`, `net.quic_pq_keyshare_vs_ua`, `br.cdp_runtime_enabled` +6 |
 | `selenium-driverless` | bot | 1.00 | 7/118 | `br.headless_ua` |
 | `spoof-ua` | bot | 1.00 | 18/118 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +9 |
@@ -111,7 +111,6 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.quic_pq_keyshare_vs_ua` | network,browser | coherence | 4 |
 | `bh.path_too_straight` | behavioral | behavioral | 3 |
 | `br.error_engine_vs_ua` | browser | coherence | 3 |
-| `br.fingerprint_improbable` | browser | prevalence | 3 |
 | `br.tostring_tampered` | browser | automation | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
 | `br.webgl_worker_vs_main` | browser | coherence | 3 |
@@ -122,6 +121,7 @@ _62/65 evaders caught (`bot`). Generated from the committed captures at ruleset 
 | `net.tls_vs_ua_browser` | network,browser | coherence | 3 |
 | `bh.power_law_violation` | behavioral | behavioral | 2 |
 | `br.canvas_noise` | browser | artifact | 2 |
+| `br.fingerprint_improbable` | browser | prevalence | 2 |
 | `br.languages_worker_vs_main` | browser | coherence | 2 |
 | `br.no_connection` | browser | environment | 2 |
 | `br.timezone_inconsistent` | browser | coherence | 2 |
