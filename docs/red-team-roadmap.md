@@ -70,9 +70,18 @@ realm-coherence spoof is caught. The detector's durable signals are the headless
    h2, so azuretls negotiates h2. Validates the detector's network-coherence suite end-to-end. Capture frozen.
 3. **[network] JA4 profile rotation** — an evader that rotates between several realistic JA4 fingerprints over a
    session (the "too-random vs too-static" frontier JA4 normalization targets).
-4. **[fingerprint] real-value-reuse injection** (botright / apify fingerprint-injector class) — Proxy-over-native
-   injection of real-sampled `(gpu, screen, cores, …)` joints; attacks the artifact + prevalence layers head-on
-   (the white-boxed limit of per-session prevalence).
+4. **[fingerprint] real-value-reuse injection** (apify fingerprint-injector class) — ✅ **BUILT + GROUNDED iter-14
+   (2026-06-20).** Created the `apify-fp-inject` evader (18th fleet tool): `fingerprint-generator` samples a real
+   Linux-Chrome joint, `newInjectedContext` injects it via Proxy-over-native. **The white-boxed "defeats the
+   artifact + coherence layer by design" inference was INCOMPLETE.** Grounded live: it DOES defeat the artifact
+   layer (no `native_invariant`/`tostring_tampered`) AND the network layer (`network` score **0** — coherent
+   Sec-CH-UA, no `headless_ua`/`ch_he_headless`). But the injection is **MAIN-realm only** (init script), so a Web
+   Worker sees the un-injected headless navigator → it MANUFACTURES three realm-coherence trips the un-spoofed
+   browser never had: `br.worker_divergence` + `br.languages_worker_vs_main` + `br.webgl_worker_vs_main`. Scored
+   `bot` (0.99999) — the injection ADDS detectability on the coherence axis (textbook thesis demo). No new rule
+   (existing realm-coherence catches it); capture frozen, lit-test guard on `br.worker_divergence`. Worker-realm
+   coherence is a robust FP-safe catch for the whole main-realm-injection class; beating it needs identical
+   worker/OffscreenCanvas-realm spoofing apify does not do (→ external/coordination frontier).
 5. **[environment] stock-Chrome `--headless=new`** — ❌ **REFUTED iter-8 (grounded live).** The hypothesis was
    that a stock Chrome binary's new-headless drops the HeadlessChrome UA token → the CDP-minimal class EVADES.
    Installed real stock Chrome 149: `--headless=new`/`--headless=old`/`--headless` ALL report

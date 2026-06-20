@@ -1,0 +1,14 @@
+{
+  "name": "@kitsune/apify-fp-inject",
+  "version": "0.1.0",
+  "description": "Apify fingerprint-injector evader: injects a real Linux-Chrome fingerprint into Playwright and drives the edge.",
+  "type": "module",
+  "scripts": {
+    "start": "node run.mjs"
+  },
+  "dependencies": {
+    "fingerprint-generator": "2.1.82",
+    "fingerprint-injector": "2.1.82",
+    "playwright": "1.52.0"
+  }
+}

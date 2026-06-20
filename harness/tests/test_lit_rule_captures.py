@@ -30,6 +30,7 @@ _LIT = {
     "h2-settings-split": "net.h2_settings_vs_order",
     "camoufox-macos": "br.font_mac_internal",
     "coalesce-proxy": "br.coalesced_untrusted",
+    "apify-fp-inject": "br.worker_divergence",
 }
 
 
