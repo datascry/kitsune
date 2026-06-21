@@ -21,6 +21,10 @@ var quicV1InitialSalt = []byte{
 // ErrNotQUICInitial is returned when the bytes are not a QUIC v1 Initial long-header packet.
 var ErrNotQUICInitial = errors.New("fingerprint: not a QUIC v1 Initial packet")
 
+// maxCryptoReassembly bounds the CRYPTO-frame reassembly buffer (64 KiB) so a forged Initial cannot force
+// an unbounded allocation — see the offset check in ParseQUICInitials.
+const maxCryptoReassembly = 1 << 16
+
 // hkdfExtract / hkdfExpandLabel implement the TLS 1.3 HKDF (RFC 8446 §7.1) QUIC uses for key schedule.
 func hkdfExtract(salt, ikm []byte) []byte {
 	h := hmac.New(sha256.New, salt)
@@ -83,18 +87,32 @@ func ParseQUICInitials(pkts [][]byte) (*ClientHello, error) {
 		if err != nil {
 			continue // not a decryptable Initial (e.g. a padding-only retransmit) — skip
 		}
-		for _, f := range frags {
-			need := int(f.off) + len(f.data)
-			if need > len(buf) {
-				buf = append(buf, make([]byte, need-len(buf))...)
-			}
-			copy(buf[f.off:], f.data)
-		}
+		buf = reassembleCrypto(buf, frags)
 		if ch := tryParseHandshake(buf); ch != nil {
 			return ch, nil
 		}
 	}
 	return nil, ErrNotQUICInitial
+}
+
+// reassembleCrypto stitches CRYPTO fragments into buf at their stream offsets. It BOUNDS the buffer at
+// maxCryptoReassembly: a real QUIC ClientHello (even with post-quantum key shares spanning several Initials)
+// is a few KB, so a CRYPTO offset beyond the cap is a forged/garbage Initial. The offset is an attacker-
+// controllable varint (up to 2^62) and the Initial keys derive from the PUBLIC DCID, so without this cap a
+// crafted authenticated Initial could force a multi-GB allocation (remote OOM on the NET_RAW edge). An
+// oversized fragment is skipped (the rest still stitch), so a truncated buf simply never parses as a hello.
+func reassembleCrypto(buf []byte, frags []cryptoFrag) []byte {
+	for _, f := range frags {
+		if f.off > maxCryptoReassembly || int(f.off)+len(f.data) > maxCryptoReassembly {
+			continue
+		}
+		need := int(f.off) + len(f.data)
+		if need > len(buf) {
+			buf = append(buf, make([]byte, need-len(buf))...)
+		}
+		copy(buf[f.off:], f.data)
+	}
+	return buf
 }
 
 // tryParseHandshake parses buf as a ClientHello only once it holds the complete handshake message.
