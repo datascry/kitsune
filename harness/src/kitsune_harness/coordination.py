@@ -3,7 +3,7 @@
 
 """Coordination scoring.
 
-[[fleet]] groups sessions by JA4 (the TLS-engine identity below the JS spoofing layer). But a JA4
+Coordination groups sessions by JA4 (the TLS-engine identity below the JS spoofing layer). But a JA4
 cluster alone is only a *candidate* — millions of real users run the same Chrome build and share a
 JA4. The discriminator is a paradox an anti-detect fleet cannot avoid:
 
