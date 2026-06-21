@@ -32,6 +32,10 @@ def _fingerprint_to_dict(fp: Any) -> dict[str, Any]:
             "userAgent": nav.userAgent,
             "platform": nav.platform,
             "languages": list(nav.languages or []),
+            # navigator.language IS navigator.languages[0] on every real browser (HTML standard). browserforge
+            # carries only the list, so derive the singular faithfully — without it the mapper's
+            # language_list_incoherent coherence check has no left-hand value and silently never runs.
+            "language": getattr(nav, "language", None) or (next(iter(nav.languages)) if nav.languages else None),
             "hardwareConcurrency": nav.hardwareConcurrency,
             "deviceMemory": getattr(nav, "deviceMemory", None),
             # browserforge represents Firefox's real navigator.vendor === "" as None; normalise it to the

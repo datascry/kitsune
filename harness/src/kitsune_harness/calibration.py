@@ -47,6 +47,7 @@ DERIVABLE_KINDS = frozenset(
         "mimetypes_empty",
         "productsub_render",
         "languages_empty",
+        "language_list_incoherent",
         "platform_empty",
         "webgl_os_hint",
         "webgl_software",
