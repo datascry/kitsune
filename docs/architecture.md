@@ -20,9 +20,9 @@ A self-contained lab that runs **both sides** of the bot-vs-human arms race agai
   behavioral, reputation) and — its differentiator — flags **incoherence *across* layers** rather than
   bad signals within one. It scores each session into an **explainable verdict** behind a precision
   discipline (the conviction gate, §7) that keeps it from flagging real-but-unusual browsers.
-- **`evaders` ("red")** — a difficulty ladder of *real* anti-detect tools and browsers (vanilla,
-  curl-impersonate, primp, go-tls, selenium-driverless, undetected, nodriver, zendriver, pydoll,
-  camoufox, brave, stealth, h2-rapid-reset, agent) that attack the detector.
+- **`evaders` ("red")** — a difficulty ladder of ~22 *real* anti-detect tools and browsers (vanilla,
+  curl-impersonate, primp, go-tls, nodriver, zendriver, camoufox, stealth, mobile-emulation, pow, … —
+  the full generated fleet is [`docs/evasion-catalog.md`](evasion-catalog.md)) that attack the detector.
 - **`harness`** — runs each evader against the detector and emits a reproducible, dated, per-layer
   **scoreboard**; it also hosts the two precision/structural subsystems that the detector cannot test
   against itself: the real-browser **calibration** gate (§9) and the **coordination/fleet** detector (§8).
@@ -103,9 +103,11 @@ layer uses the ecosystem that's genuinely best for it — which also happens to 
 | `evaders/` | **Py / TS / Go** | A red-team ladder of *real* tools, each in its native language (see below) — the point is to score genuine anti-detect software, not toy clients. |
 
 The evader fleet spans all three languages because the real tools do: Python (vanilla `httpx` control,
-`primp`, `pydoll`, `undetected`, `nodriver`, `zendriver`, `selenium-driverless`, `agent`), TypeScript
-(`stealth` / Camoufox-on-Playwright), and Go (`go-tls` uTLS ClientHello forging, `h2-rapid-reset`).
-`camoufox` and `brave` drive real anti-detect browsers.
+`primp`, `pydoll`, `undetected`, `nodriver`, `zendriver`, `selenium-driverless`, `agent`, `xtest-coalesce`),
+TypeScript (`stealth`, `playwright-extra`, `apify-fp-inject`, `mobile-emulation`, `webkit-ua-spoof`,
+`firefox-os-spoof` — Camoufox/Playwright-driven), and Go (`go-tls`/`azuretls` uTLS ClientHello forging,
+`h2-rapid-reset`, `pow`). `camoufox` and `brave` drive real anti-detect browsers. The complete, generated
+fleet list is [`docs/evasion-catalog.md`](evasion-catalog.md).
 
 > **Honest tradeoff.** Polyglot costs upfront setup and a 3-toolchain CI. It's worth it here because
 > the seams are natural (network capture / server scoring / in-browser collection) and forcing one
@@ -170,7 +172,7 @@ contracts/
   session.schema.json         # joined view
   verdict.schema.json         # scored result
   coherence-rule.schema.json  # the shape of a rule (rules are data — see §6)
-  rules/registry.yaml         # the coherence-rule registry (ruleset_version 0.70.0)
+  rules/registry.yaml         # the coherence-rule registry (carries its own ruleset_version — see below)
   examples/                   # golden fixtures, validated in CI against the schemas
 ```
 
@@ -194,7 +196,7 @@ Why data-driven matters: bot-detection signals **decay**. The classic `Error.sta
 the detector. Every rule carries provenance (`added`, `last_validated`, `status`, `source`) so the
 matrix can chart *signal decay over time* — an honesty mechanism, not just a writeup angle.
 
-A rule (one of ~114 in the live registry):
+A rule (one of ~130 in the live registry — the generated [detection catalog](detection-catalog.md) is the authoritative, current table):
 
 ```yaml
 - id: net.tls_os_vs_tcp_os
@@ -412,7 +414,7 @@ mocking to 95% buys fragile tests, not safety.
 |---|---|---|---|
 | **Core logic** | contracts validation, detector scoring + coherence engine + conviction gate, prevalence, coordination scorer, harness aggregation, edge fingerprint parsing | **≥95% line+branch** (CI-enforced; currently ~100%) | fast unit tests, golden fixtures from `contracts/examples/`, property tests on scorers |
 | **IO / integration** | edge proxy networking, collector DOM glue, evaders | **lower** + meaningful e2e | integration tests against the real spine; don't chase the number with mocks |
-| **End-to-end** | full pipeline | smoke, not %-gated | docker-compose up; run an evader; assert a verdict lands with the correct `session_id` |
+| **End-to-end** | full pipeline | smoke, not %-gated | the CI `e2e` job runs the in-process spine (vanilla scores human, naive-bot scores bot); locally, `docker compose up` + an evader asserts a verdict lands with the correct `session_id` |
 
 Principles: schemas are the test oracle (every example fixture validates and round-trips); the coherence
 engine is tested rule-by-rule with crafted sessions; scorers are tested for monotonicity, the conviction
@@ -429,8 +431,9 @@ first two lines), Conventional Commits, and strict typing everywhere (`mypy --st
 ## 12. CI/CD & reproducibility
 
 - **CI (GitHub Actions), per-language matrix:** lint + type-check + test + coverage-gate for Go,
-  Python, TS independently, plus a `contracts` job validating every schema and example fixture, plus
-  an e2e job (`docker compose up` + smoke) and a `task calibrate` precision gate.
+  Python, TS independently, plus a `contracts` job validating the rule registry, a `docs` drift gate
+  (regenerates the catalogs/README/matrix and fails on drift), and an e2e spine-smoke job (vanilla
+  scores human, naive-bot scores bot). The calibration precision gate runs locally via `task calibrate`.
 - **"CD" for a lab** = build & publish container images to **GHCR** on tag, and publish the latest
   scoreboard + matrix to **GitHub Pages** (the closest thing to a live demo).
 - **Reproducibility is a first-class requirement** because this field breaks you from the outside
