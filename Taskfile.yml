@@ -102,6 +102,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.sapimouse_corpus"]
 
+  prevalence-real-corroborate:
+    desc: "Tier-3: corroborate the prevalence prior vs a REAL-traffic fingerprint CSV (run LOCALLY; raw data not committed)"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.prevalence_real_corroborate {{.CLI_ARGS}}"]
+
   docs:
     desc: "Regenerate ALL auto-generated docs (README stats, rule + evasion catalogs, evader matrix, scoreboard) from source"
     dir: harness

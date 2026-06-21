@@ -41,3 +41,9 @@ sbom*.json
 
 # pnpm content-addressable store (created when running pnpm in-tree)
 .pnpm-store/
+
+# Consented real-traffic fingerprint corpus (PoPETS-2025) — research-only, MUST NOT be committed/re-shared
+data/raw/
+*fingerprints*.csv
+fp-real.csv
+survey-and-browser-attributes-data.csv
