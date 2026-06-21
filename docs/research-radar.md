@@ -44,6 +44,8 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 | G1 | coherence (spatial) | **Cross-attribute inconsistency within one fingerprint** — e.g. a device class (UA/model) paired with a screen resolution/DPR that device never ships, an iPhone with an impossible screen geometry. FP-Inconsistent's *spatial* rules cut DataDome evasion 48% / BotD 45%. | anti-detect browsers that spoof attributes independently (browserforge/fingerprint-injector mix fields) | FP-Inconsistent, ACM **IMC 2025** (DOI 10.1145/3730567.3732919; arXiv 2406.07647) | **done** → `br.mobile_no_touch` (phone/tablet UA + maxTouchPoints 0; device-DB-free, FP-safe). Screen-geometry coherence needs a real-device resolution DB → see X5. |
 | G2 | red-team / behavioral | **GAN/diffusion mouse-trajectory synthesis** as a faithful evader to pressure-test the behavioral floor + the coalesced-sample terminus. | DMTG (diffusion, arXiv 2410.18233), BeCAPTCHA-Mouse GAN, SapiAgent | DMTG; BeCAPTCHA-Mouse (Pattern Recognition 2022) | **validated** — the convicting tell (`bh.synthetic_no_coalesced` / `br.coalesced_untrusted`) is STRUCTURAL (getCoalescedEvents length + isTrusted), so trajectory SHAPE quality is orthogonal: a DMTG path injected via CDP still has `coalescedMax<=1` → caught. Already grounded (stealth `KS_BEHAVE`); escape is real XTEST/uinput (privilege-gated terminus). DMTG validates Kitsune's structural-over-shape bet. No new rule. |
 | G3 | behavioral | **Keystroke-dynamics detection** (timing + key-identity); cGAN can synthesize evasions. | cGAN keystroke synthesis (arXiv 2212.08445) | IFIP SEC 2024 (DOI 10.1007/978-3-031-65175-5_30) | **not groundable** — keystroke timing is jitter-unsound across instances (no clone/structural channel, unlike mouse coalesced; memory-confirmed). `bh.keystroke_entropy_floor` stays corroborating; cGAN defeats shape/timing and there is no structural keystroke analog of coalesced sampling. |
+| G6 | coherence (mobile) | **Mobile GPU-family ↔ OS coherence** — real mobile GPUs surface as enumerable WebGL renderer strings (Qualcomm **Adreno**, ARM **Mali** ⟹ Android; **"Apple GPU"** ⟹ Apple iOS/macOS). An Android UA with renderer "Apple GPU", or an iPhone UA with "Adreno"/"Mali", is a clean cross-layer incoherence — the mobile extension of `webgl_os_vs_ua` (which today only knows desktop Direct3D/Metal/Mesa). FP-safe (a real device's GPU matches its OS; "Apple GPU" under macOS is the coherent Apple-Silicon case). | a desktop-faking-mobile that fakes a mobile renderer to dodge `webgl_software` but mismatches the GPU family | Castle.io WebGL-renderer fingerprinting (mobile GPU enumeration), mobile-research pass 2026-06-21 | **lead (top mobile)** — extend `_webgl_os` (collector + harness) to Adreno/Mali→Android, Apple-GPU→Apple; ground via a faithful mismatched-mobile-renderer evader |
+| G5 | environment (mobile) | **WebView / in-app-browser surface** — the `wv` UA token (durable through Android 16 UA reduction; standalone Chrome lacks it) + per-app IAB tokens (`FB_IAB`/`FBAN`) + the `X-Requested-With` package header (Android WebView). | host app overrides UA via `setUserAgentString` (all UA signals spoofable) | Android Devs Blog (Dec 2024); Tiwari et al. arXiv 2208.01968; mobiforge | **lead (weak/corroborating)** — WebView is ALSO the dominant *legit* mobile surface (in-app browsers), so presence is NOT convicting; only a non-UA-vs-UA mismatch (`X-Requested-With` present but UA omits `wv`) is a tell, and that's niche + needs real app traffic → mostly X7 |
 | G4 | network (JA4+) | **JA4+ suite coverage audit.** | uTLS/curl-impersonate pin JA4; JA4T harder (real stack) | FoxIO JA4 (github.com/FoxIO-LLC/ja4), JA4T blog (blog.foxio.io/ja4t-tcp-fingerprinting) | **covered** — JA4 (ja4a/b/c) + JA4H (`net.h2_header_order_vs_ua`) present; JA4T's detection value = TCP-OS coherence (`tcp_kernel` SYN fp + `net.tcp_os_vs_ua`); JA4L (latency/hop-distance) marginal for bot-detection + latency-external; JA4S is server-side (N/A for a client detector). No groundable gap. |
 
 ## External-data-bound leads (queue — need real data the lab can't self-generate)
@@ -59,6 +61,8 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 | X2 | residential proxy | **RESIP relayed/tunnel-flow classifier** — transformer, first 5 packets, payload-free: relayed 93%/93%, tunnel 91%/96%. | real RESIP node deployment + wild egress (3TB / 116M flows) | Huang et al., arXiv 2404.10610 (USTC+IU 2024) | **external** — the IP-reputation/proxy half Kitsune already flags as blocked |
 | X3 | IP reputation | **CGNAT detection** to bound the `ip_rotation_within_session` confound + RESIP collateral. | real CGNAT/residential traffic | Cloudflare (blog.cloudflare.com/detecting-cgn-to-reduce-collateral-damage) | **external** — refines the documented CGNAT FP caveat |
 | X4 | prevalence | **Real-traffic prevalence/IP-reputation prior** (the recurring Tier-3 gap). | hosted-demo opt-in / real-device matrix / real traffic | Resident Evil (RESIP study); Kitsune `build_prior_from_sessions` | **external** — the grounding-harness unlock |
+| X6 | behavioral (mobile) | **Mobile touch/swipe biometrics** — Touchalytics (30 features, ~0% median intra-session EER), BeCAPTCHA swipe+accelerometer human/bot. The mobile analog of the mouse biomech floor. | real mobile touch/swipe traffic (and GAN-defense — touch auth is adversarially synthesizable: random-vector/population attacks raise FAR 22-27%) | Touchalytics (arXiv 1207.6231), BeCAPTCHA (arXiv 2005.13655), G-TCAS (arXiv 2210.01594) | **external** — needs real mobile traffic; synthesizable, so it's corroborating-only by nature |
+| X7 | environment (mobile) | **iOS WKWebView / in-app discriminator** — no durable CLIENT-side signal survived verification (the `Version/`-token-absence AND `window.webkit.messageHandlers` signals were both **refuted**); `X-Requested-With` (Android) reliability is post-2023-opt-in uncertain. | real in-app / WebView traffic across apps | research open-question 2026-06-21 | **external/open** — the largest unfilled real-mobile gap |
 | X5 | coherence (spatial) | **Device-model ↔ screen-geometry coherence** — the DB-dependent half of G1 (an iPhone-15 UA with a resolution no iPhone-15 ships). Needs a real (device → screen res/DPR) mapping to be FP-safe; a hand-coded threshold FPs on foldables/edge devices. | real-device fingerprint DB (the FP-Inconsistent dataset is honey-site-derived, not released) | FP-Inconsistent, ACM IMC 2025 | **external** — split from G1 (the DB-free `mobile_no_touch` shipped) |
 
 ## Validations (research that confirms existing Kitsune work — do NOT rebuild)
@@ -73,6 +77,15 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 - **Engine-level spoof defeated by coherence, not property probes** — Camoufox's C++ patches read native;
   caught via TLS + cross-layer mismatch. Matches `privacy-browser-fp-surface` memory; keep mining coherence,
   not `[native code]` probes.
+
+## Refuted leads — do NOT build (verification-killed)
+
+- **Device-motion-sensor fingerprinting / coherence** — the "motion sensors fingerprint a phone 96-99%" and
+  "sensors are permissionless, unlike camera/mic" claims did **not** survive 3-vote verification (1-2 / 0-3).
+  Do not build a sensor-presence or motion-coherence rule on those grounds (it would be FP-prone).
+- **iOS WKWebView client-side discriminators** — both "Safari has a `Version/` token a WKWebView lacks" and
+  "`window.webkit.messageHandlers` is WebView-only" were **refuted** (0-3). No durable client signal → X7.
+- **WebView privacy-sandbox / "259× more identifying" uniqueness** — refuted; not a basis for detection.
 
 ## Iteration log
 
@@ -96,3 +109,11 @@ research-loop cycle", or with `/loop` inside a session. The steps:
   HARNESS (hosted-demo opt-in / trusted-cert QUIC host / proxy egress), not more in-sandbox rules. Net result
   of the research-fed loop: 1 new grounded rule (`br.mobile_no_touch`, G1) + the rest validated/routed.
   Re-run the SCAN periodically — a genuinely new technique or tool re-opens the groundable column.
+- **2026-06-21 · iteration 4 (mobile uplevel)** — Tier-1: grounded the mobile escalation ladder live (Android
+  naive-spoof → `mobile_no_touch`; iOS-naive → `apple_ua_nonwebkit`+`safari_ua_no_webkit_api`+`mobile_no_touch`;
+  fixed-touch → `pointer_touch_incoherent`; full-emulation → OS-leak), lighting 3 previously-unexercised rules
+  via faithful evader modes (commits 350ffdb, 3ae9ac5). Tier-2: a mobile-targeted deep-research pass (6 angles,
+  26 sources, 25 claims 3-vote-verified) added **G6** (mobile GPU↔OS coherence — top groundable), **G5**
+  (WebView surface — weak/non-convicting), **X6** (mobile touch biometrics — external), **X7** (iOS WKWebView
+  discriminator — open/external), and **killed the device-sensor lead** (refuted; saved an FP-prone build).
+  Next groundable: **G6** (extend `_webgl_os` to mobile GPU families + a mismatched-renderer evader).
