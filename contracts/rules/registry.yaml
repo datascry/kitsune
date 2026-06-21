@@ -744,7 +744,6 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "CreepJS own-property lie detection; FLOOR_SPOOF fakes the PDF floor via defineProperty"
-    source: "CreepJS lie-detection: native plugins is inherited from Navigator.prototype"
 
   - id: br.webdriver_getter_tampered
     title: Navigator.prototype.webdriver getter is non-native (prototype patch)
@@ -1576,6 +1575,7 @@ rules:
     category: coherence
     added: "2026-06-18"
     last_validated: "2026-06-18"
+    source: "Every modern browser sends Sec-Fetch-Site/Mode/Dest on requests; a scripted HTTP client (httpx/curl) faking a browser UA omits them — an HTTP-layer tell independent of TLS/JS"
 
   - id: net.accept_encoding_vs_ua
     title: UA claims a modern browser but Accept-Encoding omits Brotli (scripted client)
@@ -1636,7 +1636,6 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "Sec-CH-UA GREASE (anti-ossification); every real Chromium emits a 'Not...Brand' entry"
-    source: "Every modern browser sends Sec-Fetch-Site/Mode on requests; a scripted HTTP client (httpx/curl) faking a browser UA omits them — an HTTP-layer tell independent of TLS/JS"
 
   # --- v0.25.0: resistFingerprinting (Tor/Mullvad) uniformity signature ---
 
