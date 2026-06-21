@@ -57,11 +57,11 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**126 live rules** (99 active · 27 experimental; 6 retired, ruleset `0.74.49`) — each a small predicate over the correlated session. **88 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**127 live rules** (100 active · 27 experimental; 6 retired, ruleset `0.74.49`) — each a small predicate over the correlated session. **89 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
-| **coherence** | 49 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
+| **coherence** | 50 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
 | **automation** | 24 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 15 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
 | **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |

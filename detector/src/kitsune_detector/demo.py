@@ -833,6 +833,12 @@ td code{font-size:12px;color:#0a3}
     if (isChromium && !isMobileEnv && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));
     if (window.chrome && !window.chrome.runtime) sigs.push(S("browser", "chrome_runtime_missing", true));
     if (navigator.maxTouchPoints > 0 && !/Mobile|Android|iPhone|iPad/i.test(ua)) sigs.push(S("browser", "maxtouch_desktop", true));
+    // Spatial UA<->capability coherence (FP-Inconsistent, ACM IMC 2025): a phone/tablet UA is a touchscreen
+    // device — every real one reports navigator.maxTouchPoints > 0 (iOS Safari = 5, Android > 0). A mobile UA
+    // with maxTouchPoints === 0 is a desktop wearing a mobile UA without touch emulation (CDP setUserAgent to
+    // a phone UA but no Emulation.setTouchEmulation). Scoped to the Mobile/iPhone/iPad tokens, NOT bare
+    // "Android" (which also matches touch-less Android TV / Auto). Complements maxtouch_desktop (the inverse).
+    if ((navigator.maxTouchPoints || 0) === 0 && /iPhone|iPad|iPod|Mobile/i.test(ua)) sigs.push(S("browser", "mobile_no_touch", true));
     if (!isMobileEnv && navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
     if (isChromium && typeof navigator.deviceMemory === "undefined") sigs.push(S("browser", "chrome_no_devicememory", true));
     try { if (window.Notification && Notification.permission === "denied") sigs.push(S("browser", "notification_denied", true)); } catch (e) {}

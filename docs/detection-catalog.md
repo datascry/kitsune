@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.49`); regenerate with `task catalog`, do not edit by hand. **132 rules**: 99 active · 27 experimental · 6 retired; 88 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.49`); regenerate with `task catalog`, do not edit by hand. **133 rules**: 100 active · 27 experimental · 6 retired; 89 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (30)
 
@@ -45,7 +45,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (107)
+### browser layer (108)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -61,6 +61,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.language_vs_languages` | coherence✦ | present | 0.6 | active | navigator.language disagrees with navigator.languages[0] (spec-invariant violation) |
 | `br.languages_worker_vs_main` | coherence✦ | present | 0.6 | experimental | navigator.languages differs between the main thread and a Web Worker |
 | `br.math_engine_vs_ua` | coherence | present | 0.7 | retired | JS Math float precision implies an engine that contradicts the UA |
+| `br.mobile_no_touch` | coherence✦ | present | 0.7 | active | Phone/tablet UA reports no touch capability (maxTouchPoints 0) |
 | `br.navplatform_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.platform implies an OS that contradicts the UA platform |
 | `br.oscpu_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.oscpu implies an OS that contradicts the UA platform |
 | `br.pointer_touch_incoherent` | coherence✦ | present | 0.7 | active | CSS coarse-pointer and navigator.maxTouchPoints disagree on touch |
