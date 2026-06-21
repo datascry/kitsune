@@ -80,8 +80,8 @@ research-loop cycle", or with `/loop` inside a session. The steps:
   Device-DB-free + FP-safe (scoped off bare `Android`/TV). Grounded: convicts the mobile-spoof as the sole
   tell, silent on real iOS/Android (touch>0) and desktop; 0 FP on browserforge N=600; detector 260 + harness
   230 green; catalog/README/matrix regenerated. G1 spatial-screen-DB half split out to **X5** (external).
-  FOLLOW-UP: mirror the emission into the production collector (`collector/src/livepage/probes.ts` +
-  `collect.ts`) so live-page traffic emits it too — demo.py (authoritative) carries it now.
+  Mirrored into the production livepage collector (`collector/src/livepage/probes.ts`, commit 3099fad) —
+  emitted across demo.py (authoritative) + calibration mapper + livepage; collector CI green (Docker node).
 - **2026-06-21 · iteration 3 (drain the groundable queue)** — ran G2/G3/G4: **G2 validated** (the coalesced
   terminus is structural/shape-independent, so DMTG-quality synthesis is already caught — no new rule);
   **G3 not groundable** (keystroke timing jitter-unsound, no structural channel); **G4 covered** (JA4/JA4H/
