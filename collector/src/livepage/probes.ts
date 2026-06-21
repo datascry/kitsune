@@ -641,6 +641,10 @@ export function armCollector(): LiveCollector {
     }
 
     const wg = webglInfo();
+    // Raw GPU identity values (mirrors demo.py): they feed the prevalence model and the within-session
+    // br.fp_unstable convicting rule (a mid-session GPU change = a re-randomising anti-detect browser).
+    if (wg.renderer) put("browser", "webgl_renderer", wg.renderer);
+    if (wg.vendor) put("browser", "webgl_vendor", wg.vendor);
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer))
       put("browser", "webgl_software", true);
     if (/,\s*or similar|generic renderer|placeholder/i.test(wg.renderer)) {
@@ -908,6 +912,10 @@ export function armCollector(): LiveCollector {
     if (navigator.language && lang0 && navigator.language !== lang0) {
       put("browser", "language_list_incoherent", true);
     }
+    // Primary language subtag (mirrors demo.py) — cross-checked against the HTTP Accept-Language at the edge.
+    const navLang = navigator.languages[0] ?? navigator.language ?? "";
+    const primaryLang = navLang.split("-")[0] ?? "";
+    if (primaryLang) put("browser", "nav_language_primary", primaryLang.toLowerCase());
     if (!screen.width || !screen.height || window.outerWidth === 0 || window.outerHeight === 0) {
       put("browser", "screen_zero", true);
     }
@@ -1097,6 +1105,9 @@ export function armCollector(): LiveCollector {
       const cssTouch = matchMedia("(any-pointer: coarse)").matches;
       const jsTouch = navigator.maxTouchPoints > 0;
       if (cssTouch !== jsTouch) put("browser", "pointer_touch_incoherent", true);
+      // A desktop UA reporting touch points (mirrors demo.py) — the inverse of mobile_no_touch below.
+      if (navigator.maxTouchPoints > 0 && !/Mobile|Android|iPhone|iPad/i.test(ua))
+        put("browser", "maxtouch_desktop", true);
       // Spatial UA<->capability coherence (br.mobile_no_touch): a phone/tablet UA is a touchscreen device,
       // so maxTouchPoints === 0 under a Mobile/iPhone/iPad token is a desktop wearing a mobile UA. Mirrors
       // demo.py; scoped off bare "Android" (touch-less Android TV). FP-safe: real mobile reports >0 (iOS=5).
