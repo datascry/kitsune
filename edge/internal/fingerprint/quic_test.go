@@ -134,3 +134,25 @@ func TestInitialDCID(t *testing.T) {
 		}
 	}
 }
+
+// TestReassembleCryptoBoundsOffset pins the OOM guard: an attacker-controlled CRYPTO offset (a varint up to
+// 2^62 in a DCID-keyed, AEAD-authenticated Initial) must not drive an unbounded allocation. The oversized
+// fragment is skipped; legit fragments in the same set still stitch; the buffer stays under the cap.
+func TestReassembleCryptoBoundsOffset(t *testing.T) {
+	buf := reassembleCrypto(nil, []cryptoFrag{{off: 0, data: []byte{1, 2, 3}}, {off: 3, data: []byte{4, 5}}})
+	if string(buf) != string([]byte{1, 2, 3, 4, 5}) {
+		t.Fatalf("normal stitch = %v, want [1 2 3 4 5]", buf)
+	}
+	// ~1 TiB offset: must be skipped (not allocated); the legit fragment alongside it still lands.
+	buf = reassembleCrypto(nil, []cryptoFrag{{off: 1 << 40, data: []byte{0xaa}}, {off: 0, data: []byte{0x09}}})
+	if len(buf) > maxCryptoReassembly {
+		t.Fatalf("buffer grew to %d (> cap %d) — offset not bounded", len(buf), maxCryptoReassembly)
+	}
+	if len(buf) != 1 || buf[0] != 0x09 {
+		t.Fatalf("legit fragment lost after skipping oversized one: %v", buf)
+	}
+	// An offset+len just past the cap is rejected (boundary).
+	if got := reassembleCrypto(nil, []cryptoFrag{{off: maxCryptoReassembly, data: []byte{1}}}); len(got) != 0 {
+		t.Fatalf("offset at cap should skip, got len %d", len(got))
+	}
+}
