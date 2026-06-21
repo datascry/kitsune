@@ -111,20 +111,43 @@ def render(report: GroundingReport) -> str:
     return "\n".join(lines) + "\n"
 
 
+def parse_args(argv: list[str]) -> tuple[str, str, str | None]:
+    """Parse the grounding CLI args → ``(directory, expect, build_prior_out)``.
+
+    Recognises ``--expect <legit|bot>`` and ``--build-prior <out>`` in any position; the first non-flag token
+    that is not an option *value* is the corpus directory (default ``../corpus/sessions``). Crucially BOTH
+    option values are consumed, so ``--build-prior out.json`` placed before the positional directory no longer
+    makes ``out.json`` get mistaken for the corpus path (the old index-based scan only excluded ``--expect``'s
+    value). Unknown ``--flags`` are skipped; a missing value for a known flag is ignored rather than crashing.
+    """
+    expect = "legit"
+    build_prior: str | None = None
+    positionals: list[str] = []
+    i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--expect" and i + 1 < len(argv):
+            expect, i = argv[i + 1], i + 2
+        elif a == "--build-prior" and i + 1 < len(argv):
+            build_prior, i = argv[i + 1], i + 2
+        elif a.startswith("--"):
+            i += 1  # unknown/value-less flag — skip
+        else:
+            positionals.append(a)
+            i += 1
+    return (positionals[0] if positionals else "../corpus/sessions"), expect, build_prior
+
+
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI / IO
     from .browserforge_corpus import build_prior_from_sessions
     from .corpus import load_corpus
 
-    argv = sys.argv[1:] if argv is None else argv
-    expect = argv[argv.index("--expect") + 1] if "--expect" in argv else "legit"
-    paths = [a for i, a in enumerate(argv) if not a.startswith("--") and (i == 0 or argv[i - 1] != "--expect")]
-    directory = paths[0] if paths else "../corpus/sessions"
+    directory, expect, build_prior = parse_args(sys.argv[1:] if argv is None else argv)
     corpus = load_corpus(directory)
     print(render(evaluate(Detector(), corpus, expect=expect)), end="")
-    if "--build-prior" in argv:
-        out = argv[argv.index("--build-prior") + 1]
-        n = build_prior_from_sessions(directory, out)
-        print(f"\nrebuilt prevalence prior from {n} real sessions -> {out}", file=sys.stderr)
+    if build_prior is not None:
+        n = build_prior_from_sessions(directory, build_prior)
+        print(f"\nrebuilt prevalence prior from {n} real sessions -> {build_prior}", file=sys.stderr)
 
 
 if __name__ == "__main__":  # pragma: no cover
