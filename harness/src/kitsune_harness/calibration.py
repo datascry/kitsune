@@ -160,6 +160,44 @@ def _os_family(os_hint: str, ua_plat: str) -> str:
     return os_hint
 
 
+def fingerprint_coherence(fp: dict[str, Any]) -> tuple[bool, str]:
+    """Is this fingerprint an internally-coherent LEGITIMATE-browser sample?
+
+    browserforge cross-samples ``userAgent`` / ``navigator.platform`` / ``userAgentData`` semi-independently
+    from its Bayesian network, so it emits fingerprints no single real device produces: a Windows UA with
+    ``navigator.platform`` ``"Linux x86_64"``, a UA Chrome major that disagrees with the UA-CH major, or a
+    ``HeadlessChrome`` brand set. These are NOT legitimate-browser samples — the convicting coherence rules
+    (``br.navplatform_vs_ua``, ``br.ch_he_version_vs_ua``) and the headless tell (``br.ch_he_headless``) fire
+    on them CORRECTLY (a real browser's UA/platform/CH come from one binary and cannot disagree). Counting
+    them as false positives over-reports the FP rate and masks genuine FPs, and risks pressure to weaken a
+    correct convicting rule to chase a number that is a corpus artifact, not a real-browser misfire. The
+    false-positive corpus must therefore contain only coherent real browsers; the caller excludes the
+    artifacts and REPORTS the count (never a silent drop).
+
+    Returns ``(coherent, reason)`` — ``reason`` is ``""`` when coherent, else a short tag for the histogram.
+    Mirrors the same derivations ``signals_from_fingerprint`` uses, so it excludes exactly the incoherences
+    the rules key on (Android's Linux-kernel platform under an Android UA stays coherent via ``_os_family``).
+    """
+    nav = fp.get("navigator", {})
+    uad = fp.get("userAgentData") or {}
+    ua = str(nav.get("userAgent", ""))
+    brands = (uad.get("fullVersionList") or []) + (uad.get("brands") or [])
+    if any(re.search(r"headless", str(b.get("brand", "")), re.I) for b in brands):
+        return False, "headless-brand"
+    ua_plat = _ua_platform(ua)
+    nav_os = _os_family(_nav_platform_os(str(nav.get("platform", ""))), ua_plat)
+    if ua_plat in ("Windows", "macOS", "Linux", "Android") and nav_os and nav_os != ua_plat:
+        return False, "ua-vs-navplatform-os"
+    if _ua_engine(ua) == "chromium":
+        fvl = uad.get("fullVersionList") or []
+        ch_brand = next((b for b in fvl if re.search(r"chrom", str(b.get("brand", "")), re.I)), None)
+        ch_major = str((ch_brand or {}).get("version", uad.get("uaFullVersion", ""))).split(".")[0]
+        m = re.search(r"Chrome/(\d+)", ua)
+        if ch_major and m and ch_major != m.group(1):
+            return False, "ua-vs-ch-version"
+    return True, ""
+
+
 def _font_os(fonts: list[str]) -> str:
     present = set(fonts)
     best, best_n = "", 1  # require >= 2 signature fonts before classifying (mirrors demo.py)

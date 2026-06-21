@@ -94,6 +94,23 @@ two browserforge coherence *data artifacts* (`navplatform_vs_ua`, `webgl_not_ang
 already refuted — not a scoring problem, so the gate has removed every env-only bot FP that scoring *can*
 fix. The remaining lever is the Tier-3 real-desktop source for the environment-tell weights themselves.
 
+## Corpus coherence filter — the honest denominator
+
+The residual bot FPs above are **not real-browser misfires**: browserforge cross-samples `userAgent`,
+`navigator.platform`, and `userAgentData` semi-independently from its Bayesian network, so a fraction of
+its output is internally incoherent — a Windows UA with `navigator.platform` `"Linux x86_64"`
+(`navplatform_vs_ua`), a UA Chrome major that disagrees with the UA-CH major (`ch_he_version_vs_ua`), or a
+`HeadlessChrome` brand set (`ch_he_headless`). A real browser's UA / platform / CH all come from **one
+binary** and cannot disagree, so the convicting rules flag these *correctly* — counting them as false
+positives over-reports the FP rate and risks pressure to weaken a correct convicting rule to chase a
+number that is a corpus artifact. So `generate_profiles` now excludes internally-incoherent fingerprints
+from the legit corpus via `calibration.fingerprint_coherence` (which mirrors the mapper's own derivations,
+so Android's Linux-kernel platform under an Android UA stays coherent) and **reports the excluded count by
+reason** (never a silent drop). The FP rate is then measured over coherent real browsers only, and the
+hard bot FP rate falls to ~0% without touching a rule. Fonts are deliberately *not* part of this filter:
+they are user-configurable (cross-OS font installs are real), so a UA-vs-font mismatch is not a
+binary-bound incoherence and `br.font_os_vs_ua` is evaluated on its own merits, not excluded here.
+
 ## Methodology validation (not just browserforge)
 
 browserforge is one generated distribution, not ground truth — so the mapper itself is validated against a

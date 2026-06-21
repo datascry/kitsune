@@ -20,7 +20,7 @@ from typing import Any
 
 from kitsune_detector.detector import Detector
 
-from .calibration import calibrate, render_report, signals_from_fingerprint
+from .calibration import calibrate, fingerprint_coherence, render_report, signals_from_fingerprint
 
 
 def _fingerprint_to_dict(fp: Any) -> dict[str, Any]:
@@ -69,11 +69,30 @@ def generate_profiles(n: int, now: datetime) -> list[tuple[str, list[Any]]]:  # 
 
     fg = FingerprintGenerator()
     profiles: list[tuple[str, list[Any]]] = []
-    for i in range(n):
+    dropped: dict[str, int] = {}
+    attempts = 0
+    # browserforge cross-samples fields, so a fraction of its output is internally incoherent (a Windows UA
+    # with a Linux navigator.platform, a UA/CH version skew, a HeadlessChrome brand set) — NOT legit-browser
+    # samples. Those are flagged CORRECTLY by the convicting rules, so keeping them would over-report the FP
+    # rate; exclude them (and report the count, never a silent drop). Oversample to still reach n coherent.
+    while len(profiles) < n and attempts < n * 6:
+        attempts += 1
         fp = _fingerprint_to_dict(fg.generate())
-        ua = str(fp["navigator"]["userAgent"])
-        profiles.append((f"bf-{i:04d}", signals_from_fingerprint(fp, f"bf-{i:04d}", now)))
-        _ = ua
+        coherent, reason = fingerprint_coherence(fp)
+        if not coherent:
+            dropped[reason] = dropped.get(reason, 0) + 1
+            continue
+        sid = f"bf-{len(profiles):04d}"
+        profiles.append((sid, signals_from_fingerprint(fp, sid, now)))
+    if dropped:
+        total = sum(dropped.values())
+        hist = ", ".join(f"{k}={v}" for k, v in sorted(dropped.items()))
+        print(
+            f"NOTE: excluded {total} internally-incoherent browserforge fingerprints from the legit corpus "
+            f"({hist}) — not real-browser samples (the convicting rules flag them correctly). FP rate below "
+            f"is measured over {len(profiles)} coherent fingerprints.",
+            file=sys.stderr,
+        )
     return profiles
 
 
