@@ -131,6 +131,12 @@ fleet list is [`docs/evasion-catalog.md`](evasion-catalog.md).
 >   `livepage` is meant to mirror it but can lag — for authoritative white-boxing, use the live stack /
 >   `demo.py`, not the self-test page. (So "the detector mirrors the collector" in §10 means demo.py
 >   reproduces the production-collector signal shape, not that the detector itself collects in production.)
+>   The lag is bounded to the **heavy/async probes** that the lightweight self-test page intentionally
+>   omits — WebRTC STUN (`webrtc_public_ip`), the composite `fp_hash`, the WebGPU family, the biomech
+>   stream (`power_law_exponent`/`submovement_count`/`pause_ratio`), `honeypot_interacted`, `adblock_present`.
+>   The static convicting/coherence + within-session signals are mirrored (incl. `webgl_renderer`/`vendor`,
+>   `maxtouch_desktop`, `nav_language_primary`). Re-confirm a new demo.py convicting probe is added to
+>   `livepage` (or listed here as an intentional omission) before relying on the self-test page for it.
 
 ---
 
