@@ -48,6 +48,33 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest
 
+  contracts:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: detector } }
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with: { enable-cache: true }
+      - run: uv sync
+      - run: uv run python -c 'from kitsune_detector.contracts import load_rule_registry; load_rule_registry(); print("contracts ok")'
+
+  docs:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: harness } }
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with: { enable-cache: true }
+      - run: uv sync
+      # The drift gate that already runs in local `task ci` — fail PRs that change the registry/corpus
+      # without regenerating the committed auto-docs (catalogs, README stats, matrix).
+      - run: uv run python -m kitsune_harness.readme_stats --check
+      - run: uv run python -m kitsune_harness.readme_redteam --check
+      - run: uv run python -m kitsune_harness.rule_catalog --check
+      - run: uv run python -m kitsune_harness.evasion_catalog --check
+      - run: uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
+      - run: git -C .. diff --exit-code -- docs/matrix.md || (echo "docs/matrix.md is STALE — run 'task docs'" >&2; exit 1)
+
   edge:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: edge } }
