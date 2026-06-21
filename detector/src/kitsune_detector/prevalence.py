@@ -127,7 +127,6 @@ def features_from_session(session: Session) -> dict[str, Any]:
         "plat": _v(session, "ua_platform"),
         "gpu": _gpu_family(str(renderer)) if renderer else None,
         "screen": _screen_bucket(str(res)) if res else None,
-        "color": _v(session, "color_depth"),
         "cores": _cores_bucket(_v(session, "hardware_concurrency")),
     }
 

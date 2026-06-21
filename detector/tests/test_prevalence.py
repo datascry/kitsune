@@ -58,7 +58,7 @@ def test_screen_bucket() -> None:
 
 def test_features_from_session() -> None:
     feats = prevalence.features_from_session(_fp("macOS", "ANGLE (Apple, Apple M2)", "1470x956", 30, 8))
-    assert feats == {"plat": "macOS", "gpu": "apple", "screen": "laptop-land", "color": 30, "cores": "5-8"}
+    assert feats == {"plat": "macOS", "gpu": "apple", "screen": "laptop-land", "cores": "5-8"}
 
 
 def test_common_clears_improbable_fires() -> None:
