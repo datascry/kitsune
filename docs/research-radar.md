@@ -157,7 +157,10 @@ terms before pulling).
   wired **X4BNet/lists_vpn (MIT)** into `ip_reputation_refresh` — `proxy_exit` was Tor-only (a thin slice) and
   is now Tor + ~11k VPN CIDRs; `datacenter` was AWS/GCP-only and now adds ~42k hosting CIDRs. New `parse_cidr_list`
   + floor guards (`x4b_vpn`/`x4b_datacenter` ≥ 1000) + offline parser/drift tests; output stays uncommitted per
-  the existing deploy-not-commit rule (detector 328 green, 99.34%). **Verification catch:** GitHub's licence
+  the existing deploy-not-commit rule (detector 328 green, 99.34%). **Live-validated at scale** (in-memory, no
+  committed output): a real refresh with the deploy-time floor guard active passes and grows the feeds from a
+  thin seed to `proxy_exit` 1.2k → **12,231** CIDRs (~10×) and `datacenter` ~11.6k → **53,297** CIDRs (~4.6×),
+  deduped; real AWS/Google IPs classify as datacenter, private LAN stays clean. **Verification catch:** GitHub's licence
   field reported X4BNet `null`, but its README carries full MIT text covering "the list itself" — confirmed at
   source before wiring (the standing don't-trust-single-source rule, applied to a licence). The other assets are
   licence-gated (Berke corpus → request research-use terms; FireHOL → per-upstream vetting) or stats-only; X6/X7
