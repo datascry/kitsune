@@ -161,6 +161,7 @@ tasks:
     desc: Run the full local pipeline
     cmds:
       - task: headers
+      - task: contracts
       - task: docs:check
       - task: detector
       - task: harness
