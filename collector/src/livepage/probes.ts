@@ -1097,6 +1097,11 @@ export function armCollector(): LiveCollector {
       const cssTouch = matchMedia("(any-pointer: coarse)").matches;
       const jsTouch = navigator.maxTouchPoints > 0;
       if (cssTouch !== jsTouch) put("browser", "pointer_touch_incoherent", true);
+      // Spatial UA<->capability coherence (br.mobile_no_touch): a phone/tablet UA is a touchscreen device,
+      // so maxTouchPoints === 0 under a Mobile/iPhone/iPad token is a desktop wearing a mobile UA. Mirrors
+      // demo.py; scoped off bare "Android" (touch-less Android TV). FP-safe: real mobile reports >0 (iOS=5).
+      if ((navigator.maxTouchPoints || 0) === 0 && /iPhone|iPad|iPod|Mobile/i.test(ua))
+        put("browser", "mobile_no_touch", true);
     } catch {
       /* ignore */
     }
