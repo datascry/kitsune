@@ -583,3 +583,142 @@ def test_render_coordination() -> None:
     assert "no JA4 cluster" in render_coordination([("solo", _sess("solo", "Z", 2))])
     md = render_coordination([("a", _sess("a", "X_a_1", 8)), ("b", _sess("b", "X_a_2", 32))])
     assert "fleet" in md and "score" in md and "cf" not in md
+
+
+# --- JA4-ROTATION evasion: a fleet that rotates its JA4 per node defeats JA4-prefix clustering, but is
+# recovered by its cross-instance binding (cloned fp / replayed trace / shared origin). Grounded red->blue. ---
+
+
+def _ja4_rotated(i: int) -> str:
+    # A distinct full JA4 per node (distinct cipher prefix) — uTLS egress / mixed builds. No two nodes cluster.
+    return f"t13d{1500 + i}h2_cipher{i:04d}_ext{i:04d}"
+
+
+def test_ja4_rotating_cloned_fleet_caught_by_collision_clustering() -> None:
+    # RED: a cloned-profile bot fleet (one fp_hash) routes each node through a different TLS egress so every
+    # node has a distinct JA4 — JA4-prefix clustering makes 5 singletons and never grades it (EVADES before
+    # the fix). BLUE: collision clustering recovers it by the shared fp_hash across distinct IPs; automated
+    # (webdriver) corroborates the ambiguous fp-collision as a bot fleet.
+    corpus = [
+        (
+            f"a{i}",
+            _sess(
+                f"a{i}",
+                _ja4_rotated(i),
+                hw=8,
+                plat="Windows",
+                observed_ip=f"7.7.7.{i}",
+                fp_hash="cloned",
+                webdriver=True,
+            ),
+        )
+        for i in range(5)
+    ]
+    verdicts = score_corpus(corpus)
+    fleets = [v for v in verdicts if v.label == "fleet"]
+    assert len(fleets) == 1, [(v.label, v.evidence) for v in verdicts]
+    assert fleets[0].cloned_fingerprint == "cloned"
+    assert len(fleets[0].members) == 5
+
+
+def test_ja4_rotating_trace_replay_fleet_is_convicted() -> None:
+    # The unambiguous behavioural tell survives JA4 rotation: distinct fp AND distinct JA4 per node, but ONE
+    # replayed pointer trace across distinct IPs — two real users never trace the same path, so it solo-convicts.
+    corpus = [
+        (
+            f"t{i}",
+            _sess(
+                f"t{i}",
+                _ja4_rotated(i),
+                hw=8,
+                plat="Windows",
+                observed_ip=f"8.8.8.{i}",
+                fp_hash=f"fp{i}",
+                trace_hash="canned",
+            ),
+        )
+        for i in range(4)
+    ]
+    fleets = [v for v in score_corpus(corpus) if v.label == "fleet"]
+    assert len(fleets) == 1 and fleets[0].cloned_trace == "canned", fleets
+
+
+def test_ja4_rotating_shared_origin_fleet_is_convicted() -> None:
+    # The unambiguous network tell survives JA4 rotation: distinct JA4 per node behind distinct proxy IPs, but
+    # ONE WebRTC-leaked real origin — proxies fronting a single machine, which solo-convicts.
+    corpus = [
+        (f"o{i}", _sess(f"o{i}", _ja4_rotated(i), hw=4 + i, observed_ip=f"9.9.9.{i}", webrtc_ip="198.51.100.9"))
+        for i in range(4)
+    ]
+    fleets = [v for v in score_corpus(corpus) if v.label == "fleet"]
+    assert len(fleets) == 1 and fleets[0].shared_real_ip == "198.51.100.9", fleets
+
+
+def test_ja4_rotating_fleet_online_alert() -> None:
+    # The ONLINE detector also catches the JA4-rotating cloned fleet: the alert fires on the 2nd arrival, the
+    # instant the cloned fp spans a second distinct IP — exactly once, deduped against the (absent) JA4 cluster.
+    corpus = [
+        (
+            f"a{i}",
+            _sess(
+                f"a{i}",
+                _ja4_rotated(i),
+                hw=8,
+                plat="Windows",
+                offset_s=i * 5.0,
+                observed_ip=f"7.7.7.{i}",
+                fp_hash="cloned",
+                webdriver=True,
+            ),
+        )
+        for i in range(4)
+    ]
+    alerts = replay_stream(corpus)
+    assert len(alerts) == 1, alerts
+    _trigger, verdict = alerts[0]
+    assert verdict.label == "fleet" and verdict.cloned_fingerprint == "cloned"
+    assert len(verdict.members) == 2  # raised the instant the binding spanned a 2nd IP
+
+
+def test_ja4_rotating_distinct_profiles_is_not_a_fleet() -> None:
+    # FP-safety: genuinely distinct users who merely differ in TLS (distinct JA4) AND have distinct fp + trace
+    # share NO binding — no collision cluster forms, so they are never convicted. The fix needs a real binding.
+    corpus = [
+        (
+            f"u{i}",
+            _sess(
+                f"u{i}",
+                _ja4_rotated(i),
+                hw=4 + i * 4,
+                plat="Windows",
+                observed_ip=f"6.6.6.{i}",
+                fp_hash=f"real{i}",
+                trace_hash=f"path{i}",
+            ),
+        )
+        for i in range(4)
+    ]
+    assert [v for v in score_corpus(corpus) if v.label == "fleet"] == []
+
+
+def test_ja4_rotating_corporate_fp_collision_caps_at_candidate() -> None:
+    # FP-safety: the corroboration gate holds on the collision-clustering path too. A standardized corporate
+    # image (one fp_hash) on distinct residential IPs with NO automation and NO datacenter flag collides, but
+    # the fp-collision is AMBIGUOUS — it must cap at candidate, not botnet-label a real corporate cohort, even
+    # when JA4 happens to differ across nodes.
+    corpus = [
+        (
+            f"c{i}",
+            _sess(
+                f"c{i}",
+                _ja4_rotated(i),
+                hw=8,
+                plat="Windows",
+                observed_ip=f"203.0.113.{i}",
+                fp_hash="corp-image",
+                trace_hash=f"human-{i}",
+            ),
+        )
+        for i in range(4)
+    ]
+    assert [v for v in score_corpus(corpus) if v.label == "fleet"] == []
