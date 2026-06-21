@@ -231,8 +231,11 @@ def _has_ip_reputation_flag(sessions: list[Session]) -> bool:
     )
 
 
-def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdict:
-    """Grade one JA4-prefix cluster (>= 2 sessions sharing the cipher-suite ``prefix``)."""
+def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = "JA4 cipher prefix") -> FleetVerdict:
+    """Grade one cluster of >= 2 sessions sharing a binding invariant. ``basis`` names that invariant: the
+    default ``JA4 cipher prefix`` (the cipher-suite engine identity) or, for a JA4-ROTATING fleet caught by
+    :func:`_collision_clusters`, the cross-instance binding it shares (cloned fingerprint / replayed trace /
+    shared WebRTC origin). The conviction logic is identical either way — it reads the sessions, not the key."""
     names = sorted(n for n, _ in members)
     sessions = [s for _, s in members]
     diverged = _diverged_traits(sessions)
@@ -241,7 +244,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     ja4c_divergent = len(full_ja4s) > 1
 
     score = _BASE_CANDIDATE
-    evidence = [f"{len(names)} sessions share JA4 cipher prefix `{prefix}`"]
+    evidence = [f"{len(names)} sessions share {basis} `{prefix}`"]
     score += min((len(names) - 2) * _PER_MEMBER, _MAX_MEMBER_BONUS)
 
     if diverged:
@@ -390,6 +393,68 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]]) -> FleetVerdi
     )
 
 
+# Cross-instance binding invariants that are INDEPENDENT of JA4. A fleet that rotates its JA4 per node
+# (uTLS egress / mixed builds) to defeat JA4-prefix clustering still shares one of these — a cloned
+# fingerprint, a replayed pointer trace, or one WebRTC-leaked origin behind its proxies.
+_COLLISION_KEYS: list[tuple[Layer, str, str]] = [
+    (Layer.browser, "fp_hash", "cloned fingerprint"),
+    (Layer.behavioral, "trace_hash", "replayed pointer trace"),
+    (Layer.browser, "webrtc_public_ip", "shared WebRTC origin"),
+]
+
+
+def _collision_clusters(
+    corpus: list[tuple[str, Session]],
+) -> dict[tuple[str, str], tuple[str, list[tuple[str, Session]]]]:
+    """Clusters bound by a cross-instance invariant that does NOT depend on JA4 — one cloned ``fp_hash``, one
+    replayed ``trace_hash``, or one shared ``webrtc_public_ip`` — each spanning >= 2 DISTINCT observed IPs.
+
+    JA4-prefix clustering (``score_corpus`` / ``FleetTracker``) misses a fleet that rotates its JA4 per node:
+    each instance lands in its own singleton cluster and is never graded, so its convicting collision tells
+    are never computed (grounded: a cloned-fp / replayed-trace / shared-origin fleet with a distinct JA4 per
+    node scores zero clusters). This recovers those fleets by their actual binding. The >= 2-distinct-IP gate
+    is the same discriminator the per-cluster collision checks use — one machine over many sessions is one IP,
+    so it cannot collide with itself. Keyed by ``(kind, value)``; the value is the shared invariant."""
+    out: dict[tuple[str, str], tuple[str, list[tuple[str, Session]]]] = {}
+    for layer, kind, basis in _COLLISION_KEYS:
+        by_val: dict[str, dict[str, tuple[str, Session]]] = {}
+        for name, session in corpus:
+            value = session.value(layer, kind)
+            ip = session.value(Layer.network, "observed_ip")
+            if value is MISSING or ip is MISSING:
+                continue
+            by_val.setdefault(str(value), {})[name] = (name, session)
+        for value, members in by_val.items():
+            ips = {m[1].value(Layer.network, "observed_ip") for m in members.values()}
+            if len(members) >= 2 and len(ips) >= 2:
+                out[(kind, value)] = (basis, list(members.values()))
+    return out
+
+
+def _clusters(corpus: list[tuple[str, Session]]) -> list[tuple[str, str, list[tuple[str, Session]]]]:
+    """Every graded-eligible coordination cluster as ``(basis, key, members)``: JA4-prefix clusters of >= 2
+    members, PLUS collision clusters (:func:`_collision_clusters`) not already covered by a JA4 cluster — so a
+    JA4-rotating fleet is caught by its binding while a fleet that shares both JA4 and a collision is reported
+    once (the collision cluster is dropped when its members are a subset of a graded JA4 cluster)."""
+    out: list[tuple[str, str, list[tuple[str, Session]]]] = []
+    ja4_clusters: dict[str, list[tuple[str, Session]]] = {}
+    for name, session in corpus:
+        ja4 = _ja4(session)
+        if ja4 is not None:
+            ja4_clusters.setdefault(_ja4_prefix(ja4), []).append((name, session))
+    graded_sets: list[frozenset[str]] = []
+    for prefix, members in ja4_clusters.items():
+        if len(members) > 1:
+            out.append(("JA4 cipher prefix", prefix, members))
+            graded_sets.append(frozenset(n for n, _ in members))
+    for (_kind, value), (basis, members) in _collision_clusters(corpus).items():
+        member_set = frozenset(n for n, _ in members)
+        if any(member_set <= g for g in graded_sets):
+            continue  # already caught (and reported) by a JA4 cluster — don't double-count
+        out.append((basis, value, members))
+    return out
+
+
 _SEVERITY_RANK = {"n/a": 0, "moderate": 1, "high": 2, "critical": 3}
 
 
@@ -404,47 +469,50 @@ class FleetTracker:
         # window_seconds: only cluster members within this many seconds of the latest arrival count — a
         # burst over a sliding window, not slow all-time accumulation. None = unbounded (accumulate all).
         self._window = window_seconds
-        self._clusters: dict[str, list[tuple[str, Session]]] = {}
-        self._label: dict[str, str] = {}
+        self._members: list[tuple[str, Session]] = []
+        self._label: dict[str, str] = {}  # cluster key ("basis|value") -> last label
         self._severity: dict[str, str] = {}
 
     def observe(self, name: str, session: Session) -> FleetVerdict | None:
-        """Add one session; return a FleetVerdict iff this arrival newly raised the cluster's alert state
-        (became a ``fleet``, or a ``fleet`` escalated to a higher severity tier). Otherwise ``None``."""
-        ja4 = _ja4(session)
-        if ja4 is None:
-            return None
-        prefix = _ja4_prefix(ja4)
-        members = self._clusters.setdefault(prefix, [])
-        members.append((name, session))
+        """Add one session; return a FleetVerdict iff this arrival newly raised a cluster's alert state
+        (became a ``fleet``, or a ``fleet`` escalated to a higher severity tier). Otherwise ``None``.
+
+        Clusters by JA4 prefix AND by cross-instance collision (see :func:`_clusters`), so a fleet that
+        rotates its JA4 per node alerts the moment its shared binding (cloned fp / replayed trace / shared
+        origin) spans a second distinct IP — not only the JA4-sharing case the per-prefix grouping caught."""
+        self._members.append((name, session))
         if self._window is not None:
             # Age out members older than the window relative to this arrival (the stream's clock).
             cutoff = session.first_seen.timestamp() - self._window
-            members[:] = [(n, s) for (n, s) in members if s.first_seen.timestamp() >= cutoff]
-            if self._label.get(prefix) == "fleet" and len(members) < 2:
-                self._label[prefix] = "benign"  # the burst aged out — reset so a new burst re-alerts
-                self._severity[prefix] = "n/a"
-        if len(members) < 2:
-            return None
-        verdict = score_cluster(prefix, members)
-        prev_label = self._label.get(prefix, "benign")
-        prev_sev = self._severity.get(prefix, "n/a")
-        self._label[prefix] = verdict.label
-        self._severity[prefix] = verdict.severity
-        became_fleet = verdict.label == "fleet" and prev_label != "fleet"
-        escalated = verdict.label == "fleet" and _SEVERITY_RANK[verdict.severity] > _SEVERITY_RANK[prev_sev]
-        return verdict if (became_fleet or escalated) else None
+            self._members[:] = [(n, s) for (n, s) in self._members if s.first_seen.timestamp() >= cutoff]
+        best: FleetVerdict | None = None
+        active: set[str] = set()
+        for basis, key, members in _clusters(self._members):
+            ck = f"{basis}|{key}"
+            active.add(ck)
+            verdict = score_cluster(key, members, basis=basis)
+            prev_label = self._label.get(ck, "benign")
+            prev_sev = self._severity.get(ck, "n/a")
+            self._label[ck] = verdict.label
+            self._severity[ck] = verdict.severity
+            became_fleet = verdict.label == "fleet" and prev_label != "fleet"
+            escalated = verdict.label == "fleet" and _SEVERITY_RANK[verdict.severity] > _SEVERITY_RANK[prev_sev]
+            if (became_fleet or escalated) and (best is None or verdict.score > best.score):
+                best = verdict
+        # A cluster whose members all aged out of the window resets, so a fresh burst re-alerts.
+        for ck in list(self._label):
+            if ck not in active:
+                self._label[ck] = "benign"
+                self._severity[ck] = "n/a"
+        return best
 
 
 def score_corpus(corpus: list[tuple[str, Session]]) -> list[FleetVerdict]:
-    """Cluster by JA4 *prefix* (cipher-suite identity) and grade clusters of size > 1, strongest first."""
-    clusters: dict[str, list[tuple[str, Session]]] = {}
-    for name, session in corpus:
-        ja4 = _ja4(session)
-        if ja4 is None:
-            continue
-        clusters.setdefault(_ja4_prefix(ja4), []).append((name, session))
-    verdicts = [score_cluster(p, members) for p, members in clusters.items() if len(members) > 1]
+    """Grade every coordination cluster, strongest first. Clusters by JA4 *prefix* (cipher-suite identity)
+    AND by cross-instance collision (cloned fp / replayed trace / shared origin across distinct IPs), so a
+    JA4-rotating fleet is caught by its binding rather than slipping past JA4-only clustering (see
+    :func:`_clusters`)."""
+    verdicts = [score_cluster(key, members, basis=basis) for basis, key, members in _clusters(corpus)]
     return sorted(verdicts, key=lambda v: -v.score)
 
 
