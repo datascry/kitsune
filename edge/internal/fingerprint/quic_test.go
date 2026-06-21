@@ -109,3 +109,28 @@ func TestParseQUICInitialRejectsNonQUIC(t *testing.T) {
 		t.Error("empty input should error")
 	}
 }
+
+// TestInitialDCID pins the cleartext Destination Connection ID extraction (the ADR-0005 per-connection
+// attribution key) without decryption — including the rejections that keep it from mis-keying garbage.
+func TestInitialDCID(t *testing.T) {
+	// Well-formed v1 Initial long header: 0xc0 (long+fixed, type 00), version 1, dcidLen 4, then the DCID.
+	good := []byte{0xc0, 0x00, 0x00, 0x00, 0x01, 0x04, 0xaa, 0xbb, 0xcc, 0xdd, 0x00}
+	dcid, ok := InitialDCID(good)
+	if !ok || string(dcid) != string([]byte{0xaa, 0xbb, 0xcc, 0xdd}) {
+		t.Fatalf("InitialDCID(good) = %x, %v; want aabbccdd, true", dcid, ok)
+	}
+
+	cases := map[string][]byte{
+		"short-header (form bit clear)": {0x40, 0x00, 0x00, 0x00, 0x01, 0x04, 0xaa, 0xbb, 0xcc, 0xdd},
+		"wrong version":                 {0xc0, 0x00, 0x00, 0x00, 0x02, 0x04, 0xaa, 0xbb, 0xcc, 0xdd},
+		"non-initial packet type":       {0xf0, 0x00, 0x00, 0x00, 0x01, 0x04, 0xaa, 0xbb, 0xcc, 0xdd},
+		"too short":                     {0xc0, 0x00, 0x00},
+		"zero-length dcid":              {0xc0, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x00},
+		"dcid len exceeds packet":       {0xc0, 0x00, 0x00, 0x00, 0x01, 0x14, 0xaa, 0xbb},
+	}
+	for name, pkt := range cases {
+		if _, ok := InitialDCID(pkt); ok {
+			t.Errorf("InitialDCID(%s) returned ok; want false", name)
+		}
+	}
+}

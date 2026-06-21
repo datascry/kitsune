@@ -89,12 +89,12 @@ func TestQUICTeeTTLExpiresStaleInitials(t *testing.T) {
 	tee.initials["10.0.0.7:51000"] = &teeEntry{pkts: [][]byte{{0x01, 0x02}}, seen: clk}
 
 	// Fresh: within the TTL, take() returns it.
-	if got := tee.take(func(host, _ string) bool { return host == "10.0.0.7" }); got == nil {
+	if got := tee.take(func(addr string, _ *teeEntry) bool { return addr == "10.0.0.7:51000" }); got == nil {
 		t.Fatal("fresh entry within TTL should be returned")
 	}
 	// Advance past the TTL: the same entry is now stale → not returned, and purged from the map.
 	clk = clk.Add(quicTeeTTL + time.Second)
-	if got := tee.take(func(host, _ string) bool { return host == "10.0.0.7" }); got != nil {
+	if got := tee.take(func(addr string, _ *teeEntry) bool { return addr == "10.0.0.7:51000" }); got != nil {
 		t.Error("stale entry past TTL must not be returned (cross-attribution to a recycled IP)")
 	}
 	if _, ok := tee.initials["10.0.0.7:51000"]; ok {
@@ -143,5 +143,69 @@ func TestQUICTells(t *testing.T) {
 	}
 	if kinds(quicTells("s", withPQ, chrome131, time.Now()))["quic_no_pq_keyshare"] {
 		t.Error("a QUIC hello with X25519MLKEM768 must not fire quic_no_pq_keyshare")
+	}
+}
+
+// TestFingerprintByDCID drives a real quic-go handshake and confirms the captured Initial can be retrieved
+// by its client-chosen Destination Connection ID — the per-connection attribution primitive (ADR-0005),
+// the path that replaces source-IP matching once the edge serves H3 and links the Initial to a ks_sid.
+func TestFingerprintByDCID(t *testing.T) {
+	cert, err := selfSignedCert()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cap, err := NewQUICCapturer("127.0.0.1:0", cert)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cap.Close()
+
+	cliConn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cliConn.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	conn, err := quic.Dial(ctx, cliConn, cap.Addr(), &tls.Config{
+		InsecureSkipVerify: true, //nolint:gosec
+		NextProtos:         []string{"h3"},
+		ServerName:         "edge",
+	}, &quic.Config{})
+	if err != nil {
+		t.Fatalf("client dial: %v", err)
+	}
+	defer conn.CloseWithError(0, "")
+
+	// Wait for the capture (happens on the listener read goroutine), then read the recorded DCID.
+	src := cliConn.LocalAddr().String()
+	var dcid string
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		cap.tee.mu.Lock()
+		if e := cap.tee.initials[src]; e != nil {
+			dcid = e.dcid
+		}
+		cap.tee.mu.Unlock()
+		if dcid != "" {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("no Initial with a DCID captured")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	got, err := cap.FingerprintByDCID([]byte(dcid))
+	if err != nil {
+		t.Fatalf("FingerprintByDCID(captured) error: %v", err)
+	}
+	if got.Transport != "q" {
+		t.Errorf("transport = %q, want q", got.Transport)
+	}
+	// A DCID nothing was captured for must not mis-attribute.
+	if _, err := cap.FingerprintByDCID([]byte("nonexistent-dcid")); err == nil {
+		t.Error("FingerprintByDCID(unknown) should error, not mis-attribute")
 	}
 }
