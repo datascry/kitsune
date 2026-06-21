@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from kitsune_detector.ingest import group_signals
 from kitsune_detector.models import Layer, Session, Signal, Source
 
-from kitsune_harness.grounding import evaluate, render
+from kitsune_harness.grounding import evaluate, parse_args, render
 
 _NOW = datetime(2026, 6, 21, tzinfo=UTC)
 
@@ -55,6 +55,38 @@ def test_bot_caught_per_session() -> None:
     report = evaluate(_detector(), corpus, expect="bot")
     assert report.misclassified == []
     assert report.ok
+
+
+def test_render_surfaces_false_positives_and_fleets() -> None:
+    # The operator-facing NEEDS-ATTENTION path: a legit corpus with one convicting FP renders the offending
+    # rule, and a coordination fleet renders its cluster line. This is the output that matters when real data
+    # exposes a regression, so pin it.
+    fp = evaluate(_detector(), [("fp", _sess("fp", browser__mobile_no_touch=True))], expect="legit")
+    out = render(fp)
+    assert "NEEDS ATTENTION" in out and "false positives" in out and "`br.mobile_no_touch`" in out
+
+    ja4 = "t13d1516h2_8daaf6152771_e5627efa2ab1"
+    fleet_corpus = [
+        (f"t{i}", _sess(f"t{i}", network__ja4=ja4, network__observed_ip=f"8.8.8.{i}", behavioral__trace_hash="x"))
+        for i in range(3)
+    ]
+    fleet_out = render(evaluate(_detector(), fleet_corpus, expect="bot"))
+    assert "coordination fleets" in fleet_out and "fleet" in fleet_out
+
+
+def test_parse_args_defaults_and_basic() -> None:
+    assert parse_args([]) == ("../corpus/sessions", "legit", None)
+    assert parse_args(["caps"]) == ("caps", "legit", None)
+    assert parse_args(["caps", "--expect", "bot"]) == ("caps", "bot", None)
+
+
+def test_parse_args_build_prior_value_not_mistaken_for_corpus_dir() -> None:
+    # Regression: the old index-based scan only excluded --expect's value, so --build-prior's value placed
+    # before the positional dir was picked up AS the corpus directory. parse_args consumes both option values.
+    assert parse_args(["--build-prior", "out.json", "--expect", "bot", "caps"]) == ("caps", "bot", "out.json")
+    assert parse_args(["caps", "--build-prior", "out.json"]) == ("caps", "legit", "out.json")
+    # An unknown flag is skipped, not treated as the directory.
+    assert parse_args(["--verbose", "caps"]) == ("caps", "legit", None)
 
 
 def test_bot_caught_via_fleet_membership_not_counted_as_miss() -> None:
