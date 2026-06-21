@@ -18,6 +18,7 @@ require (
 	github.com/google/pprof v0.0.0-20240430035430-e4905b036c4e // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/onsi/ginkgo/v2 v2.17.2 // indirect
+	github.com/quic-go/qpack v0.6.0 // indirect
 	go.uber.org/mock v0.5.2 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect

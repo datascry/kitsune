@@ -103,6 +103,28 @@ func (t *quicInitialTee) fingerprint(addr string) (*fingerprint.ClientHello, err
 	return fingerprint.ParseQUICInitials(pkts)
 }
 
+// fingerprintByDCID parses the captured hello for the connection whose client Initial carried dcid.
+func (t *quicInitialTee) fingerprintByDCID(dcid string) (*fingerprint.ClientHello, error) {
+	pkts := t.take(func(_ string, e *teeEntry) bool { return e.dcid != "" && e.dcid == dcid })
+	if pkts == nil {
+		return nil, fingerprint.ErrNotQUICInitial
+	}
+	return fingerprint.ParseQUICInitials(pkts)
+}
+
+// dcidForAddr returns the DCID recorded for a fresh (non-expired) Initial captured from source addr, if
+// any. Used at connection start (http3 ConnContext) where the connection's remote addr still equals its
+// Initial's source addr, to bind the per-connection DCID into the request context before any migration.
+func (t *quicInitialTee) dcidForAddr(addr string) (string, bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	e := t.initials[addr]
+	if e == nil || e.dcid == "" || e.seen.Before(t.clock().Add(-quicTeeTTL)) {
+		return "", false
+	}
+	return e.dcid, true
+}
+
 // QUICCapturer serves QUIC on a UDP address purely to elicit and capture client Initials; it accepts (and
 // immediately closes) connections so quic-go drives reads on the tee. Fingerprint returns the QUIC
 // ClientHello seen from a source address (JA3/JA4 over QUIC), or an error if none was captured.
@@ -169,12 +191,7 @@ func (c *QUICCapturer) FingerprintByIP(ip string) (*fingerprint.ClientHello, err
 // sharing a source IP. It is the attribution primitive for ADR-0005 — once the edge serves H3, the captured
 // Initial is linked to the connection (and thus the request's ks_sid) by DCID rather than source address.
 func (c *QUICCapturer) FingerprintByDCID(dcid []byte) (*fingerprint.ClientHello, error) {
-	want := string(dcid)
-	pkts := c.tee.take(func(_ string, e *teeEntry) bool { return e.dcid != "" && e.dcid == want })
-	if pkts == nil {
-		return nil, fingerprint.ErrNotQUICInitial
-	}
-	return fingerprint.ParseQUICInitials(pkts)
+	return c.tee.fingerprintByDCID(string(dcid))
 }
 
 // quicTells builds the QUIC-layer signals for a captured QUIC ClientHello under the given UA: an
