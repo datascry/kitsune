@@ -4,6 +4,8 @@
 
 package fingerprint
 
+import "sync/atomic"
+
 // H2 frame type codes (RFC 7540 §6 / RFC 9113).
 const (
 	frameRSTStream    = 0x3
@@ -27,11 +29,15 @@ type H2FrameScanner struct {
 	hdr            [9]byte // partial frame header buffer
 	hdrFilled      int     // bytes of hdr currently filled
 	payloadLeft    int     // bytes of the current frame's payload still to skip
-	Headers        uint64
-	RSTStreams     uint64
-	Continuations  uint64
-	Settings       uint64
-	Pings          uint64
+	// Frame counters are atomic: Feed (the http2 server's single per-connection read goroutine) increments
+	// them while the flood-detector methods (RapidReset/ContinuationFlood/ControlFrameFlood) are read from
+	// concurrent per-stream handler goroutines. The parser state above is single-writer (only Feed) so it
+	// needs no synchronisation; only these cross-goroutine counters do.
+	Headers       atomic.Uint64
+	RSTStreams    atomic.Uint64
+	Continuations atomic.Uint64
+	Settings      atomic.Uint64
+	Pings         atomic.Uint64
 }
 
 // Feed advances the scanner over the next chunk of connection bytes.
@@ -73,15 +79,15 @@ func (s *H2FrameScanner) Feed(b []byte) {
 		length := int(s.hdr[0])<<16 | int(s.hdr[1])<<8 | int(s.hdr[2])
 		switch s.hdr[3] {
 		case frameHeaders:
-			s.Headers++
+			s.Headers.Add(1)
 		case frameRSTStream:
-			s.RSTStreams++
+			s.RSTStreams.Add(1)
 		case frameContinuation:
-			s.Continuations++
+			s.Continuations.Add(1)
 		case frameSettings:
-			s.Settings++
+			s.Settings.Add(1)
 		case framePing:
-			s.Pings++
+			s.Pings.Add(1)
 		}
 		s.payloadLeft = length
 		s.hdrFilled = 0
@@ -94,7 +100,8 @@ func (s *H2FrameScanner) Feed(b []byte) {
 // deliberately conservative so a handful of legitimate cancellations never trips it.
 func (s *H2FrameScanner) RapidReset() bool {
 	const floor = 100
-	return s.RSTStreams >= floor && s.RSTStreams*2 >= s.Headers
+	rst := s.RSTStreams.Load()
+	return rst >= floor && rst*2 >= s.Headers.Load()
 }
 
 // ContinuationFlood reports the CVE-2024-27316 signature: a flood of CONTINUATION frames (the attack
@@ -103,7 +110,7 @@ func (s *H2FrameScanner) RapidReset() bool {
 // header block, and then just a handful — never at this scale.
 func (s *H2FrameScanner) ContinuationFlood() bool {
 	const floor = 50
-	return s.Continuations >= floor
+	return s.Continuations.Load() >= floor
 }
 
 // ControlFrameFlood reports the 2019 control-frame floods (CVE-2019-9515 SETTINGS flood, CVE-2019-9512
@@ -111,5 +118,5 @@ func (s *H2FrameScanner) ContinuationFlood() bool {
 // sends its one preface SETTINGS and rarely a PING — never hundreds.
 func (s *H2FrameScanner) ControlFrameFlood() bool {
 	const floor = 100
-	return s.Settings+s.Pings >= floor
+	return s.Settings.Load()+s.Pings.Load() >= floor
 }

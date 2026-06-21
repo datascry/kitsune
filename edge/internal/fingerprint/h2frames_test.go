@@ -35,8 +35,8 @@ func buildFrameStream(t *testing.T, nHeaders, nRST int) []byte {
 func TestH2FrameScannerCounts(t *testing.T) {
 	var s H2FrameScanner
 	s.Feed(buildFrameStream(t, 120, 120))
-	if s.Headers != 120 || s.RSTStreams != 120 {
-		t.Fatalf("counts: headers=%d rst=%d, want 120/120", s.Headers, s.RSTStreams)
+	if s.Headers.Load() != 120 || s.RSTStreams.Load() != 120 {
+		t.Fatalf("counts: headers=%d rst=%d, want 120/120", s.Headers.Load(), s.RSTStreams.Load())
 	}
 	if !s.RapidReset() {
 		t.Error("120 HEADERS + 120 RST_STREAM should match the rapid-reset signature")
@@ -54,8 +54,8 @@ func TestH2FrameScannerChunkBoundaries(t *testing.T) {
 		}
 		s.Feed(raw[i:end])
 	}
-	if s.Headers != 120 || s.RSTStreams != 120 {
-		t.Fatalf("chunked counts: headers=%d rst=%d, want 120/120", s.Headers, s.RSTStreams)
+	if s.Headers.Load() != 120 || s.RSTStreams.Load() != 120 {
+		t.Fatalf("chunked counts: headers=%d rst=%d, want 120/120", s.Headers.Load(), s.RSTStreams.Load())
 	}
 }
 
@@ -64,7 +64,7 @@ func TestH2FrameScannerLegitTrafficIsQuiet(t *testing.T) {
 	var s H2FrameScanner
 	s.Feed(buildFrameStream(t, 30, 1))
 	if s.RapidReset() {
-		t.Errorf("legit traffic (30 HEADERS, 1 RST) must not trip rapid-reset: rst=%d", s.RSTStreams)
+		t.Errorf("legit traffic (30 HEADERS, 1 RST) must not trip rapid-reset: rst=%d", s.RSTStreams.Load())
 	}
 }
 
@@ -92,8 +92,8 @@ func TestH2FrameScannerContinuationFlood(t *testing.T) {
 	}
 	var s H2FrameScanner
 	s.Feed(buf.Bytes())
-	if s.Continuations != 80 {
-		t.Fatalf("continuations=%d, want 80", s.Continuations)
+	if s.Continuations.Load() != 80 {
+		t.Fatalf("continuations=%d, want 80", s.Continuations.Load())
 	}
 	if !s.ContinuationFlood() {
 		t.Error("80 CONTINUATION frames should match the flood signature")
@@ -118,7 +118,7 @@ func TestH2FrameScannerControlFrameFlood(t *testing.T) {
 	var s H2FrameScanner
 	s.Feed(buf.Bytes())
 	if !s.ControlFrameFlood() {
-		t.Errorf("60 SETTINGS + 60 PING should match the control-frame flood: settings=%d pings=%d", s.Settings, s.Pings)
+		t.Errorf("60 SETTINGS + 60 PING should match the control-frame flood: settings=%d pings=%d", s.Settings.Load(), s.Pings.Load())
 	}
 }
 
@@ -140,7 +140,37 @@ func TestH2FrameScannerEmptyAndPartial(t *testing.T) {
 	var s H2FrameScanner
 	s.Feed(nil)
 	s.Feed([]byte("PRI * HTTP/2")) // partial preface only
-	if s.Headers != 0 || s.RSTStreams != 0 || s.RapidReset() {
+	if s.Headers.Load() != 0 || s.RSTStreams.Load() != 0 || s.RapidReset() {
 		t.Error("partial preface alone must count nothing and not trip")
+	}
+}
+
+// TestH2FrameScannerConcurrentFeedAndReadIsRaceFree pins GAP-2: Feed (the http2 read goroutine) increments
+// counters while the flood detectors are read from concurrent handler goroutines. With atomic counters this
+// is race-free; `go test -race` would flag the old plain-uint64 fields.
+func TestH2FrameScannerConcurrentFeedAndReadIsRaceFree(t *testing.T) {
+	var s H2FrameScanner
+	s.Feed(make([]byte, clientPrefaceLen)) // consume the preface
+	frame := func(typ byte) []byte { return []byte{0, 0, 0, typ, 0, 0, 0, 0, 0} }
+	done := make(chan struct{})
+	go func() {
+		for range 5000 {
+			s.Feed(frame(frameRSTStream))
+			s.Feed(frame(frameHeaders))
+		}
+		close(done)
+	}()
+	for {
+		select {
+		case <-done:
+			if s.Headers.Load() != 5000 || s.RSTStreams.Load() != 5000 {
+				t.Fatalf("counts after concurrent feed: headers=%d rst=%d", s.Headers.Load(), s.RSTStreams.Load())
+			}
+			return
+		default:
+			_ = s.RapidReset()
+			_ = s.ContinuationFlood()
+			_ = s.ControlFrameFlood()
+		}
 	}
 }
