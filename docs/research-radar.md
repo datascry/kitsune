@@ -9,7 +9,9 @@ lab (Docker, headless+headful browsers, synthetic traffic) or needs data the lab
 
 ## The loop cycle
 
-Each iteration (run manually, or by the scheduled routine — see `.claude` schedule `research-loop`):
+Each iteration runs **locally, on demand** (the full toolchain — `uv`, `go-task`, Docker for the edge Go
+tests — only exists in a local session; no cloud routine). Drive a cycle by asking Claude to "run a
+research-loop cycle", or with `/loop` inside a session. The steps:
 
 1. **Scan** — deep-research for new detection/evasion work since the last cycle; append new rows below
    (seam-tagged, cited, groundability assessed). Dedup against what Kitsune already covers.
@@ -70,4 +72,5 @@ Each iteration (run manually, or by the scheduled routine — see `.claude` sche
 
 - **2026-06-21 · iteration 1** — seeded from a deep-research pass (5 angles, 23 sources, 25 claims verified
   3-vote, 22 confirmed). Added G1–G4, X1–X4, 4 validations. Top groundable pick: **G1** (spatial
-  cross-attribute coherence). Recurring routine `research-loop` created.
+  cross-attribute coherence). Loop runs **local/manual** by design (no cloud routine — the edge pump needs
+  local Docker/`go-task`); a cloud routine can be added later via `/schedule` once GitHub is connected.
