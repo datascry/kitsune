@@ -107,6 +107,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.prevalence_real_corroborate {{.CLI_ARGS}}"]
 
+  grounding:
+    desc: "Grounding sweep over a DIR of real captured sessions: per-session FP/recall + coordination + (--build-prior) prior rebuild. Run LOCALLY on operator data — see docs/grounding.md. e.g. task grounding -- ../corpus/sessions --expect bot"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.grounding {{.CLI_ARGS}}"]
+
   docs:
     desc: "Regenerate ALL auto-generated docs (README stats, rule + evasion catalogs, evader matrix, scoreboard) from source"
     dir: harness
