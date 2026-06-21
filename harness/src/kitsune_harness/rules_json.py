@@ -26,7 +26,9 @@ CLIENT_LAYERS = frozenset({"browser", "behavioral"})
 def _client_evaluable(rule: dict[str, Any]) -> bool:
     """True iff every read resolves to a browser/behavioral signal (no edge needed)."""
     reads: list[str] = rule.get("reads", [])
-    return all(ref.split(".", 1)[0] in CLIENT_LAYERS for ref in reads)
+    # bool(reads) guards the vacuous-true: a rule with no reads is NOT client-evaluable (an empty all() is
+    # True, which would wrongly mark an unevaluable rule clientEvaluable).
+    return bool(reads) and all(ref.split(".", 1)[0] in CLIENT_LAYERS for ref in reads)
 
 
 def build() -> dict[str, Any]:

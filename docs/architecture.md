@@ -449,7 +449,10 @@ first two lines), Conventional Commits, and strict typing everywhere (`mypy --st
     distinguish a real detection from a stale baseline (this is what the Tier-2 engine corpus is).
   - Every scoreboard records `ruleset_version` + evader versions + UTC date; the store is
     schema-versioned so historical comparisons stay valid as signals are added or retired.
-  - Evaders (especially browser-based) are containerized so runs reproduce.
+  - Evaders (especially browser-based) are containerized so runs reproduce. Each carries its own Dockerfile,
+    except the lightweight Playwright variants (`mobile-emulation`, `firefox-os-spoof`, `webkit-ua-spoof`)
+    which are bare `run.mjs` scripts run via the shared `kitsune-stealth` Playwright image (`docker run -v
+    run.mjs:/app/run.mjs kitsune-stealth node /app/run.mjs`) rather than duplicating that image.
 
 ---
 
