@@ -34,7 +34,7 @@ _START = "<!-- GENERATED:evasion:start -->"
 _END = "<!-- GENERATED:evasion:end -->"
 
 # Where each evader's 2-line header lives + the language it implies (checked in order).
-_MAIN_CANDIDATES = ["run.mjs", "run.py", "run.go", "forge.go", "main.go", "runner.py"]
+_MAIN_CANDIDATES = ["run.mjs", "run.py", "run.go", "forge.go", "main.go", "runner.py", "pow.go", "probe.py"]
 _LANG = {".mjs": "TS/Node", ".js": "TS/Node", ".py": "Python", ".go": "Go"}
 
 

@@ -8,9 +8,9 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **20 evader tools**, **96 exercised techniques** (86 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **22 evader tools**, **96 exercised techniques** (86 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
-### Fleet — the evader tools (20)
+### Fleet — the evader tools (22)
 
 | evader | lang | what it is |
 |---|---|---|
@@ -26,6 +26,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `mobile-emulation` | TS/Node | a desktop Chromium emulating an Android phone (Playwright Pixel 5 device). |
 | `nodriver` | Python | drive nodriver (undetected-chromedriver successor) through the edge. |
 | `playwright-extra` | TS/Node | drive playwright-extra + puppeteer-extra-plugin-stealth through the edge. |
+| `pow` | Go | multi-class proof-of-work primitive (anubis · friendlycaptcha · altcha families). |
 | `primp` | Python | drive one request through the edge with a browser-impersonating TLS stack. |
 | `pydoll` | Python | drive pydoll (async CDP-native, no webdriver) through the edge and read the verdict. |
 | `selenium-driverless` | Python | drive selenium-driverless through the edge and read the verdict. |
@@ -33,6 +34,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `undetected` | Python | drive undetected-chromedriver through the edge and read the verdict. |
 | `vanilla` | Python | drive one request through the edge and read the verdict. |
 | `webkit-ua-spoof` | TS/Node | a WebKit-engine bot faking a Chrome UA (TLS engine ≠ claimed browser). |
+| `xtest-coalesce` | Python | pressure-test: can X11 XTEST motion injection defeat the coalesced tell? |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
 ### Techniques exercised — scored against the live ruleset (96)
