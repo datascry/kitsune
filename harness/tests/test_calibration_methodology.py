@@ -26,7 +26,32 @@ from pathlib import Path
 from kitsune_detector.detector import Detector
 from kitsune_detector.models import RuleCategory, Signal
 
-from kitsune_harness.calibration import signals_from_fingerprint
+from kitsune_harness.calibration import fingerprint_coherence, signals_from_fingerprint
+
+
+def _fp(ua: str, platform: str, *, uad: dict | None = None) -> dict:
+    return {"navigator": {"userAgent": ua, "platform": platform}, "userAgentData": uad}
+
+
+def test_fingerprint_coherence_accepts_real_browsers_rejects_browserforge_artifacts() -> None:
+    """The FP corpus must keep only internally-coherent real browsers (docs/calibration.md). Pins the
+    exact incoherences browserforge cross-samples — they are flagged CORRECTLY by the convicting rules,
+    so they are not false positives and must be excluded from the legit denominator, not chased as FPs."""
+    win = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36"
+    android = "Mozilla/5.0 (Linux; Android 14) Chrome/120.0.0.0 Mobile Safari/537.36"
+
+    def cr(major: int) -> dict:
+        return {"platform": "Windows", "fullVersionList": [{"brand": "Chromium", "version": f"{major}.0.0.0"}]}
+
+    # coherent real browsers — accepted (Android's Linux-kernel platform under an Android UA stays coherent)
+    assert fingerprint_coherence(_fp(win, "Win32", uad=cr(120))) == (True, "")
+    assert fingerprint_coherence(_fp(android, "Linux armv8l", uad={"platform": "Android"})) == (True, "")
+    # browserforge cross-sample artifacts — excluded with a reason tag for the report histogram
+    assert fingerprint_coherence(_fp(win, "Linux x86_64", uad=cr(120))) == (False, "ua-vs-navplatform-os")
+    assert fingerprint_coherence(_fp(win, "Win32", uad=cr(147))) == (False, "ua-vs-ch-version")
+    hl = {"platform": "Windows", "fullVersionList": [{"brand": "HeadlessChrome", "version": "120.0.0.0"}]}
+    assert fingerprint_coherence(_fp(win, "Win32", uad=hl)) == (False, "headless-brand")
+
 
 _NOW = datetime(2026, 6, 19, tzinfo=UTC)
 _CALIB = Path(__file__).resolve().parents[2] / "corpus" / "calibration"
