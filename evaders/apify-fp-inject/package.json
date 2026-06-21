@@ -9,6 +9,6 @@
   "dependencies": {
     "fingerprint-generator": "2.1.82",
     "fingerprint-injector": "2.1.82",
-    "playwright": "1.52.0"
+    "playwright": "1.55.1"
   }
 }
