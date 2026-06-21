@@ -1,5 +1,5 @@
 # detector/ip_reputation_refresh — refresh the IP-reputation seed lists from authoritative public sources.
-# Fetches Tor exits + cloud-provider ranges into the data/*.txt seed format; run at deploy (output not committed).
+# Fetches Tor exits + cloud ranges + X4BNet VPN/datacenter lists into data/*.txt; run at deploy (output not committed).
 
 """Refresh the IP-reputation feed (``data/datacenter_cidrs.txt`` / ``data/proxy_exit_cidrs.txt``).
 
@@ -8,6 +8,11 @@ list ships empty, because real exits are dynamic public IPs that go stale within
 ``docs/ip-reputation-data.md``). This is the documented refresh path: at deploy time an operator runs
 ``python -m kitsune_detector.ip_reputation_refresh`` to pull live, authoritative ranges into the same
 one-CIDR-per-line seed format the producer (:mod:`kitsune_detector.ip_reputation`) already reads.
+
+Sources: Tor bulk exit list + the MIT-licensed X4BNet VPN list (proxy/VPN/Tor exits); AWS + GCP cloud
+ranges + the X4BNet datacenter list (hosting). X4BNet widens both feeds well beyond the original Tor-only
+proxy seed and cloud-only datacenter seed — its MIT licence (stated in the repo README, covering the list
+data) keeps the lab self-contained and redistributable.
 
 Pure-stdlib (``urllib`` + ``json``), no paid API — in keeping with the self-contained lab. The fetch is
 injectable (:func:`refresh` takes a ``Fetcher``) so the parsing/normalisation is unit-tested hermetically;
@@ -25,6 +30,11 @@ from pathlib import Path
 TOR_BULK_EXIT_URL = "https://check.torproject.org/torbulkexitlist"
 AWS_RANGES_URL = "https://ip-ranges.amazonaws.com/ip-ranges.json"
 GCP_RANGES_URL = "https://www.gstatic.com/ipranges/cloud.json"
+# X4BNet/lists_vpn — MIT-licensed (LICENSE text in the repo README explicitly covers "the list itself
+# (source files and generated output)"). The Tor list alone is a thin slice of proxy egress; the VPN list
+# (~11k CIDRs) is the real VPN/proxy-exit feed, and the datacenter list (~42k) covers hosting beyond AWS+GCP.
+X4BNET_VPN_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt"
+X4BNET_DATACENTER_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt"
 
 _DATA = Path(__file__).parent / "data"
 _Net = ipaddress.IPv4Network | ipaddress.IPv6Network
@@ -39,10 +49,11 @@ class SourceDriftError(RuntimeError):
     """
 
 
-#: Conservative per-source minimum entry counts enforced at deploy time. Live counts (2026-06-19, validated
-#: against the real sources): Tor 1238, AWS 10613, GCP 979 — these floors sit ~10x below, so normal source
-#: fluctuation passes while a format/URL drift (which collapses a parse to ~0) trips the guard.
-_PRODUCTION_FLOORS = {"tor": 100, "aws": 1000, "gcp": 100}
+#: Conservative per-source minimum entry counts enforced at deploy time. Live counts (X4BNet validated
+#: 2026-06-21: VPN 10994, datacenter 41977; Tor/AWS/GCP 2026-06-19: Tor 1238, AWS 10613, GCP 979) — these
+#: floors sit ~10x below, so normal source fluctuation passes while a format/URL drift (which collapses a
+#: parse to ~0) trips the guard.
+_PRODUCTION_FLOORS = {"tor": 100, "aws": 1000, "gcp": 100, "x4b_vpn": 1000, "x4b_datacenter": 1000}
 
 #: A function that fetches a URL and returns the body as text. Injected so tests stay offline.
 Fetcher = Callable[[str], str]
@@ -60,6 +71,25 @@ def parse_tor_bulk_exit(text: str) -> list[str]:
         except ValueError:
             continue
         out.append(f"{line}/32" if addr.version == 4 else f"{line}/128")
+    return out
+
+
+def parse_cidr_list(text: str) -> list[str]:
+    """Plain one-CIDR-per-line list (X4BNet vpn/datacenter ipv4.txt) → validated CIDRs.
+
+    Blanks, ``#`` comments, and unparseable lines are skipped — so a source switching to an HTML error page
+    or a comment-only file parses to ~0 and trips the deploy-time floor guard rather than poisoning the seed.
+    """
+    out: list[str] = []
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        try:
+            ipaddress.ip_network(line, strict=False)
+        except ValueError:
+            continue
+        out.append(line)
     return out
 
 
@@ -132,15 +162,25 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
     tor_raw = parse_tor_bulk_exit(fetch(TOR_BULK_EXIT_URL))
     aws_raw = parse_aws_ranges(fetch(AWS_RANGES_URL))
     gcp_raw = parse_gcp_ranges(fetch(GCP_RANGES_URL))
+    x4b_vpn_raw = parse_cidr_list(fetch(X4BNET_VPN_URL))
+    x4b_dc_raw = parse_cidr_list(fetch(X4BNET_DATACENTER_URL))
     if min_counts:
-        for src, got in (("tor", len(tor_raw)), ("aws", len(aws_raw)), ("gcp", len(gcp_raw))):
+        for src, got in (
+            ("tor", len(tor_raw)),
+            ("aws", len(aws_raw)),
+            ("gcp", len(gcp_raw)),
+            ("x4b_vpn", len(x4b_vpn_raw)),
+            ("x4b_datacenter", len(x4b_dc_raw)),
+        ):
             floor = min_counts.get(src, 0)
             if got < floor:
                 raise SourceDriftError(
                     f"{src} source returned {got} entries (< {floor} floor) — its URL or format likely drifted"
                 )
-    tor = normalize_cidrs(tor_raw)
-    datacenter = normalize_cidrs(aws_raw + gcp_raw)
+    # Proxy/VPN/Tor exits: Tor bulk list + X4BNet VPN list. Datacenter: AWS + GCP cloud ranges + X4BNet
+    # datacenter list (hosting beyond the two clouds). normalize_cidrs dedupes the union and sorts.
+    proxy_exit = normalize_cidrs(tor_raw + x4b_vpn_raw)
+    datacenter = normalize_cidrs(aws_raw + gcp_raw + x4b_dc_raw)
     regen = (
         "Regenerate: python -m kitsune_detector.ip_reputation_refresh "
         "(output not committed — see docs/ip-reputation-data.md)."
@@ -148,12 +188,12 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
     return {
         "proxy_exit_cidrs.txt": render_seed(
             "detector/data/proxy_exit — GENERATED proxy/VPN/Tor-exit CIDRs (deploy-time; do not commit).",
-            f"Source: Tor bulk exit list ({len(tor)} entries). {regen}",
-            tor,
+            f"Sources: Tor bulk exit list + X4BNet VPN list, MIT ({len(proxy_exit)} entries). {regen}",
+            proxy_exit,
         ),
         "datacenter_cidrs.txt": render_seed(
             "detector/data/datacenter_cidrs — GENERATED datacenter/hosting CIDRs (deploy-time; do not commit).",
-            f"Sources: AWS ip-ranges + GCP cloud.json ({len(datacenter)} entries). {regen}",
+            f"Sources: AWS + GCP cloud + X4BNet datacenter list, MIT ({len(datacenter)} entries). {regen}",
             datacenter,
         ),
     }
