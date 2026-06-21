@@ -60,10 +60,35 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 | X1 | proxy/tunnel | **Encapsulated-TLS-handshake fingerprinting** — fully passive; detects ALL proxy/tunnel stacks (shadowsocks/vmess/trojan/vless/httpt, TPR >70%) from nested-handshake size/timing/**direction**; padding doesn't defeat it (falls back to order+direction). | real proxy egress + large-scale ISP traffic (paper: 110M flows, TCP-only deployed) | Xue et al., **USENIX Sec 2024** (ensa.fi/papers/sec24-xue.pdf) | **external** — order/direction *insight* is mineable; QUIC/MASQUE transfer is an open question |
 | X2 | residential proxy | **RESIP relayed/tunnel-flow classifier** — transformer, first 5 packets, payload-free: relayed 93%/93%, tunnel 91%/96%. | real RESIP node deployment + wild egress (3TB / 116M flows) | Huang et al., arXiv 2404.10610 (USTC+IU 2024) | **external** — the IP-reputation/proxy half Kitsune already flags as blocked |
 | X3 | IP reputation | **CGNAT detection** to bound the `ip_rotation_within_session` confound + RESIP collateral. | real CGNAT/residential traffic | Cloudflare (blog.cloudflare.com/detecting-cgn-to-reduce-collateral-damage) | **external** — refines the documented CGNAT FP caveat |
-| X4 | prevalence | **Real-traffic prevalence/IP-reputation prior** (the recurring Tier-3 gap). | hosted-demo opt-in / real-device matrix / real traffic | Resident Evil (RESIP study); Kitsune `build_prior_from_sessions` | **external** — the grounding-harness unlock |
+| X4 | prevalence | **Real-traffic prevalence/IP-reputation prior** (the recurring Tier-3 gap). | hosted-demo opt-in / real-device matrix / real traffic | Resident Evil (RESIP study); Kitsune `build_prior_from_sessions` | **partially unblocked** — the IP-reputation half is now fed by the MIT X4BNet feed (wired into `ip_reputation_refresh`, see the real-data table below); the prevalence-prior half still needs the licence-gated Berke corpus or hosted-demo opt-in |
 | X6 | behavioral (mobile) | **Mobile touch/swipe biometrics** — Touchalytics (30 features, ~0% median intra-session EER), BeCAPTCHA swipe+accelerometer human/bot. The mobile analog of the mouse biomech floor. | real mobile touch/swipe traffic (and GAN-defense — touch auth is adversarially synthesizable: random-vector/population attacks raise FAR 22-27%) | Touchalytics (arXiv 1207.6231), BeCAPTCHA (arXiv 2005.13655), G-TCAS (arXiv 2210.01594) | **external** — needs real mobile traffic; synthesizable, so it's corroborating-only by nature |
 | X7 | environment (mobile) | **iOS WKWebView / in-app discriminator** — no durable CLIENT-side signal survived verification (the `Version/`-token-absence AND `window.webkit.messageHandlers` signals were both **refuted**); `X-Requested-With` (Android) reliability is post-2023-opt-in uncertain. | real in-app / WebView traffic across apps | research open-question 2026-06-21 | **external/open** — the largest unfilled real-mobile gap |
 | X5 | coherence (spatial) | **Device-model ↔ screen-geometry coherence** — the DB-dependent half of G1 (an iPhone-15 UA with a resolution no iPhone-15 ships). Needs a real (device → screen res/DPR) mapping to be FP-safe; a hand-coded threshold FPs on foldables/edge devices. | real-device fingerprint DB (the FP-Inconsistent dataset is honey-site-derived, not released) | FP-Inconsistent, ACM IMC 2025 | **external** — split from G1 (the DB-free `mobile_no_touch` shipped) |
+
+## Real-data sources → grounding input (the "search for more real data" shopping list)
+
+A vetted catalog of **actual downloadable datasets/feeds** mapped to the X-item each one unblocks, with
+access + licence + the exact grounding command. Sourced via a deep-research pass (2026-06-21) and
+fetchability/licence-verified in-sandbox. **Discipline:** never commit raw dataset rows — only de-identified
+aggregates (a prior, a CIDR seed regenerated at deploy, counts). Licence claims are verified against the
+source itself, not the aggregator's metadata (GitHub's licence detector missed X4BNet's README-embedded MIT).
+
+| dataset / feed | unblocks | access | licence | fetchable now? | grounding input |
+|---|---|---|---|---|---|
+| **X4BNet/lists_vpn** `output/{vpn,datacenter}/ipv4.txt` | X4 (IP-rep) / X2,X3 corroboration | raw GitHub | **MIT** (README, covers the list data) — verified | ✅ HTTP 200 (vpn ~11k, dc ~42k) | **WIRED** → `ip_reputation_refresh` (proxy_exit += VPN, datacenter += hosting). Output uncommitted; run at deploy. |
+| **Tor bulk exit list** | X4 (IP-rep) | check.torproject.org | public | ✅ (already wired) | `ip_reputation_refresh` proxy_exit (Tor slice) |
+| **AWS `ip-ranges.json` + GCP `cloud.json`** | X4 (IP-rep) | publisher-authoritative | public | ✅ (already wired) | `ip_reputation_refresh` datacenter (cloud slice) |
+| **FireHOL blocklist-ipsets** `firehol_proxies`/`firehol_anonymous` | X4 (broader proxy/anonymizer) | raw GitHub | **GPLv2 aggregate of mixed-licence upstreams** | ✅ HTTP 200 (~34MB) but **licence-gated** | candidate only — per-upstream vetting required before any redistribution (some components non-redistributable). Documented in `docs/ip-reputation-data.md`, NOT wired. |
+| **Berke et al.** `github.com/aberke/fingerprinting-study` (PoPETs 2025) | X4 (prevalence prior) | GitHub repo (data **research-use, US-only**) | research-use terms | ✅ repo HTTP 200 | `build_prior_from_dir` → committed **aggregate prior only** (`prevalence_prior.json`), never raw fingerprints. 8,400 consented FPs w/ WebGL masked+unmasked/canvas/CH — Kitsune's exact attribute set. **Request/accept the data terms first.** |
+| **X4BNet datacenter** (above) | — | — | — | — | also a 2nd-source cross-check for the prevalence GPU/screen single-source factors |
+| **Matomo `device-detector`** (regexes) | X5 (device↔geometry) partial | GitHub | **LGPL** | ✅ | device-model → class mapping; **no screen-resolution DB** (the FP-safe X5 half still needs a real device→res map) |
+| **Resident Evil RESIP** (~6M IPs, rpaas.site) | X2/X3 (RESIP) | study artifact | study terms | gated | the RESIP IP set behind the residential-proxy-fleet signal |
+| Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
+
+**Hardest-gap status:** mouse/touch biometrics (X6) and mobile/WebView (X7) have **no** permissively-downloadable
+real dataset — they remain external/open. The one in-sandbox-actionable + permissive + fetchable asset was the
+X4BNet MIT feed (now wired); the Berke corpus is the next unlock but is licence-gated (request the research-use
+terms before pulling).
 
 ## Validations (research that confirms existing Kitsune work — do NOT rebuild)
 
@@ -125,3 +150,15 @@ research-loop cycle", or with `/loop` inside a session. The steps:
   the whole gap queue (GAP-1–11) is cleared** — both queues exhausted. The loop's `next groundable` is empty;
   remaining radar items (X1–X7) are all external-data-bound and route to the grounding harness
   (`docs/grounding.md` / `task grounding`). External sourcing is the only way to refill the groundable column.
+- **2026-06-21 · iteration 6 (real-data sourcing — X4 IP-rep half unblocked)** — ran the "search for more real
+  data" pass: a deep-research sweep + in-sandbox fetchability/licence verification produced a vetted real-data
+  shopping list (new **"Real-data sources → grounding input"** section), each dataset mapped to its X-item +
+  access + licence + grounding command. **Grounded the one permissively-licensed, fetchable, in-sandbox asset:**
+  wired **X4BNet/lists_vpn (MIT)** into `ip_reputation_refresh` — `proxy_exit` was Tor-only (a thin slice) and
+  is now Tor + ~11k VPN CIDRs; `datacenter` was AWS/GCP-only and now adds ~42k hosting CIDRs. New `parse_cidr_list`
+  + floor guards (`x4b_vpn`/`x4b_datacenter` ≥ 1000) + offline parser/drift tests; output stays uncommitted per
+  the existing deploy-not-commit rule (detector 328 green, 99.34%). **Verification catch:** GitHub's licence
+  field reported X4BNet `null`, but its README carries full MIT text covering "the list itself" — confirmed at
+  source before wiring (the standing don't-trust-single-source rule, applied to a licence). The other assets are
+  licence-gated (Berke corpus → request research-use terms; FireHOL → per-upstream vetting) or stats-only; X6/X7
+  still have no downloadable real dataset. Next external unlock: accept the Berke data terms → real prevalence prior.
