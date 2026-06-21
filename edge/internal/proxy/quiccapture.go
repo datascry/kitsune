@@ -25,9 +25,13 @@ const quicTeeTTL = 60 * time.Second
 
 // teeEntry is the captured Initial fragments for one source address plus when they were last seen, so stale
 // entries (from a since-departed client whose IP was later recycled) can be expired before mis-attribution.
+// dcid is the client-chosen QUIC Destination Connection ID shared by this handshake's Initials — the
+// per-CONNECTION key (NAT-stable, migration-stable) that FingerprintByDCID uses for ks_sid correlation
+// once the edge serves H3 (ADR-0005); the addr keying remains for the current per-IP bridge.
 type teeEntry struct {
 	pkts [][]byte
 	seen time.Time
+	dcid string
 }
 
 // quicInitialTee wraps a UDP PacketConn and stashes the QUIC v1 Initial datagrams (long header, type 00)
@@ -61,6 +65,11 @@ func (t *quicInitialTee) ReadFrom(p []byte) (int, net.Addr, error) {
 		if len(e.pkts) < 8 { // a hello fragments across a few Initials; cap to bound memory
 			e.pkts = append(e.pkts, append([]byte(nil), p[:n]...))
 		}
+		if e.dcid == "" { // all Initials of one handshake share the client's DCID; record it once
+			if dcid, ok := fingerprint.InitialDCID(p[:n]); ok {
+				e.dcid = string(dcid)
+			}
+		}
 		e.seen = t.clock()
 		t.mu.Unlock()
 	}
@@ -69,7 +78,7 @@ func (t *quicInitialTee) ReadFrom(p []byte) (int, net.Addr, error) {
 
 // take expires every entry older than the TTL (bounding memory + killing stale cross-attribution from a
 // recycled source IP) and returns the fragments of the first FRESH entry whose address satisfies pred, or nil.
-func (t *quicInitialTee) take(pred func(host, port string) bool) [][]byte {
+func (t *quicInitialTee) take(pred func(addr string, e *teeEntry) bool) [][]byte {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	cutoff := t.clock().Add(-quicTeeTTL)
@@ -79,17 +88,15 @@ func (t *quicInitialTee) take(pred func(host, port string) bool) [][]byte {
 			delete(t.initials, addr) // expired: purge before it can mis-attribute to a recycled IP
 			continue
 		}
-		if found == nil {
-			if host, port, err := net.SplitHostPort(addr); err == nil && pred(host, port) {
-				found = e.pkts
-			}
+		if found == nil && pred(addr, e) {
+			found = e.pkts
 		}
 	}
 	return found
 }
 
 func (t *quicInitialTee) fingerprint(addr string) (*fingerprint.ClientHello, error) {
-	pkts := t.take(func(host, port string) bool { return net.JoinHostPort(host, port) == addr })
+	pkts := t.take(func(a string, _ *teeEntry) bool { return a == addr })
 	if pkts == nil {
 		return nil, fingerprint.ErrNotQUICInitial
 	}
@@ -146,7 +153,24 @@ func (c *QUICCapturer) Fingerprint(addr string) (*fingerprint.ClientHello, error
 // FingerprintByIP returns the QUIC ClientHello captured from any port at source IP ip — the request
 // arrives over TCP from the same IP on a different port than the client's QUIC socket, so we match on IP.
 func (c *QUICCapturer) FingerprintByIP(ip string) (*fingerprint.ClientHello, error) {
-	pkts := c.tee.take(func(host, _ string) bool { return host == ip })
+	pkts := c.tee.take(func(addr string, _ *teeEntry) bool {
+		host, _, err := net.SplitHostPort(addr)
+		return err == nil && host == ip
+	})
+	if pkts == nil {
+		return nil, fingerprint.ErrNotQUICInitial
+	}
+	return fingerprint.ParseQUICInitials(pkts)
+}
+
+// FingerprintByDCID returns the QUIC ClientHello captured for the connection whose client Initial carried
+// the given Destination Connection ID. Unlike FingerprintByIP this is per-CONNECTION: the DCID is unique to
+// one handshake, NAT-stable, and survives path migration, so it does not cross-attribute between clients
+// sharing a source IP. It is the attribution primitive for ADR-0005 — once the edge serves H3, the captured
+// Initial is linked to the connection (and thus the request's ks_sid) by DCID rather than source address.
+func (c *QUICCapturer) FingerprintByDCID(dcid []byte) (*fingerprint.ClientHello, error) {
+	want := string(dcid)
+	pkts := c.tee.take(func(_ string, e *teeEntry) bool { return e.dcid != "" && e.dcid == want })
 	if pkts == nil {
 		return nil, fingerprint.ErrNotQUICInitial
 	}

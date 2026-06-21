@@ -113,24 +113,35 @@ func tryParseHandshake(buf []byte) *ClientHello {
 	return ch
 }
 
+// InitialDCID extracts the client-chosen Destination Connection ID from a QUIC v1 Initial packet's
+// CLEARTEXT long header — no decryption needed, the DCID precedes packet protection (RFC 9000 §17.2).
+// Returns (dcid, true) for a well-formed v1 Initial long header carrying a usable (>=1-byte) DCID, else
+// (nil, false). The DCID ties every Initial datagram of one handshake together, so it is the
+// per-CONNECTION key QUIC fingerprint attribution should use instead of the source address (which is
+// NAT-shared and changes on path migration) — the basis for ks_sid correlation in ADR-0005.
+func InitialDCID(pkt []byte) ([]byte, bool) {
+	// Long header (form bit set) + QUIC v1 + Initial packet type (byte0 & 0x30 == 0).
+	if len(pkt) < 7 || pkt[0]&0x80 == 0 {
+		return nil, false
+	}
+	if binary.BigEndian.Uint32(pkt[1:5]) != 0x00000001 || pkt[0]&0x30 != 0x00 {
+		return nil, false
+	}
+	dcidLen := int(pkt[5])
+	if dcidLen == 0 || 6+dcidLen > len(pkt) {
+		return nil, false
+	}
+	return pkt[6 : 6+dcidLen], true
+}
+
 // decryptInitialCrypto removes header + packet protection from one QUIC v1 Initial and returns its CRYPTO
 // fragments. Keys come from the packet's own DCID (the Initial secrets are public).
 func decryptInitialCrypto(pkt []byte) ([]cryptoFrag, error) {
-	// Long header: 0b1???? form bit; QUIC v1 Initial has packet-type bits 00 (byte0 & 0x30 == 0).
-	if len(pkt) < 7 || pkt[0]&0x80 == 0 {
+	dcid, ok := InitialDCID(pkt)
+	if !ok {
 		return nil, ErrNotQUICInitial
 	}
-	if binary.BigEndian.Uint32(pkt[1:5]) != 0x00000001 || pkt[0]&0x30 != 0x00 {
-		return nil, ErrNotQUICInitial
-	}
-	i := 5
-	dcidLen := int(pkt[i])
-	i++
-	if i+dcidLen > len(pkt) {
-		return nil, ErrNotQUICInitial
-	}
-	dcid := pkt[i : i+dcidLen]
-	i += dcidLen
+	i := 6 + len(dcid) // past byte0(1) + version(4) + dcidLen(1) + dcid
 	if i >= len(pkt) {
 		return nil, ErrNotQUICInitial
 	}
