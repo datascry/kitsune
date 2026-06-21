@@ -58,6 +58,7 @@ DERIVABLE_KINDS = frozenset(
         "screen_impossible",
         "screen_avail_invalid",
         "macos_dpr1",
+        "mobile_no_touch",
         "media_devices_empty",
         "codec_os_incoherent",
         "font_os_hint",
@@ -266,6 +267,11 @@ def signals_from_fingerprint(fp: dict[str, Any], session_id: str, now: datetime)
     plugins = (fp.get("pluginsData") or {}).get("plugins", []) or []
     if not is_mobile:
         sig("plugins_count", len(plugins))
+    # Spatial UA<->capability coherence (br.mobile_no_touch): a phone/tablet UA is a touchscreen device, so
+    # maxTouchPoints == 0 under a Mobile/iPhone/iPad token is a desktop wearing a mobile UA (mirrors demo.py;
+    # scoped off bare "Android" to exclude touch-less Android TV). Faithful — browserforge carries maxTouchPoints.
+    if re.search(r"iPhone|iPad|iPod|Mobile", ua) and int(nav.get("maxTouchPoints", 0) or 0) == 0:
+        sig("mobile_no_touch", True)
 
     # UA Client Hints (navigator.userAgentData) exist ONLY on Chromium — Firefox/Safari/iOS report it
     # undefined, so the collector emits no ch_* for them. Gate the UA-CH-derived signals on the engine so a

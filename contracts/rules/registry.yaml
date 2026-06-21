@@ -1179,6 +1179,18 @@ rules:
     last_validated: "2026-06-18"
     source: "CreepJS: touch capability spoofed on one surface (CSS vs JS) but not the other"
 
+  - id: br.mobile_no_touch
+    title: Phone/tablet UA reports no touch capability (maxTouchPoints 0)
+    layers: [browser]
+    reads: [browser.mobile_no_touch]
+    predicate: present
+    category: coherence
+    weight: 0.7
+    status: active
+    added: "2026-06-21"
+    last_validated: "2026-06-21"
+    source: "Spatial UA<->capability coherence — the device-database-FREE form of FP-Inconsistent's (ACM IMC 2025, DOI 10.1145/3730567.3732919) spatial inconsistency check ('an iPhone with an impossible screen geometry'), surfaced by the research-radar loop (docs/research-radar.md G1). A phone/tablet is a TOUCHSCREEN device: every real one reports navigator.maxTouchPoints > 0 (iOS Safari is hardcoded to 5; Android Chrome/Firefox > 0). A UA carrying a phone/tablet token (iPhone/iPad/iPod or the `Mobile` token) with maxTouchPoints === 0 is therefore a desktop wearing a mobile UA without touch emulation — the classic mobile-spoof (CDP Emulation.setUserAgentOverride to a phone UA but no Emulation.setTouchEmulationEnabled). FP-SAFE by construction, no device DB needed: no real mobile browser reports 0 touch points, and the scope is deliberately the Mobile/iPhone/iPad tokens, NOT bare `Android` (which also matches touch-LESS Android TV / Auto / set-top devices that would otherwise FP). Complements br.maxtouch_desktop (the inverse: touch on a desktop UA) and br.pointer_touch_incoherent (which MISSES this case — a real desktop is CSS coarse=false AND maxTouchPoints=0, internally coherent, so the desktop+mobile-UA spoof slips past it; this rule keys on the UA's device CLASS, not the CSS<->JS agreement). browserforge/Intoli calibration: a real mobile fingerprint carries maxTouchPoints > 0, so promotion cannot raise the legit-browser flag rate (a browserforge mobile fp with 0 touch is itself an incoherent synthetic the rule correctly flags). GROUNDED 2026-06-21: a synthetic mobile-UA + maxTouchPoints=0 fingerprint trips it through the detector; real iOS/Android fingerprints (maxTouchPoints 5/>0) and desktop UAs (out of scope) do NOT — zero FP across the calibration corpus."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty

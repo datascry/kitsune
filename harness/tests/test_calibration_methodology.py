@@ -315,3 +315,30 @@ def test_no_real_firefox_fixture_trips_tls_grease_vs_ua() -> None:
         signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
         fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
         assert "net.tls_grease_vs_ua" not in fired, f"{path.name} (stale GREASE signal?): {sorted(fired)}"
+
+
+def test_mobile_ua_without_touch_is_a_coherence_conviction() -> None:
+    """br.mobile_no_touch (research-radar G1, FP-Inconsistent IMC 2025): a phone UA reporting
+    maxTouchPoints==0 is a desktop wearing a mobile UA — convicts; a real touch device (>0) and a desktop UA
+    (out of scope) do not fire it. The device-DB-free spatial UA<->capability coherence catch."""
+    iphone = (
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
+        "(KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+    )
+    desktop = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36"
+
+    def fired(ua: str, touch: int) -> set[str]:
+        fp = {
+            "navigator": {
+                "userAgent": ua,
+                "platform": "iPhone",
+                "maxTouchPoints": touch,
+                "vendor": "Apple Computer, Inc.",
+            }
+        }
+        verdict = Detector().ingest_and_score(signals_from_fingerprint(fp, "s", _NOW))[0]
+        return {c.rule_id for c in verdict.contradictions}
+
+    assert "br.mobile_no_touch" in fired(iphone, 0)  # spoof: phone UA, no touch -> convict
+    assert "br.mobile_no_touch" not in fired(iphone, 5)  # real iPhone (maxTouchPoints 5) -> silent
+    assert "br.mobile_no_touch" not in fired(desktop, 0)  # desktop UA out of scope -> silent

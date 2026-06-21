@@ -41,7 +41,7 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 
 | # | seam | technique / signal | evasion / tool | source | status |
 |---|---|---|---|---|---|
-| G1 | coherence (spatial) | **Cross-attribute inconsistency within one fingerprint** — e.g. a device class (UA/model) paired with a screen resolution/DPR that device never ships, an iPhone with an impossible screen geometry. FP-Inconsistent's *spatial* rules cut DataDome evasion 48% / BotD 45%. | anti-detect browsers that spoof attributes independently (browserforge/fingerprint-injector mix fields) | FP-Inconsistent, ACM **IMC 2025** (DOI 10.1145/3730567.3732919; arXiv 2406.07647) | **lead** — audit device-class↔screen-geometry coherence; partial overlap with `screen_impossible`/`macos_dpr1` (check the gap) |
+| G1 | coherence (spatial) | **Cross-attribute inconsistency within one fingerprint** — e.g. a device class (UA/model) paired with a screen resolution/DPR that device never ships, an iPhone with an impossible screen geometry. FP-Inconsistent's *spatial* rules cut DataDome evasion 48% / BotD 45%. | anti-detect browsers that spoof attributes independently (browserforge/fingerprint-injector mix fields) | FP-Inconsistent, ACM **IMC 2025** (DOI 10.1145/3730567.3732919; arXiv 2406.07647) | **done** → `br.mobile_no_touch` (phone/tablet UA + maxTouchPoints 0; device-DB-free, FP-safe). Screen-geometry coherence needs a real-device resolution DB → see X5. |
 | G2 | red-team / behavioral | **GAN/diffusion mouse-trajectory synthesis** as a faithful evader to pressure-test the behavioral floor + the coalesced-sample terminus. Validates whether synthesized paths defeat `bh.trace_replay`/biomech or still lack coalesced events. | DMTG (diffusion, arXiv 2410.18233), BeCAPTCHA-Mouse GAN, SapiAgent | DMTG; BeCAPTCHA-Mouse (Pattern Recognition 2022) | **lead** — red rung: inject a synthesized trajectory; expected to still trip `bh.synthetic_no_coalesced` (CDP events are discrete) — grounds the terminus |
 | G3 | behavioral | **Keystroke-dynamics detection** (timing + key-identity) — a corroborating biometric layer; cGAN can synthesize evasions (validated vs external auth). | cGAN keystroke synthesis (arXiv 2212.08445) | IFIP SEC 2024 (DOI 10.1007/978-3-031-65175-5_30) | **lead** — only if a value/coordinate channel exists; NOTE memory: timing hashes are jitter-unstable across instances (no clone channel) |
 | G4 | network (JA4+) | **JA4+ suite coverage audit** — confirm Kitsune covers JA4 (TLS), JA4H (HTTP), JA4T (TCP); assess JA4L (light/latency) and JA4S (server) relevance. | uTLS/curl-impersonate pin JA4; JA4T harder (real stack) | FoxIO JA4 (github.com/FoxIO-LLC/ja4), JA4T blog (blog.foxio.io/ja4t-tcp-fingerprinting) | **lead** — coverage check, likely mostly covered; flag genuine gaps only |
@@ -54,6 +54,7 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 | X2 | residential proxy | **RESIP relayed/tunnel-flow classifier** — transformer, first 5 packets, payload-free: relayed 93%/93%, tunnel 91%/96%. | real RESIP node deployment + wild egress (3TB / 116M flows) | Huang et al., arXiv 2404.10610 (USTC+IU 2024) | **external** — the IP-reputation/proxy half Kitsune already flags as blocked |
 | X3 | IP reputation | **CGNAT detection** to bound the `ip_rotation_within_session` confound + RESIP collateral. | real CGNAT/residential traffic | Cloudflare (blog.cloudflare.com/detecting-cgn-to-reduce-collateral-damage) | **external** — refines the documented CGNAT FP caveat |
 | X4 | prevalence | **Real-traffic prevalence/IP-reputation prior** (the recurring Tier-3 gap). | hosted-demo opt-in / real-device matrix / real traffic | Resident Evil (RESIP study); Kitsune `build_prior_from_sessions` | **external** — the grounding-harness unlock |
+| X5 | coherence (spatial) | **Device-model ↔ screen-geometry coherence** — the DB-dependent half of G1 (an iPhone-15 UA with a resolution no iPhone-15 ships). Needs a real (device → screen res/DPR) mapping to be FP-safe; a hand-coded threshold FPs on foldables/edge devices. | real-device fingerprint DB (the FP-Inconsistent dataset is honey-site-derived, not released) | FP-Inconsistent, ACM IMC 2025 | **external** — split from G1 (the DB-free `mobile_no_touch` shipped) |
 
 ## Validations (research that confirms existing Kitsune work — do NOT rebuild)
 
@@ -74,3 +75,10 @@ research-loop cycle", or with `/loop` inside a session. The steps:
   3-vote, 22 confirmed). Added G1–G4, X1–X4, 4 validations. Top groundable pick: **G1** (spatial
   cross-attribute coherence). Loop runs **local/manual** by design (no cloud routine — the edge pump needs
   local Docker/`go-task`); a cloud routine can be added later via `/schedule` once GitHub is connected.
+- **2026-06-21 · iteration 2 (pump on G1)** — shipped `br.mobile_no_touch` (coherence, convicting): a
+  phone/tablet UA (`Mobile`/iPhone/iPad token) with `maxTouchPoints == 0` is a desktop wearing a mobile UA.
+  Device-DB-free + FP-safe (scoped off bare `Android`/TV). Grounded: convicts the mobile-spoof as the sole
+  tell, silent on real iOS/Android (touch>0) and desktop; 0 FP on browserforge N=600; detector 260 + harness
+  230 green; catalog/README/matrix regenerated. G1 spatial-screen-DB half split out to **X5** (external).
+  FOLLOW-UP: mirror the emission into the production collector (`collector/src/livepage/probes.ts` +
+  `collect.ts`) so live-page traffic emits it too — demo.py (authoritative) carries it now.
