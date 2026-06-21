@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import pytest
+import yaml
 
 from kitsune_detector import contracts
 from kitsune_detector.contracts import (
@@ -64,3 +65,30 @@ def test_walk_up_not_found(monkeypatch: pytest.MonkeyPatch) -> None:
     contracts.contracts_dir.cache_clear()
     with pytest.raises(FileNotFoundError):
         contracts_dir()
+
+
+def test_registry_has_no_duplicate_yaml_keys() -> None:
+    # PyYAML silently keeps the LAST of duplicate mapping keys, so a rule with two `source:` lines (or any
+    # repeated key) loads "valid" while dropping the real value — and provenance/last_validated feed the
+    # signal-decay matrix. Re-parse with a loader that REJECTS duplicate keys so this can never recur.
+    class _DupKeyLoader(yaml.SafeLoader):
+        pass
+
+    def _no_dup(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> dict[object, object]:
+        seen: dict[object, object] = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=True)
+            if key in seen:
+                raise ValueError(f"duplicate key {key!r} at line {key_node.start_mark.line + 1}")
+            seen[key] = loader.construct_object(value_node, deep=True)
+        return seen
+
+    _DupKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_dup)
+
+    # Guard the guard: the loader must actually catch a duplicate.
+    with pytest.raises(ValueError, match="duplicate key"):
+        yaml.load("a: 1\na: 2\n", Loader=_DupKeyLoader)
+
+    # The real registry must be free of duplicate keys in every rule block.
+    text = (contracts.contracts_dir() / "rules" / "registry.yaml").read_text()
+    yaml.load(text, Loader=_DupKeyLoader)
