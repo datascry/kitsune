@@ -45,7 +45,7 @@ func TestCountingConnFeedsScanner(t *testing.T) {
 		t.Error("countingConn must pass bytes through unchanged")
 	}
 	if !s.RapidReset() {
-		t.Errorf("scanner should flag rapid-reset: headers=%d rst=%d", s.Headers, s.RSTStreams)
+		t.Errorf("scanner should flag rapid-reset: headers=%d rst=%d", s.Headers.Load(), s.RSTStreams.Load())
 	}
 }
 
