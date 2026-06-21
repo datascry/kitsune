@@ -48,6 +48,11 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 
 ## External-data-bound leads (queue — need real data the lab can't self-generate)
 
+> **Turnkey path built:** `docs/grounding.md` + `task grounding -- <captures>` runs the full grounding
+> sweep (per-session FP/recall + coordination + prevalence-prior rebuild) the moment an operator supplies
+> real captures. Each X-item below maps to a capture + command in that runbook.
+
+
 | # | seam | technique / signal | real data needed | source | status |
 |---|---|---|---|---|---|
 | X1 | proxy/tunnel | **Encapsulated-TLS-handshake fingerprinting** — fully passive; detects ALL proxy/tunnel stacks (shadowsocks/vmess/trojan/vless/httpt, TPR >70%) from nested-handshake size/timing/**direction**; padding doesn't defeat it (falls back to order+direction). | real proxy egress + large-scale ISP traffic (paper: 110M flows, TCP-only deployed) | Xue et al., **USENIX Sec 2024** (ensa.fi/papers/sec24-xue.pdf) | **external** — order/direction *insight* is mineable; QUIC/MASQUE transfer is an open question |
