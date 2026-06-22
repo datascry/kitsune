@@ -26,8 +26,38 @@ table.tells th{background:#f6f6f6}
 td code{font-size:12px;color:#0a3}
 .cat-coherence,.cat-automation,.cat-artifact{color:#a11;font-weight:600}
 .cat-environment,.cat-behavioral,.cat-reputation{color:#888}
+/* Interactive behavioral-biometrics panel (live readout near the top). */
+#ks-bio{border:1px solid #e3e3e3;border-radius:8px;padding:.8rem 1rem;margin:.6rem 0 1rem;background:#fafafa}
+#ks-bio h2{font-size:1.05rem;margin:0 0 .5rem}
+.bio-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.35rem .9rem;margin:.2rem 0 .6rem}
+.bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;border-bottom:1px dotted #e3e3e3;padding:2px 0;font-size:13px}
+.bio-row span{color:#666}.bio-row b{font-variant-numeric:tabular-nums}
+.bio-row i{font-style:normal;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+.bm-human{color:#067a52}.bm-bot{color:#a11;font-weight:600}.bm-more,.bm-ok{color:#999}
+.bio-help{color:#666;font-size:12.5px;margin:.2rem 0 .6rem}
+.bio-pad{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-between;margin:.4rem 0}
+.bio-dot{flex:1 1 auto;min-width:60px;padding:.55rem;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:14px}
+.bio-dot:hover{background:#eef2ff}.bio-dot.hit{background:#d9f2e3;border-color:#067a52}
+#ks-bio-text{width:100%;box-sizing:border-box;padding:.5rem;border:1px solid #cbd5e1;border-radius:6px;margin:.3rem 0;font:inherit}
+#ks-analyze{padding:.5rem .9rem;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font-size:14px}
+#ks-analyze:hover{background:#1d4ed8}
 </style></head>
-<body><h1>Kitsune lab</h1><p class="sub">Live bot-detection demo — your browser's signals are scored by the real detector.</p><p id="ks-status">collecting…</p><div id="ks-result"></div>
+<body><h1>Kitsune lab</h1><p class="sub">Live bot-detection demo — your browser's signals are scored by the real detector.</p>
+<section id="ks-bio" aria-label="behavioral biometrics">
+  <h2>Your behavioral biometrics</h2>
+  <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
+  <p class="bio-help">Move your mouse to click the buttons, then type a sentence — the detector measures your mouse dynamics and keystroke timing live. Press <b>Analyze</b> to re-score with your input.</p>
+  <div class="bio-pad">
+    <button type="button" class="bio-dot" data-n="1">1</button>
+    <button type="button" class="bio-dot" data-n="2">2</button>
+    <button type="button" class="bio-dot" data-n="3">3</button>
+    <button type="button" class="bio-dot" data-n="4">4</button>
+    <button type="button" class="bio-dot" data-n="5">5</button>
+  </div>
+  <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
+  <button type="button" id="ks-analyze">Analyze my behavior</button>
+</section>
+<p id="ks-status">collecting…</p><div id="ks-result"></div>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
@@ -1212,6 +1242,41 @@ td code{font-size:12px;color:#0a3}
   // Default 1200ms lets behavioral (mouse) signals accumulate. `?fast` cuts the wait for
   // detection-only captures that need the browser-layer fingerprint, not behaviour (e.g. the
   // single-Camoufox frontier test); body[data-ks=sent] lets a harness wait on completion.
+  // Interactive biometrics: a live readout (near the top) computed from the SAME pts/keys the detector
+  // scores, plus buttons + a text input that elicit real mouse dynamics and keystroke timing. The global
+  // mousemove/keydown listeners above already capture interaction anywhere on the page (the text input's
+  // keydowns bubble to window), so the panel just drives richer input and lets the visitor re-score it.
+  function bioRow(label, val, cls) { return '<div class="bio-row"><span>' + label + '</span><b>' + val + '</b><i class="bm-' + cls + '">' + cls + '</i></div>'; }
+  function renderBio() {
+    var el = document.getElementById("ks-bio-metrics");
+    if (!el) return;
+    var rows = bioRow("pointer events", pts.length, pts.length >= 12 ? "ok" : "more");
+    if (pts.length >= 3) {
+      var e = entropy(pts), st = straightness(pts), vc = velcv(pts);
+      rows += bioRow("mouse entropy", e.toFixed(3), e < 0.15 ? "bot" : "human");
+      rows += bioRow("path straightness", st.toFixed(3), st > 0.97 ? "bot" : "human");
+      rows += bioRow("velocity CV", vc.toFixed(3), vc < 0.08 ? "bot" : "human");
+    }
+    if (pts.length >= 12) {
+      var ple = powerLawExp(pts);
+      if (ple !== null) rows += bioRow("power-law \\u03b2", ple.toFixed(3), ple < 0.05 ? "bot" : "human");
+    }
+    rows += bioRow("keystrokes", keys.length, keys.length >= 4 ? "ok" : "more");
+    if (keys.length >= 4) { var ke = keyEntropy(keys); rows += bioRow("keystroke entropy", ke.toFixed(3), ke < 0.15 ? "bot" : "human"); }
+    el.innerHTML = rows;
+  }
+  try {
+    var dots = document.querySelectorAll(".bio-dot");
+    for (var di = 0; di < dots.length; di++) dots[di].addEventListener("click", function () { this.classList.add("hit"); renderBio(); });
+    var btxt = document.getElementById("ks-bio-text");
+    if (btxt) btxt.addEventListener("input", renderBio);
+    var analyze = document.getElementById("ks-analyze");
+    if (analyze) analyze.addEventListener("click", function () {
+      var s = document.getElementById("ks-status"); if (s) s.textContent = "re-scoring your behavior\\u2026";
+      renderBio(); send();
+    });
+    setInterval(renderBio, 600); // keep the live readout fresh as the visitor moves/types
+  } catch (e) {}
   setTimeout(function () { send(); }, /(?:\\?|&)fast\\b/.test(location.search) ? 200 : 1200);
 })();
 </script></body></html>
