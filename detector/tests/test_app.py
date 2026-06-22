@@ -59,6 +59,32 @@ def test_create_app_defaults() -> None:
     assert client.get("/healthz").status_code == 200
 
 
+def test_admin_token_gates_inspection_endpoints(fixed_clock) -> None:
+    # With KITSUNE_ADMIN_TOKEN configured, the inspection endpoints require a bearer token and the
+    # interactive docs are hidden; the public surface (/, /healthz, /ingest) stays open.
+    app = create_app(detector=Detector(clock=fixed_clock), store=Store(":memory:"), admin_token="s3cret")
+    client = TestClient(app)
+
+    # public endpoints stay open
+    assert client.get("/healthz").status_code == 200
+    assert client.get("/").status_code == 200
+
+    # inspection endpoints reject a missing or wrong token
+    for path in ("/scoreboard", "/session/x", "/verdict/x"):
+        assert client.get(path).status_code == 401
+    assert client.get("/scoreboard", headers={"Authorization": "Bearer wrong"}).status_code == 401
+
+    # with the right token they pass auth (then 200 / 404 on their own merits)
+    h = {"Authorization": "Bearer s3cret"}
+    assert client.get("/scoreboard", headers=h).status_code == 200
+    assert client.get("/session/nope", headers=h).status_code == 404
+    assert client.get("/verdict/nope", headers=h).status_code == 404
+
+    # the API docs are hidden on a hardened deployment
+    assert client.get("/openapi.json").status_code == 404
+    assert client.get("/docs").status_code == 404
+
+
 def test_index_serves_collector(client: TestClient) -> None:
     resp = client.get("/")
     assert resp.status_code == 200
