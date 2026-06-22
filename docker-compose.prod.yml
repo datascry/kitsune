@@ -5,8 +5,11 @@
 services:
   detector:
     # Persist the session/verdict store across restarts (the detector already reads KITSUNE_DB).
+    # KITSUNE_ADMIN_TOKEN (from .env, optional) gates /session,/verdict,/scoreboard + hides the API
+    # docs on this public host; empty/unset leaves them open (dev behaviour).
     environment:
       KITSUNE_DB: /data/kitsune.db
+      KITSUNE_ADMIN_TOKEN: ${KITSUNE_ADMIN_TOKEN:-}
     volumes:
       - detector-data:/data
     restart: unless-stopped
