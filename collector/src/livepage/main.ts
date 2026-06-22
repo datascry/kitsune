@@ -120,52 +120,59 @@ function rawFingerprint(): Record<string, string> {
 }
 
 async function main(): Promise<void> {
-  const root = document.getElementById("app");
-  if (root === null) return;
+  const appRoot = document.getElementById("app");
+  const panelMount = document.getElementById("behavioral-panel");
+  if (appRoot === null) return;
 
   // Arm behavioural listeners immediately so early mouse/key movement is captured while the page loads.
   const collector = armCollector();
   const registry = (await (await fetch("./rules.json")).json()) as RegistryJSON;
-
-  // Give the visitor a moment to move the mouse / type so the behavioural layer has something to score.
-  await new Promise((r) => setTimeout(r, COLLECT_DELAY_MS));
-
-  const signals = await collector.collect();
-  const prediction = predict();
   const clientRules = registry.rules.filter((r) => r.clientEvaluable);
-  const fired = evaluate(clientRules, signals);
 
-  // Per-browser gating: a fired detection that does not apply to the predicted browser/form-factor is
-  // shown but excluded from the verdict — the mechanism that keeps real Firefox/Safari/mobile from being
-  // mislabelled (e.g. navplatform_vs_ua on Android, where a Linux platform under an Android UA is normal).
-  const naReasons = new Map<string, string>();
-  const applicable = fired.filter((c) => {
-    const reason = notApplicable(c.id, prediction);
-    if (reason !== null) {
-      naReasons.set(c.id, reason);
-      return false;
-    }
-    return true;
-  });
+  // collect → evaluate (per-browser gating) → render the verdict/fingerprint into #app. Re-callable:
+  // collect() snapshots the latest accumulated pointer/key samples, so the panel's "Re-evaluate" button
+  // re-runs it after the visitor has interacted more (L2). Per-browser gating keeps real
+  // Firefox/Safari/mobile from being mislabelled (a fired tell that doesn't apply is shown, not counted).
+  const run = async (): Promise<void> => {
+    const signals = await collector.collect();
+    const prediction = predict();
+    const fired = evaluate(clientRules, signals);
+    const naReasons = new Map<string, string>();
+    const applicable = fired.filter((c) => {
+      const reason = notApplicable(c.id, prediction);
+      if (reason !== null) {
+        naReasons.set(c.id, reason);
+        return false;
+      }
+      return true;
+    });
+    const fingerprint = rawFingerprint();
+    render(appRoot, {
+      prediction,
+      coherence: coherence(prediction),
+      fingerprint,
+      surfaces: surfaces(signals, fingerprint),
+      rules: registry.rules,
+      fired: applicable,
+      naReasons,
+      verdict: verdictFor(applicable),
+      rulesetVersion: registry.ruleset_version,
+    });
+  };
 
-  const fingerprint = rawFingerprint();
-  render(root, {
-    prediction,
-    coherence: coherence(prediction),
-    fingerprint,
-    surfaces: surfaces(signals, fingerprint),
-    rules: registry.rules,
-    fired: applicable,
-    naReasons,
-    verdict: verdictFor(applicable),
-    rulesetVersion: registry.ruleset_version,
-  });
+  // L1: mount the interactive behavioural panel IMMEDIATELY (not after the collection wait) so the visitor
+  // can move/type and watch the biomechanics measure during collection, instead of staring at a blank page.
+  // It lives outside #app, so each verdict re-render leaves it (and the visitor's typing) untouched.
+  const isTouch =
+    predict().formFactor === "mobile" ||
+    (typeof matchMedia === "function" && matchMedia("(any-pointer: coarse)").matches);
+  if (panelMount !== null)
+    mountBehavioralPanel(panelMount, collector, clientRules, { isTouch, onReevaluate: run });
 
-  // Behavioural layer is passive (its rules are floors a still visitor never trips), so the per-layer
-  // tables show nothing for it. Mount a live panel that surfaces the measured biomechanics against those
-  // floors as the visitor moves/types — and lets them run the same metric code over a scripted bot path.
-  const panelMount = document.getElementById("behavioral-panel");
-  if (panelMount !== null) mountBehavioralPanel(panelMount, collector, clientRules);
+  // Give the visitor a moment to move the mouse / type so the behavioural layer has something to score
+  // (#app stays empty meanwhile, so the "move your mouse and type" status prompt stays visible), then render.
+  await new Promise((r) => setTimeout(r, COLLECT_DELAY_MS));
+  await run();
 }
 
 void main();

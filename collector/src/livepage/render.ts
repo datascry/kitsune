@@ -182,7 +182,6 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
       <div class="score">bot-likelihood ${pct(verdict.score)}</div>
       <div class="sub">incoherence ${pct(verdict.incoherence)} · ruleset ${esc(rulesetVersion)}</div>
     </section>
-    <section class="behavioral-panel" id="behavioral-panel"></section>
     ${coherenceBanner(coherence, prediction)}
     ${predictionCard(prediction)}
     ${surfacesSection(surfaces)}

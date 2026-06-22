@@ -34,6 +34,9 @@
         Collecting signals from your browser — <strong>move your mouse around and type</strong> for
         a few seconds so the behavioral layer can be assessed…
       </p>
+      <!-- Persistent interactive biometrics panel: mounted immediately (outside #app, so the verdict
+           re-render never wipes it) and kept at the top, so visitors interact DURING collection. -->
+      <section class="behavioral-panel" id="behavioral-panel"></section>
       <div id="app"></div>
     </main>
 

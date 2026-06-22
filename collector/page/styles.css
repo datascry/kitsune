@@ -582,7 +582,14 @@ tr.pending {
   color: var(--ink);
   margin: 0.5rem 0;
 }
-button.bp-demo {
+.bp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+button.bp-demo,
+button.bp-reeval {
   font-family: var(--mono);
   font-size: 0.76rem;
   color: var(--ink);
@@ -591,7 +598,11 @@ button.bp-demo {
   padding: 0.4rem 0.7rem;
   cursor: pointer;
 }
-button.bp-demo:hover {
+button.bp-demo:hover,
+button.bp-reeval:hover {
   border-color: var(--fox);
   color: var(--fox);
+}
+.bp-dot {
+  touch-action: manipulation;
 }

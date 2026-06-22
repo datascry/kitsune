@@ -44,16 +44,23 @@ function metricsHtml(snapshot: BehavioralSnapshot, rows: BehavioralRow[], note: 
     <p class="bp-summary">${fired}/${rows.length} biomech floors currently tripped.</p>`;
 }
 
-/** The interactive controls — buttons (elicit mouse travel) + a text input (keystroke timing). Built ONCE
- * and never repainted, so typing keeps focus while the metrics slot refreshes underneath. */
-function controlsHtml(): string {
-  return `<p class="note bp-help">Move your mouse to the buttons and click them, then type a sentence —
-      your mouse dynamics and keystroke timing are measured live against the registry floors.</p>
+/** The interactive controls — buttons (elicit pointer travel) + a text input (keystroke timing). Built ONCE
+ * and never repainted, so typing keeps focus while the metrics slot refreshes underneath. Touch-aware copy
+ * (the biomech floors are mouse-calibrated, so on a touch device they read as advisory, not convicting). */
+function controlsHtml(isTouch: boolean): string {
+  const help = isTouch
+    ? `Tap the buttons and swipe across them, then type a sentence — your touch/pointer dynamics and
+       keystroke timing are measured live. <em>Note: the biomech floors are mouse-calibrated, so they are
+       advisory on a touch device.</em>`
+    : `Move your mouse to the buttons and click them, then type a sentence — your mouse dynamics and
+       keystroke timing are measured live against the registry floors.`;
+  const placeholder = "Type a sentence here to measure keystroke timing…";
+  return `<p class="note bp-help">${help}</p>
     <div class="bp-pad">${[1, 2, 3, 4, 5]
       .map((n) => `<button type="button" class="bp-dot" data-n="${n}">${n}</button>`)
       .join("")}</div>
     <input type="text" class="bp-text" autocomplete="off" autocapitalize="off" spellcheck="false"
-      aria-label="type to measure keystroke timing" placeholder="Type a sentence here to measure keystroke timing…" />`;
+      aria-label="type to measure keystroke timing" placeholder="${placeholder}" />`;
 }
 
 /**
@@ -69,6 +76,7 @@ export function mountBehavioralPanel(
   container: HTMLElement,
   collector: { snapshotBehavioral(): BehavioralSnapshot },
   rules: RuleJSON[],
+  opts: { isTouch?: boolean; onReevaluate?: () => void } = {},
 ): void {
   const liveNote = "Real human motion stays clear of every floor; a scripted path does not.";
   const demoNote =
@@ -77,9 +85,12 @@ export function mountBehavioralPanel(
 
   container.innerHTML = `<h2>Behavioral layer — live biomechanics
       <span class="note">— measured in your browser against the same registry floors the detector uses</span></h2>
-    ${controlsHtml()}
+    ${controlsHtml(opts.isTouch === true)}
     <div class="bp-live"></div>
-    <button type="button" class="bp-demo">Demo a synthetic bot path ↻</button>`;
+    <div class="bp-actions">
+      <button type="button" class="bp-demo">Demo a synthetic bot path ↻</button>
+      ${opts.onReevaluate ? '<button type="button" class="bp-reeval">Re-evaluate my detections ↻</button>' : ""}
+    </div>`;
   const live = container.querySelector(".bp-live") as HTMLElement;
 
   const draw = (snapshot: BehavioralSnapshot, note: string): void => {
@@ -99,7 +110,10 @@ export function mountBehavioralPanel(
     if (t?.classList.contains("bp-demo")) {
       demoing = true;
       draw(syntheticBotSnapshot(), demoNote);
+      return;
     }
+    // L2: re-score the verdict against the visitor's now-richer interaction (collect() re-snapshots).
+    if (t?.classList.contains("bp-reeval") && opts.onReevaluate) opts.onReevaluate();
   });
   // Any genuine pointer motion exits the frozen demo back to live readings.
   window.addEventListener("mousemove", () => {
