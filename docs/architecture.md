@@ -352,6 +352,14 @@ prior (browserforge) may reflect the generator's own sampling gaps, not true rar
 convict a real-but-rare browser alone until corroborated against Tier-3 real traffic. This is the only
 signal that scores a statistically-assembled fingerprint with no contradiction.
 
+The Tier-3 corroboration is no longer just aspirational — its **turnkey consumer is built** (see
+[`grounding.md`](./grounding.md)): the IP-reputation half is wired to the MIT X4BNet feed
+([`ip_reputation_refresh.py`](../detector/src/kitsune_detector/ip_reputation_refresh.py)), and the
+prevalence-prior half has an adapter for the published Berke et al. (PoPETs 2025) real-fingerprint corpus
+([`berke_corpus.py`](../harness/src/kitsune_harness/berke_corpus.py)) that builds the real-traffic prior
+from one command. Both emit only de-identified aggregates; what remains is the operator-gated data itself,
+not the machinery to consume it.
+
 ### Frontier #2 — coordination / fleet detector
 
 A spoofing *fleet* defeats per-session detection: each instance is individually clean, but they share an
