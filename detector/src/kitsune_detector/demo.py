@@ -26,15 +26,8 @@ table.tells th{background:#f6f6f6}
 td code{font-size:12px;color:#0a3}
 .cat-coherence,.cat-automation,.cat-artifact{color:#a11;font-weight:600}
 .cat-environment,.cat-behavioral,.cat-reputation{color:#888}
-/* CSS @media beacon (no-JS channel, S1). The rendering ENGINE fetches the @font-face src for whichever
-   media value matches — a request JS hooks cannot redirect (unlike matchMedia). @font-face uses font-src,
-   so it survives the demo's img-src 'none' CSP. Exactly one beacon fires: the @media override wins when it
-   matches, else the default. ks_sid cookie auto-correlates it (see app.css_beacon / docs/detection-landscape S1). */
-@font-face{font-family:kspt;src:url("/b/any_pointer_coarse/0")}
-@media (any-pointer: coarse){@font-face{font-family:kspt;src:url("/b/any_pointer_coarse/1")}}
-.ks-beacon{position:absolute;left:-9999px;top:-9999px;font-family:kspt;speak:none}
 </style></head>
-<body><h1>Kitsune lab</h1><p class="sub">Live bot-detection demo — your browser's signals are scored by the real detector.</p><p id="ks-status">collecting…</p><div id="ks-result"></div><span class="ks-beacon" aria-hidden="true">.</span>
+<body><h1>Kitsune lab</h1><p class="sub">Live bot-detection demo — your browser's signals are scored by the real detector.</p><p id="ks-status">collecting…</p><div id="ks-result"></div>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
@@ -840,11 +833,6 @@ td code{font-size:12px;color:#0a3}
     if (isChromium && !isMobileEnv && navigator.pdfViewerEnabled === false) sigs.push(S("browser", "chrome_no_pdfviewer", true));
     if (window.chrome && !window.chrome.runtime) sigs.push(S("browser", "chrome_runtime_missing", true));
     if (navigator.maxTouchPoints > 0 && !/Mobile|Android|iPhone|iPad/i.test(ua)) sigs.push(S("browser", "maxtouch_desktop", true));
-    // JS-reported touch capability — the cross-check datum for the no-JS CSS @media beacon (S1). The CSS
-    // channel (css_any_pointer_coarse, sent by the rendering engine) and this JS value describe the SAME
-    // capability; a spoof that patches maxTouchPoints (or hooks matchMedia) but cannot redirect the CSS
-    // beacon fetch makes them disagree. Raw boolean here; the coherence rule lands in a later S1 chunk.
-    sigs.push(S("browser", "js_touch", (navigator.maxTouchPoints || 0) > 0));
     // Spatial UA<->capability coherence (FP-Inconsistent, ACM IMC 2025): a phone/tablet UA is a touchscreen
     // device — every real one reports navigator.maxTouchPoints > 0 (iOS Safari = 5, Android > 0). A mobile UA
     // with maxTouchPoints === 0 is a desktop wearing a mobile UA without touch emulation (CDP setUserAgent to

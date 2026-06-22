@@ -95,7 +95,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 
 | ID | Improvement | Size | Category | Status |
 |---|---|---|---|---|
-| **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer (pointer/hover/color-gamut/resolution/`forced-colors`/`prefers-color-scheme`) cross-checked against the JS equivalents (`maxTouchPoints`, `devicePixelRatio`, color scheme). Convict on clear CSS-vs-JS contradiction; corroborate `no_js_execution` with beacon-absence. Confirm a current evader (e.g. mobile-emulation) creates the mismatch before shipping a convicting rule. | M | coherence | ◐ in progress — EVADES confirmed |
+| **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer cross-checked against the JS equivalents. The first pairing tried — `@media (any-pointer: coarse)` vs `navigator.maxTouchPoints` — is **FP-unsafe** (headful-grounded, below). | M | coherence | ✗ resolved — not built (pointer/touch FP-unsafe; see note) |
 | **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ☐ not started |
 | **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ☐ not started |
 | **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ☐ not started |
@@ -113,22 +113,23 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   that beats the current rule. The edge (`edge/internal/proxy/handler.go`) serves via `http.ServeMux`
   (`/healthz`, `/fingerprint`, `/ingest`, reverse proxy) — the beacon endpoint (`GET /b/<sid>/<key>/<value>`)
   + a served stylesheet are the next chunk (step b). Grounding rationale established; no rule shipped yet.
-- **2026-06-22 · S1 step (b) — beacon collector built.** Added the no-JS CSS beacon channel: a cookie-correlated
-  receiver `GET /b/{key}/{value}` in `app.py` (allow-listed `(key,value)` only — never an open signal sink;
-  cookieless/unknown fetches dropped) that records a `browser.css_*` signal merged into the session; a
-  `@font-face` `@media (any-pointer: coarse)` beacon in `demo.py` (font-src, so it survives the `img-src 'none'`
-  CSP; exactly one beacon fires, ks_sid cookie auto-correlates); and the JS-side `js_touch` cross-check datum.
-  5 endpoint unit tests (cookie correlation, allow-list rejection, session merge); detector 333 green @ 99.35%.
-  No rule shipped — the `css_any_pointer_coarse` vs `js_touch` coherence rule + its calibration/headful
-  grounding are the next chunk (steps c/d).
-- **2026-06-22 · S1 step (c, logic) — detector-side coherence derivation.** `Detector._with_derived` now emits
-  `browser.css_pointer_vs_js_incoherent` iff BOTH `css_any_pointer_coarse` (CSS beacon) and `js_touch` (JS) are
-  present AND disagree. Derived detector-side because the CSS value arrives on a separate server-side channel
-  the JS collector never sees. 6 logic tests (disagree→fires both directions; agree→silent; single-channel→
-  abstain); detector 334 green @ 99.35%, detector.py 100%. **Still inert** — no registry rule reads it yet.
-  **Gating note:** the convicting `br.css_pointer_vs_js_touch` (coherence) rule will NOT be added until headful
-  real-browser FP-validation confirms real browsers never produce `any-pointer:coarse ≠ maxTouchPoints>0` — the
-  browserforge/Intoli calibration gates cannot exercise this (no CSS channel in synthetic fps), so the standing
-  "never ship an ungrounded convicting rule" discipline routes S1's promotion through a headful capture (step d,
-  next chunk: load the demo page in touch-emulated vs non-touch real Chromium, confirm agreement = no FP, then a
-  JS-only maxTouchPoints/matchMedia spoof = the convicting mismatch).
+- **2026-06-22 · S1 — RESOLVED, not built (pointer/touch CSS⇄JS FP-unsafe).** Built the beacon collector
+  (cookie-correlated `/b/` receiver + `@font-face` `@media (any-pointer: coarse)` beacon + `js_touch`) and the
+  detector-side derivation, then **grounded it headful** (`harness/tools/css_beacon_ground.mjs`: real Chromium
+  via Playwright/xvfb, route-intercepting the engine's beacon fetch). Result killed the convicting rule:
+
+  | case | CSS `any-pointer:coarse` | JS `maxTouchPoints` | agree |
+  |---|---|---|---|
+  | desktop-no-touch | false | 0 | ✓ |
+  | real-touch (emulated) | **false** | **1** | ✗ |
+  | js-spoof-maxtouch | false | 5 | ✗ |
+
+  A **legitimate touch context** produces `any-pointer:coarse ≠ maxTouchPoints>0` — CSS `any-pointer` semantics
+  ("any coarse pointer present") genuinely diverge from the touch-digitizer count under emulation / hybrid
+  (2-in-1) / xvfb. The convicting rule would FALSE-POSITIVE on real touch/hybrid devices, indistinguishable
+  from the spoof (same direction). Per the standing discipline this is the **G6 / `font_os_vs_ua` pattern**:
+  the probe was built, grounded, and the rule REVERTED rather than shipped FP-prone. The beacon collector +
+  derivation were reverted too (no dead code); the grounding tool stays as the evidence + a reusable harness.
+  S1's no-JS-beacon *idea* survives for an FP-SAFER pairing (devicePixelRatio via `@media (resolution)`, or
+  `prefers-color-scheme`, where the CSS media and the JS value are exactly equivalent on real browsers) — left
+  as a future candidate, not pursued now. Net: one FP averted, the channel design + grounding harness banked.

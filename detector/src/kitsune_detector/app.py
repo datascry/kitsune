@@ -10,25 +10,13 @@ the whole surface is testable in-memory with no network.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
 from .demo import DEMO_PAGE
 from .detector import Detector
-from .models import Layer, Session, Signal, Source, Verdict
+from .models import Session, Signal, Verdict
 from .store import Store
-
-# CSS @media beacon channel (no-JS). A same-origin @font-face fetch the rendering ENGINE makes per matched
-# media value — unspoofable by the JS matchMedia hooks that defeat br.pointer_touch_incoherent (see
-# docs/detection-landscape.md S1). Correlated by the ks_sid cookie (auto-sent with the fetch); the value lands
-# as a browser.css_* signal a coherence rule can cross-check against the JS-reported equivalent. font-src (not
-# the demo's img-src 'none') governs @font-face, so the beacon survives the CSP. Allow-listed (key,value) ONLY
-# — never an open signal sink.
-_CSS_BEACON_VALUES: dict[str, dict[str, bool]] = {
-    "any_pointer_coarse": {"0": False, "1": True},
-}
 
 
 def create_app(detector: Detector | None = None, store: Store | None = None) -> FastAPI:
@@ -53,31 +41,6 @@ def create_app(detector: Detector | None = None, store: Store | None = None) -> 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "ruleset_version": detector.ruleset_version}
-
-    @app.get("/b/{key}/{value}")
-    def css_beacon(key: str, value: str, request: Request) -> Response:
-        # No-JS CSS beacon receiver: record the engine-reported media value as a browser.css_* signal,
-        # correlated by the ks_sid cookie. Allow-listed (key,value) only, so this is never an open signal
-        # sink; an unknown key/value or a cookieless fetch is silently dropped. The request IS the signal,
-        # so the body is empty (204) — the browser doesn't need a real font back.
-        sid = request.cookies.get("ks_sid")
-        allowed = _CSS_BEACON_VALUES.get(key)
-        if sid and allowed is not None and value in allowed:
-            from .ingest import group_signals, merge_sessions
-
-            sig = Signal(
-                session_id=sid,
-                layer=Layer.browser,
-                kind=f"css_{key}",
-                value=allowed[value],
-                source=Source.collector,
-                observed_at=datetime.now(UTC),
-            )
-            for session in group_signals([sig]):
-                existing = store.get_session(session.session_id)
-                merged = merge_sessions(existing, session) if existing else session
-                store.save_session(merged)
-        return Response(status_code=204)
 
     @app.post("/ingest", response_model=list[Verdict])
     def ingest(signals: list[Signal]) -> list[Verdict]:
