@@ -97,7 +97,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 |---|---|---|---|---|
 | **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer cross-checked against the JS equivalents. The first pairing tried — `@media (any-pointer: coarse)` vs `navigator.maxTouchPoints` — is **FP-unsafe** (headful-grounded, below). | M | coherence | ✗ resolved — not built (pointer/touch FP-unsafe; see note) |
 | **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ✗ resolved — core covered; new oracle external-data-bound (see note) |
-| **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ☐ not started |
+| **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ✗ resolved — named realms redundant/FP-prone; real residual speculative (see note) |
 | **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ☐ not started |
 | **S5** | **Emoji / DOMRect render coherence.** Emoji + `getClientRects()` sub-pixel metrics as an added GPU/farbling oracle, cross-realm. Deterministic on a real engine. | S–M | coherence | ☐ not started |
 | **S6** | **`forced-colors` / `color-gamut` as OS corroborators.** Windows High-Contrast + Apple-P3 as corroborating-only OS signals vs UA. FP-safe by construction (never convicts alone). | S | environment | ☐ not started |
@@ -147,3 +147,20 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   Tier-3) and `br.webgl_worker_vs_main` (grounded only on software rendering). Building the canvas->GPU oracle
   in-sandbox would be ungrounded (no real-GPU data to learn the mapping or prove FP-safety), so it is routed to
   the external/grounding-harness queue, not built. No new rule; the GPU-oracle cross-check S2 wanted exists.
+- **2026-06-22 · S3 — RESOLVED, realm coherence already comprehensive; named realms redundant/FP-prone.** The
+  Worker-realm family is mature and robust: `br.worker_divergence` (worker navigator != main), the FUNDAMENTAL
+  `br.worker_source_rewritten` (self.location.href != passed blob URL — documented robust to the ENTIRE
+  Worker-disguise ladder: WORKER_WRAP / WORKER_PROXY / WORKER_PROXY_FIX, all grounded-live), plus
+  `br.worker_constructor_tampered` and the per-attribute `*_worker_vs_main` (languages/timezone/webgl/canvas).
+  Probed: both realm-evasion classes already convict — a main-only navigator spoof → `worker_divergence` (bot);
+  a worker-scope injection → `worker_source_rewritten` (bot). Assessing the named extensions:
+  **SharedWorker** is a second worker realm catching the SAME divergence/injection kinds already caught
+  (defense-in-depth duplication, not new coverage); no current evader beats the Worker realm but leaks
+  SharedWorker (confirm-EVADES fails), and it is unavailable in major real contexts (Chrome on Android, some
+  privacy modes) → FP-handling overhead for redundant coverage. **ServiceWorker** is heavyweight (HTTPS +
+  persistent async registration + cache side-effects), restricted in many contexts, and its scope cannot read
+  navigator like a Worker → FP-prone + limited. **AudioWorklet**'s `AudioWorkletGlobalScope` has no `navigator`
+  → cannot do navigator-coherence. The one REAL residual (the existing rules' own documented next rung) is the
+  `WorkerLocation.prototype.href` override (a tool echoing the original URL to beat `worker_source_rewritten`,
+  leaving a non-native `WorkerLocation.href` in worker scope) — but no current evader performs it, so per
+  confirm-EVADES-first it stays the documented next rung, not built. No new rule; realm coherence is covered.
