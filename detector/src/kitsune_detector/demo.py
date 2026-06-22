@@ -12,37 +12,690 @@ joining the network signals into one session.
 from __future__ import annotations
 
 DEMO_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><title>Kitsune</title>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kitsune — live browser detection</title>
 <style>
-body{font:14px system-ui,-apple-system,sans-serif;margin:2rem;max-width:780px;color:#222;line-height:1.45}
-h1{font-size:1.4rem;margin:0 0 .25rem}
-.sub{color:#666;margin:0 0 1rem}
-#ks-result .verdict{font-size:1.5rem;font-weight:700;padding:.45rem .8rem;border-radius:6px;display:inline-block;margin:.4rem 0}
-.verdict.bot{background:#fde2e1;color:#a11}.verdict.suspicious{background:#fff3cd;color:#7a5c00}.verdict.human{background:#d9f2e3;color:#067a52}
-.verdict .score{font-weight:400;font-size:.95rem;opacity:.75}
-table.tells{border-collapse:collapse;width:100%;margin-top:.7rem;font-size:13px}
-table.tells th,table.tells td{border:1px solid #e3e3e3;padding:4px 8px;text-align:left;vertical-align:top}
-table.tells th{background:#f6f6f6}
-td code{font-size:12px;color:#0a3}
-.cat-coherence,.cat-automation,.cat-artifact{color:#a11;font-weight:600}
-.cat-environment,.cat-behavioral,.cat-reputation{color:#888}
-/* Interactive behavioral-biometrics panel (live readout near the top). */
-#ks-bio{border:1px solid #e3e3e3;border-radius:8px;padding:.8rem 1rem;margin:.6rem 0 1rem;background:#fafafa}
-#ks-bio h2{font-size:1.05rem;margin:0 0 .5rem}
-.bio-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.35rem .9rem;margin:.2rem 0 .6rem}
-.bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;border-bottom:1px dotted #e3e3e3;padding:2px 0;font-size:13px}
-.bio-row span{color:#666}.bio-row b{font-variant-numeric:tabular-nums}
-.bio-row i{font-style:normal;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
-.bm-human{color:#067a52}.bm-bot{color:#a11;font-weight:600}.bm-more,.bm-ok{color:#999}
-.bio-help{color:#666;font-size:12.5px;margin:.2rem 0 .6rem}
+:root {
+  --bg: #0a0a0c;
+  --panel: #0e0e12;
+  --panel-2: #121218;
+  --line: #20202a;
+  --line-bright: #34343f;
+  --ink: #eae7df; /* bone */
+  --muted: #797985;
+  --fox: #e8482b; /* fox-fire vermilion — the one accent */
+  --jade: #5fb89a; /* clear / coherent */
+  --amber: #d6a44e; /* suspicious / experimental */
+  --mono:
+    ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.01em;
+}
+
+header,
+main,
+footer {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Masthead — a vermilion rule, the wordmark, a forensic subtitle. */
+header {
+  padding-top: 2.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+header .mark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+header .mark::before {
+  content: "";
+  width: 0.55rem;
+  height: 1.4rem;
+  background: var(--fox);
+  transform: translateY(0.2rem);
+}
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+header .tag {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+header p {
+  color: var(--muted);
+  max-width: 46rem;
+  font-size: 0.82rem;
+  margin: 0.75rem 0 0;
+}
+header a,
+footer a {
+  color: var(--fox);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+header a:hover,
+footer a:hover {
+  border-bottom-color: var(--fox);
+}
+
+main {
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+#status {
+  color: var(--amber);
+  font-size: 0.82rem;
+  border-left: 2px solid var(--amber);
+  padding-left: 0.75rem;
+}
+
+/* Section labels — "§ TITLE ────" with a hairline filling the row. */
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 2rem 0 0.85rem;
+}
+h2::before {
+  content: "§";
+  color: var(--fox);
+}
+h2::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+h2 .note {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+h3 {
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 1.25rem 0 0.4rem;
+}
+h3 .count {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* Verdict — a bordered forensic stamp, colour = result. */
+/* Hero capability banner — leads the page with the full detection breadth (the MVP value prop). */
+.hero {
+  border: 1.5px solid var(--line-bright);
+  background: var(--panel-2);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.hero-stat strong {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--fox);
+}
+.hero-stat span {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.hero-note {
+  flex: 1 1 14rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  align-self: center;
+}
+
+.verdict {
+  border: 1.5px solid var(--line-bright);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: baseline;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.verdict .label {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.verdict-bot {
+  border-color: var(--fox);
+}
+.verdict-bot .label {
+  color: var(--fox);
+}
+.verdict-suspicious {
+  border-color: var(--amber);
+}
+.verdict-suspicious .label {
+  color: var(--amber);
+}
+.verdict-human {
+  border-color: var(--jade);
+}
+.verdict-human .label {
+  color: var(--jade);
+}
+.verdict .score {
+  font-size: 0.95rem;
+}
+.verdict .sub {
+  color: var(--muted);
+  font-size: 0.76rem;
+  margin-left: auto;
+}
+
+/* Coherence banner — feature-prediction vs the claimed UA (the thesis, up front). */
+.coherence {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.75rem;
+  align-items: stretch;
+  margin: 1rem 0 1.5rem;
+  border: 1px solid var(--line);
+}
+.coherence .side {
+  padding: 0.85rem 1.1rem;
+}
+.coherence .side .cap {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.coherence .side .val {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.coherence .verdict-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.coherence.match .verdict-cell {
+  color: var(--jade);
+}
+.coherence.mismatch {
+  border-color: var(--fox);
+}
+.coherence.mismatch .verdict-cell {
+  color: var(--fox);
+}
+
+/* Predicted-browser detail grid. */
+.predict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.kv {
+  background: var(--panel);
+  padding: 0.6rem 0.8rem;
+}
+.kv .k {
+  display: block;
+  color: var(--muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.kv .v {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+details.ev {
+  margin-top: 0.6rem;
+}
+details.ev summary {
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+details.ev ul {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin: 0.4rem 0;
+}
+
+/* Fingerprint surfaces — value + hash + tamper status, per surface. */
+.surfaces {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.surface {
+  background: var(--panel);
+  padding: 0.75rem 0.9rem;
+  border-top: 2px solid var(--jade);
+}
+.surface.tampered {
+  border-top-color: var(--fox);
+}
+.surface .top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.surface .sname {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.surface .chip {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--jade);
+}
+.surface.tampered .chip {
+  color: var(--fox);
+}
+.surface .sval {
+  font-size: 0.82rem;
+  word-break: break-all;
+  margin-top: 0.3rem;
+}
+.surface .shash {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-top: 0.2rem;
+}
+.surface .stells {
+  color: var(--fox);
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+}
+
+/* Per-layer score bars — hairline, no gradient. */
+.bar {
+  display: grid;
+  grid-template-columns: 7rem 1fr 3rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.3rem 0;
+}
+.bar-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+}
+.bar-track {
+  background: var(--panel-2);
+  height: 0.55rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--fox);
+}
+.bar-val {
+  text-align: right;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Detection tables. */
+table.detections {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+}
+table.detections th,
+table.detections td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.detections th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+td.mark {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+tr.fired td.mark {
+  color: var(--fox);
+  font-weight: 700;
+}
+tr.clear td.mark {
+  color: var(--muted);
+}
+tr.clear {
+  opacity: 0.5;
+}
+code {
+  font-family: var(--mono);
+  color: var(--fox);
+}
+.title {
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+.exp {
+  font-size: 0.62rem;
+  color: var(--bg);
+  background: var(--amber);
+  padding: 0 0.3rem;
+  letter-spacing: 0.05em;
+}
+td.weight {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.na {
+  border-left: 2px solid var(--jade);
+  padding-left: 0.85rem;
+  margin: 1rem 0;
+}
+.na-list,
+.edge-list {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0.4rem 0;
+}
+.na-list code {
+  color: var(--jade);
+}
+.edge-list {
+  columns: 2;
+  column-gap: 2rem;
+}
+.layers {
+  color: var(--line-bright);
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--line);
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  padding-bottom: 2.5rem;
+}
+
+/* Behavioral live panel — the interactive biomechanics layer. */
+.behavioral-panel {
+  border: 1.5px solid var(--line-bright);
+  background: var(--panel-2);
+  padding: 1rem 1.1rem;
+  margin: 1.5rem 0;
+}
+.bp-help {
+  margin: 0.2rem 0 0.6rem;
+}
+.bp-pad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin: 0.4rem 0;
+}
+.bp-dot {
+  flex: 1 1 auto;
+  min-width: 56px;
+  padding: 0.55rem;
+  border: 1px solid var(--line-bright);
+  background: var(--panel);
+  color: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+.bp-dot:hover {
+  background: var(--panel-2);
+}
+.bp-dot.hit {
+  border-color: var(--ok, #2ea043);
+  color: var(--ok, #2ea043);
+}
+.bp-text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  margin: 0.3rem 0 0.6rem;
+  border: 1px solid var(--line-bright);
+  background: var(--panel);
+  color: inherit;
+  border-radius: 4px;
+  font: inherit;
+}
+.bp-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0.3rem 0 0.6rem;
+}
+.bp-status .ok {
+  color: var(--jade);
+}
+.bp-status .wait {
+  color: var(--amber);
+}
+table.bp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.6rem 0;
+  font-size: 0.82rem;
+}
+table.bp-table th,
+table.bp-table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.bp-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.bp-title {
+  color: var(--ink);
+  font-size: 0.8rem;
+}
+.bp-val,
+.bp-floor {
+  font-variant-numeric: tabular-nums;
+}
+.bp-floor {
+  color: var(--muted);
+}
+.bp-verdict {
+  white-space: nowrap;
+  font-weight: 700;
+}
+tr.bot .bp-verdict {
+  color: var(--fox);
+}
+tr.human .bp-verdict {
+  color: var(--jade);
+}
+tr.pending .bp-verdict {
+  color: var(--amber);
+  font-weight: 400;
+}
+tr.pending {
+  opacity: 0.6;
+}
+.bp-summary {
+  font-size: 0.8rem;
+  color: var(--ink);
+  margin: 0.5rem 0;
+}
+.bp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+button.bp-demo,
+button.bp-reeval {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line-bright);
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+button.bp-demo:hover,
+button.bp-reeval:hover {
+  border-color: var(--fox);
+  color: var(--fox);
+}
+.bp-dot {
+  touch-action: manipulation;
+}
+/* L5 demo controls + banner, L6 rule provenance link, L7 share button. */
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+.dc-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+button.demo-spoof,
+button.demo-reset,
+button.share-btn {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line-bright);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+button.demo-spoof:hover,
+button.demo-reset:hover,
+button.share-btn:hover {
+  border-color: var(--fox);
+  color: var(--fox);
+}
+.demo-banner {
+  background: var(--panel-2);
+  border: 1px solid var(--fox);
+  padding: 0.5rem 0.8rem;
+  margin: 0.5rem 0;
+  font-size: 0.84rem;
+}
+.share-btn {
+  margin-top: 0.5rem;
+}
+a.rule-src {
+  text-decoration: none;
+}
+a.rule-src:hover code {
+  text-decoration: underline;
+}
+
+/* --- demo-page specifics: status line, result container, server-scored behavioral panel --- */
+#ks-status{color:var(--amber);font-size:.82rem;border-left:2px solid var(--amber);padding-left:.75rem;margin:1rem 0}
+#ks-result{margin-top:.5rem}
+.layer-bars{margin:1rem 0 1.25rem}
+#ks-bio{border:1.5px solid var(--line-bright);background:var(--panel-2);padding:1rem 1.1rem;margin:1.5rem 0}
+.bio-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:.6rem 0}
+.bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;background:var(--panel);padding:.5rem .7rem;font-size:.8rem}
+.bio-row span{color:var(--muted)}.bio-row b{font-variant-numeric:tabular-nums;font-weight:700}
+.bio-row i{font-style:normal;font-size:.6rem;text-transform:uppercase;letter-spacing:.1em}
+.bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-more,.bm-ok{color:var(--muted)}
+.bio-help{color:var(--muted);font-size:.78rem;margin:.3rem 0 .6rem}
 .bio-pad{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-between;margin:.4rem 0}
-.bio-dot{flex:1 1 auto;min-width:60px;padding:.55rem;border:1px solid #cbd5e1;border-radius:6px;background:#fff;cursor:pointer;font-size:14px}
-.bio-dot:hover{background:#eef2ff}.bio-dot.hit{background:#d9f2e3;border-color:#067a52}
-#ks-bio-text{width:100%;box-sizing:border-box;padding:.5rem;border:1px solid #cbd5e1;border-radius:6px;margin:.3rem 0;font:inherit}
-#ks-analyze{padding:.5rem .9rem;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font-size:14px}
-#ks-analyze:hover{background:#1d4ed8}
+.bio-dot{flex:1 1 auto;min-width:56px;padding:.55rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;cursor:pointer;font:inherit;touch-action:manipulation}
+.bio-dot:hover{background:var(--panel-2)}.bio-dot.hit{border-color:var(--jade);color:var(--jade)}
+#ks-bio-text{width:100%;box-sizing:border-box;padding:.5rem;margin:.3rem 0 .6rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;font:inherit}
+#ks-analyze{font-family:var(--mono);font-size:.78rem;color:var(--bg);background:var(--fox);border:1px solid var(--fox);padding:.45rem .8rem;cursor:pointer;font-weight:700;letter-spacing:.04em}
+#ks-analyze:hover{filter:brightness(1.12)}
 </style></head>
-<body><h1>Kitsune lab</h1><p class="sub">Live bot-detection demo — your browser's signals are scored by the real detector.</p>
+<body>
+<header>
+  <div class="mark"><h1>Kitsune</h1><span class="tag">live browser inspector</span></div>
+  <p>Kitsune flags <strong>incoherence across layers</strong>, not just bad signals. This page collects your browser &amp; behavioral signals and scores them with the <strong>real detector</strong> at this origin — the same rules-as-data the engine runs server-side, correlated with the edge's TLS / HTTP-2 / QUIC / TCP wire fingerprints. <a href="https://github.com/datascry/kitsune">source</a></p>
+</header>
+<main>
+<div class="hero">
+  <div class="hero-stat"><strong>7</strong><span>signal layers</span></div>
+  <div class="hero-stat"><strong>live</strong><span>real detector verdict</span></div>
+  <div class="hero-stat"><strong>wire+JS</strong><span>edge-correlated</span></div>
+  <p class="hero-note">Network · browser · behavioral · reputation — scored together, then checked for cross-layer contradictions.</p>
+</div>
 <section id="ks-bio" aria-label="behavioral biometrics">
   <h2>Your behavioral biometrics</h2>
   <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
@@ -57,7 +710,10 @@ td code{font-size:12px;color:#0a3}
   <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
   <button type="button" id="ks-analyze">Analyze my behavior</button>
 </section>
+<h2>Detector verdict</h2>
 <p id="ks-status">collecting…</p><div id="ks-result"></div>
+</main>
+<footer><p>Your signals are scored by Kitsune's real detector at this origin. This is the blue-team demo — raw captures stay on the host; only de-identified verdicts are shared. TLS / HTTP-2 / QUIC / TCP / IP-reputation layers are captured by the edge.</p></footer>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
@@ -68,17 +724,35 @@ td code{font-size:12px;color:#0a3}
     if (!v) { if (status) status.textContent = "no verdict (no session?)"; return; }
     if (status) status.textContent = "";
     var label = String(v.label || "?"), pct = Math.round((v.score || 0) * 100);
-    var html = '<div class="verdict ' + esc(label) + '">' + esc(label.toUpperCase()) + ' <span class="score">score ' + pct + '%</span></div>';
-    var cs = v.contradictions || [];
+    var inc = Math.round((v.incoherence_score || 0) * 100);
+    var html = '<div class="verdict verdict-' + esc(label) + '">'
+      + '<span class="label">' + esc(label.toUpperCase()) + '</span>'
+      + '<span class="score">bot-likelihood ' + pct + '%</span>'
+      + '<span class="sub">incoherence ' + inc + '%</span></div>';
+    // Per-layer score bars (the detector's LayerScores).
+    var ls = v.layer_scores || {};
+    var layers = ["network", "browser", "behavioral", "reputation"], bars = "";
+    for (var li = 0; li < layers.length; li++) {
+      var lp = Math.round((ls[layers[li]] || 0) * 100);
+      bars += '<div class="bar"><span class="bar-label">' + layers[li] + '</span>'
+        + '<span class="bar-track"><span class="bar-fill" style="width:' + lp + '%"></span></span>'
+        + '<span class="bar-val">' + lp + '</span></div>';
+    }
+    html += '<div class="layer-bars">' + bars + '</div>';
+    // Fired-rule detections — convicting categories highlighted, corroborating ones dimmed.
+    var cs = v.contradictions || [], convicting = { coherence: 1, automation: 1, artifact: 1 };
     if (cs.length) {
-      html += "<p>" + cs.length + " signal(s) fired (only coherence/automation/artifact convict; the rest corroborate):</p>";
-      html += '<table class="tells"><tr><th>signal</th><th>category</th><th>why</th></tr>';
+      html += '<p class="note">' + cs.length + ' signal(s) fired — only coherence / automation / artifact convict; the rest corroborate.</p>';
+      html += '<table class="detections"><tr><th>signal</th><th>category</th><th>weight</th><th>why</th></tr>';
       for (var i = 0; i < cs.length; i++) {
-        var c = cs[i];
-        html += '<tr><td><code>' + esc(c.rule_id) + '</code></td><td class="cat-' + esc(c.category) + '">' + esc(c.category) + '</td><td>' + esc(c.detail) + '</td></tr>';
+        var c = cs[i], cls = convicting[c.category] ? "fired" : "clear";
+        var w = (typeof c.weight === "number") ? c.weight.toFixed(2) : "";
+        html += '<tr class="' + cls + '"><td class="mark"><code>' + esc(c.rule_id) + '</code></td>'
+          + '<td>' + esc(c.category) + '</td><td class="weight">' + w + '</td>'
+          + '<td class="title">' + esc(c.detail) + '</td></tr>';
       }
       html += "</table>";
-    } else { html += "<p>No convicting signals — consistent with a real browser.</p>"; }
+    } else { html += '<div class="na"><p>No convicting signals — consistent with a real browser.</p></div>'; }
     if (out) out.innerHTML = html;
   }
   var id = sid();
