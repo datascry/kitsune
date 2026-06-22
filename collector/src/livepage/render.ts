@@ -182,6 +182,7 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
       <div class="score">bot-likelihood ${pct(verdict.score)}</div>
       <div class="sub">incoherence ${pct(verdict.incoherence)} · ruleset ${esc(rulesetVersion)}</div>
     </section>
+    <section class="behavioral-panel" id="behavioral-panel"></section>
     ${coherenceBanner(coherence, prediction)}
     ${predictionCard(prediction)}
     ${surfacesSection(surfaces)}
@@ -192,7 +193,6 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
       scored on a per-browser basis (${naRules.length} excluded as not-applicable).</p>
     </section>
     <section class="results"><h2>Detections evaluated in your browser</h2>${byLayer}</section>
-    <section class="behavioral-panel" id="behavioral-panel"></section>
     ${naHtml}
     <section class="edge"><h2>Requires the Kitsune edge (${edge.length} not evaluated here)</h2>
       <p class="note">These read TLS/HTTP-2/QUIC/TCP or IP-reputation signals only the edge captures from the raw connection.</p>
