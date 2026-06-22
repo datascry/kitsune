@@ -15,14 +15,28 @@ from urllib.parse import urlparse
 _OWN_DETECTOR_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "detector", "edge"})
 
 #: Public endpoints explicitly built for bot/fingerprint testing (see docs/architecture.md §13).
+#: Only DEDICATED test/demo hosts belong here — never a third-party production site, and never an
+#: over-broad host (e.g. ``www.google.com`` is EXCLUDED: it would permit all of Google, not just the
+#: reCAPTCHA demo path; host matching is exact, so reCAPTCHA/Turnstile are evaluated via self-hosting instead).
 ALLOWED_TEST_HOSTS = frozenset(
     {
+        # Fingerprint / bot self-test pages (the original set).
         "bot.sannysoft.com",
-        "abrahamjuliot.github.io",
+        "abrahamjuliot.github.io",  # CreepJS
         "browserleaks.com",
-        "tls.peet.ws",
-        "demo.fingerprint.com",
-        "bot.incolumitas.com",
+        "tls.peet.ws",  # JA3/JA4 + HTTP/2 echo
+        "demo.fingerprint.com",  # FingerprintJS Pro Smart-Signals demo
+        "bot.incolumitas.com",  # static + behavioral bot test
+        # Vendor-official challenge demos (built by the vendor for evaluation).
+        "accounts.hcaptcha.com",  # hCaptcha official demo
+        "demo.funcaptcha.com",  # Arkose Labs / FunCaptcha official demo
+        # Fingerprint-echo / bot-test services (purpose-built tools, not production sites).
+        "scrapfly.io",  # JA3/JA4 + HTTP/2 fingerprint + antibot-detector tools
+        "browserscan.net",  # composite fingerprint-authenticity + bot test
+        "pixelscan.net",  # fingerprint <-> IP/geo coherence test
+        "deviceandbrowserinfo.com",  # Vastel fingerprint + bot signals
+        "arh.antoinevastel.com",  # Vastel are-you-headless / fp-collect
+        "fingerprint-scan.com",  # fingerprint + bot-risk-score tool
     }
 )
 

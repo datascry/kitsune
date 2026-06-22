@@ -468,10 +468,16 @@ first two lines), Conventional Commits, and strict typing everywhere (`mypy --st
 
 Hard rules, enforced as an allow-list in the harness (`harness/.../allowlist.py`, not just docs):
 
-- Evaders may target **only** (a) Kitsune's own detector and (b) a fixed public set of bot-detection
-  test endpoints (e.g. `bot.sannysoft.com`, CreepJS, `browserleaks.com`, `tls.peet.ws`,
-  `demo.fingerprint.com`, `bot.incolumitas.com`).
-- **Never** a third-party/production site; no scraping, no credentials, no live DDoS.
+- Evaders may target **only** (a) Kitsune's own detector and (b) a fixed public set of **dedicated**
+  bot-detection / fingerprint test endpoints: the self-test pages (`bot.sannysoft.com`, CreepJS,
+  `browserleaks.com`, `tls.peet.ws`, `demo.fingerprint.com`, `bot.incolumitas.com`), the vendor-official
+  challenge demos (`accounts.hcaptcha.com`, `demo.funcaptcha.com`), and the purpose-built fingerprint/bot
+  test services (`scrapfly.io`, `browserscan.net`, `pixelscan.net`, `deviceandbrowserinfo.com`,
+  `arh.antoinevastel.com`, `fingerprint-scan.com`).
+- **Never** a third-party/production site, and **never an over-broad host**: a vendor demo under a shared
+  domain (e.g. the reCAPTCHA demo on `www.google.com`) is excluded because exact-host matching would permit
+  the whole domain — such vendors are evaluated by self-hosting them on a property you own, not via the list.
+- **Never** scraping, credentials, or live DDoS.
 - The harness refuses any target not on the allow-list, and the allow-list must not be weakened. The
   self-contained arena is the ethics design.
 
