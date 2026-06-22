@@ -1,0 +1,47 @@
+# .github/workflows/build-push — publish the detector + edge images to GHCR on each release.
+# Pull-based CD (Option B): a release triggers this build; the VPS's Watchtower auto-pulls the new images.
+
+name: build-push
+on:
+  release:
+    types: [published] # release-please publishes the GitHub Release when its release PR is merged
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: detector
+            context: "."
+            dockerfile: detector/Dockerfile
+          - service: edge
+            context: ./edge
+            dockerfile: edge/Dockerfile
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      # NOTE: SHA-pin the docker/* actions in review to match the repo convention (Scorecard PinnedDependencies).
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/kitsune-${{ matrix.service }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

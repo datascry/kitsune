@@ -81,6 +81,31 @@ cd /path/to/kitsune && docker compose -f docker-compose.yml -f docker-compose.pr
 (Zero-touch alternative for later: Go `autocert` in the edge — auto-renew + hot-reload, no restart — at the
 cost of integrating the ACME TLS-ALPN challenge into the edge's custom TLS listener.)
 
+## Continuous deployment (pull-based: GHCR + Watchtower)
+
+Release-gated, no inbound CI→VPS access. On each **release** (release-please publishes it when its release
+PR merges), `.github/workflows/build-push.yml` builds the `detector` + `edge` images and pushes them to
+`ghcr.io/datascry/kitsune-{detector,edge}`. On the VPS, a **Watchtower** container polls GHCR and pulls +
+restarts the new images in place — the whole CD loop is `release → build-push → Watchtower pull`.
+
+One-time, on the VPS, switch to the pull-based stack (adds the deploy overlay):
+
+```sh
+C="docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml"
+$C pull        # fetch the GHCR images (so up uses them instead of building)
+$C up -d       # detector/edge now run the GHCR images; watchtower auto-updates them on every release
+```
+
+- **Image visibility:** make the two GHCR packages **public** (simplest — no pull auth), or keep them private
+  and `docker login ghcr.io` on the VPS with a `read:packages` token.
+- **State survives updates:** the `detector-data` (SQLite) and `letsencrypt` volumes persist, so a Watchtower
+  restart loses nothing — and the edge restart also picks up a freshly renewed cert.
+- **Scope:** Watchtower is label-scoped to `detector` + `edge` only (it won't touch certbot or itself).
+- **Security note:** Watchtower mounts the Docker socket (root-equivalent) — acceptable on a single research
+  box; on a hardened host use a socket-proxy or the SSH-deploy model instead.
+- **Auto-update cadence:** every 5 min (`WATCHTOWER_POLL_INTERVAL`); deployments are gated to releases because
+  only a release builds+pushes a new image tag.
+
 ## What it unlocks (Tier-3 grounding)
 
 Once real traffic flows, run the grounding sweep over the captured sessions (see [grounding.md](grounding.md)):
