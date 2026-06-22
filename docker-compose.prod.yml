@@ -1,0 +1,45 @@
+# docker-compose.prod — production overlay for a REAL network-edge host (real cert, 443 + QUIC, persistence).
+# Use WITH the base file:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Requires a .env with KITSUNE_DOMAIN=your.domain and KITSUNE_ACME_EMAIL=you@example.com. See docs/deploy.md.
+
+services:
+  detector:
+    # Persist the session/verdict store across restarts (the detector already reads KITSUNE_DB).
+    environment:
+      KITSUNE_DB: /data/kitsune.db
+    volumes:
+      - detector-data:/data
+    restart: unless-stopped
+
+  edge:
+    # Terminate TLS with the real Let's Encrypt cert (loaded by the edge's loadCert via these env paths) and
+    # serve on the public ports. CAP_NET_RAW (for the TCP/IP SYN sniffer) + user:root are inherited from the
+    # base file. The edge MUST be the direct TLS endpoint — do NOT put a proxying CDN/LB in front (it would
+    # re-terminate TLS and destroy the JA3/JA4, HTTP/2 and TCP fingerprints). DNS A/AAAA -> this host directly.
+    environment:
+      KITSUNE_EDGE_ADDR: "0.0.0.0:443"
+      KITSUNE_TLS_CERT: "/certs/live/${KITSUNE_DOMAIN}/fullchain.pem"
+      KITSUNE_TLS_KEY: "/certs/live/${KITSUNE_DOMAIN}/privkey.pem"
+    ports:
+      - "443:443"       # TLS + HTTP/2
+      - "443:443/udp"   # QUIC / HTTP-3 (Alt-Svc advertised; needs the real cert)
+    volumes:
+      - letsencrypt:/certs:ro
+    restart: unless-stopped
+
+  # Let's Encrypt via certbot (HTTP-01 standalone on :80). Initial issuance is a one-shot `run` (docs/deploy.md);
+  # this long-running service renews every 12h. The edge loads the cert at startup, so after a renewal restart
+  # the edge to pick it up: `docker compose ... restart edge` (a monthly cron is plenty). 80 must be open.
+  certbot:
+    image: certbot/certbot:latest
+    ports:
+      - "80:80"
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+    entrypoint: /bin/sh
+    command: -c "trap exit TERM; while :; do certbot renew --standalone --quiet; sleep 12h & wait $${!}; done"
+    restart: unless-stopped
+
+volumes:
+  detector-data:
+  letsencrypt:

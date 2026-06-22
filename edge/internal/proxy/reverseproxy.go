@@ -12,12 +12,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"fmt"
 	"log"
 	"math/big"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -462,9 +464,10 @@ func (p *ReverseProxy) forward(sigs []signal.Signal) {
 	}
 }
 
-// ListenAndServe runs the proxy on addr with TLS terminated using an ephemeral self-signed cert.
+// ListenAndServe runs the proxy on addr, terminating TLS with loadCert()'s certificate (a real
+// browser-trusted keypair in production, else an ephemeral self-signed cert for the lab).
 func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integration
-	cert, err := selfSignedCert()
+	cert, err := loadCert()
 	if err != nil {
 		return err
 	}
@@ -515,6 +518,24 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 		},
 	}
 	return srv.Serve(ln)
+}
+
+// loadCert returns the edge's TLS certificate. In production set KITSUNE_TLS_CERT + KITSUNE_TLS_KEY to a
+// real (Let's Encrypt) PEM keypair — a browser-trusted cert is required for genuine visitors AND for QUIC/
+// HTTP-3 (real Chrome refuses QUIC on an untrusted cert). When either env is unset the edge falls back to an
+// ephemeral self-signed cert (the lab default; impersonators/tests pass with -ignore-certificate-errors).
+func loadCert() (*tls.Certificate, error) { // pragma: integration
+	certPath, keyPath := os.Getenv("KITSUNE_TLS_CERT"), os.Getenv("KITSUNE_TLS_KEY")
+	if certPath != "" && keyPath != "" {
+		c, err := tls.LoadX509KeyPair(certPath, keyPath)
+		if err != nil {
+			return nil, fmt.Errorf("load TLS keypair from %s/%s: %w", certPath, keyPath, err)
+		}
+		log.Printf("edge TLS: loaded keypair from %s", certPath)
+		return &c, nil
+	}
+	log.Printf("edge TLS: KITSUNE_TLS_CERT/KEY unset — using ephemeral self-signed cert (lab mode)")
+	return selfSignedCert()
 }
 
 func selfSignedCert() (*tls.Certificate, error) { // pragma: integration
