@@ -70,6 +70,17 @@ class Detector:
         # improbable tail of the real-traffic prior (the randomizer attack no coherence rule catches).
         if session.signals.browser and prevalence.is_improbable(session):
             browser_add.append(mk(Layer.browser, kind="prevalence_low", value=True))
+        # CSS⇄JS channel coherence (S1, docs/detection-landscape.md): the no-JS CSS @media beacon
+        # (css_any_pointer_coarse, sent by the rendering engine) and the JS-reported js_touch describe the SAME
+        # touch capability. On a real browser they always agree; they can only disagree when a spoof patches the
+        # JS side (maxTouchPoints / a matchMedia hook) but cannot redirect the engine's CSS beacon fetch. Derived
+        # detector-side because the CSS value arrives on a separate (server-side) channel the JS collector never
+        # sees. Inert until the convicting rule lands — which is gated on headful real-browser FP-validation
+        # (the browserforge calibration gate cannot exercise this, having no CSS channel).
+        css_coarse = session.value(Layer.browser, "css_any_pointer_coarse")
+        js_touch = session.value(Layer.browser, "js_touch")
+        if css_coarse is not MISSING and js_touch is not MISSING and bool(css_coarse) != bool(js_touch):
+            browser_add.append(mk(Layer.browser, kind="css_pointer_vs_js_incoherent", value=True))
         ip = session.value(Layer.network, "observed_ip")
         observed_is_dc: bool | None = None
         if ip is not MISSING:
