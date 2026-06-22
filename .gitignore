@@ -47,3 +47,8 @@ data/raw/
 *fingerprints*.csv
 fp-real.csv
 survey-and-browser-attributes-data.csv
+
+# Local secrets / deploy config (domain, ACME email, admin token) — never commit
+.env
+.env.*
+!.env.example
