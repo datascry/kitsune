@@ -1,6 +1,14 @@
 # hosted-demo plan — running the full ruleset live against a visitor
 
-The [GitHub Pages live page](https://datascry.github.io/kitsune/) evaluates the **client-evaluable**
+> **Status: implemented and live at [kitsune.id](https://kitsune.id/).** This plan is now realized — the
+> full edge + detector stack is hosted publicly (runbook: [`deploy.md`](deploy.md)). The standalone
+> **GitHub Pages live page has been retired**: the detector now serves the authoritative full demo page
+> itself (`detector/.../demo.py`), which posts to the real `/ingest` and returns the cross-layer verdict
+> correlated with the edge's wire fingerprints. The client-side-only `collector/src/livepage/` bundle is
+> kept as a local self-test tool (see [`../collector/README.md`](../collector/README.md)). The historical
+> plan below is preserved for context.
+
+The (now-retired) GitHub Pages live page evaluated the **client-evaluable**
 browser/behavioral subset of the ruleset against the visitor's own browser, entirely client-side
 (currently ~86 of the 113 non-retired rules at v0.70.0 — the split is computed at render time from the
 `clientEvaluable` flag, not hardcoded). The remaining **edge-only rules** (~27) a browser cannot resolve:
