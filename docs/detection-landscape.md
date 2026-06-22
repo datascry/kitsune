@@ -98,7 +98,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 | **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer cross-checked against the JS equivalents. The first pairing tried — `@media (any-pointer: coarse)` vs `navigator.maxTouchPoints` — is **FP-unsafe** (headful-grounded, below). | M | coherence | ✗ resolved — not built (pointer/touch FP-unsafe; see note) |
 | **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ✗ resolved — core covered; new oracle external-data-bound (see note) |
 | **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ✗ resolved — named realms redundant/FP-prone; real residual speculative (see note) |
-| **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ☐ not started |
+| **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ✗ resolved — not built (grounded: adds no coverage; see note) |
 | **S5** | **Emoji / DOMRect render coherence.** Emoji + `getClientRects()` sub-pixel metrics as an added GPU/farbling oracle, cross-realm. Deterministic on a real engine. | S–M | coherence | ☐ not started |
 | **S6** | **`forced-colors` / `color-gamut` as OS corroborators.** Windows High-Contrast + Apple-P3 as corroborating-only OS signals vs UA. FP-safe by construction (never convicts alone). | S | environment | ☐ not started |
 
@@ -164,3 +164,17 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   `WorkerLocation.prototype.href` override (a tool echoing the original URL to beat `worker_source_rewritten`,
   leaving a non-native `WorkerLocation.href` in worker scope) — but no current evader performs it, so per
   confirm-EVADES-first it stays the documented next rung, not built. No new rule; realm coherence is covered.
+- **2026-06-22 · S4 — RESOLVED, not built (grounded: exact-own-keys adds no coverage).** Headful-grounded the
+  native-lie expansion across real Chromium + Firefox + WebKit (`harness/tools/native_lie_ground.mjs`). FP
+  baseline: every present native method (`permissions.query`, `toDataURL`, `getParameter`, `Function.prototype.bind`)
+  has `Reflect.ownKeys` exactly `["length","name"]` on ALL THREE engines — so an exact-own-keys check is
+  FP-safe. But the evader run kills its value: a **Proxy-over-native** method (the real threat that defeats the
+  current toString/own-prototype/constructibility checks — `claimsNative=true, ownProto=false, constructible=false`)
+  also forwards `Reflect.ownKeys → ["length","name"]`, so exact-own-keys does NOT catch it; and a **sloppy
+  wrapper** with extra own keys has `claimsNative=false`, already caught by the existing toString check. So the
+  proposed exact-own-keys / descriptor-keys tests add ZERO catches (the evasions are already caught or forward
+  right past them). Closing the residual (transparent Proxy over a native non-constructor method) would need
+  fragile engine-version-specific proxy-trap error-shape tests (S1-class FP risk) AND is redundant: the spoof's
+  OUTPUT is already caught by output-coherence rules (`permissions_anomaly` etc.) — Kitsune catches the
+  injection consequence, not the wrapper structure (the existing `worker_constructor_tampered` /
+  `worker_source_rewritten` design). No new rule; grounding tool kept as evidence + reusable harness.
