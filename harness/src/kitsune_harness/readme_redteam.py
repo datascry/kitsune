@@ -21,6 +21,7 @@ from pathlib import Path
 from kitsune_detector.coherence import load_registry
 from kitsune_detector.detector import Detector
 from kitsune_detector.models import Verdict
+from kitsune_detector.scoring import CONVICTING_CATEGORIES
 
 from .corpus import load_corpus
 
@@ -32,19 +33,37 @@ _CORPUS = str(_ROOT / "corpus" / "sessions")
 _START = "<!-- GENERATED:readme-redteam:start -->"
 _END = "<!-- GENERATED:readme-redteam:end -->"
 
-# A representative, fixed walk DOWN the ladder — scripted transport → CDP driver → engine-level → the
-# realm-coherence escalations → the headful frontier. Names are committed corpus sessions; any that is
-# absent is skipped (the table shrinks rather than breaking), so the teaser stays stable as the fleet grows.
+# A representative walk DOWN the ladder of REAL anti-detect tools/techniques — scripted transport → CDP
+# driver → stealth stack → real anti-detect browser → coherence/within-session escalation → mobile spoof.
+# Each is a committed corpus session; any absent name is skipped (the table shrinks rather than breaking),
+# so the teaser stays stable as the fleet grows. The "Caught by" column renders each one's actual top
+# convicting tell, so the table shows the DETECTION mechanism, not just an abstract score.
 _SAMPLE: list[str] = [
-    "vanilla",
     "curl-impersonate",
     "nodriver",
     "patchright",
+    "full-stealth",
+    "brave",
     "camoufox",
-    "tz-spoof",
-    "worker-wrap",
-    "camoufox-headful",
+    "fp-rotation",
+    "ios-ua-spoof",
 ]
+
+
+def _top_convicting(v: Verdict) -> str | None:
+    """The highest-weight CONVICTING (coherence/automation/artifact) tell — what actually flags the evader."""
+    conv = [c for c in v.contradictions if c.category in CONVICTING_CATEGORIES]
+    return max(conv, key=lambda c: c.weight).rule_id if conv else None
+
+
+def _top_corroborating(v: Verdict, n: int = 2) -> list[str]:
+    """The top non-convicting tells an evader trips — what the frontier cases have INSTEAD of a hard tell."""
+    corr = sorted(
+        (c for c in v.contradictions if c.category not in CONVICTING_CATEGORIES),
+        key=lambda c: c.weight,
+        reverse=True,
+    )
+    return [c.rule_id for c in corr[:n]]
 
 
 def _score(directory: str | None = None) -> dict[str, Verdict]:
@@ -63,28 +82,51 @@ def generate_redteam_md(directory: str | None = None) -> str:
     version = load_registry().ruleset_version
 
     out: list[str] = []
-    headline = f"**{bot} of {total} evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `{version}`)."
+    headline = f"**{bot} of {total} evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `{version}`)."
     if suspicious:
         headline += (
-            f" The remaining {suspicious} are pinned to `suspicious` by the conviction gate — the "
-            "headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every "
-            "*convicting* rule and leaves only corroborating tells, which can never reach `bot` alone."
+            f" The remaining {suspicious} reach only `suspicious` — the conviction-gate frontier "
+            "(top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, "
+            "which can never reach `bot` alone."
         )
     if human:
         headline += f" ({human} score `human` — an open red-team gap.)"
     out.append(headline)
     out.append("")
-    out.append("| Evader | Network | Browser | Behavioral | Incoh. | Score | Label |")
-    out.append("|---|---|---|---|---|---|---|")
+
+    # The ladder — representative REAL tools and the convicting tell that catches each (not just a score).
+    out.append("Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:")
+    out.append("")
+    out.append("| Evader | Caught by (top convicting tell) | Incoh. | Score | Label |")
+    out.append("|---|---|---|---|---|")
     for name in _SAMPLE:
         v = verdicts.get(name)
         if v is None:
             continue
-        ls = v.layer_scores
+        tell = _top_convicting(v)
+        caught = f"`{tell}`" if tell else "_corroborating only_"
+        out.append(f"| `{name}` | {caught} | {v.incoherence_score:.2f} | {v.score:.2f} | {v.label.value} |")
+
+    # Top evaders — the conviction-gate frontier, auto-derived: every `suspicious` evader, hardest first.
+    frontier = sorted(
+        ((n, v) for n, v in verdicts.items() if v.label.value == "suspicious"),
+        key=lambda kv: kv[1].score,
+        reverse=True,
+    )
+    if frontier:
+        out.append("")
         out.append(
-            f"| `{name}` | {ls.network:.2f} | {ls.browser:.2f} | {ls.behavioral:.2f} | "
-            f"{v.incoherence_score:.2f} | {v.score:.2f} | {v.label.value} |"
+            f"**Top evaders — the conviction-gate frontier ({len(frontier)}).** These real tools defeat every "
+            "*convicting* (coherence/automation/artifact) rule and trip only corroborating tells, so the gate "
+            "holds them at `suspicious` — never `bot` on corroboration alone:"
         )
+        out.append("")
+        out.append("| Evader | Trips (corroborating only) | Score | Label |")
+        out.append("|---|---|---|---|")
+        for name, v in frontier:
+            corr = _top_corroborating(v)
+            trips = ", ".join(f"`{r}`" for r in corr) if corr else "_(score-only)_"
+            out.append(f"| `{name}` | {trips} | {v.score:.2f} | {v.label.value} |")
     return "\n".join(out).rstrip() + "\n"
 
 

@@ -15,14 +15,24 @@ def test_headline_reports_the_true_caught_count() -> None:
     md = generate_redteam_md()
     # The headline counts bot-labelled evaders out of the whole corpus; the matrix and this must agree.
     assert "evaders score `bot`" in md
-    assert "conviction gate" in md  # the suspicious frontier is explained, not hidden
+    assert "conviction-gate frontier" in md  # the suspicious frontier (top evaders) is explained, not hidden
 
 
-def test_sample_rows_are_real_corpus_evaders() -> None:
+def test_sample_rows_show_the_convicting_tell() -> None:
     md = generate_redteam_md()
-    # A representative spread down the ladder appears, each as a backticked session name with a verdict.
-    assert "| `vanilla` |" in md
-    assert "| `camoufox-headful` |" in md  # the suspicious frontier row
+    # The ladder names real corpus evaders, each with the "Caught by" convicting tell (the detection mechanism,
+    # not just a score). curl-impersonate is caught on the network layer (no JS execution).
+    assert "Caught by (top convicting tell)" in md
+    assert "| `curl-impersonate` |" in md
+    assert "`net.no_js_execution`" in md
+
+
+def test_top_evaders_frontier_is_listed() -> None:
+    md = generate_redteam_md()
+    # The auto-derived "top evaders" frontier: every suspicious evader, shown with the corroborating-only tells
+    # it trips (no convicting rule) — the conviction-gate story.
+    assert "Top evaders" in md
+    assert "| `camoufox-headful` |" in md  # a known headful-frontier suspicious evader
     assert md.rstrip().endswith("|")  # ends on a table row, not stray prose
 
 
