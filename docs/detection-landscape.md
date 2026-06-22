@@ -100,7 +100,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 | **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ✗ resolved — named realms redundant/FP-prone; real residual speculative (see note) |
 | **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ✗ resolved — not built (grounded: adds no coverage; see note) |
 | **S5** | **Emoji / DOMRect render coherence.** Emoji + `getClientRects()` sub-pixel metrics as an added GPU/farbling oracle, cross-realm. Deterministic on a real engine. | S–M | coherence | ✗ resolved — coherence covered; prediction oracle Tier-3-bound (see note) |
-| **S6** | **`forced-colors` / `color-gamut` as OS corroborators.** Windows High-Contrast + Apple-P3 as corroborating-only OS signals vs UA. FP-safe by construction (never convicts alone). | S | environment | ☐ not started |
+| **S6** | **`forced-colors` / `color-gamut` as OS corroborators.** Windows High-Contrast + Apple-P3 as corroborating-only OS signals vs UA. FP-safe by construction (never convicts alone). | S | environment | ✗ resolved — not built (FP-prone OS mapping + redundant; see note) |
 
 ### Iteration log
 
@@ -188,3 +188,34 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   ("stays corroborating until validated against a Tier-3 real-GPU device") and the same one that resolved S2.
   Cross-realm *emoji* coherence specifically would be only marginal extra draw-ops on the already-experimental
   canvas-realm rule, not new capability. No new rule; routed external (Tier-3), same queue as S2.
+- **2026-06-22 · S6 — RESOLVED, not built (FP-prone OS mapping + redundant).** `forced-colors`/`color-gamut`
+  as OS corroborators fail the FP-safety bar (a corroborator that lifts the legit-browser flag rate is the
+  prevalence-rule trap): **color-gamut: p3 is NOT Apple-exclusive** — it is standard on modern non-Apple
+  displays (Dell/Samsung/Pixel laptops+phones, most external monitors), so "p3 ⟹ Apple" false-positives broadly;
+  **forced-colors: active is rare** (accessibility-gated; most users off → almost never contributes) AND **not
+  strictly Windows** (Linux GTK high-contrast; the spec permits UA triggers), and it carries no human-vs-bot
+  discrimination. Both would be weaker, FP-prone additions to an already-strong, grounded OS-corroborator set
+  (`webgl_os_vs_ua`, `navplatform_vs_ua`, `oscpu_vs_ua`, `font_os_vs_ua`, `voice_os_vs_ua`, `font_linux_leak`,
+  `font_mac_internal`, `codec_os_incoherent`) — the same FP-prone-OS-mapping lesson as `font_os_vs_ua` / G6.
+  No new rule.
+
+### Backlog outcome — S1–S6 DRAINED (2026-06-22)
+
+All six AI-proposed improvements are resolved; **no new convicting rule shipped, no FP introduced** — the
+disciplined outcome. The throughline: Kitsune's coherence/native-invariant engine already covers what the
+in-browser detection field (CreepJS et al.) does, and the genuinely-new capabilities are either FP-unsafe in
+real browsers or external-data-bound (Tier-3 real-device corpus). Per-rung:
+
+| rung | outcome | why |
+|---|---|---|
+| S1 | resolved (FP-unsafe) | CSS `any-pointer` ≠ `maxTouchPoints` in legit touch/hybrid contexts (headful-grounded) — rule reverted |
+| S2 | resolved (covered + external) | WebGL↔WebGPU oracle already convicts (`webgpu_vendor_vs_webgl`); canvas→GPU oracle needs Tier-3 |
+| S3 | resolved (covered + redundant) | Worker-realm coherence already robust; SharedWorker/ServiceWorker/AudioWorklet redundant/FP-prone |
+| S4 | resolved (grounded no-coverage) | exact-own-keys forwards through a Proxy-over-native (3-engine headful); spoof output already caught |
+| S5 | resolved (covered + external) | DOMRect/measureText/canvas-realm oracles already shipped; emoji→GPU prediction needs Tier-3 |
+| S6 | resolved (FP-prone + redundant) | `color-gamut`/`forced-colors` are not clean OS tells; redundant with 8 existing OS corroborators |
+
+Banked: two reusable headful grounding harnesses (`harness/tools/css_beacon_ground.mjs`,
+`native_lie_ground.mjs`) and the cross-engine FP baselines. External queue (Tier-3 real-device / real-GPU
+corpus) gains the canvas/emoji→GPU-family oracle (S2/S5) — routed to `docs/grounding.md`, not built in-sandbox.
+This confirms the in-browser detection frontier is saturated, consistent with the per-session-saturation finding.
