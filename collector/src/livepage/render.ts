@@ -27,7 +27,20 @@ export interface RenderOpts {
   naReasons: Map<string, string>; // ruleId -> why it fired but does NOT apply to this browser
   verdict: Verdict; // computed over the applicable detections only
   rulesetVersion: string;
+  demo?: { label: string }; // L5: present when showing a spoofed-browser demo overlay (not the real verdict)
 }
+
+// L6: a one-line plain-language gloss per rule category (the "why it convicts" the title alone doesn't say).
+const CATEGORY_WHY: Record<string, string> = {
+  coherence: "cross-layer contradiction — values that cannot co-occur on one real browser",
+  automation: "automation-framework surface (webdriver / CDP / injected globals)",
+  artifact: "anti-detect implementation flaw (spoofing placeholder / tampered native)",
+  environment: "a capability a real browser has is stripped/absent",
+  behavioral: "human input biomechanics floor",
+  reputation: "network reputation (datacenter / proxy exit)",
+  prevalence: "a coherent but statistically improbable fingerprint",
+};
+const REGISTRY_URL = "https://github.com/datascry/kitsune/blob/main/contracts/rules/registry.yaml";
 
 function esc(s: string): string {
   return s.replace(
@@ -110,9 +123,12 @@ function ruleRow(rule: RuleJSON, fired: boolean): string {
   const cls = fired ? "fired" : "clear";
   const mark = fired ? "● FIRED" : "○ clear";
   const status = rule.status === "experimental" ? ' <span class="exp">exp</span>' : "";
+  // L6: link the rule id to its registry source (provenance) and gloss the category (the plain "why").
+  const why = CATEGORY_WHY[rule.category] ?? "";
+  const idLink = `<a class="rule-src" href="${REGISTRY_URL}" target="_blank" rel="noopener" title="view rule source in registry.yaml"><code>${esc(rule.id)}</code></a>`;
   return `<tr class="${cls}"><td class="mark">${mark}</td>
-    <td><code>${esc(rule.id)}</code>${status}<div class="title">${esc(rule.title)}</div></td>
-    <td>${esc(rule.category)}</td><td class="weight">${rule.weight.toFixed(2)}</td></tr>`;
+    <td>${idLink}${status}<div class="title">${esc(rule.title)}</div></td>
+    <td title="${esc(why)}">${esc(rule.category)}</td><td class="weight">${rule.weight.toFixed(2)}</td></tr>`;
 }
 
 export function render(root: HTMLElement, opts: RenderOpts): void {
@@ -126,6 +142,7 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
     naReasons,
     verdict,
     rulesetVersion,
+    demo,
   } = opts;
   const firedIds = new Set(fired.map((c) => c.id));
   const client = rules.filter((r) => r.clientEvaluable);
@@ -177,10 +194,22 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
       <p class="hero-note">Every rule is cross-layer coherence-as-data — the same registry the server-side
         detector evaluates, ruleset ${esc(rulesetVersion)}.</p>
     </section>
+    ${
+      demo
+        ? `<section class="demo-banner">▶ DEMO — showing how a <strong>${esc(demo.label)}</strong> would score, overlaid on your real signals. <button type="button" class="demo-reset">← back to my browser</button></section>`
+        : ""
+    }
     <section class="verdict verdict-${verdict.label}">
       <div class="label">${esc(verdict.label.toUpperCase())}</div>
       <div class="score">bot-likelihood ${pct(verdict.score)}</div>
       <div class="sub">incoherence ${pct(verdict.incoherence)} · ruleset ${esc(rulesetVersion)}</div>
+      <button type="button" class="share-btn" title="copy a text summary of this result">⧉ Copy result</button>
+    </section>
+    <section class="demo-controls">
+      <span class="dc-label">See how a spoofed browser scores:</span>
+      <button type="button" class="demo-spoof" data-preset="automation">Automation (webdriver)</button>
+      <button type="button" class="demo-spoof" data-preset="canvas">Canvas spoof</button>
+      <button type="button" class="demo-spoof" data-preset="worker">Worker divergence</button>
     </section>
     ${coherenceBanner(coherence, prediction)}
     ${predictionCard(prediction)}
