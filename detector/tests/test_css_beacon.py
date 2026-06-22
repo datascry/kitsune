@@ -3,13 +3,31 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
 from kitsune_detector.app import create_app
 from kitsune_detector.detector import Detector
-from kitsune_detector.models import Layer
+from kitsune_detector.ingest import group_signals
+from kitsune_detector.models import MISSING, Layer, Signal, Source
 from kitsune_detector.store import Store
+
+_NOW = datetime(2026, 6, 22, tzinfo=UTC)
+
+
+def _session_with(**browser: object):
+    sigs = [
+        Signal(session_id="s", layer=Layer.browser, kind=k, value=v, source=Source.collector, observed_at=_NOW)
+        for k, v in browser.items()
+    ]
+    return group_signals(sigs)[0]
+
+
+def _derived_css_incoherent(**browser: object) -> object:
+    session = Detector()._with_derived(_session_with(**browser))
+    return session.value(Layer.browser, "css_pointer_vs_js_incoherent")
 
 
 @pytest.fixture
@@ -49,6 +67,20 @@ def test_beacon_rejects_unknown_key_and_value(app_store: tuple[TestClient, Store
     assert store.get_session("s") is None
     assert client.get("/b/any_pointer_coarse/9", cookies={"ks_sid": "s"}).status_code == 204
     assert store.get_session("s") is None
+
+
+def test_css_js_touch_incoherence_derivation() -> None:
+    # The S1 coherence substrate: detector derives css_pointer_vs_js_incoherent only when BOTH channels are
+    # present AND disagree — the contradiction a JS-side touch spoof produces but cannot avoid on the CSS beacon.
+    # Disagree → fires (both directions).
+    assert _derived_css_incoherent(css_any_pointer_coarse=True, js_touch=False) is True
+    assert _derived_css_incoherent(css_any_pointer_coarse=False, js_touch=True) is True
+    # Agree → silent (a real touch device and a real desktop both agree across channels).
+    assert _derived_css_incoherent(css_any_pointer_coarse=True, js_touch=True) is MISSING
+    assert _derived_css_incoherent(css_any_pointer_coarse=False, js_touch=False) is MISSING
+    # Only one channel present → cannot compare, abstain (no beacon yet, or no-JS client).
+    assert _derived_css_incoherent(css_any_pointer_coarse=True) is MISSING
+    assert _derived_css_incoherent(js_touch=False) is MISSING
 
 
 def test_beacon_merges_into_existing_session(app_store: tuple[TestClient, Store]) -> None:

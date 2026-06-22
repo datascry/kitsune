@@ -121,3 +121,14 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   5 endpoint unit tests (cookie correlation, allow-list rejection, session merge); detector 333 green @ 99.35%.
   No rule shipped — the `css_any_pointer_coarse` vs `js_touch` coherence rule + its calibration/headful
   grounding are the next chunk (steps c/d).
+- **2026-06-22 · S1 step (c, logic) — detector-side coherence derivation.** `Detector._with_derived` now emits
+  `browser.css_pointer_vs_js_incoherent` iff BOTH `css_any_pointer_coarse` (CSS beacon) and `js_touch` (JS) are
+  present AND disagree. Derived detector-side because the CSS value arrives on a separate server-side channel
+  the JS collector never sees. 6 logic tests (disagree→fires both directions; agree→silent; single-channel→
+  abstain); detector 334 green @ 99.35%, detector.py 100%. **Still inert** — no registry rule reads it yet.
+  **Gating note:** the convicting `br.css_pointer_vs_js_touch` (coherence) rule will NOT be added until headful
+  real-browser FP-validation confirms real browsers never produce `any-pointer:coarse ≠ maxTouchPoints>0` — the
+  browserforge/Intoli calibration gates cannot exercise this (no CSS channel in synthetic fps), so the standing
+  "never ship an ungrounded convicting rule" discipline routes S1's promotion through a headful capture (step d,
+  next chunk: load the demo page in touch-emulated vs non-touch real Chromium, confirm agreement = no FP, then a
+  JS-only maxTouchPoints/matchMedia spoof = the convicting mismatch).
