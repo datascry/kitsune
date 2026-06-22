@@ -96,7 +96,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 | ID | Improvement | Size | Category | Status |
 |---|---|---|---|---|
 | **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer cross-checked against the JS equivalents. The first pairing tried — `@media (any-pointer: coarse)` vs `navigator.maxTouchPoints` — is **FP-unsafe** (headful-grounded, below). | M | coherence | ✗ resolved — not built (pointer/touch FP-unsafe; see note) |
-| **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ☐ not started |
+| **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ✗ resolved — core covered; new oracle external-data-bound (see note) |
 | **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ☐ not started |
 | **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ☐ not started |
 | **S5** | **Emoji / DOMRect render coherence.** Emoji + `getClientRects()` sub-pixel metrics as an added GPU/farbling oracle, cross-realm. Deterministic on a real engine. | S–M | coherence | ☐ not started |
@@ -133,3 +133,17 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   S1's no-JS-beacon *idea* survives for an FP-SAFER pairing (devicePixelRatio via `@media (resolution)`, or
   `prefers-color-scheme`, where the CSS media and the JS value are exactly equivalent on real browsers) — left
   as a future candidate, not pursued now. Net: one FP averted, the channel design + grounding harness banked.
+- **2026-06-22 · S2 — RESOLVED, core already covered + new oracle external-data-bound.** S2's central idea —
+  cross-checking GPU oracles and convicting on disagreement — is **already shipped and convicting**:
+  `br.webgpu_vendor_vs_webgl` (active, coherence, w0.75) fires when the WebGL-renderer GPU family and the
+  WebGPU-adapter GPU family disagree (a spoofed WebGL string on real hardware showing through WebGPU); the
+  worker-realm oracles (`br.webgl_worker_vs_main`, `br.canvas_worker_vs_main`) cover main-vs-worker GPU/canvas.
+  Probed live: a renderer-spoof with a disagreeing WebGPU adapter -> `br.webgpu_vendor_vs_webgl` fires -> bot;
+  the SAME renderer-spoof on a **no-WebGPU target** (older/blacklisted GPU, headless) has no convicting GPU
+  tell -> evades. Closing that residual needs the genuinely-NEW oracle S2 proposed: predict GPU family from the
+  **canvas-hash / emoji render** (CreepJS's encrypted-samples approach) and convict on disagreement with the
+  WebGL string. That requires a **Tier-3 real-GPU reference corpus** (render -> GPU-family map across real
+  devices) — the exact wall already documented for `br.fingerprint_improbable` (gpu single-source pending
+  Tier-3) and `br.webgl_worker_vs_main` (grounded only on software rendering). Building the canvas->GPU oracle
+  in-sandbox would be ungrounded (no real-GPU data to learn the mapping or prove FP-safety), so it is routed to
+  the external/grounding-harness queue, not built. No new rule; the GPU-oracle cross-check S2 wanted exists.
