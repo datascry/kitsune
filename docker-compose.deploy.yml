@@ -1,0 +1,28 @@
+# docker-compose.deploy — pull-based CD overlay (Option B): run GHCR images + Watchtower auto-update.
+# Use WITH the base + prod overlays on the VPS:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml up -d
+# `pull` fetches the GHCR images so `up` (no --build) runs them; Watchtower then auto-pulls future releases.
+
+services:
+  detector:
+    image: ghcr.io/datascry/kitsune-detector:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true" # only this + edge are auto-updated (label-scoped)
+
+  edge:
+    image: ghcr.io/datascry/kitsune-edge:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # Watches GHCR for new detector/edge image tags and pulls + restarts them in place. A release ->
+  # build-push -> Watchtower pull is the whole CD loop, with no inbound CI->VPS access.
+  watchtower:
+    image: containrrr/watchtower:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # NOTE: socket access is root-equivalent (single-box trade-off)
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true" # update only the labelled containers (detector, edge), not itself/certbot
+      WATCHTOWER_POLL_INTERVAL: "300" # check every 5 min
+      WATCHTOWER_CLEANUP: "true" # remove the superseded image after a successful update
+    restart: unless-stopped
