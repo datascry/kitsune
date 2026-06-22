@@ -31,6 +31,12 @@ const (
 	ClassMemoryHard Class = "memory-hard"
 )
 
+// MaxManySmallCount bounds the many-small sub-puzzle count. friendlycaptcha-style variance-reduction sets
+// use tens of puzzles; this cap sits far above any real challenge while making the puzzles() allocation
+// provably bounded, so a malformed or hostile Challenge.Count (it arrives over JSON) cannot drive an
+// unbounded allocation (CodeQL go/uncontrolled-allocation-size).
+const MaxManySmallCount = 1024
+
 // Challenge is one PoW puzzle (or puzzle-set). Difficulty is in leading-zero BITS of the work-function
 // output (per sub-puzzle for many-small); Count is the sub-puzzle count; MemKiB/TimeCost are Argon2 costs.
 type Challenge struct {
@@ -61,6 +67,9 @@ func Mint(class Class, difficulty, count int, memKiB, timeCost uint32) (Challeng
 	case ClassManySmall:
 		if count <= 0 {
 			count = 1
+		}
+		if count > MaxManySmallCount {
+			count = MaxManySmallCount
 		}
 		c.Count = count
 	case ClassMemoryHard:
@@ -107,7 +116,14 @@ func workDigest(c Challenge, subNonce string, counter uint64) []byte {
 // Count entries (distinct sub-nonces) for many-small.
 func puzzles(c Challenge) []string {
 	if c.Class == ClassManySmall {
-		out := make([]string, c.Count)
+		n := c.Count
+		if n < 1 {
+			n = 1
+		}
+		if n > MaxManySmallCount {
+			n = MaxManySmallCount // bound the allocation; an over-range count is malformed (Verify then fails on length mismatch)
+		}
+		out := make([]string, n)
 		for i := range out {
 			out[i] = fmt.Sprintf("%d:", i)
 		}

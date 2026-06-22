@@ -35,6 +35,23 @@ func TestManySmallHasOneCounterPerPuzzle(t *testing.T) {
 	}
 }
 
+func TestManySmallCountIsBounded(t *testing.T) {
+	// Mint clamps an over-range count, and puzzles() bounds the allocation even for a hand-built (e.g.
+	// JSON-deserialized) Challenge whose Count exceeds the cap — so a hostile count cannot drive an
+	// unbounded allocation (CodeQL go/uncontrolled-allocation-size).
+	c, err := Mint(ClassManySmall, 8, MaxManySmallCount+50, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Count != MaxManySmallCount {
+		t.Fatalf("Mint did not clamp count: got %d, want %d", c.Count, MaxManySmallCount)
+	}
+	hostile := Challenge{Class: ClassManySmall, Nonce: "ab", Difficulty: 1, Count: 1 << 30}
+	if got := len(puzzles(hostile)); got != MaxManySmallCount {
+		t.Fatalf("puzzles() did not bound the allocation: got %d, want %d", got, MaxManySmallCount)
+	}
+}
+
 func TestVerifyRejectsWrongSolution(t *testing.T) {
 	c := mustMint(t, ClassHashcash, 16, 0, 0, 0)
 	if Verify(c, Solution{Counters: []uint64{0}}) {
