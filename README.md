@@ -104,20 +104,68 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**86 of 96 evaders score `bot`** ([live matrix](docs/matrix.md), ruleset `0.74.49`). The remaining 10 are pinned to `suspicious` by the conviction gate — the headful / engine-level frontier (hardened Camoufox, headful patchright) that defeats every *convicting* rule and leaves only corroborating tells, which can never reach `bot` alone.
+**86 of 96 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.49`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
-| Evader | Network | Browser | Behavioral | Incoh. | Score | Label |
-|---|---|---|---|---|---|---|
-| `vanilla` | 0.99 | 0.98 | 0.00 | 0.98 | 1.00 | bot |
-| `curl-impersonate` | 0.60 | 0.60 | 0.00 | 0.60 | 0.90 | bot |
-| `nodriver` | 0.00 | 0.99 | 0.80 | 0.00 | 1.00 | bot |
-| `patchright` | 0.00 | 1.00 | 0.00 | 0.00 | 1.00 | bot |
-| `camoufox` | 0.95 | 0.84 | 0.00 | 0.84 | 1.00 | bot |
-| `tz-spoof` | 0.00 | 1.00 | 0.55 | 0.00 | 1.00 | bot |
-| `worker-wrap` | 0.00 | 1.00 | 0.55 | 0.00 | 1.00 | bot |
-| `camoufox-headful` | 0.00 | 0.95 | 0.00 | 0.00 | 0.95 | suspicious |
+Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
+
+| Evader | Caught by (top convicting tell) | Incoh. | Score | Label |
+|---|---|---|---|---|
+| `curl-impersonate` | `net.no_js_execution` | 0.60 | 0.90 | bot |
+| `nodriver` | `br.headless_ua` | 0.00 | 1.00 | bot |
+| `patchright` | `br.headless_ua` | 0.00 | 1.00 | bot |
+| `full-stealth` | `br.cdp_runtime_enabled` | 0.60 | 1.00 | bot |
+| `brave` | `br.webdriver_present` | 0.00 | 1.00 | bot |
+| `camoufox` | `net.tcp_os_vs_ua` | 0.84 | 1.00 | bot |
+| `fp-rotation` | `br.fingerprint_unstable_within_session` | 0.00 | 1.00 | bot |
+| `ios-ua-spoof` | `br.ch_he_headless` | 0.98 | 1.00 | bot |
+
+**Top evaders — the conviction-gate frontier (10).** These real tools defeat every *convicting* (coherence/automation/artifact) rule and trip only corroborating tells, so the gate holds them at `suspicious` — never `bot` on corroboration alone:
+
+| Evader | Trips (corroborating only) | Score | Label |
+|---|---|---|---|
+| `webrtc-leak` | `net.webrtc_ip_vs_observed`, `br.media_devices_empty` | 1.00 | suspicious |
+| `zendriver-uach` | `bh.input_entropy_floor`, `br.hover_none_desktop` | 0.99 | suspicious |
+| `camoufox-hardened` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.99 | suspicious |
+| `camoufox-linux-coherent` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.99 | suspicious |
+| `camoufox-linux` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.99 | suspicious |
+| `zendriver-uach-behave` | `br.hover_none_desktop`, `br.webrtc_unavailable` | 0.99 | suspicious |
+| `camoufox-hardened-behave` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.97 | suspicious |
+| `camoufox-socks-webrtc` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.97 | suspicious |
+| `camoufox-headful` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.95 | suspicious |
+| `patchright-headful` | `br.media_devices_empty`, `br.voices_empty` | 0.93 | suspicious |
 
 <!-- GENERATED:readme-redteam:end -->
+
+## What's novel — detections unique to Kitsune
+
+The field's pages (CreepJS, Sannysoft, pixelscan, …) are single-layer, client-side point-checks. Kitsune's
+edge is **incoherence across layers _and_ time, scored server-side** — see [`docs/detection-landscape.md`](docs/detection-landscape.md)
+for the full gap analysis. The genuinely novel or rare-in-the-field mechanisms:
+
+- **Within-session temporal incoherence** — flags an *invariant* field that rotates under one session:
+  TLS (`net.ja4_unstable_within_session`), origin (`net.ip_rotation_within_session`), browser fingerprint
+  (`br.fingerprint_unstable_within_session`), trajectory replay (`bh.trace_replay_within_session`). No public
+  fingerprinting page tracks rotation across a session — it catches the re-randomizing anti-detect browser
+  that reuses one cookie.
+- **Coalesced-pointer-event structural tell** (`bh.synthetic_no_coalesced` / `br.coalesced_untrusted`) —
+  catches CDP-injected input via `getCoalescedEvents()` length + `isTrusted`, *independent of trajectory
+  shape*, so a GAN/diffusion mouse-path humanizer that beats every shape metric is still caught.
+- **Worker-realm coherence ladder** (`br.worker_source_rewritten`, `br.worker_constructor_tampered`) —
+  convicts worker-scope spoof injection by the blob-URL + constructor-identity round-trip, robust to the
+  entire Proxy-over-native disguise ladder.
+- **Cross-layer wire⇄JS fusion in one session** — TLS JA3/JA4 ⇄ HTTP/2 (Akamai/JA4H) ⇄ QUIC/HTTP-3
+  (per-connection DCID attribution, [ADR-0005](docs/adr/0005-per-connection-quic-attribution.md)) ⇄ TCP/IP-OS
+  ⇄ JS, correlated server-side (`net.tcp_os_vs_ua`). The field's pages are single-layer; only Kitsune fuses
+  all four wire layers with the JS layer.
+- **Cloud-behind-residential-proxy** (`net.datacenter_origin_proxied`) — a datacenter WebRTC origin behind a
+  residential observed IP: the dominant commercial-scraping pattern (cloud VM + residential proxy) that
+  single-IP reputation misses.
+- **2/3-power-law biomechanics** (`bh.power_law_violation`) — the Lacquaniti velocity∝curvature law, grounded
+  against two independent human-mouse corpora (Balabit + SapiMouse).
+
+Every one was grounded the same way: confirm the evasion **EVADES** first (a purpose-built red-team mode —
+the Worker Proxy-fix, coalesced-event Proxy, fingerprint-rotation, residential-proxy fleet), then ship the
+detection only once it **CONVICTS** that evader and stays clean on the calibration FP gate.
 
 ## The structural frontiers
 
