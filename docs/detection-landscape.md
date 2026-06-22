@@ -95,7 +95,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 
 | ID | Improvement | Size | Category | Status |
 |---|---|---|---|---|
-| **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer (pointer/hover/color-gamut/resolution/`forced-colors`/`prefers-color-scheme`) cross-checked against the JS equivalents (`maxTouchPoints`, `devicePixelRatio`, color scheme). Convict on clear CSS-vs-JS contradiction; corroborate `no_js_execution` with beacon-absence. Confirm a current evader (e.g. mobile-emulation) creates the mismatch before shipping a convicting rule. | M | coherence | ☐ not started |
+| **S1** | **CSS⇄JS channel coherence (new no-JS axis).** CSS `@media` beacon layer (pointer/hover/color-gamut/resolution/`forced-colors`/`prefers-color-scheme`) cross-checked against the JS equivalents (`maxTouchPoints`, `devicePixelRatio`, color scheme). Convict on clear CSS-vs-JS contradiction; corroborate `no_js_execution` with beacon-absence. Confirm a current evader (e.g. mobile-emulation) creates the mismatch before shipping a convicting rule. | M | coherence | ◐ in progress — EVADES confirmed |
 | **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ☐ not started |
 | **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ☐ not started |
 | **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ☐ not started |
@@ -104,4 +104,12 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 
 ### Iteration log
 
-- _(loop appends one entry per rung as it lands; mark the row above ☑ done / resolved.)_
+- **2026-06-22 · S1 step (a) — EVADES confirmed.** The current `br.pointer_touch_incoherent` rule
+  (demo.py ~L975) reads BOTH sides via JS: `matchMedia("(any-pointer: coarse)")` vs
+  `navigator.maxTouchPoints`. An anti-detect tool that hooks `window.matchMedia` (or sets both
+  consistently) makes `cssTouch === jsTouch` → the rule is JS-evadable. A pure-CSS `@media` *beacon*
+  (a `background:url()` the rendering engine fetches per matched media value) is NOT JS-hookable, so the
+  beacon-reported pointer/DPR/color-scheme vs the JS-reported equivalents catches the coherent-JS spoof
+  that beats the current rule. The edge (`edge/internal/proxy/handler.go`) serves via `http.ServeMux`
+  (`/healthz`, `/fingerprint`, `/ingest`, reverse proxy) — the beacon endpoint (`GET /b/<sid>/<key>/<value>`)
+  + a served stylesheet are the next chunk (step b). Grounding rationale established; no rule shipped yet.
