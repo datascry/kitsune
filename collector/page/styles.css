@@ -606,3 +606,49 @@ button.bp-reeval:hover {
 .bp-dot {
   touch-action: manipulation;
 }
+/* L5 demo controls + banner, L6 rule provenance link, L7 share button. */
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.6rem 0;
+}
+.dc-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+button.demo-spoof,
+button.demo-reset,
+button.share-btn {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line-bright);
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+button.demo-spoof:hover,
+button.demo-reset:hover,
+button.share-btn:hover {
+  border-color: var(--fox);
+  color: var(--fox);
+}
+.demo-banner {
+  background: var(--panel-2);
+  border: 1px solid var(--fox);
+  padding: 0.5rem 0.8rem;
+  margin: 0.5rem 0;
+  font-size: 0.84rem;
+}
+.share-btn {
+  margin-top: 0.5rem;
+}
+a.rule-src {
+  text-decoration: none;
+}
+a.rule-src:hover code {
+  text-decoration: underline;
+}

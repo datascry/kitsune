@@ -129,12 +129,27 @@ async function main(): Promise<void> {
   const registry = (await (await fetch("./rules.json")).json()) as RegistryJSON;
   const clientRules = registry.rules.filter((r) => r.clientEvaluable);
 
+  // L5: spoofed-browser demos — overlay a preset's signals onto the visitor's real ones so the corresponding
+  // convicting tell fires, making the detection tangible. Each preset reads a single clear boolean signal.
+  const DEMO_PRESETS: Record<string, { label: string; signals: [string, boolean][] }> = {
+    automation: { label: "headless automation tool", signals: [["browser.webdriver", true]] },
+    canvas: {
+      label: "canvas-spoofing anti-detect browser",
+      signals: [["browser.canvas_lie", true]],
+    },
+    worker: { label: "worker-realm spoofing tool", signals: [["browser.worker_divergence", true]] },
+  };
+
+  let lastSummary = "";
+
   // collect → evaluate (per-browser gating) → render the verdict/fingerprint into #app. Re-callable:
   // collect() snapshots the latest accumulated pointer/key samples, so the panel's "Re-evaluate" button
   // re-runs it after the visitor has interacted more (L2). Per-browser gating keeps real
   // Firefox/Safari/mobile from being mislabelled (a fired tell that doesn't apply is shown, not counted).
-  const run = async (): Promise<void> => {
+  // `overlay` (L5) injects demo signals; when set, the verdict is a demo, not the real browser's.
+  const run = async (overlay?: { label: string; signals: [string, boolean][] }): Promise<void> => {
     const signals = await collector.collect();
+    if (overlay) for (const [k, v] of overlay.signals) signals.set(k, v);
     const prediction = predict();
     const fired = evaluate(clientRules, signals);
     const naReasons = new Map<string, string>();
@@ -147,6 +162,7 @@ async function main(): Promise<void> {
       return true;
     });
     const fingerprint = rawFingerprint();
+    const verdict = verdictFor(applicable);
     render(appRoot, {
       prediction,
       coherence: coherence(prediction),
@@ -155,10 +171,43 @@ async function main(): Promise<void> {
       rules: registry.rules,
       fired: applicable,
       naReasons,
-      verdict: verdictFor(applicable),
+      verdict,
       rulesetVersion: registry.ruleset_version,
+      ...(overlay ? { demo: { label: overlay.label } } : {}),
     });
+    // L7: keep a shareable text summary of the current (real) result for the Copy-result button.
+    if (!overlay) {
+      lastSummary =
+        `Kitsune live verdict: ${verdict.label.toUpperCase()} ` +
+        `(bot-likelihood ${Math.round(verdict.score * 100)}%, incoherence ${Math.round(verdict.incoherence * 100)}%) ` +
+        `· ruleset ${registry.ruleset_version} · canvas ${canvasHash()} · ` +
+        `${applicable.length ? "fired: " + applicable.map((c) => c.id).join(", ") : "no convicting tells"} ` +
+        `· https://datascry.github.io/kitsune/`;
+    }
   };
+
+  // L5/L7: delegated clicks on the persistent #app survive every re-render. Demo presets overlay + re-render;
+  // reset returns to the real browser; the share button copies the last real summary.
+  appRoot.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement | null;
+    if (t === null) return;
+    const preset = t.dataset["preset"];
+    const overlay = preset !== undefined ? DEMO_PRESETS[preset] : undefined;
+    if (t.classList.contains("demo-spoof") && overlay !== undefined) {
+      void run(overlay);
+    } else if (t.classList.contains("demo-reset")) {
+      void run();
+    } else if (t.classList.contains("share-btn")) {
+      void navigator.clipboard?.writeText(lastSummary).then(
+        () => {
+          t.textContent = "✓ copied";
+        },
+        () => {
+          /* clipboard blocked — no-op */
+        },
+      );
+    }
+  });
 
   // L1: mount the interactive behavioural panel IMMEDIATELY (not after the collection wait) so the visitor
   // can move/type and watch the biomechanics measure during collection, instead of staring at a blank page.
@@ -167,7 +216,12 @@ async function main(): Promise<void> {
     predict().formFactor === "mobile" ||
     (typeof matchMedia === "function" && matchMedia("(any-pointer: coarse)").matches);
   if (panelMount !== null)
-    mountBehavioralPanel(panelMount, collector, clientRules, { isTouch, onReevaluate: run });
+    mountBehavioralPanel(panelMount, collector, clientRules, {
+      isTouch,
+      onReevaluate: () => {
+        void run();
+      },
+    });
 
   // Give the visitor a moment to move the mouse / type so the behavioural layer has something to score
   // (#app stays empty meanwhile, so the "move your mouse and type" status prompt stays visible), then render.
