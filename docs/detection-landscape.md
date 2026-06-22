@@ -113,3 +113,11 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   that beats the current rule. The edge (`edge/internal/proxy/handler.go`) serves via `http.ServeMux`
   (`/healthz`, `/fingerprint`, `/ingest`, reverse proxy) — the beacon endpoint (`GET /b/<sid>/<key>/<value>`)
   + a served stylesheet are the next chunk (step b). Grounding rationale established; no rule shipped yet.
+- **2026-06-22 · S1 step (b) — beacon collector built.** Added the no-JS CSS beacon channel: a cookie-correlated
+  receiver `GET /b/{key}/{value}` in `app.py` (allow-listed `(key,value)` only — never an open signal sink;
+  cookieless/unknown fetches dropped) that records a `browser.css_*` signal merged into the session; a
+  `@font-face` `@media (any-pointer: coarse)` beacon in `demo.py` (font-src, so it survives the `img-src 'none'`
+  CSP; exactly one beacon fires, ks_sid cookie auto-correlates); and the JS-side `js_touch` cross-check datum.
+  5 endpoint unit tests (cookie correlation, allow-list rejection, session merge); detector 333 green @ 99.35%.
+  No rule shipped — the `css_any_pointer_coarse` vs `js_touch` coherence rule + its calibration/headful
+  grounding are the next chunk (steps c/d).
