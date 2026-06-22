@@ -17,6 +17,10 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with: { fetch-depth: 0 }
       - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        env:
+          # gitleaks-action v2 requires GITHUB_TOKEN to scan PRs (breaking change); without it the job
+          # errors out and the secret scan silently does not run. Read-only default token is sufficient.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   license-isolation:
     runs-on: ubuntu-latest
