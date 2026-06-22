@@ -38,13 +38,20 @@ git clone https://github.com/datascry/kitsune && cd kitsune
 cat > .env <<EOF
 KITSUNE_DOMAIN=your.domain
 KITSUNE_ACME_EMAIL=you@example.com
+# Recommended on a public host: gate the inspection endpoints (/session, /verdict, /scoreboard) and
+# hide the API docs. Anything reaching /session can expose raw signals incl. client IPs, so set a token.
+KITSUNE_ADMIN_TOKEN=$(head -c 24 /dev/urandom | base64)
 EOF
+# .env holds secrets — it's gitignored; never commit it.
 
 # 3. Open the firewall (ufw example).
 ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw allow 443/udp && ufw enable
 
 # 4. Issue the initial Let's Encrypt cert (standalone on :80; one-shot, before bringing the stack up).
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --service-ports certbot \
+#    --entrypoint certbot is required: the prod overlay sets the certbot service's entrypoint to /bin/sh
+#    for the renewal loop, so the one-shot issuance must point it back at the certbot binary.
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --service-ports \
+  --entrypoint certbot certbot \
   certonly --standalone -d "$(grep KITSUNE_DOMAIN .env | cut -d= -f2)" \
   -m "$(grep KITSUNE_ACME_EMAIL .env | cut -d= -f2)" --agree-tos --no-eff-email
 ```
@@ -124,6 +131,10 @@ populates from real egress, and the prevalence prior becomes real-traffic-ground
 
 - The edge runs as root for `CAP_NET_RAW` (a research-demo trade-off; tighten to non-root + `setcap` later).
 - The detector port is never published — only 443 (tcp+udp) and 80 face the internet.
+- **Set `KITSUNE_ADMIN_TOKEN`.** With it set, the inspection endpoints (`/session`, `/verdict`,
+  `/scoreboard`) require an `Authorization: Bearer <token>` header and `/docs` + `/openapi.json` are
+  hidden — so the public surface is just `/` (demo page) + `/ingest` + `/healthz`. Without it they are
+  open (`/session` can return raw signals incl. client IPs), so don't run a public host without one.
 - **Operator raw data stays on the host.** Only de-identified aggregates (a rebuilt prior, IP-rep counts,
   verdict reports) are safe to commit/share — never raw captures (see the standing data rule).
 - This is the **blue (detector) side** — a legitimate public bot-detection demo. Evaders still target only
