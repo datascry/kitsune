@@ -99,7 +99,7 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
 | **S2** | **Multi-oracle GPU/OS cross-check.** Predict GPU family independently from canvas-hash + WebGL renderer + (new) emoji/text-metric render; convict on cross-oracle disagreement. Extends WebGL↔WebGPU match. Ground vs a renderer-spoof evader. | M–L | coherence | ✗ resolved — core covered; new oracle external-data-bound (see note) |
 | **S3** | **Realm-coherence breadth.** Extend the Worker-realm checks to SharedWorker / ServiceWorker / AudioWorklet. Verify a stealth tool leaks an un-patched realm before convicting. | M | coherence | ✗ resolved — named realms redundant/FP-prone; real residual speculative (see note) |
 | **S4** | **Native-lie battery expansion.** Add `Reflect.ownKeys === [length,name]` exact-match, descriptor-keys, `class extends` tamper tests. Calibrate against real-browser captures first (engine/version variance) before convicting. | S–M | artifact | ✗ resolved — not built (grounded: adds no coverage; see note) |
-| **S5** | **Emoji / DOMRect render coherence.** Emoji + `getClientRects()` sub-pixel metrics as an added GPU/farbling oracle, cross-realm. Deterministic on a real engine. | S–M | coherence | ☐ not started |
+| **S5** | **Emoji / DOMRect render coherence.** Emoji + `getClientRects()` sub-pixel metrics as an added GPU/farbling oracle, cross-realm. Deterministic on a real engine. | S–M | coherence | ✗ resolved — coherence covered; prediction oracle Tier-3-bound (see note) |
 | **S6** | **`forced-colors` / `color-gamut` as OS corroborators.** Windows High-Contrast + Apple-P3 as corroborating-only OS signals vs UA. FP-safe by construction (never convicts alone). | S | environment | ☐ not started |
 
 ### Iteration log
@@ -178,3 +178,13 @@ Never ship an ungrounded convicting rule. If a rung proves FP-unsafe or not-grou
   OUTPUT is already caught by output-coherence rules (`permissions_anomaly` etc.) — Kitsune catches the
   injection consequence, not the wrapper structure (the existing `worker_constructor_tampered` /
   `worker_source_rewritten` design). No new rule; grounding tool kept as evidence + reusable harness.
+- **2026-06-22 · S5 — RESOLVED, coherence covered + prediction oracle Tier-3-bound (mirrors S2).** The render
+  coherence S5 proposes is already shipped and firing (probed): `br.domrect_invariant` (artifact — DOMRect
+  determinism + `getClientRects()` consistency, the geometry oracle), `br.measuretext_offscreen_vs` (artifact —
+  text-metric main-vs-OffscreenCanvas oracle), and `br.canvas_worker_vs_main` (coherence — cross-realm canvas
+  render). The genuinely-NEW part — emoji/DOMRect render → PREDICT GPU/OS family (CreepJS's encrypted-samples
+  oracle) and convict on cross-oracle disagreement — needs a **Tier-3 real-device reference corpus** to learn
+  the render→family map and prove FP-safety, the exact wall `br.canvas_worker_vs_main` already documents
+  ("stays corroborating until validated against a Tier-3 real-GPU device") and the same one that resolved S2.
+  Cross-realm *emoji* coherence specifically would be only marginal extra draw-ops on the already-experimental
+  canvas-realm rule, not new capability. No new rule; routed external (Tier-3), same queue as S2.
