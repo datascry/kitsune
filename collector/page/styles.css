@@ -479,6 +479,45 @@ footer {
   padding: 1rem 1.1rem;
   margin: 1.5rem 0;
 }
+.bp-help {
+  margin: 0.2rem 0 0.6rem;
+}
+.bp-pad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin: 0.4rem 0;
+}
+.bp-dot {
+  flex: 1 1 auto;
+  min-width: 56px;
+  padding: 0.55rem;
+  border: 1px solid var(--line-bright);
+  background: var(--panel);
+  color: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+}
+.bp-dot:hover {
+  background: var(--panel-2);
+}
+.bp-dot.hit {
+  border-color: var(--ok, #2ea043);
+  color: var(--ok, #2ea043);
+}
+.bp-text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  margin: 0.3rem 0 0.6rem;
+  border: 1px solid var(--line-bright);
+  background: var(--panel);
+  color: inherit;
+  border-radius: 4px;
+  font: inherit;
+}
 .bp-status {
   font-size: 0.78rem;
   color: var(--muted);
