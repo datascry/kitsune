@@ -5,6 +5,86 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.2.0](https://github.com/datascry/kitsune/compare/v1.1.0...v1.2.0) (2026-06-22)
+
+
+### Features
+
+* **collector:** lead the live page with a detection-capability hero banner ([8c9b77f](https://github.com/datascry/kitsune/commit/8c9b77fb3b14479fbf016a2d4d637daf6f7c0c8e))
+* **collector:** live interactive behavioral panel on the demo page ([582297c](https://github.com/datascry/kitsune/commit/582297c7db5927548c019115980af417ed1405be))
+* **collector:** mirror br.mobile_no_touch into the livepage collector ([1fe8885](https://github.com/datascry/kitsune/commit/1fe888575a61b453bb6c39d6215e2e679dda7e08))
+* **detector:** bh.trace_replay_within_session — convict within-session pointer-trace replay (v0.74.45) ([fc39131](https://github.com/datascry/kitsune/commit/fc39131f0415c70ccaf334e2ab1173857c972eeb))
+* **detector:** br.brave_spoofed catches Proxy-faked navigator.brave (v0.74.48) ([c7f629f](https://github.com/datascry/kitsune/commit/c7f629f49c4af06b6ef54747d0cf31158cf6e3f4))
+* **detector:** br.coalesced_untrusted catches the Proxy-over-native coalesce fake (v0.74.37) ([087f393](https://github.com/datascry/kitsune/commit/087f393ec2c953220480e048236cc49f1e8f3464))
+* **detector:** br.fingerprint_unstable_within_session — catch re-randomising anti-detect browser reusing a cookie (v0.74.44) ([cb007e8](https://github.com/datascry/kitsune/commit/cb007e863812845f47b6b0b206363c9e8c665b5a))
+* **detector:** br.mobile_no_touch — phone/tablet UA with maxTouchPoints 0 (research-radar G1) ([0be9d49](https://github.com/datascry/kitsune/commit/0be9d492e4b134fa6a415dfe3e877ffb0945c340))
+* **detector:** br.worker_source_rewritten — fundamental catch for worker-scope injection (v0.74.47) ([16aae95](https://github.com/datascry/kitsune/commit/16aae95c48d90a3222d12f101d8790f8e9aa9462))
+* **detector:** convict within-session IP rotation (net.ip_rotation_within_session, v0.74.39) ([3145328](https://github.com/datascry/kitsune/commit/3145328d040ecb5f4e83c8dcc369ea0fc56393d8))
+* **detector:** convict within-session JA4 rotation (net.ja4_unstable_within_session, v0.74.38) ([27e8bd1](https://github.com/datascry/kitsune/commit/27e8bd1dadba107573ead7fa11c0b719efdac925))
+* **detector:** ground the WebRTC real-IP leak in-sandbox; demote net.webrtc_ip_vs_observed FP-safe (v0.74.40) ([3789bb5](https://github.com/datascry/kitsune/commit/3789bb5328175f54de72d0ad3b588c7ef3fac276))
+* **detector:** net.datacenter_origin_proxied — convict the cloud-VM-behind-residential-proxy (v0.74.42) ([ab53bb3](https://github.com/datascry/kitsune/commit/ab53bb30f905c9786158ddc3ae8ffacae443d885))
+* **detector:** net.h2_unstable_within_session — within-session h2-stack rotation (v0.74.49) ([e3d847b](https://github.com/datascry/kitsune/commit/e3d847b2f2303c3c209b6ae6c6120a209cfc40d8))
+* **detector:** net.ua_rotation_within_session — catch same-engine mid-session UA rotation (v0.74.43) ([7249773](https://github.com/datascry/kitsune/commit/7249773eed392bed63ac8f9eb92feb9d01336df4))
+* **detector:** rep.webrtc_origin_datacenter — classify the WebRTC-leaked origin (v0.74.41) ([f7192a6](https://github.com/datascry/kitsune/commit/f7192a6d8f1bbcbc844fabe729a6748f1cc3ee74))
+* **detector:** wire MIT X4BNet VPN/datacenter feeds into IP-rep refresh ([bc60859](https://github.com/datascry/kitsune/commit/bc60859f9e1077190af7dbc2e45d6f9296d64267))
+* **detector:** worker_constructor_tampered catches Proxy-wrapped Worker ctor (v0.74.46) ([762543a](https://github.com/datascry/kitsune/commit/762543ade86162b9602adeac26f00eb13e54314d))
+* **docs:** deterministic auto-generation + CI freshness gate for every programmable doc metric ([9588ab3](https://github.com/datascry/kitsune/commit/9588ab396b706bb4d34f5a1d1c2a88cb2cc0ce6a))
+* **edge:** DCID-keyed QUIC capture — per-connection attribution primitive (ADR-0005) ([d5f7425](https://github.com/datascry/kitsune/commit/d5f74259ba052b93023ae38e7e7e61582b60e0ca))
+* **edge:** serve HTTP/3 with per-connection (DCID) QUIC attribution (ADR-0005) ([67eac3a](https://github.com/datascry/kitsune/commit/67eac3a4a87d50ada17ef7a79455cb206b556176))
+* **evaders:** add apify-fp-inject — main-realm injection manufactures worker-realm incoherence ([9248870](https://github.com/datascry/kitsune/commit/92488706c509682a84e794c3b27a5ef694cf00b6))
+* **evaders:** add azuretls — TLS forger caught by 4 net tells (the redundant inference was wrong) ([faa8f45](https://github.com/datascry/kitsune/commit/faa8f45e888f252c99477544bbf38c44ed65fe64))
+* **evaders:** add playwright-extra — the OG stealth baseline self-inflicts cross-layer incoherence ([96eba86](https://github.com/datascry/kitsune/commit/96eba86106d9bc3ce6cf61f18b276825fc20796e))
+* **evaders:** COALESCE_PROXY — Proxy-over-native coalesce patch defeats the artifact layer ([292f5e5](https://github.com/datascry/kitsune/commit/292f5e5e8ec0fe1f4d67a49817f02721bfe8d88f))
+* **evaders:** COALESCE_SPOOF — defeat bh.synthetic_no_coalesced via fabricated coalesced events ([cb5800c](https://github.com/datascry/kitsune/commit/cb5800c8c413bbcb7a9d9e0181299a0eb34fc9f4))
+* **evaders:** coherent-Gecko is the thinnest-caught stock engine (1 tell) — locates why Camoufox exists ([5e83d62](https://github.com/datascry/kitsune/commit/5e83d627c81e6bf95cfd90ae41cc7775629e1ed2))
+* **evaders:** fix the self-defeating camoufox-hardened config (Windows-on-Linux → tcp_os) → now EVADES ([81d7cc3](https://github.com/datascry/kitsune/commit/81d7cc3e739451367f19cb26ddbcbf685f259284))
+* **evaders:** Gecko maximal stack (camoufox-hardened-behave) + cross-layer combination matrix ([491ce95](https://github.com/datascry/kitsune/commit/491ce9598f4c876fcc560b0cebd803acf3ff81dd))
+* **evaders:** go-tls KS_QUIC — the fleet's first QUIC client; ground-truth the retired QUIC parser FP ([824c7c7](https://github.com/datascry/kitsune/commit/824c7c7464966fa9b835974c54eb00cf751b575f))
+* **evaders:** ground the coherent-WebKit engine profile (KS_COHERENT) — engine evades CDP, OS axis betrays it ([1144a74](https://github.com/datascry/kitsune/commit/1144a747af87f6a42f54773a6727815ebbcc9b5d))
+* **evaders:** instrumented PoW rung — Vein D mapped to its terminus ([d98ff41](https://github.com/datascry/kitsune/commit/d98ff41f16e3003616c24bd7880b63c58e1ef634))
+* **evaders:** iOS-naive + fixed-touch mobile-spoof modes — ground the mobile escalation ladder ([e62a345](https://github.com/datascry/kitsune/commit/e62a3459186ce00e3768126bb290efd07a6f507b))
+* **evaders:** KEYSTROKE_HUMAN — first fleet evader to defeat the keystroke floor by timing synthesis ([6d0dd43](https://github.com/datascry/kitsune/commit/6d0dd43050bd7681e56f483ed138685c47ce9f15))
+* **evaders:** KS_NOWEBRTC — block WebRTC to defeat shared_real_ip (closes the WebRTC arms race) ([7b9b3fc](https://github.com/datascry/kitsune/commit/7b9b3fc622a9cc9080089ce697a961f3959dbbb9))
+* **evaders:** KS_SOCKS WebRTC counter degrades to webrtc_unavailable — the WebRTC arms race closes ([f8e851c](https://github.com/datascry/kitsune/commit/f8e851c40512550d20708d925b56c93fb1442b60))
+* **evaders:** mobile-emulation — new surface, comprehensively caught (prevalence model's first live positive) ([56dd8ce](https://github.com/datascry/kitsune/commit/56dd8ce44db6adb70b8fac8fde356bc8acf3af96))
+* **evaders:** naive mobile-UA-spoof mode — live positive for br.mobile_no_touch ([234aeba](https://github.com/datascry/kitsune/commit/234aeba014d35dec8eb99144477f683e9514e844))
+* **evaders:** NEW EVADES — Linux-pinned headless Camoufox (lowest-bar; corrects "headful-only" framing) ([c24eb3f](https://github.com/datascry/kitsune/commit/c24eb3f86d7f5167ce4f985b0b9ebc13757bb023))
+* **evaders:** PoW arms-race testbed — multi-class gate + native solver (Vein D) ([8c10745](https://github.com/datascry/kitsune/commit/8c10745a69c7d60848ac23b2eaf41bb46b7f4edd))
+* **evaders:** red-team counter — headless Camoufox EVADES once the touch leak is fixed (KS_NOTOUCH) ([bf5f1ca](https://github.com/datascry/kitsune/commit/bf5f1ca31de22cf754e4addaf395e81d21151998))
+* **evaders:** UACH_COHERENT — coherent cross-layer UA via CDP defeats the UA-CH headless tells ([553bf03](https://github.com/datascry/kitsune/commit/553bf0374c811dcbdd401f7490f3677c58147c13))
+* **evaders:** white-box + harden playwright-extra's maskLinux self-defeat (cross-layer OS incoherence by default) ([6cb228c](https://github.com/datascry/kitsune/commit/6cb228cf4416740d2246e26a24b3529f6d9b2397))
+* **evaders:** zendriver KS_UACH — coherent UA-CH makes zendriver a HEADLESS evader ([43e3f86](https://github.com/datascry/kitsune/commit/43e3f86118ac08d81c0fbcd7d0eaeb721bd19fdd))
+* **evaders:** zendriver-uach-behave — stack behavioral synthesis on the clean evader; ground the saturation boundary ([0bdc64c](https://github.com/datascry/kitsune/commit/0bdc64c3815486ff4cb72f0e27b56292a6cabff6))
+* **harness:** build the Berke (PoPETs 2025) prevalence-prior adapter ([9e75b4c](https://github.com/datascry/kitsune/commit/9e75b4c18973da081e6914ee9165ebbff4f0e3c0))
+* **harness:** coordination — catch JA4-rotating fleets via collision clustering ([c8c80c7](https://github.com/datascry/kitsune/commit/c8c80c711b05fa8de38e10228e42e35f487adf38))
+* **harness:** grounding harness — turnkey sweep + runbook for real-data grounding ([6808182](https://github.com/datascry/kitsune/commit/6808182c2d31ed0093695a9d83b6bef2a4dc5aae))
+* **harness:** Tier-3 prevalence corroboration tool (real-traffic second source) ([cbc9f26](https://github.com/datascry/kitsune/commit/cbc9f26a4c3a10a98dde87ba6c7fdb1bbb15fb12))
+
+
+### Bug Fixes
+
+* **collector:** mirror high-value probes into livepage + bound the demo.py lag (GAP-10) ([27cfc3f](https://github.com/datascry/kitsune/commit/27cfc3fe0e5955e3494d7acd86ca3a39252e730f))
+* **contracts:** remove duplicate source: keys + lint against them (GAP-6) ([b63679f](https://github.com/datascry/kitsune/commit/b63679f68967d8e72a01e3012b053baa035444d0))
+* **detector:** catch the COALESCE_SPOOF coalesced-events override (v0.74.36) ([980d70f](https://github.com/datascry/kitsune/commit/980d70f7c77efcb8ff8fffcab976e5b3f821c8c3))
+* **docs:** correct the camoufox pointer_touch mechanism — random maxTouchPoints, not ?fast under-probing ([6a6e4f4](https://github.com/datascry/kitsune/commit/6a6e4f4378d55fbd767e65190c241987d0cc0cf3))
+* **edge:** cap QUIC CRYPTO reassembly to bound a forged-Initial OOM (GAP-1) ([35b9586](https://github.com/datascry/kitsune/commit/35b95862dc9b1f9f1457b597cb93b7a561fd6596))
+* **edge:** evict expired tcpfp Store entries — bound memory (GAP-7) ([b049408](https://github.com/datascry/kitsune/commit/b04940870803c0594945116dd610f252731beee3))
+* **edge:** expire QUIC tee Initials after a TTL — kill the stale-buffer cross-attribution + memory leak ([8c18560](https://github.com/datascry/kitsune/commit/8c1856093f5ca9070502ba7dd90bfa0d0e218d52))
+* **edge:** make H2FrameScanner counters atomic — fix data race (GAP-2) ([922f6b8](https://github.com/datascry/kitsune/commit/922f6b8d8f53d1665f4323b1225cfb8031bb71d9))
+* **evaders:** camoufox fixed-coords mouse self-inflicts trace_collision; jitter it + ground the coordination boundary ([3fa228c](https://github.com/datascry/kitsune/commit/3fa228c118823bd7209eaf2c224ab0dbb73d817c))
+* **evaders:** REFUTE iter-24 — headless Camoufox is CAUGHT by pointer_touch_incoherent (?fast under-probed) ([36a37e6](https://github.com/datascry/kitsune/commit/36a37e69cf1e98f021e8ca1a61009f80c0f8d230))
+* **harness:** calibrate br.language_vs_languages (DERIVABLE_KINDS + nav.language) (GAP-4) ([c14e7bd](https://github.com/datascry/kitsune/commit/c14e7bdf9a9c2d04141a5b9e98e11284f69b6c3c))
+* **harness:** exclude internally-incoherent browserforge fingerprints from the FP corpus ([463d4c8](https://github.com/datascry/kitsune/commit/463d4c8b71069abaa266ea1c7e48f892c9a01cca))
+* **harness:** harden grounding CLI arg-parsing + cover the operator path ([1a41298](https://github.com/datascry/kitsune/commit/1a41298258cad5f6882ee6f882522cbfcb55e821))
+* **harness:** include pow + xtest-coalesce evaders in the evasion catalog (GAP-3) ([4dc724a](https://github.com/datascry/kitsune/commit/4dc724a6cdfd8d1825e24d14e6087019f8ec29d2))
+* **repo:** re-freeze stale brave.json fleet capture — privacy-browser FP-safety re-grounded ([d97fa27](https://github.com/datascry/kitsune/commit/d97fa27cfb162baba7034a7e32dd23a4bfec3231))
+
+
+### Reverts
+
+* **evaders:** restore the deliberate playwright@1.52.0 pin ([b0a8dd8](https://github.com/datascry/kitsune/commit/b0a8dd8dfe37b8ddc889db39d208e9a330605ccb))
+* **evaders:** restore the documented playwright@1.52.0 pin — my sprint bump was ineffective + contradicted it ([94fa3b9](https://github.com/datascry/kitsune/commit/94fa3b90d49ac0beab8af871ea3b33e8e292c0b6))
+
 ## [1.1.0](https://github.com/datascry/kitsune/compare/v1.0.2...v1.1.0) (2026-06-20)
 
 
