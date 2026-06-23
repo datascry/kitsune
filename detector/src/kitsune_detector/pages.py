@@ -253,3 +253,129 @@ def render_evasions_page(md: str) -> str:
         "</div>"
         f'<div class="cards">{"".join(cards)}</div>'
     )
+
+
+#: The signal layers, for the How-it-works card grid (name -> what Kitsune reads from it).
+_LAYERS: list[tuple[str, str]] = [
+    ("TLS", "JA3 / JA4 from your ClientHello — the TLS library, read before any HTTP."),
+    ("HTTP/2", "Frame order, SETTINGS and pseudo-header order — the client's H2 fingerprint."),
+    ("QUIC / HTTP-3", "The HTTP-3 transport fingerprint the application layer never sees."),
+    ("TCP / IP", "The OS stack beneath TLS — a p0f-style kernel tell from the raw SYN."),
+    ("Browser", "Canvas, WebGL, audio, fonts and Client Hints — the classic JS surface."),
+    ("Behavioral", "Mouse dynamics and keystroke timing — biomechanics a script can't fake."),
+    ("IP reputation", "Datacenter / proxy / residential signals on the connecting address."),
+]
+
+
+def _section(title: str, *paras: str) -> str:
+    body = "".join(f"<p>{p}</p>" for p in paras)
+    return f"<h2>{html.escape(title)}</h2>{body}"
+
+
+def render_how_it_works_page() -> str:
+    """A concise, scannable explainer (not the full architecture doc)."""
+    cards = "".join(
+        f'<div class="card"><div class="ct"><span class="cn">{html.escape(n)}</span></div>'
+        f'<div class="cd">{html.escape(d)}</div></div>'
+        for n, d in _LAYERS
+    )
+    return (
+        "<h1>How Kitsune works</h1>"
+        '<p class="lead">Most tools flag <em>bad signals</em>. Kitsune flags <strong>incoherence across '
+        "layers</strong> — the contradictions a real browser can't produce but a spoofed or automated one "
+        "does.</p>"
+        + _section(
+            "The one idea",
+            "A real visit is <strong>one device telling one story</strong>. Its TLS handshake, HTTP/2 frames, "
+            "TCP/IP stack, GPU, JavaScript surface and behaviour all agree. Kitsune's edge ties them to a "
+            "single session and checks they line up. When the User-Agent says Chrome-on-Windows but the JA4 "
+            "says Firefox and the TCP stack says Linux, that disagreement is the tell.",
+        )
+        + "<h2>Seven layers, one device</h2>"
+        + f'<div class="cards">{cards}</div>'
+        + _section(
+            "How a session is judged",
+            "Only <strong>cross-layer contradictions, automation artifacts and implementation flaws</strong> "
+            "can convict — a single odd value never does. Everything else (a stripped capability, unusual "
+            "behaviour, a datacenter IP) only corroborates, nudging toward <em>suspicious</em> but never "
+            "<em>bot</em> on its own. That conviction gate is what keeps real, unusual humans from being flagged.",
+        )
+        + _section(
+            "Why it's hard to beat",
+            "An anti-detect browser can spoof the User-Agent and patch <code>navigator.webdriver</code> in "
+            "seconds. Making the JA4, the HTTP/2 frame order, the TCP/IP stack, the GPU renderer and the JS "
+            "feature-set <em>all</em> describe one coherent, real device at the same time is far harder — and "
+            "that is exactly what this page measures live.",
+        )
+        + _section(
+            "Calibrated, not guessed",
+            "No rule ships until a real evader has exercised it <strong>and</strong> a calibration gate proves "
+            "it doesn't flag real browsers — trusted-but-verified against multiple independent fingerprint "
+            "sources.",
+        )
+        + '<p class="lead"><a href="/">Run the live test →</a> &nbsp;·&nbsp; '
+        '<a href="https://github.com/datascry/kitsune/blob/main/docs/architecture.md">Full architecture doc</a></p>'
+    )
+
+
+#: Headline research findings (title -> one-line takeaway), drawn from docs/findings.md.
+_FINDINGS: list[tuple[str, str]] = [
+    (
+        "The arms-race ladder",
+        "Each anti-detect rung defeats the one below it; the detector answers each with a new cross-layer check.",
+    ),
+    (
+        "Coordination, not the instance",
+        "A single polished bot can hide; a fleet can't — shared JA4/fingerprint/trace collisions across sessions are the durable signal.",
+    ),
+    (
+        "Camoufox is the frontier",
+        "Engine-level anti-detect Firefox is the hardest case, reaching only ~suspicious — the bar everything else is measured against.",
+    ),
+    (
+        "Realm coherence",
+        "Many spoofs patch the main JavaScript scope but forget the Worker/iframe realm — the two disagree, and that convicts.",
+    ),
+    (
+        "Tells below the application",
+        "JA3/JA4, the HTTP/2 preface, QUIC and the TCP/IP stack betray automation before a single line of page JS runs.",
+    ),
+    (
+        "Behavioral is the weakest layer",
+        "Mouse/keystroke biomechanics are corroborating-only — humanizers are improving, so it never convicts alone.",
+    ),
+    (
+        "Precision is the hard part",
+        "Real, unusual humans (Brave, Tor, mobile, privacy browsers) must never be flagged — calibration against real-traffic sources is the gate.",
+    ),
+]
+
+
+def render_research_page() -> str:
+    """A concise findings overview (not the 99KB findings doc)."""
+    cards = "".join(
+        f'<div class="card"><div class="ct"><span class="cn">{html.escape(t)}</span></div>'
+        f'<div class="cd">{html.escape(d)}</div></div>'
+        for t, d in _FINDINGS
+    )
+    return (
+        "<h1>Research</h1>"
+        '<p class="lead">What Kitsune has actually measured, running real anti-detect tools through the live '
+        "edge → detector. The thesis holds: <strong>incoherence across layers — not any single bad signal — "
+        "is what survives anti-detect tooling.</strong></p>"
+        '<div class="stat-row">'
+        '<div class="stat"><strong>86/96</strong><span>evaders caught</span></div>'
+        '<div class="stat"><strong>127</strong><span>detection rules</span></div>'
+        '<div class="stat"><strong>7</strong><span>signal layers</span></div>'
+        "</div>"
+        "<h2>What we've learned</h2>"
+        f'<div class="cards">{cards}</div>'
+        + _section(
+            "How it's grounded",
+            "Findings come from running each evader through the real stack, not from synthetic tests. Detections "
+            "are held to a calibration gate against multiple independent fingerprint sources, so a rule that "
+            "would flag real humans never ships.",
+        )
+        + '<p class="lead"><a href="/matrix">See the full matrix →</a> &nbsp;·&nbsp; '
+        '<a href="https://github.com/datascry/kitsune/blob/main/docs/findings.md">Full findings doc</a></p>'
+    )

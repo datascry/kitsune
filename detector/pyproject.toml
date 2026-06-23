@@ -10,7 +10,6 @@ dependencies = [
   "fastapi>=0.110",
   "uvicorn>=0.29",
   "maxminddb>=2.5",
-  "markdown>=3.6",
 ]
 
 [dependency-groups]

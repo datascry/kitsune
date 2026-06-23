@@ -15,7 +15,6 @@ import os
 from collections.abc import Callable
 from pathlib import Path
 
-import markdown  # type: ignore[import-untyped]
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 
@@ -28,7 +27,9 @@ from .pages import (
     render_detections_page,
     render_doc_page,
     render_evasions_page,
+    render_how_it_works_page,
     render_matrix_page,
+    render_research_page,
 )
 from .store import Store
 
@@ -224,20 +225,20 @@ def create_app(
     def _make_doc_route(slug: str, filename: str, title: str, desc: str) -> Callable[[], HTMLResponse]:
         def doc_page() -> HTMLResponse:
             if slug not in _doc_cache:
-                # /detections renders from the in-memory registry (no markdown). The others read their doc.
+                # Every page is a curated, mobile-first view. detections/how-it-works/research are built
+                # from data or hand-authored copy; matrix/evasions parse their committed doc's key table.
                 if slug == "detections":
                     body = render_detections_page(rules_list)
+                elif slug == "how-it-works":
+                    body = render_how_it_works_page()
+                elif slug == "research":
+                    body = render_research_page()
                 else:
                     try:
                         text = (docs_dir / filename).read_text(encoding="utf-8")
                     except OSError as exc:
                         raise HTTPException(status_code=404, detail="doc unavailable") from exc
-                    if slug == "matrix":
-                        body = render_matrix_page(text)  # curated cards, not the raw 5-section dump
-                    elif slug == "evasions":
-                        body = render_evasions_page(text)  # the fleet list, not the frontier prose
-                    else:
-                        body = markdown.markdown(text, extensions=["tables", "fenced_code", "sane_lists", "toc"])
+                    body = render_matrix_page(text) if slug == "matrix" else render_evasions_page(text)
                 _doc_cache[slug] = render_doc_page(title, desc, f"/{slug}", body)
             return HTMLResponse(_doc_cache[slug])
 
