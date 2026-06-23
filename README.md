@@ -20,11 +20,9 @@
   <br /><sub>The live verdict, catching this capture's own headless browser — per-layer bars and the explainable tells.</sub>
 </p>
 
-Kitsune builds **both sides** of the bot-vs-human arms race in one repo — a fingerprint + behavioral
-**detector** (blue team) and a fleet of real anti-detect **evaders** (red team) — and runs them against
-each other to produce a reproducible, per-layer scoreboard. The red team makes the blue team honest:
-no detection ships until a real evader has exercised it and the calibration gate proves it doesn't flag
-real browsers. Named after the shapeshifting fox spirit.
+The two sides run against each other to produce a reproducible, per-layer scoreboard, and the red team
+keeps the blue team honest: no detection ships until a real evader has exercised it and the calibration
+gate proves it doesn't flag real browsers. Named after the shapeshifting fox spirit.
 
 ## The thesis: catch the *contradiction*, not the signal
 
