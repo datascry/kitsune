@@ -41,11 +41,8 @@ _END = "<!-- GENERATED:readme-redteam:end -->"
 _SAMPLE: list[str] = [
     "curl-impersonate",
     "nodriver",
-    "patchright",
     "full-stealth",
-    "brave",
     "camoufox",
-    "fp-rotation",
     "ios-ua-spoof",
 ]
 
