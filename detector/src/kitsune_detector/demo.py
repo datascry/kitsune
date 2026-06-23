@@ -778,13 +778,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
 <main>
 <section id="test">
   <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
-  <p class="lead">Is your browser — or your stealth / antidetect setup — detectable? Kitsune fingerprints this browser across every layer and returns the <strong>real bot-detection verdict</strong>, live.</p>
-  <div class="hero">
-    <div class="hero-stat"><strong>7</strong><span>signal layers</span></div>
-    <div class="hero-stat"><strong>live</strong><span>real detector verdict</span></div>
-    <div class="hero-stat"><strong>wire+JS</strong><span>edge-correlated</span></div>
-    <p class="hero-note">Network · browser · behavioral · reputation — scored together, then checked for cross-layer contradictions.</p>
-  </div>
+  <p class="lead">Is your browser — or your stealth / antidetect setup — detectable? Kitsune fingerprints this browser across <strong>every layer — from the TLS handshake to the JavaScript</strong>, correlated at the edge, and returns the <strong>real bot-detection verdict</strong>, live.</p>
   <!-- HEADLINE: who you are + the verdict, together -->
   <div id="ks-fpid" class="fpid">computing your fingerprint…</div>
   <h2>Detector verdict</h2>
