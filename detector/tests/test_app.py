@@ -120,7 +120,7 @@ def test_static_and_crawl_routes(client: TestClient) -> None:
     robots = client.get("/robots.txt")
     assert robots.status_code == 200 and "Sitemap: https://kitsune.id/sitemap.xml" in robots.text
     sm = client.get("/sitemap.xml")
-    assert sm.status_code == 200 and "https://kitsune.id/" in sm.text
+    assert sm.status_code == 200 and "<loc>https://kitsune.id/</loc>" in sm.text
 
 
 def test_rules_json(client: TestClient) -> None:

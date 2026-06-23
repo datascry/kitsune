@@ -109,7 +109,9 @@ def _nav() -> str:
 def render_doc_page(title: str, description: str, canonical_path: str, body_html: str, noindex: bool = False) -> str:
     """Wrap ``body_html`` in the shared shell with per-page SEO head (noindex for thin pages)."""
     t, d = _esc(title), _esc(description)
-    url = f"{SITE_ORIGIN}{canonical_path}"
+    # Escape the canonical/OG url: canonical_path can carry a path param (drill-down slug/rule id), so
+    # treat it as untrusted before it lands in an href/content attribute.
+    url = _esc(f"{SITE_ORIGIN}{canonical_path}")
     robots = "noindex, follow" if noindex else "index, follow"
     return (
         '<!doctype html><html lang="en"><head>'
