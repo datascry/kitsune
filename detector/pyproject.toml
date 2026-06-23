@@ -10,6 +10,7 @@ dependencies = [
   "fastapi>=0.110",
   "uvicorn>=0.29",
   "maxminddb>=2.5",
+  "markdown>=3.6",
 ]
 
 [dependency-groups]
@@ -57,9 +58,10 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-# demo.py is a Python file holding one large embedded HTML/JS collector template; Python
-# line-length does not meaningfully apply to the embedded JavaScript lines.
+# demo.py / pages.py hold large embedded HTML/CSS/JS templates; Python line-length does not
+# meaningfully apply to the embedded markup lines.
 "src/kitsune_detector/demo.py" = ["E501"]
+"src/kitsune_detector/pages.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
