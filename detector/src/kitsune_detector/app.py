@@ -10,6 +10,7 @@ the whole surface is testable in-memory with no network.
 
 from __future__ import annotations
 
+import contextlib
 import hmac
 import os
 from collections.abc import Callable
@@ -24,8 +25,12 @@ from .detector import Detector
 from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
 from .pages import (
+    parse_fleet,
+    parse_matrix,
+    render_detection_detail,
     render_detections_page,
     render_doc_page,
+    render_evasion_detail,
     render_evasions_page,
     render_how_it_works_page,
     render_matrix_page,
@@ -181,6 +186,8 @@ def create_app(
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap() -> Response:
         urls = ["/"] + [f"/{slug}" for slug in DOC_PAGES]
+        urls += [f"/detections/{rid}" for rid in rules_by_id]
+        urls += [f"/evasions/{s}" for s in dict.fromkeys([*evaders, *fleet])]
         locs = "".join(f"<url><loc>{SITE_ORIGIN}{u}</loc></url>" for u in urls)
         xml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
@@ -193,12 +200,13 @@ def create_app(
     # browser PASSED (not just the ones that fired). Built once at startup; the same rules-as-data the
     # engine scores with. Convicting = coherence/automation/artifact (only these make a `bot`).
     rules_list: list[dict[str, object]] = []
+    rules_by_id: dict[str, dict[str, object]] = {}  # full fields, for the per-rule drill-down pages
     ruleset_version = detector.ruleset_version
     try:
         _ruleset = load_registry()
         ruleset_version = _ruleset.ruleset_version
-        rules_list = [
-            {
+        for r in _ruleset.evaluable_rules:
+            rules_by_id[r.id] = {
                 "id": r.id,
                 "title": r.title,
                 "layers": [str(ly) for ly in r.layers],
@@ -206,9 +214,13 @@ def create_app(
                 "weight": r.weight,
                 "status": str(r.status),
                 "convicting": r.category in CONVICTING_CATEGORIES,
+                "source": r.source,
+                "reads": list(r.reads),
+                "predicate": r.predicate,
+                "threshold": r.threshold,
             }
-            for r in _ruleset.evaluable_rules
-        ]
+        _lean = ("id", "title", "layers", "category", "weight", "status", "convicting")
+        rules_list = [{k: rd[k] for k in _lean} for rd in rules_by_id.values()]
     except Exception:  # pragma: no cover - registry always loads in practice; defensive only
         pass
     rules_payload: dict[str, object] = {"ruleset_version": ruleset_version, "rules": rules_list}
@@ -221,6 +233,15 @@ def create_app(
     # in the image). Internal planning docs are intentionally NOT published. Built per slug below.
     docs_dir = _docs_dir()
     _doc_cache: dict[str, str] = {}
+    # Drill-down data parsed once from the committed docs: per-evader verdicts + per-rule catch counts
+    # (matrix.md) and the fleet (evasion-catalog.md). Missing docs degrade to empty (routes 404).
+    evaders: dict[str, dict[str, object]] = {}
+    rule_catch: dict[str, str] = {}
+    fleet: dict[str, dict[str, str]] = {}
+    with contextlib.suppress(OSError):
+        evaders, rule_catch = parse_matrix((docs_dir / "matrix.md").read_text(encoding="utf-8"))
+    with contextlib.suppress(OSError):
+        fleet = parse_fleet((docs_dir / "evasion-catalog.md").read_text(encoding="utf-8"))
 
     def _make_doc_route(slug: str, filename: str, title: str, desc: str) -> Callable[[], HTMLResponse]:
         def doc_page() -> HTMLResponse:
@@ -251,6 +272,25 @@ def create_app(
             response_class=HTMLResponse,
             include_in_schema=False,
         )
+
+    @app.get("/detections/{rule_id}", response_class=HTMLResponse, include_in_schema=False)
+    def detection_detail(rule_id: str) -> HTMLResponse:
+        rule = rules_by_id.get(rule_id)
+        if rule is None:
+            raise HTTPException(status_code=404, detail="no such detection")
+        body = render_detection_detail(rule, rule_catch.get(rule_id))
+        title = str(rule.get("title") or rule_id)
+        desc = f"{title} — a Kitsune cross-layer bot-detection check."
+        noindex = not rule.get("source")  # thin (no provenance) -> keep out of the index
+        return HTMLResponse(render_doc_page(title, desc, f"/detections/{rule_id}", body or "", noindex))
+
+    @app.get("/evasions/{slug}", response_class=HTMLResponse, include_in_schema=False)
+    def evasion_detail(slug: str) -> HTMLResponse:
+        body = render_evasion_detail(slug, evaders.get(slug), fleet.get(slug))
+        if body is None:
+            raise HTTPException(status_code=404, detail="no such evader")
+        desc = f"Is {slug} detectable? Kitsune's verdict and the tells that caught it."
+        return HTMLResponse(render_doc_page(slug, desc, f"/evasions/{slug}", body))
 
     @app.get("/inspect/{session_id}")
     def inspect(session_id: str, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:

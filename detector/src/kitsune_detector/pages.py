@@ -69,6 +69,9 @@ footer a{color:var(--fox);text-decoration:none}
 .card .cd{color:var(--muted);font-size:.8rem;margin-top:.35rem;overflow-wrap:anywhere}
 .card .cm{color:var(--muted);font-size:.72rem;margin-top:.35rem}
 .card .cm code{color:var(--fox)}
+a.card{text-decoration:none;color:inherit;display:block}
+a.card:hover{background:var(--panel-2)}a.card:hover .cn{color:var(--fox)}
+.rrow .rid a{color:inherit;text-decoration:none}.rrow .rid a:hover code{text-decoration:underline}
 .badge{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;padding:.12rem .4rem;border:1px solid var(--line-bright);color:var(--muted);white-space:nowrap;flex:none}
 .badge.bot{color:var(--fox);border-color:var(--fox)}
 .badge.suspicious{color:var(--amber);border-color:var(--amber)}
@@ -103,17 +106,18 @@ def _nav() -> str:
     return f'<nav class="top"><a class="brand" href="/">Kitsune</a>{links}<span class="spacer"></span></nav>'
 
 
-def render_doc_page(title: str, description: str, canonical_path: str, body_html: str) -> str:
-    """Wrap rendered-markdown ``body_html`` in the shared shell with per-page SEO head."""
+def render_doc_page(title: str, description: str, canonical_path: str, body_html: str, noindex: bool = False) -> str:
+    """Wrap ``body_html`` in the shared shell with per-page SEO head (noindex for thin pages)."""
     t, d = _esc(title), _esc(description)
     url = f"{SITE_ORIGIN}{canonical_path}"
+    robots = "noindex, follow" if noindex else "index, follow"
     return (
         '<!doctype html><html lang="en"><head>'
         '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         f"<title>{t} — Kitsune</title>"
         f'<meta name="description" content="{d}">'
         f'<link rel="canonical" href="{url}">'
-        '<meta name="robots" content="index, follow"><meta name="theme-color" content="#0a0a0c">'
+        f'<meta name="robots" content="{robots}"><meta name="theme-color" content="#0a0a0c">'
         f'<meta property="og:type" content="article"><meta property="og:title" content="{t} — Kitsune">'
         f'<meta property="og:description" content="{d}"><meta property="og:url" content="{url}">'
         f'<meta property="og:image" content="{SITE_ORIGIN}/og.png">'
@@ -141,6 +145,11 @@ def _cellhtml(s: str) -> str:
         last = m.end()
     out.append(html.escape(s[last:]))
     return "".join(out)
+
+
+def _slug(cell: str) -> str:
+    """A table cell like `accept-lang-spoof` -> the bare slug used in drill-down URLs."""
+    return cell.strip().strip("`").strip()
 
 
 def _md_table(md: str, after: str) -> tuple[list[str], list[list[str]]]:
@@ -190,7 +199,8 @@ def render_detections_page(rules: list[dict[str, Any]]) -> str:
         if not grp:
             continue
         rows = "".join(
-            f'<div class="rrow"><span class="rid"><code>{html.escape(r["id"])}</code> '
+            f'<div class="rrow"><span class="rid">'
+            f'<a href="/detections/{html.escape(r["id"])}"><code>{html.escape(r["id"])}</code></a> '
             f'<span class="badge {"convicting" if r.get("convicting") else "corroborating"}">'
             f"{'convicts' if r.get('convicting') else 'corroborates'}</span></span>"
             f'<span class="rt">{html.escape(r.get("title", ""))}</span></div>'
@@ -211,11 +221,11 @@ def render_matrix_page(md: str) -> str:
             continue
         name, verdict, score, _fired, tells = r[0], r[1], r[2], r[3], r[4]
         cards.append(
-            '<div class="card"><div class="ct">'
+            f'<a class="card" href="/evasions/{html.escape(_slug(name))}"><div class="ct">'
             f'<span class="cn">{_cellhtml(name)}</span>'
             f'<span class="badge {html.escape(verdict)}">{html.escape(verdict)}</span></div>'
             f'<div class="cd">score {html.escape(score)}</div>'
-            f'<div class="cm">{_cellhtml(tells)}</div></div>'
+            f'<div class="cm">{_cellhtml(tells)}</div></a>'
         )
     return (
         "<h1>Detection matrix</h1>"
@@ -239,10 +249,10 @@ def render_evasions_page(md: str) -> str:
             continue
         name, lang, what = r[0], r[1], r[2]
         cards.append(
-            '<div class="card"><div class="ct">'
+            f'<a class="card" href="/evasions/{html.escape(_slug(name))}"><div class="ct">'
             f'<span class="cn">{_cellhtml(name)}</span>'
             f'<span class="badge">{html.escape(lang)}</span></div>'
-            f'<div class="cd">{_cellhtml(what)}</div></div>'
+            f'<div class="cd">{_cellhtml(what)}</div></a>'
         )
     return (
         "<h1>Evasion catalog</h1>"
@@ -379,3 +389,105 @@ def render_research_page() -> str:
         + '<p class="lead"><a href="/matrix">See the full matrix →</a> &nbsp;·&nbsp; '
         '<a href="https://github.com/datascry/kitsune/blob/main/docs/findings.md">Full findings doc</a></p>'
     )
+
+
+# ----- drill-down pages: one per evader and per detection rule -----
+
+
+def parse_matrix(md: str) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """From matrix.md: per-evader verdicts (slug -> {verdict,score,tells,more}) and rule catch-counts."""
+    evaders: dict[str, dict[str, Any]] = {}
+    _, rows = _md_table(md, "Per-evader verdict")
+    for r in rows:
+        if len(r) < 5:
+            continue
+        tells = re.findall(r"`([^`]+)`", r[4])
+        more = re.search(r"\+(\d+)", r[4])
+        evaders[_slug(r[0])] = {
+            "verdict": r[1],
+            "score": r[2],
+            "fired": r[3],
+            "tells": tells,
+            "more": int(more.group(1)) if more else 0,
+        }
+    catch: dict[str, str] = {}
+    _, crows = _md_table(md, "Per-rule coverage")
+    for r in crows:
+        if len(r) >= 4:
+            catch[_slug(r[0])] = r[3].strip()
+    return evaders, catch
+
+
+def parse_fleet(md: str) -> dict[str, dict[str, str]]:
+    """From evasion-catalog.md: the fleet (slug -> {lang, what})."""
+    fleet: dict[str, dict[str, str]] = {}
+    _, rows = _md_table(md, "Fleet —")
+    for r in rows:
+        if len(r) >= 3:
+            fleet[_slug(r[0])] = {"lang": r[1], "what": r[2]}
+    return fleet
+
+
+def render_evasion_detail(slug: str, ev: dict[str, Any] | None, fleet: dict[str, str] | None) -> str | None:
+    """One evader: what it is, its verdict, and the tells that caught it (linking to detections)."""
+    if ev is None and fleet is None:
+        return None
+    parts = [f"<h1>{html.escape(slug)}</h1>"]
+    if fleet:
+        parts.append(f'<p class="lead">{_cellhtml(fleet["what"])}</p>')
+    stats = ""
+    if ev:
+        stats += f'<div class="stat"><strong>{html.escape(ev["verdict"])}</strong><span>verdict</span></div>'
+        stats += f'<div class="stat"><strong>{html.escape(ev["score"])}</strong><span>score</span></div>'
+        stats += f'<div class="stat"><strong>{html.escape(ev["fired"])}</strong><span>checks fired</span></div>'
+    if fleet:
+        stats += f'<div class="stat"><strong>{html.escape(fleet["lang"])}</strong><span>language</span></div>'
+    if stats:
+        parts.append(f'<div class="stat-row">{stats}</div>')
+    if ev and ev["tells"]:
+        rows = "".join(
+            f'<div class="rrow"><span class="rid">'
+            f'<a href="/detections/{html.escape(t)}"><code>{html.escape(t)}</code></a></span></div>'
+            for t in ev["tells"]
+        )
+        more = f' <span class="c">+{ev["more"]} more</span>' if ev["more"] else ""
+        parts.append(f'<div class="lgrp"><h3>Convicting tells{more}</h3>{rows}</div>')
+    parts.append(
+        '<p class="lead"><a href="/matrix">← all evaders</a> &nbsp;·&nbsp; <a href="/evasions">the fleet</a></p>'
+    )
+    return "".join(parts)
+
+
+def render_detection_detail(rule: dict[str, Any] | None, catch_count: str | None) -> str | None:
+    """One detection rule: what it catches, the signals it reads, and how it fires."""
+    if rule is None:
+        return None
+    convicts = bool(rule.get("convicting"))
+    badge = "convicting" if convicts else "corroborating"
+    parts = [
+        f"<h1>{html.escape(rule.get('title', rule['id']))}</h1>",
+        f'<p class="lead"><code>{html.escape(rule["id"])}</code> &nbsp;·&nbsp; '
+        f'<span class="badge {badge}">{"convicts" if convicts else "corroborates"}</span></p>',
+    ]
+    stats = (
+        f'<div class="stat"><strong>{html.escape(", ".join(rule.get("layers") or []))}</strong><span>layer</span></div>'
+    )
+    stats += (
+        f'<div class="stat"><strong>{html.escape(str(rule.get("category", "")))}</strong><span>category</span></div>'
+    )
+    if catch_count:
+        stats += f'<div class="stat"><strong>{html.escape(catch_count)}</strong><span>evaders caught</span></div>'
+    parts.append(f'<div class="stat-row">{stats}</div>')
+    src = rule.get("source")
+    if src:
+        parts.append(_section("What it catches", _cellhtml(str(src))))
+    reads = rule.get("reads") or []
+    if reads:
+        parts.append(_section("Signals it reads", " &nbsp; ".join(f"<code>{html.escape(x)}</code>" for x in reads)))
+    pred = rule.get("predicate")
+    if pred:
+        thr = rule.get("threshold")
+        extra = f" (threshold {html.escape(str(thr))})" if thr is not None else ""
+        parts.append(_section("How it fires", f"<code>{html.escape(str(pred))}</code>{extra}"))
+    parts.append('<p class="lead"><a href="/detections">← all detections</a></p>')
+    return "".join(parts)
