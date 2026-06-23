@@ -691,6 +691,7 @@ a.rule-src:hover code {
 #ks-status{color:var(--amber);font-size:.82rem;border-left:2px solid var(--amber);padding-left:.75rem;margin:1rem 0}
 #ks-result{margin-top:.5rem}
 .layer-bars{margin:1rem 0 1.25rem}
+.bar-clean .bar-val{color:var(--jade)}.bar-clean .bar-label{color:var(--muted)}
 #ks-bio{border:1.5px solid var(--line-bright);background:var(--panel-2);padding:1rem 1.1rem;margin:1.5rem 0}
 .bio-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:.6rem 0}
 .bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;background:var(--panel);padding:.5rem .7rem;font-size:.8rem}
@@ -1021,19 +1022,30 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (status) status.textContent = "";
     var label = String(v.label || "?"), pct = Math.round((v.score || 0) * 100);
     var inc = Math.round((v.incoherence_score || 0) * 100);
+    // Plain-English read of the verdict, instead of a bare second percentage.
+    var explain;
+    if (label === "human") explain = "Every layer agrees — consistent with a real browser.";
+    else if (label === "bot") explain = inc > 0
+      ? "Cross-layer contradiction: the layers describe different devices — a real browser can\\u2019t do that."
+      : "A clear automation or spoofing artifact was found.";
+    else explain = "Some signals don\\u2019t fit a coherent real browser, but there\\u2019s no hard bot signature.";
     var html = '<div class="verdict verdict-' + esc(label) + '">'
       + '<span class="label">' + esc(label.toUpperCase()) + '</span>'
-      + '<span class="score">bot-likelihood ' + pct + '%</span>'
-      + '<span class="sub">incoherence ' + inc + '%</span></div>';
-    // Per-layer score bars (the detector's LayerScores).
+      + '<span class="score">' + pct + '% bot-likelihood</span></div>'
+      + '<p class="note">' + esc(explain) + '</p>';
+    // Per-layer bars — how bot-like EACH layer looks (0 = human). The verdict is their combined
+    // likelihood (not a sum), and a cross-layer contradiction counts toward it twice.
     var ls = v.layer_scores || {};
     var layers = ["network", "browser", "behavioral", "reputation"], bars = "";
     for (var li = 0; li < layers.length; li++) {
       var lp = Math.round((ls[layers[li]] || 0) * 100);
-      bars += '<div class="bar"><span class="bar-label">' + layers[li] + '</span>'
+      bars += '<div class="bar' + (lp ? "" : " bar-clean") + '"><span class="bar-label">' + layers[li] + '</span>'
         + '<span class="bar-track"><span class="bar-fill" style="width:' + lp + '%"></span></span>'
         + '<span class="bar-val">' + lp + '</span></div>';
     }
+    html += '<p class="note">How bot-like each layer looks — <b>0 is human</b>. The verdict combines them; '
+      + 'a cross-layer contradiction (one device telling two stories) counts double'
+      + (inc > 0 ? ' — yours is <b>' + inc + '%</b>' : '') + '.</p>';
     html += '<div class="layer-bars">' + bars + '</div>';
     if (out) out.innerHTML = html;  // #ks-result = the headline summary (verdict stamp + layer bars)
     // The detailed layer-grouped detections render into their own section AFTER the evidence panels,
