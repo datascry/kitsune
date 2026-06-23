@@ -96,6 +96,40 @@ cd .. && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d d
   licence); keep them in `geoip/` (gitignored) and refresh monthly (MaxMind updates them; stale data is
   the only failure mode, and it degrades to a slightly-wrong city, never a crash).
 
+## IP-reputation lists (optional — fuller datacenter / proxy / VPN / Tor coverage)
+
+The detector ships a thin committed **seed** of datacenter/proxy CIDRs baked into the image. To land the
+**full** lists on the server, generate them with the refresher into an `iprep/` dir next to the compose
+files (the prod overlay mounts it at `/iprep` read-only and sets `KITSUNE_IPREP_DIR=/iprep`). Absent or
+empty, the detector falls back to the in-image seed per file — purely additive, never a crash.
+
+```sh
+# Generate the lists (Tor exits + AWS/GCP ranges + X4BNet VPN/datacenter, ~50k+ CIDRs). Run it inside a
+# detector container so you don't need a local Python toolchain; write into the mounted /iprep:
+mkdir -p iprep
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm \
+  -v "$PWD/iprep:/iprep" -e KITSUNE_IPREP_DIR=/iprep --entrypoint python detector \
+  -m kitsune_detector.ip_reputation_refresh
+#   -> wrote /iprep/proxy_exit_cidrs.txt (…)   /iprep/datacenter_cidrs.txt (…)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # picks up the lists
+```
+
+- **Refresh monthly** (the lists drift): a cron that re-runs the generate step + restarts the detector.
+
+  ```sh
+  # /etc/cron.monthly/kitsune-iprep
+  cd /path/to/kitsune && docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm \
+    -v "$PWD/iprep:/iprep" -e KITSUNE_IPREP_DIR=/iprep --entrypoint python detector \
+    -m kitsune_detector.ip_reputation_refresh \
+    && docker compose -f docker-compose.yml -f docker-compose.prod.yml restart detector
+  ```
+
+- **Data hygiene:** `iprep/` is gitignored — only de-identified CIDR aggregates land on disk, never raw
+  traffic. The refresher enforces per-source floors, so a drifted/empty upstream fails loud rather than
+  silently shrinking coverage.
+- **GreyNoise actor enrichment (future, needs an API key):** richer per-IP `classification`/`actor` intel
+  (radar X8) would wire into the same refresh step; not yet implemented (gated on a key + egress).
+
 ## Renewal
 
 The `certbot` service renews every 12h. The edge loads the cert at **startup**, so after a renewal restart it

@@ -55,6 +55,7 @@ func prepare(
 	hints fingerprint.HintTable,
 	newID IDFunc,
 	now time.Time,
+	resolver fingerprint.Resolver,
 ) (prepared, error) {
 	var out prepared
 	if c, err := r.Cookie(session.CookieName); err == nil {
@@ -129,6 +130,21 @@ func prepare(
 	// that keeps JA4/h2/OS coherent and so slips past every cross-layer UA rule.
 	if ua := r.Header.Get("User-Agent"); ua != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "http_user_agent", ua, now))
+		// Forward-confirmed reverse DNS for a DECLARED crawler: a UA claiming Googlebot/Bingbot/etc. whose
+		// connecting IP does not FCrDNS-confirm to that crawler's official domain is an impersonator. This is
+		// the crawlers' OWN documented verification method, so a real crawler always confirms; a transient DNS
+		// failure abstains (never convicts a real crawler). Only runs for the rare declared-crawler UA.
+		if resolver != nil {
+			if suffixes := fingerprint.DeclaredCrawler(ua); suffixes != nil {
+				if ip := clientIP(r); ip != "" {
+					ctx, cancel := context.WithTimeout(r.Context(), 800*time.Millisecond)
+					if fingerprint.VerifyCrawler(ctx, resolver, ip, suffixes) == fingerprint.CrawlerFake {
+						out.signals = append(out.signals, signal.Network(out.sessionID, "fake_declared_crawler", true, now))
+					}
+					cancel()
+				}
+			}
+		}
 	}
 	if secFetchMissing(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "sec_fetch_missing", true, now))
@@ -390,9 +406,10 @@ type ReverseProxy struct {
 	newID       IDFunc
 	now         func() time.Time
 	client      *http.Client
-	synStore    *tcpfp.Store  // source-IP -> TCP/IP kernel family; nil when capture is unavailable
-	quic        *QUICCapturer // source-IP -> QUIC ClientHello; nil when QUIC is not enabled
-	altSvc      string        // Alt-Svc header advertising h3, so browsers attempt QUIC; "" when disabled
+	synStore    *tcpfp.Store         // source-IP -> TCP/IP kernel family; nil when capture is unavailable
+	quic        *QUICCapturer        // source-IP -> QUIC ClientHello; nil when QUIC is not enabled
+	altSvc      string               // Alt-Svc header advertising h3, so browsers attempt QUIC; "" when disabled
+	resolver    fingerprint.Resolver // for FCrDNS crawler verification; nil disables the check
 }
 
 // NewReverseProxy builds a reverse proxy forwarding to backendURL and reporting to detectorURL.
@@ -408,13 +425,14 @@ func NewReverseProxy(backendURL, detectorURL string, hints fingerprint.HintTable
 		newID:       session.NewID,
 		now:         time.Now,
 		client:      &http.Client{Timeout: 5 * time.Second},
+		resolver:    net.DefaultResolver,
 	}, nil
 }
 
 func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hello, _ := r.Context().Value(helloKey).(*fingerprint.ClientHello)
 	h2fp, _ := r.Context().Value(h2Key).(*fingerprint.H2Fingerprint)
-	prep, err := prepare(r, hello, h2fp, p.hints, p.newID, p.now())
+	prep, err := prepare(r, hello, h2fp, p.hints, p.newID, p.now(), p.resolver)
 	if err != nil {
 		http.Error(w, "could not mint session id", http.StatusInternalServerError)
 		return

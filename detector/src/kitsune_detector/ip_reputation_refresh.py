@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -214,4 +215,6 @@ def main(fetch: Fetcher = _http_get, out_dir: Path = _DATA) -> None:  # pragma: 
 
 
 if __name__ == "__main__":  # pragma: no cover
-    main()
+    # Write to KITSUNE_IPREP_DIR when set (the deploy mount the detector reads), else the in-package seed dir.
+    _env_dir = os.environ.get("KITSUNE_IPREP_DIR")
+    main(out_dir=Path(_env_dir) if _env_dir else _DATA)

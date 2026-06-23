@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.49`); regenerate with `task catalog`, do not edit by hand. **133 rules**: 100 active · 27 experimental · 6 retired; 89 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.49`); regenerate with `task catalog`, do not edit by hand. **134 rules**: 100 active · 28 experimental · 6 retired; 90 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (30)
+### network layer (31)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -21,6 +21,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
 | `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
 | `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
+| `net.fake_declared_crawler` | coherence✦ | present | 0.8 | experimental | A UA declaring a known crawler (Googlebot/Bingbot/…) whose IP fails forward-confirmed reverse DNS |
 | `net.h2_header_order_vs_ua` | coherence✦ | present | 0.6 | active | Chromium UA but the HTTP/2 regular-header order is not chromium-shaped (JA4H) |
 | `net.h2_settings_vs_order` | coherence✦ | not_equal | 0.6 | active | HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine |
 | `net.h2_unknown_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the HTTP/2 stack matches no known browser engine |

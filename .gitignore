@@ -56,3 +56,6 @@ survey-and-browser-attributes-data.csv
 # MaxMind GeoLite2 databases (free but licensed; not redistributable) — mounted at deploy
 geoip/
 *.mmdb
+
+# Refreshed IP-reputation lists (regenerated at deploy from public sources) — mounted at deploy
+iprep/

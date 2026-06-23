@@ -21,6 +21,16 @@ def _rep() -> IPReputation:
     )
 
 
+def test_from_seed_prefers_mounted_iprep_dir(tmp_path, monkeypatch) -> None:
+    # The deploy mount: KITSUNE_IPREP_DIR overrides the in-image seed when it holds the refreshed list,
+    # and falls back to the committed seed per-file when the mounted file is absent (an empty mount).
+    (tmp_path / "proxy_exit_cidrs.txt").write_text("12.0.0.0/24\n", encoding="utf-8")  # routable (not RFC-5737)
+    monkeypatch.setenv("KITSUNE_IPREP_DIR", str(tmp_path))
+    rep = IPReputation.from_seed()
+    assert rep.classify("12.0.0.7") == (False, True)  # from the mounted proxy_exit list
+    assert rep.datacenter  # datacenter file absent in the mount -> fell back to the committed seed
+
+
 def test_parse_cidrs_ignores_comments_and_blanks() -> None:
     nets = _parse_cidrs("# header\n\n10.0.0.0/8  # private\n  \n192.0.2.0/24\n")
     assert nets == (ipaddress.ip_network("10.0.0.0/8"), ipaddress.ip_network("192.0.2.0/24"))
