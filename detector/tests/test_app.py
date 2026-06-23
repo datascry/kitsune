@@ -123,6 +123,20 @@ def test_static_and_crawl_routes(client: TestClient) -> None:
     assert sm.status_code == 200 and "https://kitsune.id/" in sm.text
 
 
+def test_rules_json(client: TestClient) -> None:
+    data = client.get("/rules.json").json()
+    assert data["ruleset_version"]
+    assert len(data["rules"]) > 50
+    rule = data["rules"][0]
+    assert {"id", "title", "layers", "category", "convicting"} <= set(rule)
+
+
+def test_index_has_live_render_containers(client: TestClient) -> None:
+    html = client.get("/").text
+    for marker in ('id="ks-coherence"', 'id="ks-predict"', 'id="ks-surfaces"', 'id="ks-fpid"'):
+        assert marker in html
+
+
 def test_session_endpoint(client: TestClient) -> None:
     client.post("/ingest", json=_signals_from("session_bot.json"))
     resp = client.get("/session/bot-001")

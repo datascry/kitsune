@@ -17,10 +17,14 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 
+from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
-from .models import Session, Signal, Verdict
+from .models import RuleCategory, Session, Signal, Verdict
 from .store import Store
+
+#: Categories that can convict a session as a bot (the rest only corroborate).
+CONVICTING_CATEGORIES = {RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact}
 
 #: Canonical public origin — used for robots/sitemap absolute URLs and the page's canonical/OG tags.
 SITE_ORIGIN = "https://kitsune.id"
@@ -131,6 +135,37 @@ def create_app(
             f"{locs}</urlset>"
         )
         return Response(content=xml, media_type="application/xml")
+
+    # The evaluable rule registry, so the live page can group detections by layer and list the checks a
+    # browser PASSED (not just the ones that fired). Built once at startup; the same rules-as-data the
+    # engine scores with. Convicting = coherence/automation/artifact (only these make a `bot`).
+    rules_payload: dict[str, object] = {
+        "ruleset_version": detector.ruleset_version,
+        "rules": [],
+    }
+    try:
+        _ruleset = load_registry()
+        rules_payload = {
+            "ruleset_version": _ruleset.ruleset_version,
+            "rules": [
+                {
+                    "id": r.id,
+                    "title": r.title,
+                    "layers": [str(ly) for ly in r.layers],
+                    "category": str(r.category),
+                    "weight": r.weight,
+                    "status": str(r.status),
+                    "convicting": r.category in CONVICTING_CATEGORIES,
+                }
+                for r in _ruleset.evaluable_rules
+            ],
+        }
+    except Exception:  # pragma: no cover - registry always loads in practice; defensive only
+        pass
+
+    @app.get("/rules.json")
+    def rules_json() -> dict[str, object]:
+        return rules_payload
 
     @app.post("/ingest", response_model=list[Verdict])
     def ingest(signals: list[Signal]) -> list[Verdict]:
