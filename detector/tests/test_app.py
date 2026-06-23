@@ -144,6 +144,15 @@ def test_index_has_live_render_containers(client: TestClient) -> None:
         assert marker in html
 
 
+def test_index_exposes_machine_readable_result(client: TestClient) -> None:
+    # Automated tools can parse the verdict from a JSON <script> tag (filled in client-side once scoring
+    # completes) instead of scraping the DOM — plus a window.ksResult global and a "kitsune:result" event.
+    html = client.get("/").text
+    assert '<script type="application/json" id="ks-verdict">{"status":"collecting"}</script>' in html
+    assert "window.ksResult" in html
+    assert "kitsune:result" in html
+
+
 def test_inspect_is_cookie_scoped(client: TestClient) -> None:
     # No cookie -> 403; cookie naming an absent session -> 404.
     assert client.get("/inspect/abc").status_code == 403
