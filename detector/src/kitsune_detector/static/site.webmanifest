@@ -1,0 +1,15 @@
+{
+  "name": "Kitsune — antidetect & browser fingerprint test",
+  "short_name": "Kitsune",
+  "description": "Test whether your browser or antidetect setup is detectable: cross-layer fingerprint, TLS/JA4, and bot detection.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0a0a0c",
+  "background_color": "#0a0a0c",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "/favicon-32.png", "type": "image/png", "sizes": "32x32" },
+    { "src": "/apple-touch-icon.png", "type": "image/png", "sizes": "180x180" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ]
+}

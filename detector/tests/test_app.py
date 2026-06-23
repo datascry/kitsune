@@ -97,9 +97,30 @@ def test_index_ships_csp_probe(client: TestClient) -> None:
     # (an automation context that called setBypassCSP). The policy stays permissive for everything else.
     resp = client.get("/")
     csp = resp.headers.get("content-security-policy", "")
-    assert "img-src 'none'" in csp
+    # img-src 'self' (not 'none') so the favicon loads while the probe's data: image is still blocked.
+    assert "img-src 'self'" in csp
     assert "default-src *" in csp
     assert "securitypolicyviolation" in resp.text
+
+
+def test_index_has_seo_head(client: TestClient) -> None:
+    html = client.get("/").text
+    assert '<link rel="canonical" href="https://kitsune.id/">' in html
+    assert 'property="og:image"' in html
+    assert "application/ld+json" in html
+    assert 'rel="icon" href="/favicon.svg"' in html
+
+
+def test_static_and_crawl_routes(client: TestClient) -> None:
+    assert client.get("/favicon.svg").status_code == 200
+    assert client.get("/favicon.ico").status_code == 200
+    assert client.get("/apple-touch-icon.png").status_code == 200
+    assert client.get("/og.png").status_code == 200
+    assert client.get("/site.webmanifest").status_code == 200
+    robots = client.get("/robots.txt")
+    assert robots.status_code == 200 and "Sitemap: https://kitsune.id/sitemap.xml" in robots.text
+    sm = client.get("/sitemap.xml")
+    assert sm.status_code == 200 and "https://kitsune.id/" in sm.text
 
 
 def test_session_endpoint(client: TestClient) -> None:

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Kitsune">
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="#0a0a0c" stroke="#20202a" stroke-width="2"/>
+  <!-- ears -->
+  <polygon points="11.5,29.4 19.2,7.7 28.2,28.2" fill="#e8482b"/>
+  <polygon points="35.8,28.2 44.8,7.7 52.5,29.4" fill="#e8482b"/>
+  <!-- face -->
+  <polygon points="12.8,25.6 51.2,25.6 42.2,41 32,55 21.8,41" fill="#e8482b"/>
+  <!-- eyes (cut to bg) -->
+  <polygon points="22.7,33.3 28.8,33.3 25.9,39" fill="#0a0a0c"/>
+  <polygon points="35.2,33.3 41.3,33.3 38.1,39" fill="#0a0a0c"/>
+  <!-- snout -->
+  <polygon points="28.8,46.7 35.2,46.7 32,53.1" fill="#eae7df"/>
+</svg>
