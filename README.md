@@ -9,6 +9,8 @@
   <img src="docs/kitsune.jpg" alt="Kitsune — a nine-tailed fox spirit on a mountain ridge" width="320" />
 </p>
 
+<p align="center"><strong><a href="https://kitsune.id">Try the live test → kitsune.id</a></strong></p>
+
 Kitsune builds **both sides** of the bot-vs-human arms race in one repo — a fingerprint + behavioral
 **detector** (blue team) and a fleet of real anti-detect **evaders** (red team) — and runs them against
 each other to produce a reproducible, per-layer scoreboard. The red team makes the blue team honest:
