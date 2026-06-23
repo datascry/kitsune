@@ -27,6 +27,7 @@ from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
 from .pages import (
     parse_fleet,
     parse_matrix,
+    parse_techniques,
     render_detection_detail,
     render_detections_page,
     render_doc_page,
@@ -35,6 +36,7 @@ from .pages import (
     render_how_it_works_page,
     render_matrix_page,
     render_research_page,
+    reverse_index,
 )
 from .store import Store
 
@@ -238,10 +240,15 @@ def create_app(
     evaders: dict[str, dict[str, object]] = {}
     rule_catch: dict[str, str] = {}
     fleet: dict[str, dict[str, str]] = {}
+    techniques: dict[str, dict[str, object]] = {}
+    rule_evaders: dict[str, list[str]] = {}
     with contextlib.suppress(OSError):
         evaders, rule_catch = parse_matrix((docs_dir / "matrix.md").read_text(encoding="utf-8"))
     with contextlib.suppress(OSError):
-        fleet = parse_fleet((docs_dir / "evasion-catalog.md").read_text(encoding="utf-8"))
+        _ecat = (docs_dir / "evasion-catalog.md").read_text(encoding="utf-8")
+        fleet = parse_fleet(_ecat)
+        techniques = parse_techniques(_ecat)  # full tell lists + EVADES status
+        rule_evaders = reverse_index(techniques)  # rule_id -> evaders it caught
 
     def _make_doc_route(slug: str, filename: str, title: str, desc: str) -> Callable[[], HTMLResponse]:
         def doc_page() -> HTMLResponse:
@@ -278,7 +285,7 @@ def create_app(
         rule = rules_by_id.get(rule_id)
         if rule is None:
             raise HTTPException(status_code=404, detail="no such detection")
-        body = render_detection_detail(rule, rule_catch.get(rule_id))
+        body = render_detection_detail(rule, rule_catch.get(rule_id), rule_evaders.get(rule_id))
         title = str(rule.get("title") or rule_id)
         desc = f"{title} — a Kitsune cross-layer bot-detection check."
         noindex = not rule.get("source")  # thin (no provenance) -> keep out of the index
@@ -286,7 +293,7 @@ def create_app(
 
     @app.get("/evasions/{slug}", response_class=HTMLResponse, include_in_schema=False)
     def evasion_detail(slug: str) -> HTMLResponse:
-        body = render_evasion_detail(slug, evaders.get(slug), fleet.get(slug))
+        body = render_evasion_detail(slug, evaders.get(slug), fleet.get(slug), techniques.get(slug))
         if body is None:
             raise HTTPException(status_code=404, detail="no such evader")
         desc = f"Is {slug} detectable? Kitsune's verdict and the tells that caught it."

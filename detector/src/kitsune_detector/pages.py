@@ -82,6 +82,7 @@ a.card:hover{background:var(--panel-2)}a.card:hover .cn{color:var(--fox)}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;padding:.35rem .1rem;border-bottom:1px solid var(--line);font-size:.84rem}
 .rrow .rid{color:var(--fox);overflow-wrap:anywhere}
 .rrow .rt{color:var(--muted);text-align:right;flex:1}
+.chiplist{display:flex;flex-wrap:wrap;gap:.35rem .7rem;font-size:.82rem}.chiplist a{text-decoration:none}.chiplist a:hover code{text-decoration:underline}
 @media (max-width:640px){.cards{grid-template-columns:1fr}.stat strong{font-size:1.5rem}.rrow{flex-direction:column;gap:.15rem}.rrow .rt{text-align:left}}
 html,body{overflow-x:hidden;max-width:100%}
 main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywhere}
@@ -430,38 +431,88 @@ def parse_fleet(md: str) -> dict[str, dict[str, str]]:
     return fleet
 
 
-def render_evasion_detail(slug: str, ev: dict[str, Any] | None, fleet: dict[str, str] | None) -> str | None:
-    """One evader: what it is, its verdict, and the tells that caught it (linking to detections)."""
-    if ev is None and fleet is None:
+def parse_techniques(md: str) -> dict[str, dict[str, Any]]:
+    """From evasion-catalog.md 'Techniques exercised': slug -> {verdict, tells (FULL list), evades}.
+
+    Richer than matrix.md's per-evader column (which truncates the tells); also flags EVADES cases.
+    """
+    tech: dict[str, dict[str, Any]] = {}
+    _, rows = _md_table(md, "Techniques exercised")
+    for r in rows:
+        if len(r) < 3:
+            continue
+        cell = r[2]
+        tech[_slug(r[0])] = {
+            "verdict": r[1].strip(),
+            "tells": re.findall(r"`([^`]+)`", cell),
+            "evades": "EVADES" in cell,
+        }
+    return tech
+
+
+def reverse_index(tech: dict[str, dict[str, Any]]) -> dict[str, list[str]]:
+    """rule_id -> sorted list of evader slugs whose convicting tells include it (for detection pages)."""
+    idx: dict[str, list[str]] = {}
+    for slug, t in tech.items():
+        for rule_id in t.get("tells", []):
+            idx.setdefault(rule_id, []).append(slug)
+    for rule_id in idx:
+        idx[rule_id] = sorted(set(idx[rule_id]))
+    return idx
+
+
+def _chiplist(items: list[str], href: str) -> str:
+    links = " ".join(f'<a href="{href}{html.escape(s)}"><code>{html.escape(s)}</code></a>' for s in items)
+    return f'<div class="chiplist">{links}</div>'
+
+
+def render_evasion_detail(
+    slug: str,
+    ev: dict[str, Any] | None,
+    fleet: dict[str, str] | None,
+    tech: dict[str, Any] | None,
+) -> str | None:
+    """One evader: what it is, its verdict, and the FULL convicting-tell list (linking to detections)."""
+    if ev is None and fleet is None and tech is None:
         return None
+    verdict = (tech or {}).get("verdict") or (ev or {}).get("verdict")
     parts = [f"<h1>{html.escape(slug)}</h1>"]
     if fleet:
         parts.append(f'<p class="lead">{_cellhtml(fleet["what"])}</p>')
     stats = ""
+    if verdict:
+        stats += f'<div class="stat"><strong>{html.escape(str(verdict))}</strong><span>verdict</span></div>'
     if ev:
-        stats += f'<div class="stat"><strong>{html.escape(ev["verdict"])}</strong><span>verdict</span></div>'
         stats += f'<div class="stat"><strong>{html.escape(ev["score"])}</strong><span>score</span></div>'
         stats += f'<div class="stat"><strong>{html.escape(ev["fired"])}</strong><span>checks fired</span></div>'
     if fleet:
         stats += f'<div class="stat"><strong>{html.escape(fleet["lang"])}</strong><span>language</span></div>'
     if stats:
         parts.append(f'<div class="stat-row">{stats}</div>')
-    if ev and ev["tells"]:
+    if tech and tech.get("evades"):
+        parts.append(
+            '<p class="lead">⚠ This evader <strong>evades conviction</strong> — it reaches only '
+            "<em>suspicious</em>, with no single convicting tell. It is the frontier the detector is still "
+            "chasing.</p>"
+        )
+    tells = (tech or {}).get("tells") or (ev or {}).get("tells") or []
+    if tells:
         rows = "".join(
             f'<div class="rrow"><span class="rid">'
             f'<a href="/detections/{html.escape(t)}"><code>{html.escape(t)}</code></a></span></div>'
-            for t in ev["tells"]
+            for t in tells
         )
-        more = f' <span class="c">+{ev["more"]} more</span>' if ev["more"] else ""
-        parts.append(f'<div class="lgrp"><h3>Convicting tells{more}</h3>{rows}</div>')
+        parts.append(f'<div class="lgrp"><h3>Convicting tells <span class="c">{len(tells)}</span></h3>{rows}</div>')
     parts.append(
         '<p class="lead"><a href="/matrix">← all evaders</a> &nbsp;·&nbsp; <a href="/evasions">the fleet</a></p>'
     )
     return "".join(parts)
 
 
-def render_detection_detail(rule: dict[str, Any] | None, catch_count: str | None) -> str | None:
-    """One detection rule: what it catches, the signals it reads, and how it fires."""
+def render_detection_detail(
+    rule: dict[str, Any] | None, catch_count: str | None, caught: list[str] | None = None
+) -> str | None:
+    """One detection rule: what it catches, the signals it reads, how it fires, and who it caught."""
     if rule is None:
         return None
     convicts = bool(rule.get("convicting"))
@@ -491,5 +542,10 @@ def render_detection_detail(rule: dict[str, Any] | None, catch_count: str | None
         thr = rule.get("threshold")
         extra = f" (threshold {html.escape(str(thr))})" if thr is not None else ""
         parts.append(_section("How it fires", f"<code>{html.escape(str(pred))}</code>{extra}"))
+    if caught:
+        parts.append(
+            f'<div class="lgrp"><h3>Evaders it caught <span class="c">{len(caught)}</span></h3>'
+            f"{_chiplist(caught, '/evasions/')}</div>"
+        )
     parts.append('<p class="lead"><a href="/detections">← all detections</a></p>')
     return "".join(parts)
