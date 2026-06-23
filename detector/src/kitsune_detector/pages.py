@@ -245,27 +245,33 @@ def render_matrix_page(md: str) -> str:
     )
 
 
-def render_evasions_page(md: str) -> str:
-    """Clean fleet list from the evasion catalog (drops the frontier prose)."""
-    _, rows = _md_table(md, "Fleet —")
+def render_evasions_page(evaders: dict[str, dict[str, Any]]) -> str:
+    """Every evader *config* (96) — fleet tools, technique probes and mode variants — each with a
+    verdict badge and a real description, linking to its drill-down."""
     cards = []
-    for r in rows:
-        if len(r) < 3:
-            continue
-        name, lang, what = r[0], r[1], r[2]
-        sl = _slug(name)
+    caught = susp = 0
+    for slug in sorted(evaders):
+        ev = evaders[slug]
+        verdict = str(ev.get("verdict", "")).strip()
+        if verdict == "bot":
+            caught += 1
+        elif verdict == "suspicious":
+            susp += 1
         cards.append(
-            f'<a class="card" href="/evasions/{html.escape(sl)}"><div class="ct">'
-            f'<span class="cn">{_cellhtml(name)}</span>'
-            f'<span class="badge">{html.escape(lang)}</span></div>'
-            f'<div class="cd">{html.escape(evader_description(sl, what))}</div></a>'
+            f'<a class="card" href="/evasions/{html.escape(slug)}"><div class="ct">'
+            f'<span class="cn">{html.escape(slug)}</span>'
+            f'<span class="badge {html.escape(verdict)}">{html.escape(verdict)}</span></div>'
+            f'<div class="cd">{html.escape(evader_description(slug))}</div></a>'
         )
     return (
         "<h1>Evasion catalog</h1>"
-        '<p class="lead">The red-team fleet Kitsune tests itself against — real anti-detect tools, stealth '
-        "browsers, and TLS/HTTP forgers. Every one is exercised against the live detector.</p>"
+        '<p class="lead">Every red-team configuration Kitsune tests itself against — real anti-detect '
+        "tools, stealth browsers, TLS/HTTP forgers and single-surface technique probes. Each is exercised "
+        "against the live detector and scored.</p>"
         '<div class="stat-row">'
-        f'<div class="stat"><strong>{len(rows)}</strong><span>evader tools</span></div>'
+        f'<div class="stat"><strong>{len(evaders)}</strong><span>configs</span></div>'
+        f'<div class="stat"><strong>{caught}</strong><span>caught (bot)</span></div>'
+        f'<div class="stat"><strong>{susp}</strong><span>suspicious</span></div>'
         "</div>"
         f'<div class="cards">{"".join(cards)}</div>'
     )
@@ -512,17 +518,173 @@ EVADER_DESCRIPTIONS: dict[str, str] = {
 }
 
 
+#: Hand-authored descriptions for the standalone *technique* tests (matrix configs that aren't a fleet
+#: tool, e.g. canvas-lie, electron-leak). Each is a captured session probing one detection surface.
+_TECHNIQUE_DESCRIPTIONS: dict[str, str] = {
+    "accept-lang-spoof": "A headless Chromium that forges its Accept-Language header out of step with "
+    "navigator.languages — a network-vs-JavaScript language mismatch.",
+    "audio-noise": "A bot that adds random noise to the Web Audio fingerprint to defeat audio hashing — "
+    "the injected noise signature is itself the tell.",
+    "audio-readback-spoof": "Spoofs the AudioBuffer read-back values to fake a stable audio fingerprint; "
+    "the readback noise gives it away.",
+    "baseline-firefox": "A plain automated Firefox with no stealth — the WebDriver flag is left exposed. "
+    "A control case.",
+    "brave-fake": "A non-Brave browser faking Brave's farbling and brave APIs — the spoofed Brave "
+    "identity is itself detectable.",
+    "brave-fake-proxy": "A non-Brave browser faking Brave, relayed through a proxy — the spoofed Brave "
+    "identity still shows through.",
+    "canvas-geometry-spoof": "Perturbs canvas geometry (text and shape metrics) to dodge canvas hashing; "
+    "the geometry noise is detectable.",
+    "canvas-lie": "Returns a fixed, fabricated canvas image instead of rendering — a toDataURL the engine "
+    "never actually produced.",
+    "canvas-spoof": "Injects per-pixel noise into the canvas to randomize its hash; the noise and the "
+    "worker-vs-main mismatch convict it.",
+    "cdc-leak": "An automated Chrome still carrying the `cdc_` ChromeDriver artifact variables — the "
+    "classic Selenium leak.",
+    "ch-ua-hardcoded": "An HTTP client with a hardcoded Client-Hints brand list that lacks the GREASE "
+    "brand a real Chrome always emits.",
+    "chrome-clone-1": "A cloned Chrome fingerprint replayed across sessions (clone 1 of a coordinated "
+    "pair) — the collision with its twin is the durable tell.",
+    "chrome-clone-2": "The second member of a cloned-Chrome fleet — its fingerprint collides with "
+    "clone 1 across sessions.",
+    "coalesce-proxy": "Injects synthetic pointer events through a proxy; the coalesced events are "
+    "untrusted (isTrusted=false).",
+    "coalesce-spoof": "Fakes coalesced pointer events to mimic high-frequency mouse input; the toString "
+    "patch betrays the spoof.",
+    "csp-bypass": "A bot that bypasses the page Content-Security-Policy to inject its automation hooks — "
+    "the bypass is observable.",
+    "curl-http2": "curl driving raw HTTP/2 with a browser User-Agent — its header order, TLS and TCP "
+    "stack all contradict the claimed Chrome.",
+    "datacenter-origin-proxied": "Traffic relayed from a datacenter origin through a proxy — the true "
+    "origin still reads as datacenter despite the exit node.",
+    "domrect-spoof": "Spoofs getBoundingClientRect to fake element geometry; the DOMRect values are "
+    "invariant where a real layout varies.",
+    "electron-leak": "An Electron-app bot leaking its process and automation globals — it reports as "
+    "Chrome but the Electron runtime shows through.",
+    "firefox-coherent": "A carefully coherent automated Firefox — every spoof lines up except the "
+    "exposed WebDriver flag.",
+    "floor-spoof": "A minimal 'floor' spoof patching only the obvious tells (webdriver, notifications); "
+    "the patched getters' toString gives it away.",
+    "font-os-leak": "Its installed-font set and Client-Hints betray a different OS than the User-Agent claims.",
+    "fp-rotation": "Rotates its fingerprint mid-session to dodge hashing — the within-session "
+    "instability is itself the tell.",
+    "full-stealth": "A maximal stealth stack patching dozens of surfaces at once; the WebGL and "
+    "worker-realm spoofs still diverge.",
+    "h2-continuation-flood": "An HTTP/2 CONTINUATION-frame flood (DoS) — exercises the edge's "
+    "frame-abuse detection, not fingerprint evasion.",
+    "h2-control-flood": "An HTTP/2 control-frame flood (PING/SETTINGS abuse) pressure-testing the edge's DoS guard.",
+    "h2-settings-split": "Sends HTTP/2 SETTINGS out of the expected order — a frame-sequence tell "
+    "mismatched with the claimed browser.",
+    "honeypot": "A bot that interacts with hidden honeypot elements a human would never see or click.",
+    "http2-naive": "A naive HTTP/2 client with a browser User-Agent but mismatched header order, TLS and TCP stack.",
+    "human-mouse": "Automation replaying recorded human mouse traces — the motion looks human but the "
+    "headless/CDP surface still convicts.",
+    "iframe-spoof": "Patches the main realm but not nested iframes; the iframe realm reports different "
+    "values — a realm divergence.",
+    "ios-ua-spoof": "Claims to be Safari on iOS while running a non-WebKit engine — an Apple UA without "
+    "the matching WebKit APIs.",
+    "ip-rotation": "Rotates its source IP within a single session — the address changes mid-session "
+    "where a real client's would not.",
+    "keystroke-human": "Replays human-like keystroke timing, but the headless/CDP runtime underneath "
+    "still gives it away.",
+    "lang-list-spoof": "navigator.language disagrees with navigator.languages — the singular value and "
+    "the list contradict.",
+    "lang-spoof": "Spoofs the page language, but the Worker realm reports a different language than the main thread.",
+    "linear-bot": "A bot moving the cursor in perfectly straight, constant-velocity lines — non-human "
+    "kinematics over a headless base.",
+    "max-stealth": "An aggressive stealth profile spoofing the webdriver flag and chrome object; the "
+    "spoof's own seams remain.",
+    "measuretext-spoof": "Spoofs Canvas measureText metrics; they disagree with the OffscreenCanvas "
+    "measurement of the same text.",
+    "naive-tz-spoof": "Naively overrides the timezone — the offset, Intl zone and Worker-realm timezone all disagree.",
+    "native-spoof": "Overrides native functions to fake values, but violates a native invariant the "
+    "real engine always preserves.",
+    "os-spoof": "Claims a different OS than its real platform — navigator.platform, WebGL and the TCP "
+    "stack betray the true one.",
+    "patchright": "Patchright (a patched Playwright) — strips many headless tells, but the Client-Hints "
+    "headless markers remain.",
+    "patchright-headful": "Patchright run headful — reaches only suspicious, with no single convicting "
+    "tell. A frontier case.",
+    "quic-no-grease": "A QUIC/HTTP-3 client whose ClientHello omits the GREASE values a real browser always includes.",
+    "rebrowser": "Rebrowser-patches stealth Chromium — masks the common automation tells but leaves "
+    "headless and webdriver traces.",
+    "renderer-spoof": "Spoofs the WebGL renderer string; the getParameter patch and the worker-realm "
+    "renderer disagree.",
+    "screen-impossible": "Reports screen dimensions that cannot physically exist (e.g. available larger "
+    "than total) — an impossible display.",
+    "spoof-ua": "Claims one browser in its User-Agent while the engine, TLS and HTTP/2 stack describe another.",
+    "stale-engine": "Its User-Agent claims a current version but the engine feature-set is from an older "
+    "build — a stale template.",
+    "tls-stale-template": "Replays a real browser's TLS fingerprint from an outdated template — the "
+    "GREASE and key-share no longer match the claimed UA.",
+    "trace-replay": "Replays a recorded behavioral trace verbatim — identical within-session repetition "
+    "betrays the replay.",
+    "tz-spoof": "Spoofs the timezone; the offset, the Intl resolved zone and the Worker-realm timezone "
+    "contradict each other.",
+    "ua-rotation": "Rotates its User-Agent within one session — the UA changes mid-session where a real "
+    "client's stays fixed.",
+    "uach-coherent": "A bot that makes its Client-Hints internally coherent, yet the automation runtime "
+    "(CDP/webdriver) still shows.",
+    "webkit-safari-coherent": "A coherent WebKit/Safari profile — but its fonts, platform, TLS and "
+    "HTTP/2 stack still betray the real OS.",
+    "webrtc-leak": "Leaks its real IP via WebRTC despite a proxy — reaches only suspicious, a frontier "
+    "corroborating case.",
+    "webrtc-origin-datacenter": "A WebRTC candidate revealing a datacenter origin behind the proxied connection.",
+    "worker-proxy": "Proxies Worker-thread calls back to the main realm to hide divergence; the Worker "
+    "constructor patch shows.",
+    "worker-proxy-fix": "A refined Worker proxy that rewrites the worker source to hide the seam — the "
+    "rewrite is itself detectable.",
+    "worker-spoof": "Spoofs the main thread, but the Worker realm still diverges from it.",
+    "worker-wrap": "Wraps the Worker constructor to intercept realm checks — the tampered constructor is the tell.",
+}
+
+#: Suffix → clause appended to a base tool's description for a mode variant (zendriver-uach-behave →
+#: zendriver's description + "spoofing UA Client-Hints with humanized behaviour").
+_MODE_NOTES: dict[str, str] = {
+    "fake": "faking the identity rather than running the real browser",
+    "fake-proxy": "faking the identity, relayed through a proxy",
+    "hardened": "with maximum anti-detect hardening",
+    "hardened-behave": "hardened and driven with humanized behaviour",
+    "headful": "run headful, with a real display",
+    "linux": "on Linux",
+    "linux-coherent": "on Linux, kept cross-layer coherent",
+    "macos": "on macOS",
+    "socks-webrtc": "behind a SOCKS proxy with WebRTC masking",
+    "touch-incoherent": "with a deliberately incoherent touch/pointer profile",
+    "h2-rotate": "rotating its HTTP/2 fingerprint mid-session",
+    "rotate": "rotating its TLS/JA4 fingerprint mid-session",
+    "coherent": "with its cross-layer values kept coherent",
+    "naive": "with only naive patches applied",
+    "patched": "with extra stealth patches applied",
+    "uach": "spoofing UA Client-Hints",
+    "uach-behave": "spoofing UA Client-Hints with humanized behaviour",
+}
+
+
+def _humanize(slug: str) -> str:
+    """Last-resort readable description from a slug (every known config has an authored entry above)."""
+    return f"A red-team configuration exercising the {slug.replace('-', ' ')} technique."
+
+
 def evader_description(slug: str, fallback: str = "") -> str:
-    """Curated description for an evader; mode variants (camoufox-hardened) fall back to the base tool."""
+    """Curated description for any evader config — fleet tool, standalone technique, or a mode variant.
+
+    Mode variants (camoufox-hardened, zendriver-uach-behave) resolve to the base tool's description
+    and append a mode-specific clause, so every one of the matrix configs gets a real description.
+    """
     if slug in EVADER_DESCRIPTIONS:
         return EVADER_DESCRIPTIONS[slug]
+    if slug in _TECHNIQUE_DESCRIPTIONS:
+        return _TECHNIQUE_DESCRIPTIONS[slug]
     parts = slug.split("-")
     while len(parts) > 1:
         parts = parts[:-1]
         base = "-".join(parts)
         if base in EVADER_DESCRIPTIONS:
-            return EVADER_DESCRIPTIONS[base]
-    return fallback
+            desc = EVADER_DESCRIPTIONS[base]
+            note = _MODE_NOTES.get(slug[len(base) + 1 :])
+            return f"{desc.rstrip('.')} — {note}." if note else desc
+    return fallback or _humanize(slug)
 
 
 def _chiplist(items: list[str], href: str) -> str:
