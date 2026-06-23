@@ -52,6 +52,17 @@ main.doc blockquote{border-left:2px solid var(--fox);margin:1rem 0;padding:.2rem
 main.doc hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
 footer{max-width:64rem;margin:0 auto;color:var(--muted);font-size:.78rem;border-top:1px solid var(--line);padding:1rem 1.5rem 2.5rem}
 footer a{color:var(--fox);text-decoration:none}
+html,body{overflow-x:hidden;max-width:100%}
+main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywhere}
+@media (max-width:640px){
+  nav.top,main.doc,footer{padding-left:1rem;padding-right:1rem}
+  nav.top{gap:.7rem .9rem}
+  nav.top a{font-size:.72rem}
+  nav.top a.brand{font-size:.85rem;letter-spacing:.16em}
+  main.doc h1{font-size:1.35rem}
+  main.doc h2{font-size:.9rem}
+  main.doc table{font-size:.74rem}
+}
 """
 
 

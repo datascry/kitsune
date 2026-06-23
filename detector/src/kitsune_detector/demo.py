@@ -733,6 +733,33 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 .surface.pending{border-top-color:var(--line)}
 .surface.pending .chip{color:var(--muted)}
 .surface.pending .sval{color:var(--muted)}
+/* --- overflow safety: let flex/grid children shrink + wrap long tokens (JA4/UA/hashes) --- */
+html,body{overflow-x:hidden;max-width:100%}
+.verdict,.coherence,.fpid,.bar,.hero,.layer-group{min-width:0}
+.verdict>*,.coherence>*,.coherence .side,.fpid>*,.bar>*{min-width:0}
+code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap:anywhere}
+/* --- mobile (<=640px) --- */
+@media (max-width:640px){
+  nav.top,header,main,footer{padding-left:1rem;padding-right:1rem}
+  nav.top{gap:.7rem .9rem}
+  nav.top a{font-size:.72rem}
+  nav.top a.brand{font-size:.85rem;letter-spacing:.16em}
+  h1.page{font-size:1.4rem;letter-spacing:0}
+  .lead{font-size:.95rem}
+  .hero{gap:.9rem 1.5rem;padding:1rem}
+  .hero-stat strong{font-size:1.8rem}
+  .verdict{padding:1rem;gap:.5rem 1rem}
+  .verdict .label{font-size:1.5rem}
+  .verdict .sub{margin-left:0}
+  .surfaces,.predict-grid{grid-template-columns:1fr}
+  .coherence{grid-template-columns:1fr}
+  .coherence .verdict-cell{border-left:0;border-right:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:.5rem}
+  .bar{grid-template-columns:5rem 1fr 2.25rem;gap:.5rem}
+  .edge-list,.passed-list{columns:1}
+  table.detections{font-size:.78rem}
+  table.detections th:nth-child(3),table.detections td.weight{display:none}
+  .fpid{gap:.3rem .9rem}
+}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kitsune","url":"https://kitsune.id/","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Antidetect & browser fingerprint test: cross-layer fingerprint, TLS/JA4, HTTP-2, QUIC, TCP/IP and bot detection."}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a browser fingerprint?","acceptedAnswer":{"@type":"Answer","text":"The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are."}},{"@type":"Question","name":"Can antidetect browsers beat fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"Stealth/antidetect browsers spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain."}},{"@type":"Question","name":"What is JA3 / JA4 TLS fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection."}},{"@type":"Question","name":"Is my browser detectable as a bot?","acceptedAnswer":{"@type":"Answer","text":"Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired."}},{"@type":"Question","name":"Does this send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties."}}]}</script>
