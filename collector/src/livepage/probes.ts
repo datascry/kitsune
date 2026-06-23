@@ -12,6 +12,16 @@ import {
 import type { PointerSample, SignalValue } from "../types.js";
 import type { SignalMap } from "./engine.js";
 
+// One nonce per page load (this module is evaluated once per load). Emitted with trace_hash so the
+// detector counts a replayed trajectory across distinct LOADS, not across one load's repeated re-scores.
+const LOAD_NONCE: string = ((): string => {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Math.random()}`.slice(2) + `${Math.random()}`.slice(2);
+  }
+})();
+
 // Non-standard / vendor-prefixed surfaces the probes read, typed minimally and reached via unknown casts.
 interface UAHEBrand {
   brand?: string;
@@ -712,9 +722,11 @@ export function armCollector(): LiveCollector {
     if (proc && (proc.versions?.electron || proc.type === "renderer")) {
       put("browser", "electron_process", true);
     }
-    // DOMRect invariants: real getBoundingClientRect is deterministic (two reads identical) and a
-    // single-rect element's getClientRects()[0] equals it; a noise shim or a one-sided geometry hook breaks
-    // these. Verified deterministic + consistent on real Chrome.
+    // DOMRect determinism: real getBoundingClientRect returns byte-identical values on two reads of an
+    // unchanged element (pages depend on it), and a per-call DOMRect-noise shim (DOMRECT_SPOOF) breaks it —
+    // the grounded tell. The old getClientRects()[0]-vs-getBoundingClientRect() consistency arm was removed:
+    // real Safari on Retina rounds the two geometry paths to sub-pixel-different values (a legit engine
+    // difference) which false-positived it, and no evader exercised it.
     try {
       const dre = document.createElement("div");
       dre.style.cssText =
@@ -724,17 +736,8 @@ export function armCollector(): LiveCollector {
       const a = dre.getBoundingClientRect();
       const c = dre.getBoundingClientRect();
       const det = a.x === c.x && a.y === c.y && a.width === c.width && a.height === c.height;
-      const rects = dre.getClientRects();
-      const r0 = rects[0];
-      const cons =
-        rects.length === 1 &&
-        !!r0 &&
-        Math.abs(r0.width - a.width) < 1e-6 &&
-        Math.abs(r0.height - a.height) < 1e-6 &&
-        Math.abs(r0.x - a.x) < 1e-6 &&
-        Math.abs(r0.y - a.y) < 1e-6;
       document.documentElement.removeChild(dre);
-      if (!det || !cons) put("browser", "domrect_invariant_violated", true);
+      if (!det) put("browser", "domrect_invariant_violated", true);
     } catch {
       /* ignore */
     }
@@ -1320,7 +1323,10 @@ export function armCollector(): LiveCollector {
       put("behavioral", "mouse_straightness", pathStraightness(pts));
       put("behavioral", "mouse_velocity_cv", velocityCV(pts));
       const th = traceHash(pts);
-      if (th !== null) put("behavioral", "trace_hash", th);
+      if (th !== null) {
+        put("behavioral", "trace_hash", th);
+        put("behavioral", "load_nonce", LOAD_NONCE);
+      }
       if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
         put("behavioral", "coalesced_events_absent", true);
       }

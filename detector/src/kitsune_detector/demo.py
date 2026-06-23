@@ -834,6 +834,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // ---- client-side render: predicted browser, coherence, fingerprint surfaces, composite ID ----
   var KS_CONVICTING = { coherence: 1, automation: 1, artifact: 1 };
   var KS_RULES = null; // /rules.json (full evaluable registry), fetched once
+  // One nonce per PAGE LOAD (this script runs once per load). Emitted with trace_hash so the detector
+  // counts a replayed trajectory across distinct LOADS, not across this load's repeated re-score posts.
+  var KS_LOAD = (function () { try { return crypto.randomUUID(); } catch (e) { return String(Math.random()).slice(2) + String(Math.random()).slice(2); } })();
   // Machine-readable result, mirrored into the #ks-verdict <script> tag + window.ksResult for scrapers.
   var KS_RESULT = { status: "collecting" };
   function publishResult(patch) {
@@ -1682,10 +1685,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
           ((process.versions && process.versions.electron) || process.type === "renderer"))
         sigs.push(S("browser", "electron_process", true));
     } catch (e) {}
-    // DOMRect invariants: on a real engine getBoundingClientRect is deterministic (two reads of an
-    // unchanged element are identical) and a single-rect element's getClientRects()[0] equals it. A
-    // per-call DOMRect-noise shim breaks determinism; a tool that hooks one geometry path but not the
-    // other breaks consistency. Verified deterministic + consistent on real Chrome.
+    // DOMRect determinism: on a real engine two reads of an unchanged element are byte-identical (pages
+    // depend on it), and a per-call DOMRect-noise shim (the DOMRECT_SPOOF evader) breaks it — the grounded
+    // tell. The old getClientRects()[0]-vs-getBoundingClientRect() *consistency* arm was removed: real
+    // Safari on a Retina display rounds the two geometry paths to sub-pixel-different values, a legitimate
+    // engine difference that false-positived real Safari, and no evader ever exercised that arm.
     try {
       var dre = document.createElement("div");
       dre.style.cssText = "position:absolute;left:-9999px;top:0;width:123.45px;height:67.8px;transform:rotate(7deg) scale(1.3)";
@@ -1693,12 +1697,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       document.documentElement.appendChild(dre);
       var dra = dre.getBoundingClientRect(), drc = dre.getBoundingClientRect();
       var drDet = dra.x === drc.x && dra.y === drc.y && dra.width === drc.width && dra.height === drc.height;
-      var drRects = dre.getClientRects(), dr0 = drRects[0];
-      var drCons = drRects.length === 1 && dr0 &&
-        Math.abs(dr0.width - dra.width) < 1e-6 && Math.abs(dr0.height - dra.height) < 1e-6 &&
-        Math.abs(dr0.x - dra.x) < 1e-6 && Math.abs(dr0.y - dra.y) < 1e-6;
       document.documentElement.removeChild(dre);
-      if (!drDet || !drCons) sigs.push(S("browser", "domrect_invariant_violated", true));
+      if (!drDet) sigs.push(S("browser", "domrect_invariant_violated", true));
     } catch (e) {}
     // measureText main-vs-OffscreenCanvas coherence: both use the same engine font metrics, so on a real
     // browser they are identical (verified width 390.34375 == on Chrome). A tool that hooks main-thread
@@ -2237,7 +2237,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         var ple = powerLawExp(pts);
         if (ple !== null) sigs.push(S("behavioral", "power_law_exponent", ple));
         var th = traceHash(pts);
-        if (th !== null) sigs.push(S("behavioral", "trace_hash", th));
+        // Pair the trajectory hash with this load's nonce so re-scoring the same path in ONE load can't
+        // self-collide into a false "record-and-replay" verdict (only a recurrence across loads counts).
+        if (th !== null) { sigs.push(S("behavioral", "trace_hash", th)); sigs.push(S("behavioral", "load_nonce", KS_LOAD)); }
         // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.
         if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
           sigs.push(S("behavioral", "coalesced_events_absent", true));

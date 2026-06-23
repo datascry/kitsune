@@ -269,3 +269,27 @@ def test_trace_replay_is_sticky_after_variation() -> None:
     s = merge_sessions(s, group_signals([_trace_sig("deadbeef", 30)])[0])  # replay -> flagged
     s = merge_sessions(s, group_signals([_trace_sig("feed5678", 60)])[0])  # later varies
     assert s.value(Layer.behavioral, "trace_replay") is True
+
+
+def _trace_load(value: str, nonce: str, secs: int) -> list[Signal]:
+    # One page-load's post: the trajectory hash + that load's nonce, stamped at the same time.
+    at = FIXED + timedelta(seconds=secs)
+    return [
+        make_signal("a", Layer.behavioral, "trace_hash", value, source=Source.collector, at=at),
+        make_signal("a", Layer.behavioral, "load_nonce", nonce, source=Source.collector, at=at),
+    ]
+
+
+def test_trace_replay_ignores_rescore_within_one_load() -> None:
+    # The live page re-posts the same trajectory within ONE load (same nonce, e.g. the Analyze re-score) —
+    # that must NOT read as record-and-replay. This is the real-Safari false positive being fixed.
+    s = group_signals(_trace_load("deadbeef", "load-1", 0))[0]
+    s = merge_sessions(s, group_signals(_trace_load("deadbeef", "load-1", 30))[0])
+    assert s.value(Layer.behavioral, "trace_replay") is MISSING
+
+
+def test_trace_replay_flagged_across_distinct_loads() -> None:
+    # The SAME trajectory under TWO distinct page loads (distinct nonces) is record-and-replay — still caught.
+    s = group_signals(_trace_load("deadbeef", "load-1", 0))[0]
+    s = merge_sessions(s, group_signals(_trace_load("deadbeef", "load-2", 30))[0])
+    assert s.value(Layer.behavioral, "trace_replay") is True
