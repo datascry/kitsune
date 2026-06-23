@@ -39,14 +39,15 @@ simultaneously — and that is much harder than fooling any one of them.
 ## How it works
 
 ```
-                  ┌──────────────────────── one session_id ────────────────────────┐
-   evader ──▶  EDGE (Go)  ──────────────▶  APP / collector (TS)  ──signals──▶  DETECTOR (Python)
-            raw TLS/JA4, HTTP-2,        in-browser fingerprint +            data-driven coherence
-            TCP/IP, QUIC, DoS          behavior, realm probes              engine → scored Verdict
-                  │                            │                                    │
-                  └──────── network.* ─────────┴──── browser.* / behavioral.* ──────┤
-                                                                                     ▼
-                                                            STORE ─▶ HARNESS ─▶ per-layer SCOREBOARD
+              one session_id — threaded through every hop
+
+  evader ─▶ EDGE (Go) ─▶ COLLECTOR (TS) ─▶ DETECTOR (Python) ─▶ Verdict
+             │              │                  │
+       network.*       browser.* +       coherence engine (rules-as-data)
+       TLS·JA4·HTTP-2   behavioral.*     → noisy-or ⊕ incoherence ⊕ gate
+       QUIC·TCP/IP·DoS  canvas·WebGL              │
+                        audio·realm·biomech       ▼
+                        STORE ─▶ HARNESS ─▶ per-layer SCOREBOARD
 ```
 
 The **edge** fingerprints the network layers a UA-spoofer can't reach (it terminates TLS and reads the
