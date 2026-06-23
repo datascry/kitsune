@@ -123,6 +123,17 @@ def test_static_and_crawl_routes(client: TestClient) -> None:
     assert sm.status_code == 200 and "<urlset" in sm.text and "<loc>" in sm.text
 
 
+def test_llms_txt(client: TestClient) -> None:
+    # llmstxt.org convention: H1 + blockquote summary + curated link sections, served as markdown.
+    r = client.get("/llms.txt")
+    assert r.status_code == 200
+    assert "text/markdown" in r.headers["content-type"]
+    body = r.text
+    assert body.startswith("# Kitsune")
+    assert "\n> " in body  # the required summary blockquote
+    assert "https://kitsune.id/rules.json" in body and "https://kitsune.id/evasions" in body
+
+
 def test_rules_json(client: TestClient) -> None:
     data = client.get("/rules.json").json()
     assert data["ruleset_version"]

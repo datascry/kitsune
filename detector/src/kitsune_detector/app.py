@@ -96,6 +96,37 @@ SEO_KEYWORDS = (
     "bot detection, browser fingerprinting, antidetect browser, TLS JA3 JA4, HTTP/2 fingerprint, "
     "QUIC fingerprint, TCP/IP fingerprint, automation detection, headless browser detection"
 )
+#: /llms.txt — the llmstxt.org convention: a concise, link-first map of the site for LLM agents (H1 +
+#: blockquote summary + curated sections). Mirrors the SEO head's structured data in a plain-text form.
+LLMS_TXT = """# Kitsune
+
+> Kitsune is a bot detection ⇄ evasion lab: a blue-team detector and a red-team anti-detect evader
+> fleet, run against each other to produce a per-layer scoreboard. The live page fingerprints a
+> visitor's browser across every layer — TLS/JA4, HTTP/2, QUIC, TCP/IP, the JavaScript runtime and
+> behavior — correlated at the edge, and returns a real bot-detection verdict. Its thesis: catch the
+> incoherence across layers, not any single signal.
+
+## Live tool
+- [Bot-detection & fingerprint test](https://kitsune.id/): fingerprints this browser and returns a live
+  verdict (human / suspicious / bot). The machine-readable verdict is embedded in the page as JSON at
+  `#ks-verdict` and on `window.ksResult` (plus a `kitsune:result` DOM event): label, score,
+  incoherence_score, layer_scores and the contradictions that fired.
+
+## Documentation
+- [How it works](https://kitsune.id/how-it-works): the cross-layer incoherence thesis and the signal layers.
+- [Detection catalog](https://kitsune.id/detections): every detection rule and the exact signal it exploits.
+- [Evasion catalog](https://kitsune.id/evasions): every anti-detect tool and technique tested, with verdicts.
+- [Coverage matrix](https://kitsune.id/matrix): every detection rule x every evader.
+- [Research](https://kitsune.id/research): findings from the detection-vs-evasion arms race.
+
+## API
+- [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry.
+- POST https://kitsune.id/ingest: accepts collector signal envelopes and returns the verdict JSON.
+
+## Source
+- [Source on GitHub](https://github.com/datascry/kitsune): MIT — detector, edge, collector, evader fleet.
+"""
+
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
 #: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
@@ -194,6 +225,11 @@ def create_app(
     @app.get("/robots.txt", include_in_schema=False)
     def robots() -> PlainTextResponse:
         return PlainTextResponse(f"User-agent: *\nAllow: /\nSitemap: {SITE_ORIGIN}/sitemap.xml\n")
+
+    @app.get("/llms.txt", include_in_schema=False)
+    def llms_txt() -> PlainTextResponse:
+        # llmstxt.org: a link-first site map for LLM agents. Markdown served as text/plain per the convention.
+        return PlainTextResponse(LLMS_TXT, media_type="text/markdown; charset=utf-8")
 
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap() -> Response:
