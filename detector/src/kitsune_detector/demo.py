@@ -785,6 +785,12 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <div id="ks-fpid" class="fpid">computing your fingerprint…</div>
   <h2>Detector verdict</h2>
   <p id="ks-status">collecting…</p><div id="ks-result"></div>
+  <!-- MACHINE-READABLE RESULT: automated tools can parse the verdict here without scraping the DOM.
+       It starts as {"status":"collecting"} and is replaced with the full verdict (label, score,
+       incoherence_score, layer_scores, contradictions[], session_id, and a wire{} block) once scoring
+       completes — status becomes "complete". Also exposed as window.ksResult and a "kitsune:result"
+       event. Poll this element's textContent, or: addEventListener("kitsune:result", e => e.detail). -->
+  <script type="application/json" id="ks-verdict">{"status":"collecting"}</script>
   <div id="ks-coherence"></div>
   <!-- INTERACT: behavioral panel up front so input accrues during collection -->
   <section id="ks-bio" aria-label="behavioral biometrics">
@@ -828,6 +834,27 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // ---- client-side render: predicted browser, coherence, fingerprint surfaces, composite ID ----
   var KS_CONVICTING = { coherence: 1, automation: 1, artifact: 1 };
   var KS_RULES = null; // /rules.json (full evaluable registry), fetched once
+  // Machine-readable result, mirrored into the #ks-verdict <script> tag + window.ksResult for scrapers.
+  var KS_RESULT = { status: "collecting" };
+  function publishResult(patch) {
+    try {
+      if (patch) { for (var k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) KS_RESULT[k] = patch[k]; } }
+      window.ksResult = KS_RESULT;
+      var el = document.getElementById("ks-verdict");
+      // textContent (not innerHTML) on an existing element isn't re-parsed; the \\u003c escape is belt-and-
+      // braces so a serialize-then-reparse (outerHTML) of a contradiction detail can't close the tag.
+      if (el) el.textContent = JSON.stringify(KS_RESULT).replace(/</g, "\\u003c");
+      try { dispatchEvent(new CustomEvent("kitsune:result", { detail: KS_RESULT })); } catch (e) {}
+    } catch (e) {}
+  }
+  function publishWire(d) {
+    if (!d) return;
+    var w = d.wire || {};
+    publishResult({
+      wire: { ip: d.ip || null, geo: d.geo || null, ja4: w.ja4 || null, ja3: w.ja3 || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, wire_fp: d.wire_fp || null },
+      network_contradictions: d.network_contradictions || []
+    });
+  }
   function fnv(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h = ((h ^ s.charCodeAt(i)) * 16777619) >>> 0; } return (h >>> 0).toString(16); }
   function has(k) { return k in window; }
   function predictEngine(ev) {
@@ -1008,7 +1035,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   }
   function fetchWire() {
     var id = sid(); if (!id) { renderWire(null); return; }
-    try { fetch("/inspect/" + encodeURIComponent(id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { renderWire(d); }).catch(function () { renderWire(null); }); } catch (e) { renderWire(null); }
+    try { fetch("/inspect/" + encodeURIComponent(id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { renderWire(d); publishWire(d); }).catch(function () { renderWire(null); }); } catch (e) { renderWire(null); }
   }
   function renderClientImmediate() {
     try {
@@ -1050,6 +1077,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + (inc > 0 ? ' — yours is <b>' + inc + '%</b>' : '') + '.</p>';
     html += '<div class="layer-bars">' + bars + '</div>';
     if (out) out.innerHTML = html;  // #ks-result = the headline summary (verdict stamp + layer bars)
+    // Publish the full verdict for automated consumers (the same fields the /ingest API returns).
+    var rec = {}; for (var rk in v) { if (Object.prototype.hasOwnProperty.call(v, rk)) rec[rk] = v[rk]; }
+    rec.status = "complete"; rec.session_id = sid();
+    publishResult(rec);
     // The detailed layer-grouped detections render into their own section AFTER the evidence panels,
     // built from the full rule registry (/rules.json) cross-referenced with the fired contradictions.
     var cs = v.contradictions || [], firedMap = {}, firedSet = {};
