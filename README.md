@@ -9,10 +9,6 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![conventional commits](https://img.shields.io/badge/commits-conventional-fe5196.svg)](https://www.conventionalcommits.org)
 
-<p align="center">
-  <img src="docs/kitsune.jpg" alt="Kitsune — a nine-tailed fox spirit on a mountain ridge" width="320" />
-</p>
-
 <p align="center"><strong><a href="https://kitsune.id">Try the live test → kitsune.id</a></strong></p>
 
 <p align="center">
