@@ -264,3 +264,25 @@ terms before pulling).
   behavioral layers Kitsune already spans. No new groundable lead; in-sandbox queue remains DRY. The loop
   is in steady-state saturation — recommend winding the 4-min cadence down to SCAN-only weekly (or delete
   cron 2e89fb67; it auto-expires in ~7 days regardless).
+- **2026-06-23 · commercial anti-detect browser coverage assessment (white-box + empirical)** — Evaluated
+  the commercial class (Kameleo Chroma/Junglefox, Multilogin Mimic/Stalkfox, GoLogin Orbita, Octo, AdsPower
+  SunBrowser, Dolphin{anty}). They are **engine-level (C++) Chromium/Firefox forks** — masking applied
+  before any JS runs and consistent across main/worker/iframe realms — i.e. the **Camoufox class**, not the
+  puppeteer-stealth class. White-box attempt on the OSS clone `itbrowser-net/undetectable-fingerprint-browser`:
+  **dead end — it ships a prebuilt Windows .exe, no source** ("source uploaded gradually"); running an
+  untrusted Windows binary in-sandbox is unsafe/infeasible. BUT the class is already characterized because
+  **Camoufox (its OSS engine-level representative) is in the fleet**. Surface map vs coverage: canvas/WebGL/
+  audio/fonts/timezone/languages — engine-level + **stable-per-profile** (real-device pool, not per-call
+  noise) + all-realm → EVADES the JS-realm tells (`canvas_noise`, `*_worker_vs_main`, `fingerprint_unstable`)
+  → reaches the documented `suspicious` frontier. TLS/JA4/HTTP-2 — they ARE real Chromium/Firefox → coherent
+  → no tell (their strength). **The decisive convicting tell is the one their engine cannot reach: the
+  kernel TCP/IP stack (`net.tcp_os_vs_ua` + `tcp_kernel` SYN fp).** EMPIRICAL PROOF in our own matrix:
+  `camoufox-macos` (engine-level, spoofs OS→macOS on a Linux box) → **bot** via `net.tcp_os_vs_ua`;
+  `camoufox-linux`/`camoufox-hardened` (engine-level, OS-coherent) → **suspicious**. Industry confirms (Google
+  signup keys on the p0f TCP fingerprint as the decision point). So a multi-accounter running profiles that
+  claim various OSes on one machine is convicted by `net.tcp_os_vs_ua` — the single highest-value tell vs this
+  class, ALREADY shipped. The durable second axis is **coordination** (`fp_collision`/JA4-collision/
+  `shared_real_ip`) — a fleet can't hide its shared infrastructure. **No new groundable convicting tell**: the
+  OS-coherent engine-level browser is the saturation frontier (= Camoufox at suspicious); the convictable part
+  (OS-spoof + coordination) is covered. The only residual path to convict an OS-coherent commercial browser is
+  a Camoufox-class residual-leak hunt (frontier-by-definition) or external coordination data.
