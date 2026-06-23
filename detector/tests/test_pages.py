@@ -33,6 +33,25 @@ def test_doc_pages_are_curated_not_raw_dumps(client: TestClient) -> None:
     assert 'class="cards"' in client.get("/evasions").text
 
 
+def test_detection_drilldown(client: TestClient) -> None:
+    r = client.get("/detections/br.canvas_lie")
+    assert r.status_code == 200
+    assert "<h1" in r.text and 'href="/detections"' in r.text  # rendered + back-link
+    assert client.get("/detections/nope.not.a.rule").status_code == 404
+
+
+def test_evasion_drilldown(client: TestClient) -> None:
+    r = client.get("/evasions/nodriver")
+    assert r.status_code == 200
+    assert "<h1" in r.text and "/detections/" in r.text  # tells link to detection pages
+    assert client.get("/evasions/nope-not-real").status_code == 404
+
+
+def test_sitemap_lists_drilldowns(client: TestClient) -> None:
+    sm = client.get("/sitemap.xml").text
+    assert "/detections/br." in sm and "/evasions/" in sm
+
+
 def test_sitemap_lists_doc_pages(client: TestClient) -> None:
     xml = client.get("/sitemap.xml").text
     for slug in DOC_PAGES:
