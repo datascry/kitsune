@@ -5,6 +5,14 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.4.0](https://github.com/datascry/kitsune/compare/v1.3.0...v1.4.0) (2026-06-23)
+
+
+### Features
+
+* **detector:** customer-facing matrix/detections/evasions pages ([25040af](https://github.com/datascry/kitsune/commit/25040af6d54211427531607c85b21586da256e08))
+* **detector:** mobile-responsive layout — fix the horizontal-overflow scroll ([71e9081](https://github.com/datascry/kitsune/commit/71e908130f22c1dee84dc6acfdd8fe66358904f5))
+
 ## [1.3.0](https://github.com/datascry/kitsune/compare/v1.2.0...v1.3.0) (2026-06-23)
 
 
