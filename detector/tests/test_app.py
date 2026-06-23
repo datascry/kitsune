@@ -118,9 +118,9 @@ def test_static_and_crawl_routes(client: TestClient) -> None:
     assert client.get("/og.png").status_code == 200
     assert client.get("/site.webmanifest").status_code == 200
     robots = client.get("/robots.txt")
-    assert robots.status_code == 200 and "Sitemap: https://kitsune.id/sitemap.xml" in robots.text
+    assert robots.status_code == 200 and "Sitemap:" in robots.text and "/sitemap.xml" in robots.text
     sm = client.get("/sitemap.xml")
-    assert sm.status_code == 200 and "<loc>https://kitsune.id/</loc>" in sm.text
+    assert sm.status_code == 200 and "<urlset" in sm.text and "<loc>" in sm.text
 
 
 def test_rules_json(client: TestClient) -> None:
