@@ -9,13 +9,18 @@ services:
     # docs on this public host; empty/unset leaves them open (dev behaviour).
     # KITSUNE_GEOIP_DIR points at a dir holding MaxMind GeoLite2-City.mmdb / GeoLite2-ASN.mmdb (mounted
     # read-only below). Absent/empty -> the wire panel shows the IP without city/ASN (purely additive).
+    # KITSUNE_IPREP_DIR points at a dir holding the refreshed IP-reputation lists (datacenter_cidrs.txt /
+    # proxy_exit_cidrs.txt) from `python -m kitsune_detector.ip_reputation_refresh`. Absent/empty -> the
+    # committed in-image seeds (a thin slice). Populate ./iprep on the host + cron monthly; see docs/deploy.md.
     environment:
       KITSUNE_DB: /data/kitsune.db
       KITSUNE_ADMIN_TOKEN: ${KITSUNE_ADMIN_TOKEN:-}
       KITSUNE_GEOIP_DIR: /geoip
+      KITSUNE_IPREP_DIR: /iprep
     volumes:
       - detector-data:/data
       - ./geoip:/geoip:ro
+      - ./iprep:/iprep:ro
     restart: unless-stopped
 
   edge:

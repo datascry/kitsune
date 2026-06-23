@@ -382,6 +382,18 @@ rules:
     last_validated: "2026-06-20"
     source: "The cross-layer thesis applied to IP reputation: the REAL machine running the browser is in a DATACENTER (WebRTC-leaked srflx origin classifies datacenter) yet it CONNECTS through a NON-datacenter (residential) IP (observed_ip classifies not-datacenter) — a datacenter machine HIDING behind a residential proxy. This is the dominant commercial-scraping pattern (a cloud VM on AWS/GCP fronted by a residential proxy pool) that defeats observed_ip reputation: rep.datacenter_asn sees only the clean residential proxy. The detector derives network.datacenter_origin_proxied in _with_derived when webrtc_public_ip is datacenter AND observed_ip is NOT datacenter. CONVICTING (coherence) where the sibling rep.webrtc_origin_datacenter is only corroborating, because the extra `observed_ip not datacenter` clause removes the one real FP: a cloud-desktop / remote-browser user (browser on a cloud VM) connects DIRECTLY from the datacenter, so their observed_ip is ALSO datacenter → this rule does NOT fire on them (they are caught corroboratively by rep.datacenter_asn instead). A datacenter machine connecting via a residential IP has no legitimate explanation — only a bot hides a cloud VM behind a residential proxy. A real VPN user leaks their RESIDENTIAL home origin (not datacenter) → never fires. GROUNDED LIVE 2026-06-20 (iter-34): local STUN reporting 52.0.0.1 (committed AWS CIDR) + an HTTP CONNECT proxy → camoufox observed_ip = clean proxy (not datacenter), webrtc_public_ip = 52.0.0.1 (datacenter) → this rule FIRED (label bot) while rep.datacenter_asn did NOT. browserforge/intoli calibration carry no WebRTC layer so this never fires there; a real cloud-desktop-direct user (observed_ip datacenter) is unit-tested to NOT fire it."
 
+  - id: net.fake_declared_crawler
+    title: A UA declaring a known crawler (Googlebot/Bingbot/…) whose IP fails forward-confirmed reverse DNS
+    layers: [network]
+    reads: [network.fake_declared_crawler]
+    predicate: present
+    weight: 0.8
+    status: experimental
+    category: coherence
+    added: "2026-06-23"
+    last_validated: "2026-06-23"
+    source: "Forward-confirmed reverse DNS (FCrDNS) is the crawlers' OWN documented verification method: a real Googlebot/Bingbot/Applebot/etc. connects from an IP whose PTR record resolves under the crawler's official domain (e.g. *.googlebot.com) AND that host's forward A/AAAA records include the connecting IP. The edge runs this check (uaHasKnownH2Order sibling — fingerprint.VerifyCrawler) only for a UA that DECLARES a known crawler, and emits network.fake_declared_crawler ONLY on a DEFINITIVE failure: no PTR record, a PTR under no official crawler suffix (an impersonator), or a matching host that does not forward-confirm the IP. A transient resolver error (SERVFAIL/timeout) ABSTAINS — a real crawler is never convicted on a flaky lookup. FP-safe by construction: a genuine crawler always confirms (that is what FCrDNS is for), so the only thing that fires is a non-crawler IP wearing a crawler UA — a clear impersonation. CONVICTING (coherence): the network identity contradicts the declared UA. EXPERIMENTAL until grounded against a live resolver in deployment (the edge ships with net.DefaultResolver; tests inject a stub). Complements the existing UA-vs-wire coherence family for the DECLARED-crawler abuse case (fake-Googlebot scrapers, a common allow-list bypass) rather than the real-browser-faking case the rest of the ruleset targets. Capability sourced from the GreyNoise GNQL gap analysis (actor + rdns_validated facets); see docs/research-radar.md."
+
   # --- v0.2.0: deepened coverage ---
 
   - id: net.h2_vs_tls_browser

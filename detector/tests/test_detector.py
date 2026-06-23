@@ -28,6 +28,17 @@ def test_scores_bot_as_bot(detector: Detector, bot_session: Session) -> None:
     assert all(c.evidence for c in verdict.contradictions)
 
 
+def test_fake_declared_crawler_convicts(detector: Detector) -> None:
+    # A UA declaring a crawler whose IP fails FCrDNS (edge emits network.fake_declared_crawler) is a
+    # convicting coherence tell — the network identity contradicts the declared crawler UA.
+    verdicts = detector.ingest_and_score(
+        [make_signal("c", Layer.network, "fake_declared_crawler", True, source=Source.edge)]
+    )
+    v = verdicts[0]
+    assert v.label is Label.bot
+    assert any(c.rule_id == "net.fake_declared_crawler" for c in v.contradictions)
+
+
 def test_ingest_and_score(detector: Detector) -> None:
     signals = [
         make_signal("z", Layer.browser, "webdriver", True, source=Source.collector),
