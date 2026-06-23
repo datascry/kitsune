@@ -14,17 +14,26 @@ import hmac
 import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Cookie, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 
 from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
-from .models import RuleCategory, Session, Signal, Verdict
+from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
 from .store import Store
 
 #: Categories that can convict a session as a bot (the rest only corroborate).
 CONVICTING_CATEGORIES = {RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact}
+
+
+def _fnv1a(s: str) -> str:
+    """FNV-1a (32-bit) hex — the same hash the client uses, so IDs are comparable across layers."""
+    h = 2166136261
+    for ch in s:
+        h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
+    return format(h, "x")
+
 
 #: Canonical public origin — used for robots/sitemap absolute URLs and the page's canonical/OG tags.
 SITE_ORIGIN = "https://kitsune.id"
@@ -166,6 +175,54 @@ def create_app(
     @app.get("/rules.json")
     def rules_json() -> dict[str, object]:
         return rules_payload
+
+    @app.get("/inspect/{session_id}")
+    def inspect(session_id: str, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
+        # The public, de-identified wire view the live page reads. Cookie-scoped: you may only inspect the
+        # session your OWN ks_sid cookie names — so it can show you your own IP/JA4/TCP without exposing
+        # anyone else's. (/session, which returns raw signals for any id, stays admin-gated.)
+        if ks_sid is None or not hmac.compare_digest(ks_sid, session_id):
+            raise HTTPException(status_code=403, detail="inspect is limited to your own session")
+        session = store.get_session(session_id)
+        if session is None:
+            raise HTTPException(status_code=404, detail="no session")
+
+        def netval(kind: str) -> object | None:
+            v = session.value(Layer.network, kind)
+            return None if v is MISSING else v
+
+        wire: dict[str, object | None] = {
+            "ja3": netval("ja3"),
+            "ja4": netval("ja4"),
+            "tcp": netval("tcp"),
+            "tcp_os": netval("tcp_kernel"),
+            "h2": netval("h2"),
+            "quic": netval("quic_observed"),
+        }
+        contradictions: list[dict[str, object]] = []
+        verdict = store.get_verdict(session_id)
+        if verdict is not None:
+            wire_layers = {Layer.network, Layer.reputation}
+            for c in verdict.contradictions:
+                if any(ly in wire_layers for ly in c.layers):
+                    contradictions.append(
+                        {
+                            "rule_id": c.rule_id,
+                            "category": str(c.category),
+                            "detail": c.detail,
+                            "weight": c.weight,
+                            "layers": [str(ly) for ly in c.layers],
+                        }
+                    )
+        basis = "|".join(f"{k}={wire[k]}" for k in sorted(wire) if wire[k])
+        return {
+            "session_id": session_id,
+            "ip": netval("observed_ip"),
+            "geo": None,  # populated by GeoLite2 in a later phase
+            "wire": wire,
+            "wire_fp": _fnv1a(basis) if basis else None,
+            "network_contradictions": contradictions,
+        }
 
     @app.post("/ingest", response_model=list[Verdict])
     def ingest(signals: list[Signal]) -> list[Verdict]:

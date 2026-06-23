@@ -730,6 +730,9 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 .passed-toggle summary{color:var(--jade)}
 .passed-list{font-size:.74rem;color:var(--muted);columns:2;column-gap:2rem;margin:.3rem 0}
 .passed-list code{color:var(--jade)}
+.surface.pending{border-top-color:var(--line)}
+.surface.pending .chip{color:var(--muted)}
+.surface.pending .sval{color:var(--muted)}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kitsune","url":"https://kitsune.id/","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Antidetect & browser fingerprint test: cross-layer fingerprint, TLS/JA4, HTTP-2, QUIC, TCP/IP and bot detection."}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a browser fingerprint?","acceptedAnswer":{"@type":"Answer","text":"The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are."}},{"@type":"Question","name":"Can antidetect browsers beat fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"Stealth/antidetect browsers spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain."}},{"@type":"Question","name":"What is JA3 / JA4 TLS fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection."}},{"@type":"Question","name":"Is my browser detectable as a bot?","acceptedAnswer":{"@type":"Answer","text":"Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired."}},{"@type":"Question","name":"Does this send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties."}}]}</script>
@@ -756,6 +759,7 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
   <div id="ks-coherence"></div>
   <h2>Detector verdict</h2>
   <p id="ks-status">collecting…</p><div id="ks-result"></div>
+  <div id="ks-wire"></div>
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
     <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
@@ -942,10 +946,40 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
     }
     return out;
   }
+  function wireRow(name, val, note) {
+    var present = !!val;
+    return '<div class="surface' + (present ? "" : " pending") + '"><div class="top"><span class="sname">' + esc(name) + '</span><span class="chip">' + (present ? "captured" : "pending") + '</span></div><div class="sval">' + esc(present ? val : (note || "n/a")) + '</div></div>';
+  }
+  function renderWire(d) {
+    var el = document.getElementById("ks-wire"); if (!el) return;
+    if (!d) { el.innerHTML = '<h2>Network / wire layer <span class="note">\\u2014 captured by Kitsune\\u2019s edge</span></h2><p class="note">No edge session yet \\u2014 the wire layer (TLS/JA4, HTTP-2, TCP/IP, QUIC) is read from your raw connection when you reach this page through Kitsune\\u2019s edge.</p>'; return; }
+    var w = d.wire || {};
+    var cards = wireRow("IP", d.ip, "n/a") + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
+      + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit");
+    var html = '<h2>Network / wire layer <span class="note">\\u2014 read from your raw connection by Kitsune\\u2019s edge</span></h2><div class="surfaces">' + cards + '</div>';
+    var nc = d.network_contradictions || [];
+    if (nc.length) {
+      html += '<p class="note">' + nc.length + ' network/reputation signal(s) fired:</p><table class="detections"><tr><th>signal</th><th>category</th><th>why</th></tr>';
+      for (var i = 0; i < nc.length; i++) { var c = nc[i]; html += '<tr class="' + (KS_CONVICTING[c.category] ? "fired" : "clear") + '"><td class="mark"><code>' + esc(c.rule_id) + '</code></td><td>' + esc(c.category) + '</td><td class="title">' + esc(c.detail) + '</td></tr>'; }
+      html += '</table>';
+    }
+    el.innerHTML = html;
+    // Full-stack fingerprint ID = browser FP \\u2295 wire FP — the cross-layer identifier a pure-JS tester can't form.
+    if (d.wire_fp && window.__ksBrowserFp) {
+      var full = fnv(window.__ksBrowserFp + "|" + d.wire_fp);
+      var fpel = document.getElementById("ks-fpid");
+      if (fpel) { var b = fpel.querySelectorAll("b"); if (b.length >= 3) { b[2].textContent = full; b[2].removeAttribute("title"); } }
+    }
+  }
+  function fetchWire() {
+    var id = sid(); if (!id) { renderWire(null); return; }
+    try { fetch("/inspect/" + encodeURIComponent(id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { renderWire(d); }).catch(function () { renderWire(null); }); } catch (e) { renderWire(null); }
+  }
   function renderClientImmediate() {
     try {
       var p = predict(); window.__ksFp = rawFingerprint();
       renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); renderFingerprint(window.__ksFp); renderSurfaces(window.__ksFp, {});
+      fetchWire();
     } catch (e) {}
   }
   // Close the detection loop for the visitor: render the REAL detector's verdict (the /ingest response).
@@ -977,6 +1011,8 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
     if (out) out.innerHTML = html;
     // Surface tamper-state reflects which browser rules fired (from the server verdict).
     renderSurfaces(window.__ksFp || rawFingerprint(), firedSet);
+    // Pull the edge wire layer (JA3/JA4/TCP-OS/QUIC + IP) for this session and form the full-stack ID.
+    fetchWire();
   }
   // Fetch the full rule registry (for layer-grouped detections + the passed-checks list), then paint the
   // client-side panels immediately — predicted browser, coherence, surfaces, composite ID — independent of
