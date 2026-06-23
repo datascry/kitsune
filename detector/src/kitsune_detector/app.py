@@ -294,7 +294,7 @@ def create_app(
 
     @app.get("/evasions/{slug}", response_class=HTMLResponse, include_in_schema=False)
     def evasion_detail(slug: str) -> HTMLResponse:
-        body = render_evasion_detail(slug, evaders.get(slug), fleet.get(slug), techniques.get(slug))
+        body = render_evasion_detail(slug, evaders.get(slug), fleet.get(slug), techniques.get(slug), rules_by_id)
         if body is None:
             raise HTTPException(status_code=404, detail="no such evader")
         desc = f"Is {slug} detectable? Kitsune's verdict and the tells that caught it."
