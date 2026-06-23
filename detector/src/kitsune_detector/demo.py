@@ -787,7 +787,8 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
   <details><summary>Is my browser detectable as a bot?</summary><p>Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired.</p></details>
   <details><summary>Does this send my data anywhere?</summary><p>Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties.</p></details>
 </main>
-<footer><p>Your signals are scored by Kitsune's real detector at this origin — the blue-team side of a bot detection ⇄ evasion lab. Raw captures stay on the host; only de-identified verdicts are shared. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p></footer>
+<footer><p>Your signals are scored by Kitsune's real detector at this origin — the blue-team side of a bot detection ⇄ evasion lab. Raw captures stay on the host; only de-identified verdicts are shared. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p>
+<p class="note">IP geolocation by <a href="https://www.maxmind.com">GeoLite2 data created by MaxMind</a>.</p></footer>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
@@ -953,8 +954,9 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
   function renderWire(d) {
     var el = document.getElementById("ks-wire"); if (!el) return;
     if (!d) { el.innerHTML = '<h2>Network / wire layer <span class="note">\\u2014 captured by Kitsune\\u2019s edge</span></h2><p class="note">No edge session yet \\u2014 the wire layer (TLS/JA4, HTTP-2, TCP/IP, QUIC) is read from your raw connection when you reach this page through Kitsune\\u2019s edge.</p>'; return; }
-    var w = d.wire || {};
-    var cards = wireRow("IP", d.ip, "n/a") + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
+    var w = d.wire || {}, g = d.geo || null, ipLabel = d.ip || "";
+    if (g) { var loc = [g.city, g.country].filter(function (x) { return x; }).join(", "); var org = g.asn_org || g.asn || ""; ipLabel = (d.ip || "") + (loc ? " \\u00b7 " + loc : "") + (org ? " \\u00b7 " + org : ""); }
+    var cards = wireRow("IP / geo", ipLabel, "n/a") + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
       + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit");
     var html = '<h2>Network / wire layer <span class="note">\\u2014 read from your raw connection by Kitsune\\u2019s edge</span></h2><div class="surfaces">' + cards + '</div>';
     var nc = d.network_contradictions || [];

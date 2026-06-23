@@ -7,11 +7,15 @@ services:
     # Persist the session/verdict store across restarts (the detector already reads KITSUNE_DB).
     # KITSUNE_ADMIN_TOKEN (from .env, optional) gates /session,/verdict,/scoreboard + hides the API
     # docs on this public host; empty/unset leaves them open (dev behaviour).
+    # KITSUNE_GEOIP_DIR points at a dir holding MaxMind GeoLite2-City.mmdb / GeoLite2-ASN.mmdb (mounted
+    # read-only below). Absent/empty -> the wire panel shows the IP without city/ASN (purely additive).
     environment:
       KITSUNE_DB: /data/kitsune.db
       KITSUNE_ADMIN_TOKEN: ${KITSUNE_ADMIN_TOKEN:-}
+      KITSUNE_GEOIP_DIR: /geoip
     volumes:
       - detector-data:/data
+      - ./geoip:/geoip:ro
     restart: unless-stopped
 
   edge:
