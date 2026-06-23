@@ -5,6 +5,40 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.3.0](https://github.com/datascry/kitsune/compare/v1.2.0...v1.3.0) (2026-06-23)
+
+
+### Features
+
+* **ci:** pull-based CD — GHCR image publish + Watchtower auto-update (Option B) ([737520a](https://github.com/datascry/kitsune/commit/737520afb8b0acead7d280e3504b7cd7eec5e358))
+* **collector:** interactive biometrics controls + move panel to top (GitHub Pages livepage) ([debd4cf](https://github.com/datascry/kitsune/commit/debd4cf2721ff4d8a82a5bdff3cf28e21252f42e))
+* **collector:** livepage L1-L3 — mount panel early, re-evaluate, touch-aware ([4047060](https://github.com/datascry/kitsune/commit/4047060f9386451bf0ad5121c254b4166401ca65))
+* **collector:** livepage L5-L7 — spoof demos, rule provenance, shareable result ([8e8049e](https://github.com/datascry/kitsune/commit/8e8049ea7125bcf7357ee7efb8afbf37c5731922))
+* **detector:** doc pages — matrix/evasions/detections/how-it-works/research (Phase 5) ([1286ea8](https://github.com/datascry/kitsune/commit/1286ea8eb1a1083739663e0ae17c95772743fb57))
+* **detector:** gate inspection endpoints behind KITSUNE_ADMIN_TOKEN ([6cb8f5e](https://github.com/datascry/kitsune/commit/6cb8f5ebbd308f7dc73ee8aac55a26ccd860dcae))
+* **detector:** geo/ASN enrichment on the wire panel via GeoLite2 (Phase 4) ([3981733](https://github.com/datascry/kitsune/commit/3981733179325b478ff7b207f0855bf24d40bd05))
+* **detector:** interactive biometrics panel on the demo page + live readout up top ([c39a206](https://github.com/datascry/kitsune/commit/c39a206c04e8345be2d00d536b77c4e02309597c))
+* **detector:** landing-page SEO shell + brand assets (antidetect-first front door) ([638a172](https://github.com/datascry/kitsune/commit/638a172ccb69dc5613068e6906ac3934084882d0))
+* **detector:** live-page render port + layer-grouped detections (Phase 2) ([64a94d8](https://github.com/datascry/kitsune/commit/64a94d8df9a03cc182be3b638624cb8b0c1f5f09))
+* **detector:** S1 step (b) — no-JS CSS [@media](https://github.com/media) beacon collector ([d083156](https://github.com/datascry/kitsune/commit/d083156b5524a9a9a76c7970011c34147826f248))
+* **detector:** S1 step (c) — detector-side CSS⇄JS touch coherence derivation ([5e6af5f](https://github.com/datascry/kitsune/commit/5e6af5f4936585dde121b4232f64f17f60ccd41a))
+* **detector:** uplevel the served demo page to the forensic-inspector aesthetic ([c743d8b](https://github.com/datascry/kitsune/commit/c743d8b8c97a444842508482aefe582723540d73))
+* **detector:** wire layer + cookie-scoped /inspect + full-stack ID (Phase 3) ([3090459](https://github.com/datascry/kitsune/commit/30904599e9421cc1bbe085e0ff71820316a4787c))
+* **edge:** production deploy — real-cert TLS, prod compose overlay, deploy runbook ([719977e](https://github.com/datascry/kitsune/commit/719977e7c27c969bf63c7d04fa795e14a6ef9309))
+* **harness:** expand the ethics allow-list with dedicated vendor/test endpoints ([a1c1e5c](https://github.com/datascry/kitsune/commit/a1c1e5c84bbbad534788f82baa09b4b4b142fb01))
+
+
+### Bug Fixes
+
+* **detector:** gate the behavioral layer on real human input ([8859752](https://github.com/datascry/kitsune/commit/885975234a16a6fa3d74740e6c8c3a1ec88f4d07))
+* **docs:** certbot one-shot needs --entrypoint certbot; gitignore .env ([1065bf8](https://github.com/datascry/kitsune/commit/1065bf8c9ae22438387c7979c1ab42dc745ea554))
+* **evaders:** bound PoW many-small count + annotate lab cert-skips (CodeQL) ([b6adb1b](https://github.com/datascry/kitsune/commit/b6adb1bf7f6088e228f63f95512250bb0aab67bd))
+
+
+### Reverts
+
+* **detector:** S1 pointer/touch CSS⇄JS rule — FP-unsafe (headful-grounded) ([3290747](https://github.com/datascry/kitsune/commit/3290747ead2df91fcaf9a5076b718c2bb9386801))
+
 ## [1.2.0](https://github.com/datascry/kitsune/compare/v1.1.0...v1.2.0) (2026-06-22)
 
 
