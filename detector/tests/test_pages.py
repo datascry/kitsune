@@ -62,6 +62,18 @@ def test_evader_descriptions_are_curated(client: TestClient) -> None:
     assert "patches the Gecko" in client.get("/evasions/camoufox-hardened").text
 
 
+def test_evasions_list_shows_every_config(client: TestClient) -> None:
+    # The list shows all matrix configs (combos + technique probes), not just the 22 fleet tools.
+    page = client.get("/evasions").text
+    assert "/evasions/zendriver-uach-behave" in page  # a mode combo, previously missing
+    assert "/evasions/canvas-lie" in page  # a standalone technique probe
+    # Every listed config carries a non-empty description (no boilerplate gaps).
+    from kitsune_detector.pages import _MODE_NOTES, evader_description
+
+    combo = evader_description("zendriver-uach-behave")
+    assert "successor to nodriver" in combo and _MODE_NOTES["uach-behave"] in combo
+
+
 def test_detection_drilldown_lists_caught_evaders(client: TestClient) -> None:
     d = client.get("/detections/br.headless_ua").text
     assert "Evaders it caught" in d and 'href="/evasions/' in d

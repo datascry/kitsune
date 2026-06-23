@@ -261,12 +261,14 @@ def create_app(
                     body = render_how_it_works_page()
                 elif slug == "research":
                     body = render_research_page()
+                elif slug == "evasions":
+                    body = render_evasions_page(evaders)  # all 96 configs, from the parsed matrix
                 else:
                     try:
                         text = (docs_dir / filename).read_text(encoding="utf-8")
                     except OSError as exc:
                         raise HTTPException(status_code=404, detail="doc unavailable") from exc
-                    body = render_matrix_page(text) if slug == "matrix" else render_evasions_page(text)
+                    body = render_matrix_page(text)
                 _doc_cache[slug] = render_doc_page(title, desc, f"/{slug}", body)
             return HTMLResponse(_doc_cache[slug])
 
