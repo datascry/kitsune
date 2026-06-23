@@ -5,6 +5,31 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.6.0](https://github.com/datascry/kitsune/compare/v1.5.0...v1.6.0) (2026-06-23)
+
+
+### Features
+
+* **collector:** catch Playwright's __playwright__binding__ automation global ([7fce633](https://github.com/datascry/kitsune/commit/7fce63363f9c3fd0e2f2ad6e7e22a166f1efccd5))
+* **detector:** add Oracle/DigitalOcean/Cloudflare/Fastly to the datacenter feed ([485e39b](https://github.com/datascry/kitsune/commit/485e39b3ffe823588fc07643d4f1de3512fd27d3))
+* **detector:** embed machine-readable verdict JSON in the live page ([66a4ccd](https://github.com/datascry/kitsune/commit/66a4ccd7b87ba9a7f6c3f2406bd15440073699e1))
+* **detector:** link main-page detections + uplevel the evader drill-downs ([2a4b457](https://github.com/datascry/kitsune/commit/2a4b457bcf01be88f20a8681137c251106a96f84))
+* **detector:** list all 96 evasion configs with real descriptions ([7f80f3b](https://github.com/datascry/kitsune/commit/7f80f3bf8c3f6756a2c3363a2bdf07e7157ed8ec))
+* **detector:** maximal SEO on every doc + drill-down page ([f628f39](https://github.com/datascry/kitsune/commit/f628f39fcfafabd48a266c4ca62e8d6a0f2cab0e))
+* **detector:** richer evader pages — real descriptions + tell titles ([0ed1ccb](https://github.com/datascry/kitsune/commit/0ed1ccb38e23759c79a4a687385242c8cffe5baa))
+* **detector:** serve /llms.txt for LLM agents ([268bae1](https://github.com/datascry/kitsune/commit/268bae1ac9c75c26411bfc3631b3b0076537e5c0))
+* verify declared crawlers via FCrDNS + make IP-rep data deployable ([57ddd7a](https://github.com/datascry/kitsune/commit/57ddd7a3c262eec3412ac560b08504bd52800bef))
+
+
+### Bug Fixes
+
+* clear three false positives that convicted real Safari ([d376175](https://github.com/datascry/kitsune/commit/d3761756ce13ec8522b6a2ceb079c448e9c72811))
+* **detector:** define --amber in doc CSS so suspicious badges render ([f391a96](https://github.com/datascry/kitsune/commit/f391a969b812b62278cbbc277db9301277b7832a))
+* **detector:** gate mouse-biomech floors off real mobile devices ([332cfcc](https://github.com/datascry/kitsune/commit/332cfcc9a82a0557b5249bb35643ff2e2193fc5f))
+* **detector:** harden the drill-down routes against reflected XSS ([87e8f57](https://github.com/datascry/kitsune/commit/87e8f57d9c77ffcf5b3c418cdfd4cbe9a03559ac))
+* **detector:** sanitize the evasion slug before it reaches SEO sinks ([f98fc65](https://github.com/datascry/kitsune/commit/f98fc65fd9229eec5005c87466a8eaadb6712057))
+* **docs:** correct the IP-rep refresh command (uv run, not bare python) ([5af181a](https://github.com/datascry/kitsune/commit/5af181a7f8390002db6143cc986d55f04b86c248))
+
 ## [1.5.0](https://github.com/datascry/kitsune/compare/v1.4.0...v1.5.0) (2026-06-23)
 
 
