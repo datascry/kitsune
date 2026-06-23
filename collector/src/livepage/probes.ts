@@ -1014,12 +1014,17 @@ export function armCollector(): LiveCollector {
       "__driver_evaluate",
     ];
     if (cdcKeys.some((k) => k in window || k in document)) put("browser", "cdc_artifacts", true);
+    // Automation-runtime globals no real browser exposes. __playwright__binding__ was added (G9 / rebrowser-
+    // bot-detector audit): a live Playwright page that uses addInitScript/exposeFunction installs it (confirmed
+    // on Playwright 1.48; FP-safe — a Playwright-internal name). The current Playwright no longer exposes the
+    // older __pwInitScripts, so that one is deliberately NOT added (would be ungrounded).
     const autoGlobals = [
       "Buffer",
       "process",
       "global",
       "require",
       "__playwright__",
+      "__playwright__binding__",
       "__pw_manual",
       "__puppeteer_evaluation_script__",
       "__puppeteer__",

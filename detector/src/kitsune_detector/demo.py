@@ -1943,8 +1943,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // --- v0.47.0: detections mined from the survey (docs/landscape.md). ---
     // FingerprintJS BotD / bot.sannysoft.com: Electron/Node globals, Playwright/Puppeteer hooks, and
     // webdriver attributes on documentElement — none of which a real browser on this (own) page exposes.
-    var autoGlobals = ["Buffer", "process", "global", "require", "__playwright__", "__pw_manual",
-      "__puppeteer_evaluation_script__", "__puppeteer__", "_playwright", "fmget_targets"];
+    var autoGlobals = ["Buffer", "process", "global", "require", "__playwright__", "__playwright__binding__",
+      "__pw_manual", "__puppeteer_evaluation_script__", "__puppeteer__", "_playwright", "fmget_targets"];
     var autoHit = autoGlobals.some(function (k) { return k in window; });
     try {
       var de = document.documentElement;
