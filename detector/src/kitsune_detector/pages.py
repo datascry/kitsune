@@ -10,10 +10,20 @@ the live page's forensic aesthetic, navigation, and SEO scaffolding (title/descr
 from __future__ import annotations
 
 import html
+import json
 import re
 from typing import Any
 
 SITE_ORIGIN = "https://kitsune.id"
+
+#: Human names for URL path segments, for breadcrumbs + page titles in structured data.
+_SECTION_NAMES: dict[str, str] = {
+    "matrix": "Detection matrix",
+    "evasions": "Evasion catalog",
+    "detections": "Detection catalog",
+    "how-it-works": "How it works",
+    "research": "Research",
+}
 
 #: Top-nav links shared across the doc pages (and mirrored in the live page's nav).
 NAV_LINKS: list[tuple[str, str]] = [
@@ -109,8 +119,103 @@ def _nav() -> str:
     return f'<nav class="top"><a class="brand" href="/">Kitsune</a>{links}<span class="spacer"></span></nav>'
 
 
-def render_doc_page(title: str, description: str, canonical_path: str, body_html: str, noindex: bool = False) -> str:
-    """Wrap ``body_html`` in the shared shell with per-page SEO head (noindex for thin pages)."""
+#: Image dimensions of the shared OG card (static/og.png) — declared so crawlers don't have to fetch it.
+_OG_W, _OG_H = "1200", "630"
+_OG_ALT = "Kitsune — a bot detection ⇄ evasion lab"
+
+
+def _breadcrumb(canonical_path: str, title: str) -> list[dict[str, Any]]:
+    """Home → section → page crumbs derived from the URL path (for a BreadcrumbList rich result)."""
+    crumbs = [("Home", "/")]
+    segs = [s for s in canonical_path.split("/") if s]
+    acc = ""
+    for i, seg in enumerate(segs):
+        acc += "/" + seg
+        name = title if i == len(segs) - 1 else _SECTION_NAMES.get(seg, seg)
+        crumbs.append((name, acc))
+    return [
+        {"@type": "ListItem", "position": i + 1, "name": name, "item": f"{SITE_ORIGIN}{path}"}
+        for i, (name, path) in enumerate(crumbs)
+    ]
+
+
+def _ld_json(
+    title: str,
+    description: str,
+    canonical_path: str,
+    page_type: str,
+    keywords: str | None,
+    extra: list[dict[str, Any]] | None,
+) -> str:
+    """A JSON-LD ``@graph`` (WebSite + Organization + this page + breadcrumb, plus any extra nodes).
+
+    Built with ``json.dumps`` (correct escaping) and a ``<`` → ``\\u003c`` pass so no field can close the
+    script tag. Gives every doc/drill-down page the structured data the main page already had.
+    """
+    url = f"{SITE_ORIGIN}{canonical_path}"
+    org = {
+        "@type": "Organization",
+        "@id": f"{SITE_ORIGIN}/#org",
+        "name": "Kitsune",
+        "url": f"{SITE_ORIGIN}/",
+        "logo": {"@type": "ImageObject", "url": f"{SITE_ORIGIN}/icon-512.png"},
+        "sameAs": ["https://github.com/datascry/kitsune"],
+    }
+    website = {
+        "@type": "WebSite",
+        "@id": f"{SITE_ORIGIN}/#website",
+        "url": f"{SITE_ORIGIN}/",
+        "name": "Kitsune",
+        "description": "A bot detection ⇄ evasion lab: cross-layer fingerprint, TLS/JA4, HTTP-2, QUIC, "
+        "TCP/IP and behavioral bot detection.",
+        "publisher": {"@id": f"{SITE_ORIGIN}/#org"},
+        "inLanguage": "en-US",
+    }
+    image = {
+        "@type": "ImageObject",
+        "url": f"{SITE_ORIGIN}/og.png",
+        "width": _OG_W,
+        "height": _OG_H,
+    }
+    page: dict[str, Any] = {
+        "@type": page_type,
+        "@id": f"{url}#webpage",
+        "url": url,
+        "name": f"{title} — Kitsune",
+        "description": description,
+        "isPartOf": {"@id": f"{SITE_ORIGIN}/#website"},
+        "publisher": {"@id": f"{SITE_ORIGIN}/#org"},
+        "primaryImageOfPage": image,
+        "inLanguage": "en-US",
+        "breadcrumb": {"@id": f"{url}#breadcrumb"},
+    }
+    if keywords:
+        page["keywords"] = keywords
+    breadcrumb = {
+        "@type": "BreadcrumbList",
+        "@id": f"{url}#breadcrumb",
+        "itemListElement": _breadcrumb(canonical_path, title),
+    }
+    graph = {"@context": "https://schema.org", "@graph": [org, website, page, breadcrumb, *(extra or [])]}
+    payload = json.dumps(graph, ensure_ascii=False).replace("<", "\\u003c")
+    return f'<script type="application/ld+json">{payload}</script>'
+
+
+def render_doc_page(
+    title: str,
+    description: str,
+    canonical_path: str,
+    body_html: str,
+    noindex: bool = False,
+    page_type: str = "WebPage",
+    keywords: str | None = None,
+    extra_ld: list[dict[str, Any]] | None = None,
+) -> str:
+    """Wrap ``body_html`` in the shared shell with a full per-page SEO head (noindex for thin pages).
+
+    ``page_type`` sets the JSON-LD type (WebPage / CollectionPage / TechArticle); ``keywords`` and
+    ``extra_ld`` enrich the structured data for catalog and drill-down pages.
+    """
     t, d = _esc(title), _esc(description)
     # Escape the canonical/OG url: canonical_path can carry a path param (drill-down slug/rule id), so
     # treat it as untrusted before it lands in an href/content attribute.
@@ -121,16 +226,26 @@ def render_doc_page(title: str, description: str, canonical_path: str, body_html
         '<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         f"<title>{t} — Kitsune</title>"
         f'<meta name="description" content="{d}">'
+        '<meta name="author" content="Kitsune">'
         f'<link rel="canonical" href="{url}">'
-        f'<meta name="robots" content="{robots}"><meta name="theme-color" content="#0a0a0c">'
-        f'<meta property="og:type" content="article"><meta property="og:title" content="{t} — Kitsune">'
+        f'<meta name="robots" content="{robots}">'
+        '<meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1">'
+        '<meta name="theme-color" content="#0a0a0c">'
+        '<meta property="og:type" content="article"><meta property="og:site_name" content="Kitsune">'
+        '<meta property="og:locale" content="en_US">'
+        f'<meta property="og:title" content="{t} — Kitsune">'
         f'<meta property="og:description" content="{d}"><meta property="og:url" content="{url}">'
         f'<meta property="og:image" content="{SITE_ORIGIN}/og.png">'
+        f'<meta property="og:image:width" content="{_OG_W}"><meta property="og:image:height" content="{_OG_H}">'
+        f'<meta property="og:image:alt" content="{_esc(_OG_ALT)}">'
         '<meta name="twitter:card" content="summary_large_image">'
         f'<meta name="twitter:title" content="{t} — Kitsune"><meta name="twitter:description" content="{d}">'
+        f'<meta name="twitter:image" content="{SITE_ORIGIN}/og.png">'
+        f'<meta name="twitter:image:alt" content="{_esc(_OG_ALT)}">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         '<link rel="icon" href="/favicon.ico" sizes="any">'
         '<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">'
+        f"{_ld_json(title, description, canonical_path, page_type, keywords, extra_ld)}"
         f"<style>{DOC_CSS}</style></head><body>{_nav()}"
         f'<main class="doc">{body_html}</main>'
         '<footer><p>The blue-team side of a <a href="https://github.com/datascry/kitsune">bot detection ⇄ '

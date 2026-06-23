@@ -89,6 +89,11 @@ def _fnv1a(s: str) -> str:
 
 #: Canonical public origin — used for robots/sitemap absolute URLs and the page's canonical/OG tags.
 SITE_ORIGIN = "https://kitsune.id"
+#: Base keyword set woven into every doc page's structured data (each page appends its own specifics).
+SEO_KEYWORDS = (
+    "bot detection, browser fingerprinting, antidetect browser, TLS JA3 JA4, HTTP/2 fingerprint, "
+    "QUIC fingerprint, TCP/IP fingerprint, automation detection, headless browser detection"
+)
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -250,26 +255,57 @@ def create_app(
         techniques = parse_techniques(_ecat)  # full tell lists + EVADES status
         rule_evaders = reverse_index(techniques)  # rule_id -> evaders it caught
 
+    def _item_list(slugs: list[str], prefix: str, name: str) -> list[dict[str, object]]:
+        """A schema.org ItemList of drill-down links — lets crawlers see the catalog's members."""
+        return [
+            {
+                "@type": "ItemList",
+                "name": name,
+                "numberOfItems": len(slugs),
+                "itemListElement": [
+                    {"@type": "ListItem", "position": i + 1, "url": f"{SITE_ORIGIN}{prefix}{s}", "name": s}
+                    for i, s in enumerate(slugs)
+                ],
+            }
+        ]
+
     def _make_doc_route(slug: str, filename: str, title: str, desc: str) -> Callable[[], HTMLResponse]:
         def doc_page() -> HTMLResponse:
             if slug not in _doc_cache:
                 # Every page is a curated, mobile-first view. detections/how-it-works/research are built
                 # from data or hand-authored copy; matrix/evasions parse their committed doc's key table.
+                page_type, extra_ld = "WebPage", None
+                keywords = SEO_KEYWORDS
                 if slug == "detections":
                     body = render_detections_page(rules_list)
+                    page_type = "CollectionPage"
+                    keywords = f"{SEO_KEYWORDS}, detection rules, coherence engine"
+                    extra_ld = _item_list([str(r["id"]) for r in rules_list], "/detections/", "Kitsune detection rules")
                 elif slug == "how-it-works":
                     body = render_how_it_works_page()
+                    page_type = "TechArticle"
+                    keywords = f"{SEO_KEYWORDS}, cross-layer coherence, architecture"
                 elif slug == "research":
                     body = render_research_page()
+                    page_type = "TechArticle"
+                    keywords = f"{SEO_KEYWORDS}, arms-race findings, research"
                 elif slug == "evasions":
                     body = render_evasions_page(evaders)  # all 96 configs, from the parsed matrix
+                    page_type = "CollectionPage"
+                    keywords = f"{SEO_KEYWORDS}, anti-detect tools, stealth browsers"
+                    extra_ld = _item_list(sorted(evaders), "/evasions/", "Kitsune evasion catalog")
                 else:
                     try:
                         text = (docs_dir / filename).read_text(encoding="utf-8")
                     except OSError as exc:
                         raise HTTPException(status_code=404, detail="doc unavailable") from exc
                     body = render_matrix_page(text)
-                _doc_cache[slug] = render_doc_page(title, desc, f"/{slug}", body)
+                    page_type = "CollectionPage"
+                    keywords = f"{SEO_KEYWORDS}, coverage matrix"
+                    extra_ld = _item_list(sorted(evaders), "/evasions/", "Kitsune detection matrix")
+                _doc_cache[slug] = render_doc_page(
+                    title, desc, f"/{slug}", body, page_type=page_type, keywords=keywords, extra_ld=extra_ld
+                )
             return HTMLResponse(_doc_cache[slug])
 
         return doc_page
@@ -292,7 +328,12 @@ def create_app(
         title = str(rule.get("title") or rid)
         desc = f"{title} — a Kitsune cross-layer bot-detection check."
         noindex = not rule.get("source")  # thin (no provenance) -> keep out of the index
-        return HTMLResponse(render_doc_page(title, desc, f"/detections/{rid}", body or "", noindex))
+        kw = f"{SEO_KEYWORDS}, {rid}, {rule.get('category', '')} detection"
+        return HTMLResponse(
+            render_doc_page(
+                title, desc, f"/detections/{rid}", body or "", noindex, page_type="TechArticle", keywords=kw
+            )
+        )
 
     @app.get("/evasions/{slug}", response_class=HTMLResponse, include_in_schema=False)
     def evasion_detail(slug: str) -> HTMLResponse:
@@ -300,7 +341,10 @@ def create_app(
         if body is None:
             raise HTTPException(status_code=404, detail="no such evader")
         desc = f"Is {slug} detectable? Kitsune's verdict and the tells that caught it."
-        return HTMLResponse(render_doc_page(slug, desc, f"/evasions/{slug}", body))
+        kw = f"{SEO_KEYWORDS}, {slug}, anti-detect, evasion"
+        return HTMLResponse(
+            render_doc_page(slug, desc, f"/evasions/{slug}", body, page_type="TechArticle", keywords=kw)
+        )
 
     @app.get("/inspect/{session_id}")
     def inspect(session_id: str, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
