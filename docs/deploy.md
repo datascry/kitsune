@@ -104,16 +104,18 @@ files (the prod overlay mounts it at `/iprep` read-only and sets `KITSUNE_IPREP_
 empty, the detector falls back to the in-image seed per file — purely additive, never a crash.
 
 ```sh
-# Generate the lists (Tor exits + AWS/GCP ranges + X4BNet VPN/datacenter, ~50k+ CIDRs). Run it inside a
-# detector container so you don't need a local Python toolchain; write into the mounted /iprep. The image
-# runs through `uv run` (the package lives in a uv venv — bare `python` won't find it), and `--build`
-# ensures the image carries the KITSUNE_IPREP_DIR support:
+# Generate the lists (Tor + AWS/GCP/Oracle/DigitalOcean/Cloudflare/Fastly + X4BNet, ~60k+ CIDRs). Run it
+# inside a detector container so you don't need a local Python toolchain. The image runs through `uv run`
+# (the package lives in a uv venv — bare `python` won't find it), and `--build` ensures the image carries
+# the KITSUNE_IPREP_DIR support. IMPORTANT: write to a SEPARATE read-WRITE target (/out) — the detector
+# service mounts ./iprep at /iprep READ-ONLY, so the refresher cannot write there directly. Both /out and
+# the detector's /iprep point at the same host ./iprep dir.
 mkdir -p iprep
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build \
-  -v "$PWD/iprep:/iprep" -e KITSUNE_IPREP_DIR=/iprep \
+  -v "$PWD/iprep:/out" -e KITSUNE_IPREP_DIR=/out \
   detector uv run python -m kitsune_detector.ip_reputation_refresh
-#   -> wrote /iprep/proxy_exit_cidrs.txt (…)   /iprep/datacenter_cidrs.txt (…)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # picks up the lists
+#   -> wrote /out/proxy_exit_cidrs.txt (…)   /out/datacenter_cidrs.txt (…)   (= host ./iprep/…)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # reads ./iprep at /iprep:ro
 ```
 
 - **Refresh monthly** (the lists drift): a cron that re-runs the generate step + restarts the detector.
@@ -121,7 +123,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector  
   ```sh
   # /etc/cron.monthly/kitsune-iprep
   cd /path/to/kitsune && docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm \
-    -v "$PWD/iprep:/iprep" -e KITSUNE_IPREP_DIR=/iprep \
+    -v "$PWD/iprep:/out" -e KITSUNE_IPREP_DIR=/out \
     detector uv run python -m kitsune_detector.ip_reputation_refresh \
     && docker compose -f docker-compose.yml -f docker-compose.prod.yml restart detector
   ```
