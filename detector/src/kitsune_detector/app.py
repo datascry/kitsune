@@ -108,9 +108,18 @@ LLMS_TXT = """# Kitsune
 
 ## Live tool
 - [Bot-detection & fingerprint test](https://kitsune.id/): fingerprints this browser and returns a live
-  verdict (human / suspicious / bot). The machine-readable verdict is embedded in the page as JSON at
-  `#ks-verdict` and on `window.ksResult` (plus a `kitsune:result` DOM event): label, score,
-  incoherence_score, layer_scores and the contradictions that fired.
+  verdict (human / suspicious / bot) across every layer.
+
+## Get the result as JSON (programmatic access)
+- In the live page: after scoring, the full verdict is embedded as JSON in the
+  `<script type="application/json" id="ks-verdict">` tag and mirrored on `window.ksResult` (a
+  `kitsune:result` DOM event also fires). It starts as `{"status":"collecting"}`; poll until `status`
+  is `"complete"`. Fields: `status`, `label`, `score`, `incoherence_score`, `layer_scores`,
+  `contradictions[]` (rule_id, category, weight, detail), `session_id`, and a `wire` block
+  (`ja3`, `ja4`, `h2`, `tcp_os`, `quic`, `ip`, `geo`).
+- `POST https://kitsune.id/ingest`: send collector signal envelopes; the response is the same verdict JSON.
+- [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry
+  (rule id, title, layers, category, and whether each rule can convict).
 
 ## Documentation
 - [How it works](https://kitsune.id/how-it-works): the cross-layer incoherence thesis and the signal layers.
@@ -118,10 +127,6 @@ LLMS_TXT = """# Kitsune
 - [Evasion catalog](https://kitsune.id/evasions): every anti-detect tool and technique tested, with verdicts.
 - [Coverage matrix](https://kitsune.id/matrix): every detection rule x every evader.
 - [Research](https://kitsune.id/research): findings from the detection-vs-evasion arms race.
-
-## API
-- [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry.
-- POST https://kitsune.id/ingest: accepts collector signal envelopes and returns the verdict JSON.
 
 ## Source
 - [Source on GitHub](https://github.com/datascry/kitsune): MIT — detector, edge, collector, evader fleet.
