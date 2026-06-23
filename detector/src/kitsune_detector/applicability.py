@@ -47,6 +47,23 @@ _PRIVACY_FARBLING = frozenset(
     }
 )
 
+# The mouse-biomech behavioral FLOORS — calibrated on mouse-on-desktop corpora (Balabit, SapiMouse). On a
+# REAL mobile device the collector still derives them from touch-driven pointermove events, but a finger
+# swipe is near-straight, constant-velocity, has no hardware coalescing, and yields a short power-law
+# sample — so these floors false-positive on a real phone (capped at suspicious by the conviction gate, but
+# still a precision hit). They are dropped for a session that GENUINELY identifies as mobile
+# (browser.is_mobile: a mobile UA token AND maxTouchPoints>0). trace_replay stays active (device-agnostic,
+# convicting), as does the keystroke floor (keyboard, not mouse). G10 — mobile-vs-desktop analysis 2026-06-23.
+_MOBILE_BIOMECH_NA = frozenset(
+    {
+        "bh.input_entropy_floor",
+        "bh.power_law_violation",
+        "bh.path_too_straight",
+        "bh.uniform_velocity",
+        "bh.synthetic_no_coalesced",
+    }
+)
+
 
 def _privacy_browser(session: Session) -> str | None:
     """Name the privacy browser the session GENUINELY identifies as, or ``None``.
@@ -77,6 +94,8 @@ def not_applicable(rule_id: str, session: Session) -> str | None:
     # emits that format), so the rule is dropped only for the Gecko engine that legitimately produces it.
     if rule_id == "br.webgl_renderer_artifact" and session.value(Layer.browser, "ua_engine") == "firefox":
         return "Firefox generalises the WebGL renderer string ('…, or similar') by design — a privacy feature"
+    if rule_id in _MOBILE_BIOMECH_NA and session.value(Layer.browser, "is_mobile") is True:
+        return "mouse-biomechanics floors do not apply to a touch device — calibrated on mouse-on-desktop only"
     return None
 
 
@@ -84,6 +103,7 @@ def filter_applicable(contradictions: list[Contradiction], session: Session) -> 
     """Drop the contradictions that are not applicable to this session's identified browser."""
     no_brave = session.value(Layer.browser, "is_brave") is MISSING
     no_rfp = session.value(Layer.browser, "rfp_browser") is MISSING
-    if no_brave and no_rfp and session.value(Layer.browser, "ua_engine") != "firefox":
-        return contradictions  # fast path: no privacy-browser / Gecko context to apply
+    no_mobile = session.value(Layer.browser, "is_mobile") is not True
+    if no_brave and no_rfp and no_mobile and session.value(Layer.browser, "ua_engine") != "firefox":
+        return contradictions  # fast path: no privacy-browser / Gecko / mobile context to apply
     return [c for c in contradictions if not_applicable(c.rule_id, session) is None]

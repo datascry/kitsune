@@ -1885,6 +1885,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // a phone UA but no Emulation.setTouchEmulation). Scoped to the Mobile/iPhone/iPad tokens, NOT bare
     // "Android" (which also matches touch-less Android TV / Auto). Complements maxtouch_desktop (the inverse).
     if ((navigator.maxTouchPoints || 0) === 0 && /iPhone|iPad|iPod|Mobile/i.test(ua)) sigs.push(S("browser", "mobile_no_touch", true));
+    // Genuine mobile device = a mobile UA token AND real touch. The detector gates the mouse-biomech
+    // behavioral FLOORS off for these (power-law / straightness / velocity-CV / mouse-entropy / coalesced-
+    // absent are mouse-calibrated and false-positive on a real finger swipe — G10). NOT set for a mobile UA
+    // without touch (that is mobile_no_touch, a desktop faker). trace_replay stays active (device-agnostic).
+    if (navigator.maxTouchPoints > 0 && /Mobile|Android|iPhone|iPad/i.test(ua)) sigs.push(S("browser", "is_mobile", true));
     if (!isMobileEnv && navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
     if (isChromium && typeof navigator.deviceMemory === "undefined") sigs.push(S("browser", "chrome_no_devicememory", true));
     try { if (window.Notification && Notification.permission === "denied") sigs.push(S("browser", "notification_denied", true)); } catch (e) {}

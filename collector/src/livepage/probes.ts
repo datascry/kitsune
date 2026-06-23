@@ -1116,6 +1116,11 @@ export function armCollector(): LiveCollector {
       // demo.py; scoped off bare "Android" (touch-less Android TV). FP-safe: real mobile reports >0 (iOS=5).
       if ((navigator.maxTouchPoints || 0) === 0 && /iPhone|iPad|iPod|Mobile/i.test(ua))
         put("browser", "mobile_no_touch", true);
+      // Genuine mobile device = mobile UA token AND real touch. The detector gates the mouse-biomech
+      // behavioral floors off for these (mouse-calibrated → FP on a real finger swipe; G10). NOT set for a
+      // mobile UA without touch (mobile_no_touch, a desktop faker). trace_replay stays active.
+      if (navigator.maxTouchPoints > 0 && /Mobile|Android|iPhone|iPad/i.test(ua))
+        put("browser", "is_mobile", true);
     } catch {
       /* ignore */
     }
