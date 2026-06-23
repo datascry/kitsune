@@ -5,6 +5,22 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.5.0](https://github.com/datascry/kitsune/compare/v1.4.0...v1.5.0) (2026-06-23)
+
+
+### Features
+
+* **detector:** concise customer-facing how-it-works + research pages ([5ba85da](https://github.com/datascry/kitsune/commit/5ba85dabeb905be49c310f74160e29fd96b75d46))
+* **detector:** drill-down pages for every detection + evader ([ec28149](https://github.com/datascry/kitsune/commit/ec281490ee5d2c5bed3dcbf41405a2ceb8bc3553))
+
+
+### Bug Fixes
+
+* **detector:** drop the filler hero stat panel ([420c2a9](https://github.com/datascry/kitsune/commit/420c2a98a18ace136a09eb934640143cfd4b7468))
+* **detector:** escape the canonical/OG url in the page shell (CodeQL) ([434cfea](https://github.com/datascry/kitsune/commit/434cfea6114fc3e6840233a0df61fc5a55521e74))
+* **detector:** make the verdict legible (audit follow-up) ([485c136](https://github.com/datascry/kitsune/commit/485c1361fc1554fa8f3b6d2ec2449bb93f98d844))
+* **detector:** show all behavioral metrics on mobile ([e6b293d](https://github.com/datascry/kitsune/commit/e6b293da399123f1bfdfbed11ea9f18f3514cb2d))
+
 ## [1.4.0](https://github.com/datascry/kitsune/compare/v1.3.0...v1.4.0) (2026-06-23)
 
 
