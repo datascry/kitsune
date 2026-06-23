@@ -120,6 +120,13 @@ func TestPrepareEmitsH2EngineUnknown(t *testing.T) {
 	if emits("", unknownH2) {
 		t.Error("non-browser UA must not emit h2_engine_unknown (gated on a browser UA)")
 	}
+	// Real Safari's on-wire h2 order is unverified (classified "unknown"); convicting an unknown order under
+	// a Safari UA false-positived every real Safari, so the emission carves Safari out (like the Firefox
+	// GREASE carve-out). A Safari-UA-faking bot is still caught by its JA4 mismatch + the no-JS tells.
+	const safariUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+	if emits(safariUA, unknownH2) {
+		t.Error("Safari UA + unknown h2 order must NOT emit h2_engine_unknown (real Safari is unfingerprintable here)")
+	}
 }
 
 func TestPrepareIDFailure(t *testing.T) {

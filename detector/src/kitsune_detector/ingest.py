@@ -258,6 +258,15 @@ def _annotate_trace_replay(behavioral: list[Signal]) -> None:
     hash recurs on >=2 distinct timestamps. FP-safe by construction (no real motion repeats byte-for-byte) and
     browserforge calibration carries no behavioral trace, so promotion cannot raise its legit-browser flag rate.
     """
+    # Tag each trace_hash by the PAGE-LOAD it came from, not the emission timestamp: the live collector
+    # re-posts the same unchanged trajectory several times within ONE load (the "Analyze" re-score, periodic
+    # flushes, a paused pointer), which under the old observed_at keying self-collided and false-positived a
+    # real human. The collector now stamps each load with a `load_nonce`; a hash only counts as replayed when
+    # it recurs under >=2 DISTINCT nonces. Falls back to observed_at for nonce-less inputs (older captures and
+    # the evader fixtures, whose separate loads already carry distinct timestamps).
+    # Pair each trace_hash with the load_nonce emitted in the SAME post (same observed_at); the merged
+    # history spans several posts/loads, so a single nonce would mis-tag. Falls back to the timestamp itself.
+    nonce_at = {s.observed_at: s.value for s in behavioral if s.kind == "load_nonce" and isinstance(s.value, str)}
     seen: dict[str, set[str]] = {}
     for s in behavioral:
         if s.kind == "trace_seen" and isinstance(s.value, dict):
@@ -265,7 +274,7 @@ def _annotate_trace_replay(behavioral: list[Signal]) -> None:
                 if isinstance(ts, list):
                     seen.setdefault(h, set()).update(str(t) for t in ts)
         elif s.kind == "trace_hash" and isinstance(s.value, str):
-            seen.setdefault(s.value, set()).add(s.observed_at.isoformat())
+            seen.setdefault(s.value, set()).add(nonce_at.get(s.observed_at) or s.observed_at.isoformat())
     if not seen:
         return
     ref = next(s for s in behavioral if s.kind in ("trace_hash", "trace_seen"))

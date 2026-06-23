@@ -141,8 +141,8 @@ rules:
     weight: 0.6
     status: active
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Every real browser sends a recognised h2 pseudo-header order (Chrome m,a,s,p; Firefox m,p,a,s; Safari m,s,p,a); a Go/Python http2 client — or a browser fronted by a non-browser h2 proxy — under a browser UA does not. The h2 analog of tls_no_grease, and a second network-layer tell beyond no_js_execution. Closes the gap where net.h2_vs_ua_browser stays silent on an *unrecognised* (not merely mismatched) h2 engine."
+    last_validated: "2026-06-23"
+    source: "Chrome (m,a,s,p) and Firefox (m,p,a,s) send a POSITIVELY-identified h2 pseudo-header order; a Go/Python http2 client — or a browser fronted by a non-browser h2 proxy — under a Chrome/Firefox UA does not. The h2 analog of tls_no_grease, and a second network-layer tell beyond no_js_execution. Closes the gap where net.h2_vs_ua_browser stays silent on an *unrecognised* (not merely mismatched) h2 engine. v0.74.x FP FIX: emission (edge uaHasKnownH2Order) now EXCLUDES Safari UAs — real macOS/iOS Safari's on-wire order is unverified (the old m,s,p,a 'safari' seed was a guess; real Safari emits the generic m,s,a,p the table keeps 'unknown'), so 'unknown h2 under a Safari UA' is the edge's blind spot, not a contradiction, and convicting it false-positived EVERY real Safari. A Safari-UA-faking bot is still caught by its JA4 mismatch + the no-JS/Sec-Fetch/Accept-Encoding tells, so the carve-out loses no grounded coverage (mirrors the Firefox GREASE carve-out)."
 
   - id: net.h2_header_order_vs_ua
     title: Chromium UA but the HTTP/2 regular-header order is not chromium-shaped (JA4H)
@@ -1302,7 +1302,7 @@ rules:
     category: artifact
     added: "2026-06-19"
     last_validated: "2026-06-19"
-    source: "On a real engine getBoundingClientRect is deterministic (two reads of an unchanged element are identical — pages depend on it) and a single-rect element's getClientRects()[0] equals it (verified on Chrome 136). A per-call DOMRect-noise shim breaks determinism; a tool hooking one geometry path but not the other breaks consistency. FP-safe: determinism is a hard invariant no real browser (incl. farblers, which use stable per-session offsets) violates. Ref CreepJS domrect. v0.74.22 FIRST LIVE POSITIVE: the new stealth DOMRECT_SPOOF=1 evader (adds per-call sub-pixel noise to getBoundingClientRect) tripped it through the live edge+detector; previously unexercised (constraint-#6 liability resolved). NEGATIVE: a plain STEALTH=1 run does NOT trip it, and zero of the 53 committed real/fleet captures do."
+    source: "On a real engine getBoundingClientRect is DETERMINISTIC: two reads of an unchanged element are byte-identical (pages depend on it). A per-call DOMRect-noise shim breaks that. FP-safe: determinism is a hard invariant no real browser (incl. farblers, which use stable per-session offsets) violates. Ref CreepJS domrect. v0.74.22 FIRST LIVE POSITIVE: the stealth DOMRECT_SPOOF=1 evader (per-call sub-pixel noise on getBoundingClientRect) tripped it through the live edge+detector. NEGATIVE: a plain STEALTH=1 run does NOT trip it, and zero of the committed real/fleet captures do. v0.74.x FP FIX: the second arm — getClientRects()[0] == getBoundingClientRect() consistency at 1e-6 — was REMOVED. It false-positived real Safari on Retina (devicePixelRatio>=2 rounds the two geometry paths to sub-pixel-different values, a legitimate engine difference, not a shim), and no evader ever exercised it (DOMRECT_SPOOF trips determinism, not consistency), so dropping it loses no grounded coverage while clearing the Safari FP."
 
   - id: br.measuretext_offscreen_vs
     title: Canvas measureText differs between main and OffscreenCanvas — main-thread font hook

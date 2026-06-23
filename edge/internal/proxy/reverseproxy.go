@@ -105,7 +105,7 @@ func prepare(
 		// http2 client — or a browser fronted by a non-browser h2 proxy — does not. This is the h2 analog
 		// of tls_no_grease: a browser UA over a non-browser stack, and a second network-layer tell beyond
 		// no_js_execution (which only fires when no JS ran at all).
-		if h2fp.Browser() == "unknown" && isModernBrowserUA(r.Header.Get("User-Agent")) {
+		if h2fp.Browser() == "unknown" && uaHasKnownH2Order(r.Header.Get("User-Agent")) {
 			out.signals = append(out.signals, signal.Network(out.sessionID, "h2_engine_unknown", true, now))
 		}
 		// JA4H header-order tell: a UA claiming Chromium whose regular header order is not chromium-shaped
@@ -306,6 +306,18 @@ func clientIP(r *http.Request) string {
 func isModernBrowserUA(ua string) bool {
 	return strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Firefox/") ||
 		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
+}
+
+// uaHasKnownH2Order reports whether the UA's engine has a POSITIVELY-identified HTTP/2 pseudo-header order
+// in H2Fingerprint.Browser — Chromium (m,a,s,p) and Firefox (m,p,a,s). Safari/WebKit is deliberately
+// EXCLUDED: real macOS/iOS Safari's on-wire order is unverified (the m,s,p,a seed is a guess, and real
+// Safari emits the generic m,s,a,p which the FP-safe table keeps "unknown"), so an "unknown" h2 under a
+// Safari UA is our own blind spot, NOT a contradiction. Convicting it false-positived every real Safari
+// (h2_engine_unknown → net.h2_unknown_vs_ua). A non-browser stack faking a Safari UA is still caught by its
+// JA4 engine mismatch (net.tls_vs_ua_browser) and the no-JS / Sec-Fetch / Accept-Encoding tells, so excluding
+// Safari here loses no grounded coverage while removing the FP. Mirrors the Firefox carve-out in GREASE.
+func uaHasKnownH2Order(ua string) bool {
+	return strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Edg/") || strings.Contains(ua, "Firefox/")
 }
 
 // uaGreasesHandshake reports whether the UA's ENGINE injects GREASE (RFC 8701) into its TLS/QUIC ClientHello
