@@ -47,6 +47,19 @@ def test_evasion_drilldown(client: TestClient) -> None:
     assert client.get("/evasions/nope-not-real").status_code == 404
 
 
+def test_evasion_drilldown_is_rich(client: TestClient) -> None:
+    # Full convicting-tell list (not truncated) linking to detections.
+    ev = client.get("/evasions/accept-lang-spoof").text
+    assert ev.count('href="/detections/') >= 5
+    # Frontier evaders get an EVADES callout.
+    assert "evades conviction" in client.get("/evasions/camoufox-hardened").text
+
+
+def test_detection_drilldown_lists_caught_evaders(client: TestClient) -> None:
+    d = client.get("/detections/br.headless_ua").text
+    assert "Evaders it caught" in d and 'href="/evasions/' in d
+
+
 def test_sitemap_lists_drilldowns(client: TestClient) -> None:
     sm = client.get("/sitemap.xml").text
     assert "/detections/br." in sm and "/evasions/" in sm

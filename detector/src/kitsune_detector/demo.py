@@ -731,6 +731,7 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 .passed-toggle summary{color:var(--jade)}
 .passed-list{font-size:.74rem;color:var(--muted);columns:2;column-gap:2rem;margin:.3rem 0}
 .passed-list code{color:var(--jade)}
+.rule-link{text-decoration:none}.rule-link:hover code{text-decoration:underline}
 .surface.pending{border-top-color:var(--line)}
 .surface.pending .chip{color:var(--muted)}
 .surface.pending .sval{color:var(--muted)}
@@ -951,11 +952,12 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + '<span><span class="id-k">canvas</span> <b>' + esc(canvasHash()) + '</b></span>'
       + '<span><span class="id-k">full-stack id</span> <b title="browser \\u2295 wire \\u2014 needs the edge">pending edge</b></span>';
   }
+  function ruleLink(id) { return '<a class="rule-link" href="/detections/' + encodeURIComponent(id) + '"><code>' + esc(id) + '</code></a>'; }
   function renderDetections(firedMap, firedCount) {
     if (!KS_RULES || !KS_RULES.rules) {
       if (!firedCount) return '<div class="na"><p>No convicting signals \\u2014 consistent with a real browser.</p></div>';
       var fh = '<table class="detections"><tr><th>signal</th><th>category</th><th>weight</th><th>why</th></tr>';
-      for (var fid in firedMap) { if (firedMap.hasOwnProperty(fid)) { var fc = firedMap[fid]; fh += '<tr class="' + (KS_CONVICTING[fc.category] ? "fired" : "clear") + '"><td class="mark"><code>' + esc(fid) + '</code></td><td>' + esc(fc.category) + '</td><td class="weight">' + ((typeof fc.weight === "number") ? fc.weight.toFixed(2) : "") + '</td><td class="title">' + esc(fc.detail) + '</td></tr>'; } }
+      for (var fid in firedMap) { if (firedMap.hasOwnProperty(fid)) { var fc = firedMap[fid]; fh += '<tr class="' + (KS_CONVICTING[fc.category] ? "fired" : "clear") + '"><td class="mark">' + ruleLink(fid) + '</td><td>' + esc(fc.category) + '</td><td class="weight">' + ((typeof fc.weight === "number") ? fc.weight.toFixed(2) : "") + '</td><td class="title">' + esc(fc.detail) + '</td></tr>'; } }
       return fh + '</table>';
     }
     var LAYERS = ["network", "browser", "behavioral", "reputation"], groups = { cross: [] }, rules = KS_RULES.rules, gi, k;
@@ -967,13 +969,13 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       var rows = "", passed = [], nFired = 0;
       for (k = 0; k < grp.length; k++) {
         var ru = grp[k], c = firedMap[ru.id];
-        if (c) { nFired++; rows += '<tr class="' + (KS_CONVICTING[c.category] ? "fired" : "clear") + '"><td class="mark"><code>' + esc(ru.id) + '</code></td><td>' + esc(c.category) + '</td><td class="weight">' + ((typeof c.weight === "number") ? c.weight.toFixed(2) : "") + '</td><td class="title">' + esc(c.detail) + '</td></tr>'; }
+        if (c) { nFired++; rows += '<tr class="' + (KS_CONVICTING[c.category] ? "fired" : "clear") + '"><td class="mark">' + ruleLink(ru.id) + '</td><td>' + esc(c.category) + '</td><td class="weight">' + ((typeof c.weight === "number") ? c.weight.toFixed(2) : "") + '</td><td class="title">' + esc(c.detail) + '</td></tr>'; }
         else passed.push(ru.id);
       }
       var title = key === "cross" ? "cross-layer" : key;
       out += '<div class="layer-group"><div class="lg-head">' + esc(title) + ' <span class="lg-fired">' + nFired + ' fired</span> <span>\\u00b7 ' + passed.length + ' passed</span></div>';
       out += rows ? ('<table class="detections"><tr><th>signal</th><th>category</th><th>weight</th><th>why</th></tr>' + rows + '</table>') : '<p class="note">none fired</p>';
-      if (passed.length) { var pl = passed.map(function (x) { return '<code>' + esc(x) + '</code>'; }).join(" "); out += '<details class="passed-toggle"><summary>' + passed.length + ' checks passed</summary><div class="passed-list">' + pl + '</div></details>'; }
+      if (passed.length) { var pl = passed.map(function (x) { return ruleLink(x); }).join(" "); out += '<details class="passed-toggle"><summary>' + passed.length + ' checks passed</summary><div class="passed-list">' + pl + '</div></details>'; }
       out += '</div>';
     }
     return out;
@@ -993,7 +995,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var nc = d.network_contradictions || [];
     if (nc.length) {
       html += '<p class="note">' + nc.length + ' network/reputation signal(s) fired:</p><table class="detections"><tr><th>signal</th><th>category</th><th>why</th></tr>';
-      for (var i = 0; i < nc.length; i++) { var c = nc[i]; html += '<tr class="' + (KS_CONVICTING[c.category] ? "fired" : "clear") + '"><td class="mark"><code>' + esc(c.rule_id) + '</code></td><td>' + esc(c.category) + '</td><td class="title">' + esc(c.detail) + '</td></tr>'; }
+      for (var i = 0; i < nc.length; i++) { var c = nc[i]; html += '<tr class="' + (KS_CONVICTING[c.category] ? "fired" : "clear") + '"><td class="mark">' + ruleLink(c.rule_id) + '</td><td>' + esc(c.category) + '</td><td class="title">' + esc(c.detail) + '</td></tr>'; }
       html += '</table>';
     }
     el.innerHTML = html;
