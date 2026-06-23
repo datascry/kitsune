@@ -1,5 +1,9 @@
 # Kitsune — a bot detection ⇄ evasion lab
 
+> **TL;DR** — Both sides of the bot-vs-human arms race in one repo: a cross-layer fingerprint +
+> behavioral **detector** (blue) and a fleet of real anti-detect **evaders** (red), scored against each
+> other. The thesis: **catch the contradiction across layers, not the signal.** [Try it live →](https://kitsune.id)
+
 [![ci](https://github.com/datascry/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/ci.yml)
 [![security](https://github.com/datascry/kitsune/actions/workflows/security.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/security.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -10,6 +14,11 @@
 </p>
 
 <p align="center"><strong><a href="https://kitsune.id">Try the live test → kitsune.id</a></strong></p>
+
+<p align="center">
+  <a href="https://kitsune.id"><img src="docs/img/verdict.png" alt="Kitsune's live verdict page catching a headless automation: a BOT verdict at 100% bot-likelihood, with the per-layer bars and the coherent feature-prediction" width="760" /></a>
+  <br /><sub>The live verdict, catching this capture's own headless browser — per-layer bars and the explainable tells.</sub>
+</p>
 
 Kitsune builds **both sides** of the bot-vs-human arms race in one repo — a fingerprint + behavioral
 **detector** (blue team) and a fleet of real anti-detect **evaders** (red team) — and runs them against
@@ -115,11 +124,8 @@ Each evader is a real anti-detect tool/technique; **Caught by** is the top convi
 |---|---|---|---|---|
 | `curl-impersonate` | `net.no_js_execution` | 0.60 | 0.90 | bot |
 | `nodriver` | `br.headless_ua` | 0.00 | 1.00 | bot |
-| `patchright` | `br.headless_ua` | 0.00 | 1.00 | bot |
 | `full-stealth` | `br.cdp_runtime_enabled` | 0.60 | 1.00 | bot |
-| `brave` | `br.webdriver_present` | 0.00 | 1.00 | bot |
 | `camoufox` | `net.tcp_os_vs_ua` | 0.84 | 1.00 | bot |
-| `fp-rotation` | `br.fingerprint_unstable_within_session` | 0.00 | 1.00 | bot |
 | `ios-ua-spoof` | `br.ch_he_headless` | 0.98 | 1.00 | bot |
 
 **Top evaders — the conviction-gate frontier (10).** These real tools defeat every *convicting* (coherence/automation/artifact) rule and trip only corroborating tells, so the gate holds them at `suspicious` — never `bot` on corroboration alone:
@@ -142,8 +148,8 @@ Each evader is a real anti-detect tool/technique; **Caught by** is the top convi
 ## What's novel — detections unique to Kitsune
 
 The field's pages (CreepJS, Sannysoft, pixelscan, …) are single-layer, client-side point-checks. Kitsune's
-edge is **incoherence across layers _and_ time, scored server-side** — see [`docs/detection-landscape.md`](docs/detection-landscape.md)
-for the full gap analysis. The genuinely novel or rare-in-the-field mechanisms:
+edge is **incoherence across layers _and_ time, scored server-side**. The three most differentiating
+mechanisms:
 
 - **Within-session temporal incoherence** — flags an *invariant* field that rotates under one session:
   TLS (`net.ja4_unstable_within_session`), origin (`net.ip_rotation_within_session`), browser fingerprint
@@ -156,18 +162,11 @@ for the full gap analysis. The genuinely novel or rare-in-the-field mechanisms:
 - **Worker-realm coherence ladder** (`br.worker_source_rewritten`, `br.worker_constructor_tampered`) —
   convicts worker-scope spoof injection by the blob-URL + constructor-identity round-trip, robust to the
   entire Proxy-over-native disguise ladder.
-- **Cross-layer wire⇄JS fusion in one session** — TLS JA3/JA4 ⇄ HTTP/2 (Akamai/JA4H) ⇄ QUIC/HTTP-3
-  (per-connection DCID attribution, [ADR-0005](docs/adr/0005-per-connection-quic-attribution.md)) ⇄ TCP/IP-OS
-  ⇄ JS, correlated server-side (`net.tcp_os_vs_ua`). The field's pages are single-layer; only Kitsune fuses
-  all four wire layers with the JS layer.
-- **Cloud-behind-residential-proxy** (`net.datacenter_origin_proxied`) — a datacenter WebRTC origin behind a
-  residential observed IP: the dominant commercial-scraping pattern (cloud VM + residential proxy) that
-  single-IP reputation misses.
-- **2/3-power-law biomechanics** (`bh.power_law_violation`) — the Lacquaniti velocity∝curvature law, grounded
-  against two independent human-mouse corpora (Balabit + SapiMouse).
 
-Every one was grounded the same way: confirm the evasion **EVADES** first (a purpose-built red-team mode —
-the Worker Proxy-fix, coalesced-event Proxy, fingerprint-rotation, residential-proxy fleet), then ship the
+The rest — four-wire-layer ⇄ JS fusion and 2/3-power-law biomechanics
+([`docs/detection-landscape.md`](docs/detection-landscape.md)), plus cloud-behind-residential-proxy
+([`docs/coordination-proxy.md`](docs/coordination-proxy.md)) — round out the gap analysis. Every one was
+grounded the same way: confirm the evasion **EVADES** first (a purpose-built red-team mode), then ship the
 detection only once it **CONVICTS** that evader and stays clean on the calibration FP gate.
 
 ## The structural frontiers
@@ -221,6 +220,11 @@ Go and Node aren't required locally — use Docker (`golang:1.26-alpine`, `node:
 - [Coverage matrix](docs/matrix.md) — every detector rule × every evader.
 - [Decision records](docs/adr) — MADR ADRs for the load-bearing decisions.
 - [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
+
+**Explore it live** (the same data, rendered + cross-linked at [kitsune.id](https://kitsune.id)):
+[Detections](https://kitsune.id/detections) · [Evasions](https://kitsune.id/evasions) ·
+[Matrix](https://kitsune.id/matrix) · [How it works](https://kitsune.id/how-it-works) ·
+[Research](https://kitsune.id/research)
 
 ## Ethics
 
