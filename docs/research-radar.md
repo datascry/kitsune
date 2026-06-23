@@ -224,3 +224,16 @@ terms before pulling).
   mobile/ISP proxy detection + malware-fuelled RESIP (the Proxy-Providers-List categories → X2/X3/X8);
   CAPTCHA-solver traffic patterns (solver services are orthogonal to per-session FP detection). Loop closes
   G8→G10 + adds the breadth evaders on subsequent ticks.
+- **2026-06-23 · arms-race loop tick 3 (closed G10 + missing-test audit)** — **G10 DONE** (mobile-biomech
+  applicability gate, merged). **Missing-detection-test audit**: scored the full corpus vs the 100 active
+  rules — 89 fire on a corpus evader, 11 do not (br.color_depth_anomaly, devicepixelratio_anomaly,
+  languages_empty, mobile_no_touch, platform_empty, rfp_browser, screen_zero, voice_os_vs_ua,
+  webgpu_vendor_vs_webgl, rep.datacenter_asn, rep.known_proxy_exit). **No missing-test gap**: all 11 already
+  have engine-level firing tests (detector/tests/test_engine.py parametrised cases) + unit tests (rep.* in
+  test_ip_reputation, rfp_browser in test_applicability). They are environment / degenerate-value / IP-rep
+  tells the EVADER FLEET doesn't happen to trip (it isn't stripped/datacenter-hosted), which is expected —
+  the corpus is the red-team ladder, not a coverage harness. No action; coverage is solid. **Next builds:**
+  G9 (rebrowser-bot-detector leak audit — exposeFunction-binding + sourceURL leaks beyond cdp_runtime_enabled;
+  groundable via a vanilla-Playwright positive vs patchright EVADES) and G8 (screen-coordinate coherence —
+  net-new surface; build CORROBORATING + fullscreen-gated for FP-safety, since CDP Input.dispatchMouseEvent
+  defaults screenX=clientX/screenY=clientY while a real windowed browser always has vertical chrome offset).
