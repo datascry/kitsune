@@ -3,6 +3,9 @@
 
 from __future__ import annotations
 
+import json
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -12,6 +15,45 @@ from kitsune_detector.app import DOC_PAGES, create_app
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(create_app())
+
+
+def _ld(html: str) -> dict[str, object]:
+    """Parse the page's JSON-LD @graph block (raises if absent or malformed)."""
+    m = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
+    assert m, "no JSON-LD on page"
+    return json.loads(m.group(1))
+
+
+@pytest.mark.parametrize("slug", list(DOC_PAGES))
+def test_doc_page_has_full_seo_head(client: TestClient, slug: str) -> None:
+    html = client.get(f"/{slug}").text
+    # Open Graph + Twitter completeness (site_name, locale, image dims/alt, explicit twitter:image).
+    for marker in (
+        'property="og:site_name" content="Kitsune"',
+        'property="og:locale" content="en_US"',
+        'property="og:image:width"',
+        'property="og:image:alt"',
+        'name="twitter:image"',
+        "max-image-preview:large",
+    ):
+        assert marker in html, f"{slug} missing {marker}"
+    # Structured data: a @graph with WebSite + Organization + breadcrumb.
+    graph = _ld(html)["@graph"]
+    types = {n.get("@type") for n in graph}  # type: ignore[union-attr]
+    assert {"WebSite", "Organization", "BreadcrumbList"} <= types
+
+
+def test_catalog_pages_emit_itemlist(client: TestClient) -> None:
+    # The catalog pages enumerate their drill-downs as a schema.org ItemList for crawlers.
+    for slug in ("evasions", "detections", "matrix"):
+        types = {n.get("@type") for n in _ld(client.get(f"/{slug}").text)["@graph"]}  # type: ignore[union-attr]
+        assert "ItemList" in types and "CollectionPage" in types
+
+
+def test_drilldown_pages_are_techarticles(client: TestClient) -> None:
+    for path in ("/evasions/nodriver", "/detections/br.canvas_lie"):
+        types = {n.get("@type") for n in _ld(client.get(path).text)["@graph"]}  # type: ignore[union-attr]
+        assert "TechArticle" in types and "BreadcrumbList" in types
 
 
 @pytest.mark.parametrize("slug", list(DOC_PAGES))
