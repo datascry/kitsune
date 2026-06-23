@@ -133,7 +133,14 @@ def test_rules_json(client: TestClient) -> None:
 
 def test_index_has_live_render_containers(client: TestClient) -> None:
     html = client.get("/").text
-    for marker in ('id="ks-coherence"', 'id="ks-predict"', 'id="ks-surfaces"', 'id="ks-fpid"'):
+    for marker in (
+        'id="ks-coherence"',
+        'id="ks-predict"',
+        'id="ks-surfaces"',
+        'id="ks-fpid"',
+        'id="ks-wire"',
+        'id="ks-detections"',
+    ):
         assert marker in html
 
 

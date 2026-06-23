@@ -752,27 +752,33 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 <section id="test">
   <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
   <p class="lead">Is your browser — or your stealth / antidetect setup — detectable? Kitsune fingerprints this browser across every layer and returns the <strong>real bot-detection verdict</strong>, live.</p>
-  <div id="ks-fpid" class="fpid">computing your fingerprint…</div>
   <div class="hero">
     <div class="hero-stat"><strong>7</strong><span>signal layers</span></div>
     <div class="hero-stat"><strong>live</strong><span>real detector verdict</span></div>
     <div class="hero-stat"><strong>wire+JS</strong><span>edge-correlated</span></div>
     <p class="hero-note">Network · browser · behavioral · reputation — scored together, then checked for cross-layer contradictions.</p>
   </div>
-  <div id="ks-coherence"></div>
+  <!-- HEADLINE: who you are + the verdict, together -->
+  <div id="ks-fpid" class="fpid">computing your fingerprint…</div>
   <h2>Detector verdict</h2>
   <p id="ks-status">collecting…</p><div id="ks-result"></div>
-  <div id="ks-wire"></div>
+  <div id="ks-coherence"></div>
+  <!-- INTERACT: behavioral panel up front so input accrues during collection -->
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
     <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
-    <p class="bio-help">Type a sentence below and move your mouse — the detector measures your mouse dynamics and keystroke timing live. Press <b>Analyze</b> to re-score with your input.</p>
+    <p class="bio-help">Type a sentence below and move your mouse — the detector measures your mouse dynamics and keystroke timing live; it re-scores automatically once it has enough input (or press <b>Analyze</b>).</p>
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
     <button type="button" id="ks-analyze">Analyze my behavior</button>
   </section>
+  <!-- EVIDENCE: your fingerprint, layer by layer -->
   <div id="ks-predict"></div>
+  <div id="ks-wire"></div>
   <div id="ks-surfaces"></div>
   <div id="ks-fp"></div>
+  <!-- THE WHY: the full rule breakdown, after its evidence -->
+  <h2>Detections <span class="note">— every check Kitsune ran, grouped by layer</span></h2>
+  <div id="ks-detections"></div>
 </section>
 <section id="how-it-works">
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
@@ -1008,12 +1014,13 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
         + '<span class="bar-val">' + lp + '</span></div>';
     }
     html += '<div class="layer-bars">' + bars + '</div>';
-    // Layer-grouped detections (fired convicting vs corroborating + collapsible passed), from the full
-    // rule registry (/rules.json) cross-referenced with the server verdict's fired contradictions.
+    if (out) out.innerHTML = html;  // #ks-result = the headline summary (verdict stamp + layer bars)
+    // The detailed layer-grouped detections render into their own section AFTER the evidence panels,
+    // built from the full rule registry (/rules.json) cross-referenced with the fired contradictions.
     var cs = v.contradictions || [], firedMap = {}, firedSet = {};
     for (var i = 0; i < cs.length; i++) { firedMap[cs[i].rule_id] = cs[i]; firedSet[cs[i].rule_id] = 1; }
-    html += renderDetections(firedMap, cs.length);
-    if (out) out.innerHTML = html;
+    var det = document.getElementById("ks-detections");
+    if (det) det.innerHTML = renderDetections(firedMap, cs.length);
     // Surface tamper-state reflects which browser rules fired (from the server verdict).
     renderSurfaces(window.__ksFp || rawFingerprint(), firedSet);
     // Pull the edge wire layer (JA3/JA4/TCP-OS/QUIC + IP) for this session and form the full-stack ID.
