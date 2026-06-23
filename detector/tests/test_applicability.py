@@ -40,6 +40,36 @@ def test_is_brave_does_not_shield_other_tells() -> None:
     assert "br.webdriver_present" in {c.rule_id for c in verdict.contradictions}
 
 
+def _ml_session(*, behavioral: dict[str, object], browser: dict[str, object] | None = None) -> Session:
+    sigs = [
+        Signal(session_id="s", layer=Layer.behavioral, kind=k, value=v, source=Source.collector, observed_at=NOW)
+        for k, v in behavioral.items()
+    ]
+    sigs += [
+        Signal(session_id="s", layer=Layer.browser, kind=k, value=v, source=Source.collector, observed_at=NOW)
+        for k, v in (browser or {}).items()
+    ]
+    return group_signals(sigs)[0]
+
+
+def test_mobile_drops_mouse_biomech_floors() -> None:
+    # A near-straight, constant-velocity, no-coalescing pointer trips the mouse-biomech floors on desktop
+    # (corroborating → suspicious). On a GENUINE mobile device they are mouse-calibrated N/A → dropped (G10).
+    floors = {"mouse_straightness": 1.0, "mouse_velocity_cv": 0.0, "coalesced_events_absent": True}
+    desktop = {c.rule_id for c in Detector().score(_ml_session(behavioral=floors)).contradictions}
+    assert {"bh.path_too_straight", "bh.uniform_velocity", "bh.synthetic_no_coalesced"} <= desktop
+    mobile = {
+        c.rule_id for c in Detector().score(_ml_session(behavioral=floors, browser={"is_mobile": True})).contradictions
+    }
+    assert not ({"bh.path_too_straight", "bh.uniform_velocity", "bh.synthetic_no_coalesced"} & mobile)
+
+
+def test_mobile_does_not_shield_trace_replay() -> None:
+    # The device-agnostic convicting behavioral rule (record-and-replay) still fires on mobile.
+    v = Detector().score(_ml_session(behavioral={"trace_replay": True}, browser={"is_mobile": True}))
+    assert "bh.trace_replay_within_session" in {c.rule_id for c in v.contradictions}
+
+
 def test_brave_readback_noise_is_excused() -> None:
     # readback_noise (getChannelData vs copyFromChannel divergence) is the same privacy-feature footprint as
     # canvas_noise/audio_noise — Brave's by-design audio farbling trips it, so it must also be N/A for Brave.
