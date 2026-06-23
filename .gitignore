@@ -52,3 +52,7 @@ survey-and-browser-attributes-data.csv
 .env
 .env.*
 !.env.example
+
+# MaxMind GeoLite2 databases (free but licensed; not redistributable) — mounted at deploy
+geoip/
+*.mmdb

@@ -75,6 +75,27 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml logs edge | grep
 # from a real browser, load https://your.domain  -> verdict renders; QUIC after the first visit (Alt-Svc)
 ```
 
+## GeoLite2 (optional — geo/ASN on the wire panel)
+
+The wire panel shows each visitor their own IP. To also resolve **city / country / ASN**, drop MaxMind's
+free **GeoLite2** databases into a `geoip/` dir next to the compose files (the prod overlay mounts it at
+`/geoip` read-only and sets `KITSUNE_GEOIP_DIR=/geoip`). Without them the panel just omits geo — it's
+purely additive.
+
+```sh
+# Requires a free MaxMind account + licence key (https://www.maxmind.com/en/geolite2/signup).
+mkdir -p geoip && cd geoip
+# Download GeoLite2-City and GeoLite2-ASN (the .mmdb files) with your licence key, e.g.:
+#   curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=YOUR_KEY&suffix=tar.gz" | tar xz --strip-components=1 --wildcards '*GeoLite2-City.mmdb'
+#   curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=YOUR_KEY&suffix=tar.gz"  | tar xz --strip-components=1 --wildcards '*GeoLite2-ASN.mmdb'
+cd .. && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # picks up the DBs
+```
+
+- **Licence/attribution:** GeoLite2 is free but its licence **requires attribution** — the page footer
+  already credits "GeoLite2 data created by MaxMind". The `.mmdb` files are **not committed** (size +
+  licence); keep them in `geoip/` (gitignored) and refresh monthly (MaxMind updates them; stale data is
+  the only failure mode, and it degrades to a slightly-wrong city, never a crash).
+
 ## Renewal
 
 The `certbot` service renews every 12h. The edge loads the cert at **startup**, so after a renewal restart it

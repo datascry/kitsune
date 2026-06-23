@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Res
 from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
+from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
 from .store import Store
 
@@ -215,10 +216,11 @@ def create_app(
                         }
                     )
         basis = "|".join(f"{k}={wire[k]}" for k in sorted(wire) if wire[k])
+        ip = netval("observed_ip")
         return {
             "session_id": session_id,
-            "ip": netval("observed_ip"),
-            "geo": None,  # populated by GeoLite2 in a later phase
+            "ip": ip,
+            "geo": geo_lookup(ip if isinstance(ip, str) else None),
             "wire": wire,
             "wire_fp": _fnv1a(basis) if basis else None,
             "network_contradictions": contradictions,
