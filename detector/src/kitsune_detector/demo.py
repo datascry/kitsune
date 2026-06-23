@@ -740,8 +740,11 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 <body>
 <nav class="top">
   <a class="brand" href="/">Kitsune</a>
-  <a href="#how-it-works">How it works</a>
-  <a href="#faq">FAQ</a>
+  <a href="/matrix">Matrix</a>
+  <a href="/evasions">Evasions</a>
+  <a href="/detections">Detections</a>
+  <a href="/how-it-works">How it works</a>
+  <a href="/research">Research</a>
   <a href="https://github.com/datascry/kitsune">GitHub</a>
   <span class="spacer"></span>
 </nav>

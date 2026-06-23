@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import hmac
 import os
+from collections.abc import Callable
 from pathlib import Path
 
+import markdown  # type: ignore[import-untyped]
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 
@@ -22,7 +24,43 @@ from .demo import DEMO_PAGE
 from .detector import Detector
 from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
+from .pages import render_doc_page
 from .store import Store
+
+#: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
+DOC_PAGES: dict[str, tuple[str, str, str]] = {
+    "matrix": (
+        "matrix.md",
+        "Detection matrix",
+        "Which antidetect tools and bots Kitsune catches — per-evader verdicts and the tells that convict each.",
+    ),
+    "evasions": (
+        "evasion-catalog.md",
+        "Evasion catalog",
+        "Every evasion technique in the red-team ladder and the anti-detect tools that implement it.",
+    ),
+    "detections": (
+        "detection-catalog.md",
+        "Detection catalog",
+        "Every detection rule Kitsune runs and the exact signal it exploits, across all layers.",
+    ),
+    "how-it-works": (
+        "architecture.md",
+        "How it works",
+        "Kitsune's architecture and the cross-layer incoherence thesis behind its bot detection.",
+    ),
+    "research": (
+        "findings.md",
+        "Research",
+        "Findings from the Kitsune detection-vs-evasion arms race.",
+    ),
+}
+
+
+def _docs_dir() -> Path:
+    env = os.environ.get("KITSUNE_DOCS_DIR")
+    return Path(env) if env else Path(__file__).resolve().parents[3] / "docs"
+
 
 #: Categories that can convict a session as a bot (the rest only corroborate).
 CONVICTING_CATEGORIES = {RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact}
@@ -136,8 +174,7 @@ def create_app(
 
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap() -> Response:
-        # Public routes only; the doc pages (/matrix, /evasions, …) are added in a later phase.
-        urls = ["/"]
+        urls = ["/"] + [f"/{slug}" for slug in DOC_PAGES]
         locs = "".join(f"<url><loc>{SITE_ORIGIN}{u}</loc></url>" for u in urls)
         xml = (
             '<?xml version="1.0" encoding="UTF-8"?>'
@@ -176,6 +213,32 @@ def create_app(
     @app.get("/rules.json")
     def rules_json() -> dict[str, object]:
         return rules_payload
+
+    # Doc pages: render selected docs/*.md to themed HTML at request time (cached — the docs are static
+    # in the image). Internal planning docs are intentionally NOT published. Built per slug below.
+    docs_dir = _docs_dir()
+    _doc_cache: dict[str, str] = {}
+
+    def _make_doc_route(slug: str, filename: str, title: str, desc: str) -> Callable[[], HTMLResponse]:
+        def doc_page() -> HTMLResponse:
+            if slug not in _doc_cache:
+                try:
+                    text = (docs_dir / filename).read_text(encoding="utf-8")
+                except OSError as exc:
+                    raise HTTPException(status_code=404, detail="doc unavailable") from exc
+                body = markdown.markdown(text, extensions=["tables", "fenced_code", "sane_lists", "toc"])
+                _doc_cache[slug] = render_doc_page(title, desc, f"/{slug}", body)
+            return HTMLResponse(_doc_cache[slug])
+
+        return doc_page
+
+    for _slug, (_fn, _title, _desc) in DOC_PAGES.items():
+        app.add_api_route(
+            f"/{_slug}",
+            _make_doc_route(_slug, _fn, _title, _desc),
+            response_class=HTMLResponse,
+            include_in_schema=False,
+        )
 
     @app.get("/inspect/{session_id}")
     def inspect(session_id: str, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
