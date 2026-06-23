@@ -695,8 +695,8 @@ a.rule-src:hover code {
 .bio-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:.6rem 0}
 .bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;background:var(--panel);padding:.5rem .7rem;font-size:.8rem}
 .bio-row span{color:var(--muted)}.bio-row b{font-variant-numeric:tabular-nums;font-weight:700}
-.bio-row i{font-style:normal;font-size:.6rem;text-transform:uppercase;letter-spacing:.1em}
-.bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-more,.bm-ok{color:var(--muted)}
+.bio-row i{font-style:normal;font-size:.66rem;text-transform:uppercase;letter-spacing:.08em}
+.bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-collecting,.bm-more,.bm-ok{color:var(--muted)}
 .bio-help{color:var(--muted);font-size:.78rem;margin:.3rem 0 .6rem}
 .bio-pad{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-between;margin:.4rem 0}
 .bio-dot{flex:1 1 auto;min-width:56px;padding:.55rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;cursor:pointer;font:inherit;touch-action:manipulation}
@@ -751,7 +751,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   .verdict{padding:1rem;gap:.5rem 1rem}
   .verdict .label{font-size:1.5rem}
   .verdict .sub{margin-left:0}
-  .surfaces,.predict-grid{grid-template-columns:1fr}
+  .surfaces,.predict-grid,.bio-metrics{grid-template-columns:1fr}
   .coherence{grid-template-columns:1fr}
   .coherence .verdict-cell{border-left:0;border-right:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:.5rem}
   .bar{grid-template-columns:5rem 1fr 2.25rem;gap:.5rem}
@@ -2228,19 +2228,17 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   function renderBio() {
     var el = document.getElementById("ks-bio-metrics");
     if (!el) return;
-    var rows = bioRow("pointer events", pts.length, pts.length >= 12 ? "ok" : "more");
-    if (pts.length >= 3) {
-      var e = entropy(pts), st = straightness(pts), vc = velcv(pts);
-      rows += bioRow("mouse entropy", e.toFixed(3), e < 0.15 ? "bot" : "human");
-      rows += bioRow("path straightness", st.toFixed(3), st > 0.97 ? "bot" : "human");
-      rows += bioRow("velocity CV", vc.toFixed(3), vc < 0.08 ? "bot" : "human");
-    }
-    if (pts.length >= 12) {
-      var ple = powerLawExp(pts);
-      if (ple !== null) rows += bioRow("power-law \\u03b2", ple.toFixed(3), ple < 0.05 ? "bot" : "human");
-    }
-    rows += bioRow("keystrokes", keys.length, keys.length >= 4 ? "ok" : "more");
-    if (keys.length >= 4) { var ke = keyEntropy(keys); rows += bioRow("keystroke entropy", ke.toFixed(3), ke < 0.15 ? "bot" : "human"); }
+    // Always show EVERY metric — greyed "collecting" until it has enough samples — so nothing is hidden
+    // behind a status tag (especially on mobile). Move the mouse and type to fill them in.
+    var enoughPts = pts.length >= 3, fullPts = pts.length >= 12, enoughKeys = keys.length >= 4;
+    var rows = bioRow("pointer events", pts.length, fullPts ? "ok" : "collecting");
+    rows += bioRow("mouse entropy", enoughPts ? entropy(pts).toFixed(3) : "\\u2014", enoughPts ? (entropy(pts) < 0.15 ? "bot" : "human") : "collecting");
+    rows += bioRow("path straightness", enoughPts ? straightness(pts).toFixed(3) : "\\u2014", enoughPts ? (straightness(pts) > 0.97 ? "bot" : "human") : "collecting");
+    rows += bioRow("velocity CV", enoughPts ? velcv(pts).toFixed(3) : "\\u2014", enoughPts ? (velcv(pts) < 0.08 ? "bot" : "human") : "collecting");
+    var ple = fullPts ? powerLawExp(pts) : null;
+    rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
+    rows += bioRow("keystrokes", keys.length, enoughKeys ? "ok" : "collecting");
+    rows += bioRow("keystroke entropy", enoughKeys ? keyEntropy(keys).toFixed(3) : "\\u2014", enoughKeys ? (keyEntropy(keys) < 0.15 ? "bot" : "human") : "collecting");
     el.innerHTML = rows;
   }
   try {
