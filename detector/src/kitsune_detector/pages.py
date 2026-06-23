@@ -99,7 +99,9 @@ main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywh
 
 
 def _esc(s: str) -> str:
-    return s.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+    # html.escape (not a hand-rolled .replace chain) so static analysis recognises it as an HTML sanitizer;
+    # quote=True also escapes ' and " for attribute contexts (canonical/OG href + content).
+    return html.escape(s, quote=True)
 
 
 def _nav() -> str:
