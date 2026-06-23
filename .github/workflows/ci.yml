@@ -84,14 +84,12 @@ jobs:
         with: { go-version: "1.26" }
       - run: gofmt -l . | tee /dev/stderr | (! read)
       - run: go vet ./...
+      # `go test ./...` runs every fuzz target's SEED CORPUS (the F.Add seeds + any committed
+      # testdata/fuzz crashers) as deterministic regression tests, so a regression that lets malformed
+      # client bytes panic the edge — a DoS — is caught here. ACTIVE, time-bounded fuzzing (which is
+      # nondeterministic and flakes under CI-runner contention) runs nightly in fuzz.yml instead, keeping
+      # it off the per-PR path so a random worker-budget hiccup never red-marks an unrelated PR.
       - run: go test ./... -cover
-      # Smoke-fuzz the adversarial-input parsers (ClientHello + h2 preface) so a regression that lets
-      # malformed client bytes panic the edge — a DoS — is caught in CI, not in production.
-      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseClientHello' -fuzztime 20s
-      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParsePreface' -fuzztime 20s
-      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzH2FrameScanner' -fuzztime 20s
-      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseSYN' -fuzztime 20s
-      - run: go test ./internal/fingerprint/ -run '^$' -fuzz 'FuzzParseQUICInitial' -fuzztime 20s
 
   collector:
     runs-on: ubuntu-latest

@@ -1,0 +1,39 @@
+# .github/workflows/fuzz — nightly ACTIVE fuzzing of the edge's adversarial-input parsers.
+# Per-PR CI runs only the deterministic seed corpus (ci.yml); time-bounded fuzzing lives here so its
+# nondeterministic, runner-contention-sensitive failures never flake an unrelated PR.
+
+name: fuzz
+on:
+  schedule:
+    - cron: "0 6 * * *" # nightly 06:00 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: edge } }
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - FuzzParseClientHello
+          - FuzzParsePreface
+          - FuzzH2FrameScanner
+          - FuzzParseSYN
+          - FuzzParseQUICInitial
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with: { go-version: "1.26" }
+      - name: fuzz ${{ matrix.target }}
+        run: go test ./internal/fingerprint/ -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime 180s
+      # A found crasher is written under testdata/fuzz/<target>/; surface it so it can be added as a seed.
+      - if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-crasher-${{ matrix.target }}
+          path: edge/internal/fingerprint/testdata/fuzz/
+          if-no-files-found: ignore
