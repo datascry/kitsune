@@ -36,6 +36,15 @@ GCP_RANGES_URL = "https://www.gstatic.com/ipranges/cloud.json"
 # (~11k CIDRs) is the real VPN/proxy-exit feed, and the datacenter list (~42k) covers hosting beyond AWS+GCP.
 X4BNET_VPN_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt"
 X4BNET_DATACENTER_URL = "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt"
+# Additional cloud/CDN hosting ranges beyond AWS+GCP — each a STABLE official direct URL (Azure is omitted:
+# its Service-Tags JSON download URL rotates weekly behind a portal redirect, so it needs a discovery step,
+# tracked in docs/research-radar.md). A client connecting FROM these is server-side egress (a bot on the
+# provider's compute), never a real eyeball, so they fold into the datacenter slice FP-safely.
+ORACLE_RANGES_URL = "https://docs.oracle.com/iaas/tools/public_ip_ranges.json"
+DIGITALOCEAN_RANGES_URL = "https://www.digitalocean.com/geo/google.csv"
+CLOUDFLARE_V4_URL = "https://www.cloudflare.com/ips-v4"
+CLOUDFLARE_V6_URL = "https://www.cloudflare.com/ips-v6"
+FASTLY_RANGES_URL = "https://api.fastly.com/public-ip-list"
 
 _DATA = Path(__file__).parent / "data"
 _Net = ipaddress.IPv4Network | ipaddress.IPv6Network
@@ -54,7 +63,17 @@ class SourceDriftError(RuntimeError):
 #: 2026-06-21: VPN 10994, datacenter 41977; Tor/AWS/GCP 2026-06-19: Tor 1238, AWS 10613, GCP 979) — these
 #: floors sit ~10x below, so normal source fluctuation passes while a format/URL drift (which collapses a
 #: parse to ~0) trips the guard.
-_PRODUCTION_FLOORS = {"tor": 100, "aws": 1000, "gcp": 100, "x4b_vpn": 1000, "x4b_datacenter": 1000}
+_PRODUCTION_FLOORS = {
+    "tor": 100,
+    "aws": 1000,
+    "gcp": 100,
+    "x4b_vpn": 1000,
+    "x4b_datacenter": 1000,
+    "oracle": 50,
+    "digitalocean": 50,
+    "cloudflare": 10,
+    "fastly": 10,
+}
 
 #: A function that fetches a URL and returns the body as text. Injected so tests stay offline.
 Fetcher = Callable[[str], str]
@@ -129,6 +148,50 @@ def parse_gcp_ranges(text: str) -> list[str]:
     return out
 
 
+def parse_oracle_ranges(text: str) -> list[str]:
+    """Oracle ``public_ip_ranges.json`` → ``regions[].cidrs[].cidr``."""
+    doc = json.loads(text)
+    out: list[str] = []
+    if not isinstance(doc, dict):
+        return out
+    regions = doc.get("regions", [])
+    if not isinstance(regions, list):
+        return out
+    for region in regions:
+        if not isinstance(region, dict):
+            continue
+        for entry in region.get("cidrs", []) or []:
+            if isinstance(entry, dict) and isinstance(entry.get("cidr"), str):
+                out.append(entry["cidr"])
+    return out
+
+
+def parse_digitalocean_csv(text: str) -> list[str]:
+    """DigitalOcean ``google.csv`` → the first column of each row is the CIDR (no header row)."""
+    out: list[str] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        cidr = line.split(",", 1)[0].strip()
+        if cidr:
+            out.append(cidr)
+    return out
+
+
+def parse_fastly_ranges(text: str) -> list[str]:
+    """Fastly ``public-ip-list`` → ``addresses[]`` + ``ipv6_addresses[]``."""
+    doc = json.loads(text)
+    out: list[str] = []
+    if not isinstance(doc, dict):
+        return out
+    for key in ("addresses", "ipv6_addresses"):
+        for cidr in doc.get(key, []) or []:
+            if isinstance(cidr, str):
+                out.append(cidr)
+    return out
+
+
 def normalize_cidrs(cidrs: Iterable[str]) -> list[str]:
     """Validate, dedupe, and sort CIDRs (by version, then network address, then prefix). Junk dropped.
 
@@ -165,6 +228,10 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
     gcp_raw = parse_gcp_ranges(fetch(GCP_RANGES_URL))
     x4b_vpn_raw = parse_cidr_list(fetch(X4BNET_VPN_URL))
     x4b_dc_raw = parse_cidr_list(fetch(X4BNET_DATACENTER_URL))
+    oracle_raw = parse_oracle_ranges(fetch(ORACLE_RANGES_URL))
+    do_raw = parse_digitalocean_csv(fetch(DIGITALOCEAN_RANGES_URL))
+    cloudflare_raw = parse_cidr_list(fetch(CLOUDFLARE_V4_URL)) + parse_cidr_list(fetch(CLOUDFLARE_V6_URL))
+    fastly_raw = parse_fastly_ranges(fetch(FASTLY_RANGES_URL))
     if min_counts:
         for src, got in (
             ("tor", len(tor_raw)),
@@ -172,16 +239,20 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
             ("gcp", len(gcp_raw)),
             ("x4b_vpn", len(x4b_vpn_raw)),
             ("x4b_datacenter", len(x4b_dc_raw)),
+            ("oracle", len(oracle_raw)),
+            ("digitalocean", len(do_raw)),
+            ("cloudflare", len(cloudflare_raw)),
+            ("fastly", len(fastly_raw)),
         ):
             floor = min_counts.get(src, 0)
             if got < floor:
                 raise SourceDriftError(
                     f"{src} source returned {got} entries (< {floor} floor) — its URL or format likely drifted"
                 )
-    # Proxy/VPN/Tor exits: Tor bulk list + X4BNet VPN list. Datacenter: AWS + GCP cloud ranges + X4BNet
-    # datacenter list (hosting beyond the two clouds). normalize_cidrs dedupes the union and sorts.
+    # Proxy/VPN/Tor exits: Tor bulk list + X4BNet VPN list. Datacenter: AWS + GCP + Oracle + DigitalOcean +
+    # Cloudflare + Fastly cloud/CDN ranges + X4BNet datacenter list. normalize_cidrs dedupes + sorts the union.
     proxy_exit = normalize_cidrs(tor_raw + x4b_vpn_raw)
-    datacenter = normalize_cidrs(aws_raw + gcp_raw + x4b_dc_raw)
+    datacenter = normalize_cidrs(aws_raw + gcp_raw + oracle_raw + do_raw + cloudflare_raw + fastly_raw + x4b_dc_raw)
     regen = (
         "Regenerate: python -m kitsune_detector.ip_reputation_refresh "
         "(output not committed — see docs/ip-reputation-data.md)."
@@ -194,7 +265,8 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
         ),
         "datacenter_cidrs.txt": render_seed(
             "detector/data/datacenter_cidrs — GENERATED datacenter/hosting CIDRs (deploy-time; do not commit).",
-            f"Sources: AWS + GCP cloud + X4BNet datacenter list, MIT ({len(datacenter)} entries). {regen}",
+            f"Sources: AWS + GCP + Oracle + DigitalOcean + Cloudflare + Fastly + X4BNet datacenter "
+            f"({len(datacenter)} entries). {regen}",
             datacenter,
         ),
     }

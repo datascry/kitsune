@@ -86,6 +86,10 @@ source itself, not the aggregator's metadata (GitHub's licence detector missed X
 | **Matomo `device-detector`** (regexes) | X5 (device↔geometry) partial | GitHub | **LGPL** | ✅ | device-model → class mapping; **no screen-resolution DB** (the FP-safe X5 half still needs a real device→res map) |
 | **Resident Evil RESIP** (~6M IPs, rpaas.site) | X2/X3 (RESIP) | study artifact | study terms | gated | the RESIP IP set behind the residential-proxy-fleet signal |
 | **GreyNoise GNQL** (per-IP actor/classification) | X8 (IP-rep actor) / G7 (benign-crawler actors) | api.greynoise.io | API key; community tier rate-limited, GNQL enterprise | ⚠ gated (needs key) | per-IP `classification`/`actor`/`tag`/`spoofable` → `ip_reputation_refresh` actor enrichment at deploy; aggregate/cache only, never commit raw |
+| **Google/Bing crawler IP-range JSON** | G7 (FCrDNS — DNS-free CIDR path) | developers.google.com/static/crawling/ipranges/common-crawlers.json (+ special-crawlers); Bing equivalent | public (Google/MS authoritative) | ✅ public, daily, CIDR JSON | candidate → an authoritative CIDR feed for `net.fake_declared_crawler` (verify a declared crawler with NO DNS round-trip; resilient if DNS is slow/blocked). Edge-side consumer co-located with FCrDNS; not yet wired. |
+| **Azure / Oracle / DigitalOcean / Cloudflare / Fastly ranges** | X4 (IP-rep datacenter) | Oracle `public_ip_ranges.json`, DO `digitalocean.com/geo/google.csv`, Cloudflare `/ips-v4`+`/ips-v6`, Fastly `api.fastly.com/public-ip-list`; Azure Service-Tags (rotating URL) | public | ✅ Oracle/DO/Cloudflare/Fastly stable; Azure rotates | **WIRED** (Oracle/DO/Cloudflare/Fastly → `ip_reputation_refresh` datacenter, per-source floors). Azure needs a discovery step for its rotating Service-Tags URL → candidate. |
+| **Spamhaus DROP/EDROP + IPsum** | X4 (IP-rep proxy/abuse) | spamhaus.org/drop, github.com/stamparm/ipsum | DROP free-to-use; IPsum permissive (verify) | ✅ public, daily | candidate → thicken `proxy_exit` beyond Tor+X4BNet; licence-verify per source (cf. FireHOL caveat). |
+| **FoxIO ja4db / peet.ws** (JA4 + Akamai H2 → client) | net.tls_vs_ua_browser / net.h2_vs_ua_browser precision | github.com/FoxIO-LLC/ja4 (ja4db), tls.peet.ws | varies (verify) | ✅ static lookup tables | candidate → expand the edge's tiny `ja4_hints.json` seed with more positively-identified clients (static table, no live traffic). |
 | Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
 
 **Hardest-gap status:** mouse/touch biometrics (X6) and mobile/WebView (X7) have **no** permissively-downloadable
@@ -194,3 +198,11 @@ terms before pulling).
   per-IP actor/classification feed missing from the data-source table; queued (needs an API key at
   deploy). So the groundable column is no longer strictly dry — a new external telemetry source
   (GreyNoise) re-opened it, exactly as iteration 3 predicted ("a genuinely new technique re-opens it").
+- **2026-06-23 · external-dataset sweep + cloud-range expansion** — catalogued four new public feeds in
+  the data-source table: Google/Bing crawler IP-range JSON (G7 DNS-free path), additional cloud/CDN ranges,
+  Spamhaus DROP/IPsum, and the FoxIO/peet.ws JA4 fingerprint DB. **WIRED #2**: `ip_reputation_refresh` now
+  folds Oracle + DigitalOcean + Cloudflare + Fastly into the datacenter slice (stable official URLs, per-
+  source floors, offline parser tests) on top of AWS+GCP+X4BNet — a ~60k-CIDR datacenter feed. Azure
+  omitted (its Service-Tags JSON URL rotates weekly behind a portal redirect — needs a discovery step).
+  The crawler-IP-range feed (the authoritative DNS-free consumer for `net.fake_declared_crawler`) and the
+  JA4-DB hint-table expansion remain candidate (edge-side consumers).
