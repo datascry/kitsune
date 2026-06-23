@@ -7,13 +7,16 @@ on:
     types: [published] # release-please publishes the GitHub Release when its release PR is merged
   workflow_dispatch: {}
 
+# Minimal top-level token; only the images job is granted packages:write (Scorecard TokenPermissions).
 permissions:
   contents: read
-  packages: write
 
 jobs:
   images:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
