@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import contextlib
 import hmac
+import html
 import os
+import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -96,6 +98,9 @@ SEO_KEYWORDS = (
 )
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
+#: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
+#: it reaches any HTML/SEO sink both 404s junk URLs and removes the reflected-XSS taint (no <, ", etc.).
+_SAFE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,80}")
 
 
 def create_app(
@@ -337,13 +342,20 @@ def create_app(
 
     @app.get("/evasions/{slug}", response_class=HTMLResponse, include_in_schema=False)
     def evasion_detail(slug: str) -> HTMLResponse:
+        # Validate the path param to a safe slug charset first — junk 404s. Then route it through
+        # html.escape (the recognised HTML sanitizer): a no-op for a validated `[a-z0-9-]` slug, but it
+        # provably strips any HTML-significant character before the value reaches the title / description /
+        # keywords / canonical URL / JSON-LD sinks.
+        if not _SAFE_SLUG.fullmatch(slug):
+            raise HTTPException(status_code=404, detail="no such evader")
         body = render_evasion_detail(slug, evaders.get(slug), fleet.get(slug), techniques.get(slug), rules_by_id)
         if body is None:
             raise HTTPException(status_code=404, detail="no such evader")
-        desc = f"Is {slug} detectable? Kitsune's verdict and the tells that caught it."
-        kw = f"{SEO_KEYWORDS}, {slug}, anti-detect, evasion"
+        safe = html.escape(slug, quote=True)
+        desc = f"Is {safe} detectable? Kitsune's verdict and the tells that caught it."
+        kw = f"{SEO_KEYWORDS}, {safe}, anti-detect, evasion"
         return HTMLResponse(
-            render_doc_page(slug, desc, f"/evasions/{slug}", body, page_type="TechArticle", keywords=kw)
+            render_doc_page(safe, desc, f"/evasions/{safe}", body, page_type="TechArticle", keywords=kw)
         )
 
     @app.get("/inspect/{session_id}")
