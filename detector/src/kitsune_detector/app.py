@@ -286,10 +286,11 @@ def create_app(
         if rule is None:
             raise HTTPException(status_code=404, detail="no such detection")
         body = render_detection_detail(rule, rule_catch.get(rule_id), rule_evaders.get(rule_id))
-        title = str(rule.get("title") or rule_id)
+        rid = str(rule["id"])  # trusted registry id, not the raw path param
+        title = str(rule.get("title") or rid)
         desc = f"{title} — a Kitsune cross-layer bot-detection check."
         noindex = not rule.get("source")  # thin (no provenance) -> keep out of the index
-        return HTMLResponse(render_doc_page(title, desc, f"/detections/{rule_id}", body or "", noindex))
+        return HTMLResponse(render_doc_page(title, desc, f"/detections/{rid}", body or "", noindex))
 
     @app.get("/evasions/{slug}", response_class=HTMLResponse, include_in_schema=False)
     def evasion_detail(slug: str) -> HTMLResponse:
