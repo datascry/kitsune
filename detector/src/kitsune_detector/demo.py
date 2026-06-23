@@ -2148,30 +2148,31 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
     // signals would make the *absence* of input score as bot-like and mask the fingerprint result.
     // Omit the behavioral layer entirely in fast mode; a full capture still scores behaviour.
     if (!/(?:\\?|&)fast\\b/.test(location.search)) {
-      sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
-      sigs.push(S("behavioral", "pointer_event_count", pts.length));
-      if (pts.length >= 3) {
+      // Don't penalise a real visitor who simply hasn't moved/typed yet. Emit the behavioral layer ONLY
+      // once there is enough genuine human input to expect human structure (>=12 pointer samples — the
+      // Balabit min segment length — or >=4 keystrokes). Below that, emit NOTHING behavioral so an
+      // undersampled trace scores neutral, not bot-like; the page auto-re-scores once real input arrives.
+      if (pts.length >= 12) {
+        sigs.push(S("behavioral", "mouse_entropy", entropy(pts)));
+        sigs.push(S("behavioral", "pointer_event_count", pts.length));
         sigs.push(S("behavioral", "mouse_straightness", straightness(pts)));
         sigs.push(S("behavioral", "mouse_velocity_cv", velcv(pts)));
-      }
-      // Biomechanics: only with enough of a movement to expect human structure (matches the Balabit
-      // calibration's min segment length). Real hands make corrective sub-movements, pause, and obey the
-      // 2/3 power law; a Bezier humanizer does none of these (docs/behavioral-data.md).
-      if (pts.length >= 12) {
+        // Biomechanics: corrective sub-movements, pauses, and the 2/3 power law — a Bezier humanizer does
+        // none of these (docs/behavioral-data.md).
         sigs.push(S("behavioral", "submovement_count", submovementCount(pts)));
         sigs.push(S("behavioral", "pause_ratio", pauseRatio(pts)));
         var ple = powerLawExp(pts);
         if (ple !== null) sigs.push(S("behavioral", "power_law_exponent", ple));
         var th = traceHash(pts);
         if (th !== null) sigs.push(S("behavioral", "trace_hash", th));
+        // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.
+        if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
+          sigs.push(S("behavioral", "coalesced_events_absent", true));
+        }
       }
       if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
-      // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.
-      if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
-        sigs.push(S("behavioral", "coalesced_events_absent", true));
-      }
       // A coalesced batch carrying an untrusted (constructor-built) event is fabricated — a hard artifact a
-      // real browser never produces, even through a Proxy-over-native getCoalescedEvents override.
+      // real browser never produces, even through a Proxy-over-native override. Always emitted (an artifact).
       if (coalescedUntrusted) sigs.push(S("browser", "coalesced_untrusted", true));
     }
     fetch("/ingest", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(sigs) })
@@ -2220,7 +2221,19 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
     });
     setInterval(renderBio, 600); // keep the live readout fresh as the visitor moves/types
   } catch (e) {}
-  setTimeout(function () { send(); }, /(?:\\?|&)fast\\b/.test(location.search) ? 200 : 1200);
+  // Score after a short delay (a fast first verdict). In full mode, if the visitor hasn't produced enough
+  // input yet the behavioral layer is omitted (no penalty) and we AUTO-RE-SCORE once they move/type enough,
+  // so a real human gets a proper behavioral read without having to press Analyze.
+  var ksFast = /(?:\\?|&)fast\\b/.test(location.search), ksRescored = false;
+  function ksMaybeRescore() {
+    if (ksRescored || (pts.length < 12 && keys.length < 4)) return;
+    ksRescored = true;
+    send();
+  }
+  setTimeout(function () {
+    send();
+    if (!ksFast) { addEventListener("mousemove", ksMaybeRescore); addEventListener("keydown", ksMaybeRescore); }
+  }, ksFast ? 200 : 1200);
 })();
 </script></body></html>
 """
