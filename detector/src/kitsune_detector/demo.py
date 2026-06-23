@@ -12,7 +12,28 @@ joining the network signals into one session.
 from __future__ import annotations
 
 DEMO_PAGE = """<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Kitsune — live browser detection</title>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antidetect &amp; browser fingerprint test — Kitsune</title>
+<meta name="description" content="Is your browser or antidetect setup detectable? Kitsune fingerprints your browser, TLS/JA4, HTTP-2, QUIC, TCP/IP and behavior, then flags incoherence across layers — the real bot-detection verdict, live.">
+<link rel="canonical" href="https://kitsune.id/">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0a0a0c">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Kitsune">
+<meta property="og:title" content="Antidetect &amp; browser fingerprint test — Kitsune">
+<meta property="og:description" content="Is your stealth browser detectable? Live cross-layer fingerprint, TLS/JA4 and bot-detection test.">
+<meta property="og:url" content="https://kitsune.id/">
+<meta property="og:image" content="https://kitsune.id/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Antidetect &amp; browser fingerprint test — Kitsune">
+<meta name="twitter:description" content="Is your stealth browser detectable? Live cross-layer fingerprint, TLS/JA4 and bot-detection test.">
+<meta name="twitter:image" content="https://kitsune.id/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <style>
 :root {
   --bg: #0a0a0c;
@@ -683,37 +704,70 @@ a.rule-src:hover code {
 #ks-bio-text{width:100%;box-sizing:border-box;padding:.5rem;margin:.3rem 0 .6rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;font:inherit}
 #ks-analyze{font-family:var(--mono);font-size:.78rem;color:var(--bg);background:var(--fox);border:1px solid var(--fox);padding:.45rem .8rem;cursor:pointer;font-weight:700;letter-spacing:.04em}
 #ks-analyze:hover{filter:brightness(1.12)}
-</style></head>
+/* --- landing nav --- */
+nav.top{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;max-width:64rem;margin:0 auto;padding:.9rem 1.5rem;border-bottom:1px solid var(--line)}
+nav.top a{color:var(--muted);text-decoration:none;font-size:.78rem;letter-spacing:.06em}
+nav.top a:hover{color:var(--fox)}
+nav.top a.brand{display:flex;align-items:center;gap:.5rem;color:var(--ink);font-weight:700;letter-spacing:.22em;text-transform:uppercase;font-size:.95rem}
+nav.top a.brand::before{content:"";width:.5rem;height:1.1rem;background:var(--fox)}
+nav.top .spacer{flex:1}
+/* --- landing prose + faq --- */
+h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0;color:var(--ink)}
+.lead{font-size:1.05rem;color:var(--ink);max-width:46rem;margin:.6rem 0 .25rem}
+.prose{color:var(--muted);font-size:.88rem;max-width:48rem}
+.prose p{margin:.7rem 0}.prose strong{color:var(--ink)}
+.faq details{border-bottom:1px solid var(--line);padding:.65rem 0}
+.faq summary{cursor:pointer;color:var(--ink);font-size:.88rem;font-weight:600}
+.faq details p{color:var(--muted);font-size:.84rem;margin:.5rem 0 0;max-width:48rem}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kitsune","url":"https://kitsune.id/","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Antidetect & browser fingerprint test: cross-layer fingerprint, TLS/JA4, HTTP-2, QUIC, TCP/IP and bot detection."}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a browser fingerprint?","acceptedAnswer":{"@type":"Answer","text":"The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are."}},{"@type":"Question","name":"Can antidetect browsers beat fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"Stealth/antidetect browsers spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain."}},{"@type":"Question","name":"What is JA3 / JA4 TLS fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection."}},{"@type":"Question","name":"Is my browser detectable as a bot?","acceptedAnswer":{"@type":"Answer","text":"Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired."}},{"@type":"Question","name":"Does this send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties."}}]}</script>
+</head>
 <body>
-<header>
-  <div class="mark"><h1>Kitsune</h1><span class="tag">live browser inspector</span></div>
-  <p>Kitsune flags <strong>incoherence across layers</strong>, not just bad signals. This page collects your browser &amp; behavioral signals and scores them with the <strong>real detector</strong> at this origin — the same rules-as-data the engine runs server-side, correlated with the edge's TLS / HTTP-2 / QUIC / TCP wire fingerprints. <a href="https://github.com/datascry/kitsune">source</a></p>
-</header>
+<nav class="top">
+  <a class="brand" href="/">Kitsune</a>
+  <a href="#how-it-works">How it works</a>
+  <a href="#faq">FAQ</a>
+  <a href="https://github.com/datascry/kitsune">GitHub</a>
+  <span class="spacer"></span>
+</nav>
 <main>
-<div class="hero">
-  <div class="hero-stat"><strong>7</strong><span>signal layers</span></div>
-  <div class="hero-stat"><strong>live</strong><span>real detector verdict</span></div>
-  <div class="hero-stat"><strong>wire+JS</strong><span>edge-correlated</span></div>
-  <p class="hero-note">Network · browser · behavioral · reputation — scored together, then checked for cross-layer contradictions.</p>
-</div>
-<section id="ks-bio" aria-label="behavioral biometrics">
-  <h2>Your behavioral biometrics</h2>
-  <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
-  <p class="bio-help">Move your mouse to click the buttons, then type a sentence — the detector measures your mouse dynamics and keystroke timing live. Press <b>Analyze</b> to re-score with your input.</p>
-  <div class="bio-pad">
-    <button type="button" class="bio-dot" data-n="1">1</button>
-    <button type="button" class="bio-dot" data-n="2">2</button>
-    <button type="button" class="bio-dot" data-n="3">3</button>
-    <button type="button" class="bio-dot" data-n="4">4</button>
-    <button type="button" class="bio-dot" data-n="5">5</button>
+<section id="test">
+  <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
+  <p class="lead">Is your browser — or your stealth / antidetect setup — detectable? Kitsune fingerprints this browser across every layer and returns the <strong>real bot-detection verdict</strong>, live.</p>
+  <div class="hero">
+    <div class="hero-stat"><strong>7</strong><span>signal layers</span></div>
+    <div class="hero-stat"><strong>live</strong><span>real detector verdict</span></div>
+    <div class="hero-stat"><strong>wire+JS</strong><span>edge-correlated</span></div>
+    <p class="hero-note">Network · browser · behavioral · reputation — scored together, then checked for cross-layer contradictions.</p>
   </div>
-  <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
-  <button type="button" id="ks-analyze">Analyze my behavior</button>
+  <h2>Detector verdict</h2>
+  <p id="ks-status">collecting…</p><div id="ks-result"></div>
+  <section id="ks-bio" aria-label="behavioral biometrics">
+    <h2>Your behavioral biometrics</h2>
+    <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
+    <p class="bio-help">Type a sentence below and move your mouse — the detector measures your mouse dynamics and keystroke timing live. Press <b>Analyze</b> to re-score with your input.</p>
+    <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
+    <button type="button" id="ks-analyze">Analyze my behavior</button>
+  </section>
 </section>
-<h2>Detector verdict</h2>
-<p id="ks-status">collecting…</p><div id="ks-result"></div>
+<section id="how-it-works">
+  <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
+  <div class="prose">
+    <p>Most fingerprint testers list signals. Kitsune flags <strong>incoherence across layers</strong> — the contradictions a real browser cannot produce but a spoofed or automated one does. The User-Agent, the TLS handshake, the HTTP-2 frames, the TCP/IP stack, the GPU and the JavaScript feature-set all have to describe <em>one</em> coherent device. When they disagree, that is the tell.</p>
+    <p>It scores seven layers: <strong>TLS/JA4</strong>, <strong>HTTP-2</strong>, <strong>QUIC/HTTP-3</strong> and <strong>TCP/IP-OS</strong> read from the raw connection by Kitsune's edge; <strong>canvas, WebGL, audio, fonts and Client Hints</strong> in the browser; <strong>mouse and keystroke dynamics</strong>; and <strong>IP reputation</strong>. Every rule is data in a public registry — the same rules the server runs.</p>
+    <p>An antidetect browser can spoof the User-Agent and patch <code>navigator.webdriver</code>, but making the JA4, the frame order, the TCP stack, the GPU renderer and the JS surface all agree on one real device is much harder — and that is exactly what this page measures.</p>
+  </div>
+</section>
+<section id="faq" class="faq">
+  <h2>FAQ</h2>
+  <details><summary>What is a browser fingerprint?</summary><p>The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are.</p></details>
+  <details><summary>Can antidetect browsers beat fingerprinting?</summary><p>Stealth/antidetect browsers (Camoufox, undetected-chromedriver, multilogin, …) spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain.</p></details>
+  <details><summary>What is JA3 / JA4 TLS fingerprinting?</summary><p>JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection.</p></details>
+  <details><summary>Is my browser detectable as a bot?</summary><p>Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired.</p></details>
+  <details><summary>Does this send my data anywhere?</summary><p>Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties.</p></details>
 </main>
-<footer><p>Your signals are scored by Kitsune's real detector at this origin. This is the blue-team demo — raw captures stay on the host; only de-identified verdicts are shared. TLS / HTTP-2 / QUIC / TCP / IP-reputation layers are captured by the edge.</p></footer>
+<footer><p>Your signals are scored by Kitsune's real detector at this origin — the blue-team side of a bot detection ⇄ evasion lab. Raw captures stay on the host; only de-identified verdicts are shared. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p></footer>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
@@ -788,8 +842,8 @@ a.rule-src:hover code {
   // that types at a fixed delay has near-zero interval entropy — the keystroke-dynamics tell.
   var keys = [];
   addEventListener("keydown", function (e) { keys.push(e.timeStamp); });
-  // CSP-bypass probe: the page is served with `img-src 'none'`, so loading any image violates the
-  // policy and fires securitypolicyviolation in a real browser. Playwright/Puppeteer scrapers that call
+  // CSP-bypass probe: the page is served with `img-src 'self'`, so the `data:` bait below (data: is not
+  // 'self') is blocked and fires securitypolicyviolation in a real browser. Playwright/Puppeteer scrapers that call
   // setBypassCSP(true) to inject their scripts silently disable enforcement, so the violation never
   // fires — an automation tell rebrowser-patches explicitly cannot fix. The listener is attached before
   // the probe is triggered, so there is no ordering race (a violation can only occur after this point).

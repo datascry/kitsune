@@ -12,14 +12,20 @@ from __future__ import annotations
 
 import hmac
 import os
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 
 from .demo import DEMO_PAGE
 from .detector import Detector
 from .models import Session, Signal, Verdict
 from .store import Store
+
+#: Canonical public origin — used for robots/sitemap absolute URLs and the page's canonical/OG tags.
+SITE_ORIGIN = "https://kitsune.id"
+#: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 def create_app(
@@ -58,20 +64,73 @@ def create_app(
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
         # Served (via the edge) to a real browser; the inline collector posts signals to /ingest.
-        # The CSP is permissive for everything the collector uses (default-src *) but forbids images
-        # (no signal uses <img>), so the collector can probe whether CSP is actually enforced. A real
-        # browser fires a securitypolicyviolation on the forbidden image; an automation context that
-        # called setBypassCSP(true) to inject scripts silently disables enforcement — a tell that
-        # rebrowser-patches explicitly does not fix. See br.csp_bypassed.
+        # The CSP is permissive for everything the collector uses (default-src *) but restricts images to
+        # same-origin (img-src 'self') — which lets the favicon load while STILL blocking the collector's
+        # csp_bypassed probe, whose bait is a `data:` image (data: is not 'self', so it's blocked). A real
+        # browser fires a securitypolicyviolation on the blocked data: image; an automation context that
+        # called setBypassCSP(true) to inject scripts silently disables enforcement, so the violation never
+        # fires — a tell rebrowser-patches explicitly does not fix. See br.csp_bypassed.
         resp = HTMLResponse(DEMO_PAGE)
         resp.headers["Content-Security-Policy"] = (
-            "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'none'"
+            "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self'"
         )
         return resp
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "ruleset_version": detector.ruleset_version}
+
+    # --- Static brand assets + crawl/SEO infra (public, off the OpenAPI schema) ---
+    def _asset(name: str, media_type: str) -> FileResponse:
+        return FileResponse(
+            STATIC_DIR / name,
+            media_type=media_type,
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon_ico() -> FileResponse:
+        return _asset("favicon.ico", "image/x-icon")
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    def favicon_svg() -> FileResponse:
+        return _asset("favicon.svg", "image/svg+xml")
+
+    @app.get("/favicon-32.png", include_in_schema=False)
+    def favicon_png() -> FileResponse:
+        return _asset("favicon-32.png", "image/png")
+
+    @app.get("/apple-touch-icon.png", include_in_schema=False)
+    def apple_touch_icon() -> FileResponse:
+        return _asset("apple-touch-icon.png", "image/png")
+
+    @app.get("/icon-512.png", include_in_schema=False)
+    def icon_512() -> FileResponse:
+        return _asset("icon-512.png", "image/png")
+
+    @app.get("/og.png", include_in_schema=False)
+    def og_png() -> FileResponse:
+        return _asset("og.png", "image/png")
+
+    @app.get("/site.webmanifest", include_in_schema=False)
+    def site_webmanifest() -> FileResponse:
+        return _asset("site.webmanifest", "application/manifest+json")
+
+    @app.get("/robots.txt", include_in_schema=False)
+    def robots() -> PlainTextResponse:
+        return PlainTextResponse(f"User-agent: *\nAllow: /\nSitemap: {SITE_ORIGIN}/sitemap.xml\n")
+
+    @app.get("/sitemap.xml", include_in_schema=False)
+    def sitemap() -> Response:
+        # Public routes only; the doc pages (/matrix, /evasions, …) are added in a later phase.
+        urls = ["/"]
+        locs = "".join(f"<url><loc>{SITE_ORIGIN}{u}</loc></url>" for u in urls)
+        xml = (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+            f"{locs}</urlset>"
+        )
+        return Response(content=xml, media_type="application/xml")
 
     @app.post("/ingest", response_model=list[Verdict])
     def ingest(signals: list[Signal]) -> list[Verdict]:
