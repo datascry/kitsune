@@ -25,6 +25,14 @@ def test_doc_page_renders(client: TestClient, slug: str) -> None:
     assert "<h1" in html  # the doc's title rendered from markdown
 
 
+def test_doc_pages_are_curated_not_raw_dumps(client: TestClient) -> None:
+    matrix = client.get("/matrix").text
+    assert 'class="cards"' in matrix and "Per-rule coverage" not in matrix  # cards, not the 5-section dump
+    detections = client.get("/detections").text
+    assert 'class="lgrp"' in detections and "predicate" not in detections.lower()  # per-layer, no noise cols
+    assert 'class="cards"' in client.get("/evasions").text
+
+
 def test_sitemap_lists_doc_pages(client: TestClient) -> None:
     xml = client.get("/sitemap.xml").text
     for slug in DOC_PAGES:

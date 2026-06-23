@@ -24,7 +24,12 @@ from .demo import DEMO_PAGE
 from .detector import Detector
 from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
-from .pages import render_doc_page
+from .pages import (
+    render_detections_page,
+    render_doc_page,
+    render_evasions_page,
+    render_matrix_page,
+)
 from .store import Store
 
 #: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
@@ -186,29 +191,26 @@ def create_app(
     # The evaluable rule registry, so the live page can group detections by layer and list the checks a
     # browser PASSED (not just the ones that fired). Built once at startup; the same rules-as-data the
     # engine scores with. Convicting = coherence/automation/artifact (only these make a `bot`).
-    rules_payload: dict[str, object] = {
-        "ruleset_version": detector.ruleset_version,
-        "rules": [],
-    }
+    rules_list: list[dict[str, object]] = []
+    ruleset_version = detector.ruleset_version
     try:
         _ruleset = load_registry()
-        rules_payload = {
-            "ruleset_version": _ruleset.ruleset_version,
-            "rules": [
-                {
-                    "id": r.id,
-                    "title": r.title,
-                    "layers": [str(ly) for ly in r.layers],
-                    "category": str(r.category),
-                    "weight": r.weight,
-                    "status": str(r.status),
-                    "convicting": r.category in CONVICTING_CATEGORIES,
-                }
-                for r in _ruleset.evaluable_rules
-            ],
-        }
+        ruleset_version = _ruleset.ruleset_version
+        rules_list = [
+            {
+                "id": r.id,
+                "title": r.title,
+                "layers": [str(ly) for ly in r.layers],
+                "category": str(r.category),
+                "weight": r.weight,
+                "status": str(r.status),
+                "convicting": r.category in CONVICTING_CATEGORIES,
+            }
+            for r in _ruleset.evaluable_rules
+        ]
     except Exception:  # pragma: no cover - registry always loads in practice; defensive only
         pass
+    rules_payload: dict[str, object] = {"ruleset_version": ruleset_version, "rules": rules_list}
 
     @app.get("/rules.json")
     def rules_json() -> dict[str, object]:
@@ -222,11 +224,20 @@ def create_app(
     def _make_doc_route(slug: str, filename: str, title: str, desc: str) -> Callable[[], HTMLResponse]:
         def doc_page() -> HTMLResponse:
             if slug not in _doc_cache:
-                try:
-                    text = (docs_dir / filename).read_text(encoding="utf-8")
-                except OSError as exc:
-                    raise HTTPException(status_code=404, detail="doc unavailable") from exc
-                body = markdown.markdown(text, extensions=["tables", "fenced_code", "sane_lists", "toc"])
+                # /detections renders from the in-memory registry (no markdown). The others read their doc.
+                if slug == "detections":
+                    body = render_detections_page(rules_list)
+                else:
+                    try:
+                        text = (docs_dir / filename).read_text(encoding="utf-8")
+                    except OSError as exc:
+                        raise HTTPException(status_code=404, detail="doc unavailable") from exc
+                    if slug == "matrix":
+                        body = render_matrix_page(text)  # curated cards, not the raw 5-section dump
+                    elif slug == "evasions":
+                        body = render_evasions_page(text)  # the fleet list, not the frontier prose
+                    else:
+                        body = markdown.markdown(text, extensions=["tables", "fenced_code", "sane_lists", "toc"])
                 _doc_cache[slug] = render_doc_page(title, desc, f"/{slug}", body)
             return HTMLResponse(_doc_cache[slug])
 

@@ -9,6 +9,10 @@ the live page's forensic aesthetic, navigation, and SEO scaffolding (title/descr
 
 from __future__ import annotations
 
+import html
+import re
+from typing import Any
+
 SITE_ORIGIN = "https://kitsune.id"
 
 #: Top-nav links shared across the doc pages (and mirrored in the live page's nav).
@@ -52,6 +56,30 @@ main.doc blockquote{border-left:2px solid var(--fox);margin:1rem 0;padding:.2rem
 main.doc hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
 footer{max-width:64rem;margin:0 auto;color:var(--muted);font-size:.78rem;border-top:1px solid var(--line);padding:1rem 1.5rem 2.5rem}
 footer a{color:var(--fox);text-decoration:none}
+/* --- customer-facing cards / badges / stats --- */
+.lead{font-size:1.02rem;color:var(--ink);max-width:48rem;margin:.4rem 0 1rem}
+.stat-row{display:flex;flex-wrap:wrap;gap:.8rem 2rem;margin:.4rem 0 1.4rem}
+.stat{display:flex;flex-direction:column;line-height:1.1}
+.stat strong{font-size:2rem;color:var(--fox)}
+.stat span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:.8rem 0 1.6rem}
+.card{background:var(--panel);padding:.7rem .9rem;min-width:0}
+.card .ct{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.card .cn{font-weight:700;color:var(--ink);overflow-wrap:anywhere}
+.card .cd{color:var(--muted);font-size:.8rem;margin-top:.35rem;overflow-wrap:anywhere}
+.card .cm{color:var(--muted);font-size:.72rem;margin-top:.35rem}
+.card .cm code{color:var(--fox)}
+.badge{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;padding:.12rem .4rem;border:1px solid var(--line-bright);color:var(--muted);white-space:nowrap;flex:none}
+.badge.bot{color:var(--fox);border-color:var(--fox)}
+.badge.suspicious{color:var(--amber);border-color:var(--amber)}
+.badge.human,.badge.convicting{color:var(--jade);border-color:var(--jade)}
+.lgrp{margin:1.4rem 0}
+.lgrp>h3{display:flex;align-items:baseline;gap:.6rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink);margin:0 0 .5rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.lgrp>h3 .c{color:var(--muted);font-weight:400}
+.rrow{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;padding:.35rem .1rem;border-bottom:1px solid var(--line);font-size:.84rem}
+.rrow .rid{color:var(--fox);overflow-wrap:anywhere}
+.rrow .rt{color:var(--muted);text-align:right;flex:1}
+@media (max-width:640px){.cards{grid-template-columns:1fr}.stat strong{font-size:1.5rem}.rrow{flex-direction:column;gap:.15rem}.rrow .rt{text-align:left}}
 html,body{overflow-x:hidden;max-width:100%}
 main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywhere}
 @media (max-width:640px){
@@ -98,4 +126,130 @@ def render_doc_page(title: str, description: str, canonical_path: str, body_html
         f'<main class="doc">{body_html}</main>'
         '<footer><p>The blue-team side of a <a href="https://github.com/datascry/kitsune">bot detection ⇄ '
         'evasion lab</a>. <a href="/">Run the live test →</a></p></footer></body></html>'
+    )
+
+
+# ----- customer-facing renderers: curated, mobile-first views built from structured data -----
+
+
+def _cellhtml(s: str) -> str:
+    """Escape a markdown table cell and turn `code` spans into <code>."""
+    out, last = [], 0
+    for m in re.finditer(r"`([^`]+)`", s):
+        out.append(html.escape(s[last : m.start()]))
+        out.append("<code>" + html.escape(m.group(1)) + "</code>")
+        last = m.end()
+    out.append(html.escape(s[last:]))
+    return "".join(out)
+
+
+def _md_table(md: str, after: str) -> tuple[list[str], list[list[str]]]:
+    """Extract the first markdown table appearing after a line containing ``after``."""
+    lines = md.splitlines()
+    i = 0
+    while i < len(lines) and after not in lines[i]:
+        i += 1
+    while i < len(lines) and not lines[i].lstrip().startswith("|"):
+        i += 1
+    header: list[str] | None = None
+    rows: list[list[str]] = []
+    while i < len(lines) and lines[i].lstrip().startswith("|"):
+        cells = [c.strip() for c in lines[i].strip().strip("|").split("|")]
+        i += 1
+        if cells and all(set(c) <= set("-:") for c in cells):
+            continue  # separator row
+        if header is None:
+            header = cells
+        else:
+            rows.append(cells)
+    return header or [], rows
+
+
+def render_detections_page(rules: list[dict[str, Any]]) -> str:
+    """A clean, per-layer view of the rule registry (no predicate/weight/status noise)."""
+    layers = ["network", "browser", "behavioral", "reputation"]
+    groups: dict[str, list[dict[str, Any]]] = {k: [] for k in [*layers, "cross-layer"]}
+    for r in rules:
+        ly = r.get("layers") or []
+        key = "cross-layer" if len(ly) > 1 else (ly[0] if ly else "browser")
+        groups.setdefault(key, []).append(r)
+    convicting = sum(1 for r in rules if r.get("convicting"))
+    body = [
+        "<h1>Detection catalog</h1>",
+        '<p class="lead">Every check Kitsune runs, grouped by signal layer. '
+        "<strong>Convicting</strong> rules (coherence · automation · artifact) can label a session a bot; "
+        "the rest corroborate.</p>",
+        '<div class="stat-row">'
+        f'<div class="stat"><strong>{len(rules)}</strong><span>checks</span></div>'
+        f'<div class="stat"><strong>{convicting}</strong><span>convicting</span></div>'
+        f'<div class="stat"><strong>{len([k for k in groups if groups[k]])}</strong><span>layers</span></div>'
+        "</div>",
+    ]
+    for key in ["cross-layer", *layers]:
+        grp = groups.get(key) or []
+        if not grp:
+            continue
+        rows = "".join(
+            f'<div class="rrow"><span class="rid"><code>{html.escape(r["id"])}</code> '
+            f'<span class="badge {"convicting" if r.get("convicting") else "corroborating"}">'
+            f"{'convicts' if r.get('convicting') else 'corroborates'}</span></span>"
+            f'<span class="rt">{html.escape(r.get("title", ""))}</span></div>'
+            for r in sorted(grp, key=lambda r: (not r.get("convicting"), r["id"]))
+        )
+        body.append(f'<div class="lgrp"><h3>{html.escape(key)} <span class="c">{len(grp)}</span></h3>{rows}</div>')
+    return "".join(body)
+
+
+def render_matrix_page(md: str) -> str:
+    """Responsive per-evader cards from the matrix's verdict table (drops the rule/coverage sections)."""
+    _, rows = _md_table(md, "Per-evader verdict")
+    caught = sum(1 for r in rows if len(r) > 1 and r[1] == "bot")
+    susp = sum(1 for r in rows if len(r) > 1 and r[1] == "suspicious")
+    cards = []
+    for r in rows:
+        if len(r) < 5:
+            continue
+        name, verdict, score, _fired, tells = r[0], r[1], r[2], r[3], r[4]
+        cards.append(
+            '<div class="card"><div class="ct">'
+            f'<span class="cn">{_cellhtml(name)}</span>'
+            f'<span class="badge {html.escape(verdict)}">{html.escape(verdict)}</span></div>'
+            f'<div class="cd">score {html.escape(score)}</div>'
+            f'<div class="cm">{_cellhtml(tells)}</div></div>'
+        )
+    return (
+        "<h1>Detection matrix</h1>"
+        '<p class="lead">Kitsune\'s red-team fleet — real anti-detect tools and browsers — run against the '
+        "detector. Each card is one evader: its verdict and the convicting tells that caught it.</p>"
+        '<div class="stat-row">'
+        f'<div class="stat"><strong>{len(rows)}</strong><span>evaders</span></div>'
+        f'<div class="stat"><strong>{caught}</strong><span>caught (bot)</span></div>'
+        f'<div class="stat"><strong>{susp}</strong><span>suspicious</span></div>'
+        "</div>"
+        f'<div class="cards">{"".join(cards)}</div>'
+    )
+
+
+def render_evasions_page(md: str) -> str:
+    """Clean fleet list from the evasion catalog (drops the frontier prose)."""
+    _, rows = _md_table(md, "Fleet —")
+    cards = []
+    for r in rows:
+        if len(r) < 3:
+            continue
+        name, lang, what = r[0], r[1], r[2]
+        cards.append(
+            '<div class="card"><div class="ct">'
+            f'<span class="cn">{_cellhtml(name)}</span>'
+            f'<span class="badge">{html.escape(lang)}</span></div>'
+            f'<div class="cd">{_cellhtml(what)}</div></div>'
+        )
+    return (
+        "<h1>Evasion catalog</h1>"
+        '<p class="lead">The red-team fleet Kitsune tests itself against — real anti-detect tools, stealth '
+        "browsers, and TLS/HTTP forgers. Every one is exercised against the live detector.</p>"
+        '<div class="stat-row">'
+        f'<div class="stat"><strong>{len(rows)}</strong><span>evader tools</span></div>'
+        "</div>"
+        f'<div class="cards">{"".join(cards)}</div>'
     )
