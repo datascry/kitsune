@@ -252,3 +252,15 @@ terms before pulling).
   Per [[per-session-detection-saturated]], the loop has hit the saturation wall: future ticks should be
   SCAN-only (source genuinely-new external techniques) or wind down to a slower cadence — grinding marginal
   corroborating rules / redundant evaders is not worth the cost.
+- **2026-06-23 · arms-race loop tick 6 (SCAN-only — queue still dry)** — Second consecutive dry scan, this
+  time the EVASION-tooling angle (vs tick 5's detection-SOTA angle). Surfaced tools all map to existing
+  coverage: patchright / playwright-stealth / puppeteer-extra-plugin-stealth (→ playwright-extra,
+  stealth family), nodriver (→ evader). One genuinely new NAME — **SeleniumBase UC Mode** (Selenium +
+  Cloudflare evasion + CDP-leak prevention + fingerprint patches) — but it is the same CDP-native-Selenium-
+  with-stealth CLASS as the existing `undetected` / `selenium-driverless` evaders, so it buys NO new test
+  surface (same per-session floor → caught by the same headless/CDP/coherence tells). The 2026 consensus
+  itself restates Kitsune's thesis verbatim: "stealth only solves fingerprint-level detection, not IP
+  reputation, TLS fingerprinting, or behavioral analysis" — i.e. the durable frontier is the external/wire/
+  behavioral layers Kitsune already spans. No new groundable lead; in-sandbox queue remains DRY. The loop
+  is in steady-state saturation — recommend winding the 4-min cadence down to SCAN-only weekly (or delete
+  cron 2e89fb67; it auto-expires in ~7 days regardless).
