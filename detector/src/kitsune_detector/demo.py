@@ -719,6 +719,17 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 .faq details{border-bottom:1px solid var(--line);padding:.65rem 0}
 .faq summary{cursor:pointer;color:var(--ink);font-size:.88rem;font-weight:600}
 .faq details p{color:var(--muted);font-size:.84rem;margin:.5rem 0 0;max-width:48rem}
+/* --- composite fingerprint ID + per-layer detection groups --- */
+.fpid{border:1px solid var(--line);background:var(--panel-2);padding:.6rem .9rem;margin:.7rem 0;font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.4rem 1.5rem}
+.fpid .id-k{color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-size:.66rem}
+.fpid b{color:var(--fox);font-variant-numeric:tabular-nums;font-weight:700}
+.layer-group{margin:.5rem 0 1rem}
+.layer-group .lg-head{display:flex;align-items:baseline;gap:.6rem;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:.6rem 0 .3rem}
+.layer-group .lg-head .lg-fired{color:var(--fox);font-weight:700}
+.passed-toggle{cursor:pointer;color:var(--muted);font-size:.76rem}
+.passed-toggle summary{color:var(--jade)}
+.passed-list{font-size:.74rem;color:var(--muted);columns:2;column-gap:2rem;margin:.3rem 0}
+.passed-list code{color:var(--jade)}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kitsune","url":"https://kitsune.id/","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Antidetect & browser fingerprint test: cross-layer fingerprint, TLS/JA4, HTTP-2, QUIC, TCP/IP and bot detection."}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a browser fingerprint?","acceptedAnswer":{"@type":"Answer","text":"The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are."}},{"@type":"Question","name":"Can antidetect browsers beat fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"Stealth/antidetect browsers spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain."}},{"@type":"Question","name":"What is JA3 / JA4 TLS fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection."}},{"@type":"Question","name":"Is my browser detectable as a bot?","acceptedAnswer":{"@type":"Answer","text":"Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired."}},{"@type":"Question","name":"Does this send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties."}}]}</script>
@@ -735,12 +746,14 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 <section id="test">
   <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
   <p class="lead">Is your browser — or your stealth / antidetect setup — detectable? Kitsune fingerprints this browser across every layer and returns the <strong>real bot-detection verdict</strong>, live.</p>
+  <div id="ks-fpid" class="fpid">computing your fingerprint…</div>
   <div class="hero">
     <div class="hero-stat"><strong>7</strong><span>signal layers</span></div>
     <div class="hero-stat"><strong>live</strong><span>real detector verdict</span></div>
     <div class="hero-stat"><strong>wire+JS</strong><span>edge-correlated</span></div>
     <p class="hero-note">Network · browser · behavioral · reputation — scored together, then checked for cross-layer contradictions.</p>
   </div>
+  <div id="ks-coherence"></div>
   <h2>Detector verdict</h2>
   <p id="ks-status">collecting…</p><div id="ks-result"></div>
   <section id="ks-bio" aria-label="behavioral biometrics">
@@ -750,6 +763,9 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
     <button type="button" id="ks-analyze">Analyze my behavior</button>
   </section>
+  <div id="ks-predict"></div>
+  <div id="ks-surfaces"></div>
+  <div id="ks-fp"></div>
 </section>
 <section id="how-it-works">
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
@@ -772,6 +788,166 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
   function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  // ---- client-side render: predicted browser, coherence, fingerprint surfaces, composite ID ----
+  var KS_CONVICTING = { coherence: 1, automation: 1, artifact: 1 };
+  var KS_RULES = null; // /rules.json (full evaluable registry), fetched once
+  function fnv(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h = ((h ^ s.charCodeAt(i)) * 16777619) >>> 0; } return (h >>> 0).toString(16); }
+  function has(k) { return k in window; }
+  function predictEngine(ev) {
+    var gecko = false, webkit = false, blink = false;
+    try { gecko = CSS.supports("-moz-appearance", "none") || has("InstallTrigger") || has("mozInnerScreenX") || typeof navigator.buildID === "string"; } catch (e) {}
+    try { webkit = (has("GestureEvent") && !has("chrome")) || (CSS.supports("-webkit-touch-callout", "none") && !has("chrome") && !gecko); } catch (e) {}
+    try { blink = has("chrome") || "userAgentData" in navigator || CSS.supports("-webkit-app-region", "drag"); } catch (e) {}
+    if (gecko && !blink) { ev.push("CSS -moz-appearance / mozInnerScreenX / buildID"); return { engine: "gecko", confidence: 0.95 }; }
+    if (blink && !gecko) { ev.push(has("chrome") ? "window.chrome present" : "navigator.userAgentData present"); return { engine: "blink", confidence: 0.95 }; }
+    if (webkit) { ev.push("GestureEvent / -webkit-touch-callout, no chrome object"); return { engine: "webkit", confidence: 0.9 }; }
+    ev.push("no decisive engine feature"); return { engine: "unknown", confidence: 0.3 };
+  }
+  function detectOsForm(ev) {
+    var plat = (navigator.platform || "").toString(), touch = navigator.maxTouchPoints > 0 || has("ontouchstart"), ua = navigator.userAgent, os = "unknown", form = "unknown";
+    if (/iPhone|iPad|iPod/.test(plat) || (plat === "MacIntel" && navigator.maxTouchPoints > 1)) { os = "iOS"; form = "mobile"; ev.push("iOS platform / touch-Mac"); }
+    else if (/Mac/i.test(plat)) { os = "macOS"; form = "desktop"; }
+    else if (/Win/i.test(plat)) { os = "Windows"; form = "desktop"; }
+    else if (/Linux|Android|X11/i.test(plat)) {
+      if (touch && Math.min(screen.width, screen.height) <= 600) { os = "Android"; form = "mobile"; ev.push("Linux platform + touch + small screen"); }
+      else if (/Android/i.test(ua)) { os = "Android"; form = "mobile"; }
+      else { os = "Linux"; form = "desktop"; }
+    }
+    return { os: os, formFactor: form };
+  }
+  function detectBrowser(engine, os, form, ev) {
+    if (os === "iOS") { ev.push("iOS: all browsers share system WebKit"); return "iOS browser (WebKit)"; }
+    if (engine === "gecko") return form === "mobile" ? "Firefox / GeckoView (Android)" : "Firefox";
+    if (engine === "webkit") return "Safari";
+    if (engine === "blink") {
+      var mob = function (n) { return form === "mobile" ? n + " (Android)" : n; };
+      if (has("opr") || has("opera")) { ev.push("window.opr (Opera)"); return mob("Opera"); }
+      if ("brave" in navigator) { ev.push("navigator.brave (Brave)"); return mob("Brave"); }
+      var brands = (navigator.userAgentData && navigator.userAgentData.brands) || [];
+      var brand = brands.map(function (b) { return b.brand; }).join(" ");
+      if (/Edg/i.test(brand)) { ev.push("UA-CH brand: Edge"); return mob("Edge"); }
+      if (/Samsung/i.test(brand)) { ev.push("UA-CH brand: Samsung Internet"); return "Samsung Internet"; }
+      if (/Google Chrome/i.test(brand)) { ev.push("UA-CH brand: Google Chrome"); return mob("Chrome"); }
+      ev.push("Chromium engine, no vendor-specific global or UA-CH brand"); return mob("Chromium");
+    }
+    return "unknown";
+  }
+  function predict() { var ev = []; var e = predictEngine(ev); var of = detectOsForm(ev); var browser = detectBrowser(e.engine, of.os, of.formFactor, ev); return { engine: e.engine, browser: browser, os: of.os, formFactor: of.formFactor, confidence: e.confidence, evidence: ev }; }
+  function uaClaimed() {
+    var ua = navigator.userAgent, engine = "unknown", os = "unknown";
+    if (/Firefox\\//.test(ua)) engine = "gecko"; else if (/Edg\\/|OPR\\/|Chrome\\//.test(ua)) engine = "blink"; else if (/Version\\/.*Safari\\//.test(ua)) engine = "webkit";
+    if (/Android/.test(ua)) os = "Android"; else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS"; else if (/Windows/.test(ua)) os = "Windows"; else if (/Macintosh|Mac OS X/.test(ua)) os = "macOS"; else if (/Linux|X11/.test(ua)) os = "Linux";
+    return { engine: engine, os: os };
+  }
+  function coherence(p) {
+    var c = uaClaimed();
+    var engineOk = p.engine === "unknown" || c.engine === "unknown" || p.engine === c.engine;
+    var osOk = p.os === "unknown" || c.os === "unknown" || p.os === c.os;
+    var match = engineOk && osOk;
+    var reason = match ? "feature prediction agrees with the User-Agent" : (!engineOk ? "features detect " + p.engine + ", but the UA claims " + c.engine : "features detect " + p.os + ", but the UA claims " + c.os);
+    return { match: match, claimedEngine: c.engine, claimedOs: c.os, reason: reason };
+  }
+  function canvasHash() { try { var c = document.createElement("canvas"); c.width = 200; c.height = 40; var ctx = c.getContext("2d"); if (!ctx) return "n/a"; ctx.textBaseline = "top"; ctx.font = "16px Arial"; ctx.fillStyle = "#069"; ctx.fillRect(0, 0, 200, 40); ctx.fillStyle = "#f60"; ctx.fillText("Kitsune canvas \\u2728", 4, 4); return fnv(c.toDataURL()); } catch (e) { return "n/a"; } }
+  function rawFingerprint() {
+    var renderer = "n/a", vendor = "n/a";
+    try { var gl = document.createElement("canvas").getContext("webgl"); var dbg = gl && gl.getExtension("WEBGL_debug_renderer_info"); if (gl && dbg) { renderer = String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)); vendor = String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)); } } catch (e) {}
+    var tz = "n/a"; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "n/a"; } catch (e) {}
+    return {
+      "User-Agent": navigator.userAgent,
+      "navigator.platform": navigator.platform || "n/a",
+      "navigator.vendor": navigator.vendor || "n/a",
+      "Languages": (navigator.languages || []).join(", ") || "n/a",
+      "Timezone": tz,
+      "Screen": screen.width + "\\u00d7" + screen.height + " \\u00b7 DPR " + window.devicePixelRatio + " \\u00b7 " + screen.colorDepth + "-bit",
+      "Hardware concurrency": String(navigator.hardwareConcurrency == null ? "n/a" : navigator.hardwareConcurrency),
+      "Device memory": (navigator.deviceMemory != null ? navigator.deviceMemory + " GB" : "n/a"),
+      "Max touch points": String(navigator.maxTouchPoints || 0),
+      "WebGL vendor": vendor,
+      "WebGL renderer": renderer
+    };
+  }
+  function renderCoherence(p) {
+    var el = document.getElementById("ks-coherence"); if (!el) return; var c = coherence(p);
+    el.innerHTML = '<div class="coherence ' + (c.match ? "match" : "mismatch") + '">'
+      + '<div class="side"><span class="cap">Feature prediction</span><span class="val">' + esc(p.engine) + ' \\u00b7 ' + esc(p.os) + '</span></div>'
+      + '<div class="verdict-cell">' + (c.match ? "COHERENT" : "MISMATCH") + '</div>'
+      + '<div class="side"><span class="cap">User-Agent claims</span><span class="val">' + esc(c.claimedEngine) + ' \\u00b7 ' + esc(c.claimedOs) + '</span></div>'
+      + '</div><p class="note">' + esc(c.reason) + '</p>';
+  }
+  function renderPredict(p) {
+    var el = document.getElementById("ks-predict"); if (!el) return;
+    var kv = function (k, v) { return '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span></div>'; };
+    var ev = (p.evidence || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("");
+    el.innerHTML = '<h2>Predicted browser <span class="note">\\u2014 from feature detection, independent of the User-Agent</span></h2>'
+      + '<div class="predict-grid">' + kv("engine", p.engine) + kv("browser", p.browser) + kv("OS", p.os) + kv("form factor", p.formFactor) + kv("confidence", Math.round(p.confidence * 100) + "%") + '</div>'
+      + '<details class="ev"><summary>feature evidence</summary><ul>' + ev + '</ul></details>';
+  }
+  function renderFingerprint(fp) {
+    var el = document.getElementById("ks-fp"); if (!el) return; var rows = "";
+    for (var k in fp) { if (fp.hasOwnProperty(k)) rows += '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v" style="font-size:.82rem;font-weight:400;word-break:break-all">' + esc(fp[k]) + '</span></div>'; }
+    el.innerHTML = '<h2>Enumerated values <span class="note">\\u2014 your raw fingerprint surface</span></h2><div class="predict-grid">' + rows + '</div>';
+  }
+  var KS_SURFACES = [
+    { name: "Navigator", val: function (fp) { return (fp["User-Agent"] || "").slice(0, 52) + "\\u2026"; }, tells: ["webdriver", "webdriver_spoofed", "webdriver_getter_tampered", "nav_property_spoofed", "automation_globals"] },
+    { name: "WebGL", val: function (fp) { return fp["WebGL renderer"] || "n/a"; }, tells: ["webgl_getparameter_tampered", "webgl_worker_divergence", "webgl_renderer_artifact"] },
+    { name: "Canvas", val: function () { return "2D render \\u00b7 " + canvasHash(); }, tells: ["canvas_lie", "canvas_noise", "canvas_worker_divergence"] },
+    { name: "Audio", val: function () { return "OfflineAudioContext"; }, tells: ["audio_noise", "audio_readback_noise"] },
+    { name: "Timezone", val: function (fp) { return fp["Timezone"] || "n/a"; }, tells: ["timezone_inconsistent", "timezone_internal_incoherent", "timezone_worker_divergence"] },
+    { name: "Functions", val: function () { return "native integrity"; }, tells: ["native_invariant_violated", "function_tostring_tampered", "tostring_tampered", "plugins_spoofed"] },
+    { name: "Workers / realms", val: function () { return "main vs Worker/iframe"; }, tells: ["worker_divergence", "iframe_divergence", "worker_constructor_tampered", "worker_source_rewritten", "languages_worker_divergence"] }
+  ];
+  function renderSurfaces(fp, firedSet) {
+    var el = document.getElementById("ks-surfaces"); if (!el) return; firedSet = firedSet || {};
+    var cards = "", dirty = 0;
+    for (var i = 0; i < KS_SURFACES.length; i++) {
+      var s = KS_SURFACES[i], hit = [];
+      for (var j = 0; j < s.tells.length; j++) { if (firedSet["br." + s.tells[j]]) hit.push(s.tells[j]); }
+      var tampered = hit.length > 0; if (tampered) dirty++;
+      cards += '<div class="surface' + (tampered ? " tampered" : "") + '"><div class="top"><span class="sname">' + esc(s.name) + '</span><span class="chip">' + (tampered ? "tampered" : "clean") + '</span></div><div class="sval">' + esc(s.val(fp)) + '</div>' + (tampered ? '<div class="stells">' + esc(hit.join(", ")) + '</div>' : "") + '</div>';
+    }
+    el.innerHTML = '<h2>Fingerprint surfaces <span class="note">\\u2014 value \\u00b7 tamper status (' + dirty + ' tampered)</span></h2><div class="surfaces">' + cards + '</div>';
+  }
+  function renderFpId(fp) {
+    var el = document.getElementById("ks-fpid"); if (!el) return; var parts = [];
+    for (var k in fp) { if (fp.hasOwnProperty(k)) parts.push(k + "=" + fp[k]); }
+    var bh = fnv(parts.join("|")); window.__ksBrowserFp = bh;
+    el.innerHTML = '<span><span class="id-k">browser fingerprint</span> <b>' + esc(bh) + '</b></span>'
+      + '<span><span class="id-k">canvas</span> <b>' + esc(canvasHash()) + '</b></span>'
+      + '<span><span class="id-k">full-stack id</span> <b title="browser \\u2295 wire \\u2014 needs the edge">pending edge</b></span>';
+  }
+  function renderDetections(firedMap, firedCount) {
+    if (!KS_RULES || !KS_RULES.rules) {
+      if (!firedCount) return '<div class="na"><p>No convicting signals \\u2014 consistent with a real browser.</p></div>';
+      var fh = '<table class="detections"><tr><th>signal</th><th>category</th><th>weight</th><th>why</th></tr>';
+      for (var fid in firedMap) { if (firedMap.hasOwnProperty(fid)) { var fc = firedMap[fid]; fh += '<tr class="' + (KS_CONVICTING[fc.category] ? "fired" : "clear") + '"><td class="mark"><code>' + esc(fid) + '</code></td><td>' + esc(fc.category) + '</td><td class="weight">' + ((typeof fc.weight === "number") ? fc.weight.toFixed(2) : "") + '</td><td class="title">' + esc(fc.detail) + '</td></tr>'; } }
+      return fh + '</table>';
+    }
+    var LAYERS = ["network", "browser", "behavioral", "reputation"], groups = { cross: [] }, rules = KS_RULES.rules, gi, k;
+    for (gi = 0; gi < LAYERS.length; gi++) groups[LAYERS[gi]] = [];
+    for (k = 0; k < rules.length; k++) { var r = rules[k]; var lay = (r.layers && r.layers.length > 1) ? "cross" : ((r.layers && r.layers[0]) || "browser"); if (!groups[lay]) groups[lay] = []; groups[lay].push(r); }
+    var order = ["cross"].concat(LAYERS), out = '<p class="note">' + firedCount + ' signal(s) fired across ' + rules.length + ' checks \\u2014 only coherence / automation / artifact convict; the rest corroborate.</p>';
+    for (gi = 0; gi < order.length; gi++) {
+      var key = order[gi], grp = groups[key] || []; if (!grp.length) continue;
+      var rows = "", passed = [], nFired = 0;
+      for (k = 0; k < grp.length; k++) {
+        var ru = grp[k], c = firedMap[ru.id];
+        if (c) { nFired++; rows += '<tr class="' + (KS_CONVICTING[c.category] ? "fired" : "clear") + '"><td class="mark"><code>' + esc(ru.id) + '</code></td><td>' + esc(c.category) + '</td><td class="weight">' + ((typeof c.weight === "number") ? c.weight.toFixed(2) : "") + '</td><td class="title">' + esc(c.detail) + '</td></tr>'; }
+        else passed.push(ru.id);
+      }
+      var title = key === "cross" ? "cross-layer" : key;
+      out += '<div class="layer-group"><div class="lg-head">' + esc(title) + ' <span class="lg-fired">' + nFired + ' fired</span> <span>\\u00b7 ' + passed.length + ' passed</span></div>';
+      out += rows ? ('<table class="detections"><tr><th>signal</th><th>category</th><th>weight</th><th>why</th></tr>' + rows + '</table>') : '<p class="note">none fired</p>';
+      if (passed.length) { var pl = passed.map(function (x) { return '<code>' + esc(x) + '</code>'; }).join(" "); out += '<details class="passed-toggle"><summary>' + passed.length + ' checks passed</summary><div class="passed-list">' + pl + '</div></details>'; }
+      out += '</div>';
+    }
+    return out;
+  }
+  function renderClientImmediate() {
+    try {
+      var p = predict(); window.__ksFp = rawFingerprint();
+      renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); renderFingerprint(window.__ksFp); renderSurfaces(window.__ksFp, {});
+    } catch (e) {}
+  }
   // Close the detection loop for the visitor: render the REAL detector's verdict (the /ingest response).
   function showVerdict(v) {
     var status = document.getElementById("ks-status"), out = document.getElementById("ks-result");
@@ -793,22 +969,20 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
         + '<span class="bar-val">' + lp + '</span></div>';
     }
     html += '<div class="layer-bars">' + bars + '</div>';
-    // Fired-rule detections — convicting categories highlighted, corroborating ones dimmed.
-    var cs = v.contradictions || [], convicting = { coherence: 1, automation: 1, artifact: 1 };
-    if (cs.length) {
-      html += '<p class="note">' + cs.length + ' signal(s) fired — only coherence / automation / artifact convict; the rest corroborate.</p>';
-      html += '<table class="detections"><tr><th>signal</th><th>category</th><th>weight</th><th>why</th></tr>';
-      for (var i = 0; i < cs.length; i++) {
-        var c = cs[i], cls = convicting[c.category] ? "fired" : "clear";
-        var w = (typeof c.weight === "number") ? c.weight.toFixed(2) : "";
-        html += '<tr class="' + cls + '"><td class="mark"><code>' + esc(c.rule_id) + '</code></td>'
-          + '<td>' + esc(c.category) + '</td><td class="weight">' + w + '</td>'
-          + '<td class="title">' + esc(c.detail) + '</td></tr>';
-      }
-      html += "</table>";
-    } else { html += '<div class="na"><p>No convicting signals — consistent with a real browser.</p></div>'; }
+    // Layer-grouped detections (fired convicting vs corroborating + collapsible passed), from the full
+    // rule registry (/rules.json) cross-referenced with the server verdict's fired contradictions.
+    var cs = v.contradictions || [], firedMap = {}, firedSet = {};
+    for (var i = 0; i < cs.length; i++) { firedMap[cs[i].rule_id] = cs[i]; firedSet[cs[i].rule_id] = 1; }
+    html += renderDetections(firedMap, cs.length);
     if (out) out.innerHTML = html;
+    // Surface tamper-state reflects which browser rules fired (from the server verdict).
+    renderSurfaces(window.__ksFp || rawFingerprint(), firedSet);
   }
+  // Fetch the full rule registry (for layer-grouped detections + the passed-checks list), then paint the
+  // client-side panels immediately — predicted browser, coherence, surfaces, composite ID — independent of
+  // the server verdict (which arrives after collection).
+  try { fetch("/rules.json").then(function (r) { return r.json(); }).then(function (d) { KS_RULES = d; }).catch(function () {}); } catch (e) {}
+  renderClientImmediate();
   var id = sid();
   if (!id) { return; }
   var pts = [];
