@@ -1,9 +1,3 @@
-<p align="center">
-  <a href="https://kitsune.id"><img src="docs/assets/banner.png" alt="Kitsune — antidetect &amp; browser-fingerprint detection" width="100%" /></a>
-</p>
-
-<p align="center"><strong><a href="https://kitsune.id">Try the live test → kitsune.id</a></strong></p>
-
 # Kitsune — a bot detection ⇄ evasion lab
 
 [![ci](https://github.com/datascry/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/ci.yml)
