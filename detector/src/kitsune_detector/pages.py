@@ -253,11 +253,12 @@ def render_evasions_page(md: str) -> str:
         if len(r) < 3:
             continue
         name, lang, what = r[0], r[1], r[2]
+        sl = _slug(name)
         cards.append(
-            f'<a class="card" href="/evasions/{html.escape(_slug(name))}"><div class="ct">'
+            f'<a class="card" href="/evasions/{html.escape(sl)}"><div class="ct">'
             f'<span class="cn">{_cellhtml(name)}</span>'
             f'<span class="badge">{html.escape(lang)}</span></div>'
-            f'<div class="cd">{_cellhtml(what)}</div></a>'
+            f'<div class="cd">{html.escape(evader_description(sl, what))}</div></a>'
         )
     return (
         "<h1>Evasion catalog</h1>"
@@ -463,6 +464,67 @@ def reverse_index(tech: dict[str, dict[str, Any]]) -> dict[str, list[str]]:
     return idx
 
 
+#: Hand-authored, customer-facing descriptions per evader tool — what it actually is and how it evades
+#: (the fleet table's one-liners are terse internal headers). Mode variants resolve to their base tool.
+EVADER_DESCRIPTIONS: dict[str, str] = {
+    "agent": "An LLM agent that drives a remote Chromium with model-chosen actions — realistic, "
+    "human-like automation rather than a fixed script.",
+    "apify-fp-inject": "Playwright Chromium with an Apify-style fingerprint overlay injected over the real "
+    "browser — it spoofs JS-visible surfaces while the underlying engine stays Chromium.",
+    "azuretls": "A Go HTTP client (azuretls) that forges a real browser's TLS (JA3/JA4) and HTTP/2 "
+    "fingerprint with no browser engine at all — pure wire-layer impersonation.",
+    "brave": "The real Brave browser, which farbles canvas and audio by design as a privacy feature — a "
+    "legitimate human browser, used as a control to keep the detector honest.",
+    "camoufox": "Engine-level anti-detect Firefox: it patches the Gecko C++ engine itself instead of "
+    "injecting JavaScript, so the spoof leaves no JS-detectable seams. The hardest case in the fleet.",
+    "curl-impersonate": "curl_cffi / curl-impersonate — an HTTP client that replays a real browser's exact "
+    "TLS and HTTP/2 fingerprint with no browser and no JavaScript execution.",
+    "firefox-os-spoof": "A Firefox automation that fakes its User-Agent OS but forgets to spoof "
+    "navigator.oscpu — a deliberate cross-layer coherence break.",
+    "go-tls": "Forges a real-browser TLS ClientHello with uTLS (Go) — a pure wire-layer JA3/JA4 spoof, no "
+    "browser engine.",
+    "h2-rapid-reset": "Not a stealth tool: an HTTP/2 frame-abuse flooder (rapid-reset CVE-2023-44487, "
+    "CONTINUATION flood, control-frame floods) that pressure-tests the edge's DoS detection.",
+    "mobile-emulation": "Desktop Chromium emulating an Android phone via Playwright's Pixel 5 device — tests "
+    "whether a mobile UA and viewport stay coherent with a desktop stack.",
+    "nodriver": "The successor to undetected-chromedriver: drives Chrome directly over CDP with no "
+    "Selenium/webdriver surface at all, async-first.",
+    "playwright-extra": "Playwright plus puppeteer-extra-plugin-stealth — a stack of JavaScript patches that "
+    "mask the common headless and automation tells.",
+    "pow": "A proof-of-work challenge primitive (anubis / friendlycaptcha / altcha families) — exercises "
+    "PoW-style anti-bot gates rather than fingerprint evasion.",
+    "primp": "A browser-impersonating HTTP client: forges the TLS and HTTP/2 stack of a real browser for a "
+    "single request, with no JavaScript.",
+    "pydoll": "Async, CDP-native Python automation with no webdriver dependency — drives Chrome through the "
+    "DevTools protocol directly.",
+    "selenium-driverless": "Selenium-style automation driven purely over CDP, avoiding the WebDriver "
+    "protocol that classic Selenium leaks.",
+    "stealth": "A plain real Chromium driven through the edge — the baseline 'just a real browser, automated' case.",
+    "undetected": "undetected-chromedriver — a patched ChromeDriver that strips the classic Selenium/CDP "
+    "webdriver giveaways.",
+    "vanilla": "A single plain HTTP request through the edge — the no-evasion baseline everything else is "
+    "measured against.",
+    "webkit-ua-spoof": "A WebKit-engine bot faking a Chrome User-Agent — its TLS/engine fingerprint "
+    "contradicts the claimed browser.",
+    "xtest-coalesce": "A pressure-test: injects mouse motion via X11 XTEST to see whether synthetic input "
+    "can defeat the coalesced-pointer-events tell.",
+    "zendriver": "A maintained successor to nodriver — CDP-native Chrome automation with no webdriver surface.",
+}
+
+
+def evader_description(slug: str, fallback: str = "") -> str:
+    """Curated description for an evader; mode variants (camoufox-hardened) fall back to the base tool."""
+    if slug in EVADER_DESCRIPTIONS:
+        return EVADER_DESCRIPTIONS[slug]
+    parts = slug.split("-")
+    while len(parts) > 1:
+        parts = parts[:-1]
+        base = "-".join(parts)
+        if base in EVADER_DESCRIPTIONS:
+            return EVADER_DESCRIPTIONS[base]
+    return fallback
+
+
 def _chiplist(items: list[str], href: str) -> str:
     links = " ".join(f'<a href="{href}{html.escape(s)}"><code>{html.escape(s)}</code></a>' for s in items)
     return f'<div class="chiplist">{links}</div>'
@@ -473,14 +535,16 @@ def render_evasion_detail(
     ev: dict[str, Any] | None,
     fleet: dict[str, str] | None,
     tech: dict[str, Any] | None,
+    rules: dict[str, dict[str, Any]] | None = None,
 ) -> str | None:
     """One evader: what it is, its verdict, and the FULL convicting-tell list (linking to detections)."""
     if ev is None and fleet is None and tech is None:
         return None
     verdict = (tech or {}).get("verdict") or (ev or {}).get("verdict")
     parts = [f"<h1>{html.escape(slug)}</h1>"]
-    if fleet:
-        parts.append(f'<p class="lead">{_cellhtml(fleet["what"])}</p>')
+    desc = evader_description(slug, fleet["what"] if fleet else "")
+    if desc:
+        parts.append(f'<p class="lead">{html.escape(desc)}</p>')
     stats = ""
     if verdict:
         stats += f'<div class="stat"><strong>{html.escape(str(verdict))}</strong><span>verdict</span></div>'
@@ -499,9 +563,11 @@ def render_evasion_detail(
         )
     tells = (tech or {}).get("tells") or (ev or {}).get("tells") or []
     if tells:
+        rules = rules or {}
         rows = "".join(
             f'<div class="rrow"><span class="rid">'
-            f'<a href="/detections/{html.escape(t)}"><code>{html.escape(t)}</code></a></span></div>'
+            f'<a href="/detections/{html.escape(t)}"><code>{html.escape(t)}</code></a></span>'
+            f'<span class="rt">{html.escape(str(rules.get(t, {}).get("title", "")))}</span></div>'
             for t in tells
         )
         parts.append(f'<div class="lgrp"><h3>Convicting tells <span class="c">{len(tells)}</span></h3>{rows}</div>')

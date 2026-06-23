@@ -55,6 +55,13 @@ def test_evasion_drilldown_is_rich(client: TestClient) -> None:
     assert "evades conviction" in client.get("/evasions/camoufox-hardened").text
 
 
+def test_evader_descriptions_are_curated(client: TestClient) -> None:
+    # Real, hand-authored descriptions, not the terse fleet one-liner.
+    assert "successor to undetected-chromedriver" in client.get("/evasions/nodriver").text
+    # Mode variants resolve to the base tool's description.
+    assert "patches the Gecko" in client.get("/evasions/camoufox-hardened").text
+
+
 def test_detection_drilldown_lists_caught_evaders(client: TestClient) -> None:
     d = client.get("/detections/br.headless_ua").text
     assert "Evaders it caught" in d and 'href="/evasions/' in d

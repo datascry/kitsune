@@ -46,23 +46,28 @@ _EVADER_IMPORT = re.compile(
 )
 
 
-def _imports_marker(line: str, marker: str) -> bool:
+def _imports_marker(line: str, marker: str, is_manifest: bool) -> bool:
     m = re.escape(marker)
-    return bool(
+    if (
         re.search(rf"^\s*(?:from|import)\s+{m}\b", line)  # python import
         or re.search(rf"(?:from\s+|require\s*\(\s*|import\s*\(\s*)['\"]{m}\b", line)  # js/ts import
-        or re.search(rf"^\s*['\"]?{m}['\"]?\s*[:=]", line)  # pyproject / package.json dependency key
-    )
+    ):
+        return True
+    # The bare `marker:` / `marker =` dependency-KEY heuristic is only valid in a manifest. In source it
+    # would flag a plain dict literal (e.g. an evader-description map keyed `"nodriver":`) — prose, not a
+    # dependency. A real copyleft dep in the core still surfaces in pyproject.toml / package.json.
+    return is_manifest and bool(re.search(rf"^\s*['\"]?{m}['\"]?\s*[:=]", line))
 
 
 def offending_lines(path: Path) -> list[str]:
+    is_manifest = path.name in {"package.json", "pyproject.toml"} or path.suffix == ".toml"
     hits: list[str] = []
     for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if _EVADER_IMPORT.search(line):
             hits.append(f"{path}:{lineno}: core imports evaders ({line.strip()})")
         low = line.lower()
         for marker in COPYLEFT_MARKERS:
-            if marker in low and _imports_marker(low, marker):
+            if marker in low and _imports_marker(low, marker, is_manifest):
                 hits.append(f"{path}:{lineno}: copyleft dependency ({line.strip()})")
     return hits
 
