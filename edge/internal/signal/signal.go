@@ -61,6 +61,13 @@ func FromClientHello(
 			out = append(out, Network(sessionID, "ja4_os_hint", hint.OS, at))
 		}
 	}
+	// Raw wire-order fingerprints JA4 sorts away (the stronger impostor tell — a pinned TLS template emits a
+	// fixed/Chrome-impossible order; GREASE normalized to "g" so placement is captured). Appended last so the
+	// hint signals keep their positions.
+	out = append(out,
+		Network(sessionID, "tls_ext_order", ch.ExtOrder(), at),
+		Network(sessionID, "tls_cipher_order", ch.CipherOrder(), at),
+	)
 	return out
 }
 

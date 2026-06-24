@@ -43,8 +43,8 @@ func TestPrepareMintsSession(t *testing.T) {
 	if prep.sessionID != "fixed-session" || prep.setCookie == nil {
 		t.Errorf("session=%s setCookie=%v", prep.sessionID, prep.setCookie)
 	}
-	if len(prep.signals) != 3 {
-		t.Errorf("want ja3+ja4+observed_ip signals, got %d", len(prep.signals))
+	if len(prep.signals) != 5 {
+		t.Errorf("want ja3+ja4+ext-order+cipher-order+observed_ip signals, got %d", len(prep.signals))
 	}
 	if last := prep.signals[len(prep.signals)-1]; last.Kind != "observed_ip" {
 		t.Errorf("expected a trailing observed_ip signal, got kind=%s", last.Kind)
