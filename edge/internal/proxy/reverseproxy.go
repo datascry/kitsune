@@ -450,8 +450,13 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		prep.signals = append(prep.signals, signal.Network(prep.sessionID, "ua_kernel", uak, p.now()))
 	}
 	if p.synStore != nil {
-		if k, ok := p.synStore.Get(clientIP(r)); ok {
-			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "tcp_kernel", k, p.now()))
+		if k, ja4t, ok := p.synStore.Get(clientIP(r)); ok {
+			if k != "" {
+				prep.signals = append(prep.signals, signal.Network(prep.sessionID, "tcp_kernel", k, p.now()))
+			}
+			if ja4t != "" {
+				prep.signals = append(prep.signals, signal.Network(prep.sessionID, "ja4t", ja4t, p.now()))
+			}
 		}
 	}
 	// QUIC/HTTP-3 coherence: if the client also attempted QUIC here (drawn by the Alt-Svc advert), the

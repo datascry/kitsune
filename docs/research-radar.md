@@ -476,3 +476,32 @@ TLS-fingerprinting; FingerprintJS osMismatch/VPN; GreyNoise GNQL; FP-Inconsisten
 **Cheapest highest-value first build: N1 (TCP/IP value-parsing → JA4T + p0f quirks)** — pure parsing of the
 SYN already captured, no new infra, and it adds a wire-layer proxy/tunnel/mobile tell Kitsune only has via
 CIDR lists today. Then N2 (TLS ext order) and N3 (QUIC transport params).
+
+## Network-fingerprint grounding data (2026-06-25, 3-agent sourcing for N1-N7)
+
+Datasets/ground-truth for grounding the wire-layer tells, license-verified on source. Discipline unchanged:
+ship only de-identified aggregates / signature maps, never raw rows.
+
+| source | grounds | access | licence | fetchable | use |
+|---|---|---|---|---|---|
+| **p0f v3 `p0f.fp`** | TCP SYN signature → OS + `[mtu]` MSS→link table | github.com/p0f/p0f `docs/p0f.fp` | **LGPL 2.1** | ✅ | JA4T/TCP-OS signature map + tunnel-MSS map, no raw traffic |
+| **ValdikSS `p0f-mtu`** | MSS → VPN/tunnel type (WireGuard 1440/1420, OpenVPN ~1400/1369, PPPoE 1492, mobile 1280/1450, native 1460) | github.com/ValdikSS/p0f-mtu | **LGPL** | ✅ | grounds the N1 MSS→tunnel hint |
+| **uTLS `u_parrots.go`** | exact per-browser ClientHello (cipher/ext ORDER, groups, sigalgs, key_share, GREASE) for ~40 Chrome/FF/Safari/Edge versions | github.com/refraction-networking/utls | **BSD-3** | ✅ | ground truth for N2 (ext order) + N5; "this JA4/order = Chrome 131" |
+| **curl-impersonate `tests/signatures`** | per-browser TLS+h2 templates (2nd source vs uTLS) | github.com/lwthiker/curl-impersonate | **MIT** | ✅ | corroborates N2/N5 + h2 |
+| **FoxIO ja4db** (`ja4db.com/api/read`, `ja4plus-mapping.csv`) | JA4/JA4H/JA4T → app/library/device/OS (+ malware col) | ja4db.com / repo | **BSD-3 (JA4-TLS part)**; JA4+ suite FoxIO-1.1 (non-monetization) | ⚠ (egress-gated; csv in repo ✅) | fingerprint→client map + prevalence |
+| **QUIC Hunter** (`quic-hunter/libraries`, PAM 2024) | QUIC transport-param ORDER → 18 QUIC libs (quiche/ngtcp2/quic-go/cronet) | github.com/quic-hunter/libraries | no LICENSE → extract heuristics only | ⚠ | grounds N3 (QUIC transport params) |
+| **Akamai h2 (BH-EU-17)** + lwthiker ts1 | h2 Akamai-fp + pseudo-header order per browser | blackhat.com / github.com/lwthiker/ts1 | cite / OSS | ✅ | grounds h2 + N4 reference values |
+| **Satori `tcp.xml`** | TCP→OS 2nd source incl. IoT/printer/phone device class | github.com/xnih/satori | **GPLv2** | ✅ | corroborates p0f; device-class |
+| Zardaxt | (TCP-OS) | github.com/NikolaiT/zardaxt | **proprietary — DO NOT use** | ❌ | reference only |
+
+**Highest-value, ready now:** p0f.fp + ValdikSS p0f-mtu (LGPL) ground N1's JA4T-OS + MSS-tunnel with zero raw
+traffic; uTLS u_parrots (BSD) + curl-impersonate (MIT) are the exact-byte browser templates that ground
+N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack logic.
+
+- **2026-06-25 · N1 SHIPPED (TCP/IP value-parsing → JA4T + display)** — edge now parses MSS value,
+  window-scale value, SACK-permitted, timestamps, DF, ECN, and the raw option kinds from the SYN it already
+  captures; computes the FoxIO **JA4T** (`window_options_mss_scale`); stores+emits `network.ja4t`; `/inspect`
+  + the live wire panel display **JA4T (TCP/IP)** with a derived MSS→tunnel hint. Pure parse of bytes already
+  in hand; edge + detector tests green. No new convicting rule (MSS-tunnel is informational — legit VPN/mobile
+  users have low MSS; the OS-coherence tell `net.tcp_os_vs_ua` already convicts). Next: N2 (TLS ext order), N3
+  (QUIC transport params), N5 (CH micro-tells), N4 (h1 header order).

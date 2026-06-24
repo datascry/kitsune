@@ -37,9 +37,8 @@ func Sniff(store *Store, stop <-chan struct{}) error {
 		if !ok {
 			continue
 		}
-		if os := fingerprint.ClassifyTCPOS(syn); os != "" {
-			// Source IP is bytes 12-16 of the IPv4 header (ParseSYN already validated the bounds).
-			store.Put(net.IP(buf[12:16]).String(), os)
-		}
+		// Store the JA4T fingerprint for every parsed SYN (it is always meaningful), plus the OS family
+		// when confidently classified. Source IP is bytes 12-16 of the IPv4 header (bounds already validated).
+		store.Put(net.IP(buf[12:16]).String(), fingerprint.ClassifyTCPOS(syn), syn.JA4T())
 	}
 }

@@ -5,6 +5,8 @@ package fingerprint
 
 import (
 	"encoding/binary"
+	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -31,18 +33,27 @@ func ParseSYN(ip []byte) (TCPSyn, bool) {
 	}
 	window := binary.BigEndian.Uint16(tcp[14:16])
 	dataOffset := int(tcp[12]>>4) * 4
-	syn := TCPSyn{TTL: ttl, WindowSize: window}
+	syn := TCPSyn{
+		TTL:        ttl,
+		WindowSize: window,
+		DF:         ip[6]&0x40 != 0,                      // IPv4 Don't-Fragment flag
+		ECN:        tcp[13]&0xc0 != 0 || ip[1]&0x03 != 0, // TCP ECE/CWR (ECN setup) or IP ToS ECT/CE
+	}
 	if dataOffset > 20 && dataOffset <= len(tcp) {
-		syn.OptionOrder = parseTCPOptions(tcp[20:dataOffset])
+		syn.parseOptions(tcp[20:dataOffset])
 	}
 	return syn, true
 }
 
-// parseTCPOptions walks the TCP option bytes and returns the option kinds, in order, as short tokens.
-func parseTCPOptions(opts []byte) string {
+// parseOptions walks the TCP option bytes, filling the OS-token order (legacy classifier) plus the raw
+// option kinds and the value-carrying options (MSS, window scale, SACK-permitted, timestamps) that JA4T and
+// MTU/tunnel detection need. Best-effort: a malformed length stops the walk rather than looping.
+func (s *TCPSyn) parseOptions(opts []byte) {
 	order := make([]string, 0, 8)
+	kinds := make([]uint8, 0, 8)
 	for i := 0; i < len(opts); {
 		kind := opts[i]
+		kinds = append(kinds, kind)
 		name, known := tcpOptionNames[kind]
 		if name == "" || !known {
 			name = "x" // unknown option kind — keep a placeholder so the order/count is preserved
@@ -55,19 +66,55 @@ func parseTCPOptions(opts []byte) string {
 			i++
 			continue
 		}
-		if i+1 >= len(opts) || int(opts[i+1]) < 2 {
+		if i+1 >= len(opts) || int(opts[i+1]) < 2 || i+int(opts[i+1]) > len(opts) {
 			break // malformed length — stop rather than loop
 		}
-		i += int(opts[i+1])
+		olen := int(opts[i+1])
+		switch {
+		case kind == 2 && olen == 4: // MSS (kind 2): 2-byte value
+			s.MSS = binary.BigEndian.Uint16(opts[i+2 : i+4])
+		case kind == 3 && olen == 3: // window scale (kind 3): 1-byte shift count
+			s.WindowScale = opts[i+2]
+			s.WindowScalePresent = true
+		case kind == 4: // SACK-permitted (kind 4)
+			s.SACKPermitted = true
+		case kind == 8: // timestamps (kind 8)
+			s.Timestamps = true
+		}
+		i += olen
 	}
-	return strings.Join(order, ",")
+	s.OptionOrder = strings.Join(order, ",")
+	s.OptionKinds = kinds
 }
 
-// TCPSyn captures the OS-revealing fields of a client's TCP SYN packet.
+// TCPSyn captures the OS- and stack-revealing fields of a client's TCP SYN packet.
 type TCPSyn struct {
-	TTL         uint8  // observed IP TTL (the initial value minus router hops)
-	WindowSize  uint16 // advertised TCP receive window
-	OptionOrder string // comma-joined TCP option kinds in order, e.g. "mss,sack,ts,nop,ws"
+	TTL                uint8   // observed IP TTL (the initial value minus router hops)
+	WindowSize         uint16  // advertised TCP receive window
+	OptionOrder        string  // comma-joined TCP option kinds in order, e.g. "mss,sack,ts,nop,ws"
+	OptionKinds        []uint8 // raw TCP option kinds in order (for JA4T)
+	MSS                uint16  // maximum segment size (option kind 2); 0 if absent
+	WindowScale        uint8   // window-scale shift count (option kind 3); valid only if WindowScalePresent
+	WindowScalePresent bool
+	SACKPermitted      bool // SACK-permitted option (kind 4) present
+	Timestamps         bool // TCP timestamps option (kind 8) present
+	DF                 bool // IPv4 Don't-Fragment flag set
+	ECN                bool // TCP ECN setup (ECE/CWR) or IP ECN bits present
+}
+
+// JA4T returns the FoxIO JA4T fingerprint: window_size "_" option-kinds(hyphen-joined) "_" MSS "_"
+// window-scale ("00" when absent). A stack/tunnel fingerprint below the TLS layer, complementary to the
+// OS-family classifier — usable as a within-session/coordination key and cross-referenceable against ja4db.
+func (s TCPSyn) JA4T() string {
+	kinds := make([]string, 0, len(s.OptionKinds))
+	for _, k := range s.OptionKinds {
+		kinds = append(kinds, strconv.Itoa(int(k)))
+	}
+	scale := "00"
+	if s.WindowScalePresent {
+		scale = strconv.Itoa(int(s.WindowScale))
+	}
+	return fmt.Sprintf("%d_%s_%d_%s", s.WindowSize, strings.Join(kinds, "-"), s.MSS, scale)
 }
 
 // initialTTL rounds an observed TTL up to the nearest standard initial value. Routers decrement TTL per

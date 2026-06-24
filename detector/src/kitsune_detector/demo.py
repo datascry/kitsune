@@ -865,7 +865,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (!d) return;
     var w = d.wire || {};
     publishResult({
-      wire: { ip: d.ip || null, geo: d.geo || null, reputation: d.reputation || null, ja4: w.ja4 || null, ja3: w.ja3 || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, wire_fp: d.wire_fp || null },
+      wire: { ip: d.ip || null, geo: d.geo || null, reputation: d.reputation || null, ja4: w.ja4 || null, ja3: w.ja3 || null, ja4t: w.ja4t || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, wire_fp: d.wire_fp || null },
       network_contradictions: d.network_contradictions || []
     });
   }
@@ -1092,9 +1092,17 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // same producer the rep.* rules use). A clean residential IP is shown as such, not left blank.
     var repLabel = "";
     if (rep) { var flags = []; if (rep.datacenter) flags.push("datacenter / hosting"); if (rep.proxy_exit) flags.push("proxy / VPN / Tor exit"); repLabel = flags.length ? flags.join(" \\u00b7 ") : "clean \\u2014 residential / unlisted"; }
+    // JA4T (TCP/IP stack fingerprint: window_options_mss_scale). Derive a coarse link/tunnel hint from the MSS
+    // (the 3rd field) — informational: a low MSS means a VPN/tunnel/mobile path, which a real user can have too.
+    var ja4tLabel = w.ja4t || "";
+    if (w.ja4t) {
+      var mss = parseInt(w.ja4t.split("_")[2], 10) || 0;
+      var link = mss <= 0 ? "" : (mss >= 1452 ? "ethernet" : mss >= 1400 ? "tunnel / VPN" : mss >= 1300 ? "VPN / mobile" : "heavy tunnel / mobile");
+      ja4tLabel = w.ja4t + (link ? " \\u00b7 MSS " + mss + " (" + link + ")" : "");
+    }
     var cards = wireRow("IP / geo", ipLabel, "n/a") + wireRow("IP reputation", repLabel, d.ip ? "clean \\u2014 residential / unlisted" : "n/a")
       + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
-      + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit");
+      + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("JA4T (TCP/IP)", ja4tLabel, "n/a") + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit");
     var html = '<h2>Network / wire layer <span class="note">\\u2014 read from your raw connection by Kitsune\\u2019s edge</span></h2><div class="surfaces">' + cards + '</div>';
     var nc = d.network_contradictions || [];
     if (nc.length) {
