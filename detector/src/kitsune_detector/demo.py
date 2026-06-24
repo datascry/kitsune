@@ -388,6 +388,20 @@ details.ev ul {
   font-size: 0.72rem;
   margin-top: 0.3rem;
 }
+.surface .srow {
+  margin-top: 0.4rem;
+}
+.surface .srow .sk {
+  display: block;
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.surface .srow .sv {
+  font-size: 0.82rem;
+  word-break: break-all;
+}
 
 /* Per-layer score bars — hairline, no gradient. */
 .bar {
@@ -804,7 +818,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <div id="ks-predict"></div>
   <div id="ks-wire"></div>
   <div id="ks-surfaces"></div>
-  <div id="ks-fp"></div>
   <!-- THE WHY: the full rule breakdown, after its evidence -->
   <h2>Detections <span class="note">— every check Kitsune ran, grouped by layer</span></h2>
   <div id="ks-detections"></div>
@@ -949,30 +962,39 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + '<div class="predict-grid">' + kv("engine", p.engine) + kv("browser", p.browser) + kv("OS", p.os) + kv("form factor", p.formFactor) + kv("confidence", Math.round(p.confidence * 100) + "%") + '</div>'
       + '<details class="ev"><summary>feature evidence</summary><ul>' + ev + '</ul></details>';
   }
-  function renderFingerprint(fp) {
-    var el = document.getElementById("ks-fp"); if (!el) return; var rows = "";
-    for (var k in fp) { if (fp.hasOwnProperty(k)) rows += '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v" style="font-size:.82rem;font-weight:400;word-break:break-all">' + esc(fp[k]) + '</span></div>'; }
-    el.innerHTML = '<h2>Enumerated values <span class="note">\\u2014 your raw fingerprint surface</span></h2><div class="predict-grid">' + rows + '</div>';
-  }
+  // One panel = every fingerprint surface, each with its ENUMERATED values inline + its tamper status. This
+  // is the consolidation of the old "Fingerprint surfaces" (value + tamper) and "Enumerated values" (a flat
+  // key/value dump) panels — same detail, grouped by surface, no redundant second list. `keys` claims raw
+  // rawFingerprint() fields; `extra()` adds computed rows (canvas/audio/realms have no single raw field); any
+  // unclaimed field falls through to the "Other" catch-all so the panel never silently drops a value.
   var KS_SURFACES = [
-    { name: "Navigator", val: function (fp) { return (fp["User-Agent"] || "").slice(0, 52) + "\\u2026"; }, tells: ["webdriver", "webdriver_spoofed", "webdriver_getter_tampered", "nav_property_spoofed", "automation_globals"] },
-    { name: "WebGL", val: function (fp) { return fp["WebGL renderer"] || "n/a"; }, tells: ["webgl_getparameter_tampered", "webgl_worker_divergence", "webgl_renderer_artifact"] },
-    { name: "Canvas", val: function () { return "2D render \\u00b7 " + canvasHash(); }, tells: ["canvas_lie", "canvas_noise", "canvas_worker_divergence"] },
-    { name: "Audio", val: function () { return "OfflineAudioContext"; }, tells: ["audio_noise", "audio_readback_noise"] },
-    { name: "Timezone", val: function (fp) { return fp["Timezone"] || "n/a"; }, tells: ["timezone_inconsistent", "timezone_internal_incoherent", "timezone_worker_divergence"] },
-    { name: "Functions", val: function () { return "native integrity"; }, tells: ["native_invariant_violated", "function_tostring_tampered", "tostring_tampered", "plugins_spoofed"] },
-    { name: "Workers / realms", val: function () { return "main vs Worker/iframe"; }, tells: ["worker_divergence", "iframe_divergence", "worker_constructor_tampered", "worker_source_rewritten", "languages_worker_divergence"] }
+    { name: "Navigator", keys: ["User-Agent", "navigator.platform", "navigator.vendor", "Languages"], tells: ["webdriver", "webdriver_spoofed", "webdriver_getter_tampered", "nav_property_spoofed", "automation_globals"] },
+    { name: "Display / screen", keys: ["Screen"], tells: [] },
+    { name: "Hardware", keys: ["Hardware concurrency", "Device memory", "Max touch points"], tells: [] },
+    { name: "WebGL", keys: ["WebGL vendor", "WebGL renderer"], tells: ["webgl_getparameter_tampered", "webgl_worker_divergence", "webgl_renderer_artifact"] },
+    { name: "Canvas", extra: function () { return [["2D render hash", canvasHash()]]; }, tells: ["canvas_lie", "canvas_noise", "canvas_worker_divergence"] },
+    { name: "Audio", extra: function () { return [["context", "OfflineAudioContext"]]; }, tells: ["audio_noise", "audio_readback_noise"] },
+    { name: "Timezone", keys: ["Timezone"], tells: ["timezone_inconsistent", "timezone_internal_incoherent", "timezone_worker_divergence"] },
+    { name: "Functions", extra: function () { return [["integrity", "native (untampered)"]]; }, tells: ["native_invariant_violated", "function_tostring_tampered", "tostring_tampered", "plugins_spoofed"] },
+    { name: "Workers / realms", extra: function () { return [["realms", "main vs Worker / iframe"]]; }, tells: ["worker_divergence", "iframe_divergence", "worker_constructor_tampered", "worker_source_rewritten", "languages_worker_divergence"] }
   ];
+  function surfRow(k, v) { return '<div class="srow"><span class="sk">' + esc(k) + '</span><span class="sv">' + esc(v) + '</span></div>'; }
   function renderSurfaces(fp, firedSet) {
-    var el = document.getElementById("ks-surfaces"); if (!el) return; firedSet = firedSet || {};
-    var cards = "", dirty = 0;
-    for (var i = 0; i < KS_SURFACES.length; i++) {
-      var s = KS_SURFACES[i], hit = [];
-      for (var j = 0; j < s.tells.length; j++) { if (firedSet["br." + s.tells[j]]) hit.push(s.tells[j]); }
+    var el = document.getElementById("ks-surfaces"); if (!el) return; firedSet = firedSet || {}; fp = fp || {};
+    var cards = "", dirty = 0, claimed = {}, i, j;
+    for (i = 0; i < KS_SURFACES.length; i++) {
+      var s = KS_SURFACES[i], hit = [], rows = "", keys = s.keys || [];
+      for (j = 0; j < s.tells.length; j++) { if (firedSet["br." + s.tells[j]]) hit.push(s.tells[j]); }
+      for (j = 0; j < keys.length; j++) { claimed[keys[j]] = 1; if (fp.hasOwnProperty(keys[j])) rows += surfRow(keys[j], fp[keys[j]]); }
+      if (s.extra) { var ex = s.extra(); for (j = 0; j < ex.length; j++) rows += surfRow(ex[j][0], ex[j][1]); }
       var tampered = hit.length > 0; if (tampered) dirty++;
-      cards += '<div class="surface' + (tampered ? " tampered" : "") + '"><div class="top"><span class="sname">' + esc(s.name) + '</span><span class="chip">' + (tampered ? "tampered" : "clean") + '</span></div><div class="sval">' + esc(s.val(fp)) + '</div>' + (tampered ? '<div class="stells">' + esc(hit.join(", ")) + '</div>' : "") + '</div>';
+      cards += '<div class="surface' + (tampered ? " tampered" : "") + '"><div class="top"><span class="sname">' + esc(s.name) + '</span><span class="chip">' + (tampered ? "tampered" : "clean") + '</span></div>' + rows + (tampered ? '<div class="stells">' + esc(hit.join(", ")) + '</div>' : "") + '</div>';
     }
-    el.innerHTML = '<h2>Fingerprint surfaces <span class="note">\\u2014 value \\u00b7 tamper status (' + dirty + ' tampered)</span></h2><div class="surfaces">' + cards + '</div>';
+    // Catch-all: any enumerated field no surface above claimed (keeps full detail as rawFingerprint grows).
+    var other = "";
+    for (var k in fp) { if (fp.hasOwnProperty(k) && !claimed[k]) other += surfRow(k, fp[k]); }
+    if (other) cards += '<div class="surface"><div class="top"><span class="sname">Other</span><span class="chip">enumerated</span></div>' + other + '</div>';
+    el.innerHTML = '<h2>Fingerprint surfaces <span class="note">\\u2014 enumerated values \\u00b7 tamper status (' + dirty + ' tampered)</span></h2><div class="surfaces">' + cards + '</div>';
   }
   function renderFpId(fp) {
     var el = document.getElementById("ks-fpid"); if (!el) return; var parts = [];
@@ -1048,7 +1070,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   function renderClientImmediate() {
     try {
       var p = predict(); window.__ksFp = rawFingerprint();
-      renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); renderFingerprint(window.__ksFp); renderSurfaces(window.__ksFp, {});
+      renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); renderSurfaces(window.__ksFp, {});
       fetchWire();
     } catch (e) {}
   }
