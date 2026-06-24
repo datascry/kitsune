@@ -202,6 +202,11 @@ func (c *QUICCapturer) FingerprintByDCID(dcid []byte) (*fingerprint.ClientHello,
 // IP-attributed, and has fired on real Chromium QUIC + non-QUIC clients, so it must not convict alone.
 func quicTells(sessionID string, ch *fingerprint.ClientHello, ua string, now time.Time) []signal.Signal {
 	out := []signal.Signal{signal.Network(sessionID, "quic_observed", true, now)}
+	// QUIC transport-parameters fingerprint (id set+order) — the QUIC-stack identity, independent of the
+	// inner-TLS JA4. No shipping vendor extracts this; the edge already decrypts the ClientHello carrying it.
+	if tp := ch.QUICTransportParamOrder(); tp != "" {
+		out = append(out, signal.Network(sessionID, "quic_transport_params", tp, now))
+	}
 	if uaGreasesHandshake(ua) && !ch.HasGREASE() {
 		out = append(out, signal.Network(sessionID, "quic_no_grease", true, now))
 	}

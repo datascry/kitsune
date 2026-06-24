@@ -16,6 +16,7 @@ const (
 	extSignatureAlgorithms uint16 = 0x000d
 	extALPN                uint16 = 0x0010
 	extSupportedVersions   uint16 = 0x002b
+	extQUICTransportParams uint16 = 0x0039
 )
 
 // ClientHello holds the parsed fields used to compute JA3/JA4.
@@ -30,6 +31,7 @@ type ClientHello struct {
 	SignatureAlgorithms []uint16
 	ALPN                []string
 	HasSNI              bool
+	QUICTransportParams []byte // raw quic_transport_parameters (ext 0x39) body; QUIC ClientHellos only
 }
 
 // reader is a bounds-checked big-endian byte cursor; once it overflows, err sticks.
@@ -195,5 +197,7 @@ func parseExtensionBody(etype uint16, data []byte, out *ClientHello) {
 		if best != 0 {
 			out.Version = best
 		}
+	case extQUICTransportParams:
+		out.QUICTransportParams = append([]byte(nil), data...)
 	}
 }

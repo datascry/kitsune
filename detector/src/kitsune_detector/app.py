@@ -420,6 +420,7 @@ def create_app(
             "ja4t": netval("ja4t"),
             "tls_ext_order": netval("tls_ext_order"),
             "tls_cipher_order": netval("tls_cipher_order"),
+            "quic_transport_params": netval("quic_transport_params"),
             "tcp": netval("tcp"),
             "tcp_os": netval("tcp_kernel"),
             "h2": netval("h2"),
