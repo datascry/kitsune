@@ -110,7 +110,7 @@ source itself, not the aggregator's metadata (GitHub's licence detector missed X
 | Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
 | **BrainRun** (Zenodo 2598135) | **X6 (mobile touch-biomech human baseline)** | Zenodo direct (gestures 265MB + sensors 3.2GB) | **CC0 1.0** (verified — derive+share aggregates freely) | ✅ **WIRED** | analysed → `docs/mobile-biomech-grounding.md` (161,780 human swipes: velocity-CV floor transferable, straightness not). The richest CC0 swipe baseline. |
 | **MEU-Mobile KSD** (UCI 399) | X6 (mobile keystroke timing+pressure) | UCI direct (1.3MB) | **CC BY 4.0** | ✅ **ANALYZED** | 2,856 records → both keystroke floors VALIDATED FP-safe on mobile (inter-key p1 216ms ≫ 30ms floor; entropy p1 0.625 ≫ 0.15). See docs/mobile-biomech-grounding.md. |
-| **Aalto ITE Typing** (Zenodo 12528163) | X6 (mobile keystroke floor, huge N) | Zenodo direct (7.3GB) | **CC BY 4.0** | ✅ | ~55k participants' own-phone typing + autocorrect/suggestion events → FP-safe mobile inter-key floor that won't trip autocomplete bursts |
+| **Aalto ITE Typing** (Zenodo 12528163) | X6 (mobile keystroke floor, huge N) | Zenodo direct (7.3GB) | **CC BY 4.0** | ✅ **ANALYZED** | 42.3M keystrokes / 849,909 free-text mobile sessions → shipped `bh.mobile_keystroke_interval_floor` (<80ms, 0.018% FP). See docs/mobile-biomech-grounding.md. |
 | **HuMIdb + BeCAPTCHA** (BiDAlab) | X6 (the only human-vs-bot mobile *positive*) | github.com/BiDAlab/HuMIdb — signed DUA, email atvs@uam.es | research-use, **no raw resharing** (aggregates after signing) | ⚠ gated | real human swipes + GAN/synthetic bot swipes+accel → the labeled positive; start the email request in parallel |
 | **HMOG / WISDM / MotionSense** | X6 (motion-during-interaction baseline) | W&M / UCI 507 / GitHub | W&M-NC / **CC BY 4.0** / **MIT** | ✅/⚠ | accel/gyro envelopes for the emulator/motion-coherence angle (NB: device-motion *fingerprinting* was REFUTED — behavioral/coherence only) |
 
@@ -440,3 +440,11 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (was scored-but-hidden). Gesture-typing (few keydowns, below the ≥4 gate) and autocomplete (single events)
   don't FP. Future headroom: a mobile-aware ~120ms interval floor would catch desktop-speed typing on a
   mobile session, but needs the free-text Aalto ITE set (7.3GB, CC-BY) to set safely — password data too narrow.
+- **2026-06-24 · X6 mobile-aware keystroke floor SHIPPED (Aalto ITE, CC-BY, 42.3M keystrokes)** — pulled the
+  7.3GB free-text set and analysed 849,909 real mobile typing sessions: per-session median inter-key p1=118ms;
+  only **0.018%** of sessions median <80ms (vs 1.2% at 120ms). Shipped `bh.mobile_keystroke_interval_floor`
+  (<80ms, mobile-gated, experimental) — catches a bot typing at DESKTOP speed (30-80ms) on a mobile session,
+  the band the universal 30ms floor (G13) misses; self-gating (emitted only on mobile) so it never touches
+  faster desktop typists. Grounded end-to-end: 55ms mobile typing fires it, 200ms (human) doesn't, 30ms floor
+  stays silent at 55ms. Entropy floor re-confirmed FP-safe on free text (p1 0.699). Hold/dwell + flight time
+  ungroundable from the processed log (one timestamp/press; raw with key-up is 65GB). Dataset deleted post-ship.

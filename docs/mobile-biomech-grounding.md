@@ -69,9 +69,24 @@ Reference distributions (MEU-Mobile): key **hold/dwell** median 88 ms (a candida
 `keyup` capture, not collected today); **pressure** median 0.14 (varies, but `KeyboardEvent` exposes no
 pressure in-browser — touch-only). The inter-key-interval row is now shown in the panel.
 
-**Headroom note (future):** a *mobile-aware* interval floor (~120 ms, still below the 216 ms human p1) would
-catch a bot typing at desktop speed on a mobile session — but the password-typing MEU sample is too narrow
-to raise it safely; that needs the free-text **Aalto ITE Typing** set (Zenodo 12528163, CC-BY, 7.3 GB) first.
+**Mobile-aware interval floor — SHIPPED (grounded on Aalto ITE free-text).** Validated on **Aalto ITE
+Typing** (Zenodo 12528163, **CC BY 4.0**) — **42.3M keystrokes across 849,909 real free-text mobile typing
+sessions** (own phones). Per-session median inter-key: p1 **118 ms**, median 202 ms. The fraction of real
+human sessions whose median falls below a candidate floor:
+
+| floor | human sessions FP'd |
+|---|---|
+| 30 ms (universal) | 0.003% |
+| 50 ms | 0.007% |
+| **80 ms (mobile floor)** | **0.018%** |
+| 120 ms | 1.215% (too high) |
+
+Shipped **`bh.mobile_keystroke_interval_floor`** (< 80 ms, mobile-gated): a mobile session typing 30–80 ms/key
+is non-human (faster than 99.98% of real mobile typists) but evades the universal 30 ms floor. 80 ms, not
+120 ms, because the FP rate jumps 70× between them. The collector emits `mobile_keystroke_interval_ms` only
+on a mobile session, so it never touches desktop typists (who legitimately type faster). Entropy floor (0.15)
+re-confirmed FP-safe on free text too (per-session entropy p1 0.699). Hold/dwell + flight time remain
+ungroundable from the processed log (one timestamp per press; the raw set with key-up is 65 GB).
 
 ## Shipping path — SHIPPED
 1. ✅ Collector: captures **touch-swipe trajectories** via `touchstart`/`touchmove`/`touchend` (touch events,

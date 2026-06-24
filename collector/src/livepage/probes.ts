@@ -1407,7 +1407,12 @@ export function armCollector(): LiveCollector {
     if (keys.length >= BEHAVIOR_MIN_KEYS) {
       put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
       const keyIntervalMs = keystrokeIntervalMedian(keys); // agent-speed-typing tell (radar G13)
-      if (keyIntervalMs >= 0) put("behavioral", "keystroke_interval_ms", keyIntervalMs);
+      if (keyIntervalMs >= 0) {
+        put("behavioral", "keystroke_interval_ms", keyIntervalMs);
+        // Mobile-aware floor (radar X6): a mobile session typing <80ms/key is non-human (Aalto ITE grounded).
+        if (navigator.maxTouchPoints > 0 && /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent))
+          put("behavioral", "mobile_keystroke_interval_ms", keyIntervalMs);
+      }
     }
     if (teleportClick) put("behavioral", "click_without_trajectory", true); // radar G11
     if (touchSwipeCVs.length) {

@@ -205,6 +205,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "bh.keystroke_interval_floor",
         ),
         (
+            # Desktop-speed typing on a MOBILE session: 55ms median < the 80ms mobile floor (radar X6, Aalto).
+            [(Layer.behavioral, "mobile_keystroke_interval_ms", 55.0, Source.collector)],
+            "bh.mobile_keystroke_interval_floor",
+        ),
+        (
             # Teleport-click: a trusted mouse click with no pointer trajectory in the session (radar G11).
             [(Layer.behavioral, "click_without_trajectory", True, Source.collector)],
             "bh.click_without_trajectory",
