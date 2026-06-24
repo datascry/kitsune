@@ -546,6 +546,44 @@ export function armCollector(): LiveCollector {
     },
     true,
   );
+  // Touch-swipe velocity uniformity (mobile biomech, radar X6, BrainRun-grounded): per-swipe (one touch
+  // pointerdown→up), velocity-CV over the swipe's points (>=5); the session emits the median per-swipe CV.
+  // A human finger swipe varies in speed (CV median ~0.6); a synthetic/replayed swipe at constant velocity
+  // sits far below the 0.15 floor. (Path-straightness is NOT ported — real swipes are inherently straight.)
+  // Captured via touch events (not pointer events): touchmove fires per native sample and touchend reliably
+  // ends the swipe, whereas pointer events coalesce moves and can drop pointerup for synthetic/replayed touch.
+  let swipeBuf: PointerSample[] = [];
+  const touchSwipeCVs: number[] = [];
+  const touchPt = (e: TouchEvent): PointerSample | null => {
+    const t = e.touches[0] ?? e.changedTouches[0];
+    return t ? { x: t.clientX, y: t.clientY, t: e.timeStamp } : null;
+  };
+  addEventListener(
+    "touchstart",
+    (e: TouchEvent) => {
+      const pt = touchPt(e);
+      if (pt) swipeBuf = [pt];
+    },
+    true,
+  );
+  addEventListener(
+    "touchmove",
+    (e: TouchEvent) => {
+      if (swipeBuf.length) {
+        const pt = touchPt(e);
+        if (pt) swipeBuf.push(pt);
+      }
+    },
+    true,
+  );
+  addEventListener(
+    "touchend",
+    () => {
+      if (swipeBuf.length >= 5) touchSwipeCVs.push(velocityCV(swipeBuf));
+      swipeBuf = [];
+    },
+    true,
+  );
   if (coalescedSupported) {
     addEventListener("pointermove", (e: PointerEvent) => {
       ptrMoves++;
@@ -1370,6 +1408,11 @@ export function armCollector(): LiveCollector {
       if (keyIntervalMs >= 0) put("behavioral", "keystroke_interval_ms", keyIntervalMs);
     }
     if (teleportClick) put("behavioral", "click_without_trajectory", true); // radar G11
+    if (touchSwipeCVs.length) {
+      // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded median-per-swipe CV)
+      touchSwipeCVs.sort((a, b) => a - b);
+      put("behavioral", "touch_velocity_cv", touchSwipeCVs[Math.floor(touchSwipeCVs.length / 2)]!);
+    }
     return out;
   }
 

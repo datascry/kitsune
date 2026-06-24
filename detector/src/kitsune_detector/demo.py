@@ -1207,6 +1207,19 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       } catch (err) {}
     });
   }
+  // Touch-swipe velocity uniformity (mobile biomech, radar X6) — grounded on BrainRun (161,780 real human
+  // swipes: per-swipe velocity-CV median ~0.60, 1st-percentile 0.235). A human finger swipe has natural
+  // speed variation; a synthetic/replayed swipe at near-constant velocity sits far below any human. Capture
+  // per-swipe (one touch pointerdown→up), CV over the swipe's points (>=5); the session emits the MEDIAN
+  // per-swipe CV. NB the mouse path-straightness floor is deliberately NOT ported to touch — real swipes are
+  // inherently near-straight (median 0.993), so it would FP on >50% of users (see docs/mobile-biomech-grounding.md).
+  // Captured via touch events (not pointer events): touchmove fires per native sample and touchend reliably
+  // ends the swipe, whereas pointer events coalesce moves and can drop pointerup for synthetic/replayed touch.
+  var swipeBuf = [], touchSwipeCVs = [];
+  function _touchPt(e) { var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]); return t ? { x: t.clientX, y: t.clientY, t: e.timeStamp } : null; }
+  addEventListener("touchstart", function (e) { var p = _touchPt(e); if (p) swipeBuf = [p]; }, true);
+  addEventListener("touchmove", function (e) { if (swipeBuf.length) { var p = _touchPt(e); if (p) swipeBuf.push(p); } }, true);
+  addEventListener("touchend", function (e) { if (swipeBuf.length >= 5) { var cv = velcv(swipeBuf); if (cv >= 0) touchSwipeCVs.push(cv); } swipeBuf = []; }, true);
   // Teleport-click (FP-Agent's #1 AI-agent tell): a trusted, mouse-origin click (detail>=1) that lands with
   // ZERO pointer movement recorded in the whole session — a CDP/vision agent dispatching a click at target
   // coordinates without ever moving the cursor. Gates: detail>=1 excludes keyboard Enter/Space activation
@@ -2354,6 +2367,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         if (kim >= 0) sigs.push(S("behavioral", "keystroke_interval_ms", kim));
       }
       if (teleportClick) sigs.push(S("behavioral", "click_without_trajectory", true));  // radar G11
+      if (touchSwipeCVs.length) {  // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded)
+        touchSwipeCVs.sort(function (a, b) { return a - b; });
+        sigs.push(S("behavioral", "touch_velocity_cv", touchSwipeCVs[Math.floor(touchSwipeCVs.length / 2)]));
+      }
       // A coalesced batch carrying an untrusted (constructor-built) event is fabricated — a hard artifact a
       // real browser never produces, even through a Proxy-over-native override. Always emitted (an artifact).
       if (coalescedUntrusted) sigs.push(S("browser", "coalesced_untrusted", true));

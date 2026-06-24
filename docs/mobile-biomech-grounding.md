@@ -33,10 +33,13 @@ straightness (net displacement / path length).
   (power-law needs the SapiMouse-style fit on BrainRun; coalesced is a desktop pointer-API structure).
   Stay gated until grounded.
 
-## Shipping path (remaining)
-1. Collector: capture **touch/pointer swipe trajectories** on mobile (pointermove/touchmove x,y,t) — today
-   `pts` is `mousemove`-only, so mobile swipes aren't measured.
-2. Detector: a mobile-applicable velocity-uniformity floor at the grounded ~0.15 threshold.
-3. Ground the positive with a faithful **synthetic-swipe** red-team mode (no labeled mobile-bot corpus
-   exists publicly — confirmed by a 4-angle dataset search; the bot side is self-generated, as the desktop
-   side did with CDP/DMTG injection).
+## Shipping path — SHIPPED
+1. ✅ Collector: captures **touch-swipe trajectories** via `touchstart`/`touchmove`/`touchend` (touch events,
+   not pointer events — pointer events coalesce moves and drop `pointerup` for synthetic/replayed touch),
+   computes per-swipe velocity-CV (≥5 points), emits the **median per-swipe** `behavioral.touch_velocity_cv`.
+   In demo.py (authoritative) + livepage probes.ts.
+2. ✅ Detector: **`bh.touch_uniform_velocity`** (below_threshold 0.15, behavioral/corroborating, experimental).
+3. ✅ Grounded end-to-end: a constant-velocity replay swipe (CV ≈ 0.005, via rAF) **fires** the rule through
+   the real detector; a varied/natural swipe (CV ≈ 0.24–0.6) stays **silent** (FP-safe). Engine test pins
+   the firing. Notable: a *naive* CDP swipe-injection is jittery (CV ≈ 0.24, ≈ the human p1) and correctly
+   does NOT fire — only a deliberately constant-velocity replay does, which is the intended target.
