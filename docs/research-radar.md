@@ -79,7 +79,7 @@ research-loop cycle", or with `/loop` inside a session. The steps:
 | X2 | residential proxy | **RESIP relayed/tunnel-flow classifier** — transformer, first 5 packets, payload-free: relayed 93%/93%, tunnel 91%/96%. | real RESIP node deployment + wild egress (3TB / 116M flows) | Huang et al., arXiv 2404.10610 (USTC+IU 2024) | **external** — the IP-reputation/proxy half Kitsune already flags as blocked |
 | X3 | IP reputation | **CGNAT detection** to bound the `ip_rotation_within_session` confound + RESIP collateral. | real CGNAT/residential traffic | Cloudflare (blog.cloudflare.com/detecting-cgn-to-reduce-collateral-damage) | **external** — refines the documented CGNAT FP caveat |
 | X4 | prevalence | **Real-traffic prevalence/IP-reputation prior** (the recurring Tier-3 gap). | hosted-demo opt-in / real-device matrix / real traffic | Resident Evil (RESIP study); Kitsune `build_prior_from_sessions` | **partially unblocked** — the IP-reputation half is now fed by the MIT X4BNet feed (wired into `ip_reputation_refresh`, see the real-data table below); the prevalence-prior half has a **turnkey adapter built** (`berke_corpus.py`) — it just needs the operator to accept the Berke Dataverse terms + download the CSV, then one command builds the aggregate prior |
-| X6 | behavioral (mobile) | **Mobile touch/swipe biometrics** — Touchalytics (30 features, ~0% median intra-session EER), BeCAPTCHA swipe+accelerometer human/bot. The mobile analog of the mouse biomech floor. | real mobile touch/swipe traffic (and GAN-defense — touch auth is adversarially synthesizable: random-vector/population attacks raise FAR 22-27%) | Touchalytics (arXiv 1207.6231), BeCAPTCHA (arXiv 2005.13655), G-TCAS (arXiv 2210.01594) | **external** — needs real mobile traffic; synthesizable, so it's corroborating-only by nature |
+| X6 | behavioral (mobile) | **Mobile touch/swipe biometrics** — extend the desktop mouse-biomech floors to touch swipes. | **human baseline NOW GROUNDED** (no longer fully external) | Touchalytics (arXiv 1207.6231), BeCAPTCHA (arXiv 2005.13655); **BrainRun (Zenodo 2598135, CC0)** | **partially unblocked — human baseline grounded; see docs/mobile-biomech-grounding.md.** Analysed 161,780 real human swipes (BrainRun, CC0). **Per-feature verdict: `bh.uniform_velocity` IS transferable** (human swipe velocity-CV p1=0.235 ≫ the 0.08 floor → FP-safe with headroom; touch-calibrated ~0.15). **`bh.path_too_straight` is NOT** (human swipes inherently near-straight, median 0.993 — would FP >50%; the empirical proof behind G10's gate; stays gated). Remaining: a collector **touch-trajectory capture** (today `pts` is mousemove-only) + a **synthetic-swipe** red-team positive (no public labeled mobile-bot corpus exists — confirmed by a 4-angle dataset search; self-generate the bot side as the desktop did with CDP/DMTG). The 4 dataset searches are cataloged in the real-data table below. |
 | X7 | environment (mobile) | **iOS WKWebView / in-app discriminator** — no durable CLIENT-side signal survived verification (the `Version/`-token-absence AND `window.webkit.messageHandlers` signals were both **refuted**); `X-Requested-With` (Android) reliability is post-2023-opt-in uncertain. | real in-app / WebView traffic across apps | research open-question 2026-06-21 | **external/open** — the largest unfilled real-mobile gap |
 | X5 | coherence (spatial) | **Device-model ↔ screen-geometry coherence** — the DB-dependent half of G1 (an iPhone-15 UA with a resolution no iPhone-15 ships). Needs a real (device → screen res/DPR) mapping to be FP-safe; a hand-coded threshold FPs on foldables/edge devices. | real-device fingerprint DB (the FP-Inconsistent dataset is honey-site-derived, not released) | FP-Inconsistent, ACM IMC 2025 | **external** — split from G1 (the DB-free `mobile_no_touch` shipped) |
 | X8 | IP reputation (actor) | **GreyNoise GNQL enrichment** — per-IP `classification` (malicious/suspicious/benign), `actor` (Shodan/Censys/GoogleBot), `tag`, `spoofable`, first/last-seen. Richer than the static CIDR lists Kitsune wires today: real actor/intent intel that would ground the currently-synthetic `rep.*` rules and complement the FCrDNS G7 check (confirming benign-crawler actors). | a GreyNoise API key + deploy-time egress (community tier rate-limited; GNQL is enterprise) | GreyNoise GNQL (docs.greynoise.io/docs/using-the-greynoise-query-language-gnql), gap analysis 2026-06-23 | **external** — the actor/reputation feed missing from the data-source table below; wire into `ip_reputation_refresh` at deploy when a key is available. |
@@ -108,11 +108,17 @@ source itself, not the aggregator's metadata (GitHub's licence detector missed X
 | **Spamhaus DROP/EDROP + IPsum** | X4 (IP-rep proxy/abuse) | spamhaus.org/drop, github.com/stamparm/ipsum | DROP free-to-use; IPsum permissive (verify) | ✅ public, daily | candidate → thicken `proxy_exit` beyond Tor+X4BNet; licence-verify per source (cf. FireHOL caveat). |
 | **FoxIO ja4db / peet.ws** (JA4 + Akamai H2 → client) | net.tls_vs_ua_browser / net.h2_vs_ua_browser precision | github.com/FoxIO-LLC/ja4 (ja4db), tls.peet.ws | varies (verify) | ✅ static lookup tables | candidate → expand the edge's tiny `ja4_hints.json` seed with more positively-identified clients (static table, no live traffic). |
 | Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
+| **BrainRun** (Zenodo 2598135) | **X6 (mobile touch-biomech human baseline)** | Zenodo direct (gestures 265MB + sensors 3.2GB) | **CC0 1.0** (verified — derive+share aggregates freely) | ✅ **WIRED** | analysed → `docs/mobile-biomech-grounding.md` (161,780 human swipes: velocity-CV floor transferable, straightness not). The richest CC0 swipe baseline. |
+| **MEU-Mobile KSD** (UCI 399) | X6 (mobile keystroke timing+pressure) | UCI direct (1.3MB) | **CC BY 4.0** | ✅ | only openly-licensed mobile-keystroke set with pressure/finger-area → mobile keystroke-floor calibration |
+| **Aalto ITE Typing** (Zenodo 12528163) | X6 (mobile keystroke floor, huge N) | Zenodo direct (7.3GB) | **CC BY 4.0** | ✅ | ~55k participants' own-phone typing + autocorrect/suggestion events → FP-safe mobile inter-key floor that won't trip autocomplete bursts |
+| **HuMIdb + BeCAPTCHA** (BiDAlab) | X6 (the only human-vs-bot mobile *positive*) | github.com/BiDAlab/HuMIdb — signed DUA, email atvs@uam.es | research-use, **no raw resharing** (aggregates after signing) | ⚠ gated | real human swipes + GAN/synthetic bot swipes+accel → the labeled positive; start the email request in parallel |
+| **HMOG / WISDM / MotionSense** | X6 (motion-during-interaction baseline) | W&M / UCI 507 / GitHub | W&M-NC / **CC BY 4.0** / **MIT** | ✅/⚠ | accel/gyro envelopes for the emulator/motion-coherence angle (NB: device-motion *fingerprinting* was REFUTED — behavioral/coherence only) |
 
-**Hardest-gap status:** mouse/touch biometrics (X6) and mobile/WebView (X7) have **no** permissively-downloadable
-real dataset — they remain external/open. The one in-sandbox-actionable + permissive + fetchable asset was the
-X4BNet MIT feed (now wired); the Berke corpus is the next unlock but is licence-gated (request the research-use
-terms before pulling).
+**Hardest-gap status:** X6 (mobile touch/keystroke biometrics) is **partially unblocked** — the *human baseline* is
+now grounded from permissive CC0/CC-BY datasets (BrainRun wired; see `docs/mobile-biomech-grounding.md`), so the
+velocity-uniformity floor is shippable on touch. What stays external is the **labeled mobile-bot positive** (no
+public dataset exists — a 4-angle search confirmed it; self-generate via a synthetic-swipe red-team, as the
+desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) remains the other licence-gated unlock.
 
 ## Validations (research that confirms existing Kitsune work — do NOT rebuild)
 
@@ -402,3 +408,17 @@ terms before pulling).
   G18-rule (real-GPU caps reference — capture-profile-bound) · G22 (real CPU corpus) · G12/G14/G15/G19/G23/
   G24 (FP-marginal on real users). Per [[per-session-detection-saturated]], grinding marginal rules is not
   worth it; resume with a deliberate design pass on G16-wiring or G17 when desired.
+
+## Iteration log (continued)
+
+- **2026-06-24 · X6 mobile touch-biomech — human baseline GROUNDED (4-angle dataset search + BrainRun analysis)**
+  — fanned out 4 research agents (touch/swipe · mobile keystroke · motion-sensor · data-platform sweep) for
+  real mobile behavioral-biometric data. All four independently converged on **BrainRun (Zenodo 2598135, CC0)**.
+  Fetched it (CC0, 265MB) and analysed **161,780 real human swipes / 2,117 devices**: **`bh.uniform_velocity`
+  is transferable to touch** (human velocity-CV p1=0.235 ≫ the 0.08 floor → FP-safe + headroom to ~0.15);
+  **`bh.path_too_straight` is NOT** (human swipes inherently near-straight, median 0.993 → would FP >50%, the
+  empirical proof behind G10's gate). Wrote `docs/mobile-biomech-grounding.md` (de-identified percentile
+  aggregate only). Cataloged the permissive datasets (BrainRun/MEU-Mobile/Aalto-ITE CC0/CC-BY + HuMIdb gated).
+  **Honest finding:** no public *labeled mobile-bot* corpus exists — the bot positive is self-generated
+  (synthetic-swipe red-team). Remaining to ship: collector touch-trajectory capture (today `pts` is
+  mousemove-only) + the synthetic-swipe positive. This moves X6 from fully-external to partially-unblocked.
