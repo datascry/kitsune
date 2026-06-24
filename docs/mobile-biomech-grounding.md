@@ -48,6 +48,31 @@ So **only velocity-CV transfers as an FP-safe convicting tell on touch.** The ot
   (power-law needs the SapiMouse-style fit on BrainRun; coalesced is a desktop pointer-API structure).
   Stay gated until grounded.
 
+## Mobile KEYSTROKE biomech (grounded on MEU-Mobile KSD)
+
+The keystroke floors are device-agnostic, so G10 kept them active on mobile — but they were *desktop*-
+calibrated. Validated on **MEU-Mobile KSD** (UCI 399, **CC BY 4.0**) — 2,856 real mobile keystroke records,
+56 subjects (Nexus 7, password `tie5Roanl`). Down-down latency = inter-key interval; entropy via the same
+log-bucket Shannon the collector uses.
+
+| floor | fires below | human mobile p1 | margin |
+|---|---|---|---|
+| **inter-key interval** (`bh.keystroke_interval_floor`, G13) | 30 ms | per-record median **216 ms** | ~7× |
+| **keystroke entropy** (`bh.keystroke_entropy_floor`) | 0.15 | **0.625** | ~4× |
+
+Both floors are **FP-safe on mobile with a large margin** — mobile typing is far slower and higher-entropy
+than the floors require (median inter-key 504 ms; entropy 0.89). No recalibration needed; the floors are
+now *grounded* on mobile, not assumed. Gesture/glide typing fires few `keydown`s (below the ≥4 gate, not
+judged) and autocomplete inserts whole words as single events (no rapid keydown burst), so neither FPs.
+
+Reference distributions (MEU-Mobile): key **hold/dwell** median 88 ms (a candidate future feature — needs
+`keyup` capture, not collected today); **pressure** median 0.14 (varies, but `KeyboardEvent` exposes no
+pressure in-browser — touch-only). The inter-key-interval row is now shown in the panel.
+
+**Headroom note (future):** a *mobile-aware* interval floor (~120 ms, still below the 216 ms human p1) would
+catch a bot typing at desktop speed on a mobile session — but the password-typing MEU sample is too narrow
+to raise it safely; that needs the free-text **Aalto ITE Typing** set (Zenodo 12528163, CC-BY, 7.3 GB) first.
+
 ## Shipping path — SHIPPED
 1. ✅ Collector: captures **touch-swipe trajectories** via `touchstart`/`touchmove`/`touchend` (touch events,
    not pointer events — pointer events coalesce moves and drop `pointerup` for synthetic/replayed touch),

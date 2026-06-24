@@ -109,7 +109,7 @@ source itself, not the aggregator's metadata (GitHub's licence detector missed X
 | **FoxIO ja4db / peet.ws** (JA4 + Akamai H2 → client) | net.tls_vs_ua_browser / net.h2_vs_ua_browser precision | github.com/FoxIO-LLC/ja4 (ja4db), tls.peet.ws | varies (verify) | ✅ static lookup tables | candidate → expand the edge's tiny `ja4_hints.json` seed with more positively-identified clients (static table, no live traffic). |
 | Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
 | **BrainRun** (Zenodo 2598135) | **X6 (mobile touch-biomech human baseline)** | Zenodo direct (gestures 265MB + sensors 3.2GB) | **CC0 1.0** (verified — derive+share aggregates freely) | ✅ **WIRED** | analysed → `docs/mobile-biomech-grounding.md` (161,780 human swipes: velocity-CV floor transferable, straightness not). The richest CC0 swipe baseline. |
-| **MEU-Mobile KSD** (UCI 399) | X6 (mobile keystroke timing+pressure) | UCI direct (1.3MB) | **CC BY 4.0** | ✅ | only openly-licensed mobile-keystroke set with pressure/finger-area → mobile keystroke-floor calibration |
+| **MEU-Mobile KSD** (UCI 399) | X6 (mobile keystroke timing+pressure) | UCI direct (1.3MB) | **CC BY 4.0** | ✅ **ANALYZED** | 2,856 records → both keystroke floors VALIDATED FP-safe on mobile (inter-key p1 216ms ≫ 30ms floor; entropy p1 0.625 ≫ 0.15). See docs/mobile-biomech-grounding.md. |
 | **Aalto ITE Typing** (Zenodo 12528163) | X6 (mobile keystroke floor, huge N) | Zenodo direct (7.3GB) | **CC BY 4.0** | ✅ | ~55k participants' own-phone typing + autocorrect/suggestion events → FP-safe mobile inter-key floor that won't trip autocomplete bursts |
 | **HuMIdb + BeCAPTCHA** (BiDAlab) | X6 (the only human-vs-bot mobile *positive*) | github.com/BiDAlab/HuMIdb — signed DUA, email atvs@uam.es | research-use, **no raw resharing** (aggregates after signing) | ⚠ gated | real human swipes + GAN/synthetic bot swipes+accel → the labeled positive; start the email request in parallel |
 | **HMOG / WISDM / MotionSense** | X6 (motion-during-interaction baseline) | W&M / UCI 507 / GitHub | W&M-NC / **CC BY 4.0** / **MIT** | ✅/⚠ | accel/gyro envelopes for the emulator/motion-coherence angle (NB: device-motion *fingerprinting* was REFUTED — behavioral/coherence only) |
@@ -432,3 +432,11 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   gated (proven un-transferable). 381 detector + 73 collector tests green; catalog/matrix regenerated. This
   is the first mobile-specific behavioral CONVICTION-layer tell (corroborating) — the rest of mobile
   behavioral detection (keystroke floor, trace_replay) was device-agnostic.
+- **2026-06-24 · X6 mobile KEYSTROKE biomech grounded (MEU-Mobile, CC-BY)** — validated the device-agnostic
+  keystroke floors (kept active on mobile by G10) against 2,856 real mobile keystroke records (MEU-Mobile
+  KSD, UCI 399). Both are FP-safe on mobile with large margin: inter-key interval floor (30ms) vs human
+  per-record median p1 **216ms** (~7×); entropy floor (0.15) vs human p1 **0.625** (~4×). No recalibration
+  needed — the desktop floors are now grounded on mobile, not assumed. Displayed the inter-key-interval row
+  (was scored-but-hidden). Gesture-typing (few keydowns, below the ≥4 gate) and autocomplete (single events)
+  don't FP. Future headroom: a mobile-aware ~120ms interval floor would catch desktop-speed typing on a
+  mobile session, but needs the free-text Aalto ITE set (7.3GB, CC-BY) to set safely — password data too narrow.
