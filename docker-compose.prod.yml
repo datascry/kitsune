@@ -23,6 +23,24 @@ services:
       - ./iprep:/iprep:ro
     restart: unless-stopped
 
+  # One-shot IP-reputation refresh. The detector mounts ./iprep READ-ONLY at runtime; this companion
+  # mounts the SAME host dir READ-WRITE at /out and writes the refreshed lists there — so the operator runs
+  # it with no flags to remember (the read-only-vs-read-write split is baked in here, not passed by hand):
+  #   docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build iprep-refresh
+  # The `tools` profile keeps it OUT of `up` (it only runs via explicit `run`). Then restart the detector to
+  # pick up the new lists. Cron it monthly; see docs/deploy.md.
+  iprep-refresh:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: detector/Dockerfile
+    environment:
+      KITSUNE_IPREP_DIR: /out
+    volumes:
+      - ./iprep:/out
+    command: ["uv", "run", "python", "-m", "kitsune_detector.ip_reputation_refresh"]
+    restart: "no"
+
   edge:
     # Terminate TLS with the real Let's Encrypt cert (loaded by the edge's loadCert via these env paths) and
     # serve on the public ports. CAP_NET_RAW (for the TCP/IP SYN sniffer) + user:root are inherited from the
