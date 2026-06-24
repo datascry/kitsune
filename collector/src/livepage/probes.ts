@@ -520,6 +520,7 @@ export function armCollector(): LiveCollector {
   let coalescedMax = 0;
   let coalescedUntrusted = false;
   let cspEnforced = false;
+  let teleportClick = false;
   let voices: SpeechSynthesisVoice[] = [];
 
   const coalescedSupported =
@@ -528,6 +529,23 @@ export function armCollector(): LiveCollector {
   addEventListener("mousemove", (e: MouseEvent) => {
     pts.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
   });
+  // Teleport-click (FP-Agent's #1 AI-agent tell, radar G11): a trusted mouse-origin click (detail>=1) with
+  // zero pointer movement recorded in the session. Gated to non-touch (a tap fires click without mousemove)
+  // and detail>=1 (keyboard activation has detail 0) — a real mouse cursor moving over the page fires first.
+  addEventListener(
+    "click",
+    (e: MouseEvent) => {
+      if (
+        e.isTrusted &&
+        e.detail >= 1 &&
+        (navigator.maxTouchPoints || 0) === 0 &&
+        pts.length === 0 &&
+        ptrMoves === 0
+      )
+        teleportClick = true;
+    },
+    true,
+  );
   if (coalescedSupported) {
     addEventListener("pointermove", (e: PointerEvent) => {
       ptrMoves++;
@@ -1351,6 +1369,7 @@ export function armCollector(): LiveCollector {
       const keyIntervalMs = keystrokeIntervalMedian(keys); // agent-speed-typing tell (radar G13)
       if (keyIntervalMs >= 0) put("behavioral", "keystroke_interval_ms", keyIntervalMs);
     }
+    if (teleportClick) put("behavioral", "click_without_trajectory", true); // radar G11
     return out;
   }
 
