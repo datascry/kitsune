@@ -19,6 +19,21 @@ straightness (net displacement / path length).
 | points/swipe | 5 | 5 | 6 | 7 | 9 | 24 | 65 |
 | duration (ms) | 69 | 83 | 105 | 135 | 184 | 515 | 1506 |
 
+## Full feature sweep (161,845 human swipes)
+
+Every desktop biomech extractor, measured on real human swipes, to decide convicting vs informational:
+
+| feature | human distribution | desktop floor | transfers as a *convicting* tell? |
+|---|---|---|---|
+| **velocity CV** | p1 0.235 · median 0.602 | `< 0.08` | **YES** → shipped `bh.touch_uniform_velocity` at 0.15 (below human p1) |
+| **straightness** | p25 0.981 · median 0.993 | `> 0.97` | **NO** — would FP on >50% (swipes are near-straight) |
+| **power-law β** | fits 98.4% of swipes; p25 **−0.014** · median 0.16 | `< 0.05` | **NO** — the human β distribution overlaps the bot region; the desktop floor would FP on ~30% of real swipes |
+| **sub-movements** | 0→**15%** · 1→63% · 2→14% · 3+→7% | n/a | **NO** — 15% of human swipes have 0 peaks, so the "0 = constant replay" tell FPs on 1-in-7 humans |
+| duration / points | median 135 ms / 7 pts | — | informational only |
+
+So **only velocity-CV transfers as an FP-safe convicting tell on touch.** The others are displayed as
+**informational** panel rows (measured value, no human/bot verdict) for transparency — never as detectors.
+
 ## Per-feature transferability verdict
 
 - **`bh.path_too_straight` — NOT transferable to touch.** Human swipes are inherently near-straight
