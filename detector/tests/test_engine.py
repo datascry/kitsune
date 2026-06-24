@@ -209,6 +209,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             [(Layer.behavioral, "click_without_trajectory", True, Source.collector)],
             "bh.click_without_trajectory",
         ),
+        (
+            # Mobile touch-swipe at near-constant velocity: CV 0.05 is far below the human floor (radar X6).
+            [(Layer.behavioral, "touch_velocity_cv", 0.05, Source.collector)],
+            "bh.touch_uniform_velocity",
+        ),
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),

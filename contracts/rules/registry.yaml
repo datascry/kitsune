@@ -565,6 +565,19 @@ rules:
     last_validated: "2026-06-18"
     source: "Kitsune; cf. CMU keystroke-dynamics benchmark"
 
+  - id: bh.touch_uniform_velocity
+    title: Touch-swipe velocity too uniform for a human finger (mobile)
+    layers: [behavioral]
+    reads: [behavioral.touch_velocity_cv]
+    predicate: below_threshold
+    threshold: 0.15
+    weight: 0.5
+    status: experimental
+    category: behavioral
+    added: "2026-06-24"
+    last_validated: "2026-06-24"
+    source: "Mobile touch analog of bh.uniform_velocity (radar X6). The mouse velocity floor is calibrated at 0.08 and gated OFF mobile (G10) because it never sees touch (the collector's mouse stream is mousemove-only). This reads a NEW per-swipe touch signal (median per-swipe velocity coefficient-of-variation over touch pointerdown->up streams of >=5 points). GROUNDED on BrainRun (Zenodo 2598135, CC0) — 161,780 real human swipes across 2,117 devices: velocity-CV 1st-percentile 0.235, median 0.602, so the 0.15 threshold is ~36% below the human 1st percentile -> FP-safe with headroom (docs/mobile-biomech-grounding.md). A synthetic/replayed swipe at near-constant velocity has CV far below 0.15. NB path-straightness is deliberately NOT ported to touch: human swipes are inherently near-straight (median 0.993) so it would FP on >50% of users. Behavioral/corroborating + experimental."
+
   - id: bh.click_without_trajectory
     title: Trusted mouse click with no pointer trajectory in the session (teleport-click)
     layers: [behavioral]
