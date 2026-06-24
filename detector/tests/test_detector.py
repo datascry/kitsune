@@ -3,10 +3,27 @@
 
 from __future__ import annotations
 
+import ipaddress
+
 from kitsune_detector.detector import Detector
+from kitsune_detector.ip_reputation import IPReputation
 from kitsune_detector.models import Label, Layer, Session, Source
 
 from .conftest import FIXED, make_signal
+
+
+def test_classify_ip_projects_reputation_for_the_wire_panel() -> None:
+    # The wire panel's IP-reputation row reads this: datacenter/hosting + proxy/VPN/Tor membership against
+    # the curated CIDR lists, with a clean residential IP returning both False.
+    det = Detector(
+        ip_reputation=IPReputation(
+            datacenter=(ipaddress.ip_network("11.0.0.0/24"),),
+            proxy_exit=(ipaddress.ip_network("12.0.0.0/24"),),
+        )
+    )
+    assert det.classify_ip("11.0.0.7") == {"datacenter": True, "proxy_exit": False}
+    assert det.classify_ip("12.0.0.7") == {"datacenter": False, "proxy_exit": True}
+    assert det.classify_ip("203.0.113.7") == {"datacenter": False, "proxy_exit": False}
 
 
 def test_scores_human_as_clean(detector: Detector, human_session: Session) -> None:

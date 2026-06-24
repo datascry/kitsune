@@ -43,6 +43,13 @@ class Detector:
     def ruleset_version(self) -> str:
         return self._ruleset.ruleset_version
 
+    def classify_ip(self, ip: str) -> dict[str, bool]:
+        """Classify an observed IP for the wire panel's reputation row: ``datacenter`` (hosting/cloud) and
+        ``proxy_exit`` (proxy/VPN/Tor exit) membership against the curated CIDR lists — the same producer
+        the ``rep.*`` rules consume in ``_with_derived``. A clean residential IP returns both ``False``."""
+        is_dc, is_px = self._iprep.classify(ip)
+        return {"datacenter": is_dc, "proxy_exit": is_px}
+
     def _with_derived(self, session: Session) -> Session:
         """Add score-time derived signals (not persisted). Two enrichments: (1) a network fingerprint with
         an empty browser layer loaded the challenge page yet never ran JS — a scripted/non-browser client,

@@ -854,7 +854,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (!d) return;
     var w = d.wire || {};
     publishResult({
-      wire: { ip: d.ip || null, geo: d.geo || null, ja4: w.ja4 || null, ja3: w.ja3 || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, wire_fp: d.wire_fp || null },
+      wire: { ip: d.ip || null, geo: d.geo || null, reputation: d.reputation || null, ja4: w.ja4 || null, ja3: w.ja3 || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, wire_fp: d.wire_fp || null },
       network_contradictions: d.network_contradictions || []
     });
   }
@@ -1017,9 +1017,14 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   function renderWire(d) {
     var el = document.getElementById("ks-wire"); if (!el) return;
     if (!d) { el.innerHTML = '<h2>Network / wire layer <span class="note">\\u2014 captured by Kitsune\\u2019s edge</span></h2><p class="note">No edge session yet \\u2014 the wire layer (TLS/JA4, HTTP-2, TCP/IP, QUIC) is read from your raw connection when you reach this page through Kitsune\\u2019s edge.</p>'; return; }
-    var w = d.wire || {}, g = d.geo || null, ipLabel = d.ip || "";
+    var w = d.wire || {}, g = d.geo || null, rep = d.reputation || null, ipLabel = d.ip || "";
     if (g) { var loc = [g.city, g.country].filter(function (x) { return x; }).join(", "); var org = g.asn_org || g.asn || ""; ipLabel = (d.ip || "") + (loc ? " \\u00b7 " + loc : "") + (org ? " \\u00b7 " + org : ""); }
-    var cards = wireRow("IP / geo", ipLabel, "n/a") + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
+    // IP reputation: datacenter/hosting + proxy/VPN/Tor-exit membership against the curated CIDR lists (the
+    // same producer the rep.* rules use). A clean residential IP is shown as such, not left blank.
+    var repLabel = "";
+    if (rep) { var flags = []; if (rep.datacenter) flags.push("datacenter / hosting"); if (rep.proxy_exit) flags.push("proxy / VPN / Tor exit"); repLabel = flags.length ? flags.join(" \\u00b7 ") : "clean \\u2014 residential / unlisted"; }
+    var cards = wireRow("IP / geo", ipLabel, "n/a") + wireRow("IP reputation", repLabel, d.ip ? "clean \\u2014 residential / unlisted" : "n/a")
+      + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
       + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit");
     var html = '<h2>Network / wire layer <span class="note">\\u2014 read from your raw connection by Kitsune\\u2019s edge</span></h2><div class="surfaces">' + cards + '</div>';
     var nc = d.network_contradictions || [];
