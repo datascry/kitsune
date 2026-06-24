@@ -968,12 +968,16 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // rawFingerprint() fields; `extra()` adds computed rows (canvas/audio/realms have no single raw field); any
   // unclaimed field falls through to the "Other" catch-all so the panel never silently drops a value.
   var KS_SURFACES = [
-    { name: "Navigator", keys: ["User-Agent", "navigator.platform", "navigator.vendor", "Languages"], tells: ["webdriver", "webdriver_spoofed", "webdriver_getter_tampered", "nav_property_spoofed", "automation_globals"] },
-    { name: "Display / screen", keys: ["Screen"], tells: [] },
-    { name: "Hardware", keys: ["Hardware concurrency", "Device memory", "Max touch points"], tells: [] },
+    { name: "Navigator", keys: ["User-Agent", "navigator.platform", "navigator.vendor", "Languages", "Plugins", "Cookies / DNT", "UA-CH brands"], tells: ["webdriver", "webdriver_spoofed", "webdriver_getter_tampered", "nav_property_spoofed", "automation_globals"] },
+    { name: "Client Hints", keys: ["CH platform", "CH architecture", "CH model", "CH full version"], tells: ["ch_he_headless", "ch_he_version_vs_ua"] },
+    { name: "Display / screen", keys: ["Screen", "Color"], tells: ["color_depth_anomaly", "devicepixelratio_anomaly", "screen_zero"] },
+    { name: "Hardware", keys: ["Hardware concurrency", "Device memory", "Max touch points", "Network"], tells: [] },
     { name: "WebGL", keys: ["WebGL vendor", "WebGL renderer"], tells: ["webgl_getparameter_tampered", "webgl_worker_divergence", "webgl_renderer_artifact"] },
+    { name: "WebGPU", keys: ["WebGPU adapter", "WebGPU limits"], tells: ["webgpu_webgl_vs", "webgpu_vendor_vs_webgl"] },
     { name: "Canvas", extra: function () { return [["2D render hash", canvasHash()]]; }, tells: ["canvas_lie", "canvas_noise", "canvas_worker_divergence"] },
-    { name: "Audio", extra: function () { return [["context", "OfflineAudioContext"]]; }, tells: ["audio_noise", "audio_readback_noise"] },
+    { name: "Audio", keys: ["Audio"], tells: ["audio_noise", "audio_readback_noise"] },
+    { name: "Fonts", keys: ["Fonts"], tells: ["font_os_vs_ua", "font_linux_leak", "font_mac_internal"] },
+    { name: "Speech / media", keys: ["Speech voices", "Media devices"], tells: ["voices_empty", "voice_os_vs_ua"] },
     { name: "Timezone", keys: ["Timezone"], tells: ["timezone_inconsistent", "timezone_internal_incoherent", "timezone_worker_divergence"] },
     { name: "Functions", extra: function () { return [["integrity", "native (untampered)"]]; }, tells: ["native_invariant_violated", "function_tostring_tampered", "tostring_tampered", "plugins_spoofed"] },
     { name: "Workers / realms", extra: function () { return [["realms", "main vs Worker / iframe"]]; }, tells: ["worker_divergence", "iframe_divergence", "worker_constructor_tampered", "worker_source_rewritten", "languages_worker_divergence"] }
@@ -995,6 +999,51 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     for (var k in fp) { if (fp.hasOwnProperty(k) && !claimed[k]) other += surfRow(k, fp[k]); }
     if (other) cards += '<div class="surface"><div class="top"><span class="sname">Other</span><span class="chip">enumerated</span></div>' + other + '</div>';
     el.innerHTML = '<h2>Fingerprint surfaces <span class="note">\\u2014 enumerated values \\u00b7 tamper status (' + dirty + ' tampered)</span></h2><div class="surfaces">' + cards + '</div>';
+  }
+  // Offscreen font-presence probe: measure a string in OS-signature fonts vs the generic baselines; a width
+  // change means the font is installed. Cheap, no canvas — surfaces the installed-font set as a value.
+  function detectFonts() {
+    try {
+      if (!document.body) return [];
+      var base = ["monospace", "sans-serif", "serif"];
+      var probes = ["Segoe UI", "Calibri", "Cambria", "Tahoma", "Times New Roman", "Arial", "Helvetica Neue", "Menlo", "Monaco", "Geneva", "Roboto", "Noto Sans", "Ubuntu", "DejaVu Sans", "Liberation Sans", "Cantarell"];
+      var span = document.createElement("span");
+      span.style.cssText = "position:absolute;left:-9999px;top:-9999px;font-size:72px;line-height:normal";
+      span.textContent = "mmmmmmmmmmlli\\u2014WX";
+      document.body.appendChild(span);
+      var baseW = {};
+      for (var b = 0; b < base.length; b++) { span.style.fontFamily = base[b]; baseW[base[b]] = span.offsetWidth; }
+      var found = [];
+      for (var p = 0; p < probes.length; p++) {
+        for (var b2 = 0; b2 < base.length; b2++) {
+          span.style.fontFamily = "'" + probes[p] + "'," + base[b2];
+          if (span.offsetWidth !== baseW[base[b2]]) { found.push(probes[p]); break; }
+        }
+      }
+      document.body.removeChild(span);
+      return found;
+    } catch (e) { return []; }
+  }
+  // Enumerate the FULL set of profiled value-bearing surfaces (sync rawFingerprint + the async ones the
+  // collector scores but the panel never showed: Client Hints high-entropy, WebGPU adapter/limits, audio FP,
+  // installed fonts, speech voices, media-device counts, plugins, connection, colour capabilities), then
+  // re-render the consolidated panel with it. Display-only — never blocks scoring; each probe is best-effort.
+  async function enumerateSurfaces() {
+    var fp = rawFingerprint();
+    function set(k, v) { if (v != null && v !== "") fp[k] = String(v); }
+    try { set("Plugins", ((navigator.plugins && navigator.plugins.length) || 0) + " plugin(s) \\u00b7 " + ((navigator.mimeTypes && navigator.mimeTypes.length) || 0) + " mimeType(s)" + (("pdfViewerEnabled" in navigator) ? " \\u00b7 pdf " + navigator.pdfViewerEnabled : "")); } catch (e) {}
+    try { set("Cookies / DNT", "cookies " + (navigator.cookieEnabled ? "on" : "off") + " \\u00b7 DNT " + (navigator.doNotTrack || "unset")); } catch (e) {}
+    try { var brands = (navigator.userAgentData && navigator.userAgentData.brands) || []; if (brands.length) set("UA-CH brands", brands.map(function (x) { return x.brand + " " + x.version; }).join(", ")); } catch (e) {}
+    try { var gamut = matchMedia("(color-gamut: p3)").matches ? "p3" : (matchMedia("(color-gamut: srgb)").matches ? "srgb" : "?"); set("Color", (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") + " \\u00b7 gamut " + gamut + " \\u00b7 " + (matchMedia("(prefers-reduced-motion: reduce)").matches ? "reduced-motion" : "full-motion")); } catch (e) {}
+    try { var nc = navigator.connection; if (nc) set("Network", (nc.effectiveType || "?") + (nc.downlink != null ? " \\u00b7 " + nc.downlink + "Mbps" : "") + (nc.rtt != null ? " \\u00b7 " + nc.rtt + "ms" : "") + (nc.saveData ? " \\u00b7 saveData" : "")); } catch (e) {}
+    try { var uad = navigator.userAgentData; if (uad && uad.getHighEntropyValues) { var he = await uad.getHighEntropyValues(["platform", "platformVersion", "architecture", "bitness", "model", "uaFullVersion"]); set("CH platform", (he.platform || "") + (he.platformVersion ? " " + he.platformVersion : "")); set("CH architecture", (he.architecture || "") + (he.bitness ? " " + he.bitness + "-bit" : "")); set("CH model", he.model); set("CH full version", he.uaFullVersion); } } catch (e) {}
+    try { if (navigator.gpu && navigator.gpu.requestAdapter) { var ad = await navigator.gpu.requestAdapter(); if (ad) { var info = ad.info || (ad.requestAdapterInfo ? await ad.requestAdapterInfo() : null); var parts = []; if (info) { if (info.vendor) parts.push(info.vendor); if (info.architecture) parts.push(info.architecture); if (info.device) parts.push(info.device); } if (ad.isFallbackAdapter) parts.push("fallback"); set("WebGPU adapter", parts.length ? parts.join(" \\u00b7 ") : "adapter (no info)"); if (ad.limits) set("WebGPU limits", "maxTex " + ad.limits.maxTextureDimension2D + " \\u00b7 maxBuf " + ad.limits.maxBufferSize); } else set("WebGPU adapter", "no adapter"); } else set("WebGPU adapter", "absent"); } catch (e) {}
+    try { var af = await audioFP(); set("Audio", (af && !af.missing) ? ("OfflineAudioContext \\u00b7 sum " + (typeof af.value === "number" ? af.value.toFixed(3) : "n/a") + (af.noise ? " (noised)" : "")) : "unavailable"); } catch (e) {}
+    try { var ff = detectFonts(); set("Fonts", ff.length + " detected" + (ff.length ? " \\u00b7 " + ff.slice(0, 6).join(", ") : "")); } catch (e) {}
+    try { var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || []; if (!vs.length && _voices && _voices.length) vs = _voices; set("Speech voices", vs.length + " voice(s)" + (vs.length ? " \\u00b7 e.g. " + (vs[0].name || vs[0].lang || "") : "")); } catch (e) {}
+    try { if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) { var devs = await navigator.mediaDevices.enumerateDevices(); var c = { audioinput: 0, videoinput: 0, audiooutput: 0 }; for (var i = 0; i < devs.length; i++) { if (c[devs[i].kind] != null) c[devs[i].kind]++; } set("Media devices", c.audioinput + " mic \\u00b7 " + c.videoinput + " cam \\u00b7 " + c.audiooutput + " out"); } } catch (e) {}
+    window.__ksFpFull = fp;
+    renderSurfaces(fp, window.__ksFiredSet || {});
   }
   function renderFpId(fp) {
     var el = document.getElementById("ks-fpid"); if (!el) return; var parts = [];
@@ -1071,6 +1120,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     try {
       var p = predict(); window.__ksFp = rawFingerprint();
       renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); renderSurfaces(window.__ksFp, {});
+      enumerateSurfaces();  // async: enrich the panel with every profiled value surface (CH/WebGPU/audio/fonts/voices/…)
       fetchWire();
     } catch (e) {}
   }
@@ -1115,10 +1165,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // built from the full rule registry (/rules.json) cross-referenced with the fired contradictions.
     var cs = v.contradictions || [], firedMap = {}, firedSet = {};
     for (var i = 0; i < cs.length; i++) { firedMap[cs[i].rule_id] = cs[i]; firedSet[cs[i].rule_id] = 1; }
+    window.__ksFiredSet = firedSet;  // remembered so an async surface re-render keeps tamper status
     var det = document.getElementById("ks-detections");
     if (det) det.innerHTML = renderDetections(firedMap, cs.length);
     // Surface tamper-state reflects which browser rules fired (from the server verdict).
-    renderSurfaces(window.__ksFp || rawFingerprint(), firedSet);
+    renderSurfaces(window.__ksFpFull || window.__ksFp || rawFingerprint(), firedSet);
     // Pull the edge wire layer (JA3/JA4/TCP-OS/QUIC + IP) for this session and form the full-stack ID.
     fetchWire();
   }

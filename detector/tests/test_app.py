@@ -155,6 +155,15 @@ def test_index_has_live_render_containers(client: TestClient) -> None:
         assert marker in html
 
 
+def test_index_enumerates_all_profiled_surfaces(client: TestClient) -> None:
+    # The consolidated "Fingerprint surfaces" panel must enumerate every value-bearing surface the collector
+    # profiles — not just the sync rawFingerprint() subset. Assert the async-enriched surfaces are wired in.
+    html = client.get("/").text
+    for surface in ("Client Hints", "WebGPU", "Fonts", "Speech / media"):
+        assert surface in html, surface
+    assert "enumerateSurfaces" in html  # the async enricher that fills the extra surfaces
+
+
 def test_index_exposes_machine_readable_result(client: TestClient) -> None:
     # Automated tools can parse the verdict from a JSON <script> tag (filled in client-side once scoring
     # completes) instead of scraping the DOM — plus a window.ksResult global and a "kitsune:result" event.
