@@ -3,6 +3,7 @@
 
 import {
   keystrokeEntropy,
+  keystrokeIntervalMedian,
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
@@ -48,6 +49,8 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
   out.push(sig("behavioral", "mouse_entropy", mouseEntropy(env.pointerEvents)));
   out.push(sig("behavioral", "pointer_event_count", pointerEventCount(env.pointerEvents)));
   out.push(sig("behavioral", "keystroke_entropy", keystrokeEntropy(env.keyEvents)));
+  const keyIntervalMs = keystrokeIntervalMedian(env.keyEvents);
+  if (keyIntervalMs >= 0) out.push(sig("behavioral", "keystroke_interval_ms", keyIntervalMs));
   // Shape features need a real path; emit only with enough samples (else genuinely absent).
   if (env.pointerEvents.length >= 3) {
     out.push(sig("behavioral", "mouse_straightness", pathStraightness(env.pointerEvents)));

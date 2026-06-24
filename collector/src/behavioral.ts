@@ -123,3 +123,20 @@ export function keystrokeEntropy(times: number[]): number {
   }
   return h / Math.log2(BINS);
 }
+
+/**
+ * Median inter-keystroke interval in ms, or -1 when there are too few intervals to judge.
+ * Catches agent-speed typing that keeps human-like entropy (varied sub-ms gaps) yet types far below any
+ * human cadence (Browser-Use ~5ms, Manus ~1ms vs a human 100ms+) — orthogonal to {@link keystrokeEntropy},
+ * which only collapses for fixed-delay scripts. Backs the `bh.keystroke_interval_floor` rule (radar G13).
+ */
+export function keystrokeIntervalMedian(times: number[]): number {
+  const intervals: number[] = [];
+  for (let i = 1; i < times.length; i++) {
+    const dt = times[i]! - times[i - 1]!;
+    if (dt > 0) intervals.push(dt);
+  }
+  if (intervals.length < 3) return -1;
+  intervals.sort((a, b) => a - b);
+  return intervals[Math.floor(intervals.length / 2)]!;
+}
