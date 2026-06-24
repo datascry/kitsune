@@ -711,7 +711,7 @@ a.rule-src:hover code {
 .bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;background:var(--panel);padding:.5rem .7rem;font-size:.8rem}
 .bio-row span{color:var(--muted)}.bio-row b{font-variant-numeric:tabular-nums;font-weight:700}
 .bio-row i{font-style:normal;font-size:.66rem;text-transform:uppercase;letter-spacing:.08em}
-.bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-collecting,.bm-more,.bm-ok{color:var(--muted)}
+.bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-collecting,.bm-more,.bm-ok,.bm-measured,.bm-na{color:var(--muted)}
 .bio-help{color:var(--muted);font-size:.78rem;margin:.3rem 0 .6rem}
 .bio-pad{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-between;margin:.4rem 0}
 .bio-dot{flex:1 1 auto;min-width:56px;padding:.55rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;cursor:pointer;font:inherit;touch-action:manipulation}
@@ -1215,11 +1215,28 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // inherently near-straight (median 0.993), so it would FP on >50% of users (see docs/mobile-biomech-grounding.md).
   // Captured via touch events (not pointer events): touchmove fires per native sample and touchend reliably
   // ends the swipe, whereas pointer events coalesce moves and can drop pointerup for synthetic/replayed touch.
-  var swipeBuf = [], touchSwipeCVs = [];
+  var swipeBuf = [], swipeForce = [], touchSwipeCVs = [], swipeStats = [];
   function _touchPt(e) { var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]); return t ? { x: t.clientX, y: t.clientY, t: e.timeStamp } : null; }
-  addEventListener("touchstart", function (e) { var p = _touchPt(e); if (p) swipeBuf = [p]; }, true);
-  addEventListener("touchmove", function (e) { if (swipeBuf.length) { var p = _touchPt(e); if (p) swipeBuf.push(p); } }, true);
-  addEventListener("touchend", function (e) { if (swipeBuf.length >= 5) { var cv = velcv(swipeBuf); if (cv >= 0) touchSwipeCVs.push(cv); } swipeBuf = []; try { renderBio(); } catch (x) {} }, true);
+  function _touchForce(e) { var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]); return t && typeof t.force === "number" ? t.force : null; }
+  addEventListener("touchstart", function (e) { var p = _touchPt(e); if (p) { swipeBuf = [p]; swipeForce = []; var f = _touchForce(e); if (f != null) swipeForce.push(f); } }, true);
+  addEventListener("touchmove", function (e) { if (swipeBuf.length) { var p = _touchPt(e); if (p) swipeBuf.push(p); var f = _touchForce(e); if (f != null) swipeForce.push(f); } }, true);
+  addEventListener("touchend", function (e) {
+    if (swipeBuf.length >= 5) {
+      // Reuse the desktop biomech extractors on the touch trajectory. Only velocity-CV CONVICTS (grounded
+      // FP-safe on BrainRun, X6); duration/points/straightness/sub-movements/power-law are INFORMATIONAL —
+      // the BrainRun analysis showed their human distributions overlap the bot region on touch (e.g. 15% of
+      // real swipes have 0 sub-movements, β median ~0.16), so they are displayed but never convict.
+      var cv = velcv(swipeBuf);
+      if (cv >= 0) touchSwipeCVs.push(cv);
+      swipeStats.push({
+        cv: cv, npts: swipeBuf.length, dur: swipeBuf[swipeBuf.length - 1].t - swipeBuf[0].t,
+        straight: straightness(swipeBuf), subs: submovementCount(swipeBuf), pl: powerLawExp(swipeBuf),
+        force: swipeForce.length ? Math.max.apply(null, swipeForce) : null
+      });
+    }
+    swipeBuf = []; swipeForce = [];
+    try { renderBio(); } catch (x) {}
+  }, true);
   // Teleport-click (FP-Agent's #1 AI-agent tell): a trusted, mouse-origin click (detail>=1) that lands with
   // ZERO pointer movement recorded in the whole session — a CDP/vision agent dispatching a click at target
   // coordinates without ever moving the cursor. Gates: detail>=1 excludes keyboard Enter/Space activation
@@ -2406,6 +2423,22 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var medSwipe = -1;
     if (touchSwipeCVs.length) { var sc = touchSwipeCVs.slice().sort(function (a, b) { return a - b; }); medSwipe = sc[Math.floor(sc.length / 2)]; }
     rows += bioRow("swipe velocity CV", medSwipe >= 0 ? medSwipe.toFixed(3) : "\\u2014", medSwipe >= 0 ? (medSwipe < 0.15 ? "bot" : "human") : "collecting");
+    // Informational swipe metrics (median per swipe; "measured", never a bot verdict — the BrainRun analysis
+    // showed these don't separate human from bot FP-safely on touch, so they are shown for transparency only).
+    function _med(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+    var haveSw = swipeStats.length > 0, infoCls = haveSw ? "measured" : "collecting";
+    var swDur = _med(swipeStats.map(function (s) { return s.dur; }));
+    var swPts = _med(swipeStats.map(function (s) { return s.npts; }));
+    var swStr = _med(swipeStats.map(function (s) { return s.straight; }));
+    var swSub = _med(swipeStats.map(function (s) { return s.subs; }));
+    var plVals = swipeStats.map(function (s) { return s.pl; }).filter(function (v) { return v !== null; }), swPl = _med(plVals);
+    var forces = swipeStats.map(function (s) { return s.force; }).filter(function (f) { return f != null && f > 0; }), swForce = _med(forces);
+    rows += bioRow("swipe duration (ms)", swDur != null ? Math.round(swDur) : "\\u2014", infoCls);
+    rows += bioRow("points / swipe", swPts != null ? swPts : "\\u2014", infoCls);
+    rows += bioRow("swipe straightness", swStr != null ? swStr.toFixed(3) : "\\u2014", infoCls);
+    rows += bioRow("swipe sub-movements", swSub != null ? swSub : "\\u2014", infoCls);
+    rows += bioRow("swipe power-law \\u03b2", swPl != null ? swPl.toFixed(3) : "\\u2014", infoCls);
+    rows += bioRow("touch pressure", swForce != null ? swForce.toFixed(2) : "\\u2014", forces.length ? "measured" : (haveSw ? "na" : "collecting"));
     var ple = fullPts ? powerLawExp(pts) : null;
     rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
     rows += bioRow("keystrokes", keys.length, enoughKeys ? "ok" : "collecting");
