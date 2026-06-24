@@ -1207,6 +1207,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       } catch (err) {}
     });
   }
+  // Teleport-click (FP-Agent's #1 AI-agent tell): a trusted, mouse-origin click (detail>=1) that lands with
+  // ZERO pointer movement recorded in the whole session — a CDP/vision agent dispatching a click at target
+  // coordinates without ever moving the cursor. Gates: detail>=1 excludes keyboard Enter/Space activation
+  // (detail 0); maxTouchPoints==0 excludes a touch tap (fires click with no mousemove); zero total movement
+  // is the bot-specific part — a real mouse cursor entering/jittering the page emits mousemove first.
+  var teleportClick = false;
+  addEventListener("click", function (e) {
+    if (e.isTrusted && e.detail >= 1 && (navigator.maxTouchPoints || 0) === 0 && pts.length === 0 && ptrMoves === 0) teleportClick = true;
+  }, true);
   // Keystroke timing: a real typist has variable inter-key intervals (digraph latencies differ); a script
   // that types at a fixed delay has near-zero interval entropy — the keystroke-dynamics tell.
   var keys = [];
@@ -2344,6 +2353,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         var kim = keyIntervalMedian(keys);  // agent-speed-typing tell, orthogonal to entropy (radar G13)
         if (kim >= 0) sigs.push(S("behavioral", "keystroke_interval_ms", kim));
       }
+      if (teleportClick) sigs.push(S("behavioral", "click_without_trajectory", true));  // radar G11
       // A coalesced batch carrying an untrusted (constructor-built) event is fabricated — a hard artifact a
       // real browser never produces, even through a Proxy-over-native override. Always emitted (an artifact).
       if (coalescedUntrusted) sigs.push(S("browser", "coalesced_untrusted", true));

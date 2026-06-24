@@ -204,6 +204,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             [(Layer.behavioral, "keystroke_interval_ms", 0.9, Source.collector)],
             "bh.keystroke_interval_floor",
         ),
+        (
+            # Teleport-click: a trusted mouse click with no pointer trajectory in the session (radar G11).
+            [(Layer.behavioral, "click_without_trajectory", True, Source.collector)],
+            "bh.click_without_trajectory",
+        ),
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
