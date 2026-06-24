@@ -7,19 +7,29 @@ Commercial anti-bot leans heavily on IP reputation (datacenter ASN, proxy/VPN/To
 rules but no feed (see ``docs/landscape.md``). This is the feed: match the observed source IP against
 curated public CIDR lists with stdlib ``ipaddress``. Lists load from committed seeds (``data/*.txt``) and
 are refreshable from the public sources documented in ``docs/ip-reputation-data.md`` — no paid API, in
-keeping with the self-contained lab. Linear CIDR scan: fine for a seed; a production feed would use a
-prefix trie.
+keeping with the self-contained lab.
+
+Lookup is a **prefix-length-indexed hash**, not a linear scan: a network of prefix length *P* contains an
+address *A* iff ``(A & mask_P) == network_address``, so each network's masked integer is stored in a
+per-``(version, prefixlen)`` set and an address is tested by masking it to every prefix length present and
+probing that set. That is O(distinct prefix lengths) — ~15-25 hash probes — instead of O(N) over the whole
+list, which matters once a deploy populates the full ~67k-CIDR production feed (the seed was small enough
+that a linear scan was fine; the full feed, scanned twice per session, was not).
 """
 
 from __future__ import annotations
 
 import ipaddress
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 _Net = ipaddress.IPv4Network | ipaddress.IPv6Network
 _DATA = Path(__file__).parent / "data"
+_BITS = {4: 32, 6: 128}
+
+#: Per-version index: {version: {prefixlen: {masked network int, …}}} plus the sorted prefix lengths present.
+_Index = tuple[dict[int, dict[int, set[int]]], dict[int, tuple[int, ...]]]
 
 
 def _seed_file(name: str) -> str:
@@ -44,12 +54,43 @@ def _parse_cidrs(text: str) -> tuple[_Net, ...]:
     return tuple(nets)
 
 
+def _build_index(nets: tuple[_Net, ...]) -> _Index:
+    """Index networks by (version, prefixlen) for O(distinct-prefix-lengths) membership. ``network_address``
+    is already masked (``ip_network`` canonicalises, even with ``strict=False``), so it is exactly the value
+    a contained address masks down to."""
+    by_len: dict[int, dict[int, set[int]]] = {4: {}, 6: {}}
+    for net in nets:
+        by_len[net.version].setdefault(net.prefixlen, set()).add(int(net.network_address))
+    lens = {v: tuple(sorted(by_len[v])) for v in (4, 6)}
+    return by_len, lens
+
+
+def _index_contains(addr_int: int, version: int, index: _Index) -> bool:
+    """True iff some indexed network of this version contains ``addr_int``."""
+    by_len, lens = index
+    table = by_len[version]
+    bits = _BITS[version]
+    for plen in lens[version]:
+        mask = ((1 << plen) - 1) << (bits - plen)  # plen leading 1-bits (plen=0 -> 0, the /0 case)
+        if (addr_int & mask) in table[plen]:
+            return True
+    return False
+
+
 @dataclass(frozen=True)
 class IPReputation:
     """Curated datacenter/hosting and proxy/VPN/Tor-exit CIDR sets; classifies an IP against them."""
 
     datacenter: tuple[_Net, ...] = ()
     proxy_exit: tuple[_Net, ...] = ()
+    # Derived prefix-length indexes (built once in __post_init__). Excluded from eq/hash/repr — the CIDR
+    # tuples above are the canonical, public data; these are just accelerators over the same content.
+    _dc_index: _Index = field(init=False, repr=False, compare=False)
+    _px_index: _Index = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_dc_index", _build_index(self.datacenter))
+        object.__setattr__(self, "_px_index", _build_index(self.proxy_exit))
 
     def classify(self, ip: str) -> tuple[bool, bool]:
         """Return ``(is_datacenter, is_proxy_exit)`` for ``ip``; ``(False, False)`` if it is invalid,
@@ -60,9 +101,11 @@ class IPReputation:
             return (False, False)
         if addr.is_private or addr.is_loopback or addr.is_link_local:
             return (False, False)
-        is_dc = any(addr in net for net in self.datacenter)
-        is_px = any(addr in net for net in self.proxy_exit)
-        return (is_dc, is_px)
+        addr_int, version = int(addr), addr.version
+        return (
+            _index_contains(addr_int, version, self._dc_index),
+            _index_contains(addr_int, version, self._px_index),
+        )
 
     @classmethod
     def from_seed(cls) -> IPReputation:
