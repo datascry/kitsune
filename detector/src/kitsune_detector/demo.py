@@ -718,8 +718,6 @@ a.rule-src:hover code {
 .bio-dot{flex:1 1 auto;min-width:56px;padding:.55rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;cursor:pointer;font:inherit;touch-action:manipulation}
 .bio-dot:hover{background:var(--panel-2)}.bio-dot.hit{border-color:var(--jade);color:var(--jade)}
 #ks-bio-text{width:100%;box-sizing:border-box;padding:.5rem;margin:.3rem 0 .6rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;font:inherit}
-#ks-analyze{font-family:var(--mono);font-size:.78rem;color:var(--bg);background:var(--fox);border:1px solid var(--fox);padding:.45rem .8rem;cursor:pointer;font-weight:700;letter-spacing:.04em}
-#ks-analyze:hover{filter:brightness(1.12)}
 /* --- landing nav --- */
 nav.top{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;max-width:64rem;margin:0 auto;padding:.9rem 1.5rem;border-bottom:1px solid var(--line)}
 nav.top a{color:var(--muted);text-decoration:none;font-size:.78rem;letter-spacing:.06em}
@@ -815,9 +813,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
     <div id="ks-bio-metrics" class="bio-metrics">move your mouse, swipe, and type below to measure…</div>
-    <p class="bio-help">Type a sentence below and move your mouse — or <b>swipe</b> on a touch screen — the detector measures your mouse/touch dynamics and keystroke timing live; it re-scores automatically once it has enough input (or press <b>Analyze</b>).</p>
+    <p class="bio-help">Type a sentence below and move your mouse — or <b>swipe</b> on a touch screen — the detector measures your mouse/touch dynamics and keystroke timing live and re-scores automatically once it has enough input.</p>
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
-    <button type="button" id="ks-analyze">Analyze my behavior</button>
   </section>
   <!-- THE WHY: the full rule breakdown, after its evidence -->
   <h2>Detections <span class="note">— every check Kitsune ran, grouped by layer</span></h2>
@@ -2371,9 +2368,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         var ple = powerLawExp(pts);
         if (ple !== null) sigs.push(S("behavioral", "power_law_exponent", ple));
         var th = traceHash(pts);
-        // Pair the trajectory hash with this load's nonce so re-scoring the same path in ONE load can't
-        // self-collide into a false "record-and-replay" verdict (only a recurrence across loads counts).
-        if (th !== null) { sigs.push(S("behavioral", "trace_hash", th)); sigs.push(S("behavioral", "load_nonce", KS_LOAD)); }
+        // Emit the trajectory hash ONCE per page load. Re-score posts within one load must never re-post it —
+        // that self-collision is what false-fired record-and-replay on a real human. Only a recurrence of the
+        // SAME hash across DISTINCT loads (a canned, replayed trajectory) is the bot signal. (Belt-and-braces
+        // with the load_nonce pairing: this makes a within-load false positive impossible by construction.)
+        if (th !== null && !window.__ksTraceSent) { sigs.push(S("behavioral", "trace_hash", th)); sigs.push(S("behavioral", "load_nonce", KS_LOAD)); window.__ksTraceSent = true; }
         // Enough of a pointer stream to expect coalescing on real hardware, yet none ever occurred.
         if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
           sigs.push(S("behavioral", "coalesced_events_absent", true));
@@ -2468,11 +2467,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     for (var di = 0; di < dots.length; di++) dots[di].addEventListener("click", function () { this.classList.add("hit"); renderBio(); });
     var btxt = document.getElementById("ks-bio-text");
     if (btxt) btxt.addEventListener("input", renderBio);
-    var analyze = document.getElementById("ks-analyze");
-    if (analyze) analyze.addEventListener("click", function () {
-      var s = document.getElementById("ks-status"); if (s) s.textContent = "re-scoring your behavior\\u2026";
-      renderBio(); send();
-    });
     setInterval(renderBio, 600); // keep the live readout fresh as the visitor moves/types
   } catch (e) {}
   // Score after a short delay (a fast first verdict). In full mode, if the visitor hasn't produced enough
