@@ -43,6 +43,50 @@ def test_classify_datacenter_proxy_residential() -> None:
     assert rep.classify("8.8.4.4") == (False, False)  # neither (public, unlisted)
 
 
+def test_index_matches_across_prefix_lengths_and_nesting() -> None:
+    # The prefix-length index must agree with naive containment across mixed/nested prefixes, /32 host CIDRs
+    # (the Tor-exit shape), and IPv6 — all public ranges so classify() does not short-circuit them.
+    rep = IPReputation(
+        datacenter=(
+            ipaddress.ip_network("13.0.0.0/8"),  # broad
+            ipaddress.ip_network("13.1.2.0/24"),  # nested inside the /8
+            ipaddress.ip_network("17.5.6.7/32"),  # host CIDR
+            ipaddress.ip_network("2606:4700::/32"),  # IPv6
+        ),
+    )
+    assert rep.classify("13.1.2.3") == (True, False)  # matches the /24 (and the /8)
+    assert rep.classify("13.9.9.9") == (True, False)  # matches the /8 only
+    assert rep.classify("17.5.6.7") == (True, False)  # exact /32 host
+    assert rep.classify("17.5.6.8") == (False, False)  # adjacent host, not listed
+    assert rep.classify("2606:4700::1") == (True, False)  # inside the IPv6 /32
+    assert rep.classify("2606:4800::1") == (False, False)  # outside it
+    assert rep.classify("8.8.4.4") == (False, False)  # public, unlisted
+
+
+def test_index_agrees_with_naive_containment_on_a_sample() -> None:
+    # Differential guard on the masking arithmetic: the fast index must return the SAME verdict as a naive
+    # `any(addr in net)` scan (with the private short-circuit) for a spread of addresses + prefix lengths.
+    nets = tuple(
+        ipaddress.ip_network(c)
+        for c in ("1.2.0.0/16", "1.2.3.0/24", "1.2.3.4/32", "8.0.0.0/9", "13.0.0.0/25", "2606:4700::/32")
+    )
+    rep = IPReputation(datacenter=nets)
+    sample = ("1.2.3.4", "1.2.3.5", "1.2.9.9", "1.3.0.0", "8.1.2.3", "8.200.0.1", "13.0.0.50", "2606:4700::9")
+    for ip in sample:
+        addr = ipaddress.ip_address(ip)
+        not_special = not (addr.is_private or addr.is_loopback or addr.is_link_local)
+        expected = not_special and any(addr in n for n in nets)
+        assert rep.classify(ip)[0] == expected, ip
+
+
+def test_ipreputation_stays_hashable_and_equal_with_derived_index() -> None:
+    # The derived index fields are compare=False, so two reputations from the same CIDRs remain equal AND
+    # hashable — the frozen-dataclass invariants the rest of the code leans on.
+    a = IPReputation(datacenter=(ipaddress.ip_network("11.0.0.0/24"),))
+    b = IPReputation(datacenter=(ipaddress.ip_network("11.0.0.0/24"),))
+    assert a == b and hash(a) == hash(b)
+
+
 def test_classify_private_and_invalid_are_clean() -> None:
     rep = _rep()
     assert rep.classify("172.22.0.4") == (False, False)  # private (the lab's own container range)
