@@ -389,3 +389,16 @@ terms before pulling).
   edge suite green via Docker golang:1.26-alpine. Scoped to the detection CORE this tick — wiring (h1 conn
   wrapper + held-connection timer; these conns are sessionless) + a `net.slow_http_attack` rule + a
   slowhttptest grounding are next tick. First edge-layer / Go increment of this loop.
+- **2026-06-24 · /loop tick 6 (G16 wiring is sessionless — loop wound down)** — confirmed the edge mints a
+  session id ONLY inside `ServeHTTP`/`prepare(r,…)`, i.e. when a *complete* request reaches the handler. A
+  slowloris connection never completes a request, so the entire request-driven signal pipeline has no path
+  for it — wiring G16 needs a deliberate **connection-level** signal path (synthetic session ids for
+  sessionless attacks, mint point, detector correlation). That is a design decision, not autonomous wiring.
+  **Wound down the 4-min /loop (cron e459ff88 deleted).** Cleanly-autonomous-shippable queue is drained;
+  what shipped this session: G11 (teleport-click), G13 (keystroke-interval floor), the live-panel surface
+  maximization (~25 enumerated surfaces), the G16 slow-HTTP detection core, and G18-recon + G20/G21 dedups.
+  **Remaining items are NOT autonomous-suitable** — each needs human-in-the-loop design or external data:
+  G16-wiring (connection-level sessionless signal path) · G17 (coordination-DDoS wiring + fleet evader) ·
+  G18-rule (real-GPU caps reference — capture-profile-bound) · G22 (real CPU corpus) · G12/G14/G15/G19/G23/
+  G24 (FP-marginal on real users). Per [[per-session-detection-saturated]], grinding marginal rules is not
+  worth it; resume with a deliberate design pass on G16-wiring or G17 when desired.
