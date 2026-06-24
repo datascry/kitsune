@@ -2381,7 +2381,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       if (keys.length >= 4) {
         sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
         var kim = keyIntervalMedian(keys);  // agent-speed-typing tell, orthogonal to entropy (radar G13)
-        if (kim >= 0) sigs.push(S("behavioral", "keystroke_interval_ms", kim));
+        if (kim >= 0) {
+          sigs.push(S("behavioral", "keystroke_interval_ms", kim));
+          // Mobile-aware floor (radar X6): a MOBILE session typing faster than ~80ms/key is non-human —
+          // real mobile typing's per-session median inter-key is far slower (Aalto ITE: p1 118ms; only
+          // 0.018% of 850k sessions median <80ms). Catches a bot typing at DESKTOP speed (30-80ms) on a
+          // mobile session, which the universal 30ms floor misses. Emitted only on mobile -> self-gating.
+          if (navigator.maxTouchPoints > 0 && /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent))
+            sigs.push(S("behavioral", "mobile_keystroke_interval_ms", kim));
+        }
       }
       if (teleportClick) sigs.push(S("behavioral", "click_without_trajectory", true));  // radar G11
       if (touchSwipeCVs.length) {  // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded)

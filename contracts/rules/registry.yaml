@@ -590,6 +590,19 @@ rules:
     last_validated: "2026-06-24"
     source: "FP-Agent (arXiv 2605.01247, radar G11): the #1 discriminative AI-agent signal — every tested LLM browser agent (Operator/Atlas, Claude-for-Chrome, Comet, Manus, Browser-Use, Skyvern) clicks at target coordinates with ZERO continuous mouse movement (CDP/vision-driven teleport). EVADES-first GROUNDED 2026-06-24: a CDP Input.dispatchMouseEvent click produced a trusted, mouse-origin (detail=1) click with 0 mousemove/pointermove events, while a real move+click fired 6. FP-safe gate: detail>=1 (excludes keyboard Enter/Space activation, detail=0) + maxTouchPoints==0 (a touch tap fires click with no mousemove) + zero total pointer movement (a real mouse cursor entering/jittering the page emits mousemove first). Behavioral/corroborating + experimental: the residual FP is a desktop user whose cursor was pre-positioned over the target and clicked without moving (rare); corroborating-only, so it cannot convict alone."
 
+  - id: bh.mobile_keystroke_interval_floor
+    title: Mobile session typing faster than any human thumb cadence
+    layers: [behavioral]
+    reads: [behavioral.mobile_keystroke_interval_ms]
+    predicate: below_threshold
+    threshold: 80
+    weight: 0.55
+    status: experimental
+    category: behavioral
+    added: "2026-06-24"
+    last_validated: "2026-06-24"
+    source: "Mobile-aware companion to bh.keystroke_interval_floor (radar X6). The universal floor is 30ms (catches only extreme agent typing); a MOBILE session typing 30-80ms/key is non-human but evades it. GROUNDED on Aalto ITE Typing (Zenodo 12528163, CC BY 4.0) — 42.3M keystrokes across 849,909 real free-text mobile typing sessions: per-session median inter-key p1=118ms, median 202ms; only 0.018% of sessions have a median <80ms (vs 1.2% at 120ms, which is why the floor is 80, not higher). The collector emits behavioral.mobile_keystroke_interval_ms ONLY on a mobile session (maxTouchPoints>0 + mobile UA), so the rule is self-gating and never touches desktop typists (who legitimately type faster). Behavioral/corroborating + experimental."
+
   - id: bh.keystroke_interval_floor
     title: Median inter-keystroke interval below the human cadence floor
     layers: [behavioral]
