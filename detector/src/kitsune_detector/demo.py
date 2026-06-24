@@ -1393,6 +1393,17 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     for (var k in b) { if (b.hasOwnProperty(k)) { var pr = b[k] / t; h -= pr * Math.log2(pr); n++; } }
     return n <= 1 ? 0 : h / Math.log2(n);
   }
+  // Median inter-keystroke interval (ms). Catches agent-speed typing that keeps human-like ENTROPY (varied
+  // sub-ms gaps spread across log2 buckets) yet types far below any human cadence (Browser-Use ~5ms, Manus
+  // ~1ms vs a human 100ms+). Orthogonal to keyEntropy, which only collapses for FIXED-delay scripts. Returns
+  // -1 when there are too few intervals to judge (so the caller emits nothing, never a false floor hit).
+  function keyIntervalMedian(ks) {
+    var iv = [];
+    for (var i = 1; i < ks.length; i++) { var dt = ks[i] - ks[i - 1]; if (dt > 0) iv.push(dt); }
+    if (iv.length < 3) return -1;
+    iv.sort(function (a, b) { return a - b; });
+    return iv[Math.floor(iv.length / 2)];
+  }
   function d(a, c) { return Math.hypot(c.x - a.x, c.y - a.y); }
   function straightness(p) {
     if (p.length < 3) return 0;
@@ -2328,7 +2339,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
           sigs.push(S("behavioral", "coalesced_events_absent", true));
         }
       }
-      if (keys.length >= 4) sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
+      if (keys.length >= 4) {
+        sigs.push(S("behavioral", "keystroke_entropy", keyEntropy(keys)));
+        var kim = keyIntervalMedian(keys);  // agent-speed-typing tell, orthogonal to entropy (radar G13)
+        if (kim >= 0) sigs.push(S("behavioral", "keystroke_interval_ms", kim));
+      }
       // A coalesced batch carrying an untrusted (constructor-built) event is fabricated — a hard artifact a
       // real browser never produces, even through a Proxy-over-native override. Always emitted (an artifact).
       if (coalescedUntrusted) sigs.push(S("browser", "coalesced_untrusted", true));

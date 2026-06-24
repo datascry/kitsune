@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   keystrokeEntropy,
+  keystrokeIntervalMedian,
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
@@ -87,6 +88,22 @@ describe("keystrokeEntropy", () => {
 
   it("is positive for varied human cadence", () => {
     expect(keystrokeEntropy([0, 90, 320, 410, 700, 760, 1300])).toBeGreaterThan(0);
+  });
+});
+
+describe("keystrokeIntervalMedian", () => {
+  it("is -1 for too few intervals to judge", () => {
+    expect(keystrokeIntervalMedian([100, 200])).toBe(-1);
+  });
+
+  it("returns the median inter-key interval for human cadence", () => {
+    // intervals 120,130,140,150 -> median 140
+    expect(keystrokeIntervalMedian([0, 120, 250, 390, 540])).toBe(140);
+  });
+
+  it("is far below the 30ms floor for agent-speed typing", () => {
+    // sub-ms gaps but VARIED (so entropy stays human-like) — the orthogonal G13 tell
+    expect(keystrokeIntervalMedian([0, 0.6, 1.3, 2.1, 2.8, 3.4])).toBeLessThan(30);
   });
 });
 

@@ -3,6 +3,7 @@
 
 import {
   keystrokeEntropy,
+  keystrokeIntervalMedian,
   mouseEntropy,
   pathStraightness,
   pointerEventCount,
@@ -1345,8 +1346,11 @@ export function armCollector(): LiveCollector {
       if (coalescedUntrusted) put("browser", "coalesced_untrusted", true);
     }
     // Keystroke cadence only judged with enough keys to be meaningful (else genuinely absent, not a floor).
-    if (keys.length >= BEHAVIOR_MIN_KEYS)
+    if (keys.length >= BEHAVIOR_MIN_KEYS) {
       put("behavioral", "keystroke_entropy", keystrokeEntropy(keys));
+      const keyIntervalMs = keystrokeIntervalMedian(keys); // agent-speed-typing tell (radar G13)
+      if (keyIntervalMs >= 0) put("behavioral", "keystroke_interval_ms", keyIntervalMs);
+    }
     return out;
   }
 

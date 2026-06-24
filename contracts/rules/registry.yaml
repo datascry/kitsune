@@ -565,6 +565,19 @@ rules:
     last_validated: "2026-06-18"
     source: "Kitsune; cf. CMU keystroke-dynamics benchmark"
 
+  - id: bh.keystroke_interval_floor
+    title: Median inter-keystroke interval below the human cadence floor
+    layers: [behavioral]
+    reads: [behavioral.keystroke_interval_ms]
+    predicate: below_threshold
+    threshold: 30
+    weight: 0.55
+    status: experimental
+    category: behavioral
+    added: "2026-06-24"
+    last_validated: "2026-06-24"
+    source: "FP-Agent (arXiv 2605.01247, radar G13): LLM browser agents type at 1-5ms inter-key (Browser-Use 5.31ms, Manus 1.39ms) vs humans 100ms+. Orthogonal to bh.keystroke_entropy_floor: agent-speed typing keeps human-like ENTROPY (sub-ms gaps spread across log2 buckets) while its median interval is non-human. EVADES-first GROUNDED 2026-06-24: a Playwright delay:0 fast-type measured entropy 0.766 (ABOVE the 0.15 entropy floor, so it evades that rule) but median inter-key 0.9ms (min 0.6 / max 2.1) — caught here. FP-safe: human median is 100-300ms (even record typists ~60ms), so a median <30ms over >=4 keystrokes is non-human."
+
   - id: rep.known_proxy_exit
     title: Source IP is a known VPN / proxy / Tor exit
     layers: [reputation]

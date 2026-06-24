@@ -199,6 +199,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             [(Layer.behavioral, "keystroke_entropy", 0.05, Source.collector)],
             "bh.keystroke_entropy_floor",
         ),
+        (
+            # Agent-speed typing: median inter-key 0.9ms is far below the 30ms human floor (radar G13).
+            [(Layer.behavioral, "keystroke_interval_ms", 0.9, Source.collector)],
+            "bh.keystroke_interval_floor",
+        ),
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
