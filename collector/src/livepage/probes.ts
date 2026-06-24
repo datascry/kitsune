@@ -503,6 +503,8 @@ export interface BehavioralSnapshot {
   mouseStraightness: number;
   mouseVelocityCv: number;
   keystrokeEntropy: number;
+  /** Median per-swipe touch velocity-CV, or -1 when no swipe has been measured yet (mobile biomech, X6). */
+  touchVelocityCv: number;
 }
 
 /** A live in-browser collector: arm listeners now, snapshot the full signal set later via collect(). */
@@ -1426,6 +1428,9 @@ export function armCollector(): LiveCollector {
       mouseStraightness: pathStraightness(pts),
       mouseVelocityCv: velocityCV(pts),
       keystrokeEntropy: keystrokeEntropy(keys),
+      touchVelocityCv: touchSwipeCVs.length
+        ? [...touchSwipeCVs].sort((a, b) => a - b)[Math.floor(touchSwipeCVs.length / 2)]!
+        : -1,
     };
   }
 

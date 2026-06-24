@@ -809,8 +809,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <!-- INTERACT: behavioral panel up front so input accrues during collection -->
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
-    <div id="ks-bio-metrics" class="bio-metrics">move your mouse and type below to measure…</div>
-    <p class="bio-help">Type a sentence below and move your mouse — the detector measures your mouse dynamics and keystroke timing live; it re-scores automatically once it has enough input (or press <b>Analyze</b>).</p>
+    <div id="ks-bio-metrics" class="bio-metrics">move your mouse, swipe, and type below to measure…</div>
+    <p class="bio-help">Type a sentence below and move your mouse — or <b>swipe</b> on a touch screen — the detector measures your mouse/touch dynamics and keystroke timing live; it re-scores automatically once it has enough input (or press <b>Analyze</b>).</p>
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
     <button type="button" id="ks-analyze">Analyze my behavior</button>
   </section>
@@ -1219,7 +1219,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   function _touchPt(e) { var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]); return t ? { x: t.clientX, y: t.clientY, t: e.timeStamp } : null; }
   addEventListener("touchstart", function (e) { var p = _touchPt(e); if (p) swipeBuf = [p]; }, true);
   addEventListener("touchmove", function (e) { if (swipeBuf.length) { var p = _touchPt(e); if (p) swipeBuf.push(p); } }, true);
-  addEventListener("touchend", function (e) { if (swipeBuf.length >= 5) { var cv = velcv(swipeBuf); if (cv >= 0) touchSwipeCVs.push(cv); } swipeBuf = []; }, true);
+  addEventListener("touchend", function (e) { if (swipeBuf.length >= 5) { var cv = velcv(swipeBuf); if (cv >= 0) touchSwipeCVs.push(cv); } swipeBuf = []; try { renderBio(); } catch (x) {} }, true);
   // Teleport-click (FP-Agent's #1 AI-agent tell): a trusted, mouse-origin click (detail>=1) that lands with
   // ZERO pointer movement recorded in the whole session — a CDP/vision agent dispatching a click at target
   // coordinates without ever moving the cursor. Gates: detail>=1 excludes keyboard Enter/Space activation
@@ -2401,6 +2401,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     rows += bioRow("mouse entropy", enoughPts ? entropy(pts).toFixed(3) : "\\u2014", enoughPts ? (entropy(pts) < 0.15 ? "bot" : "human") : "collecting");
     rows += bioRow("path straightness", enoughPts ? straightness(pts).toFixed(3) : "\\u2014", enoughPts ? (straightness(pts) > 0.97 ? "bot" : "human") : "collecting");
     rows += bioRow("velocity CV", enoughPts ? velcv(pts).toFixed(3) : "\\u2014", enoughPts ? (velcv(pts) < 0.08 ? "bot" : "human") : "collecting");
+    // Touch-swipe velocity CV (mobile biomech, radar X6): median per-swipe CV; a real finger swipe varies in
+    // speed, a constant-velocity replay sits below 0.15 (BrainRun-grounded). Shows "collecting" until a swipe.
+    var medSwipe = -1;
+    if (touchSwipeCVs.length) { var sc = touchSwipeCVs.slice().sort(function (a, b) { return a - b; }); medSwipe = sc[Math.floor(sc.length / 2)]; }
+    rows += bioRow("swipe velocity CV", medSwipe >= 0 ? medSwipe.toFixed(3) : "\\u2014", medSwipe >= 0 ? (medSwipe < 0.15 ? "bot" : "human") : "collecting");
     var ple = fullPts ? powerLawExp(pts) : null;
     rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
     rows += bioRow("keystrokes", keys.length, enoughKeys ? "ok" : "collecting");

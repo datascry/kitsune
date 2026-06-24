@@ -56,6 +56,12 @@ const METRICS: MetricSpec[] = [
     value: (s) => s.keystrokeEntropy,
     ready: (s) => s.enoughKeys,
   },
+  {
+    ruleId: "bh.touch_uniform_velocity",
+    label: "Swipe velocity variation (CV)",
+    value: (s) => s.touchVelocityCv,
+    ready: (s) => s.touchVelocityCv >= 0,
+  },
 ];
 
 function floorText(predicate: PredicateName, threshold: number | null): string {
@@ -111,5 +117,6 @@ export function syntheticBotSnapshot(): BehavioralSnapshot {
     mouseStraightness: pathStraightness(path),
     mouseVelocityCv: velocityCV(path),
     keystrokeEntropy: 0,
+    touchVelocityCv: velocityCV(path), // a constant-velocity diagonal is also a constant-velocity "swipe"
   };
 }
