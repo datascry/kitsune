@@ -116,7 +116,7 @@ LLMS_TXT = """# Kitsune
   `kitsune:result` DOM event also fires). It starts as `{"status":"collecting"}`; poll until `status`
   is `"complete"`. Fields: `status`, `label`, `score`, `incoherence_score`, `layer_scores`,
   `contradictions[]` (rule_id, category, weight, detail), `session_id`, and a `wire` block
-  (`ja3`, `ja4`, `h2`, `tcp_os`, `quic`, `ip`, `geo`).
+  (`ja3`, `ja4`, `h2`, `tcp_os`, `quic`, `ip`, `geo`, `reputation`).
 - `POST https://kitsune.id/ingest`: send collector signal envelopes; the response is the same verdict JSON.
 - [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry
   (rule id, title, layers, category, and whether each rule can convict).
@@ -439,10 +439,12 @@ def create_app(
                     )
         basis = "|".join(f"{k}={wire[k]}" for k in sorted(wire) if wire[k])
         ip = netval("observed_ip")
+        ip_str = ip if isinstance(ip, str) else None
         return {
             "session_id": session_id,
             "ip": ip,
-            "geo": geo_lookup(ip if isinstance(ip, str) else None),
+            "geo": geo_lookup(ip_str),
+            "reputation": detector.classify_ip(ip_str) if ip_str else None,
             "wire": wire,
             "wire_fp": _fnv1a(basis) if basis else None,
             "network_contradictions": contradictions,
