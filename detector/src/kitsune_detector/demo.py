@@ -2443,6 +2443,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
     rows += bioRow("keystrokes", keys.length, enoughKeys ? "ok" : "collecting");
     rows += bioRow("keystroke entropy", enoughKeys ? keyEntropy(keys).toFixed(3) : "\\u2014", enoughKeys ? (keyEntropy(keys) < 0.15 ? "bot" : "human") : "collecting");
+    // Inter-key interval (G13) — was scored but not shown. The 30ms floor is grounded FP-safe on BOTH desktop
+    // and mobile typing (real mobile median inter-key p1 ~216ms, MEU-Mobile; see docs/mobile-biomech-grounding.md).
+    var kim = enoughKeys ? keyIntervalMedian(keys) : -1;
+    rows += bioRow("inter-key interval (ms)", kim >= 0 ? Math.round(kim) : "\\u2014", kim >= 0 ? (kim < 30 ? "bot" : "human") : "collecting");
     el.innerHTML = rows;
   }
   try {
