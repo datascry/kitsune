@@ -16,6 +16,7 @@ const RULES: RuleJSON[] = [
   bh("bh.path_too_straight", "above_threshold", 0.97),
   bh("bh.uniform_velocity", "below_threshold", 0.08),
   bh("bh.keystroke_entropy_floor", "below_threshold", 0.15),
+  bh("bh.touch_uniform_velocity", "below_threshold", 0.15),
 ];
 
 function bh(id: string, predicate: RuleJSON["predicate"], threshold: number): RuleJSON {
@@ -48,12 +49,13 @@ const HUMAN: BehavioralSnapshot = {
   mouseStraightness: 0.4, // curving path
   mouseVelocityCv: 0.6, // variable speed
   keystrokeEntropy: 0.6, // varied cadence
+  touchVelocityCv: 0.6, // a varied human swipe
 };
 
 describe("evaluateBehavioral", () => {
   it("a varied human snapshot trips no floor", () => {
     const rows = evaluateBehavioral(HUMAN, RULES);
-    expect(rows).toHaveLength(4);
+    expect(rows).toHaveLength(5);
     expect(rows.every((r) => r.ready)).toBe(true);
     expect(rows.some((r) => r.fires)).toBe(false);
   });
@@ -79,6 +81,7 @@ describe("evaluateBehavioral", () => {
       enoughKeys: false,
       mouseEntropy: 0, // would trip the floor IF judged — but no motion yet, so it must not
       keystrokeEntropy: 0,
+      touchVelocityCv: -1, // no swipe measured yet → the touch metric is not ready
     };
     const rows = evaluateBehavioral(quiet, RULES);
     expect(row(rows, "bh.input_entropy_floor").ready).toBe(false);
