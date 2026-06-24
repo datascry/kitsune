@@ -183,7 +183,7 @@ def test_inspect_is_cookie_scoped(client: TestClient) -> None:
     # Matching cookie -> the de-identified wire projection.
     d = client.get("/inspect/bot-001", cookies={"ks_sid": "bot-001"}).json()
     assert d["session_id"] == "bot-001"
-    assert set(d["wire"].keys()) == {"ja3", "ja4", "tcp", "tcp_os", "h2", "quic"}
+    assert set(d["wire"].keys()) == {"ja3", "ja4", "ja4t", "tcp", "tcp_os", "h2", "quic"}
     assert "ip" in d and "network_contradictions" in d
     # Geo + IP-reputation projections accompany the wire block (reputation is None only when no IP is known).
     assert "geo" in d and "reputation" in d

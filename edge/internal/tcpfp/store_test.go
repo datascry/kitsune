@@ -1,4 +1,4 @@
-// edge/tcpfp/store_test — assert the source-IP -> OS store stores, expires, and overwrites.
+// edge/tcpfp/store_test — assert the source-IP -> (OS, JA4T) store stores, expires, and overwrites.
 // Covers put/get, TTL expiry with an injected clock, and last-SYN-wins overwrite.
 
 package tcpfp
@@ -11,12 +11,13 @@ import (
 
 func TestStorePutGet(t *testing.T) {
 	s := NewStore(time.Minute)
-	if _, ok := s.Get("1.2.3.4"); ok {
+	if _, _, ok := s.Get("1.2.3.4"); ok {
 		t.Fatal("empty store should miss")
 	}
-	s.Put("1.2.3.4", "linux")
-	if os, ok := s.Get("1.2.3.4"); !ok || os != "linux" {
-		t.Fatalf("got %q ok=%v", os, ok)
+	s.Put("1.2.3.4", "linux", "64240_2-4-8-1-3_1460_7")
+	os, ja4t, ok := s.Get("1.2.3.4")
+	if !ok || os != "linux" || ja4t != "64240_2-4-8-1-3_1460_7" {
+		t.Fatalf("got os=%q ja4t=%q ok=%v", os, ja4t, ok)
 	}
 }
 
@@ -24,19 +25,19 @@ func TestStoreExpires(t *testing.T) {
 	now := time.Unix(1000, 0)
 	s := NewStore(30 * time.Second)
 	s.now = func() time.Time { return now }
-	s.Put("1.2.3.4", "windows")
+	s.Put("1.2.3.4", "windows", "65535_2-1-3-1-1-4_1460_8")
 	now = now.Add(31 * time.Second)
-	if _, ok := s.Get("1.2.3.4"); ok {
+	if _, _, ok := s.Get("1.2.3.4"); ok {
 		t.Error("entry past its TTL must expire")
 	}
 }
 
 func TestStoreOverwrites(t *testing.T) {
 	s := NewStore(time.Minute)
-	s.Put("1.2.3.4", "linux")
-	s.Put("1.2.3.4", "darwin")
-	if os, _ := s.Get("1.2.3.4"); os != "darwin" {
-		t.Errorf("latest SYN should win, got %q", os)
+	s.Put("1.2.3.4", "linux", "a")
+	s.Put("1.2.3.4", "darwin", "b")
+	if os, ja4t, _ := s.Get("1.2.3.4"); os != "darwin" || ja4t != "b" {
+		t.Errorf("latest SYN should win, got os=%q ja4t=%q", os, ja4t)
 	}
 }
 
@@ -48,10 +49,10 @@ func TestStoreSweepsExpiredOnPut(t *testing.T) {
 	s := NewStore(time.Minute)
 	s.now = func() time.Time { return now }
 	for i := range 1000 {
-		s.Put(fmt.Sprintf("10.0.%d.%d", i/256, i%256), "linux")
+		s.Put(fmt.Sprintf("10.0.%d.%d", i/256, i%256), "linux", "x")
 	}
 	now = now.Add(2 * time.Minute) // every entry above is now past its TTL
-	s.Put("1.2.3.4", "linux")      // triggers the amortised sweep
+	s.Put("1.2.3.4", "linux", "x") // triggers the amortised sweep
 	s.mu.Lock()
 	n := len(s.m)
 	s.mu.Unlock()

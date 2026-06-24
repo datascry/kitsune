@@ -417,6 +417,7 @@ def create_app(
         wire: dict[str, object | None] = {
             "ja3": netval("ja3"),
             "ja4": netval("ja4"),
+            "ja4t": netval("ja4t"),
             "tcp": netval("tcp"),
             "tcp_os": netval("tcp_kernel"),
             "h2": netval("h2"),

@@ -51,6 +51,48 @@ func TestParseSYNWindows(t *testing.T) {
 	}
 }
 
+func TestParseSYNExtractsValuesAndJA4T(t *testing.T) {
+	// linuxOpts = mss(1460), sack-permitted, timestamps, nop, window-scale(7).
+	syn, ok := ParseSYN(buildSYN(64, 64240, linuxOpts))
+	if !ok {
+		t.Fatal("expected a parsed SYN")
+	}
+	if syn.MSS != 1460 {
+		t.Errorf("MSS=%d want 1460", syn.MSS)
+	}
+	if !syn.WindowScalePresent || syn.WindowScale != 7 {
+		t.Errorf("window scale present=%v val=%d want 7", syn.WindowScalePresent, syn.WindowScale)
+	}
+	if !syn.SACKPermitted {
+		t.Error("SACK-permitted should be detected")
+	}
+	if !syn.Timestamps {
+		t.Error("timestamps should be detected")
+	}
+	want := "64240_2-4-8-1-3_1460_7"
+	if got := syn.JA4T(); got != want {
+		t.Errorf("JA4T=%q want %q", got, want)
+	}
+}
+
+func TestParseSYNDFAndECN(t *testing.T) {
+	pkt := buildSYN(64, 64240, linuxOpts)
+	pkt[6] |= 0x40 // set the IPv4 Don't-Fragment flag
+	pkt[1] |= 0x01 // set an IP ECN (ECT) bit
+	syn, ok := ParseSYN(pkt)
+	if !ok || !syn.DF || !syn.ECN {
+		t.Fatalf("ok=%v DF=%v ECN=%v — want DF+ECN", ok, syn.DF, syn.ECN)
+	}
+	// A SYN without those bits must report them false.
+	plain, _ := ParseSYN(buildSYN(64, 64240, windowsOpts))
+	if plain.DF || plain.ECN {
+		t.Errorf("plain SYN should have DF=ECN=false, got DF=%v ECN=%v", plain.DF, plain.ECN)
+	}
+	if plain.WindowScale != 8 || plain.MSS != 1460 {
+		t.Errorf("windows SYN ws/mss = %d/%d want 8/1460", plain.WindowScale, plain.MSS)
+	}
+}
+
 func TestParseSYNRejectsNonSYN(t *testing.T) {
 	// A SYN-ACK (server side) must be ignored — only bare client SYNs are fingerprinted.
 	pkt := buildSYN(64, 64240, linuxOpts)

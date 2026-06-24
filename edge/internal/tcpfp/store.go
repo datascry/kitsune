@@ -9,8 +9,9 @@ import (
 )
 
 type entry struct {
-	os string
-	at time.Time
+	os   string
+	ja4t string
+	at   time.Time
 }
 
 // Store maps a client source IP to the OS kernel family classified from its TCP SYN. Entries expire
@@ -28,12 +29,12 @@ func NewStore(ttl time.Duration) *Store {
 	return &Store{m: make(map[string]entry), ttl: ttl, now: time.Now}
 }
 
-// Put records the OS kernel family observed for a source IP.
-func (s *Store) Put(ip, os string) {
+// Put records the OS kernel family and JA4T fingerprint observed for a source IP.
+func (s *Store) Put(ip, os, ja4t string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := s.now()
-	s.m[ip] = entry{os: os, at: now}
+	s.m[ip] = entry{os: os, ja4t: ja4t, at: now}
 	// Amortised eviction: at most once per TTL, drop expired entries. Without this the map grows without
 	// bound as distinct/spoofed source IPs arrive — the NET_RAW edge's flood/scan threat model. This bounds
 	// it to roughly one TTL window of SYNs (mirrors the QUIC tee's expiry sweep), at O(n)-once-per-TTL.
@@ -47,17 +48,17 @@ func (s *Store) Put(ip, os string) {
 	}
 }
 
-// Get returns the OS family for an IP if one was observed within the TTL.
-func (s *Store) Get(ip string) (string, bool) {
+// Get returns the OS family and JA4T fingerprint for an IP if one was observed within the TTL.
+func (s *Store) Get(ip string) (os, ja4t string, ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	e, ok := s.m[ip]
-	if !ok {
-		return "", false
+	e, found := s.m[ip]
+	if !found {
+		return "", "", false
 	}
 	if s.now().Sub(e.at) > s.ttl {
 		delete(s.m, ip) // evict on read too, so a queried-but-stale IP does not linger
-		return "", false
+		return "", "", false
 	}
-	return e.os, true
+	return e.os, e.ja4t, true
 }
