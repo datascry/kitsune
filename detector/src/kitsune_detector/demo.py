@@ -712,6 +712,7 @@ a.rule-src:hover code {
 .bio-row span{color:var(--muted)}.bio-row b{font-variant-numeric:tabular-nums;font-weight:700}
 .bio-row i{font-style:normal;font-size:.66rem;text-transform:uppercase;letter-spacing:.08em}
 .bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-collecting,.bm-more,.bm-ok,.bm-measured,.bm-na{color:var(--muted)}
+.bio-head{grid-column:1/-1;background:var(--bg);color:var(--fox);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;padding:.55rem .7rem .3rem}
 .bio-help{color:var(--muted);font-size:.78rem;margin:.3rem 0 .6rem}
 .bio-pad{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-between;margin:.4rem 0}
 .bio-dot{flex:1 1 auto;min-width:56px;padding:.55rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;cursor:pointer;font:inherit;touch-action:manipulation}
@@ -806,7 +807,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
        event. Poll this element's textContent, or: addEventListener("kitsune:result", e => e.detail). -->
   <script type="application/json" id="ks-verdict">{"status":"collecting"}</script>
   <div id="ks-coherence"></div>
-  <!-- INTERACT: behavioral panel up front so input accrues during collection -->
+  <!-- EVIDENCE: your fingerprint, layer by layer -->
+  <div id="ks-predict"></div>
+  <div id="ks-wire"></div>
+  <div id="ks-surfaces"></div>
+  <!-- INTERACT: behavioral panel AFTER the fingerprint surfaces (listeners arm on load regardless of order). -->
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
     <div id="ks-bio-metrics" class="bio-metrics">move your mouse, swipe, and type below to measure…</div>
@@ -814,10 +819,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
     <button type="button" id="ks-analyze">Analyze my behavior</button>
   </section>
-  <!-- EVIDENCE: your fingerprint, layer by layer -->
-  <div id="ks-predict"></div>
-  <div id="ks-wire"></div>
-  <div id="ks-surfaces"></div>
   <!-- THE WHY: the full rule breakdown, after its evidence -->
   <h2>Detections <span class="note">— every check Kitsune ran, grouped by layer</span></h2>
   <div id="ks-detections"></div>
@@ -2416,24 +2417,30 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // mousemove/keydown listeners above already capture interaction anywhere on the page (the text input's
   // keydowns bubble to window), so the panel just drives richer input and lets the visitor re-score it.
   function bioRow(label, val, cls) { return '<div class="bio-row"><span>' + label + '</span><b>' + val + '</b><i class="bm-' + cls + '">' + cls + '</i></div>'; }
+  function bioHead(label) { return '<div class="bio-head">' + label + '</div>'; }
   function renderBio() {
     var el = document.getElementById("ks-bio-metrics");
     if (!el) return;
-    // Always show EVERY metric — greyed "collecting" until it has enough samples — so nothing is hidden
-    // behind a status tag (especially on mobile). Move the mouse and type to fill them in.
+    // Grouped DESKTOP (mouse) / MOBILE (touch) / KEYSTROKE (both). Every metric is always shown — greyed
+    // "collecting" until it has enough samples — so nothing is hidden behind a status tag.
     var enoughPts = pts.length >= 3, fullPts = pts.length >= 12, enoughKeys = keys.length >= 4;
-    var rows = bioRow("pointer events", pts.length, fullPts ? "ok" : "collecting");
+    var isMob = (navigator.maxTouchPoints > 0) && /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    function _med(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
+
+    // --- Desktop · mouse (mouse-calibrated; gated off mobile by the detector, G10) ---
+    var rows = bioHead("Desktop \\u00b7 mouse");
+    rows += bioRow("pointer events", pts.length, fullPts ? "ok" : "collecting");
     rows += bioRow("mouse entropy", enoughPts ? entropy(pts).toFixed(3) : "\\u2014", enoughPts ? (entropy(pts) < 0.15 ? "bot" : "human") : "collecting");
     rows += bioRow("path straightness", enoughPts ? straightness(pts).toFixed(3) : "\\u2014", enoughPts ? (straightness(pts) > 0.97 ? "bot" : "human") : "collecting");
     rows += bioRow("velocity CV", enoughPts ? velcv(pts).toFixed(3) : "\\u2014", enoughPts ? (velcv(pts) < 0.08 ? "bot" : "human") : "collecting");
-    // Touch-swipe velocity CV (mobile biomech, radar X6): median per-swipe CV; a real finger swipe varies in
-    // speed, a constant-velocity replay sits below 0.15 (BrainRun-grounded). Shows "collecting" until a swipe.
+    var ple = fullPts ? powerLawExp(pts) : null;
+    rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
+
+    // --- Mobile · touch (only swipe velocity CV convicts, BrainRun-grounded; the rest are informational) ---
+    rows += bioHead("Mobile \\u00b7 touch");
     var medSwipe = -1;
     if (touchSwipeCVs.length) { var sc = touchSwipeCVs.slice().sort(function (a, b) { return a - b; }); medSwipe = sc[Math.floor(sc.length / 2)]; }
     rows += bioRow("swipe velocity CV", medSwipe >= 0 ? medSwipe.toFixed(3) : "\\u2014", medSwipe >= 0 ? (medSwipe < 0.15 ? "bot" : "human") : "collecting");
-    // Informational swipe metrics (median per swipe; "measured", never a bot verdict — the BrainRun analysis
-    // showed these don't separate human from bot FP-safely on touch, so they are shown for transparency only).
-    function _med(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
     var haveSw = swipeStats.length > 0, infoCls = haveSw ? "measured" : "collecting";
     var swDur = _med(swipeStats.map(function (s) { return s.dur; }));
     var swPts = _med(swipeStats.map(function (s) { return s.npts; }));
@@ -2447,14 +2454,13 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     rows += bioRow("swipe sub-movements", swSub != null ? swSub : "\\u2014", infoCls);
     rows += bioRow("swipe power-law \\u03b2", swPl != null ? swPl.toFixed(3) : "\\u2014", infoCls);
     rows += bioRow("touch pressure", swForce != null ? swForce.toFixed(2) : "\\u2014", forces.length ? "measured" : (haveSw ? "na" : "collecting"));
-    var ple = fullPts ? powerLawExp(pts) : null;
-    rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
+
+    // --- Keystroke · both (device-agnostic; the inter-key floor is mobile-aware: 80ms on mobile, 30ms desktop) ---
+    rows += bioHead("Keystroke \\u00b7 both");
     rows += bioRow("keystrokes", keys.length, enoughKeys ? "ok" : "collecting");
     rows += bioRow("keystroke entropy", enoughKeys ? keyEntropy(keys).toFixed(3) : "\\u2014", enoughKeys ? (keyEntropy(keys) < 0.15 ? "bot" : "human") : "collecting");
-    // Inter-key interval (G13) — was scored but not shown. The 30ms floor is grounded FP-safe on BOTH desktop
-    // and mobile typing (real mobile median inter-key p1 ~216ms, MEU-Mobile; see docs/mobile-biomech-grounding.md).
-    var kim = enoughKeys ? keyIntervalMedian(keys) : -1;
-    rows += bioRow("inter-key interval (ms)", kim >= 0 ? Math.round(kim) : "\\u2014", kim >= 0 ? (kim < 30 ? "bot" : "human") : "collecting");
+    var kim = enoughKeys ? keyIntervalMedian(keys) : -1, kFloor = isMob ? 80 : 30;
+    rows += bioRow("inter-key interval (ms)" + (isMob ? " \\u00b7 mobile" : ""), kim >= 0 ? Math.round(kim) : "\\u2014", kim >= 0 ? (kim < kFloor ? "bot" : "human") : "collecting");
     el.innerHTML = rows;
   }
   try {
