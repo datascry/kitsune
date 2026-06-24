@@ -418,6 +418,8 @@ def create_app(
             "ja3": netval("ja3"),
             "ja4": netval("ja4"),
             "ja4t": netval("ja4t"),
+            "tls_ext_order": netval("tls_ext_order"),
+            "tls_cipher_order": netval("tls_cipher_order"),
             "tcp": netval("tcp"),
             "tcp_os": netval("tcp_kernel"),
             "h2": netval("h2"),

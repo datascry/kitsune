@@ -64,8 +64,8 @@ func TestFingerprintMintsSession(t *testing.T) {
 	if resp.SessionID != "fixed-session" {
 		t.Errorf("session=%s", resp.SessionID)
 	}
-	if len(resp.Signals) != 2 {
-		t.Errorf("want ja3+ja4, got %d signals", len(resp.Signals))
+	if len(resp.Signals) != 4 {
+		t.Errorf("want ja3+ja4+ext-order+cipher-order, got %d signals", len(resp.Signals))
 	}
 }
 

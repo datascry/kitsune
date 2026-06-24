@@ -39,8 +39,8 @@ func TestNetworkSignalShape(t *testing.T) {
 func TestFromClientHelloWithoutHint(t *testing.T) {
 	ch := &fingerprint.ClientHello{Transport: "t", Version: 0x0304, CipherSuites: []uint16{0x1301}}
 	sigs := FromClientHello("sess", ch, fingerprint.HintTable{}, at)
-	if len(sigs) != 2 {
-		t.Fatalf("want 2 signals (ja3, ja4), got %d", len(sigs))
+	if len(sigs) != 4 {
+		t.Fatalf("want 4 signals (ja3, ja4, ext-order, cipher-order), got %d", len(sigs))
 	}
 	if sigs[0].Kind != "ja3" || sigs[1].Kind != "ja4" {
 		t.Errorf("kinds: %s %s", sigs[0].Kind, sigs[1].Kind)
@@ -51,8 +51,8 @@ func TestFromClientHelloWithHint(t *testing.T) {
 	ch := &fingerprint.ClientHello{Transport: "t", Version: 0x0304, CipherSuites: []uint16{0x1301}}
 	table := fingerprint.HintTable{ch.JA4(): {Browser: "chrome", OS: "windows"}}
 	sigs := FromClientHello("sess", ch, table, at)
-	if len(sigs) != 4 {
-		t.Fatalf("want 4 signals, got %d", len(sigs))
+	if len(sigs) != 6 {
+		t.Fatalf("want 6 signals, got %d", len(sigs))
 	}
 	if sigs[2].Kind != "ja4_browser_hint" || sigs[2].Value != "chrome" {
 		t.Errorf("browser hint: %+v", sigs[2])
@@ -64,8 +64,8 @@ func TestFromClientHelloBrowserHintOnlyNoOS(t *testing.T) {
 	// A prefix entry that classifies the TLS engine but pins no OS (the JA4 cipher prefix cannot).
 	table := fingerprint.HintTable{ch.JA4(): {Browser: "firefox", OS: ""}}
 	sigs := FromClientHello("sess", ch, table, at)
-	if len(sigs) != 3 {
-		t.Fatalf("want 3 signals (ja3, ja4, ja4_browser_hint), got %d", len(sigs))
+	if len(sigs) != 5 {
+		t.Fatalf("want 5 signals (ja3, ja4, browser_hint, ext-order, cipher-order), got %d", len(sigs))
 	}
 	for _, s := range sigs {
 		if s.Kind == "ja4_os_hint" {
