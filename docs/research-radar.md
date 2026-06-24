@@ -448,3 +448,31 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   faster desktop typists. Grounded end-to-end: 55ms mobile typing fires it, 200ms (human) doesn't, 30ms floor
   stays silent at 55ms. Entropy floor re-confirmed FP-safe on free text (p1 0.699). Hold/dwell + flight time
   ungroundable from the processed log (one timestamp/press; raw with key-up is 65GB). Dataset deleted post-ship.
+
+## Network / wire-layer surface audit (2026-06-25, 4-agent fan-out + industry-leader benchmark)
+
+Grounded on the edge code first, then validated against Cloudflare / Akamai / DataDome / FingerprintJS /
+GreyNoise / FoxIO JA4+ / peet.ws. **Verdict: at/near parity with the leaders on every *extractable* wire
+signal + uniquely strong on the cross-layer incoherence thesis; the leaders' remaining edge is mostly DATA,
+not signal.** Genuine un-extracted signals, mostly cheap (bytes the edge already captures):
+
+| # | seam | gap | groundable? | note |
+|---|---|---|---|---|
+| N1 | network (TCP/IP) | **JA4T value-parsing**: MSS value + window-scale value + window/MSS ratio + p0f IP quirks (DF, IP-ID, ECN, ToS, SACK-perm, TCP-timestamps). Edge parses TTL+option-ORDER+window but discards the values. | **in-sandbox (cheapest)** — SYN bytes already captured; unlocks VPN/tunnel/mobile-from-MSS (wire proxy tell, no CIDR). **Corrects G4** ("JA4T covered" was wrong — values not captured). |
+| N2 | network (TLS) | **Extension ORDER + GREASE placement** — JA4 sorts extensions; raw order is the strongest under-collected impostor tell (Chrome permutes legally per-conn; uTLS/curl-impersonate emit fixed/illegal orders). | **in-sandbox** — parse order from the CH already captured; verify it's a legal Chrome permutation. |
+| N3 | network (QUIC) | **QUIC transport_parameters (TLS ext 0x39)** — QUIC-stack fingerprint independent of inner TLS; JA4-over-QUIC OMITS it and no vendor ships it (a lead-not-follow surface). | **in-sandbox** — edge already decrypts the Initial CH that carries it. |
+| N4 | network (HTTP/1.1) | **h1 header order + casing** + "refuses h2/h3 is itself a tell". We serve h1, fingerprint nothing. | **in-sandbox** — mirror JA4H order onto the h1 path. |
+| N5 | network (TLS) | **CH micro-tells**: key_share share-vs-advertised, cert_compression list, padding/ECH presence (uTLS CVE family; extends G23). | **in-sandbox** — parse-more on the CH. |
+| N6 | network (HTTP/3) | **H3 SETTINGS/QPACK fingerprint** (the h2-Akamai analog for h3). | **in-sandbox-ish** — edge runs an H3 server; frontier, no vendor ships it. |
+| N7 | network (TLS/TCP) | **spoofable / handshake-completion** (GreyNoise) + **cipher-stunting / implausible-randomization-as-a-tell** (Akamai). | **in-sandbox** — cheap rules over data the edge sees. |
+| NX | network (latency/IP) | JA4L latency-vs-geo (proxy-by-physics), JA4 prevalence ratios, ASN/named-proxy intel. | **external-data-bound** — RTT capture groundable, geo/prevalence conviction not. |
+| N-OOS | — | JA4S / JA4X / JA4SSH / JARM — server-side / SSH / C2-infra hunting, not per-visitor web-bot. | out of scope. |
+
+Sources: FoxIO JA4+ (blog.foxio.io/ja4t-tcp-fingerprinting, ja4+-network-fingerprinting); p0f v3 README; Fastly
+Chrome-permutation; net4people #220; Scrapfly post-quantum-TLS + http2-http3-guide; BrowserLeaks /quic; QUIC
+Hunter (PAM 2024, arXiv 2308.15841); Cloudflare ja4-signals + mitmengine; Akamai h2 fp (BH-EU-17); DataDome
+TLS-fingerprinting; FingerprintJS osMismatch/VPN; GreyNoise GNQL; FP-Inconsistent IMC 2025.
+
+**Cheapest highest-value first build: N1 (TCP/IP value-parsing → JA4T + p0f quirks)** — pure parsing of the
+SYN already captured, no new infra, and it adds a wire-layer proxy/tunnel/mobile tell Kitsune only has via
+CIDR lists today. Then N2 (TLS ext order) and N3 (QUIC transport params).
