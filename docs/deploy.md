@@ -103,28 +103,25 @@ The detector ships a thin committed **seed** of datacenter/proxy CIDRs baked int
 files (the prod overlay mounts it at `/iprep` read-only and sets `KITSUNE_IPREP_DIR=/iprep`). Absent or
 empty, the detector falls back to the in-image seed per file — purely additive, never a crash.
 
+Use the dedicated **`iprep-refresh`** companion service — it mounts the same `./iprep` dir **read-write** at
+`/out` and writes the lists there, so there are no `-v`/`-e` flags to remember (the detector mounts `./iprep`
+read-only at runtime; the companion is the read-write writer). The `tools` profile keeps it out of `up`.
+
 ```sh
-# Generate the lists (Tor + AWS/GCP/Oracle/DigitalOcean/Cloudflare/Fastly + X4BNet, ~60k+ CIDRs). Run it
-# inside a detector container so you don't need a local Python toolchain. The image runs through `uv run`
-# (the package lives in a uv venv — bare `python` won't find it), and `--build` ensures the image carries
-# the KITSUNE_IPREP_DIR support. IMPORTANT: write to a SEPARATE read-WRITE target (/out) — the detector
-# service mounts ./iprep at /iprep READ-ONLY, so the refresher cannot write there directly. Both /out and
-# the detector's /iprep point at the same host ./iprep dir.
 mkdir -p iprep
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build \
-  -v "$PWD/iprep:/out" -e KITSUNE_IPREP_DIR=/out \
-  detector uv run python -m kitsune_detector.ip_reputation_refresh
+# Generate (Tor + AWS/GCP/Oracle/DigitalOcean/Cloudflare/Fastly + X4BNet, ~60k+ CIDRs). --build picks up the
+# latest image; a single source being down/403 is skipped (best-effort), the rest still write.
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build iprep-refresh
 #   -> wrote /out/proxy_exit_cidrs.txt (…)   /out/datacenter_cidrs.txt (…)   (= host ./iprep/…)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # reads ./iprep at /iprep:ro
 ```
 
-- **Refresh monthly** (the lists drift): a cron that re-runs the generate step + restarts the detector.
+- **Refresh monthly** (the lists drift): a cron that re-runs the companion + restarts the detector.
 
   ```sh
   # /etc/cron.monthly/kitsune-iprep
-  cd /path/to/kitsune && docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm \
-    -v "$PWD/iprep:/out" -e KITSUNE_IPREP_DIR=/out \
-    detector uv run python -m kitsune_detector.ip_reputation_refresh \
+  cd /path/to/kitsune \
+    && docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm iprep-refresh \
     && docker compose -f docker-compose.yml -f docker-compose.prod.yml restart detector
   ```
 
