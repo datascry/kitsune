@@ -194,3 +194,29 @@ def test_refresh_floor_guard_fails_loud_on_drifted_x4bnet_source() -> None:
     payloads = {**_PAYLOADS, X4BNET_VPN_URL: "<html>404</html>"}
     with pytest.raises(SourceDriftError, match="x4b_vpn"):
         refresh(payloads.__getitem__, min_counts={"tor": 1, "aws": 1, "gcp": 1, "x4b_vpn": 1})
+
+
+def test_optional_source_failure_does_not_abort_refresh() -> None:
+    # A best-effort cloud source down/403 (DigitalOcean here — the real deploy failure) must NOT abort the
+    # whole refresh: it is skipped, the core sources still produce seeds, and the floor guard still passes.
+    def fetch(url: str) -> str:
+        if url == DIGITALOCEAN_RANGES_URL:
+            raise OSError("HTTP Error 403: Forbidden")
+        return _PAYLOADS[url]
+
+    files = refresh(fetch, min_counts={"tor": 1, "aws": 1, "gcp": 1, "x4b_vpn": 1, "x4b_datacenter": 1})
+    rep = IPReputation(datacenter=_parse_cidrs(files["datacenter_cidrs.txt"]))
+    assert rep.classify("3.5.140.9") == (True, False)  # AWS still present
+    assert rep.classify("143.198.0.9") == (False, False)  # DigitalOcean skipped (was 403), not in the seed
+
+
+def test_core_source_fetch_failure_still_floor_aborts() -> None:
+    # A LOAD-BEARING source failing → parses to 0 → the floor guard still fails loud (resilience does not
+    # mask real drift on the core feeds).
+    def fetch(url: str) -> str:
+        if url == AWS_RANGES_URL:
+            raise OSError("HTTP Error 403: Forbidden")
+        return _PAYLOADS[url]
+
+    with pytest.raises(SourceDriftError, match="aws"):
+        refresh(fetch, min_counts={"tor": 1, "aws": 1, "gcp": 1})

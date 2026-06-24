@@ -25,6 +25,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import os
+import sys
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
@@ -63,16 +64,16 @@ class SourceDriftError(RuntimeError):
 #: 2026-06-21: VPN 10994, datacenter 41977; Tor/AWS/GCP 2026-06-19: Tor 1238, AWS 10613, GCP 979) — these
 #: floors sit ~10x below, so normal source fluctuation passes while a format/URL drift (which collapses a
 #: parse to ~0) trips the guard.
+# Floors are enforced ONLY on the load-bearing core sources — a 0-parse there means real drift, so fail
+# loud. The additive cloud/CDN sources (Oracle/DigitalOcean/Cloudflare/Fastly) are best-effort: they widen
+# the datacenter slice but a single one being down/403 must NOT abort the whole refresh (the datacenter list
+# is already large from AWS+GCP+X4BNet), so they carry no floor and a fetch failure just skips them.
 _PRODUCTION_FLOORS = {
     "tor": 100,
     "aws": 1000,
     "gcp": 100,
     "x4b_vpn": 1000,
     "x4b_datacenter": 1000,
-    "oracle": 50,
-    "digitalocean": 50,
-    "cloudflare": 10,
-    "fastly": 10,
 }
 
 #: A function that fetches a URL and returns the body as text. Injected so tests stay offline.
@@ -113,9 +114,19 @@ def parse_cidr_list(text: str) -> list[str]:
     return out
 
 
+def _loads_obj(text: str) -> object:
+    """``json.loads`` that returns ``None`` (never raises) on empty/invalid input — so a failed fetch ("")
+    or a source serving an HTML error page parses to 0 entries and the floor guard handles it, rather than
+    crashing the whole refresh. The downstream parsers all ``isinstance(doc, dict)``-guard, so ``None`` → []."""
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, ValueError):
+        return None
+
+
 def parse_aws_ranges(text: str) -> list[str]:
     """AWS ``ip-ranges.json`` → ``prefixes[].ip_prefix`` + ``ipv6_prefixes[].ipv6_prefix``."""
-    doc = json.loads(text)
+    doc = _loads_obj(text)
     out: list[str] = []
     if not isinstance(doc, dict):
         return out
@@ -133,7 +144,7 @@ def parse_aws_ranges(text: str) -> list[str]:
 
 def parse_gcp_ranges(text: str) -> list[str]:
     """GCP ``cloud.json`` → ``prefixes[].ipv4Prefix`` / ``ipv6Prefix``."""
-    doc = json.loads(text)
+    doc = _loads_obj(text)
     out: list[str] = []
     if not isinstance(doc, dict):
         return out
@@ -150,7 +161,7 @@ def parse_gcp_ranges(text: str) -> list[str]:
 
 def parse_oracle_ranges(text: str) -> list[str]:
     """Oracle ``public_ip_ranges.json`` → ``regions[].cidrs[].cidr``."""
-    doc = json.loads(text)
+    doc = _loads_obj(text)
     out: list[str] = []
     if not isinstance(doc, dict):
         return out
@@ -181,7 +192,7 @@ def parse_digitalocean_csv(text: str) -> list[str]:
 
 def parse_fastly_ranges(text: str) -> list[str]:
     """Fastly ``public-ip-list`` → ``addresses[]`` + ``ipv6_addresses[]``."""
-    doc = json.loads(text)
+    doc = _loads_obj(text)
     out: list[str] = []
     if not isinstance(doc, dict):
         return out
@@ -223,26 +234,36 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
     URL/format fails loud instead of silently writing a near-empty seed. Default ``None`` skips the check
     (keeping the pure parser tests, which use tiny canned payloads, untouched).
     """
-    tor_raw = parse_tor_bulk_exit(fetch(TOR_BULK_EXIT_URL))
-    aws_raw = parse_aws_ranges(fetch(AWS_RANGES_URL))
-    gcp_raw = parse_gcp_ranges(fetch(GCP_RANGES_URL))
-    x4b_vpn_raw = parse_cidr_list(fetch(X4BNET_VPN_URL))
-    x4b_dc_raw = parse_cidr_list(fetch(X4BNET_DATACENTER_URL))
-    oracle_raw = parse_oracle_ranges(fetch(ORACLE_RANGES_URL))
-    do_raw = parse_digitalocean_csv(fetch(DIGITALOCEAN_RANGES_URL))
-    cloudflare_raw = parse_cidr_list(fetch(CLOUDFLARE_V4_URL)) + parse_cidr_list(fetch(CLOUDFLARE_V6_URL))
-    fastly_raw = parse_fastly_ranges(fetch(FASTLY_RANGES_URL))
+
+    # Each source is fetched best-effort: a single source down / 403 / network error must not abort the whole
+    # refresh (one outage shouldn't lose AWS+GCP+Tor+X4BNet). A failed fetch yields "" → its parser returns
+    # [] → the floor guard below still fails loud if a LOAD-BEARING core source drops to ~0 (real drift),
+    # while an additive cloud source simply contributes nothing this run.
+    def _get(url: str) -> str:
+        try:
+            return fetch(url)
+        except Exception as exc:
+            print(f"warning: IP-rep source skipped (fetch failed): {url} ({exc})", file=sys.stderr)
+            return ""
+
+    tor_raw = parse_tor_bulk_exit(_get(TOR_BULK_EXIT_URL))
+    aws_raw = parse_aws_ranges(_get(AWS_RANGES_URL))
+    gcp_raw = parse_gcp_ranges(_get(GCP_RANGES_URL))
+    x4b_vpn_raw = parse_cidr_list(_get(X4BNET_VPN_URL))
+    x4b_dc_raw = parse_cidr_list(_get(X4BNET_DATACENTER_URL))
+    oracle_raw = parse_oracle_ranges(_get(ORACLE_RANGES_URL))
+    do_raw = parse_digitalocean_csv(_get(DIGITALOCEAN_RANGES_URL))
+    cloudflare_raw = parse_cidr_list(_get(CLOUDFLARE_V4_URL)) + parse_cidr_list(_get(CLOUDFLARE_V6_URL))
+    fastly_raw = parse_fastly_ranges(_get(FASTLY_RANGES_URL))
     if min_counts:
+        # Only the core sources are floor-guarded (a 0-parse = real drift → fail loud). The additive cloud
+        # sources are best-effort and carry no floor, so their absence never aborts.
         for src, got in (
             ("tor", len(tor_raw)),
             ("aws", len(aws_raw)),
             ("gcp", len(gcp_raw)),
             ("x4b_vpn", len(x4b_vpn_raw)),
             ("x4b_datacenter", len(x4b_dc_raw)),
-            ("oracle", len(oracle_raw)),
-            ("digitalocean", len(do_raw)),
-            ("cloudflare", len(cloudflare_raw)),
-            ("fastly", len(fastly_raw)),
         ):
             floor = min_counts.get(src, 0)
             if got < floor:
@@ -275,7 +296,18 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
 def _http_get(url: str) -> str:  # pragma: no cover - network IO shell
     import urllib.request
 
-    with urllib.request.urlopen(url, timeout=30) as resp:
+    # A browser-like User-Agent: some sources (e.g. DigitalOcean's geo CSV) return HTTP 403 to the default
+    # `Python-urllib/x` agent. These are public IP-range lists meant to be fetched; the UA just gets past the
+    # edge's default-agent block.
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+            )
+        },
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
         return str(resp.read().decode("utf-8"))
 
 
