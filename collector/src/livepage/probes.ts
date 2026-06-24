@@ -22,6 +22,9 @@ const LOAD_NONCE: string = ((): string => {
     return `${Math.random()}`.slice(2) + `${Math.random()}`.slice(2);
   }
 })();
+// Emit the trajectory hash ONCE per load: repeated collect()/re-score posts must not re-post it, or they
+// self-collide into a false record-and-replay. Only a recurrence across DISTINCT loads is the bot signal.
+let traceSent = false;
 
 // Non-standard / vendor-prefixed surfaces the probes read, typed minimally and reached via unknown casts.
 interface UAHEBrand {
@@ -1392,9 +1395,10 @@ export function armCollector(): LiveCollector {
       put("behavioral", "mouse_straightness", pathStraightness(pts));
       put("behavioral", "mouse_velocity_cv", velocityCV(pts));
       const th = traceHash(pts);
-      if (th !== null) {
+      if (th !== null && !traceSent) {
         put("behavioral", "trace_hash", th);
         put("behavioral", "load_nonce", LOAD_NONCE);
+        traceSent = true;
       }
       if (coalescedSupported && ptrMoves >= 20 && coalescedMax <= 1) {
         put("behavioral", "coalesced_events_absent", true);
