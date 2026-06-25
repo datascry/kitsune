@@ -1,0 +1,17 @@
+# .gitleaks — secret-scan config: the default ruleset plus this repo's known false positives.
+# The lab commits de-identified wire-fingerprint captures (corpus/sessions/*.json) whose tls_extras value
+# encodes TLS key_share GROUP NAMES like "key-share:x25519+mlkem768" — protocol identifiers, not credentials,
+# but gitleaks' generic-api-key keyword heuristic ("key…:<token>") false-fires on them. Allowlist that exact
+# shape; everything else still scans against the full default ruleset.
+
+title = "kitsune"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "TLS key_share / key-share group names in de-identified captures are not secrets (generic-api-key FP)."
+regexTarget = "match"
+regexes = [
+  '''key[_-]share:[A-Za-z0-9+_-]+''',
+]

@@ -29,6 +29,7 @@ import (
 	"github.com/datascry/kitsune/edge/internal/session"
 	"github.com/datascry/kitsune/edge/internal/signal"
 	"github.com/datascry/kitsune/edge/internal/tcpfp"
+	"github.com/datascry/kitsune/edge/internal/webbotauth"
 )
 
 type ctxKey int
@@ -152,6 +153,19 @@ func prepare(
 					cancel()
 				}
 			}
+		}
+	}
+	// Web Bot Auth (RFC 9421 HTTP Message Signatures, Ed25519): a legitimate agent cryptographically signs its
+	// requests. A request that PRESENTS a web-bot-auth signature which FAILS verification against a key we hold
+	// (forged / tampered / replayed past its expires window) is a definitive impostor — a real signer always
+	// emits a valid, in-window signature for its own key (G25). A VALID signature marks a verified benign agent.
+	// An unknown keyid is unjudgeable (we just lack that agent's key), so it never convicts — only a known-key
+	// verification FAILURE does, which keeps it FP-safe against legit agents whose directories we don't hold.
+	if wba := webbotauth.Verify(reqAuthority(r), r.Header, webbotauth.DefaultKeyDir(), now); wba.Present {
+		if wba.Valid {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "web_bot_auth_verified", true, now))
+		} else if wba.KnownKey {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "web_bot_auth_invalid", true, now))
 		}
 	}
 	if secFetchMissing(r) {
@@ -366,6 +380,12 @@ func uaClaimsChromium(ua string) bool {
 // Sec-Fetch metadata headers every such browser sends on real requests. A scripted HTTP client (the
 // volumetric-DDoS case) that fakes a browser UA over plain httpx/curl gives itself away here — an
 // HTTP-layer tell, independent of the TLS and JS layers.
+// reqAuthority is the request's RFC 9421 @authority value: the lower-cased :authority / Host with the default
+// https port stripped — what a Web Bot Auth agent signs and what the verifier reconstructs.
+func reqAuthority(r *http.Request) string {
+	return strings.TrimSuffix(strings.ToLower(r.Host), ":443")
+}
+
 func secFetchMissing(r *http.Request) bool {
 	if !isModernBrowserUA(r.Header.Get("User-Agent")) {
 		return false // a non-browser UA is a different (and weaker) signal; this rule targets fakery

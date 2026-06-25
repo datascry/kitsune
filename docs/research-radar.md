@@ -618,3 +618,21 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   TLS-bad-bot ML (arXiv 2602.09606, JA4 already shipped); DataDome behavioral-biomech + Cloudflare v9 ML
   score. Net: SCAN done — queue is dry except G25; G25 is the one new in-sandbox rung (cryptographic
   claimed-identity-vs-proof coherence — dead-on the thesis), recommended as the next red⇄blue PUMP.
+- **2026-06-25 · G25 SHIPPED — net.web_bot_auth_invalid (ruleset 0.74.51), red⇄blue grounded** — PUMPed the
+  one new groundable lead from today's SCAN. KEY FP-SAFETY REFINEMENT vs the lead's "unsigned-claimed-agent"
+  framing: convicting an UNSIGNED claimed-agent would FP on the many legit agents that don't sign yet (Web Bot
+  Auth is new), so the rule instead convicts only a Web Bot Auth signature that is PRESENT and FAILS Ed25519
+  verification against a key we HOLD (forged / tampered / wrong-@authority / replayed past expires). That is
+  FP-safe by construction — a real signer always emits a valid, in-window signature for its own key — and is
+  the cryptographic analog of net.fake_declared_crawler. An UNKNOWN keyid is unjudgeable and never convicts; a
+  VALID signature emits the benign network.web_bot_auth_verified marker. BLUE: edge/internal/webbotauth
+  reconstructs the RFC 9421 signature base ("@authority"[+"signature-agent"] + @signature-params) and verifies
+  Ed25519; wired in proxy.prepare. RED: go-tls KS_WEBBOTAUTH — `valid` signs a fresh signature (→ verified,
+  no fire), default replays the draft's own expired example (→ web_bot_auth_invalid, label bot). GROUNDED two
+  ways: (1) in-process against the draft Appendix A.2.2 OFFICIAL Ed25519 test vector + the RFC 7638 thumbprint
+  (edge webbotauth_test.go — the published signature verifies, tampered/expired/wrong-authority/unknown-key
+  all handled correctly); (2) LIVE through the rebuilt edge→detector stack (replay convicts, valid verifies),
+  frozen as corpus/sessions/go-tls-web-bot-auth.json in test_lit_rule_captures. Edge (7 pkgs) + detector (392)
+  + harness (249) green. PRODUCTION wires the real agent directories (each agent's
+  /.well-known/http-message-signatures-directory JWKS) — the lab seeds the RFC test key. The first detection
+  built on a 2026 standard, and dead-on the incoherence thesis: claimed identity vs cryptographic proof.
