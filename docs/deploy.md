@@ -75,26 +75,29 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml logs edge | grep
 # from a real browser, load https://your.domain  -> verdict renders; QUIC after the first visit (Alt-Svc)
 ```
 
-## GeoLite2 (optional — geo/ASN on the wire panel)
+## Geo / ASN on the wire panel (optional — keyless)
 
-The wire panel shows each visitor their own IP. To also resolve **city / country / ASN**, drop MaxMind's
-free **GeoLite2** databases into a `geoip/` dir next to the compose files (the prod overlay mounts it at
-`/geoip` read-only and sets `KITSUNE_GEOIP_DIR=/geoip`). Without them the panel just omits geo — it's
-purely additive.
+The wire panel shows each visitor their own IP. To also resolve **city / country / ASN**, populate a
+`geoip/` dir next to the compose files (the prod overlay mounts it at `/geoip` read-only and sets
+`KITSUNE_GEOIP_DIR=/geoip`). Without it the panel just omits geo — it's purely additive.
+
+The `geo-refresh` companion does this with **one command and no licence key** — it pulls DB-IP's free
+**Lite** City + ASN databases (MaxMind-format MMDBs, **CC BY 4.0**) into `./geoip`. It's the keyless twin
+of `iprep-refresh` (same read-only-at-runtime / read-write-during-refresh split, baked in):
 
 ```sh
-# Requires a free MaxMind account + licence key (https://www.maxmind.com/en/geolite2/signup).
-mkdir -p geoip && cd geoip
-# Download GeoLite2-City and GeoLite2-ASN (the .mmdb files) with your licence key, e.g.:
-#   curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=YOUR_KEY&suffix=tar.gz" | tar xz --strip-components=1 --wildcards '*GeoLite2-City.mmdb'
-#   curl -sL "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=YOUR_KEY&suffix=tar.gz"  | tar xz --strip-components=1 --wildcards '*GeoLite2-ASN.mmdb'
-cd .. && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # picks up the DBs
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build geo-refresh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d detector   # picks up the DBs
 ```
 
-- **Licence/attribution:** GeoLite2 is free but its licence **requires attribution** — the page footer
-  already credits "GeoLite2 data created by MaxMind". The `.mmdb` files are **not committed** (size +
-  licence); keep them in `geoip/` (gitignored) and refresh monthly (MaxMind updates them; stale data is
-  the only failure mode, and it degrades to a slightly-wrong city, never a crash).
+- **Licence/attribution:** DB-IP Lite is **CC BY 4.0**, which **requires attribution** — the page footer
+  already credits "IP Geolocation by DB-IP". The `.mmdb` files are **not committed** (size + freshness);
+  they live in `geoip/` (gitignored). Cron `geo-refresh` monthly (DB-IP publishes a new edition on the 1st;
+  the refresh auto-falls back to the prior month early in the month). Stale data only nudges a city, never
+  crashes.
+- **MaxMind GeoLite2** still works as a drop-in alternative: place `GeoLite2-City.mmdb` / `GeoLite2-ASN.mmdb`
+  in `geoip/` (needs a free MaxMind licence key) and the detector reads them as a fallback. The keyless
+  `geo-refresh` above is the default precisely because it needs no account.
 
 ## IP-reputation lists (optional — fuller datacenter / proxy / VPN / Tor coverage)
 

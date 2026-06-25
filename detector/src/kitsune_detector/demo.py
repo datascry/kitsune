@@ -722,7 +722,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <details><summary>Does this send my data anywhere?</summary><p>Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified verdicts are shared. Nothing is sold or handed to third parties.</p></details>
 </main>
 <footer><p>Your signals are scored by Kitsune's real detector at this origin — the blue-team side of a bot detection ⇄ evasion lab. Raw captures stay on the host; only de-identified verdicts are shared. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p>
-<p class="note">IP geolocation by <a href="https://www.maxmind.com">GeoLite2 data created by MaxMind</a>.</p></footer>
+<p class="note">IP Geolocation by <a href="https://db-ip.com">DB-IP</a> (CC BY 4.0).</p></footer>
 <script>
 (function () {
   function sid() { var m = document.cookie.match(/(?:^|; )ks_sid=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
