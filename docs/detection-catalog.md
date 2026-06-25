@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.51`); regenerate with `task catalog`, do not edit by hand. **140 rules**: 102 active · 32 experimental · 6 retired; 92 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.52`); regenerate with `task catalog`, do not edit by hand. **141 rules**: 103 active · 32 experimental · 6 retired; 93 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (33)
 
@@ -48,7 +48,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (108)
+### browser layer (109)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -77,6 +77,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.vendor_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.vendor implies an engine that contradicts the UA |
 | `br.voice_os_vs_ua` | coherence✦ | not_equal | 0.75 | active | Installed TTS voices imply an OS that contradicts the UA platform |
 | `br.webgl_os_vs_ua` | coherence✦ | not_equal | 0.7 | active | WebGL renderer implies an OS that contradicts the UA platform |
+| `br.webgl_renderer_caps_mismatch` | coherence✦ | present | 0.8 | active | WebGL renderer names a high-end GPU but the hardware capabilities are below its floor (spoofed string) |
 | `br.webgl_worker_vs_main` | coherence✦ | present | 0.6 | experimental | WebGL GPU renderer differs between the main thread and a Worker OffscreenCanvas |
 | `br.webgpu_vendor_vs_webgl` | coherence✦ | present | 0.75 | active | WebGPU adapter GPU family contradicts the WebGL renderer (spoofed renderer on real hardware) |
 | `net.accept_encoding_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but Accept-Encoding omits Brotli (scripted client) |

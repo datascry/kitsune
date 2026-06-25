@@ -804,8 +804,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   }
   function canvasHash() { try { var c = document.createElement("canvas"); c.width = 200; c.height = 40; var ctx = c.getContext("2d"); if (!ctx) return "n/a"; ctx.textBaseline = "top"; ctx.font = "16px Arial"; ctx.fillStyle = "#069"; ctx.fillRect(0, 0, 200, 40); ctx.fillStyle = "#f60"; ctx.fillText("Kitsune canvas \\u2728", 4, 4); return fnv(c.toDataURL()); } catch (e) { return "n/a"; } }
   function rawFingerprint() {
-    var renderer = "n/a", vendor = "n/a";
-    try { var gl = document.createElement("canvas").getContext("webgl"); var dbg = gl && gl.getExtension("WEBGL_debug_renderer_info"); if (gl && dbg) { renderer = String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)); vendor = String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)); } } catch (e) {}
+    var renderer = "n/a", vendor = "n/a", caps = null;
+    try { var gl = document.createElement("canvas").getContext("webgl"); var dbg = gl && gl.getExtension("WEBGL_debug_renderer_info"); if (gl) { if (dbg) { renderer = String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)); vendor = String(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)); } caps = webglCaps(gl); } } catch (e) {}
     var tz = "n/a"; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "n/a"; } catch (e) {}
     return {
       "User-Agent": navigator.userAgent,
@@ -818,7 +818,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       "Device memory": (navigator.deviceMemory != null ? navigator.deviceMemory + " GB" : "n/a"),
       "Max touch points": String(navigator.maxTouchPoints || 0),
       "WebGL vendor": vendor,
-      "WebGL renderer": renderer
+      "WebGL renderer": renderer,
+      "WebGL caps": capsSummary(caps) || "n/a"
     };
   }
   function renderCoherence(p) {
@@ -847,7 +848,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     { name: "Client Hints", keys: ["CH platform", "CH architecture", "CH model", "CH full version"], tells: ["ch_he_headless", "ch_he_version_vs_ua"] },
     { name: "Display / screen", keys: ["Screen", "Color"], tells: ["color_depth_anomaly", "devicepixelratio_anomaly", "screen_zero"] },
     { name: "Hardware", keys: ["Hardware concurrency", "Device memory", "Max touch points", "Network"], tells: [] },
-    { name: "WebGL", keys: ["WebGL vendor", "WebGL renderer"], tells: ["webgl_getparameter_tampered", "webgl_worker_divergence", "webgl_renderer_artifact"] },
+    { name: "WebGL", keys: ["WebGL vendor", "WebGL renderer", "WebGL caps"], tells: ["webgl_getparameter_tampered", "webgl_worker_divergence", "webgl_renderer_artifact"] },
     { name: "WebGPU", keys: ["WebGPU adapter", "WebGPU limits"], tells: ["webgpu_webgl_vs", "webgpu_vendor_vs_webgl"] },
     { name: "Canvas", extra: function () { return [["2D render hash", canvasHash()]]; }, tells: ["canvas_lie", "canvas_noise", "canvas_worker_divergence"] },
     { name: "Audio", keys: ["Audio"], tells: ["audio_noise", "audio_readback_noise"] },
@@ -1450,8 +1451,40 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       return {
         vendor: ext ? String(gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) || "") : "",
         renderer: ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || "") : "",
+        caps: webglCaps(gl),
       };
     } catch (e) { return { vendor: "", renderer: "" }; }
+  }
+  // The GPU's actual hardware CAPABILITIES (G18) — the limits and ranges the silicon exposes, independent of
+  // the UNMASKED_RENDERER STRING. A source-level anti-detect fork can spoof the renderer string (in BOTH
+  // realms, defeating webgl_worker_vs_main) but cannot change what the real GPU can do, so the caps stay
+  // consistent with the physical hardware. Captured here as the per-GPU capability fingerprint; the
+  // renderer-vs-caps coherence conviction is a grounded follow-up (needs real-GPU caps profiles).
+  function webglCaps(gl) {
+    try {
+      var p = function (k) { var v = gl.getParameter(gl[k]); return Array.isArray(v) || (v && v.length) ? Array.prototype.slice.call(v).join("x") : v; };
+      return {
+        maxTexture: p("MAX_TEXTURE_SIZE"),
+        maxCubemap: p("MAX_CUBE_MAP_TEXTURE_SIZE"),
+        maxRenderbuffer: p("MAX_RENDERBUFFER_SIZE"),
+        maxViewport: p("MAX_VIEWPORT_DIMS"),
+        maxVertexAttribs: p("MAX_VERTEX_ATTRIBS"),
+        maxVertexUniform: p("MAX_VERTEX_UNIFORM_VECTORS"),
+        maxFragmentUniform: p("MAX_FRAGMENT_UNIFORM_VECTORS"),
+        maxVaryings: p("MAX_VARYING_VECTORS"),
+        maxCombinedTexUnits: p("MAX_COMBINED_TEXTURE_IMAGE_UNITS"),
+        aliasedLineRange: p("ALIASED_LINE_WIDTH_RANGE"),
+        aliasedPointRange: p("ALIASED_POINT_SIZE_RANGE"),
+        extCount: (gl.getSupportedExtensions() || []).length,
+      };
+    } catch (e) { return null; }
+  }
+  // capsHash folds the capability fingerprint into one short stable id for the surfaces panel + the signal.
+  function capsSummary(caps) {
+    if (!caps) return "";
+    return "tex " + caps.maxTexture + " \\u00b7 vp " + caps.maxViewport + " \\u00b7 rb " + caps.maxRenderbuffer
+      + " \\u00b7 vu " + caps.maxVertexUniform + " \\u00b7 fu " + caps.maxFragmentUniform
+      + " \\u00b7 varyings " + caps.maxVaryings + " \\u00b7 " + caps.extCount + " ext";
   }
   function toStringTampered() {
     try {
@@ -1683,6 +1716,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var wg = webglInfo();
     if (wg.renderer) sigs.push(S("browser", "webgl_renderer", wg.renderer));
     if (wg.vendor) sigs.push(S("browser", "webgl_vendor", wg.vendor));
+    // GPU capability fingerprint (G18) — the renderer string's hardware reality, unspoofable by a string patch.
+    if (wg.caps) { sigs.push(S("browser", "webgl_caps", capsSummary(wg.caps))); if (wg.caps.maxTexture) sigs.push(S("browser", "webgl_max_texture", wg.caps.maxTexture)); }
+    // G18 conviction: a renderer string naming a recent HIGH-END discrete GPU (RTX / Radeon RX 6000+ / Apple
+    // M-series / Intel Arc) that reports a MAX_TEXTURE_SIZE below the 16384 floor EVERY such GPU exposes — the
+    // string is spoofed over a lesser/software backend (headless Chrome's SwiftShader reports 8192). A
+    // source-level fork patches the renderer STRING in both realms (defeating webgl_worker_vs_main) but cannot
+    // change the silicon's limits. FP-safe: real high-end GPUs are >=16384, and an honest software renderer
+    // names itself (caught by webgl_software) so it never matches the high-end pattern.
+    if (wg.caps && wg.renderer && wg.caps.maxTexture && wg.caps.maxTexture < 16384
+        && /(?:GeForce )?RTX|Radeon RX (?:6|7)[0-9]{3}|Apple M[1-9]|Intel\\(R\\) Arc|\\bArc A[0-9]/i.test(wg.renderer)) {
+      sigs.push(S("browser", "webgl_renderer_caps_mismatch", true));
+    }
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
     // Anti-detect renderer-spoofing artifacts: real GPU driver strings are exact. Camoufox labels its
     // randomized GPU pick with ", or similar"; placeholder/vague renderers never come from real drivers.
