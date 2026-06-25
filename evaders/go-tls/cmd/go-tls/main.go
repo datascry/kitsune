@@ -226,10 +226,73 @@ func rotateH2(target string) {
 	fmt.Println("__KS__" + string(out))
 }
 
+// staticExt drives several connections under ONE ks_sid, each forging the SAME STALE pinned Chrome template
+// (uTLS HelloChrome_102 — a pre-2023 Chrome that does NOT shuffle its extensions, yet still GREASEs and
+// carries Chrome's cipher list so its JA4 hints chrome). Because the template is non-shuffling, its extension
+// ORDER is byte-identical on every connection. A REAL Chrome 110+ SHUFFLES its extension order per
+// ClientHello (BoringSSL permutation), so a constant order across a session's connections under a Chrome UA
+// is a pinned anti-detect template that mimics Chrome's cipher/GREASE/extension set but NOT its per-connection
+// permutation — the tell JA4 sorts away (cipher hash stable, so net.tls_vs_ua_browser stays quiet). The
+// red-team move that exercises net.tls_ext_order_static_within_session.
+func staticExt(target string) {
+	detector := os.Getenv("KITSUNE_DETECTOR")
+	if detector == "" {
+		detector = "http://detector:8080"
+	}
+	var sid string
+	for i := 0; i < 3; i++ {
+		req, err := http.NewRequest(http.MethodGet, target, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		browserHeaders(req)
+		if sid != "" {
+			req.AddCookie(&http.Cookie{Name: "ks_sid", Value: sid})
+		}
+		// A fresh UConn per connection from the non-shuffling HelloChrome_102 — each emits the SAME extension
+		// order (no per-connection permutation), the static-order tell.
+		resp, err := gotls.RoundTripH2(context.Background(), utls.HelloChrome_102, req)
+		if err != nil {
+			log.Printf("conn %d error: %v", i, err)
+			continue
+		}
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck
+		resp.Body.Close()
+		if sid == "" {
+			for _, c := range resp.Cookies() {
+				if c.Name == "ks_sid" {
+					sid = c.Value
+				}
+			}
+		}
+		log.Printf("conn %d pinned-hello -> %s (sid=%s)", i, resp.Status, sid)
+	}
+	if sid == "" {
+		log.Fatal("no ks_sid minted")
+	}
+	vr, err := http.Get(detector + "/verdict/" + sid) //nolint:noctx
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var verdict map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&verdict); err != nil {
+		log.Fatal(err)
+	}
+	verdict["mode"] = "go-tls-static-ext"
+	verdict["session_id"] = sid
+	out, _ := json.Marshal(verdict) //nolint:errcheck
+	fmt.Println("__KS__" + string(out))
+}
+
 func main() {
 	target := os.Getenv("KITSUNE_EDGE")
 	if target == "" {
 		target = "https://localhost:8443/healthz"
+	}
+	if os.Getenv("KS_STATICEXT") == "1" {
+		staticExt(target)
+		return
 	}
 	if os.Getenv("KS_ROTATE") == "1" {
 		rotateJA4(target)

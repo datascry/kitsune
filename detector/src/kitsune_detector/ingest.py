@@ -86,6 +86,41 @@ def _annotate_h2_instability(network: list[Signal]) -> None:
     )
 
 
+def _annotate_ext_order_static(network: list[Signal]) -> None:
+    """Append a sticky ``tls_ext_order_static`` when a Chromium-JA4 session repeats ONE TLS extension order.
+
+    Chromium (BoringSSL) PERMUTES its ClientHello extension order on every connection since ~Chrome 110, so a
+    real Chromium emits a DIFFERENT ``tls_ext_order`` (the raw, GREASE-normalised wire order JA4 *sorts* away)
+    per connection. A session whose JA4 identifies a Chromium TLS engine yet repeats a SINGLE extension order
+    across >=2 connections is a pinned template that copies Chrome's ciphers/GREASE/extension SET — so its JA4
+    hints chrome and it still carries GREASE + a PQ key share (passing net.tls_vs_ua_browser /
+    net.tls_grease_vs_ua / net.tls_pq_keyshare_vs_ua) — but NOT Chrome's per-connection permutation, the tell
+    JA4 cannot see. Gated to a Chromium ``ja4_browser_hint``: Firefox/Safari do not permute, so their
+    legitimately-static order must never convict, and an unhinted JA4 stays unevaluable. FP-safe by
+    construction (a real Chromium varies the order; browserforge calibration carries no network layer); sticky.
+    """
+    if any(s.kind == "tls_ext_order_static" for s in network):
+        return
+    hint = next((s.value for s in network if s.kind == "ja4_browser_hint"), None)
+    if hint != "chrome":  # only the permuting engine — Firefox/Safari/unhinted JA4 gate off (no FP)
+        return
+    orders = [s.value for s in network if s.kind == "tls_ext_order" and isinstance(s.value, str)]
+    if len(orders) < 2 or len(set(orders)) != 1:
+        return
+    ref = next(s for s in network if s.kind == "tls_ext_order")
+    network.append(
+        Signal(
+            schema_version=ref.schema_version,
+            session_id=ref.session_id,
+            layer=Layer.network,
+            kind="tls_ext_order_static",
+            value=True,
+            source=ref.source,
+            observed_at=max(s.observed_at for s in network if s.kind == "tls_ext_order"),
+        )
+    )
+
+
 #: A real short HTTP/cookie session egresses from ONE edge-observed IP (CGNAT and a wifi<->cellular
 #: handoff present at most 1-2); >=3 distinct egress IPs under one session id is a rotating proxy pool —
 #: the dominant scraper evasion. This is a reputation-free coherence count (no residential/datacenter
@@ -325,6 +360,7 @@ def _build_session(session_id: str, signals: list[Signal]) -> Session:
         groups.of(sig.layer).append(sig)
     _annotate_ja4_instability(groups.network)  # a single batch carrying >1 JA4 is already a rotation
     _annotate_h2_instability(groups.network)  # ...likewise >1 h2 fingerprint in one batch
+    _annotate_ext_order_static(groups.network)  # ...likewise >=2 identical ext orders under a Chromium JA4
     _annotate_ip_rotation(groups.network)
     _annotate_ua_rotation(groups.network)
     _annotate_fp_rotation(groups.browser)
@@ -367,9 +403,18 @@ def merge_sessions(existing: Session, new: Session) -> Session:
     history = [*existing.signals.network, *new.signals.network]
     _annotate_ja4_instability(history)
     _annotate_h2_instability(history)
+    _annotate_ext_order_static(history)
     _annotate_ip_rotation(history)
     _annotate_ua_rotation(history)
-    for kind in ("ja4_unstable", "h2_unstable", "ip_rotation", "observed_ip_seen", "ua_rotation", "ua_seen"):
+    for kind in (
+        "ja4_unstable",
+        "h2_unstable",
+        "tls_ext_order_static",
+        "ip_rotation",
+        "observed_ip_seen",
+        "ua_rotation",
+        "ua_seen",
+    ):
         derived = next((s for s in history if s.kind == kind), None)
         groups.network = [s for s in groups.network if s.kind != kind]
         if derived is not None:

@@ -459,7 +459,7 @@ not signal.** Genuine un-extracted signals, mostly cheap (bytes the edge already
 | # | seam | gap | groundable? | note |
 |---|---|---|---|---|
 | N1 | network (TCP/IP) | **JA4T value-parsing**: MSS value + window-scale value + window/MSS ratio + p0f IP quirks (DF, IP-ID, ECN, ToS, SACK-perm, TCP-timestamps). Edge parses TTL+option-ORDER+window but discards the values. | **in-sandbox (cheapest)** — SYN bytes already captured; unlocks VPN/tunnel/mobile-from-MSS (wire proxy tell, no CIDR). **Corrects G4** ("JA4T covered" was wrong — values not captured). |
-| N2 | network (TLS) | **Extension ORDER + GREASE placement** — JA4 sorts extensions; raw order captured as `tls_ext_order`. | ⚠ EXTRACTED (display only) — conviction NOT shippable (2026-06-25): uTLS+curl-impersonate now permute per-conn, so no honest positive + FP-risk on Chrome's own permutation; unique catch is redundant with tls_vs_ua_browser/tls_grease_vs_ua. |
+| N2 | network (TLS) | **Extension ORDER + GREASE placement** — JA4 sorts extensions; raw order captured as `tls_ext_order`. | ✅ CONVICTS (2026-06-25, within-session) — single-shot not viable (Chrome permutes per-conn), but that permutation IS the tell: `net.tls_ext_order_static_within_session` convicts a Chromium-JA4 session repeating ONE order across ≥2 conns. Red⇄blue grounded: go-tls KS_STATICEXT evader + tls_ext_order_test.go. |
 | N3 | network (QUIC) | **QUIC transport_parameters (TLS ext 0x39)** — QUIC-stack fingerprint independent of inner TLS; raw order captured as `quic_transport_params`. | ⚠ EXTRACTED (display only) — conviction INFRA-BLOCKED (2026-06-25): same per-IP opportunistic QUIC-capture blocker that retired net.quic_*_vs_ua; revive when capture is per-connection w/ multi-packet reassembly. |
 | N4 | network (HTTP/1.1) | **h1 header order + casing** + "refuses h2/h3 is itself a tell". We serve h1, fingerprint nothing. | **in-sandbox** — mirror JA4H order onto the h1 path. |
 | N5 | network (TLS) | **CH micro-tells**: key_share share-vs-advertised, cert_compression list, padding/ECH presence (uTLS CVE family; extends G23). | ✅ SHIPPED 2026-06-25 (`tls_extras` signal + wire card, extract+display). Conviction NOT shippable: advertised==sent for all faithful clients → inert; advertised-side already = net.tls_pq_keyshare_vs_ua. |
@@ -539,8 +539,9 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
     permutes), and (b) a single-shot "order ∉ legal Chrome set" rule FPs on Chrome's own per-connection
     permutations. The only *unique* catch over the existing `net.tls_vs_ua_browser` (JA4 engine) +
     `net.tls_grease_vs_ua` (GREASE) would be a stack that GREASEs AND matches Chrome's cipher JA4 yet emits a
-    non-Chrome order — which no faithful tool produces. Corrected the decayed premise in `edge/.../grease.go`;
-    `tls_ext_order` stays a display/inspection signal.
+    non-Chrome order — which no faithful tool produces. Corrected the decayed premise in `edge/.../grease.go`.
+    **SUPERSEDED (same day, see next entry):** the per-connection shuffle is itself the WITHIN-SESSION tell —
+    built the faithful evader + grounded `net.tls_ext_order_static_within_session`.
   - **N5 (key_share advertised-but-not-sent) — NOT shippable (inert, no honest positive).** A faithful
     template SENDS what it ADVERTISES, so `HasPostQuantumKeyShare()` (advertised) == `HasPQKeyShareSent()`
     (sent) for every real client and every current evader; "advertised but not sent" is a pathological
@@ -557,3 +558,29 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   honest path to a NEW N2 positive is a faithful red-team evader that GREASEs + matches Chrome ciphers but
   pins a non-permuting order (a real anti-detect failure mode) — queued as a faithful-evader task, not a
   rule to arm speculatively.
+- **2026-06-25 · N2 CONVICTS via red⇄blue — net.tls_ext_order_static_within_session (ruleset 0.74.50)** — took
+  the honest path the grounding pass identified, and it reframed N2 from "not shippable" to a clean
+  within-session conviction. KEY INSIGHT: the per-connection extension permutation that KILLED the single-shot
+  rule is exactly what makes a WITHIN-SESSION rule FP-safe — a real Chromium (BoringSSL) emits a DIFFERENT
+  `tls_ext_order` on every connection, so a Chromium-JA4 session that repeats ONE order across ≥2 connections
+  cannot be a real Chrome. This is the FIFTH member of the within-session-invariant family (JA4 / h2 / IP / UA
+  / now ext-order), and the INVERSE shape: the siblings convict on >1 distinct value (a fixed field rotated),
+  this convicts on exactly 1 where a real client MUST vary. RED: `go-tls KS_STATICEXT` builds a Chrome-131
+  hello ONCE (current ciphers, GREASE, PQ key share, extension SET) and replays it across 3 connections under
+  one ks_sid (a faithful pinned-template move). BLUE: `detector ingest._annotate_ext_order_static` derives
+  `tls_ext_order_static` over the pre-collapse per-connection history, gated to a Chromium `ja4_browser_hint`
+  (Firefox/Safari don't permute → never convict); rule = `present`, weight 0.6, active. GROUNDED BOTH WAYS:
+  in-process (deterministic, in CI) `edge tls_ext_order_test.go` proves (a) real Chrome (uTLS HelloChrome_131,
+  the permuter) emits 3 DISTINCT orders → FP-safe negative, (b) a reused pinned current-Chrome spec emits a
+  byte-IDENTICAL order while still GREASEing + carrying a PQ key share → the static order is the sole residual
+  tell, (c) the hello's JA4 hints `chrome` so the gate opens; AND LIVE — the evader pins a STALE non-shuffling
+  `HelloChrome_102` (GREASEs + Chrome ciphers → JA4 hints chrome, but no permutation) and the rebuilt
+  edge→detector stack convicted it (label bot, score 0.996), captured as `corpus/sessions/go-tls-static-ext.json`
+  and frozen by `test_lit_rule_captures`. The live run also CAUGHT A BUG the in-process test could not:
+  reusing one `ClientHelloSpec` across full handshakes fails after conn 0 (consumed key shares) — so the evader
+  uses a non-shuffling preset per connection instead. 5 detector ingest tests cover positive /
+  permutation-negative / gate-off / single-conn / sticky. Edge + detector (388 tests, 97.25%) green.
+  NON-REDUNDANT: JA4 sorts extensions, so a pinned-order template keeps one JA4_b and can hold h2/IP/UA fixed —
+  every other tell stays silent while the un-permuted order is the only contradiction. Net: N2 is the first of
+  the N-series extractions to become a CONVICTION (N3 still QUIC-infra-blocked; N5 still inert). The arms-race
+  ladder gained a rung on BOTH sides.

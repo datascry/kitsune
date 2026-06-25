@@ -63,11 +63,11 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**132 live rules** (100 active · 32 experimental; 6 retired, ruleset `0.74.49`) — each a small predicate over the correlated session. **90 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**133 live rules** (101 active · 32 experimental; 6 retired, ruleset `0.74.50`) — each a small predicate over the correlated session. **91 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
-| **coherence** | 51 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
+| **coherence** | 52 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
 | **automation** | 24 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 15 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
 | **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |
@@ -110,7 +110,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**86 of 96 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.49`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
+**87 of 97 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.50`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
 Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
 
