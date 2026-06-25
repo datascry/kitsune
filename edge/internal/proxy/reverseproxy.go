@@ -122,6 +122,14 @@ func prepare(
 	if ip := clientIP(r); ip != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "observed_ip", ip, now))
 	}
+	// Negotiated HTTP version — a real browser uses HTTP/2 (or h3) to an h2-offering edge; speaking HTTP/1.1
+	// here is an older/non-browser stack ("downgrading to h1" is a dead evasion in 2026). A wire fingerprint;
+	// shown in the panel. Corroborating, not convicting on its own (corporate proxies can legitimately downgrade).
+	httpVer := "http/1.1"
+	if r.ProtoMajor == 2 {
+		httpVer = "h2"
+	}
+	out.signals = append(out.signals, signal.Network(out.sessionID, "http_version", httpVer, now))
 	// The raw User-Agent the HTTP stack sends on EVERY request — the network-layer client identity string.
 	// A real client presents ONE fixed UA for a session's lifetime (the UA is pinned per browser build; a
 	// version change requires a restart = a new session). The detector accumulates the distinct UAs under a
