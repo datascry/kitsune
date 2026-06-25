@@ -41,8 +41,29 @@ JSON array to `<detector>/ingest`. Beyond the raw fingerprints (`ja3`, `ja4`, `h
 - HTTP-header tells: `sec_fetch_missing`, `accept_encoding_no_brotli`, `accept_language_primary`,
   `observed_ip`, and the Sec-CH-UA group (`ch_platform_header`, `ch_ua_browser`,
   `ch_ua_version_mismatch`, `ch_ua_mobile_mismatch`, `ch_ua_no_grease_brand`).
+- Raw wire-order + micro-tell fingerprints JA4 sorts away: `tls_cipher_order`, `tls_ext_order` (the
+  raw ClientHello extension/cipher order, GREASE normalized to `g` so placement survives — a pinned
+  TLS template emits a fixed/Chrome-impossible order), `tls_extras` (ECH/ALPS/padding presence,
+  cert-compression, key_share groups actually sent), `ja4t` (the SYN-derived TCP-options fingerprint
+  from the kernel store), and `quic_transport_params` (the QUIC Initial's transport-parameter set).
 
 The edge only emits these facts; the coherence rules that score them live in the detector.
+
+### Declared-identity verification
+
+A few signals don't fingerprint the stack — they check a client's _declared_ identity against an
+unforgeable proof, so a known-key failure is a definitive impostor rather than a probabilistic tell:
+
+- `fake_declared_crawler` — a UA claiming Googlebot/Bingbot/etc. whose connecting IP does **not**
+  forward-confirm (FCrDNS) to that crawler's official domain. This is the crawlers' own documented
+  verification method, so a real crawler always confirms; a transient DNS failure abstains.
+- `web_bot_auth_verified` / `web_bot_auth_invalid` — Web Bot Auth (RFC 9421 HTTP Message Signatures,
+  Ed25519) verification by `internal/webbotauth`. A request that **presents** a `web-bot-auth`
+  signature verifying against a key we hold marks a verified benign agent (`_verified`); one whose
+  signature **fails** against a held key — forged, tampered, or replayed past its `expires` window —
+  is a definitive forgery (`_invalid`). An unknown keyid is unjudgeable and never convicts, keeping
+  the tell FP-safe against legit agents whose JWKS directories the edge doesn't hold. (The lab seeds
+  the RFC 9421 Ed25519 test key; production wires the real fetched agent directories.)
 
 ## How it runs
 
@@ -81,10 +102,11 @@ Go (1.26) may not be installed locally; build/test in `docker run --rm golang:1.
 
 | Package | Role |
 |---|---|
-| `internal/fingerprint` | All the parsers + fingerprint math: ClientHello → JA3/JA4, GREASE, PQ key share, HTTP/2 preface + JA4H, TCP SYN, QUIC Initial decrypt, h2 DoS frame scanner. |
+| `internal/fingerprint` | All the parsers + fingerprint math: ClientHello → JA3/JA4, GREASE, PQ key share, HTTP/2 preface + JA4H, TCP SYN, QUIC Initial decrypt, h2 DoS frame scanner. Also holds `slowhttp.go`'s `SlowLorisScanner` (HTTP/1.1 partial-header / slowloris timing) — **built and tested but not yet wired into the h1 read path**. |
 | `internal/peek` | Capture-and-replay listener that reads the ClientHello off the socket before the TLS server handshakes. |
 | `internal/proxy` | TLS-terminating reverse proxy + ALPN h2 serving, QUIC capture, signal derivation/forwarding; the fingerprint-API handler. |
 | `internal/signal` | Build contract-shaped `network` signal envelopes; POST them to `/ingest`. |
+| `internal/webbotauth` | Verify Web Bot Auth request signatures (RFC 9421 HTTP Message Signatures, Ed25519) against a keyid→public-key directory; RFC 7638 JWK thumbprints. Emits `web_bot_auth_verified` / `web_bot_auth_invalid`. |
 | `internal/session` | Mint the 128-bit correlation id; name the `ks_sid` cookie. |
 | `internal/tcpfp` | Linux raw-socket SYN sniffer + a TTL-windowed source-IP→kernel store. |
 | `cmd/edge` | Service entrypoint (proxy mode / fingerprint-API mode). |

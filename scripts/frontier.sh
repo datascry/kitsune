@@ -51,6 +51,6 @@ echo "[*] per-session verdicts (frontier miss is expected — Camoufox is cohere
 
 echo
 echo "[*] coordination verdict (the frontier catch):"
-( cd harness && uv run python -m kitsune_harness.coordination ../corpus/fleet ) | tee docs/coordination.md
+( cd harness && uv run python -m kitsune_harness.coordination ../corpus/fleet )
 
-echo "[*] done → docs/coordination.md + refreshed corpus/{sessions,fleet}/"
+echo "[*] done → coordination snapshot printed above + refreshed corpus/{sessions,fleet}/"

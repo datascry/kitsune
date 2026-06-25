@@ -9,7 +9,14 @@ communicate only through the versioned contracts in `contracts/` — never by im
   `<component>/<module> — <what it is>`, line 2 is `<what it does>`. This lets tools (and agents) map
   the codebase by reading the first two lines. Checked by `scripts/check_headers.py`.
 - **Conventional Commits.** e.g. `feat(detector): add JA4 coherence rule`, `fix(edge): …`,
-  `docs:`, `test:`, `chore:`. Releases + the changelog are generated from these.
+  `docs:`, `test:`, `chore:`. Releases + the changelog are generated from these. The subject **must
+  start lowercase** — commitlint rejects a leading uppercase word/acronym (`SEO`, `GeoLite2`, `N5`),
+  so write `fix(geo): refresh GeoLite2 fallback`, not `fix(geo): GeoLite2 fallback`.
+- **Single author.** Every commit must be authored *and* committed as
+  `datascry <datascry@users.noreply.github.com>` — no other identity, and **no `Co-Authored-By`
+  trailer** (in particular, omit the default Claude trailer). Set it once with
+  `git config user.name datascry && git config user.email datascry@users.noreply.github.com`. The one
+  sanctioned exception is the release-please bot's own `chore(main): release …` commit.
 - **Strict typing everywhere.** Python `mypy --strict`; TypeScript `strict` + `noUncheckedIndexedAccess`
   + `exactOptionalPropertyTypes`; Go is statically typed and `go vet`-clean.
 - **Tiered coverage.** Core logic (contracts, detector, harness, edge fingerprinting, collector
@@ -20,11 +27,12 @@ communicate only through the versioned contracts in `contracts/` — never by im
 
 | Component | Toolchain | Verify |
 |---|---|---|
-| `detector`, `harness` | uv + pytest + ruff + mypy | `uv run pytest && uv run ruff check . && uv run mypy` |
-| `edge` | Go stdlib | `go test ./... -cover && go vet ./... && gofmt -l .` |
-| `collector` | pnpm + vitest + tsc | `pnpm test && pnpm run typecheck && pnpm run lint` |
+| `detector`, `harness` | uv + pytest + ruff + mypy | `uv run pytest && uv run ruff check . && uv run ruff format --check . && uv run mypy` |
+| `edge` | Go (utls/uquic/quic-go) | `go test ./... -cover && go vet ./... && gofmt -l .` |
+| `collector` | pnpm + vitest + tsc | `pnpm test && pnpm run typecheck && pnpm run lint && pnpm exec prettier --check .` |
 
-Or run everything: `task ci`. Install hooks once with `pre-commit install`.
+Or run everything: `task ci` (the authoritative gate — it runs the headers check, every command
+above, and the generated-docs `--check` pass). Install hooks once with `pre-commit install`.
 
 ## Pull requests
 

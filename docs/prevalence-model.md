@@ -171,6 +171,60 @@ opt-in is the natural source — its sessions feed `--build-prior-from-sessions`
 model gains power immediately, no code change. Promoting it from corroborating to a higher weight then
 becomes defensible — the single-source caveat above is exactly what a real prior removes.
 
+### Berke (PoPETs 2025) real-traffic prior — `berke_corpus.build_prior_from_berke`
+
+The recurring unlock above ("a prior built from REAL traffic") now has a concrete, published source.
+Berke et al., *"How Unique is Whose Web Browser?"* (PoPETs 2025) released **8,400 consented** real browser
+fingerprints (Harvard Dataverse, `doi.org/10.7910/DVN/0SGZFF`) covering Kitsune's exact prevalence
+attributes — User agent, Screen resolution, Hardware concurrency, WebGL Unmasked Renderer — i.e. a measured
+second source for the gpu/screen/cores factors that until now had none.
+
+`harness/berke_corpus.py` (`build_prior_from_berke`) is the *consumer* of that dataset, not a fetcher:
+
+```sh
+cd harness && uv run python -m kitsune_harness.berke_corpus survey-and-browser-attributes-data.csv
+```
+
+It maps each CSV row through the detector's own `features_from_fingerprint` (no parallel bucketing to drift),
+then `write_prior`s a drop-in `prevalence_prior.json` over the same gpu/screen/cores factors. Two design
+points matter:
+
+- **Aggregate-prior-only, honouring the no-reshare term.** The browser-attributes file is research-use only;
+  Berke's terms of use prohibit re-identification and any further sharing of the data. So the module emits
+  **only** the resulting prior — coarse joint-frequency tables (P(gpu|plat), P(screen|plat), P(cores)) plus
+  the threshold, de-identified aggregate statistics, **never the rows**. Committing the prior does not
+  redistribute the dataset. An operator who has accepted the terms and downloaded the CSV runs this; the raw
+  rows never leave their machine.
+- **The threshold becomes the real distribution's self-p1** — a real-traffic prior is the ground truth the
+  browserforge self-p1 (and the fpgen-conservative interim bound) were stand-ins for.
+
+### Promotion gate — `prevalence_real_corroborate` (`task prevalence-real-corroborate`)
+
+Before swapping the prior, the standing discipline requires checking the *current* (browserforge) rule against
+real traffic — the same second-source methodology as SapiMouse/Intoli/fpgen, here applied to the prevalence
+factors. `harness/prevalence_real_corroborate.py` is that gate:
+
+```sh
+cd harness && uv run python -m kitsune_harness.prevalence_real_corroborate /path/to/real-fingerprints.csv
+# or: task prevalence-real-corroborate -- /path/to/real-fingerprints.csv
+```
+
+It fuzzy-matches the corpus columns to the model roles (prints the mapping to **verify** before trusting the
+result), buckets each row through `features_from_fingerprint`, and reports three things, all aggregate and
+safe to paste back:
+
+1. **Real-traffic FP rate** — what fraction of REAL fingerprints `br.fingerprint_improbable` would flag under
+   the committed (browserforge) prior. `~0%` ⇒ the rule is FP-safe on real traffic ⇒ promotion candidate;
+   `promotion_fp_safe` reports the rate-`== 0` verdict directly.
+2. **Divergence** — the top joint cells where browserforge mis-estimates vs real traffic (the single-source
+   bias the rest of this doc has been chasing per-factor).
+3. **Real prior** — the bucketed real-traffic prior (an aggregate; publishable — it is not the dataset).
+
+It runs LOCALLY on the operator's copy (raw CSV never leaves the machine; not committed, not a CI gate), so
+the promotion decision rests on de-identified aggregates only. This is the concrete answer to "what would let
+us raise the rule from corroborating toward convicting": run it on the Berke corpus (or any real-traffic
+fingerprint CSV), confirm the real-traffic FP rate is ~0, then rebuild the prior with `build_prior_from_berke`.
+
 ## Foundation built (tested + reproducible)
 
 The prototype is now a tested module — `harness/prevalence.py` (`features_from_fingerprint`, `build_prior`,
@@ -252,15 +306,29 @@ the genuine full-vector improbable joints (`iframe-spoof`, `stealth-patched`, `i
 GPU under a desktop platform with a real screen/colour/cores) — with **zero net detection loss** (the 11
 dropped remain `bot`). Locked by `test_partial_vector_abstains_unknown_never_fires`.
 
-## Remaining (future loop iterations)
+## Tier-3 / Remaining — the foundation is BUILT; only the operator data-download stays external
 
-1. Build the prior offline from the largest available real-distribution sample; ship it as a data table
-   (rules-as-data stays the coupling) with the ruleset.
-2. Emit a `prevalence_score` browser signal from the collector's collected fields; a detector rule fires
-   `below_threshold` at a conservative tail (e.g. real p1 → ~1% FP) — **corroborating weight only**.
-3. Gate it through `task calibrate` against *both* browserforge and the real-engine corpus; never let it
-   raise the legitimate-browser flag rate.
-4. Corroborate the prior against Tier-3 before raising its weight toward convicting.
+The list below was the original roadmap; items 1–3 are now **shipped**. What is left is genuinely external —
+an operator accepting a real-traffic dataset's terms and running one local command — not unwritten code.
+
+1. **Build the prior offline from a real-distribution sample — BUILT.** Two consumers exist, both writing the
+   drop-in `prevalence_prior.json` data table (rules-as-data stays the coupling):
+   `browserforge_corpus.build_prior_from_sessions/_from_dir` (collector/edge or real-device-matrix shape) and
+   `berke_corpus.build_prior_from_berke` (the published PoPETs-2025 8,400-FP CSV). Each emits aggregate
+   joint-frequency tables only — no rows.
+2. **Emit the score and fire a conservative-tail rule — BUILT (v0.63.0).** The collector emits the raw fields,
+   `detector/prevalence.py` scores against the committed prior, and `br.fingerprint_improbable` fires below a
+   cross-source-conservative p1 tail at **corroborating weight only** (structurally capped at `suspicious`
+   since v0.65.0 — the `prevalence` rule-category is excluded from `CONVICTING_CATEGORIES`).
+3. **Gate via calibration against both sources — BUILT.** `task calibrate` confirms the legitimate-browser
+   human rate is unchanged; `prevalence_real_corroborate` (`task prevalence-real-corroborate`) is the
+   real-traffic promotion gate, measuring the rule's FP rate and per-cell divergence on an operator-supplied
+   real CSV.
+4. **The one external item — corroborate the prior against real traffic before raising its weight toward
+   convicting.** This is data-download-blocked, not code-blocked: accept a real-traffic dataset's terms (the
+   Berke PoPETs-2025 corpus is the ready candidate), run `prevalence_real_corroborate` locally to confirm the
+   real-traffic FP rate is ~0, then `build_prior_from_berke` to swap in the real prior — at which point
+   promoting the rule from corroborating toward convicting becomes defensible. No code change required.
 
 ## Colour factor dropped (v0.74.20) — the second circular single-source FP
 
@@ -324,3 +392,22 @@ coarsened-robust, `colour` is dropped, and `gpu` is the one genuinely-irreducibl
 which is itself the honest, precise answer to "what does the prevalence model still need from a second
 source." (Deployed live at ruleset 0.74.21; IFRAME_SPOOF — swiftshader-on-desktop — still fires
 `fingerprint_improbable` end-to-end, zero detection loss.)
+
+### GPU "unknown never fires" — the `other` catch-all was itself a single-source FP (v0.74.33)
+
+A further GPU FP, of the same class but in the *extraction*, not the prior. `_gpu_family` used to map any
+unrecognised renderer to a catch-all `other` family. But real browsers emit renderer strings that classify to
+no vendor: software-rendering **Firefox** generalises its renderer to `"llvmpipe, or similar"`, and
+**Mullvad/RFP** generalises to `"Mozilla"`. browserforge under-generates these, so `other|plat` sat near the
+eps floor — and a real Firefox/Mullvad user took the eps-floor penalty and falsely tripped
+`br.fingerprint_improbable` on an *unclassifiable* GPU rather than an improbable one. Grounded on the real
+Firefox/Mullvad captures (see docs/real-browser-capture-profiles.md).
+
+**Fix:** `_gpu_family` now **returns `None` (abstains)** for an unclassifiable renderer instead of bucketing
+it to `other` — the registry's "unknown never fires" discipline, the same monotonic abstention that fixed
+partial vectors above. With the GPU factor unobserved, the joint abstains rather than charging a penalty it
+cannot justify from a single source. The harness `features_from_fingerprint` and the detector's `_gpu_family`
+are kept byte-for-byte in sync (both: nvidia/apple/intel/amd/mobile/swiftshader, else `None`), so the prior
+built by `berke_corpus`/`browserforge_corpus` and the runtime scorer abstain on exactly the same renderers.
+The genuine convicting catches (apple-on-Windows, swiftshader-on-desktop) are classified families and still
+fire; only the unclassifiable-real tail stops penalising.

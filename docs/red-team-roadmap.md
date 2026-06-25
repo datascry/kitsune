@@ -5,16 +5,79 @@ you find the blue-team's blind spots. **Ethics (hard, enforced in code):** every
 Kitsune's own detector + the approved endpoints in `harness/src/kitsune_harness/allowlist.py` — self-contained
 lab research, never a third-party/production site, never weaken the allow-list.
 
-## Where the red-team stands (researched 2026-06-20)
+> **STATUS as of ruleset 0.74.52** — the live fleet/technique/EVADES tallies are **generated**, not pinned
+> here (they drift every iteration). For the current numbers see the regenerated [`docs/scoreboard.md`](scoreboard.md)
+> + [`docs/matrix.md`](matrix.md) (every rule × every evader) and the README's red-team block (e.g. "N of M
+> evaders score `bot`", the rest held at `suspicious` on the conviction gate). Per-evader residual detail —
+> exactly which convicting tells each EVADER defeats and which corroborating tells it still trips — lives in the
+> generated [`docs/evasion-catalog.md`](evasion-catalog.md) (the living ledger). This file is the **strategic
+> backlog + iteration ledger**: the *why*, not the counts.
 
-16 tools, 66 techniques, **63 caught / 3 evade** (`camoufox-headful`, `patchright-headful`, `zendriver` — all
-escape via engine-level / CDP-patched spoofing with no headless tell). *(Corrected iter-9: `zendriver` is NOT an
-evader — grounded live it is caught by `net.h2_header_order_vs_ua` (its CDP nav sends no Sec-CH-UA trio + a
-non-Chromium regular-header order, while real Chrome does); the frozen capture was stale. Frontier is now **2
-evade**: `camoufox-headful`, `patchright-headful`.)* The per-session **JS-patch layer is
-saturated**: every single-tool Chromium evader hits the headless-environment floor, and every cross-layer or
-realm-coherence spoof is caught. The detector's durable signals are the headless floor, cross-layer coherence
-(TLS/H2 ≠ UA), realm coherence, and the behavioral / coordination / prevalence frontiers.
+## Where the red-team stands
+
+The per-session **JS-patch layer is saturated**: every single-tool Chromium evader hits the headless-environment
+floor, and every cross-layer or realm-coherence spoof is caught. The frontier is the small set of engine-coherent
+EVADERS (headful Camoufox/patchright + the Camoufox-Linux family + the zendriver-uach stack) whose residual is
+100% external-hardware/IP-reputation-gated — see [`docs/evasion-catalog.md`](evasion-catalog.md) for the current
+EVADES set + each one's residual, and [`docs/scoreboard.md`](scoreboard.md) for the live verdicts. The detector's
+durable signals are the headless floor, cross-layer coherence (TLS/H2 ≠ UA), realm coherence, within-session
+coherence, and the behavioral / coordination / prevalence frontiers.
+
+## Iteration index (the ledger below is NON-chronological — entries land near the vein they extend)
+
+The 66 ledger entries are grouped by vein, not by iter number, so this index is the chronological map. One line
+per iteration; follow the iter tag into the body for the grounding.
+
+- **1–4** Behavioral synthesis + the coalesced ladder (bézier already beats the biomech floor; COALESCE_SPOOF →
+  `tostring_tampered` → COALESCE_PROXY → `coalesced_untrusted`, the `isTrusted` data invariant blue holds).
+- **5** `UACH_COHERENT` — coherent UA-CH defeats all three UA tells; opens the cross-layer stack.
+- **6** Stack capstone `patchright-headful` EVADES the convicting layer; residual external-hardware-gated.
+- **7** Coordination capstone — `fp_collision` convicts an identical-fp clone fleet, spares a diverse cohort.
+- **8** REFUTED: stock Chrome `--headless=new` still emits the HeadlessChrome token → no EVADES class.
+- **9** REFUTED: `zendriver` is caught (`net.h2_header_order_vs_ua`), not an evader; stale capture.
+- **10–12** CDP-minimal catch-profile audit: the whole class EVADES headless via a coherent UA-CH override.
+- **13** `azuretls` BUILT — caught FOUR net ways (spoofs TLS, forgets the HTTP profile).
+- **14** `apify-fp-inject` — main-realm injection ADDS worker-realm-coherence detectability.
+- **15** `net.ja4_unstable_within_session` — the within-session axis opens (TLS-engine rotation, v0.74.38).
+- **16** `net.ip_rotation_within_session` — origin-IP rotation (≥3 egress IPs, v0.74.39).
+- **17** `trace_collision` ISOLATED live (fp-randomising fleet still convicted by the behavioral clone).
+- **18** `KEYSTROKE_HUMAN` — the keystroke biomech floor grounded as a two-sided arms race.
+- **19** `zendriver-uach-behave` — behavioral synthesis stacked; residual moves to the coalesced terminus.
+- **20–21** playwright-extra/puppeteer-stealth caught 6 ways (self-inflicts `tcp_os_vs_ua` via `maskLinux`).
+- **22** Coherent-WebKit profile caught 6 ways (Safari⟹macOS vs Linux across three layers).
+- **23** Coherent-Gecko is the THINNEST-caught engine — one tell (`br.webdriver_present`); locates why Camoufox exists.
+- **24–27** Headless `camoufox-linux` EVADES (lowest bar); `KS_NOTOUCH` kills the ~7% pointer-touch flake.
+- **28** Fixed the self-defeating `camoufox-hardened` (`os=windows` → `tcp_os_vs_ua`); now EVADES.
+- **29** Maximal-fleet coordination boundary — naive `trace_collision` convicts; jittered fleet → `candidate`.
+- **30** WebRTC real-IP leak grounded; `net.webrtc_ip_vs_observed` demoted FP-safe (v0.74.40).
+- **31** `shared_real_ip` grounded on a real WebRTC-leak fleet (single machine behind many proxies).
+- **32** WebRTC block defeats `shared_real_ip` → `candidate` (external-gated); arms race closes both ways.
+- **33** NEW `rep.webrtc_origin_datacenter` — leaked-origin reputation, corroborating (v0.74.41).
+- **34** NEW `net.datacenter_origin_proxied` — datacenter VM behind residential proxy, convicting (v0.74.42).
+- **35** Ledger consolidated; the precise external residual (residential IP-rep) grounded.
+- **36** SOCKS WebRTC counter degrades to `webrtc_unavailable`; WebRTC/IP-rep arc closes.
+- **37** Full-corpus regression — every convicted capture still convicts; the EVADES set isolated.
+- **38** `mobile-emulation` caught 6 ways incl. `br.fingerprint_improbable`'s first live evader positive.
+- **39** Unlit-rule audit — restored `br.pointer_touch_incoherent`'s lost lit-guard (`KS_TOUCH`).
+- **40** `net.ua_rotation_within_session` — same-engine UA-string rotation (v0.74.43).
+- **41** `br.fingerprint_unstable_within_session` — browser-layer fingerprint rotation (v0.74.44).
+- **42** `bh.trace_replay_within_session` — first CONVICTING behavioral tell (invariance-of-a-variant, v0.74.45).
+- **43** Realm ladder: `WORKER_PROXY` → constructor-identity invariant in `worker_constructor_tampered` (v0.74.46).
+- **44** Realm ladder: the fundamental catch `br.worker_source_rewritten` (worker URL ≠ passed blob, v0.74.47).
+- **45–48** QUIC vein: fleet's first QUIC client (`go-tls KS_QUIC`); FP root-caused to per-IP cross-attribution; tee TTL.
+- **49–50** Realm terminus: racy CDP loses, paused-CDP wins-but-trips-automation, non-CDP caught.
+- **51** FP-regression — fixed a stale Brave capture masking the privacy-browser FP-safety.
+- **52** Brave genuineness ladder — `BRAVE_FAKE_PROXY` → the platform-object prototype invariant (v0.74.48).
+- **53** Systematic Proxy-over-native audit — every shallow toString check has a robust backstop.
+- **54→55** Reverted an ineffective Playwright bump (the 1.52.0 pin is a documented accepted-CVE pin).
+- **56–58** The iter-39 unlit trio grounded-external (voice/TLS-OS/WebGPU all un-lightable in-sandbox).
+- **59** Experimental-tier audit — `status` is a maturity LABEL, not a scoring gate; experimental rules convict.
+- **60** Coalesced terminus grounded against rapid-CDP burst dispatch (REFUTED — 0 coalesced).
+- **61** `net.h2_unstable_within_session` — completes the network rotation quad (v0.74.49).
+- **62–63** PoW testbed (Vein D): raw PoW = cost only; instrumented PoW = the existing coherence layer.
+- **64–65** Coalesced terminus grounded against XTEST/X11 + uinput (privilege-gated); behavioral vein closed.
+- **66** Cross-layer combination matrix — `camoufox-hardened-behave` EVADES; both engine corners converge.
+- **67+ (post-66, below)** G18 `br.webgl_renderer_caps_mismatch` · G25 `net.web_bot_auth_invalid` + `Label.verified` · N2 `net.tls_ext_order_static_within_session`.
 
 **Open axis (iters 15–16): WITHIN-SESSION coherence — the temporal axis the saturation analysis missed.** The
 detector's `ingest.merge` keeps only the *latest* signal per kind, so it was **blind to mid-session rotation of
@@ -577,8 +640,11 @@ real SwiftShader) FIRST — exactly the iter-39 prediction. So the rule needs a 
 assumed. ⇒ **The iter-39 unlit-convicting-rule trio is now FULLY GROUNDED**: `br.voice_os_vs_ua` (no web voices even
 with espeak+speechd), `net.tls_os_vs_tcp_os` (Chrome JA4 is OS-independent / Apple JA4 redundant-caught), and
 `br.webgpu_vendor_vs_webgl` (SwiftShader → empty GPU family) are ALL un-lightable in-sandbox and external/hardware-gated
-— every active convicting rule is now either LIT (has a live positive + regression guard) or grounded-external. The
-detector's convicting-rule coverage is fully characterized. No code change (a grounded negative result).
+— every active convicting rule *as of this iteration* is either LIT (has a live positive + regression guard) or
+grounded-external. The convicting-rule coverage was fully characterized AT THIS POINT — but the rule layer is NOT
+frozen: the research-fed loop (see [`docs/research-radar.md`](research-radar.md)) has since added convicting surfaces
+post-iter-66 (G18/G25/N2 below), so "fully characterized" is a snapshot, not a standing claim — re-audit after any
+registry change against [`docs/detection-catalog.md`](detection-catalog.md). No code change (a grounded negative result).
 
 **EXPERIMENTAL-TIER architecture grounded — `status` is a maturity LABEL, not a scoring gate (iter-59,
 2026-06-20).** Audited the 27 `status: experimental` rules. KEY FINDING (grounded): the detector does NOT filter
@@ -590,10 +656,13 @@ version bump on its own — left as-is to avoid presuming on the team's promotio
 promotion has historically required a SECOND independent source, e.g. `net.h2_header_order_vs_ua` v0.74.13). (2) Since
 experimental coherence/artifact rules convict, they were ALREADY covered by the iter-51 FP-regression over the
 real-browser captures — which found ZERO coherence/artifact FPs (experimental rules included). So the whole convicting
-surface (active + experimental) is FP-clean on the grounded real-engine captures. ⇒ THE DETECTOR'S RULE LAYER IS NOW
-FULLY CHARACTERIZED: every convicting rule (active or experimental) is either LIT (live positive + regression guard)
-or grounded-external (the iter-39 trio: real OS-voices / GPU hardware), and none false-fires on the real-browser
-ground truth. No further in-sandbox rule-coverage work remains; the open frontiers are all external-data/hardware-gated
+surface (active + experimental) is FP-clean on the grounded real-engine captures. ⇒ AS OF THIS ITERATION THE
+DETECTOR'S RULE LAYER WAS FULLY CHARACTERIZED: every convicting rule then present (active or experimental) was either
+LIT (live positive + regression guard) or grounded-external (the iter-39 trio: real OS-voices / GPU hardware), and
+none false-fired on the real-browser ground truth. (The layer is not frozen — the research-fed loop has since added
+G18/G25/N2 below, each LIT/grounded the same way; "fully characterized" is a per-iteration snapshot against
+[`docs/detection-catalog.md`](detection-catalog.md), re-audit after any registry change.) No further *in-sandbox*
+rule-coverage work remained at this point; the open frontiers are all external-data/hardware-gated
 (per-connection QUIC attribution, IP-reputation of a diverse fleet, a Tier-3 real-traffic prevalence prior, the
 real-hardware environment floor) with their consumption infra built and waiting. No code change (a grounded audit).
 
@@ -665,6 +734,66 @@ ADDS detectability (`worker_divergence`); the proxy/WebRTC column is the only co
 wholesale by `net.no_js_execution`). So the combination space is fully explored at its corners with no new in-sandbox
 convicting gap. `camoufox-hardened-behave.json` frozen; evasion-catalog + matrix + scoreboard regenerated; no detector
 change, no version bump (an EVADES that converges on the documented terminus).
+
+## Post-iter-66 — research-fed loop additions (the rule layer is NOT frozen at 66)
+
+These land AFTER the in-sandbox-saturation ledger above, sourced from the external-research queue
+([`docs/research-radar.md`](research-radar.md)): each is a NEW convicting surface grounded red⇄blue, so the iter-58/59
+"fully characterized rule layer" claim is a per-iteration snapshot, not a standing fact. The current rule table +
+versions are generated — see [`docs/detection-catalog.md`](detection-catalog.md); each rule's red-team residual is in
+[`docs/evasion-catalog.md`](evasion-catalog.md).
+
+**G18 `br.webgl_renderer_caps_mismatch` — the renderer-string-vs-GPU-CAPABILITY tell (2026-06-25, v0.74.52).** Aimed
+at the source-level anti-detect FORK frontier (CloakBrowser/Wayfern/BotBrowser) that patches the WebGL renderer STRING
+in BOTH realms — defeating `br.webgl_worker_vs_main` (which only catches a main-realm getParameter spoof the Worker
+exposes) — yet cannot change what the physical silicon CAN DO. Kitsune ran seven string checks on UNMASKED_RENDERER
+but never read the GPU's actual CAPABILITIES. The collector now captures the capability fingerprint (`webgl_caps` +
+`webgl_max_texture`, main realm); the rule fires when the renderer string names a recent HIGH-END discrete GPU
+(RTX / Radeon RX 6000+ / Apple M-series / Intel Arc) yet `MAX_TEXTURE_SIZE < 16384` — below the floor EVERY such GPU
+exposes (16384/32768 universal since ~2013; headless Chrome's SwiftShader reports 8192, captured live). FP-SAFE by the
+high-end-string scoping: a real RTX/Apple-M/Arc is always >=16384 (never fires); an honest software renderer NAMES
+itself (SwiftShader/llvmpipe → `webgl_software`) so its string never matches; a real low-end GPU at 8192 has a low-end
+string, out of scope. CONVICTING (coherence): the claimed GPU identity contradicts the hardware. RED⇄BLUE: the stealth
+`RENDERER_SPOOF` mode (`renderer-spoof`) patches UNMASKED_RENDERER to a high-end string over the SwiftShader (8192)
+backend → fires; every real-browser capture (honest renderer ↔ caps) does not. Increment 1 (caps capture + this tell);
+the broader renderer↔caps profile match across more GPU tiers is a follow-up needing real-GPU caps profiles. Lead G18.
+
+**G25 `net.web_bot_auth_invalid` + the NEW `Label.verified` outcome — RFC 9421 Web Bot Auth (2026-06-25, v0.74.52).**
+Web Bot Auth (IETF draft-meunier-web-bot-auth-architecture; Cloudflare edge-live 2026-03) lets a legitimate agent
+(GPTBot/ClaudeBot/Operator/Perplexity/Google/CommonCrawl) cryptographically SIGN its requests via RFC 9421 HTTP Message
+Signatures over Ed25519. The edge (`edge/internal/webbotauth`) reconstructs the signature base and verifies against the
+key the keyid (RFC 7638 JWK thumbprint) resolves to. `net.web_bot_auth_invalid` fires ONLY on a DEFINITIVE forgery —
+a signature PRESENT, whose keyid resolves to a key we HOLD, but that FAILS verification (tampered sig, wrong
+`@authority`, or a replay past `expires`); an UNKNOWN keyid is unjudgeable and NEVER convicts. FP-SAFE BY CONSTRUCTION
+(a real signer always produces a valid in-window signature for its own key; a real browser sends no such headers) — the
+cryptographic analog of `net.fake_declared_crawler`. **A VALID signature instead emits `network.web_bot_auth_verified`
+→ the NEW outcome `Label.verified`** (`scoring.verified_agent` allow-lists the session as a declared good bot, NOT
+convicted). KEY CAVEAT: this is sound ONLY under signing-key SECRECY — the lab SEEDS the PUBLIC RFC 9421 Appendix A.2.2
+test key, so `KS_WEBBOTAUTH=valid` is a deliberate in-sandbox bypass DEMO (any client can mint a "verified" agent);
+production wires each agent's real fetched `/.well-known/http-message-signatures-directory` JWKS. GROUNDED in-process
+against the draft's own Ed25519 test vector (`webbotauth_test.go`: official sig verifies; tampered/expired/wrong-authority
+fail; unknown key is not a forgery) and red⇄blue by the `go-tls KS_WEBBOTAUTH` evader (faithful signer = verified/no-fire;
+replayed stale signature = `web_bot_auth_invalid`; `go-tls-web-bot-auth.json` frozen). Lead G25.
+
+**N2 `net.tls_ext_order_static_within_session` — the within-session/temporal coherence family's FIFTH network member
+(2026-06-25, v0.74.52).** The within-session-invariant family had four ROTATION members (`ja4_unstable` TLS engine ·
+`h2_unstable` HTTP/2 stack · `ip_rotation` origin · `ua_rotation` UA — each convicting on >1 distinct value, a fixed
+field that rotated); N2 is the INVERSE shape — a field that a real client MUST VARY held STATIC. Chromium (BoringSSL)
+PERMUTES its ClientHello extension order on EVERY connection since ~Chrome 110, so a real Chromium emits a DIFFERENT
+`network.tls_ext_order` (the raw GREASE-normalised wire order JA4 *sorts away*) per connection. A session whose JA4
+identifies a Chromium engine yet repeats a SINGLE extension order across >=2 connections is a pinned template that
+copied Chrome's cipher list, GREASE and extension SET (so `tls_vs_ua_browser` / `tls_grease_vs_ua` / `tls_pq_keyshare_vs_ua`
+all stay quiet) but NOT Chrome's per-connection permutation. CRITICALLY NON-REDUNDANT: JA4 sorts the extension list, so
+a pinned-order template keeps ONE JA4_b (`ja4_unstable` never fires) and can hold h2/IP/UA fixed too — the un-permuted
+order is the ONLY contradiction. Derived in `ingest` over the pre-collapse per-connection `tls_ext_order` history, gated
+to a Chromium `ja4_browser_hint` (Firefox/Safari don't permute, so they can never convict). FP-SAFE BY CONSTRUCTION,
+grounded in-process (`tls_ext_order_test.go`: real Chrome's permuter emits 3 distinct orders across 3 hellos → cannot
+fire on it; a pinned spec emits a byte-identical order). GROUNDED LIVE 2026-06-25: the `go-tls KS_STATICEXT` evader pins
+a stale non-shuffling Chrome template (uTLS HelloChrome_102 — GREASEs + Chrome ciphers so its JA4 hints chrome, but does
+NOT permute) replayed across 3 connections under one ks_sid → the rule trips (label `bot`, `go-tls-static-ext.json`
+frozen); single-connection and permuting clients (every real-browser capture) do not — zero FP. Same external-proxy
+residual class as its `ja4_unstable` sibling (a TLS-terminating forward proxy re-originating one pinned egress stack —
+but the lab edge is the first hop). This COMPLETES the within-session network family at FIVE members.
 
 **WITHIN-SESSION UA ROTATION — closed the same-engine gap (iter-40, 2026-06-20, v0.74.43).** The within-session
 invariant-rotation axis (flagged as the non-saturated in-sandbox vein) had JA4 (TLS engine, v0.74.38) and IP origin

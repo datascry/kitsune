@@ -56,7 +56,8 @@ identically. Two driver scripts wire the fleet to the live stack:
 - `scripts/live_scoreboard.sh` — full sweep: brings up detector + edge + browser, runs the whole
   evader ladder, and writes `docs/scoreboard.md` + `docs/matrix.md`, refreshing `corpus/sessions/`.
 - `scripts/frontier.sh` — fast frontier loop: only the evaders that still beat per-session detection
-  (a Camoufox single + a Camoufox **fleet**), writing `docs/coordination.md`.
+  (a Camoufox single + a Camoufox **fleet**), emitting a coordination grading snapshot
+  (see `docs/coordination-proxy.md` § Worked snapshot).
 
 ---
 
@@ -80,11 +81,32 @@ CDP / engine / tamper) are correctly absent on a static fingerprint and marked n
   fingerprints (the same data anti-detect tools use to look real), so it stands in for a legitimate-
   browser distribution across OS/engine — without a live device farm. This is the headline FP report
   but it is a **single generated source**.
-- **Tier-2 (`corpus/calibration/engines/`):** real Chromium / Firefox / WebKit captures, a second
-  *independent* source that refutes a Tier-1 number. Enforced as a regression gate:
-  `test_real_engine_captures_trip_no_spurious_coherence` fails if scoring these real captures starts
-  firing any *new* convicting (`coherence`/`artifact`) rule — the exact precision regression the
-  calibration exists to catch.
+- **Tier-2 (real captures, `corpus/calibration/`):** real browser captures, a second *independent*
+  source that refutes a Tier-1 number. Three captured corpora:
+  - `engines/` — headless Chromium / Firefox / WebKit (the engine families).
+  - `headful/` — real headful Chrome-stable / Firefox-stock / Edge / Chromium / Firefox / WebKit,
+    which surface runtime-probe tells (canvas / WebGL renderer) a static fingerprint can't carry.
+  - `privacy/` — privacy browsers (Brave, Mullvad): their farbling / RFP defenses are *legitimate*,
+    so they must NOT trip `canvas_lie` / `engine_stack` (engine-level farble reads as native).
+  Enforced as a regression gate: `test_real_engine_captures_trip_no_spurious_coherence` fails if
+  scoring these real captures starts firing any *new* convicting (`coherence`/`artifact`) rule — the
+  exact precision regression the calibration exists to catch.
+- **Corroborators (independent second sources):** never act on one source's FP number — each
+  fingerprint/behavioral rule family has its own independent refutation source.
+  - `intoli_corpus.py` — Tier-2 calibration from the Intoli user-agents dataset (real traffic, heavy
+    on **real mobile**); a second source for the UA / engine-coherence rules (`task calibrate-intoli`).
+  - `sapimouse_corpus.py` — second-source for the biomech power-law floor: SapiMouse (120 subjects),
+    reconstructs `(x,y,t)` and runs the *shipped* biomech extractor (`task biomech-corroborate`).
+  - `browserforge_corpus.py` — the Tier-1 generated source above (single-source headline FP report).
+  - `berke_corpus.py` — builds the prevalence prior from the Berke et al. (PoPETs 2025) real
+    consented-fingerprint corpus (aggregate-only).
+  - `fpgen_coherence.py` — second-source FP-check of the font / WebGL / platform / productSub
+    coherence rules vs fpgen's (Scrapfly) independently-collected data (`task fpgen-coherence`).
+  - `fpgen_corroborate.py` — diffs the prevalence prior's gpu/screen/cores conditional distributions
+    vs fpgen — a single-source-overfit check (`task prevalence-corroborate`).
+  - `prevalence_real_corroborate.py` — Tier-3: corroborate the prevalence prior against a REAL-traffic
+    fingerprint CSV and measure the rule's real-traffic FP rate (`task prevalence-real-corroborate`,
+    run locally — raw data is never committed).
 
 ```sh
 task calibrate                                                         # Tier-1 FP report, N=500
@@ -92,6 +114,21 @@ task calibrate                                                         # Tier-1 
 uv run --with browserforge python -m kitsune_harness.browserforge_corpus --n 400
 uv run --with browserforge python -m kitsune_harness.browserforge_corpus --from-dir corpus/calibration/engines
 ```
+
+### Mobile grounding
+
+The biomech floors were grounded on desktop *mouse* motion first; the mobile *touch* surface is
+grounded on its own real corpora, so the floors don't false-fire on phones:
+
+- **BrainRun** (CC0, 646,986 real `swipe` gestures) grounds `bh.touch_uniform_velocity` and gates the
+  G10 mouse-motion floors off real touch devices — a uniform-velocity swipe is the tell a humanizer
+  leaves but a real thumb doesn't.
+- **Aalto** grounds `bh.mobile_keystroke_interval_floor` — the minimum inter-key interval a real
+  thumb-typist can hit.
+
+Aggregate-only (percentile tables, never raw rows). See
+[`docs/mobile-biomech-grounding.md`](../docs/mobile-biomech-grounding.md) and
+[`docs/behavioral-data.md`](../docs/behavioral-data.md).
 
 ### Prevalence — the likelihood model
 
@@ -144,6 +181,30 @@ Two modes:
 ```sh
 uv run python -m kitsune_harness.coordination corpus/fleet            # offline graded clusters
 uv run python -m kitsune_harness.coordination --stream corpus/fleet   # online alert log
+```
+
+**Precision/recall gate (`coordination_scenarios.py`).** The coordination analog of the calibration
+FP gate: legit cohorts (one popular browser build behind a corporate NAT, a campus, a CGNAT pool)
+must never label `fleet`, and real fleets must. The fleet corpora that drive it, one per evasion
+shape a fleet can take:
+
+| Corpus | Fleet shape it captures |
+|---|---|
+| `corpus/fleet` | Camoufox fleet — shared JA4 below the spoof layer (the baseline catch). |
+| `corpus/fleet-cloned` | one high-entropy `fp_hash` cloned across distinct source IPs (collision). |
+| `corpus/fleet-proxy` | residential-proxy IP spread fronting a shared TLS identity. |
+| `corpus/fleet-randfp-trace` | per-instance JS-fingerprint randomization over a shared handshake. |
+| `corpus/fleet-replay` | replayed/lockstep arrival timing. |
+| `corpus/fleet-webrtc-leak` | diverse proxy IPs fronting one WebRTC-leaked real IP (`shared_real_ip`). |
+
+**Live mode (`live_coordination.py`).** Run the same grading against the **live** detector's session
+store instead of a static corpus: it polls `/scoreboard` + `/session/{id}` over HTTP, rebuilds the
+corpus, and reuses `score_corpus` / `render_coordination` — so coordination grades real egress, not
+just fixtures.
+
+```sh
+task coordination-eval                                                # precision/recall over the corpora
+KITSUNE_DETECTOR=http://localhost:8080 task coordination-live         # grade the live session store
 ```
 
 ### Behavioral biomechanics

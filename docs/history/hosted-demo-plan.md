@@ -1,11 +1,13 @@
 # hosted-demo plan — running the full ruleset live against a visitor
 
+> **Archived (2026-06-26) — delivered/historical.** The hosted-demo plan was realized; kept for the Tier-3 opt-in-capture rationale. The live deploy runbook is now [`../deploy.md`](../deploy.md).
+
 > **Status: implemented and live at [kitsune.id](https://kitsune.id/).** This plan is now realized — the
-> full edge + detector stack is hosted publicly (runbook: [`deploy.md`](deploy.md)). The standalone
+> full edge + detector stack is hosted publicly (runbook: [`deploy.md`](../deploy.md)). The standalone
 > **GitHub Pages live page has been retired**: the detector now serves the authoritative full demo page
 > itself (`detector/.../demo.py`), which posts to the real `/ingest` and returns the cross-layer verdict
 > correlated with the edge's wire fingerprints. The client-side-only `collector/src/livepage/` bundle is
-> kept as a local self-test tool (see [`../collector/README.md`](../collector/README.md)). The historical
+> kept as a local self-test tool (see [`../collector/README.md`](../../collector/README.md)). The historical
 > plan below is preserved for context.
 
 The (now-retired) GitHub Pages live page evaluated the **client-evaluable**
@@ -39,7 +41,7 @@ GitHub Pages serves static files only. The network-layer signals require a serve
 4. attributes all of the above to the same session as the in-browser collector POST, then runs the
    coherence engine to score cross-layer contradictions.
 
-The edge already does 1–4 (see [`edge/`](../edge) and [`architecture.md`](architecture.md)); the work is
+The edge already does 1–4 (see [`edge/`](../edge) and [`architecture.md`](../architecture.md)); the work is
 hosting it reachably and safely.
 
 ## Architecture (reuse, don't rebuild)

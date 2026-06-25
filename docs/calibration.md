@@ -4,7 +4,9 @@ The evader scoreboard proves rules *catch bots*. This proves they *don't flag hu
 empirical backstop for the precision problem: a real but unusual browser (desktop with no webcam, a
 non-Retina Mac, a VM, an ad-blocker) trips single-layer `environment` tells that noisy-or then
 accumulates into a `bot` verdict — a false positive. Same discipline the biomech rules got from the
-Balabit calibration, now generalised to the fingerprint layer.
+Balabit calibration (since broadened to a second desktop source and to mobile touch/keystroke — see
+[Behavioural & mobile calibration sources](#behavioural--mobile-calibration-sources)), now generalised
+to the fingerprint layer.
 
 ## Grounding-source status (2026-06-19) — what's grounded against what, and what needs operator capture
 
@@ -14,7 +16,10 @@ on a single source — corroborate first.
 
 | layer / factor | independent grounding source | status |
 |---|---|---|
-| **behavioural biomech** (path/velocity/keystroke) | Balabit mouse-dynamics dataset | ✅ grounded (original design) |
+| **behavioural biomech — desktop** (path/velocity/keystroke) | Balabit mouse-dynamics dataset | ✅ grounded (original design; Balabit-only until v0.74.25) |
+| **behavioural biomech — desktop 2nd source** (power-law floor) | SapiMouse (Antal et al., 120 subjects) | ✅ corroborated (`task biomech-corroborate`; floor 0.1→0.05 at v0.74.25) |
+| **behavioural biomech — mobile touch** (`bh.touch_uniform_velocity`) | BrainRun (Zenodo 2598135, CC0, 161,780 swipes) | ✅ grounded (velocity-CV floor; see mobile-biomech-grounding.md) |
+| **behavioural biomech — mobile keystroke** (`bh.mobile_keystroke_interval_floor`) | Aalto ITE Typing (Zenodo 12528163, CC BY 4.0, 42.3M keystrokes) | ✅ grounded (sub-80ms floor; see mobile-biomech-grounding.md) |
 | **prevalence — screen** | Intoli real-traffic resolutions | ✅ grounded (drove the size-class bucketing) |
 | **network — TLS JA4** (`net.tls_vs_ua_browser`) | FoxIO JA4 reference | ✅ Chrome cipher hash confirmed; edge JA4 = spec |
 | **network — PQ keyshare** (`net.*_pq_keyshare_vs_ua`) | IANA registry + 2026 deployment | ✅ X25519MLKEM768/0x11EC current + FP-safe |
@@ -29,6 +34,29 @@ The whole **network-coherence seam** (the layer Ulixee-Hero-class tools attack) 
 against external standards. The remaining ✗/⚠ items have **no clean public dataset** — they require capturing
 real browsers/traffic/proxies through our own stack, which the turnkey infra (`--build-prior-from-sessions`,
 `PROXIES=`, a real-browser edge capture) consumes.
+
+## Behavioural & mobile calibration sources
+
+The behavioural layer is the one place the grounding is *real human data*, not a generated fingerprint
+distribution — and unlike the fingerprint layer above, its floors are calibrated directly against
+public, consented research corpora. The full curation plan and per-source human envelopes live in
+[`behavioral-data.md`](behavioral-data.md) (desktop mouse) and
+[`mobile-biomech-grounding.md`](mobile-biomech-grounding.md) (mobile touch + keystroke); this is the
+calibration-eye summary. **The desktop biomech floor was Balabit-only at original design**; the rest of
+this table is the second source and the mobile extension added since.
+
+| corpus | size / licence | grounds | what it gives calibration |
+|---|---|---|---|
+| **Balabit** Mouse Dynamics Challenge | 10 subjects · public (GitHub) | desktop `bh.uniform_velocity` / power-law floor (original design) | the field's baseline human envelope; single-source until corroborated |
+| **SapiMouse** (Antal et al.) | 120 subjects · public (GitHub) | desktop power-law floor — **second source** | independent rig/era confirms the human β floor far above threshold → tightened 0.1→0.05 at zero recall cost (`task biomech-corroborate`) |
+| **BrainRun** (Zenodo 2598135) | 161,780 swipes / 2,117 devices · **CC0** | mobile `bh.touch_uniform_velocity` | human per-swipe velocity-CV p1 = 0.235 → the 0.15 floor sits ~36% below it (FP-safe with headroom; path-straightness deliberately NOT ported — human swipes are near-straight) |
+| **Aalto ITE Typing** (Zenodo 12528163) | 42.3M keystrokes / 849,909 sessions · **CC BY 4.0** | mobile `bh.mobile_keystroke_interval_floor` | only 0.018% of real mobile sessions median sub-80ms → the 80ms floor catches non-human thumb cadence the universal 30ms floor misses |
+
+Both mobile rules are self-gating (touch + mobile UA) and **corroborating-only** (the behavioural
+category never convicts — see the conviction gate above), so they raise the score toward `suspicious`
+without ever single-handedly producing a `bot` label, exactly as the desktop biomech floors do. For the
+authoritative per-rule category/weight/status, see the generated registry table in
+[`detection-catalog.md`](detection-catalog.md) rather than any count reproduced here.
 
 ## How it works
 

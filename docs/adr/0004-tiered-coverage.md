@@ -30,4 +30,4 @@ lower gate, and silent caps are logged.
 
 - Good: the parts that decide a verdict are exhaustively tested; IO tests stay meaningful.
 - Bad / cost: coverage is not a single uniform number; reviewers must understand the tiers (recorded
-  here and in `docs/architecture.md` §9).
+  here and in `docs/architecture.md` §11).

@@ -1,5 +1,8 @@
 # Detection landscape — Kitsune vs. the live-detection field
 
+> **Browser-layer gap analysis (S1–S6 backlog)** — for the broad field survey incl. commercial anti-bot
+> see [`landscape.md`](landscape.md).
+
 A capability-gap analysis of Kitsune's demo/collector against the major live browser-fingerprinting and
 bot-detection pages (CreepJS, Sannysoft, Intoli, FingerprintJS BotD, pixelscan, iphey, browserscan,
 bot.incolumitas.com), plus how each handles false positives and what pure-CSS (no-JS) detection adds.
