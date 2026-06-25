@@ -689,11 +689,11 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
        event. Poll this element's textContent, or: addEventListener("kitsune:result", e => e.detail). -->
   <script type="application/json" id="ks-verdict">{"status":"collecting"}</script>
   <div id="ks-coherence"></div>
-  <!-- EVIDENCE: your fingerprint, layer by layer. The fingerprint surfaces + detections panels start OPEN so the
-       evidence is visible without a click; the denser wire panel stays collapsed so the verdict still leads.
-       (Lazy render is preserved: an open panel paints when its data arrives via ksLazyTouch, not on page load.) -->
+  <!-- EVIDENCE: your fingerprint, layer by layer. All three evidence panels (wire, surfaces, detections) start
+       OPEN so the evidence is visible without a click. (Lazy render is preserved: an open panel paints when its
+       data arrives via ksLazyTouch, not on page load, so the load-time work is unchanged.) -->
   <div id="ks-predict"></div>
-  <details class="ks-disclose" id="ks-wire-d"><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
+  <details class="ks-disclose" id="ks-wire-d" open><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
   <details class="ks-disclose" id="ks-surfaces-d" open><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
   <!-- INTERACT: behavioral panel AFTER the fingerprint surfaces (listeners arm on load regardless of order). -->
   <section id="ks-bio" aria-label="behavioral biometrics">
