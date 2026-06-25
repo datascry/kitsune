@@ -27,6 +27,7 @@ from .detector import Detector
 from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
 from .pages import (
+    bypass_index,
     parse_fleet,
     parse_matrix,
     parse_techniques,
@@ -293,6 +294,7 @@ def create_app(
     fleet: dict[str, dict[str, str]] = {}
     techniques: dict[str, dict[str, object]] = {}
     rule_evaders: dict[str, list[str]] = {}
+    rule_bypassed: dict[str, list[str]] = {}
     with contextlib.suppress(OSError):
         evaders, rule_catch = parse_matrix((docs_dir / "matrix.md").read_text(encoding="utf-8"))
     with contextlib.suppress(OSError):
@@ -300,6 +302,7 @@ def create_app(
         fleet = parse_fleet(_ecat)
         techniques = parse_techniques(_ecat)  # full tell lists + EVADES status
         rule_evaders = reverse_index(techniques)  # rule_id -> evaders it caught
+        rule_bypassed = bypass_index(techniques, rules_by_id)  # rule_id -> layer-active evaders it missed
 
     def _item_list(slugs: list[str], prefix: str, name: str) -> list[dict[str, object]]:
         """A schema.org ItemList of drill-down links — lets crawlers see the catalog's members."""
@@ -369,7 +372,9 @@ def create_app(
         rule = rules_by_id.get(rule_id)
         if rule is None:
             raise HTTPException(status_code=404, detail="no such detection")
-        body = render_detection_detail(rule, rule_catch.get(rule_id), rule_evaders.get(rule_id))
+        body = render_detection_detail(
+            rule, rule_catch.get(rule_id), rule_evaders.get(rule_id), rule_bypassed.get(rule_id)
+        )
         rid = str(rule["id"])  # trusted registry id, not the raw path param
         title = str(rule.get("title") or rid)
         desc = f"{title} — a Kitsune cross-layer bot-detection check."
