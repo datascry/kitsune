@@ -156,6 +156,10 @@ mechanisms:
 - **Worker-realm coherence ladder** (`br.worker_source_rewritten`, `br.worker_constructor_tampered`) —
   convicts worker-scope spoof injection by the blob-URL + constructor-identity round-trip, robust to the
   entire Proxy-over-native disguise ladder.
+- **Cryptographic agent identity** (`net.web_bot_auth_invalid`) — verifies an RFC 9421 Web Bot Auth
+  signature at the edge: a *valid* signer is allow-listed as a `verified` agent (sound only under
+  signing-key secrecy), while a forged/replayed signature for a known key convicts. FP-safe by
+  construction — a real browser sends no such headers.
 
 The rest — four-wire-layer ⇄ JS fusion and 2/3-power-law biomechanics
 ([`docs/detection-landscape.md`](docs/detection-landscape.md)), plus cloud-behind-residential-proxy
@@ -182,7 +186,7 @@ both the red team flagged:
 | Component | Lang | What it is | Tests |
 |---|---|---|---|
 | [`contracts/`](contracts) | JSON Schema | The stable wire contracts + the rules-as-data registry — the only coupling | CI-validated |
-| [`detector/`](detector) | Python | Session correlation, the coherence engine, the conviction-gated scorer, the prevalence model, IP-reputation enrichment | ~100% |
+| [`detector/`](detector) | Python | Session correlation, the coherence engine, the conviction-gated scorer, the prevalence model, keyless (DB-IP Lite) City+ASN geo / IP-reputation enrichment | ~100% |
 | [`harness/`](harness) | Python | The scoreboard, the calibration precision gate, the coordination scorer, biomech calibration (ethics enforced in code) | ~97% |
 | [`edge/`](edge) | Go | TLS→JA3/JA4 (+ GREASE, post-quantum), HTTP/2 (Akamai + JA4H + unknown-engine), TCP/IP-OS, QUIC/HTTP-3 (RFC 9001 decrypt), HTTP/2 DoS attribution | ~97% (fp) |
 | [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection + a CreepJS-style live self-test page running the full probe suite | 100% (logic) |
@@ -213,7 +217,7 @@ Go and Node aren't required locally — use Docker (`golang:1.26-alpine`, `node:
 - [Detection catalog](docs/detection-catalog.md) · [Evasion catalog](docs/evasion-catalog.md) — the blue/red work queues.
 - [Coverage matrix](docs/matrix.md) — every detector rule × every evader.
 - [Decision records](docs/adr) — MADR ADRs for the load-bearing decisions.
-- [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 
 **Explore it live** (the same data, rendered + cross-linked at [kitsune.id](https://kitsune.id)):
 [Detections](https://kitsune.id/detections) · [Evasions](https://kitsune.id/evasions) ·

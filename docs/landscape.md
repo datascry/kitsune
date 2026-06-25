@@ -1,8 +1,13 @@
 # landscape — Kitsune vs. the bot-detection field
 
+> Broad field survey incl. commercial anti-bot — for the in-browser-page gap analysis see
+> [detection-landscape.md](detection-landscape.md).
+
 A survey of well-known bot-detection projects, test sites, and libraries, and an honest comparison of
-Kitsune's current detections (ruleset 0.74.21; 122 rules, ~91 active / 29 experimental / 3 retired)
-against what they do. Grounded in current sources (2025–2026), not just the codebase.
+Kitsune's current detections against what they do. For the live per-rule inventory (counts, status,
+versions) see the generated [`docs/detection-catalog.md`](detection-catalog.md) and
+[`docs/scoreboard.md`](scoreboard.md); `ruleset_version` lives at the head of
+`contracts/rules/registry.yaml`. Grounded in current sources (2025–2026), not just the codebase.
 
 ## Who's out there
 
@@ -38,17 +43,21 @@ Legend: ✅ covered · 🟢 ahead of most public tools · ⚠️ partial / no da
 | TCP/IP OS fingerprint (p0f-style) | rare client-side | 🟢 `tcp_kernel`, `net.tcp_os_vs_ua` |
 | Client Hints (UA-CH) coherence | some | 🟢 platform/browser/version/mobile/**GREASE-brand** — unusually complete |
 | Canvas / WebGL / Audio fingerprint + lie detection | CreepJS, all | ✅ `canvas_lie`, `canvas_noise`, `webgl_*`, `audio_*` |
+| WebGL renderer ↔ GPU-capability coherence | almost none | 🟢 `br.webgl_renderer_caps_mismatch` (renderer string vs `MAX_TEXTURE_SIZE` — catches source-level forks) |
 | WebGPU coherence | emerging | 🟢 `br.webgpu_*` |
 | Font enumeration / metrics | CreepJS, browserleaks | ✅ incl. Camoufox-specific artifacts |
 | navigator / webdriver / CDP artifacts | sannysoft, all | ✅ `webdriver`, `cdp_runtime_enabled`, `cdc_artifacts`, `csp_bypassed` |
 | WebRTC IP leak | browserleaks, HUMAN | ✅ `webrtc_public_ip`, cross-linked to proxy IP |
 | Cross-layer **coherence** ("lies") | CreepJS (JS-only) | 🟢 the whole engine — and across TLS↔H2↔TCP↔JS, not just JS |
 | **Coordination / fleet** detection | HUMAN (collective); most: none | 🟢 JA4-cluster + JS-divergence paradox + **fp-collision** + proxy topology |
-| Mouse / keystroke dynamics | DataDome, Kasada, HUMAN (ML) | ✅ thresholds + **biomechanics** calibrated on Balabit (`bh.power_law_violation`); no ML model |
+| Mouse / keystroke dynamics | DataDome, Kasada, HUMAN (ML) | ✅ thresholds + **biomechanics** two-source corroborated on Balabit + SapiMouse (`bh.power_law_violation`, threshold tightened 0.1→0.05); no ML model |
 | CDP-injection mechanism tell (coalesced events) | rare | 🟢 `bh.synthetic_no_coalesced` |
-| IP reputation / ASN / datacenter / proxy-exit | **all commercial** (backbone) | ✅ live CIDR classifier (`ip_reputation.py`): `rep.datacenter_asn` + `rep.known_proxy_exit` now active |
+| IP reputation / ASN / datacenter / proxy-exit | **all commercial** (backbone) | ✅ live CIDR classifier (`ip_reputation.py`): `rep.datacenter_asn` + `rep.known_proxy_exit` active; keyless **DB-IP Lite** City+ASN geo (CC BY 4.0, no licence key) |
 | QUIC / HTTP-3 fingerprint | emerging (Akamai) | 🟢 RFC 9001 Initial decrypt + capture; `net.quic_grease_vs_ua` live (few public tools do QUIC) |
-| Scroll / touch / intent sequences | DataDome 2025, Kasada | ❌ collector doesn't capture scroll/intent |
+| Within-session / temporal coherence (invariant field rotated, or must-vary field static) | rare | 🟢 JA4 / IP / HTTP-2 / UA rotation + `net.tls_ext_order_static_within_session` (Chromium that didn't permute its ClientHello extension order) |
+| Web Bot Auth (RFC 9421 signed-agent) verify | Cloudflare (edge-live 2026) | 🟢 `net.web_bot_auth_invalid` convicts a forged/replayed signature; a valid signer is allow-listed (`Label.verified`) |
+| Mouse / keystroke dynamics (touch) | DataDome 2025, Kasada | ✅ `bh.touch_uniform_velocity` (swipe velocity-CV floor, grounded on BrainRun) + `bh.mobile_keystroke_interval_floor` |
+| Scroll / intent sequences | DataDome 2025, Kasada | ⚠️ touch swipes covered; collector still doesn't capture scroll/intent |
 | ML trust-score / per-customer models | all commercial | ❌ Kitsune is rules-as-data (by design — explainable), no ML model |
 | Active challenge (CAPTCHA / **proof-of-work**) | reCAPTCHA, hCaptcha, Turnstile, Kasada | ❌ Kitsune is **passive** — no challenge-response |
 | Known-fingerprint DB (match vs known bots) | commercial scale | ❌ no large reference corpus |
@@ -71,16 +80,34 @@ Legend: ✅ covered · 🟢 ahead of most public tools · ⚠️ partial / no da
 
 - **IP reputation** — now live: a stdlib CIDR classifier (`ip_reputation.py`) feeds `rep.datacenter_asn`
   and `rep.known_proxy_exit` (active) from curated cloud/Tor/VPN lists (`docs/ip-reputation-data.md`).
-- **Behavioral biomechanics** — calibrated on 10 Balabit users; `bh.power_law_violation` is the FP-safe
-  motion rule (`docs/behavioral-data.md`). Honest scope: a well-crafted humanizer still passes (caught by
-  the mechanism tell), so this raises the floor, not the ceiling.
+- **Behavioral biomechanics** — two-source corroborated: calibrated on Balabit, then independently
+  re-measured on **SapiMouse** (120 subjects, a different rig/era) with the shipped extractor; both agree
+  real aimed motion obeys the power law far above the floor, so the threshold was tightened 0.1→0.05 at
+  zero recall cost (`bh.power_law_violation`, `docs/behavioral-data.md`). Honest scope: a well-crafted
+  humanizer still passes (caught by the mechanism tell), so this raises the floor, not the ceiling.
+- **Mobile behavioral** — touch/keystroke floors grounded on public CC-licensed corpora:
+  `bh.touch_uniform_velocity` (swipe velocity-CV, BrainRun 161,780 swipes) and
+  `bh.mobile_keystroke_interval_floor` (Aalto mobile typing); see `docs/mobile-biomech-grounding.md`.
+- **WebGL renderer ↔ caps** — `br.webgl_renderer_caps_mismatch` (G18) reads the GPU's actual
+  `MAX_TEXTURE_SIZE` and convicts a high-end renderer string over a backend whose caps betray the lie —
+  closing the source-level-fork gap the string-only WebGL checks miss.
+- **Web Bot Auth** — `net.web_bot_auth_invalid` (G25) verifies an RFC 9421 / Ed25519 signed-agent
+  identity at the edge (`edge/internal/webbotauth`) and convicts only a definitive forgery/replay; a valid
+  signer is allow-listed via the new `Label.verified` outcome (`scoring.verified_agent`).
+- **Within-session temporal coherence** — the network-invariant family now includes
+  `net.tls_ext_order_static_within_session` (a Chromium-JA4 session that repeated a single ClientHello
+  extension order instead of permuting per connection), alongside JA4/IP/HTTP-2/UA rotation.
+- **Keyless geo** — geo enrichment now reads a keyless **DB-IP Lite** City+ASN MMDB pair
+  (`dbip-city-lite.mmdb` / `dbip-asn-lite.mmdb`, CC BY 4.0), pulled by `geo_refresh.py` — replacing the
+  manual MaxMind GeoLite2 path (GeoLite2 kept as a filename fallback).
 - **QUIC / HTTP-3** — built across three validated cores (decrypt → capture → coherence);
   `net.quic_grease_vs_ua` validated live (`docs/findings.md`, "QUIC / HTTP-3 fingerprinting").
 
 ## Honest gaps that remain (prioritized)
 
 1. **ML trust-score + scroll/intent sequences** — the field trains per-customer ML over richer behavioral
-   signals; Kitsune is rules-as-data by design (explainable) and doesn't capture scroll/intent yet.
+   signals; Kitsune is rules-as-data by design (explainable). Mobile touch dynamics are now covered
+   (`bh.touch_uniform_velocity`); scroll/intent sequence capture remains the open behavioral gap.
 2. **Active proof-of-work challenge** — Kitsune is passive by design; a Kasada-style PoW gate is an option
    for the volumetric tier, but a different posture (challenge vs observe).
 3. **Scale / known-fingerprint corpus** — commercial tools match against millions of known bot fingerprints;
@@ -94,7 +121,9 @@ versus the *commercial* field is proprietary by nature — trained behavioral ML
 proof-of-work challenges, and a million-fingerprint reference corpus. The lab's thesis — incoherence across
 layers + coordination — is genuinely differentiated; the remaining gaps are posture/scale, not detection ideas.
 
-## 2026 landscape recheck (ruleset 0.74.21) — the thesis is current, no missed technique
+## 2026 landscape recheck — the thesis is current, no missed technique
+
+*(rule inventory: [`docs/detection-catalog.md`](detection-catalog.md) / [`docs/scoreboard.md`](scoreboard.md); `ruleset_version` at the head of `contracts/rules/registry.yaml`.)*
 
 Re-surveyed the public 2026 anti-detect field to confirm Kitsune is not behind the cutting edge. The field's
 state of the art maps directly onto what is already built or documented — no new attack technique surfaced

@@ -14,11 +14,22 @@ and affected component(s) (`detector` / `edge` / `collector` / `harness`).
 
 The **evaders are dual-use**. Kitsune enforces a hard boundary, in code, not just docs:
 
-- Evaders may target **only** (a) Kitsune's own detector and (b) the fixed public test endpoints in
-  `harness/src/kitsune_harness/allowlist.py` (sannysoft, CreepJS, BrowserLeaks, tls.peet.ws,
-  fingerprint.com demo, incolumitas).
+- Evaders may target **only** (a) Kitsune's own detector and (b) the fixed public test endpoints
+  enumerated in `harness/src/kitsune_harness/allowlist.py` (`ALLOWED_TEST_HOSTS`) — dedicated
+  bot/fingerprint self-test pages and vendor-official challenge demos, never a production site. That
+  file is the single source of truth; consult it rather than a copy here, which can drift. Host
+  matching is **exact** (an over-broad host like `www.google.com` is deliberately excluded).
 - **Never** point an evader at a third-party or production site. No scraping, no credential use, no
   live DDoS. The self-contained arena *is* the ethics design.
+
+**Verified-agent allow-list (Web Bot Auth).** A session presenting a cryptographically *valid* RFC 9421
+Web Bot Auth signature is allow-listed as a known-good bot (`Label.verified`, via
+`scoring.verified_agent`), overriding the automation signals it honestly trips. This is **only as strong
+as the signing key's secrecy.** The lab seeds the *public* RFC 9421 test key, so **in-sandbox any client
+can mint a "verified" agent** (the demonstrated bypass: go-tls `KS_WEBBOTAUTH=valid`) — this is an
+intentional in-sandbox demo, not a fieldable trust boundary. A *forged* signature trips
+`net.web_bot_auth_invalid` and is convicted, never allow-listed. Production must trust only real agent
+directories whose private keys stay secret.
 
 Reports that amount to "the evaders can attack site X" where X is outside the allow-list are **out of
 scope** — that is prevented by the allow-list, and bypassing it is the vulnerability we care about.

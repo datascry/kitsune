@@ -1,6 +1,6 @@
 # Kitsune — Architecture
 
-> Status: **living design doc** · Last revised 2026-06-19 · Owner: Kitsune
+> Status: **living design doc** · Last revised 2026-06-25 · Owner: Kitsune
 >
 > This document is the contract for how Kitsune is built and the map you read first. Code may lag it;
 > when they disagree, this doc is the intent and the code is the bug. Companions, all current and
@@ -8,7 +8,9 @@
 > [`prevalence-model.md`](./prevalence-model.md) (the likelihood model),
 > [`coordination-proxy.md`](./coordination-proxy.md) (the fleet detector),
 > [`detection-catalog.md`](./detection-catalog.md) (gap analysis), [`matrix.md`](./matrix.md) (live
-> rule × evader matrix), [`catalog.md`](./catalog.md) (prior art).
+> rule × evader matrix), [`mobile-biomech-grounding.md`](./mobile-biomech-grounding.md) (touch/keystroke
+> grounding corpora), [`research-radar.md`](./research-radar.md) (external-research queue),
+> [`catalog.md`](./catalog.md) (prior art).
 
 ---
 
@@ -155,8 +157,16 @@ Four entities. These are the nouns the whole system speaks.
 - **`Verdict`** — the scored result for a session:
   `{ session_id, layer_scores: {network, browser, behavioral, reputation}, contradictions: [...],
      incoherence_score, score, label, ruleset_version, scored_at }`.
-  `score ∈ [0,1]` (1 = bot); `label ∈ {human, suspicious, bot}` by configurable thresholds, with the
-  `bot` label additionally **gated on a convicting signal** (§7).
+  `score ∈ [0,1]` (1 = bot); `label ∈ {human, suspicious, bot, verified}` — the first three by
+  configurable thresholds, with the `bot` label additionally **gated on a convicting signal** (§7).
+  `verified` is the **4th label, orthogonal to the human↔bot axis**: a declared automated agent that
+  *cryptographically proved* its identity — a valid Web Bot Auth (RFC 9421) signature that
+  `scoring.verified_agent` allow-lists ([`models.py`](../detector/src/kitsune_detector/models.py)). It
+  is automation, but a *known-good, welcome* one (a search crawler, an agentic browser), so it bypasses
+  conviction rather than being convicted. The allow-list is only ever as strong as the **signing key's
+  secrecy**: the seeded RFC test key ships in-sandbox, so it doubles as a deliberate bypass demo (any
+  client can mint a `verified` signature against the public test key — the conviction the forgery rule
+  `net.web_bot_auth_invalid` catches when the signature instead *fails* verification).
 
 Scoring is **monotonic and explainable**: the final `score` is a transparent noisy-or combination of
 contradiction weights, and every point of bot-likelihood traces back to specific `Signal`s via
@@ -202,7 +212,7 @@ Why data-driven matters: bot-detection signals **decay**. The classic `Error.sta
 the detector. Every rule carries provenance (`added`, `last_validated`, `status`, `source`) so the
 matrix can chart *signal decay over time* — an honesty mechanism, not just a writeup angle.
 
-A rule (one of ~130 in the live registry — the generated [detection catalog](detection-catalog.md) is the authoritative, current table):
+A rule (the generated [detection catalog](detection-catalog.md) is the authoritative, current table — read it for the live rule count, never a number hard-coded here):
 
 ```yaml
 - id: net.tls_os_vs_tcp_os
@@ -292,8 +302,14 @@ fingerprint (SETTINGS / WINDOW_UPDATE / PRIORITY / pseudo-header order); **QUIC/
 Initial, extract the embedded ClientHello, derive a GREASE/PQ tell); **TCP/IP** kernel fingerprint
 (p0f-style initial-TTL + option order — an OS tell *below* TLS that a UA spoof can't touch); and
 **post-quantum key-share** detection (a current-Chrome handshake that omits X25519MLKEM768 is a lagging
-impersonation template). These feed both single-layer rules and cross-layer coherence rules (JA4 browser
-family vs UA, h2 fingerprint vs UA, TCP-implied OS vs UA).
+impersonation template); **Web Bot Auth** (RFC 9421) signature verification
+([`edge/internal/webbotauth`](../edge/internal/webbotauth)) — a request signed by a declared agent is
+checked against the signer's Ed25519 key, a forgery convicting via `net.web_bot_auth_invalid` and a
+valid signature unlocking the `verified` label (§4); and **per-connection TLS-extension permutation**
+(`net.tls_ext_order_static_within_session` — modern Chromium permutes its TLS extension order every
+connection, so a Chromium-JA4 session that repeats one static order is a non-permuting impersonator).
+These feed both single-layer rules and cross-layer coherence rules (JA4 browser family vs UA, h2
+fingerprint vs UA, TCP-implied OS vs UA).
 
 **Browser fingerprint (collector, TS).** The largest family. Automation surface (`webdriver`, CDP
 `Runtime.enable`, cdc_/Selenium/Puppeteer globals, Electron `process` leak); tamper/artifact tells
@@ -301,8 +317,11 @@ family vs UA, h2 fingerprint vs UA, TCP-implied OS vs UA).
 `webdriver`/`permissions`/`Notification`, canvas/WebGL/audio readback noise, DOMRect invariants);
 engine-coherence (UA engine vs V8 stack / Math / error-message / `productSub`; UA-CH high-entropy version
 and HeadlessChrome leak; `Promise.withResolvers` vs claimed Chrome version); OS-coherence (WebGL renderer
-OS vs UA, font/voice OS hints, oscpu, codec support, `navigator.platform` vs UA-CH platform); and
-environment tells (no plugins/MIME types/media devices, software WebGL, RFP heuristics).
+OS vs UA, font/voice OS hints, oscpu, codec support, `navigator.platform` vs UA-CH platform);
+hardware-coherence (`br.webgl_renderer_caps_mismatch` — a WebGL renderer string naming a high-end GPU
+whose `MAX_TEXTURE_SIZE` and friends fall below that GPU's floor, i.e. a spoofed renderer name the real
+capabilities betray); and environment tells (no plugins/MIME types/media devices, software WebGL, RFP
+heuristics).
 
 **Realm coherence (collector, TS) — a Kitsune-distinct family.** Many spoofs patch only the *main JS
 realm* and cannot reach a Web Worker or iframe. The collector cross-checks the main thread against a
@@ -325,6 +344,25 @@ below an interaction floor these emit nothing and the rules resolve MISSING. Cor
 observed source IP against curated datacenter/proxy CIDR lists and emits `asn_is_datacenter` /
 `is_proxy_exit`. It also emits `browser_absent` (a network fingerprint with no browser layer — loaded the
 page but never ran JS) and the prevalence tell. Corroborating-only.
+
+**Within-session / temporal coherence (edge + detector).** A second coherence axis, *along the time
+dimension within one session* rather than across layers at one moment. A field that is **invariant for a
+real client across the session's connections** (its TLS/JA4 identity, source IP, HTTP/2 fingerprint)
+must not rotate mid-session, and a field a real client **must vary per connection** must not be frozen.
+The family covers a JA4 / IP / h2 fingerprint that **changed within one session** (a rotating proxy or
+fingerprint-cycling tool stitched under one `session_id`) and the **must-vary** case
+`net.tls_ext_order_static_within_session` (modern Chromium permutes its TLS-extension order every
+connection, so a static order repeated across a Chromium-JA4 session is a non-permuting impersonator).
+The QUIC/HTTP-3 member of the family is infra-blocked
+(see [`adr/0005`](./adr/0005-per-connection-quic-attribution.md)); the rest are live.
+
+**Geo enrichment (detector, optional).** The wire panel resolves the source IP to city/country/ASN via
+a City+ASN MMDB pair ([`geo.py`](../detector/src/kitsune_detector/geo.py)). The databases are pulled
+**keyless** by [`geo_refresh.py`](../detector/src/kitsune_detector/geo_refresh.py) — DB-IP's free **Lite**
+City + ASN editions (`dbip-city-lite.mmdb` / `dbip-asn-lite.mmdb`), distributed under **CC BY 4.0** with
+no licence key, via the geo-refresh compose companion (GeoLite2 filenames are kept only as a fallback).
+This replaced the manual MaxMind GeoLite2 path. Attribution ("IP Geolocation by DB-IP") shows in the
+page footer. Enrichment only; it does not itself convict.
 
 ---
 

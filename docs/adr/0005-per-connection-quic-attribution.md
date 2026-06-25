@@ -1,7 +1,15 @@
 # 0005. Per-connection QUIC/HTTP-3 attribution for within-session coherence
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-21
+
+> **Implementation status.** The Option-C plumbing is **shipped in-sandbox**: the edge serves real
+> HTTP/3 via an `http3.Server` and keys the captured Initial by DCID
+> (`edge/internal/proxy/quicserver.go`, with `quicserver_test.go` driving synthetic Initials), and the
+> detector carries the `quic_seen` accumulator + sticky rule. As the Decision Outcome states, this ADR
+> does **not** authorise promoting any QUIC rule: rule promotion stays **externally gated** on
+> GROUNDED-LIVE evidence (a browser-trusted cert + a QUIC rotation evader), the same Tier-3 boundary
+> noted below — so the QUIC rules remain unshipped pending that out-of-sandbox grounding.
 
 ## Context and Problem Statement
 

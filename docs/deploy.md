@@ -82,8 +82,9 @@ The wire panel shows each visitor their own IP. To also resolve **city / country
 `KITSUNE_GEOIP_DIR=/geoip`). Without it the panel just omits geo — it's purely additive.
 
 The `geo-refresh` companion does this with **one command and no licence key** — it pulls DB-IP's free
-**Lite** City + ASN databases (MaxMind-format MMDBs, **CC BY 4.0**) into `./geoip`. It's the keyless twin
-of `iprep-refresh` (same read-only-at-runtime / read-write-during-refresh split, baked in):
+**Lite** City + ASN databases (MaxMind-format MMDBs, **CC BY 4.0**) into `./geoip` as
+`dbip-city-lite.mmdb` + `dbip-asn-lite.mmdb` (the exact filenames `geo.py` opens first). It's the keyless
+twin of `iprep-refresh` (same read-only-at-runtime / read-write-during-refresh split, baked in):
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build geo-refresh

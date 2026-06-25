@@ -9,6 +9,14 @@ hand-picked thresholds, so the bar is grounded in biomechanics, not guesswork.
 We do **not** collect our own user data — no consent infrastructure, and it would be an ethics problem.
 Behavioral biometrics is a mature field with public, anonymised, consented research corpora.
 
+This page covers the **desktop mouse** layer (Balabit / SapiMouse). The **mobile touch and keystroke**
+extension of the same grounding discipline — `bh.touch_uniform_velocity` and
+`bh.mobile_keystroke_interval_floor`, calibrated on BrainRun / Aalto / MEU-Mobile, and the G10 gate that
+keeps mouse-only floors off touch sessions — lives in
+[`docs/mobile-biomech-grounding.md`](mobile-biomech-grounding.md). The same data-derived-constant principle
+underlies the broader FP-rate work in [`docs/calibration.md`](calibration.md): thresholds are grounded in
+real corpora, not hand-picked, and rules the data won't support are removed rather than shipped.
+
 ## Datasets (curation targets)
 
 | Dataset | Subjects | Format | Access / license | Role |
@@ -79,6 +87,12 @@ rather than shipping FP-prone guesses.
 This attacks the OS-level-replay / humanizer gap *above* the mechanism tell (`bh.synthetic_no_coalesced`,
 which still backstops CDP injection): a tool can humanize the path all it wants, but reproducing the power
 law, sub-movement structure, and pausing of a real hand is a much higher bar — and now a measured one.
+
+These desktop floors (`bh.uniform_velocity`, `bh.path_too_straight`, `bh.power_law_violation`) are
+mouse-calibrated and **gated off mobile sessions (G10)** — the collector's mouse stream is `mousemove`-only,
+so they never see a finger. The per-feature transferability analysis for touch (which floors survive on real
+swipes, and the touch-native rule `bh.touch_uniform_velocity` it produced) is in
+[`docs/mobile-biomech-grounding.md`](mobile-biomech-grounding.md).
 
 ## Second-source corroboration — SapiMouse (v0.74.25, 2026-06-19)
 

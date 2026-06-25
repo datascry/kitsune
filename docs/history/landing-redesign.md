@@ -1,10 +1,12 @@
 # Landing-page redesign — kitsune.id as the project's front door
 
+> **Archived (2026-06-26) — delivered/historical.** All redesign phases shipped; kept for the Tier-3 opt-in-capture rationale. Current UX is the served pages; the live runbook is [`../deploy.md`](../deploy.md).
+
 > **Status: spec / awaiting build.** This is the agreed design for turning the detector-served page at
 > [kitsune.id](https://kitsune.id/) from a bare demo into the **project's main landing page and a
 > general-purpose fingerprint / antidetect tester** — a BrowserLeaks/CreepJS-class destination, with
 > Kitsune's cross-layer incoherence thesis as the hook. Supersedes the served page shipped in the
-> "forensic-inspector aesthetic" uplevel; complements [`deploy.md`](deploy.md).
+> "forensic-inspector aesthetic" uplevel; complements [`deploy.md`](../deploy.md).
 
 ## 1. Goals & positioning
 

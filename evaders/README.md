@@ -12,16 +12,23 @@ layers, not just bad signals.**
 | Family | Evaders | Layer attacked | Outcome |
 |---|---|---|---|
 | **Control** | `vanilla` (httpx) | none | the detection floor — scores `human` |
-| **Scripted / TLS-mimicry** | `primp`, `curl-impersonate`, `go-tls` (uTLS) | network (JA3/JA4, HTTP/2) | win the fingerprint, caught above/below it (`no_js_execution`, `tcp_os_vs_ua`) |
+| **Scripted / TLS-mimicry** | `primp`, `curl-impersonate`, `go-tls` (uTLS), `azuretls` | network (JA3/JA4, HTTP/2) | win the fingerprint, caught above/below it (`no_js_execution`, `tcp_os_vs_ua`, network-coherence tells) |
+| **Engine ≠ claimed-UA** | `webkit-ua-spoof`, `firefox-os-spoof` | TLS-engine / OS coherence | a real WebKit/Firefox engine under a mismatched UA → `net.tls_vs_ua_browser`, `br.oscpu_vs_ua` |
 | **Playwright + CDP-leak patches** | `stealth` (patchright, rebrowser) | browser-FP + CDP | defeat single-layer FP checks; caught by realm-coherence + cross-layer |
+| **JS-injection stealth** | `playwright-extra` (puppeteer-stealth), `apify-fp-inject` | browser-FP via Proxy/injected fingerprint | the ubiquitous JS-spoof baselines; caught where the injection never reached |
+| **Mobile-surface spoof** | `mobile-emulation` | mobile UA/touch over a desktop engine | a mobile UA + touch + viewport over a desktop engine leaks its real OS |
 | **CDP-native** | `nodriver`, `zendriver`, `pydoll` | automation surface | no webdriver/CDP tells, still caught by the headless environment |
 | **Isolated-world Selenium** | `undetected`, `selenium-driverless` | `Runtime.enable` CDP leak | dodge the CDP leak, caught by the headless floor |
 | **Engine-level** | `camoufox` | the whole JS-surface ruleset | C++-level spoofing; coherent across vectors |
 | **Farbling** | `brave` | canvas/audio readback | per-session noise caught reference-free |
+| **Behavioral injection** | `xtest-coalesce` | coalesced-events terminus | X11 XTEST motion injection vs `bh.synthetic_no_coalesced` / `br.coalesced_untrusted` |
 | **HTTP/2 DoS** | `h2-rapid-reset` | protocol abuse (CVE-2023-44487 / -2024-27316) | attributed to a minted session |
+| **PoW arms-race** | `pow` | proof-of-work challenge gate | a self-contained blue-team gate vs a native no-browser solver |
 | **LLM agent** | `agent` (`claude -p`) | behavioral / intent | beats network + browser, caught **behaviorally** (the headline result) |
 
-Each per-evader README documents the tool, the layer it targets, its live verdict, and how to run it.
+The more involved evaders carry a per-evader README documenting the tool, the layer it targets, its
+live verdict, and how to run it; the lighter ones are self-documenting via their mandatory 2-line file
+header (the runner's first two lines say what it is and what it does).
 
 ## The thesis, on the scoreboard
 

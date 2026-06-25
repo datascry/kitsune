@@ -64,6 +64,13 @@ Scoring is a **transparent noisy-or** — `1 - ∏(1 - wᵢ)` over contradiction
 
 Thresholds (`config.py`): `score ≥ 0.65` → `bot` (gated), `≥ 0.35` → `suspicious`, else `human`.
 
+- **The `verified` allow-list** (`scoring.verified_agent`, `Label.verified` in `models.py`). Orthogonal
+  to the human↔bot axis: a *declared* automated agent that cryptographically **proved** its identity —
+  a valid RFC 9421 / Web Bot Auth signature against a signer key the lab holds — is a known-good bot,
+  allow-listed rather than convicted (see `net.web_bot_auth_invalid` below). The guarantee is only as
+  strong as the signing key's secrecy, so the lab seeds the *public* RFC test key to demonstrate the
+  bypass.
+
 ### Rule categories (`RuleCategory` in `models.py`)
 
 | Category | Convicts? | What it means |
@@ -86,6 +93,26 @@ prior's conservative threshold, emits `browser.prevalence_low`. It is **corrobor
 design**: the prior is a single source (browserforge), so rarity must not convict a real-but-rare
 browser until corroborated against a second (Tier-3 real-traffic) source.
 
+### Recent convicting rules (illustrative)
+
+The registry head is the source of truth — these are three representative *convicting* tells that
+sharpen the cross-layer thesis (full table: [`docs/detection-catalog.md`](../docs/detection-catalog.md)):
+
+- **`br.webgl_renderer_caps_mismatch`** (G18, `coherence`) — the renderer-string-vs-GPU-capability
+  tell. A source-level anti-detect fork can patch the `UNMASKED_RENDERER` string in both the main and
+  Worker realms, but cannot change what the silicon can do: a string naming a recent high-end GPU
+  (RTX / Radeon RX 6000+ / Apple M-series / Intel Arc) over a backend whose `MAX_TEXTURE_SIZE` is
+  below the 16384 floor every such GPU exposes convicts the spoof.
+- **`net.web_bot_auth_invalid`** (G25, `coherence`) — the cryptographic analog of
+  `net.fake_declared_crawler`. The edge (`internal/webbotauth`) reconstructs the RFC 9421 signature
+  base and verifies the Ed25519 signature; it fires **only** on a definitive forgery (a signature
+  present, keyid resolving to a key the lab holds, but failing verification). An unknown keyid is
+  unjudgeable and never convicts; a valid signature instead allow-lists the session as `verified`.
+- **`net.tls_ext_order_static_within_session`** (N2, `coherence`) — a member of the
+  within-session / temporal coherence family: a must-vary field (here the TLS extension order, which
+  real clients shuffle per-connection) held static across connections within one session, or
+  conversely an invariant field (JA4 / IP / h2) that rotated mid-session.
+
 ## Layout
 
 | Module | Role |
@@ -93,20 +120,38 @@ browser until corroborated against a second (Tier-3 real-traffic) source.
 | `models.py` | Pydantic models mirroring the contracts (`Signal`/`Session`/`Verdict`/`Contradiction`/`RuleCategory`/`Label`). |
 | `contracts.py` | Locate + validate the JSON-Schema contracts; load the rule registry. |
 | `coherence/` | `predicates.py` (fixed predicate vocabulary), `rules.py` (rules-as-data + registry loader), `engine.py` (generic evaluator). |
-| `scoring.py` | Transparent noisy-or scoring; incoherence amplification + the conviction gate. |
+| `scoring.py` | Transparent noisy-or scoring; incoherence amplification + the conviction gate; `verified_agent` allow-list. |
+| `applicability.py` | Pre-scoring per-browser filter: drops "expected for the identified browser" contradictions so a real browser is not convicted on a tell that is N/A for it. |
 | `prevalence.py` | Log-prevalence scoring of coherent-but-improbable fingerprints (corroborating). |
 | `ip_reputation.py` | Offline CIDR classification of an IP as datacenter/hosting or proxy/VPN/Tor exit. |
+| `ip_reputation_refresh.py` | Deploy-time refresh of the reputation seed lists (Tor exits + cloud ranges + X4BNet VPN/datacenter) into `data/*.txt`; output not committed. |
 | `reputation.py` | Offline AS-org keyword classification (the alternate, ASN-org reputation producer). |
+| `geo.py` | Optional City+ASN geo enrichment for the wire panel — reads a keyless DB-IP Lite MMDB pair (`dbip-city-lite.mmdb` / `dbip-asn-lite.mmdb`, GeoLite2-name-compatible) from `KITSUNE_GEOIP_DIR`; degrades to `None` when absent. |
+| `geo_refresh.py` | Deploy-time refresh of the geo/ASN MMDB pair from DB-IP Lite (keyless, CC BY 4.0) into `KITSUNE_GEOIP_DIR`; output not committed. |
 | `ingest.py` | The correlation join: flat signals → `Session`s, with cross-request merge. |
 | `store.py` | Schema-versioned SQLite persistence for sessions and verdicts (used by `app.py`, not by `Detector`). |
 | `detector.py` | The `Detector` facade — `score` / `ingest_and_score`. Stateless. |
-| `app.py` | FastAPI HTTP boundary: `/ingest`, `/session/{id}`, `/verdict/{id}`, `/scoreboard`, `/healthz`, `/`. |
+| `demo.py` | The in-browser demo page served to real (or evader-driven) browsers — an inline collector mirroring the TS library; posts browser+behavioral signals to `/ingest`. |
+| `pages.py` | Themed HTML shell that wraps the markdown-rendered doc pages (nav + footer + per-page SEO head). |
+| `styles.py` | Shared CSS foundation (design tokens + a11y rules) so `demo.py` and `pages.py` can't drift apart. |
+| `app.py` | FastAPI HTTP boundary (see endpoints below). |
 | `data/` | Committed seeds: prevalence prior, datacenter/proxy CIDR lists. |
 
-The rules themselves live in **`../contracts/rules/registry.yaml`** (currently `ruleset_version:
-0.70.0`) — the detector treats them as data. To add or retire knowledge, edit the registry, not the
-code; only a genuinely new *shape* of comparison needs a new predicate in `predicates.py`. Retired
-rules are kept for history (`status: retired`) but never evaluated.
+### Endpoints (`app.py`)
+
+- **API:** `POST /ingest` (correlate + score → `Verdict`s), `GET /session/{id}`, `GET /verdict/{id}`,
+  `GET /scoreboard` (admin-gated), `GET /rules.json` (the live ruleset payload), `GET /healthz`.
+- **Live wire view:** `GET /inspect/{session_id}` — the de-identified network/reputation view the live
+  page reads, cookie-scoped to your own `ks_sid` session (geo + reputation + per-layer contradictions).
+- **Served pages:** `GET /` (the demo/self-test page from `demo.py`) and the markdown-rendered doc
+  pages `/detections`, `/evasions`, `/matrix`, `/how-it-works`, `/research`, with per-item drill-downs
+  at `/detections/{rule_id}` and `/evasions/{slug}`.
+
+The rules themselves live in **`../contracts/rules/registry.yaml`** — the detector treats them as
+data (the active `ruleset_version` is the registry head; the full rule table is the generated
+[`docs/detection-catalog.md`](../docs/detection-catalog.md)). To add or retire knowledge, edit the
+registry, not the code; only a genuinely new *shape* of comparison needs a new predicate in
+`predicates.py`. Retired rules are kept for history (`status: retired`) but never evaluated.
 
 ## Develop
 

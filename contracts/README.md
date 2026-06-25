@@ -32,9 +32,13 @@ carries:
 - `id` — namespaced, e.g. `net.tls_os_vs_tcp_os` · `title` · `weight` (0–1, contribution to score).
 - `layers` — which of the four layers it spans · `reads` — the `layer.kind` signal references its
   predicate consumes, in order.
-- `predicate` — one of `present` / `absent` / `equals` / `not_equal` / `below_threshold` /
-  `above_threshold` (the latter two require a `threshold`; `equals`/`not_equal` require two `reads`).
-  A rule *fires* — emitting a `Contradiction` with the triggering evidence — when its predicate holds.
+- `predicate` — one of `present` / `absent` / `equals` / `not_equal` / `not_equal_browser` /
+  `below_threshold` / `above_threshold` (the threshold pair requires a `threshold`; the
+  `equals`/`not_equal`/`not_equal_browser` family requires two `reads`). `not_equal_browser` is a
+  family-aware `not_equal`: it collapses the Chromium family (edge/brave/opera/vivaldi/samsung →
+  chrome) before comparing, so a same-engine UA doesn't fire — used by the JA4↔UA and h2↔UA browser
+  tells. A rule *fires* — emitting a `Contradiction` with the triggering evidence — when its
+  predicate holds.
 - `category` — the kind of tell: `coherence` (cross-layer contradiction), `environment`,
   `automation`, `artifact`, `behavioral`, `reputation`, `prevalence`.
 - `status` — `active` (convicts), `experimental` (corroborating / awaiting validation) or `retired`
@@ -50,8 +54,8 @@ Two independent versions:
 - **`schema_version`** (`MAJOR.MINOR`) on every wire envelope — currently **0.1**. Adding an optional
   field is a MINOR bump; changing/removing a field or tightening validation is a MAJOR bump and
   requires a migration note. See [ADR-0002](../docs/adr/0002-polyglot-with-contracts.md).
-- **`ruleset_version`** at the head of `registry.yaml` — currently **0.74.7** — and echoed into each
-  verdict, so a scoreboard pins exactly which ruleset produced it.
+- **`ruleset_version`** at the head of `registry.yaml` (the live value lives there — don't duplicate
+  it here) and echoed into each verdict, so a scoreboard pins exactly which ruleset produced it.
 
 ## Validation
 

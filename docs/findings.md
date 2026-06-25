@@ -6,6 +6,26 @@
 What Kitsune has actually measured, running each evader through the live edge → detector. The thesis
 holds: **incoherence across layers, not any single bad signal, is what survives anti-detect tooling.**
 
+> **Currency.** This is a running log, not a frozen snapshot — sections are added as captures land, and
+> the live frontier (what is still open vs. external-data-bound) is tracked in
+> [`docs/research-radar.md`](research-radar.md). Rule names below are stable; for the authoritative,
+> *generated* rule table (ids, categories, weights, status as of the current `ruleset_version`) see
+> [`docs/detection-catalog.md`](detection-catalog.md) and the head of
+> [`contracts/rules/registry.yaml`](../contracts/rules/registry.yaml).
+
+**Contents**
+
+- [The arms-race ladder](#the-arms-race-ladder)
+- [Behavioral biometrics](#behavioral-biometrics-is-the-weakest-layer-human_mouse1) (mouse, keystroke, and the mobile-touch grounding)
+- [Precision — legitimate humans must not be flagged](#precision--legitimate-humans-must-not-be-flagged)
+- [Camoufox is the frontier](#camoufox-is-the-frontier) (per-session capability/artifact tells)
+- [Within-session (temporal) coherence](#within-session-temporal-coherence--an-invariant-field-that-rotated) — JA4 / IP / HTTP-2 / TLS-ext-order
+- [Coordination, not the instance](#the-durable-signal-coordination-not-the-instance)
+- [Realm coherence](#realm-coherence--the-spoof-that-forgets-the-second-javascript-scope)
+- [The scripted-flood tier](#the-scripted-flood-tier--three-http-header-tells-before-any-js-runs) and [Web Bot Auth](#web-bot-auth-rfc-9421--proving-identity-instead-of-being-caught)
+- [QUIC / HTTP-3](#quic--http-3-fingerprinting--the-transport-the-application-never-sees), [TCP/IP](#tcpip-stack-fingerprinting--the-os-tell-beneath-tls), [HTTP/2 preface](#the-http2-preface--a-ua-spoof-tell-below-the-application-layer)
+- [Locale & geo coherence](#locale-coherence-across-the-httpjs-boundary)
+
 ## The arms-race ladder
 
 Each rung defeats the rung below; the detector answers each with a new cross-layer check.
@@ -119,6 +139,20 @@ never trips it (validated: real renderer → no fire, spoofed bare renderer → 
 pending broad real-browser validation across GPU/OS, since legacy/non-ANGLE Chrome configs could differ.
 (v0.56.0)
 
+The renderer string is content, and content can be made to look right. The harder lie is the one the
+*hardware* exposes underneath it: `br.webgl_renderer_caps_mismatch` (G18) checks the renderer string
+against the GPU's actual capability floor. Every recent high-end discrete GPU — GeForce/RTX, Radeon RX
+6000+/7000-series, Apple M-series, Intel Arc — exposes a `MAX_TEXTURE_SIZE` of **≥16384**; headless
+Chrome's SwiftShader reports 8192. So a renderer string *naming* one of those GPUs while the live GL
+context reports a max-texture below 16384 is a string spoofed over a lesser or software backend — the
+silicon's limits cannot be patched from JS. This is sharper than `webgl_not_angle` because it survives
+the realm-spoof escalation: a source-level fork that patches the renderer string in *both* the main realm
+and the Worker (defeating `br.webgl_worker_vs_main`) still cannot change `MAX_TEXTURE_SIZE`, so the caps
+read convicts where the cross-realm string comparison no longer can. FP-safe by construction — real
+high-end GPUs are ≥16384, and an honest software renderer names itself (caught by `webgl_software`) so it
+never matches the high-end name pattern in the first place. It ships **active** (see the registry head /
+`docs/detection-catalog.md` for its current weight and status).
+
 ### Stale templates at the JS layer — an engine older than the UA it wears
 
 The TLS layer already catches a hardcoded modern-Chrome impersonation template lagging the real
@@ -136,9 +170,10 @@ rebrowser), CDP-native automation (nodriver, zendriver, pydoll), isolated-world 
 selenium-driverless), engine-level coherent spoof (Camoufox ×3 modes), and privacy/farbling browsers
 (Brave; Tor/Mullvad RFP). Every one is `bot`. The tools differ enormously on the *automation surface* —
 some leak `webdriver` and `Runtime.enable`, the best leak neither — but the verdict is decided below that
-surface, on the environment floor and (for coordinated fleets) on cross-instance incoherence. Tool
-breadth has reached the point of diminishing returns: new captures now confirm the structural conclusion
-rather than testing it.
+surface, on the environment floor and (for coordinated fleets) on cross-instance incoherence. Adding yet
+another *open-source* anti-detect tool now tends to confirm the structural conclusion rather than test it;
+the live frontier has moved elsewhere — temporal/within-session coherence, mobile-touch grounding, and the
+external-data-bound items tracked in [`docs/research-radar.md`](research-radar.md) — not to a wider fleet.
 
 ### Red-teaming the floor — `FLOOR_SPOOF`, and why presence can't be faked for free
 
@@ -222,8 +257,36 @@ real human motion varies so widely that tighter thresholds would false-positive 
 
 The `human-mouse` evader fully zeroes the behavioral column — yet is still `bot` on `automation:6` +
 `environment:6` (it is naive Playwright Chromium). **Behavioral is the first layer to fall**, and defeating
-it changes no verdict. This is why the durable signals are environment and coordination, not behaviour —
-behavioral biometrics needs sophisticated sequence/biomechanics models, not static thresholds, to matter.
+it changes no verdict. This is why the durable signals are environment and coordination, not behaviour.
+
+**The mobile-touch grounding (X6) — static thresholds work once they sit on real human data.** The
+earlier read of this section was that behavioral biometrics needs sophisticated sequence/biomechanics
+models, not static thresholds, to matter. That has been partly overtaken: the desktop *mouse* thresholds
+remain trivially evaded, but the **mobile** layer was an unguarded gap (the collector's mouse stream is
+`mousemove`-only, so the desktop velocity floor is gated *off* mobile by G10 and never saw touch), and it
+closes with thresholds grounded on real human swipe/typing corpora — the point being that a static floor
+is only as good as the distribution it is calibrated against. Two rules now ship, mobile-gated, each with
+a measured FP headroom rather than a guessed constant (see
+[`docs/mobile-biomech-grounding.md`](mobile-biomech-grounding.md) and
+[`docs/behavioral-data.md`](behavioral-data.md)):
+
+- **`bh.touch_uniform_velocity`** — the touch analog of `bh.uniform_velocity`. The collector computes the
+  per-swipe velocity coefficient-of-variation over touch `pointerdown→up` streams (≥5 points) and emits
+  the median per-swipe value. Grounded on **BrainRun** (Zenodo `10.5281/zenodo.2598135`, **CC0**):
+  **161,780 real human swipes across 2,117 devices**, whose velocity-CV 1st percentile is 0.235 and median
+  0.602 — so the threshold sits ~36% below the human 1st percentile, FP-safe with headroom, while a
+  replayed/synthetic swipe at near-constant velocity falls far below it. (Path-*straightness* is
+  deliberately **not** ported to touch: real human swipes are inherently near-straight — median 0.993 — so
+  a straightness floor would false-positive on most users. The grounding decided this, not intuition.)
+- **`bh.mobile_keystroke_interval_floor`** — a mobile session typing faster than any human thumb cadence.
+  Calibrated on **Aalto** ITE free-text (with MEU-Mobile as a second source): the threshold sits below the
+  measured human floor, and the collector emits the signal *only* on a mobile session so it never touches
+  desktop typing.
+
+So the conclusion sharpens rather than reverses: behavioral *motion-statistics* on desktop are still a
+treadmill (the structural exit is coalesced events, below), but where a real human corpus exists to
+calibrate against — mobile touch and mobile keystroke cadence — a static floor *does* bite, FP-safely,
+and the G10 gate keeps each floor on the input modality it was grounded for.
 
 **The motion-*statistics* arms race has a structural exit: coalesced events.** Tightening straightness or
 velocity thresholds is a losing game — a bot can always shape its *path* to match human statistics. But
@@ -550,6 +613,46 @@ provable detection:
 The method generalizes: for any open-source anti-detect tool, read its spoof map, detect the documented
 **gaps** (capabilities it leaves real) and its **construction artifacts** (placeholder strings, fixed
 values) — far stronger than black-box probing.
+
+## Within-session (temporal) coherence — an invariant field that rotated
+
+Every cross-layer rule so far compares two *layers* at one instant — TLS vs UA, kernel vs UA, h2 vs JS.
+There is a second coherence axis along *time*: a field that a real client holds **invariant for a
+session's lifetime**, observed to change between connections of that one session. A real browser speaks one
+TLS engine, exits from one egress, and runs one HTTP/2 stack for the whole session; a value that rotates
+mid-session is a single client cycling its fingerprint to defeat per-connection blocklists — and
+forgetting that the *session* correlates the rotation. The detector derives these flags in `ingest.merge`
+over the *pre-collapse* per-request history (the store otherwise keeps only the latest value per kind —
+the architectural blind spot this family closes), and the flag is sticky once a rotation is seen. The
+family (added 2026-06-20; see the registry head / `docs/detection-catalog.md` for current weights/status):
+
+- **`net.ja4_unstable_within_session`** — the TLS engine changed. JA4_b is the GREASE-free, cipher-sorted
+  hash, so it is invariant across transport (H2/H3), TLS resumption (0-RTT/PSK), and Chrome's
+  per-connection extension+GREASE shuffle — every one of those leaves the cipher list untouched. Two
+  distinct JA4_b under one `ks_sid` is therefore a client rotating its TLS fingerprint (Chrome→Firefox→
+  Safari cipher lists), which a real browser cannot do. **Grounded live:** the `go-tls` `KS_ROTATE` evader
+  (uTLS cycling Hello{Chrome,Firefox,Safari,Edge,IOS} across connections under one session) trips it; every
+  single-engine evader (40+ Chrome impersonators + the headful real-browser captures, one JA4_b each) does
+  not — zero FP.
+- **`net.ip_rotation_within_session`** — one session egressed from many distinct IPs: the rotating-proxy
+  pool that defeats per-IP rate limits, made self-incriminating because the session ties the egresses
+  together.
+- **`net.h2_unstable_within_session`** — the HTTP/2 SETTINGS preface fingerprint changed within the
+  session; a real client's h2 stack is fixed for its lifetime.
+- **`net.tls_ext_order_static_within_session`** (N2) — the *complement* shape. Chrome anti-ossifies by
+  **permuting** its TLS extension order per connection (RFC 8701-era behavior), so a Chromium-JA4 session
+  that repeats *one* fixed extension order across every connection has a static ext-order where a real
+  Chrome would vary — a hardcoded impersonation template that forgot the per-connection shuffle. Here the
+  tell is the *absence* of variation in a field that must vary, the mirror image of the JA4/IP/h2 tells
+  where the catch is variation in a field that must not.
+
+The pattern unifies them: **an invariant field that rotated, or a must-vary field held static, across the
+connections of one session.** Both are invisible to any single-connection probe and to JA4 itself (a
+rotation produces several valid JA4s, each individually unremarkable); only the session-level correlation
+sees them. Documented caveat, shared with `net.tcp_os_vs_ua`'s proxy confound: a TLS-terminating forward
+proxy that re-originates a session's connections through different egress stacks could present >1 JA4_b or
+IP legitimately — the lab edge is the first hop (sees the client directly), so that residual is an
+external-proxy edge case, not an in-fleet FP.
 
 ## The durable signal: coordination, not the instance
 
@@ -915,6 +1018,39 @@ current state of the art therefore adds no rule — it confirms the existing cro
 covers the whole network-impersonation family, present and future, on the one property that does not
 update with the next browser release: a non-browser cannot execute the page.
 
+### Web Bot Auth (RFC 9421) — proving identity instead of being caught
+
+The whole survey so far convicts a bot for *failing* to look like a browser. Web Bot Auth inverts the
+frame: a *legitimate* declared agent (a crawler, an AI assistant acting for a user) can **prove** its
+identity by signing the request, rather than impersonating a person to get through. The IETF Web Bot Auth
+profile of **RFC 9421 HTTP Message Signatures** has the agent sign a small covered set (`@authority`, and
+optionally `Signature-Agent`) with an Ed25519 key, presenting the signature plus a `keyid` that is the
+RFC 7638 JWK thumbprint of its public key. The edge (`edge/internal/webbotauth`) verifies it: it
+reconstructs the RFC 9421 signing base, resolves the `keyid` to a public key via its key directory, and
+checks the Ed25519 signature *and* the created/expires window. Two outcomes feed the detector:
+
+- **`net.web_bot_auth_invalid`** — a request *presents* a Web Bot Auth signature that **fails**
+  verification (bad signature, unknown key, or expired window). A forged or replayed signature is a
+  conviction in its own right, weighted accordingly (see the registry head / `docs/detection-catalog.md`).
+  This is the conviction half: claiming the credential and failing it is worse than not claiming it.
+- **`Label.verified`** — a *new outcome label*, alongside `human`/`suspicious`/`bot`. When a session
+  presents a **valid** signature (`network.web_bot_auth_verified`) and no `net.web_bot_auth_invalid`
+  forgery tell fired, `scoring.verified_agent` allow-lists it: the verdict overrides `bot`. A declared
+  agent that proves its identity with a key the directory holds is a *known-good* bot — the honest
+  automation/coherence signals it legitimately trips (no JS execution, a non-browser HTTP/2 stack) should
+  not convict it. The label is wired in `detector.py` and the override is gated on the absence of the
+  forgery tell, so a *failed* signature can never reach `verified`.
+
+**The allow-list is only as sound as the signing key's secrecy** — and the lab is deliberately honest
+about this. It seeds the **public** RFC 9421 test key (the same key Web Bot Auth's own test vectors use),
+so *in-sandbox* any client can mint a "verified" agent: `go-tls KS_WEBBOTAUTH=valid` is the demonstrated
+bypass, and that is the intended teaching artifact — it shows the mechanism is an allow-list resting on key
+secrecy, not a fingerprint. In production the directory trusts real agent directories whose private keys
+are secret, and the same code that demonstrates the bypass is the code that enforces the allow-list. This
+is the first rule in the lab whose *correct* behavior is to let a (provably-identified) bot through, which
+is exactly the bots-vs-DDoS posture: distinguish the declared, accountable agent from the impersonating
+one, rather than treating all non-human traffic as hostile.
+
 **Confirmed live (`corpus/sessions/primp.json`).** Running `primp` with `impersonate="chrome_146"`
 through the stack convicts it on exactly **two** rules — `net.no_js_execution` and `net.tcp_os_vs_ua` —
 and *nothing else*. Its JA4 reproduces a real Chrome prefix (`t13d1516h2_8daaf6152771`), its HTTP/2
@@ -1168,8 +1304,23 @@ probe. **Validated live** by driving two Chrome/131-UA requests through the stac
 `Sec-CH-UA: "Google Chrome";v="131", "Chromium";v="131"` (no GREASE brand) **fires** the rule and scores
 `bot` (captured as `corpus/sessions/ch-ua-hardcoded.json`), while a real Chromium hint carrying
 `"Not.A/Brand"` leaves it **silent** — precise in both directions. With this, the low-entropy client-hint
-surface — browser, OS, locale, form factor, version, and GREASE integrity — is saturated; further
-client-hint work would be redundant rather than additive.
+surface — browser, OS, locale, form factor, version, and GREASE integrity — is well-covered; further
+client-hint work would mostly corroborate rather than open a new axis.
+
+### Keyless geo/ASN enrichment — no licence key in the loop
+
+The locale tells above compare the *claimed* language/OS across layers; resolving the connection's actual
+**country / city / ASN** is the complementary network-side enrichment (it powers the wire panel and feeds
+ASN-reputation context). Geo lookup reads a City + ASN MMDB pair, and the data source is now **keyless**:
+`geo_refresh.py` pulls **DB-IP Lite** (City + ASN, **CC BY 4.0**, no licence key) via the `geo-refresh`
+compose companion at deploy time, writing `dbip-city-lite.mmdb` / `dbip-asn-lite.mmdb` into
+`KITSUNE_GEOIP_DIR`. This **replaces** the old manual MaxMind GeoLite2 path, whose download required a
+registered licence key — a real friction for reproducing the lab. DB-IP Lite is MaxMind-MMDB-format and
+GeoLite2-schema-compatible, so `geo.py` reads either with one record shaper; the filenames
+`GeoLite2-City.mmdb` / `GeoLite2-ASN.mmdb` are kept as a **fallback**, so an operator who already mounts a
+GeoLite2 pair still resolves. Attribution is required and shown in the page footer ("IP Geolocation by
+DB-IP"). The whole subsystem degrades to `None` when no database is mounted, so geo enrichment is optional
+and the detector serves without it.
 
 ## Testing strategy (efficiency)
 

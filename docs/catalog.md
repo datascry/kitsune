@@ -15,6 +15,10 @@
 > **Legend.** ⭐ = my top pick for that role · 🟢 **M0** = directly usable in Milestone 0 ·
 > 🔬 = study/reference, not a dependency · 📄 = paper/writeup · 🎯 = ethics-approved test endpoint.
 >
+> **Stable section IDs.** §0–§14 are cited by number from elsewhere (e.g. `SECURITY.md` §14, the
+> `collector` / `go-tls` READMEs). Treat the numbering as a stable contract — **do not renumber**;
+> append new sections at the end instead.
+>
 > **Status (retrospective).** This is a pre-build Milestone-0 survey, kept for its prior-art map and
 > license watch-list. Its §0 *stack recommendation* (a Node/TS detector) was **not** the path taken:
 > Kitsune shipped a **Python detector + Python harness + Go edge + TypeScript collector** (see
@@ -108,6 +112,13 @@ detector can't easily get — treat as an M1+ "stretch" signal via `passivetcp-r
 
 **Verdict:** reputation data is the *easiest* layer to cover for free — `iptoasn.com` + `GeoLite2-ASN`
 gives offline datacenter classification with no API dependency, preserving the self-contained-arena ethics.
+
+> **As shipped (superseding the M0 recommendation above).** Kitsune dropped the manual MaxMind
+> GeoLite2/`iptoasn.com` path for a **keyless** offline pair: City + ASN come from **DB-IP Lite**
+> (CC BY 4.0, no licence key), pulled by `detector/.../geo_refresh.py` (the `geo-refresh` compose
+> companion) and read by `geo.py` as `dbip-city-lite.mmdb` / `dbip-asn-lite.mmdb`. DB-IP records share
+> the GeoLite2 schema, so a manually-mounted `GeoLite2-City.mmdb` / `GeoLite2-ASN.mmdb` pair is still
+> read as a filename fallback. This removes the MaxMind account/key step while keeping the lookup offline.
 
 ---
 

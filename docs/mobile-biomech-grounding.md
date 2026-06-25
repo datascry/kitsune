@@ -3,6 +3,14 @@
 Grounding aggregate for extending the desktop mouse-biomech floors to **mobile touch swipes** (radar
 **X6** / **G10**). De-identified: percentile tables only, never raw rows.
 
+This is the **mobile** counterpart to the desktop mouse grounding in
+[`docs/behavioral-data.md`](behavioral-data.md) — same discipline (calibrate a floor against a real, public,
+consented corpus; *remove* the rules the data won't support), applied to touch swipes and mobile keystrokes
+instead of desktop mouse. Both feed the broader FP-rate story in [`docs/calibration.md`](calibration.md).
+Shipped from this page: `bh.touch_uniform_velocity` (BrainRun) and `bh.mobile_keystroke_interval_floor`
+(Aalto), plus the **G10** gate that keeps the mouse-only desktop floors (`bh.uniform_velocity`,
+`bh.path_too_straight`, `bh.power_law_violation`) off mobile sessions.
+
 ## Source
 **BrainRun** — Tzafilkou & Protogeros, Zenodo `10.5281/zenodo.2598135`, **CC0 1.0 (public domain)**.
 3.11M gestures, 2,418 devices. We analysed the **646,986 `swipe` gestures**, capped at 200/device to avoid
