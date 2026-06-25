@@ -121,6 +121,40 @@ def test_detection_drilldown_lists_caught_evaders(client: TestClient) -> None:
     assert "Evaders it caught" in d and 'href="/evasions/' in d
 
 
+def test_detection_drilldown_shows_bypassers(client: TestClient) -> None:
+    # The inverse arms-race view: evaders active in the rule's layer that this check does NOT catch.
+    # net.tls_ext_order_static_within_session catches only the pinned-order evader, so the many other
+    # network-layer evaders (caught by sibling network tells) must appear as bypassers, linking to /evasions/.
+    d = client.get("/detections/net.tls_ext_order_static_within_session").text
+    assert "Bypassed by" in d
+    _, _, tail = d.partition("Bypassed by")
+    assert 'href="/evasions/' in tail  # the bypass section lists evader links
+    # A bypasser must NOT also be in the caught list (clean partition): go-tls-static-ext is caught, not a bypass.
+    assert "go-tls-static-ext" not in tail
+
+
+def test_bypass_index_is_frontier_only_and_disjoint_from_caught() -> None:
+    from kitsune_detector.pages import bypass_index, reverse_index
+
+    rules = {"net.a": {"id": "net.a"}, "net.b": {"id": "net.b"}, "br.c": {"id": "br.c"}}
+    tech = {
+        "frontier-evades": {"verdict": "suspicious", "evades": True, "tells": ["br.c"]},  # uncaught -> bypasses a/b
+        "frontier-flagged-by-a": {"verdict": "suspicious", "evades": True, "tells": ["net.a"]},  # a flags it
+        "caught-bot": {"verdict": "bot", "evades": False, "tells": ["net.b"]},  # stopped -> not a bypasser
+    }
+    caught = reverse_index(tech)
+    bypassed = bypass_index(tech, rules)
+    # The frontier evader bypasses checks that didn't flag it; the bot-scored one never counts (it was stopped).
+    assert bypassed["net.a"] == ["frontier-evades"]
+    assert sorted(bypassed["net.b"]) == ["frontier-evades", "frontier-flagged-by-a"]
+    assert "caught-bot" not in {s for v in bypassed.values() for s in v}
+    # a frontier evader a rule DID flag is excluded from that rule
+    assert "frontier-flagged-by-a" not in bypassed.get("net.a", [])
+    # disjoint from caught
+    for rid in rules:
+        assert set(bypassed.get(rid, [])) & set(caught.get(rid, [])) == set()
+
+
 def test_sitemap_lists_drilldowns(client: TestClient) -> None:
     sm = client.get("/sitemap.xml").text
     assert "/detections/br." in sm and "/evasions/" in sm

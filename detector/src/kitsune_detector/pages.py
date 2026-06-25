@@ -585,6 +585,27 @@ def reverse_index(tech: dict[str, dict[str, Any]]) -> dict[str, list[str]]:
     return idx
 
 
+def bypass_index(tech: dict[str, dict[str, Any]], rules_by_id: dict[str, dict[str, Any]]) -> dict[str, list[str]]:
+    """rule_id -> the FRONTIER evaders that this check does NOT stop (the honest arms-race inverse).
+
+    A "bypass" is only meaningful for an evader that actually reaches the detector uncaught — one scored
+    ``suspicious`` / that EVADES conviction (no single convicting tell). An evader scored ``bot`` was stopped
+    by *some* tell, so it did not bypass the detector; and an evader that is merely coherent on this rule's
+    axis (nothing to catch) is not "bypassing" it either — which is why this is scoped to the frontier rather
+    than to every evader the rule happens not to fire on. Each frontier evader is listed under every rule that
+    did not flag it: the red-team targets this specific detection still has to convict.
+    """
+    frontier = [
+        slug for slug, t in tech.items() if t.get("evades") or str(t.get("verdict", "")).strip() == "suspicious"
+    ]
+    idx: dict[str, list[str]] = {}
+    for rid in rules_by_id:
+        missed = sorted(s for s in frontier if rid not in set(tech[s].get("tells") or []))
+        if missed:
+            idx[rid] = missed
+    return idx
+
+
 #: Hand-authored, customer-facing descriptions per evader tool — what it actually is and how it evades
 #: (the fleet table's one-liners are terse internal headers). Mode variants resolve to their base tool.
 EVADER_DESCRIPTIONS: dict[str, str] = {
@@ -855,9 +876,12 @@ def render_evasion_detail(
 
 
 def render_detection_detail(
-    rule: dict[str, Any] | None, catch_count: str | None, caught: list[str] | None = None
+    rule: dict[str, Any] | None,
+    catch_count: str | None,
+    caught: list[str] | None = None,
+    bypassed: list[str] | None = None,
 ) -> str | None:
-    """One detection rule: what it catches, the signals it reads, how it fires, and who it caught."""
+    """One detection rule: what it catches, the signals it reads, how it fires, who it caught — and who slips past."""
     if rule is None:
         return None
     convicts = bool(rule.get("convicting"))
@@ -891,6 +915,14 @@ def render_detection_detail(
         parts.append(
             f'<div class="lgrp"><h3>Evaders it caught <span class="c">{len(caught)}</span></h3>'
             f"{_chiplist(caught, '/evasions/')}</div>"
+        )
+    if bypassed and convicts:
+        parts.append(
+            f'<div class="lgrp"><h3>Bypassed by <span class="c">{len(bypassed)}</span></h3>'
+            f'<p class="lead">Frontier evaders that reach the detector <em>uncaught</em> (scored only '
+            f"<em>suspicious</em>, defeating every convicting tell) — this check is not one that stops them. "
+            f"The red-team frontier this detection still has to convict.</p>"
+            f"{_chiplist(bypassed, '/evasions/')}</div>"
         )
     parts.append('<p class="lead"><a href="/detections">← all detections</a></p>')
     return "".join(parts)
