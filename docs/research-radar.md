@@ -505,3 +505,15 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   in hand; edge + detector tests green. No new convicting rule (MSS-tunnel is informational — legit VPN/mobile
   users have low MSS; the OS-coherence tell `net.tcp_os_vs_ua` already convicts). Next: N2 (TLS ext order), N3
   (QUIC transport params), N5 (CH micro-tells), N4 (h1 header order).
+- **2026-06-25 · N2/N3/N4 SHIPPED (wire-fingerprint extraction + live display)** — continued the network
+  surface buildout, each extract-on-edge → display-in-wire-panel: **N2** TLS extension + cipher ORDER
+  (`tls_ext_order`/`tls_cipher_order`, GREASE→"g" — the raw order JA4 sorts away); **N3** QUIC transport
+  parameters (`quic_transport_params`, ext-0x39 id order, GREASE 31N+27→"g" — the QUIC-stack tell no vendor
+  ships); **N4** negotiated HTTP version (`http_version` — "downgrade to h1 is a dead evasion"). All shown in
+  the wire panel + machine-readable `window.ksResult.wire`. Grounding templates recorded (uTLS/curl-impersonate
+  for N2; QUIC Hunter for N3). Edge (6 pkgs) + detector tests green. **Deferred (documented, not built):** N4's
+  raw h1 header ORDER + CASING needs teeing decrypted h1 bytes, which breaks the stdlib's `*tls.Conn` h2/ALPN
+  detection — a dedicated custom h1 reader, out of scope for a safe increment. N5 (CH micro-tells:
+  key_share-share-vs-advertised, cert_compression, padding/ECH) still queued. Convicting rules for N2-N4 (e.g.
+  Chrome-impossible ext order, TP-stack-vs-UA) are follow-ups needing the per-browser template DBs + within-
+  session order history; this wave is extraction + display (the "every fingerprint, shown" goal).

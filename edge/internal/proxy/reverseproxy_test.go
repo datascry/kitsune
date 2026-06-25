@@ -43,11 +43,15 @@ func TestPrepareMintsSession(t *testing.T) {
 	if prep.sessionID != "fixed-session" || prep.setCookie == nil {
 		t.Errorf("session=%s setCookie=%v", prep.sessionID, prep.setCookie)
 	}
-	if len(prep.signals) != 5 {
-		t.Errorf("want ja3+ja4+ext-order+cipher-order+observed_ip signals, got %d", len(prep.signals))
+	if len(prep.signals) != 6 {
+		t.Errorf("want ja3+ja4+ext-order+cipher-order+observed_ip+http_version, got %d", len(prep.signals))
 	}
-	if last := prep.signals[len(prep.signals)-1]; last.Kind != "observed_ip" {
-		t.Errorf("expected a trailing observed_ip signal, got kind=%s", last.Kind)
+	have := map[string]bool{}
+	for _, s := range prep.signals {
+		have[s.Kind] = true
+	}
+	if !have["observed_ip"] || !have["http_version"] {
+		t.Errorf("expected observed_ip + http_version signals, got kinds %v", have)
 	}
 }
 
@@ -66,9 +70,14 @@ func TestPrepareNilHello(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// No ClientHello → no ja3/ja4, but the observed source IP is still captured (network identity).
-	if len(prep.signals) != 1 || prep.signals[0].Kind != "observed_ip" {
-		t.Errorf("expected only an observed_ip signal without a ClientHello, got %d signals", len(prep.signals))
+	// No ClientHello → no ja3/ja4, but the observed source IP + HTTP version are still captured (network
+	// identity is independent of TLS).
+	kinds := map[string]bool{}
+	for _, s := range prep.signals {
+		kinds[s.Kind] = true
+	}
+	if len(prep.signals) != 2 || !kinds["observed_ip"] || !kinds["http_version"] {
+		t.Errorf("expected observed_ip + http_version without a ClientHello, got %d signals %v", len(prep.signals), kinds)
 	}
 }
 
