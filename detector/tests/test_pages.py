@@ -63,7 +63,9 @@ def test_doc_page_renders(client: TestClient, slug: str) -> None:
     html = r.text
     assert f'<link rel="canonical" href="https://kitsune.id/{slug}">' in html
     assert 'class="brand" href="/"' in html  # shared nav
-    assert '<main class="doc">' in html
+    assert '<main id="main" class="doc">' in html  # main landmark (id is the skip-link target)
+    assert 'class="skip-link"' in html  # bypass-blocks skip link (WCAG 2.4.1)
+    assert 'aria-current="page"' in html  # active-nav indicator
     assert "<h1" in html  # the doc's title rendered from markdown
 
 

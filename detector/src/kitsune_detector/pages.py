@@ -25,21 +25,30 @@ _SECTION_NAMES: dict[str, str] = {
     "research": "Research",
 }
 
-#: Top-nav links shared across the doc pages (and mirrored in the live page's nav).
+#: Top-nav links shared across the doc pages (and mirrored in the live page's nav). Ordered to follow the
+#: visitor journey: test → understand → explore the evidence catalogs → research.
 NAV_LINKS: list[tuple[str, str]] = [
     ("/", "Test"),
-    ("/matrix", "Matrix"),
-    ("/evasions", "Evasions"),
-    ("/detections", "Detections"),
     ("/how-it-works", "How it works"),
+    ("/matrix", "Matrix"),
+    ("/detections", "Detections"),
+    ("/evasions", "Evasions"),
     ("/research", "Research"),
     ("https://github.com/datascry/kitsune", "GitHub"),
 ]
 
 DOC_CSS = """
-:root{--bg:#0a0a0c;--panel:#0e0e12;--panel-2:#121218;--line:#20202a;--line-bright:#34343f;--ink:#eae7df;--muted:#797985;--fox:#e8482b;--jade:#5fb89a;--amber:#d6a44e;--mono:ui-monospace,"SF Mono","JetBrains Mono","Menlo","Consolas","Liberation Mono",monospace}
+:root{--bg:#0a0a0c;--panel:#0e0e12;--panel-2:#121218;--line:#20202a;--line-bright:#45454f;--ink:#eae7df;--muted:#8a8a97;--fox:#e8482b;--jade:#5fb89a;--amber:#d6a44e;--mono:ui-monospace,"SF Mono","JetBrains Mono","Menlo","Consolas","Liberation Mono",monospace}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--fox);outline-offset:2px;border-radius:2px}
+.skip-link{position:absolute;left:-9999px;top:0;background:var(--fox);color:var(--bg);padding:.5rem .9rem;z-index:100;font-weight:700}
+.skip-link:focus{left:.5rem;top:.5rem}
+nav.top a.active,nav.top a[aria-current]{color:var(--fox)}
+.crumbs{max-width:64rem;margin:0 auto;padding:.7rem 1.5rem 0;font-size:.74rem;color:var(--muted)}
+.crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--fox)}
+.crumbs .sep{color:var(--line-bright);margin:0 .4rem}
+.filter-box{width:100%;max-width:24rem;box-sizing:border-box;padding:.5rem .7rem;margin:.4rem 0 1rem;border:1px solid var(--line-bright);background:var(--panel);color:var(--ink);font:inherit;border-radius:3px}
 nav.top{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;max-width:64rem;margin:0 auto;padding:.9rem 1.5rem;border-bottom:1px solid var(--line)}
 nav.top a{color:var(--muted);text-decoration:none;font-size:.78rem;letter-spacing:.06em}
 nav.top a:hover{color:var(--fox)}
@@ -87,8 +96,9 @@ a.card:hover{background:var(--panel-2)}a.card:hover .cn{color:var(--fox)}
 .badge.suspicious{color:var(--amber);border-color:var(--amber)}
 .badge.human,.badge.convicting{color:var(--jade);border-color:var(--jade)}
 .lgrp{margin:1.4rem 0}
-.lgrp>h3{display:flex;align-items:baseline;gap:.6rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink);margin:0 0 .5rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
-.lgrp>h3 .c{color:var(--muted);font-weight:400}
+.lgrp>h3,.lgrp>h2.lgrp-h{display:flex;align-items:baseline;gap:.6rem;font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--ink);margin:0 0 .5rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+.lgrp>h2.lgrp-h::before,.lgrp>h2.lgrp-h::after{content:none;display:none}
+.lgrp>h3 .c,.lgrp>h2.lgrp-h .c{color:var(--muted);font-weight:400}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;padding:.35rem .1rem;border-bottom:1px solid var(--line);font-size:.84rem}
 .rrow .rid{color:var(--fox);overflow-wrap:anywhere}
 .rrow .rt{color:var(--muted);text-align:right;flex:1}
@@ -98,8 +108,9 @@ html,body{overflow-x:hidden;max-width:100%}
 main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywhere}
 @media (max-width:640px){
   nav.top,main.doc,footer{padding-left:1rem;padding-right:1rem}
-  nav.top{gap:.7rem .9rem}
-  nav.top a{font-size:.72rem}
+  .crumbs{padding-left:1rem;padding-right:1rem}
+  nav.top{gap:.5rem .9rem}
+  nav.top a{font-size:.72rem;min-height:44px;display:inline-flex;align-items:center}
   nav.top a.brand{font-size:.85rem;letter-spacing:.16em}
   main.doc h1{font-size:1.35rem}
   main.doc h2{font-size:.9rem}
@@ -114,9 +125,36 @@ def _esc(s: str) -> str:
     return html.escape(s, quote=True)
 
 
-def _nav() -> str:
-    links = "".join(f'<a href="{h}">{_esc(label)}</a>' for h, label in NAV_LINKS)
-    return f'<nav class="top"><a class="brand" href="/">Kitsune</a>{links}<span class="spacer"></span></nav>'
+def _filter_ui(placeholder: str) -> str:
+    """A client-side substring filter over a catalog's cards/rows — instant findability, no backend.
+
+    Hides non-matching .card/.rrow items on input and collapses any .lgrp group left with no visible rows.
+    """
+    return (
+        '<input class="filter-box" type="search" id="ks-filter" autocomplete="off" '
+        f'aria-label="Filter this list" placeholder="{html.escape(placeholder)}">'
+        "<script>(function(){var f=document.getElementById('ks-filter');if(!f)return;"
+        "var items=document.querySelectorAll('main .card,main .rrow');"
+        "f.addEventListener('input',function(){var q=f.value.toLowerCase(),i,it;"
+        "for(i=0;i<items.length;i++){it=items[i];"
+        "it.style.display=(!q||it.textContent.toLowerCase().indexOf(q)>=0)?'':'none';}"
+        "var g=document.querySelectorAll('main .lgrp'),j,rows,any,k;"
+        "for(j=0;j<g.length;j++){rows=g[j].querySelectorAll('.rrow');if(!rows.length)continue;any=false;"
+        "for(k=0;k<rows.length;k++){if(rows[k].style.display!=='none'){any=true;break;}}"
+        "g[j].style.display=any?'':'none';}});})();</script>"
+    )
+
+
+def _nav(current_path: str = "") -> str:
+    links = ""
+    for h, label in NAV_LINKS:
+        active = h == current_path or (h != "/" and current_path.startswith(h))
+        attr = ' class="active" aria-current="page"' if active else ""
+        links += f'<a href="{h}"{attr}>{_esc(label)}</a>'
+    return (
+        f'<nav class="top" aria-label="Primary"><a class="brand" href="/">Kitsune</a>'
+        f'{links}<span class="spacer"></span></nav>'
+    )
 
 
 #: Image dimensions of the shared OG card (static/og.png) — declared so crawlers don't have to fetch it.
@@ -124,8 +162,8 @@ _OG_W, _OG_H = "1200", "630"
 _OG_ALT = "Kitsune — a bot detection ⇄ evasion lab"
 
 
-def _breadcrumb(canonical_path: str, title: str) -> list[dict[str, Any]]:
-    """Home → section → page crumbs derived from the URL path (for a BreadcrumbList rich result)."""
+def _crumbs(canonical_path: str, title: str) -> list[tuple[str, str]]:
+    """Home → section → page crumbs (name, path) derived from the URL path."""
     crumbs = [("Home", "/")]
     segs = [s for s in canonical_path.split("/") if s]
     acc = ""
@@ -133,10 +171,28 @@ def _breadcrumb(canonical_path: str, title: str) -> list[dict[str, Any]]:
         acc += "/" + seg
         name = title if i == len(segs) - 1 else _SECTION_NAMES.get(seg, seg)
         crumbs.append((name, acc))
+    return crumbs
+
+
+def _breadcrumb(canonical_path: str, title: str) -> list[dict[str, Any]]:
+    """The crumb trail as a BreadcrumbList rich result (JSON-LD)."""
     return [
         {"@type": "ListItem", "position": i + 1, "name": name, "item": f"{SITE_ORIGIN}{path}"}
+        for i, (name, path) in enumerate(_crumbs(canonical_path, title))
+    ]
+
+
+def _crumbs_html(canonical_path: str, title: str) -> str:
+    """The same crumb trail rendered visibly (the SEO data was emitted but never shown to humans)."""
+    crumbs = _crumbs(canonical_path, title)
+    if len(crumbs) < 2:
+        return ""  # home / top level — no trail to show
+    sep = '<span class="sep">/</span>'
+    parts = [
+        (f"<span>{_esc(name)}</span>" if i == len(crumbs) - 1 else f'<a href="{_esc(path)}">{_esc(name)}</a>')
         for i, (name, path) in enumerate(crumbs)
     ]
+    return f'<nav class="crumbs" aria-label="Breadcrumb">{sep.join(parts)}</nav>'
 
 
 def _ld_json(
@@ -246,8 +302,10 @@ def render_doc_page(
         '<link rel="icon" href="/favicon.ico" sizes="any">'
         '<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">'
         f"{_ld_json(title, description, canonical_path, page_type, keywords, extra_ld)}"
-        f"<style>{DOC_CSS}</style></head><body>{_nav()}"
-        f'<main class="doc">{body_html}</main>'
+        f"<style>{DOC_CSS}</style></head><body>"
+        '<a class="skip-link" href="#main">Skip to content</a>'
+        f"{_nav(canonical_path)}{_crumbs_html(canonical_path, title)}"
+        f'<main id="main" class="doc">{body_html}</main>'
         '<footer><p>The blue-team side of a <a href="https://github.com/datascry/kitsune">bot detection ⇄ '
         'evasion lab</a>. <a href="/">Run the live test →</a></p></footer></body></html>'
     )
@@ -313,6 +371,7 @@ def render_detections_page(rules: list[dict[str, Any]]) -> str:
         f'<div class="stat"><strong>{convicting}</strong><span>convicting</span></div>'
         f'<div class="stat"><strong>{len([k for k in groups if groups[k]])}</strong><span>layers</span></div>'
         "</div>",
+        _filter_ui("Filter checks by rule id or title…"),
     ]
     for key in ["cross-layer", *layers]:
         grp = groups.get(key) or []
@@ -326,7 +385,9 @@ def render_detections_page(rules: list[dict[str, Any]]) -> str:
             f'<span class="rt">{html.escape(r.get("title", ""))}</span></div>'
             for r in sorted(grp, key=lambda r: (not r.get("convicting"), r["id"]))
         )
-        body.append(f'<div class="lgrp"><h3>{html.escape(key)} <span class="c">{len(grp)}</span></h3>{rows}</div>')
+        body.append(
+            f'<div class="lgrp"><h2 class="lgrp-h">{html.escape(key)} <span class="c">{len(grp)}</span></h2>{rows}</div>'
+        )
     return "".join(body)
 
 
@@ -350,12 +411,14 @@ def render_matrix_page(md: str) -> str:
     return (
         "<h1>Detection matrix</h1>"
         '<p class="lead">Kitsune\'s red-team fleet — real anti-detect tools and browsers — run against the '
-        "detector. Each card is one evader: its verdict and the convicting tells that caught it.</p>"
+        "detector. Each card is one evader: its verdict and the convicting <em>tells</em> that caught it. "
+        'For what each tool actually is, see the annotated <a href="/evasions">evasion catalog</a>.</p>'
         '<div class="stat-row">'
         f'<div class="stat"><strong>{len(rows)}</strong><span>evaders</span></div>'
         f'<div class="stat"><strong>{caught}</strong><span>caught (bot)</span></div>'
         f'<div class="stat"><strong>{susp}</strong><span>suspicious</span></div>'
         "</div>"
+        f"{_filter_ui('Filter evaders by name or tell…')}"
         f'<div class="cards">{"".join(cards)}</div>'
     )
 
@@ -381,13 +444,15 @@ def render_evasions_page(evaders: dict[str, dict[str, Any]]) -> str:
     return (
         "<h1>Evasion catalog</h1>"
         '<p class="lead">Every red-team configuration Kitsune tests itself against — real anti-detect '
-        "tools, stealth browsers, TLS/HTTP forgers and single-surface technique probes. Each is exercised "
-        "against the live detector and scored.</p>"
+        "tools, stealth browsers, TLS/HTTP forgers and single-surface technique probes — each with a plain "
+        "description. For the exact tells that caught each, see the "
+        '<a href="/matrix">detection matrix</a>.</p>'
         '<div class="stat-row">'
         f'<div class="stat"><strong>{len(evaders)}</strong><span>configs</span></div>'
         f'<div class="stat"><strong>{caught}</strong><span>caught (bot)</span></div>'
         f'<div class="stat"><strong>{susp}</strong><span>suspicious</span></div>'
         "</div>"
+        f"{_filter_ui('Filter evaders by name or description…')}"
         f'<div class="cards">{"".join(cards)}</div>'
     )
 
@@ -488,22 +553,24 @@ _FINDINGS: list[tuple[str, str]] = [
 ]
 
 
-def render_research_page() -> str:
-    """A concise findings overview (not the 99KB findings doc)."""
+def render_research_page(rules_total: int = 0, evaders_caught: int = 0, evaders_total: int = 0) -> str:
+    """A concise findings overview (not the 99KB findings doc). Stats are passed in live from the registry +
+    matrix so they never drift from /detections and /matrix (the hardcoded 127/7 once contradicted them)."""
     cards = "".join(
         f'<div class="card"><div class="ct"><span class="cn">{html.escape(t)}</span></div>'
         f'<div class="cd">{html.escape(d)}</div></div>'
         for t, d in _FINDINGS
     )
+    caught_stat = f"{evaders_caught}/{evaders_total}" if evaders_total else "—"
+    rules_stat = str(rules_total) if rules_total else "—"
     return (
         "<h1>Research</h1>"
         '<p class="lead">What Kitsune has actually measured, running real anti-detect tools through the live '
         "edge → detector. The thesis holds: <strong>incoherence across layers — not any single bad signal — "
         "is what survives anti-detect tooling.</strong></p>"
         '<div class="stat-row">'
-        '<div class="stat"><strong>86/96</strong><span>evaders caught</span></div>'
-        '<div class="stat"><strong>127</strong><span>detection rules</span></div>'
-        '<div class="stat"><strong>7</strong><span>signal layers</span></div>'
+        f'<div class="stat"><strong>{caught_stat}</strong><span>evaders caught</span></div>'
+        f'<div class="stat"><strong>{rules_stat}</strong><span>detection rules</span></div>'
         "</div>"
         "<h2>What we've learned</h2>"
         f'<div class="cards">{cards}</div>'
@@ -868,9 +935,11 @@ def render_evasion_detail(
             f'<span class="rt">{html.escape(str(rules.get(t, {}).get("title", "")))}</span></div>'
             for t in tells
         )
-        parts.append(f'<div class="lgrp"><h3>Convicting tells <span class="c">{len(tells)}</span></h3>{rows}</div>')
+        parts.append(
+            f'<div class="lgrp"><h2 class="lgrp-h">Convicting tells <span class="c">{len(tells)}</span></h2>{rows}</div>'
+        )
     parts.append(
-        '<p class="lead"><a href="/matrix">← all evaders</a> &nbsp;·&nbsp; <a href="/evasions">the fleet</a></p>'
+        '<p class="lead"><a href="/evasions">← all evaders</a> &nbsp;·&nbsp; <a href="/matrix">the detection matrix</a></p>'
     )
     return "".join(parts)
 
@@ -913,12 +982,12 @@ def render_detection_detail(
         parts.append(_section("How it fires", f"<code>{html.escape(str(pred))}</code>{extra}"))
     if caught:
         parts.append(
-            f'<div class="lgrp"><h3>Evaders it caught <span class="c">{len(caught)}</span></h3>'
+            f'<div class="lgrp"><h2 class="lgrp-h">Evaders it caught <span class="c">{len(caught)}</span></h2>'
             f"{_chiplist(caught, '/evasions/')}</div>"
         )
     if bypassed and convicts:
         parts.append(
-            f'<div class="lgrp"><h3>Bypassed by <span class="c">{len(bypassed)}</span></h3>'
+            f'<div class="lgrp"><h2 class="lgrp-h">Bypassed by <span class="c">{len(bypassed)}</span></h2>'
             f'<p class="lead">Frontier evaders that reach the detector <em>uncaught</em> (scored only '
             f"<em>suspicious</em>, defeating every convicting tell) — this check is not one that stops them. "
             f"The red-team frontier this detection still has to convict.</p>"
