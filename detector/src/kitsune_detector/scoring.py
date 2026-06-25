@@ -68,6 +68,21 @@ def final_score(contradictions: list[Contradiction]) -> float:
     return noisy_or(_effective_weight(c) for c in contradictions)
 
 
+def verified_agent(verified_present: bool, contradictions: Iterable[Contradiction]) -> bool:
+    """Whether the session is an allow-listed, cryptographically VERIFIED agent — overriding the bot verdict.
+
+    True when the session presented a VALID Web Bot Auth (RFC 9421) signature (network.web_bot_auth_verified)
+    and no forgery tell fired. A declared agent that proves its identity with a key we hold is a known-good
+    bot: the automation/coherence signals it legitimately trips (no JS, non-browser HTTP/2) should not convict
+    it. This is the cryptographic counterpart of net.web_bot_auth_invalid.
+
+    SECURITY NOTE — it is an ALLOW-LIST, only as strong as the signing key's secrecy: the lab seeds the PUBLIC
+    RFC 9421 test key, so in-sandbox ANY client can mint a 'verified' agent (the demonstrated bypass — go-tls
+    KS_WEBBOTAUTH=valid). Production trusts real agent directories whose private keys are secret.
+    """
+    return verified_present and not any(c.rule_id == "net.web_bot_auth_invalid" for c in contradictions)
+
+
 def label_for(score: float, contradictions: Iterable[Contradiction] | None = None) -> Label:
     """Map a score to a label, gating `bot` on a convicting signal.
 

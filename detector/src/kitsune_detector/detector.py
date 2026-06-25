@@ -17,7 +17,7 @@ from .coherence import CoherenceEngine, RuleSet, load_registry
 from .config import SCHEMA_VERSION
 from .ingest import group_signals
 from .ip_reputation import IPReputation
-from .models import MISSING, Layer, Session, Signal, Source, Verdict
+from .models import MISSING, Label, Layer, Session, Signal, Source, Verdict
 
 Clock = Callable[[], datetime]
 
@@ -122,6 +122,14 @@ class Detector:
         # Brave's canvas/audio farbling) so a real browser is not convicted on them. Mirrors the live page.
         contradictions = applicability.filter_applicable(contradictions, session)
         score = scoring.final_score(contradictions)
+        # A cryptographically VERIFIED Web Bot Auth agent is allow-listed (Label.verified), overriding the bot
+        # verdict its honest automation signals would otherwise earn — see scoring.verified_agent.
+        verified_present = any(s.kind == "web_bot_auth_verified" and s.value for s in session.signals.network)
+        label = (
+            Label.verified
+            if scoring.verified_agent(verified_present, contradictions)
+            else scoring.label_for(score, contradictions)
+        )
         return Verdict(
             schema_version=SCHEMA_VERSION,
             session_id=session.session_id,
@@ -129,7 +137,7 @@ class Detector:
             contradictions=contradictions,
             incoherence_score=scoring.incoherence_score(contradictions),
             score=score,
-            label=scoring.label_for(score, contradictions),
+            label=label,
             ruleset_version=self._ruleset.ruleset_version,
             scored_at=self._clock(),
         )

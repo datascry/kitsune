@@ -17,6 +17,19 @@ def _cat(weight: float, category: RuleCategory) -> Contradiction:
     return Contradiction(rule_id="r", layers=[Layer.browser], detail="d", weight=weight, category=category)
 
 
+def _rule(rule_id: str) -> Contradiction:
+    return Contradiction(rule_id=rule_id, layers=[Layer.network], detail="d", weight=0.85)
+
+
+def test_verified_agent_allow_lists_a_valid_signature() -> None:
+    # A valid Web Bot Auth signature (no forgery tell) → allow-listed, overriding the bot signals it trips.
+    assert scoring.verified_agent(True, [_rule("net.no_js_execution")]) is True
+    # No verified signal → not allow-listed.
+    assert scoring.verified_agent(False, []) is False
+    # A forged signature (web_bot_auth_invalid fired) is NOT a verified agent even if the marker is present.
+    assert scoring.verified_agent(True, [_rule("net.web_bot_auth_invalid")]) is False
+
+
 def test_noisy_or() -> None:
     assert scoring.noisy_or([]) == 0.0
     assert scoring.noisy_or([0.5]) == 0.5
