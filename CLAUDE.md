@@ -13,6 +13,9 @@ layers, not just bad signals.** Start with [`docs/architecture.md`](docs/archite
   trailer, not in PR descriptions or metadata, anywhere. This explicitly means **do not add the
   default `Co-Authored-By: Claude … <…@anthropic.com>` trailer** — omit it entirely.
 - Set it before committing: `git config user.name datascry && git config user.email datascry@users.noreply.github.com`.
+- **Merge your own PRs with `gh pr merge --rebase`** — it preserves the datascry committer. `--squash`
+  stamps the merge commit's committer as `GitHub <noreply@github.com>`, a foreign identity that violates
+  this rule.
 - **One accepted exception — the release automation.** Releases are cut by the release-please GitHub
   Action, whose `chore(main): release …` commit is authored by `github-actions[bot]`. Merging that
   release PR (as datascry) is the sanctioned release path, so that single bot-authored release commit
@@ -50,7 +53,7 @@ allow-list.
 | `harness/` | Python | Scenario runner + reproducible scoreboard; ethics allow-list. |
 | `edge/` | Go | Raw ClientHello → JA3/JA4, HTTP/2 + QUIC/HTTP-3 + TCP/IP fingerprints, session minting, signal forwarding. |
 | `collector/` | TypeScript | In-browser signal collection — a **focused production** page script (`src/index.ts`→`collect.ts`) + a **full self-test** page (`src/livepage/`). NB: the detector serves its OWN full inline collector (`detector/…/demo.py`), which is the authoritative full suite rules are validated against. Three collectors, distinct jobs — see [`docs/architecture.md`](docs/architecture.md) §3. |
-| `evaders/` | Py/TS/Go | Red-team ladder of real anti-detect tools/browsers (camoufox, nodriver, zendriver, pydoll, selenium-driverless, undetected, primp, curl-impersonate, go-tls, brave, stealth, h2-rapid-reset, vanilla, agent). |
+| `evaders/` | Py/TS/Go | Red-team ladder of real anti-detect tools/browsers (camoufox, nodriver, zendriver, pydoll, selenium-driverless, undetected, primp, curl-impersonate, go-tls, azuretls, brave, stealth, h2-rapid-reset, pow, agent, … — see [`evaders/README.md`](evaders/README.md) for the full ladder). |
 | `docs/adr/` | — | MADR architecture decision records. |
 
 ## Verify before committing
