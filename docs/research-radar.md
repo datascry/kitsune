@@ -462,7 +462,7 @@ not signal.** Genuine un-extracted signals, mostly cheap (bytes the edge already
 | N2 | network (TLS) | **Extension ORDER + GREASE placement** — JA4 sorts extensions; raw order is the strongest under-collected impostor tell (Chrome permutes legally per-conn; uTLS/curl-impersonate emit fixed/illegal orders). | **in-sandbox** — parse order from the CH already captured; verify it's a legal Chrome permutation. |
 | N3 | network (QUIC) | **QUIC transport_parameters (TLS ext 0x39)** — QUIC-stack fingerprint independent of inner TLS; JA4-over-QUIC OMITS it and no vendor ships it (a lead-not-follow surface). | **in-sandbox** — edge already decrypts the Initial CH that carries it. |
 | N4 | network (HTTP/1.1) | **h1 header order + casing** + "refuses h2/h3 is itself a tell". We serve h1, fingerprint nothing. | **in-sandbox** — mirror JA4H order onto the h1 path. |
-| N5 | network (TLS) | **CH micro-tells**: key_share share-vs-advertised, cert_compression list, padding/ECH presence (uTLS CVE family; extends G23). | **in-sandbox** — parse-more on the CH. |
+| N5 | network (TLS) | **CH micro-tells**: key_share share-vs-advertised, cert_compression list, padding/ECH presence (uTLS CVE family; extends G23). | ✅ **SHIPPED** 2026-06-25 — `tls_extras` signal + wire card (extract+display; convicting rule queued). |
 | N6 | network (HTTP/3) | **H3 SETTINGS/QPACK fingerprint** (the h2-Akamai analog for h3). | **in-sandbox-ish** — edge runs an H3 server; frontier, no vendor ships it. |
 | N7 | network (TLS/TCP) | **spoofable / handshake-completion** (GreyNoise) + **cipher-stunting / implausible-randomization-as-a-tell** (Akamai). | **in-sandbox** — cheap rules over data the edge sees. |
 | NX | network (latency/IP) | JA4L latency-vs-geo (proxy-by-physics), JA4 prevalence ratios, ASN/named-proxy intel. | **external-data-bound** — RTT capture groundable, geo/prevalence conviction not. |
@@ -517,3 +517,15 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   key_share-share-vs-advertised, cert_compression, padding/ECH) still queued. Convicting rules for N2-N4 (e.g.
   Chrome-impossible ext order, TP-stack-vs-UA) are follow-ups needing the per-browser template DBs + within-
   session order history; this wave is extraction + display (the "every fingerprint, shown" goal).
+- **2026-06-25 · N5 SHIPPED (CH micro-tells extraction + live display)** — edge now parses the per-stack
+  ClientHello surface JA4 sorts away: the **key_share groups actually SENT** (ext 0x33) vs merely advertised in
+  `supported_groups`, the **certificate_compression** algorithms (ext 0x1b: zlib/brotli/zstd), and **ECH / ALPS
+  / padding** presence. Surfaced as a `tls_extras` signal and a "TLS extras" wire-panel card (+ `/inspect`). The
+  sharp tell it unlocks: real Chrome 131+ ships BOTH an X25519 and an X25519MLKEM768 key_share, whereas a pinned
+  or pre-PQ template advertises the PQ group but sends only the X25519 share — `HasPQKeyShareSent()` reads the
+  share, not the advertisement. Grounding templates: uTLS `u_parrots.go` + curl-impersonate signatures (exact
+  per-browser key_share/cert-comp/ext bytes). Extraction + display only — the `key_share-advertised-not-sent`
+  conviction needs the per-browser template DBs and is queued for the rules wave. Edge (6 pkgs) + detector (382
+  tests, 97.22%) green. **This completes the N1-N5 wire-fingerprint extraction wave**; the remaining radar
+  network rows are N4-raw-h1 (deferred: needs a custom h1 reader), N6 (H3 SETTINGS/QPACK), N7 (handshake-
+  completion / cipher-stunting rules), and the convicting-rules follow-up wave.
