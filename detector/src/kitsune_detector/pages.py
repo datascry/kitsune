@@ -14,6 +14,8 @@ import json
 import re
 from typing import Any
 
+from .styles import SHARED_CSS
+
 SITE_ORIGIN = "https://kitsune.id"
 
 #: Human names for URL path segments, for breadcrumbs + page titles in structured data.
@@ -37,13 +39,10 @@ NAV_LINKS: list[tuple[str, str]] = [
     ("https://github.com/datascry/kitsune", "GitHub"),
 ]
 
-DOC_CSS = """
-:root{--bg:#0a0a0c;--panel:#0e0e12;--panel-2:#121218;--line:#20202a;--line-bright:#45454f;--ink:#eae7df;--muted:#8a8a97;--fox:#e8482b;--jade:#5fb89a;--amber:#d6a44e;--mono:ui-monospace,"SF Mono","JetBrains Mono","Menlo","Consolas","Liberation Mono",monospace}
-*{box-sizing:border-box}
+DOC_CSS = (
+    SHARED_CSS
+    + """
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font-size:13.5px;line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
-a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--fox);outline-offset:2px;border-radius:2px}
-.skip-link{position:absolute;left:-9999px;top:0;background:var(--fox);color:var(--bg);padding:.5rem .9rem;z-index:100;font-weight:700}
-.skip-link:focus{left:.5rem;top:.5rem}
 nav.top a.active,nav.top a[aria-current]{color:var(--fox)}
 .crumbs{max-width:64rem;margin:0 auto;padding:.7rem 1.5rem 0;font-size:.74rem;color:var(--muted)}
 .crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--fox)}
@@ -117,6 +116,7 @@ main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywh
   main.doc table{font-size:.74rem}
 }
 """
+)
 
 
 def _esc(s: str) -> str:

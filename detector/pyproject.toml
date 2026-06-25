@@ -57,10 +57,11 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-# demo.py / pages.py hold large embedded HTML/CSS/JS templates; Python line-length does not
+# demo.py / pages.py / styles.py hold large embedded HTML/CSS/JS templates; Python line-length does not
 # meaningfully apply to the embedded markup lines.
 "src/kitsune_detector/demo.py" = ["E501"]
 "src/kitsune_detector/pages.py" = ["E501"]
+"src/kitsune_detector/styles.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

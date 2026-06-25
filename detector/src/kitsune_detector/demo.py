@@ -11,6 +11,8 @@ joining the network signals into one session.
 
 from __future__ import annotations
 
+from .styles import SHARED_CSS
+
 DEMO_PAGE = """<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
@@ -35,24 +37,7 @@ DEMO_PAGE = """<!doctype html>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <style>
-:root {
-  --bg: #0a0a0c;
-  --panel: #0e0e12;
-  --panel-2: #121218;
-  --line: #20202a;
-  --line-bright: #45454f; /* meaningful UI borders — >=3:1 non-text contrast (WCAG 1.4.11) */
-  --ink: #eae7df; /* bone */
-  --muted: #8a8a97; /* secondary text — clears 4.5:1 on the panel surfaces too (WCAG 1.4.3) */
-  --fox: #e8482b; /* fox-fire vermilion — the one accent */
-  --jade: #5fb89a; /* clear / coherent */
-  --amber: #d6a44e; /* suspicious / experimental */
-  --mono:
-    ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
-}
-
-* {
-  box-sizing: border-box;
-}
+/*__SHARED_CSS__*/
 
 body {
   margin: 0;
@@ -86,32 +71,6 @@ main {
   padding-bottom: 2rem;
 }
 
-/* Keyboard focus — visible on every interactive element on the dark theme (WCAG 2.4.7). */
-a:focus-visible,
-button:focus-visible,
-summary:focus-visible,
-input:focus-visible,
-[tabindex]:focus-visible {
-  outline: 2px solid var(--fox);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-/* Skip link — first focusable element; bypasses the nav (WCAG 2.4.1). */
-.skip-link {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  background: var(--fox);
-  color: var(--bg);
-  padding: 0.5rem 0.9rem;
-  z-index: 100;
-  font-weight: 700;
-}
-.skip-link:focus {
-  left: 0.5rem;
-  top: 0.5rem;
-}
 
 /* Section labels — "§ TITLE ────" with a hairline filling the row. */
 h2 {
@@ -742,7 +701,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
   <div class="prose">
     <p>Most fingerprint testers list signals. Kitsune flags <strong>incoherence across layers</strong> — the contradictions a real browser cannot produce but a spoofed or automated one does. The User-Agent, the TLS handshake, the HTTP-2 frames, the TCP/IP stack, the GPU and the JavaScript feature-set all have to describe <em>one</em> coherent device. When they disagree, that is the tell.</p>
-    <p>It scores seven layers: <strong>TLS/JA4</strong>, <strong>HTTP-2</strong>, <strong>QUIC/HTTP-3</strong> and <strong>TCP/IP-OS</strong> read from the raw connection by Kitsune's edge; <strong>canvas, WebGL, audio, fonts and Client Hints</strong> in the browser; <strong>mouse and keystroke dynamics</strong>; and <strong>IP reputation</strong>. Every rule is data in a public registry — the same rules the server runs.</p>
+    <p>It scores seven layers: <strong><abbr title="A fingerprint of the TLS handshake your browser sends on connect — it identifies the network stack underneath the browser, which often betrays an automation tool even when the User-Agent looks normal.">TLS/JA4</abbr></strong>, <strong><abbr title="The HTTP/2 frame-order and SETTINGS fingerprint — each browser's HTTP/2 stack has a recognisable shape.">HTTP-2</abbr></strong>, <strong><abbr title="QUIC / HTTP-3 — the UDP-based transport modern Chrome uses; its handshake fingerprints the stack too.">QUIC/HTTP-3</abbr></strong> and <strong><abbr title="The TCP/IP packet fingerprint (p0f-style) — reveals the operating-system network stack.">TCP/IP-OS</abbr></strong> read from the raw connection by Kitsune's edge; <strong>canvas, WebGL, audio, fonts and Client Hints</strong> in the browser; <strong>mouse and keystroke dynamics</strong>; and <strong>IP reputation</strong>. Every rule is data in a public registry — the same rules the server runs.</p>
     <p>An antidetect browser can spoof the User-Agent and patch <code>navigator.webdriver</code>, but making the JA4, the frame order, the TCP stack, the GPU renderer and the JS surface all agree on one real device is much harder — and that is exactly what this page measures.</p>
   </div>
 </section>
@@ -2477,3 +2436,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
 })();
 </script></body></html>
 """
+
+# Inject the shared design tokens + a11y foundation (one source with the doc pages — see styles.SHARED_CSS).
+DEMO_PAGE = DEMO_PAGE.replace("/*__SHARED_CSS__*/", SHARED_CSS.rstrip())
