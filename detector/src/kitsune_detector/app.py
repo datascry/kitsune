@@ -422,6 +422,7 @@ def create_app(
             "tls_cipher_order": netval("tls_cipher_order"),
             "quic_transport_params": netval("quic_transport_params"),
             "http_version": netval("http_version"),
+            "tls_extras": netval("tls_extras"),
             "tcp": netval("tcp"),
             "tcp_os": netval("tcp_kernel"),
             "h2": netval("h2"),

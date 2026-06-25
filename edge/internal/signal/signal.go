@@ -68,6 +68,11 @@ func FromClientHello(
 		Network(sessionID, "tls_ext_order", ch.ExtOrder(), at),
 		Network(sessionID, "tls_cipher_order", ch.CipherOrder(), at),
 	)
+	// ClientHello micro-tells (N5): ECH/ALPS/padding presence, cert-compression, key_share groups actually
+	// sent (vs advertised) — the per-stack surface JA4 doesn't encode. Emitted when present.
+	if extras := ch.TLSExtras(); extras != "" {
+		out = append(out, Network(sessionID, "tls_extras", extras, at))
+	}
 	return out
 }
 

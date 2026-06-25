@@ -15,8 +15,14 @@ const (
 	extECPointFormats      uint16 = 0x000b
 	extSignatureAlgorithms uint16 = 0x000d
 	extALPN                uint16 = 0x0010
+	extPadding             uint16 = 0x0015
+	extCertCompression     uint16 = 0x001b
 	extSupportedVersions   uint16 = 0x002b
+	extKeyShare            uint16 = 0x0033
 	extQUICTransportParams uint16 = 0x0039
+	extALPS                uint16 = 0x4469
+	extALPSLegacy          uint16 = 0x44cd
+	extECH                 uint16 = 0xfe0d
 )
 
 // ClientHello holds the parsed fields used to compute JA3/JA4.
@@ -31,7 +37,9 @@ type ClientHello struct {
 	SignatureAlgorithms []uint16
 	ALPN                []string
 	HasSNI              bool
-	QUICTransportParams []byte // raw quic_transport_parameters (ext 0x39) body; QUIC ClientHellos only
+	QUICTransportParams []byte   // raw quic_transport_parameters (ext 0x39) body; QUIC ClientHellos only
+	KeyShareGroups      []uint16 // groups that actually carry a key_share (ext 0x33) — NOT just advertised
+	CertCompressAlgs    []uint16 // certificate_compression algorithms (ext 0x1b), in order
 }
 
 // reader is a bounds-checked big-endian byte cursor; once it overflows, err sticks.
@@ -199,5 +207,21 @@ func parseExtensionBody(etype uint16, data []byte, out *ClientHello) {
 		}
 	case extQUICTransportParams:
 		out.QUICTransportParams = append([]byte(nil), data...)
+	case extKeyShare:
+		_ = d.u16() // client_shares total length
+		for d.i < len(d.b) && d.err == nil {
+			g := d.u16()
+			kelen := int(d.u16())
+			d.take(kelen) // skip the key_exchange bytes; we only need which groups carry a share
+			if d.err != nil {
+				break
+			}
+			out.KeyShareGroups = append(out.KeyShareGroups, g)
+		}
+	case extCertCompression:
+		_ = d.u8() // algorithms list length (bytes)
+		for d.i < len(d.b) && d.err == nil {
+			out.CertCompressAlgs = append(out.CertCompressAlgs, d.u16())
+		}
 	}
 }
