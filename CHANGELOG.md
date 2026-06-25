@@ -5,6 +5,28 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.8.0](https://github.com/datascry/kitsune/compare/v1.7.0...v1.8.0) (2026-06-25)
+
+
+### Features
+
+* **detector:** allow-list verified Web Bot Auth agents (Label.verified) ([1e6854c](https://github.com/datascry/kitsune/commit/1e6854cbc44f492b88f7125c3dc3accfcfcd5a2f))
+* **detector:** convict forged Web Bot Auth signatures (G25) ([8808ae6](https://github.com/datascry/kitsune/commit/8808ae6c771b75be0f876df171025fcaf5f7e4ff))
+* **detector:** convict spoofed high-end WebGL renderer over weak caps (G18) ([#122](https://github.com/datascry/kitsune/issues/122)) ([5bcf642](https://github.com/datascry/kitsune/commit/5bcf6420ecc960567346b034fc3c2e2bc9ffa27f))
+* **detector:** convict within-session static TLS extension order ([6cc2666](https://github.com/datascry/kitsune/commit/6cc2666b981422fc48ed1dbee8b16044668e6688))
+* **detector:** show the frontier evaders that bypass each detection ([9ab0c6f](https://github.com/datascry/kitsune/commit/9ab0c6fde2ba886b3305ea0c470c7a597cb51edf))
+
+
+### Bug Fixes
+
+* **detector:** address the live-site UX/UI review — a11y, perf, interaction, nav ([228b5ee](https://github.com/datascry/kitsune/commit/228b5eea0d2d1bea5db18228ea087a2fc92fa86d))
+* **detector:** open the fingerprint surfaces and detections panels by default ([1c007b8](https://github.com/datascry/kitsune/commit/1c007b840c1d1e0c0bf3418b33822426edd5da4d))
+
+
+### Performance Improvements
+
+* **detector:** lazy-render the collapsed evidence panels ([2fe287d](https://github.com/datascry/kitsune/commit/2fe287d101ba2033d02c3d0f29cace7ea8a43b68))
+
 ## [1.7.0](https://github.com/datascry/kitsune/compare/v1.6.0...v1.7.0) (2026-06-25)
 
 
