@@ -5,6 +5,41 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.7.0](https://github.com/datascry/kitsune/compare/v1.6.0...v1.7.0) (2026-06-25)
+
+
+### Features
+
+* **collector:** show swipe velocity-CV in the behavioral biometrics panel ([60cebb0](https://github.com/datascry/kitsune/commit/60cebb09c27b5acf6d0072b318a614c5637c004d))
+* **deploy:** dedicated iprep-refresh service (flag-free, RW writer) ([0f06084](https://github.com/datascry/kitsune/commit/0f06084b58845461fa0898beea446133456bd957))
+* **detector:** consolidate fingerprint surfaces + enumerated values into one panel ([88b29f6](https://github.com/datascry/kitsune/commit/88b29f68fce041895dd7c378b9ca54e6b7f0cc6f))
+* **detector:** enumerate every profiled fingerprint surface on the live panel ([d97a379](https://github.com/datascry/kitsune/commit/d97a379998deea3b0338119f7365fb8994857c3e))
+* **detector:** full mobile biomech cluster in the behavioral panel (X6) ([be21bc1](https://github.com/datascry/kitsune/commit/be21bc1a767ae78cc71a6a6c92ed7fe71418511f))
+* **detector:** ground + display mobile keystroke biomech (X6) ([5efb6fc](https://github.com/datascry/kitsune/commit/5efb6fc691c7ccfd4bafe8088a7890e1ae79c9bf))
+* **detector:** mobile-aware keystroke interval floor, grounded on Aalto ITE (X6) ([b52979e](https://github.com/datascry/kitsune/commit/b52979eb2d49cfc0816e65ac6fa0d6fc6df03dbd))
+* **detector:** reorder behavioral panel after fingerprint surfaces + split desktop/mobile biomech ([13fc3f1](https://github.com/datascry/kitsune/commit/13fc3f17275163343cd5ffd74c448f884ee330f7))
+* **detector:** ship bh.click_without_trajectory — teleport-click tell (G11) ([9aa776c](https://github.com/datascry/kitsune/commit/9aa776c09657d83e159ebc8f10556eb19571b913))
+* **detector:** ship bh.keystroke_interval_floor — agent-speed typing tell (G13) ([0b338d5](https://github.com/datascry/kitsune/commit/0b338d57f412cd0b719be95cb5fb6c0495851d50))
+* **detector:** ship bh.touch_uniform_velocity — mobile swipe biomech (X6) ([a16f5b4](https://github.com/datascry/kitsune/commit/a16f5b40d3563b7a7c2eedf59d9ee903cf78d745))
+* **detector:** show IP geo + reputation in the wire panel ([41609c9](https://github.com/datascry/kitsune/commit/41609c921a885c929cf8da152c8a84f7788480a0))
+* **edge:** N1 — JA4T TCP/IP fingerprint (MSS, window-scale, quirks) + live wire panel ([0b038c2](https://github.com/datascry/kitsune/commit/0b038c25c9cf3030f92750ebb79f13cb1357c9d6))
+* **edge:** N2 — TLS extension + cipher ORDER fingerprints (+ GREASE placement) + display ([01ae43d](https://github.com/datascry/kitsune/commit/01ae43d1b6c875feed5f6cbb0c4d1deb9d3d5a79))
+* **edge:** N3 — QUIC transport-parameters fingerprint + display ([fe10df4](https://github.com/datascry/kitsune/commit/fe10df46b6e45ec2312134ec36d5017238b4495f))
+* **edge:** N4 — negotiated HTTP-version fingerprint + display (h1-downgrade tell) ([449394d](https://github.com/datascry/kitsune/commit/449394d648bc88cde72d69bc7bffe114fbb5345f))
+* **edge:** slow-HTTP (slowloris) detection core — SlowLorisScanner (G16) ([69d6a01](https://github.com/datascry/kitsune/commit/69d6a01c731c3cdb8fc0aec016c80ced8ccd793f))
+* **edge:** surface N5 ClientHello micro-tells — key_share, cert-comp, ECH/ALPS + display ([0be6e5b](https://github.com/datascry/kitsune/commit/0be6e5bc182313c56098fd4047711f7421823dbc))
+
+
+### Bug Fixes
+
+* **detector:** make ip-rep refresh resilient to a single source failing ([bdcb361](https://github.com/datascry/kitsune/commit/bdcb361cd85cf6d100fbe05a4eaf42dd9a2fff04))
+* **detector:** remove Analyze button; emit trace_hash once per load (trace_replay FP) ([439f94b](https://github.com/datascry/kitsune/commit/439f94bcc50f19da15fb8c437b80634405ff3d6a))
+
+
+### Performance Improvements
+
+* **detector:** prefix-length index for IP-rep lookup (linear scan -&gt; ~50x) ([a01b8ec](https://github.com/datascry/kitsune/commit/a01b8ec46980965028a2180f21d43516399c5f14))
+
 ## [1.6.0](https://github.com/datascry/kitsune/compare/v1.5.0...v1.6.0) (2026-06-23)
 
 
