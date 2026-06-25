@@ -42,6 +42,7 @@ _LIT = {
     "ua-rotation": "net.ua_rotation_within_session",
     "fp-rotation": "br.fingerprint_unstable_within_session",
     "trace-replay": "bh.trace_replay_within_session",
+    "webgl-renderer-spoof": "br.webgl_renderer_caps_mismatch",
     "worker-proxy": "br.worker_constructor_tampered",
     "worker-proxy-fix": "br.worker_source_rewritten",
     "brave-fake-proxy": "br.brave_spoofed",

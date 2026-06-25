@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.51"
+ruleset_version: "0.74.52"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -1304,6 +1304,18 @@ rules:
     source: "CreepJS: OS-specific TTS voices (Microsoft/Apple/espeak) betray a spoofed UA platform"
 
   # --- v0.14.0: anti-detect renderer-spoofing artifact (counters headful Camoufox) ---
+
+  - id: br.webgl_renderer_caps_mismatch
+    title: WebGL renderer names a high-end GPU but the hardware capabilities are below its floor (spoofed string)
+    layers: [browser]
+    reads: [browser.webgl_renderer_caps_mismatch]
+    predicate: present
+    weight: 0.8
+    status: active
+    category: coherence
+    added: "2026-06-25"
+    last_validated: "2026-06-25"
+    source: "G18 — the renderer-string-vs-GPU-CAPABILITY coherence tell, aimed at the source-level anti-detect FORK frontier (CloakBrowser/Wayfern/BotBrowser etc.) that the string-based WebGL checks miss. Kitsune already reads the UNMASKED_RENDERER string and runs seven string checks on it (webgl_software/getparameter_tampered/os_vs_ua/worker_vs_main/renderer_artifact/not_angle/webgl2_missing), but never read the GPU's actual CAPABILITIES. A source-level fork patches the renderer STRING in BOTH realms — defeating br.webgl_worker_vs_main (which only catches a main-realm getParameter spoof that the Worker exposes) — yet cannot change what the physical silicon can do, so MAX_TEXTURE_SIZE and friends stay consistent with the real hardware. The collector now captures the capability fingerprint (webgl_caps + webgl_max_texture, main realm) and emits webgl_renderer_caps_mismatch when the renderer string names a recent HIGH-END discrete GPU (RTX / Radeon RX 6000+ / Apple M-series / Intel Arc) yet MAX_TEXTURE_SIZE < 16384 — below the floor EVERY such GPU exposes. GROUNDED on real data: headless Chrome's SwiftShader backend reports MAX_TEXTURE_SIZE=8192 (captured live), while all recent high-end GPUs report 16384 or 32768 (universal since ~2013; ANGLE on D3D11/Vulkan/Metal exposes the native max). FP-SAFE by the high-end-string scoping: a real RTX/Apple-M/Arc is always >=16384 → never fires; an honest software renderer NAMES itself (SwiftShader/llvmpipe → caught by webgl_software) so its string never matches the high-end pattern → never fires; a real low-end/mobile GPU at 8192 has a low-end renderer string, not 'RTX 4090', so it is out of scope. The only thing that trips it is a spoofed high-end renderer string over a backend (software or lesser GPU) whose caps betray the lie. CONVICTING (coherence): the claimed GPU identity contradicts the hardware it runs on. RED: the renderer-spoof evader patches UNMASKED_RENDERER to a high-end string over the SwiftShader (8192) backend → fires; every real-browser capture (honest renderer ↔ caps) does not. browserforge calibration carries the renderer string but not the live caps probe, so it cannot raise the legit flag rate. Lead G18; see docs/research-radar.md. Increment 1 (caps capture + display + this tell); the broader renderer↔caps profile match across more GPU tiers is a follow-up needing real-GPU caps profiles."
 
   - id: br.webgl_renderer_artifact
     title: WebGL renderer string is an anti-detect spoofing placeholder, not a real driver

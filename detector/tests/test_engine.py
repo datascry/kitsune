@@ -338,6 +338,10 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "br.voice_os_vs_ua",
         ),
         ([(Layer.browser, "webgl_renderer_artifact", True, Source.collector)], "br.webgl_renderer_artifact"),
+        (
+            [(Layer.browser, "webgl_renderer_caps_mismatch", True, Source.collector)],
+            "br.webgl_renderer_caps_mismatch",
+        ),
         ([(Layer.browser, "audio_missing", True, Source.collector)], "br.audio_missing"),
         ([(Layer.browser, "audio_noise", True, Source.collector)], "br.audio_noise"),
         ([(Layer.browser, "media_devices_empty", True, Source.collector)], "br.media_devices_empty"),
