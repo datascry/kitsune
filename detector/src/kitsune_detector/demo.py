@@ -647,7 +647,19 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   .coherence .verdict-cell{border-left:0;border-right:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:.5rem}
   .bar{grid-template-columns:5rem 1fr 2.25rem;gap:.5rem}
   .edge-list,.passed-list{columns:1}
-  table.detections{font-size:.78rem}
+  /* Detections: a 4-col table with a long "why" sentence can't fit a phone width — the signal column
+     (long rule ids) forces width and collapses "why" to one-char-per-line. Stack each row into a card:
+     rule id on its own line (wrapping), then category + weight as a small meta line, then the why text. */
+  table.detections{font-size:.82rem}
+  table.detections,table.detections tbody,table.detections tr,table.detections td{display:block;width:auto}
+  table.detections th{display:none}
+  table.detections tr{padding:.55rem 0;border-bottom:1px solid var(--line)}
+  table.detections td{border:0;padding:0}
+  table.detections td.mark{white-space:normal;overflow-wrap:anywhere;font-weight:600;margin-bottom:.15rem}
+  table.detections td:nth-child(2),table.detections td.weight{display:inline-block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em}
+  table.detections td.weight{margin-left:.7rem;text-transform:none;letter-spacing:0}
+  table.detections td.weight::before{content:"w "}
+  table.detections td.title{margin-top:.2rem;color:var(--ink)}
   .fpid{gap:.3rem .9rem}
 }
 </style>
