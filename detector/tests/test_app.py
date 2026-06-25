@@ -191,6 +191,7 @@ def test_inspect_is_cookie_scoped(client: TestClient) -> None:
         "tls_cipher_order",
         "quic_transport_params",
         "http_version",
+        "tls_extras",
         "tcp",
         "tcp_os",
         "h2",
