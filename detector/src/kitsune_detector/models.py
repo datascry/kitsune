@@ -39,6 +39,11 @@ class Label(StrEnum):
     human = "human"
     suspicious = "suspicious"
     bot = "bot"
+    #: A declared automated agent that cryptographically PROVED its identity (a valid Web Bot Auth /
+    #: RFC 9421 signature against a key we hold) — a known-good bot, allow-listed rather than convicted.
+    #: Orthogonal to the human↔bot axis: it IS automation, but a verified, welcome one. NB an allow-list is
+    #: only as strong as the signing key's secrecy (see scoring.verified_agent).
+    verified = "verified"
 
 
 class RuleCategory(StrEnum):

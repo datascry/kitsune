@@ -185,6 +185,12 @@ h3 .count {
 .verdict-human .label {
   color: var(--jade);
 }
+.verdict-verified {
+  border-color: var(--jade);
+}
+.verdict-verified .label {
+  color: var(--jade);
+}
 .verdict .score {
   font-size: 0.95rem;
 }
@@ -1049,15 +1055,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var label = String(v.label || "?"), pct = Math.round((v.score || 0) * 100);
     var inc = Math.round((v.incoherence_score || 0) * 100);
     // Plain-English read of the verdict, instead of a bare second percentage.
-    var explain;
+    var explain, scoreLine = pct + "% overall bot-likelihood";
     if (label === "human") explain = "Every layer agrees — consistent with a real browser.";
-    else if (label === "bot") explain = inc > 0
+    else if (label === "verified") {
+      explain = "Cross-layer signals say automation, but this agent cryptographically PROVED its identity (a valid Web Bot Auth / RFC 9421 signature) — a declared good bot, allow-listed rather than convicted. Note: this lab seeds the PUBLIC RFC test key, so anyone can mint a \\u201cverified\\u201d agent here — an allow-list is only as strong as the signing key\\u2019s secrecy.";
+      scoreLine = "verified agent \\u00b7 allow-listed";
+    } else if (label === "bot") explain = inc > 0
       ? "Cross-layer contradiction: the layers describe different devices — a real browser can\\u2019t do that."
       : "A clear automation or spoofing artifact was found.";
     else explain = "Some signals don\\u2019t fit a coherent real browser, but there\\u2019s no hard bot signature.";
     var html = '<div class="verdict verdict-' + esc(label) + '">'
       + '<span class="label">' + esc(label.toUpperCase()) + '</span>'
-      + '<span class="score">' + pct + '% overall bot-likelihood</span></div>'
+      + '<span class="score">' + esc(scoreLine) + '</span></div>'
       + '<p class="note">' + esc(explain) + '</p>';
     // Per-layer bars — how bot-like EACH layer looks (0 = human). The verdict is their combined
     // likelihood (not a sum), and a cross-layer contradiction counts toward it twice.

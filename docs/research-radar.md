@@ -636,3 +636,16 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   + harness (249) green. PRODUCTION wires the real agent directories (each agent's
   /.well-known/http-message-signatures-directory JWKS) — the lab seeds the RFC test key. The first detection
   built on a 2026 standard, and dead-on the incoherence thesis: claimed identity vs cryptographic proof.
+- **2026-06-25 · G25 COMPLETED — verified-agent allow-list (Label.verified)** — closed the benign half of
+  G25. A request that cryptographically PROVES its agent identity (a VALID Web Bot Auth signature →
+  network.web_bot_auth_verified) is now ALLOW-LISTED as the new Label.verified, overriding the bot verdict its
+  honest automation signals (no JS, non-browser HTTP/2) would otherwise earn — the whole point of the standard
+  is to separate good bots from bad. scoring.verified_agent gates it (verified marker AND no web_bot_auth_invalid
+  forgery tell); detector.score applies the override; the live page renders a jade "VERIFIED · allow-listed"
+  stamp. HONEST SECURITY FRAMING (the evasion the allow-list enables): an allow-list is only as strong as the
+  signing key's secrecy. The lab seeds the PUBLIC RFC 9421 test key, so in-sandbox ANY client can sign a valid
+  signature and mint a 'verified' agent — the go-tls KS_WEBBOTAUTH=valid evader IS that bypass, and the page
+  says so. Production trusts real agent directories whose private keys are secret. Grounded by test_scoring
+  (verified_agent: allow-lists a valid sig, never a forgery) + test_detector (verified→Label.verified,
+  forged→bot). Detector 394 green. The convicting net.web_bot_auth_invalid (forgery) + the verified allow-list
+  are the two halves of the same RFC 9421 coherence check: claimed identity vs cryptographic proof, both ways.

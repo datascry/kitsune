@@ -56,6 +56,24 @@ def test_fake_declared_crawler_convicts(detector: Detector) -> None:
     assert any(c.rule_id == "net.fake_declared_crawler" for c in v.contradictions)
 
 
+def test_verified_web_bot_auth_agent_is_allow_listed(detector: Detector) -> None:
+    # A cryptographically verified Web Bot Auth agent that also has no JS (a real, declared good bot) is
+    # allow-listed (Label.verified), overriding the bot verdict its automation signals would earn.
+    verified = detector.ingest_and_score(
+        [
+            make_signal("v", Layer.network, "web_bot_auth_verified", True, source=Source.edge),
+            make_signal("v", Layer.network, "browser_absent", True, source=Source.edge),
+        ]
+    )[0]
+    assert verified.label is Label.verified
+    # A FORGED signature (web_bot_auth_invalid) is convicted, never allow-listed.
+    forged = detector.ingest_and_score(
+        [make_signal("f", Layer.network, "web_bot_auth_invalid", True, source=Source.edge)]
+    )[0]
+    assert forged.label is Label.bot
+    assert any(c.rule_id == "net.web_bot_auth_invalid" for c in forged.contradictions)
+
+
 def test_ingest_and_score(detector: Detector) -> None:
     signals = [
         make_signal("z", Layer.browser, "webdriver", True, source=Source.collector),
