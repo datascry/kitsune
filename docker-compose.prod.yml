@@ -7,8 +7,9 @@ services:
     # Persist the session/verdict store across restarts (the detector already reads KITSUNE_DB).
     # KITSUNE_ADMIN_TOKEN (from .env, optional) gates /session,/verdict,/scoreboard + hides the API
     # docs on this public host; empty/unset leaves them open (dev behaviour).
-    # KITSUNE_GEOIP_DIR points at a dir holding MaxMind GeoLite2-City.mmdb / GeoLite2-ASN.mmdb (mounted
-    # read-only below). Absent/empty -> the wire panel shows the IP without city/ASN (purely additive).
+    # KITSUNE_GEOIP_DIR points at a dir holding the City+ASN MMDB pair (mounted read-only below). Populate
+    # ./geoip with the keyless `geo-refresh` companion (DB-IP Lite, below). Absent/empty -> the wire panel
+    # shows the IP without city/ASN (purely additive).
     # KITSUNE_IPREP_DIR points at a dir holding the refreshed IP-reputation lists (datacenter_cidrs.txt /
     # proxy_exit_cidrs.txt) from `python -m kitsune_detector.ip_reputation_refresh`. Absent/empty -> the
     # committed in-image seeds (a thin slice). Populate ./iprep on the host + cron monthly; see docs/deploy.md.
@@ -39,6 +40,24 @@ services:
     volumes:
       - ./iprep:/out
     command: ["uv", "run", "python", "-m", "kitsune_detector.ip_reputation_refresh"]
+    restart: "no"
+
+  # One-shot GEO refresh — the keyless twin of iprep-refresh. The detector mounts ./geoip READ-ONLY at
+  # runtime; this companion mounts the SAME host dir READ-WRITE at /out and pulls DB-IP's free Lite City+ASN
+  # MMDBs (CC BY 4.0, NO licence key) there — so geo goes live with one command and no operator secret:
+  #   docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --build geo-refresh
+  # The `tools` profile keeps it OUT of `up`. Then restart the detector to pick up the DBs. Cron it monthly
+  # (DB-IP publishes a new edition on the 1st); see docs/deploy.md.
+  geo-refresh:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: detector/Dockerfile
+    environment:
+      KITSUNE_GEOIP_DIR: /out
+    volumes:
+      - ./geoip:/out
+    command: ["uv", "run", "python", "-m", "kitsune_detector.geo_refresh"]
     restart: "no"
 
   edge:

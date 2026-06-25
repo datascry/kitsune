@@ -1,4 +1,4 @@
-# tests/test_geo — GeoLite2 enrichment.
+# tests/test_geo — City+ASN MMDB enrichment (DB-IP Lite default, GeoLite2 fallback).
 # Covers record formatting, the DB-backed lookup path, and graceful degradation with no DB configured.
 
 from __future__ import annotations
@@ -55,4 +55,30 @@ def test_lookup_with_db(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     geo._readers.clear()
     g = geo.lookup("1.1.1.1")
     assert g is not None and g["country"] == "Canada" and g["asn"] == "AS13335"
+    geo._readers.clear()
+
+
+def test_lookup_reads_dbip_filenames(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # The keyless deploy default: geo.geo_refresh writes dbip-city-lite.mmdb / dbip-asn-lite.mmdb, and
+    # lookup resolves them (DB-IP records share the GeoLite2 schema, so format_geo is unchanged).
+    (tmp_path / "dbip-city-lite.mmdb").write_bytes(b"x")
+    (tmp_path / "dbip-asn-lite.mmdb").write_bytes(b"x")
+
+    class FakeReader:
+        def __init__(self, rec: dict) -> None:
+            self.rec = rec
+
+        def get(self, ip: str) -> dict:
+            return self.rec
+
+    def fake_open(path: str) -> FakeReader:
+        if "city" in path:
+            return FakeReader({"country": {"names": {"en": "Germany"}}, "city": {"names": {"en": "Berlin"}}})
+        return FakeReader({"autonomous_system_number": 3320, "autonomous_system_organization": "Deutsche Telekom"})
+
+    monkeypatch.setenv("KITSUNE_GEOIP_DIR", str(tmp_path))
+    monkeypatch.setattr(geo.maxminddb, "open_database", fake_open)
+    geo._readers.clear()
+    g = geo.lookup("84.0.0.1")
+    assert g == {"country": "Germany", "city": "Berlin", "asn": "AS3320", "asn_org": "Deutsche Telekom"}
     geo._readers.clear()
