@@ -20,6 +20,7 @@ from pathlib import Path
 
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
+from starlette.middleware.gzip import GZipMiddleware
 
 from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
@@ -172,6 +173,10 @@ def create_app(
         )
     else:
         app = FastAPI(title="Kitsune Detector", version="0.1.0")
+
+    # The pages are inline-everything HTML (the homepage is ~149 KB of mostly text); gzip cuts the wire
+    # transfer ~70-87% and makes the per-page repeated CSS nearly free. minimum_size skips tiny JSON bodies.
+    app.add_middleware(GZipMiddleware, minimum_size=700)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
@@ -335,7 +340,8 @@ def create_app(
                     page_type = "TechArticle"
                     keywords = f"{SEO_KEYWORDS}, cross-layer coherence, architecture"
                 elif slug == "research":
-                    body = render_research_page()
+                    _ev_caught = sum(1 for e in evaders.values() if str(e.get("verdict", "")).strip() == "bot")
+                    body = render_research_page(len(rules_list), _ev_caught, len(evaders))
                     page_type = "TechArticle"
                     keywords = f"{SEO_KEYWORDS}, arms-race findings, research"
                 elif slug == "evasions":

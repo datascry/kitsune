@@ -40,9 +40,9 @@ DEMO_PAGE = """<!doctype html>
   --panel: #0e0e12;
   --panel-2: #121218;
   --line: #20202a;
-  --line-bright: #34343f;
+  --line-bright: #45454f; /* meaningful UI borders — >=3:1 non-text contrast (WCAG 1.4.11) */
   --ink: #eae7df; /* bone */
-  --muted: #797985;
+  --muted: #8a8a97; /* secondary text — clears 4.5:1 on the panel surfaces too (WCAG 1.4.3) */
   --fox: #e8482b; /* fox-fire vermilion — the one accent */
   --jade: #5fb89a; /* clear / coherent */
   --amber: #d6a44e; /* suspicious / experimental */
@@ -65,7 +65,6 @@ body {
   letter-spacing: 0.01em;
 }
 
-header,
 main,
 footer {
   max-width: 64rem;
@@ -73,50 +72,11 @@ footer {
   padding: 0 1.5rem;
 }
 
-/* Masthead — a vermilion rule, the wordmark, a forensic subtitle. */
-header {
-  padding-top: 2.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-header .mark {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-}
-header .mark::before {
-  content: "";
-  width: 0.55rem;
-  height: 1.4rem;
-  background: var(--fox);
-  transform: translateY(0.2rem);
-}
-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-}
-header .tag {
-  color: var(--muted);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-header p {
-  color: var(--muted);
-  max-width: 46rem;
-  font-size: 0.82rem;
-  margin: 0.75rem 0 0;
-}
-header a,
 footer a {
   color: var(--fox);
   text-decoration: none;
   border-bottom: 1px solid transparent;
 }
-header a:hover,
 footer a:hover {
   border-bottom-color: var(--fox);
 }
@@ -126,11 +86,31 @@ main {
   padding-bottom: 2rem;
 }
 
-#status {
-  color: var(--amber);
-  font-size: 0.82rem;
-  border-left: 2px solid var(--amber);
-  padding-left: 0.75rem;
+/* Keyboard focus — visible on every interactive element on the dark theme (WCAG 2.4.7). */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--fox);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Skip link — first focusable element; bypasses the nav (WCAG 2.4.1). */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--fox);
+  color: var(--bg);
+  padding: 0.5rem 0.9rem;
+  z-index: 100;
+  font-weight: 700;
+}
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
 }
 
 /* Section labels — "§ TITLE ────" with a hairline filling the row. */
@@ -479,8 +459,9 @@ code {
 }
 .exp {
   font-size: 0.62rem;
-  color: var(--bg);
-  background: var(--amber);
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  background: transparent;
   padding: 0 0.3rem;
   letter-spacing: 0.05em;
 }
@@ -520,190 +501,116 @@ footer {
   padding-bottom: 2.5rem;
 }
 
-/* Behavioral live panel — the interactive biomechanics layer. */
-.behavioral-panel {
-  border: 1.5px solid var(--line-bright);
-  background: var(--panel-2);
-  padding: 1rem 1.1rem;
-  margin: 1.5rem 0;
-}
-.bp-help {
-  margin: 0.2rem 0 0.6rem;
-}
-.bp-pad {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: space-between;
-  margin: 0.4rem 0;
-}
-.bp-dot {
-  flex: 1 1 auto;
-  min-width: 56px;
-  padding: 0.55rem;
-  border: 1px solid var(--line-bright);
-  background: var(--panel);
-  color: inherit;
-  border-radius: 4px;
-  cursor: pointer;
-  font: inherit;
-}
-.bp-dot:hover {
-  background: var(--panel-2);
-}
-.bp-dot.hit {
-  border-color: var(--ok, #2ea043);
-  color: var(--ok, #2ea043);
-}
-.bp-text {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.5rem;
-  margin: 0.3rem 0 0.6rem;
-  border: 1px solid var(--line-bright);
-  background: var(--panel);
-  color: inherit;
-  border-radius: 4px;
-  font: inherit;
-}
-.bp-status {
+/* Buttons — the one interactive-control style (re-run, share, post-verdict CTA links). */
+.ks-btn {
+  font-family: var(--mono);
   font-size: 0.78rem;
-  color: var(--muted);
-  margin: 0.3rem 0 0.6rem;
-}
-.bp-status .ok {
-  color: var(--jade);
-}
-.bp-status .wait {
-  color: var(--amber);
-}
-table.bp-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0.6rem 0;
-  font-size: 0.82rem;
-}
-table.bp-table th,
-table.bp-table td {
-  text-align: left;
-  padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid var(--line);
-  vertical-align: top;
-}
-table.bp-table th {
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-.bp-title {
-  color: var(--ink);
-  font-size: 0.8rem;
-}
-.bp-val,
-.bp-floor {
-  font-variant-numeric: tabular-nums;
-}
-.bp-floor {
-  color: var(--muted);
-}
-.bp-verdict {
-  white-space: nowrap;
-  font-weight: 700;
-}
-tr.bot .bp-verdict {
-  color: var(--fox);
-}
-tr.human .bp-verdict {
-  color: var(--jade);
-}
-tr.pending .bp-verdict {
-  color: var(--amber);
-  font-weight: 400;
-}
-tr.pending {
-  opacity: 0.6;
-}
-.bp-summary {
-  font-size: 0.8rem;
-  color: var(--ink);
-  margin: 0.5rem 0;
-}
-.bp-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.5rem 0 0;
-}
-button.bp-demo,
-button.bp-reeval {
-  font-family: var(--mono);
-  font-size: 0.76rem;
   color: var(--ink);
   background: var(--panel);
   border: 1px solid var(--line-bright);
-  padding: 0.4rem 0.7rem;
+  padding: 0.45rem 0.8rem;
   cursor: pointer;
-}
-button.bp-demo:hover,
-button.bp-reeval:hover {
-  border-color: var(--fox);
-  color: var(--fox);
-}
-.bp-dot {
-  touch-action: manipulation;
-}
-/* L5 demo controls + banner, L6 rule provenance link, L7 share button. */
-.demo-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.6rem 0;
-}
-.dc-label {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-button.demo-spoof,
-button.demo-reset,
-button.share-btn {
-  font-family: var(--mono);
-  font-size: 0.74rem;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--line-bright);
-  padding: 0.35rem 0.6rem;
-  cursor: pointer;
-  border-radius: 3px;
-}
-button.demo-spoof:hover,
-button.demo-reset:hover,
-button.share-btn:hover {
-  border-color: var(--fox);
-  color: var(--fox);
-}
-.demo-banner {
-  background: var(--panel-2);
-  border: 1px solid var(--fox);
-  padding: 0.5rem 0.8rem;
-  margin: 0.5rem 0;
-  font-size: 0.84rem;
-}
-.share-btn {
-  margin-top: 0.5rem;
-}
-a.rule-src {
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
-a.rule-src:hover code {
-  text-decoration: underline;
+.ks-btn:hover {
+  border-color: var(--fox);
+  color: var(--fox);
+}
+.ks-btn.primary {
+  border-color: var(--fox);
+  color: var(--fox);
+}
+.ks-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 0.5rem;
+}
+/* Post-verdict next-step block — what the visitor does after seeing the result. */
+.ks-cta {
+  border-left: 2px solid var(--fox);
+  background: var(--panel-2);
+  padding: 0.8rem 1rem;
+  margin: 1.25rem 0;
+}
+.ks-cta p {
+  margin: 0 0 0.6rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+/* Progressive disclosure — the dense evidence panels collapse so the verdict leads. */
+.ks-disclose {
+  margin: 1.1rem 0;
+  border-top: 1px solid var(--line);
+}
+.ks-disclose > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 0.85rem 0;
+}
+.ks-disclose > summary::-webkit-details-marker {
+  display: none;
+}
+.ks-disclose > summary::before {
+  content: "\\u25b8";
+  color: var(--fox);
+}
+.ks-disclose[open] > summary::before {
+  content: "\\u25be";
+}
+.ks-disclose > summary:hover {
+  color: var(--fox);
+}
+.ks-disclose > summary .note {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Scanning stepper — perceived progress while collecting; hidden once scored. */
+.ks-scan {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.ks-scan .ks-step {
+  color: var(--muted);
+  border: 1px solid var(--line-bright);
+  padding: 0.2rem 0.55rem;
+}
+.ks-scan .ks-step.run {
+  color: var(--amber);
+  border-color: var(--amber);
+}
+.ks-scan .ks-step.done {
+  color: var(--jade);
+  border-color: var(--jade);
+}
+body.ks-done .ks-scan {
+  display: none;
 }
 
 /* --- demo-page specifics: status line, result container, server-scored behavioral panel --- */
 #ks-status{color:var(--amber);font-size:.82rem;border-left:2px solid var(--amber);padding-left:.75rem;margin:1rem 0}
-#ks-result{margin-top:.5rem}
+#ks-result{margin-top:.5rem;min-height:8.5rem}/* reserve verdict height to cut layout shift (CLS) */
+#ks-coherence{min-height:2.5rem}
+#ks-detections{overflow-x:auto}/* keep all columns on mobile; scroll rather than hide data */
 .layer-bars{margin:1rem 0 1.25rem}
 .bar-clean .bar-val{color:var(--jade)}.bar-clean .bar-label{color:var(--muted)}
 #ks-bio{border:1.5px solid var(--line-bright);background:var(--panel-2);padding:1rem 1.1rem;margin:1.5rem 0}
@@ -714,9 +621,6 @@ a.rule-src:hover code {
 .bm-human{color:var(--jade)}.bm-bot{color:var(--fox);font-weight:700}.bm-collecting,.bm-more,.bm-ok,.bm-measured,.bm-na{color:var(--muted)}
 .bio-head{grid-column:1/-1;background:var(--bg);color:var(--fox);font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;padding:.55rem .7rem .3rem}
 .bio-help{color:var(--muted);font-size:.78rem;margin:.3rem 0 .6rem}
-.bio-pad{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-between;margin:.4rem 0}
-.bio-dot{flex:1 1 auto;min-width:56px;padding:.55rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;cursor:pointer;font:inherit;touch-action:manipulation}
-.bio-dot:hover{background:var(--panel-2)}.bio-dot.hit{border-color:var(--jade);color:var(--jade)}
 #ks-bio-text{width:100%;box-sizing:border-box;padding:.5rem;margin:.3rem 0 .6rem;border:1px solid var(--line-bright);background:var(--panel);color:inherit;border-radius:4px;font:inherit}
 /* --- landing nav --- */
 nav.top{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;max-width:64rem;margin:0 auto;padding:.9rem 1.5rem;border-bottom:1px solid var(--line)}
@@ -731,7 +635,14 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 .prose{color:var(--muted);font-size:.88rem;max-width:48rem}
 .prose p{margin:.7rem 0}.prose strong{color:var(--ink)}
 .faq details{border-bottom:1px solid var(--line);padding:.65rem 0}
-.faq summary{cursor:pointer;color:var(--ink);font-size:.88rem;font-weight:600}
+.faq summary{cursor:pointer;color:var(--ink);font-size:.88rem;font-weight:600;list-style:none;display:flex;gap:.5rem;align-items:baseline}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::before{content:"\\u25b8";color:var(--fox);font-size:.8em}
+.faq details[open] summary::before{content:"\\u25be"}
+.passed-toggle summary{list-style:none}
+.passed-toggle summary::-webkit-details-marker{display:none}
+.passed-toggle summary::before{content:"\\u25b8 ";color:var(--jade)}
+.passed-toggle details[open] summary::before,details[open]>.passed-toggle summary::before{content:"\\u25be "}
 .faq details p{color:var(--muted);font-size:.84rem;margin:.5rem 0 0;max-width:48rem}
 /* --- composite fingerprint ID + per-layer detection groups --- */
 .fpid{border:1px solid var(--line);background:var(--panel-2);padding:.6rem .9rem;margin:.7rem 0;font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.4rem 1.5rem}
@@ -755,9 +666,9 @@ html,body{overflow-x:hidden;max-width:100%}
 code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap:anywhere}
 /* --- mobile (<=640px) --- */
 @media (max-width:640px){
-  nav.top,header,main,footer{padding-left:1rem;padding-right:1rem}
-  nav.top{gap:.7rem .9rem}
-  nav.top a{font-size:.72rem}
+  nav.top,main,footer{padding-left:1rem;padding-right:1rem}
+  nav.top{gap:.5rem .9rem}
+  nav.top a{font-size:.72rem;min-height:44px;display:inline-flex;align-items:center}
   nav.top a.brand{font-size:.85rem;letter-spacing:.16em}
   h1.page{font-size:1.4rem;letter-spacing:0}
   .lead{font-size:.95rem}
@@ -772,20 +683,21 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   .bar{grid-template-columns:5rem 1fr 2.25rem;gap:.5rem}
   .edge-list,.passed-list{columns:1}
   table.detections{font-size:.78rem}
-  table.detections th:nth-child(3),table.detections td.weight{display:none}
   .fpid{gap:.3rem .9rem}
 }
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Kitsune","url":"https://kitsune.id/","applicationCategory":"SecurityApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Antidetect & browser fingerprint test: cross-layer fingerprint, TLS/JA4, HTTP-2, QUIC, TCP/IP and bot detection."}</script>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a browser fingerprint?","acceptedAnswer":{"@type":"Answer","text":"The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are."}},{"@type":"Question","name":"Can antidetect browsers beat fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"Stealth/antidetect browsers spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain."}},{"@type":"Question","name":"What is JA3 / JA4 TLS fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection."}},{"@type":"Question","name":"Is my browser detectable as a bot?","acceptedAnswer":{"@type":"Answer","text":"Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired."}},{"@type":"Question","name":"Does this send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties."}}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is a browser fingerprint?","acceptedAnswer":{"@type":"Answer","text":"The combination of signals a site reads from your browser — canvas/WebGL rendering, fonts, screen, audio, Client Hints and more — that together identify your device without cookies. Kitsune enumerates them and scores how coherent they are."}},{"@type":"Question","name":"Can antidetect browsers beat fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"Stealth/antidetect browsers spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain."}},{"@type":"Question","name":"What is JA3 / JA4 TLS fingerprinting?","acceptedAnswer":{"@type":"Answer","text":"JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection."}},{"@type":"Question","name":"Is my browser detectable as a bot?","acceptedAnswer":{"@type":"Answer","text":"Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired."}},{"@type":"Question","name":"Does this send my data anywhere?","acceptedAnswer":{"@type":"Answer","text":"Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified verdicts are shared. Nothing is sold or handed to third parties."}}]}</script>
 </head>
 <body>
-<nav class="top">
+<a class="skip-link" href="#test">Skip to the detection test</a>
+<nav class="top" aria-label="Primary">
   <a class="brand" href="/">Kitsune</a>
-  <a href="/matrix">Matrix</a>
-  <a href="/evasions">Evasions</a>
-  <a href="/detections">Detections</a>
+  <a href="/" class="active" aria-current="page">Test</a>
   <a href="/how-it-works">How it works</a>
+  <a href="/matrix">Matrix</a>
+  <a href="/detections">Detections</a>
+  <a href="/evasions">Evasions</a>
   <a href="/research">Research</a>
   <a href="https://github.com/datascry/kitsune">GitHub</a>
   <span class="spacer"></span>
@@ -793,11 +705,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
 <main>
 <section id="test">
   <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
-  <p class="lead">Is your browser — or your stealth / antidetect setup — detectable? Kitsune fingerprints this browser across <strong>every layer — from the TLS handshake to the JavaScript</strong>, correlated at the edge, and returns the <strong>real bot-detection verdict</strong>, live.</p>
+  <p class="lead"><strong>Is this browser detectable as a bot?</strong> Kitsune reads every layer — from the TLS handshake to the JavaScript — correlates them at the edge, and returns the <strong>real bot-detection verdict</strong>, live. Testing a stealth or antidetect browser? This is the verdict it would actually get.</p>
   <!-- HEADLINE: who you are + the verdict, together -->
-  <div id="ks-fpid" class="fpid">computing your fingerprint…</div>
+  <div id="ks-fpid" class="fpid">Scanning your browser…</div>
   <h2>Detector verdict</h2>
-  <p id="ks-status">collecting…</p><div id="ks-result"></div>
+  <div id="ks-scan" class="ks-scan"><span class="ks-step run">browser</span><span class="ks-step">network</span><span class="ks-step">behavior</span></div>
+  <p id="ks-status" role="status" aria-live="polite">Scanning your browser…</p>
+  <div id="ks-result" aria-live="polite"></div>
+  <div id="ks-cta"></div>
+  <div class="ks-actions">
+    <button type="button" id="ks-rerun" class="ks-btn primary">↻ Re-run scan</button>
+    <button type="button" id="ks-share" class="ks-btn">Share this verdict</button>
+  </div>
   <!-- MACHINE-READABLE RESULT: automated tools can parse the verdict here without scraping the DOM.
        It starts as {"status":"collecting"} and is replaced with the full verdict (label, score,
        incoherence_score, layer_scores, contradictions[], session_id, and a wire{} block) once scoring
@@ -805,10 +724,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
        event. Poll this element's textContent, or: addEventListener("kitsune:result", e => e.detail). -->
   <script type="application/json" id="ks-verdict">{"status":"collecting"}</script>
   <div id="ks-coherence"></div>
-  <!-- EVIDENCE: your fingerprint, layer by layer -->
+  <!-- EVIDENCE: your fingerprint, layer by layer — collapsed by default so the verdict leads; drill in on demand -->
   <div id="ks-predict"></div>
-  <div id="ks-wire"></div>
-  <div id="ks-surfaces"></div>
+  <details class="ks-disclose"><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
+  <details class="ks-disclose"><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
   <!-- INTERACT: behavioral panel AFTER the fingerprint surfaces (listeners arm on load regardless of order). -->
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
@@ -816,9 +735,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     <p class="bio-help">Type a sentence below and move your mouse — or <b>swipe</b> on a touch screen — the detector measures your mouse/touch dynamics and keystroke timing live and re-scores automatically once it has enough input.</p>
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
   </section>
-  <!-- THE WHY: the full rule breakdown, after its evidence -->
-  <h2>Detections <span class="note">— every check Kitsune ran, grouped by layer</span></h2>
-  <div id="ks-detections"></div>
+  <!-- THE WHY: the full rule breakdown, collapsed after its evidence -->
+  <details class="ks-disclose"><summary>Detections <span class="note">&mdash; every check Kitsune ran, grouped by layer</span></summary><div id="ks-detections"></div></details>
 </section>
 <section id="how-it-works">
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
@@ -834,7 +752,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <details><summary>Can antidetect browsers beat fingerprinting?</summary><p>Stealth/antidetect browsers (Camoufox, undetected-chromedriver, multilogin, …) spoof many signals, but making every layer agree — TLS JA4, HTTP-2 frame order, TCP/IP stack, GPU renderer and the JS feature-set all consistent with one real device — is far harder. Kitsune flags the contradictions that remain.</p></details>
   <details><summary>What is JA3 / JA4 TLS fingerprinting?</summary><p>JA3 and JA4 fingerprint the TLS ClientHello your browser sends on connect. They identify the TLS stack, which often betrays an automation tool even when the User-Agent looks normal. Kitsune's edge reads yours from the raw connection.</p></details>
   <details><summary>Is my browser detectable as a bot?</summary><p>Run the test above: Kitsune scores your browser across network, browser, behavioral and reputation layers and returns a live verdict — human, suspicious, or bot — with the exact signals that fired.</p></details>
-  <details><summary>Does this send my data anywhere?</summary><p>Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified aggregates are ever shared. Nothing is sold or handed to third parties.</p></details>
+  <details><summary>Does this send my data anywhere?</summary><p>Your signals are scored by Kitsune's detector at this origin to produce the verdict. Raw captures stay on the host; only de-identified verdicts are shared. Nothing is sold or handed to third parties.</p></details>
 </main>
 <footer><p>Your signals are scored by Kitsune's real detector at this origin — the blue-team side of a bot detection ⇄ evasion lab. Raw captures stay on the host; only de-identified verdicts are shared. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p>
 <p class="note">IP geolocation by <a href="https://www.maxmind.com">GeoLite2 data created by MaxMind</a>.</p></footer>
@@ -996,7 +914,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var other = "";
     for (var k in fp) { if (fp.hasOwnProperty(k) && !claimed[k]) other += surfRow(k, fp[k]); }
     if (other) cards += '<div class="surface"><div class="top"><span class="sname">Other</span><span class="chip">enumerated</span></div>' + other + '</div>';
-    el.innerHTML = '<h2>Fingerprint surfaces <span class="note">\\u2014 enumerated values \\u00b7 tamper status (' + dirty + ' tampered)</span></h2><div class="surfaces">' + cards + '</div>';
+    el.innerHTML = '<div class="surfaces">' + cards + '</div>';
+    var sc = document.getElementById("ks-surf-count"); if (sc) sc.textContent = " (" + dirty + " tampered)";
   }
   // Offscreen font-presence probe: measure a string in OS-signature fonts vs the generic baselines; a width
   // change means the font is installed. Cheap, no canvas — surfaces the installed-font set as a value.
@@ -1085,7 +1004,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   }
   function renderWire(d) {
     var el = document.getElementById("ks-wire"); if (!el) return;
-    if (!d) { el.innerHTML = '<h2>Network / wire layer <span class="note">\\u2014 captured by Kitsune\\u2019s edge</span></h2><p class="note">No edge session yet \\u2014 the wire layer (TLS/JA4, HTTP-2, TCP/IP, QUIC) is read from your raw connection when you reach this page through Kitsune\\u2019s edge.</p>'; return; }
+    if (!d) { el.innerHTML = '<p class="note">No edge session yet \\u2014 the wire layer (TLS/JA4, HTTP-2, TCP/IP, QUIC) is read from your raw connection when you reach this page through Kitsune\\u2019s edge.</p>'; return; }
     var w = d.wire || {}, g = d.geo || null, rep = d.reputation || null, ipLabel = d.ip || "";
     if (g) { var loc = [g.city, g.country].filter(function (x) { return x; }).join(", "); var org = g.asn_org || g.asn || ""; ipLabel = (d.ip || "") + (loc ? " \\u00b7 " + loc : "") + (org ? " \\u00b7 " + org : ""); }
     // IP reputation: datacenter/hosting + proxy/VPN/Tor-exit membership against the curated CIDR lists (the
@@ -1105,7 +1024,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + wireRow("TLS ext order", w.tls_ext_order, "n/a") + wireRow("TLS cipher order", w.tls_cipher_order, "n/a") + wireRow("TLS extras", w.tls_extras, "n/a")
       + wireRow("HTTP version", w.http_version, "n/a") + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("JA4T (TCP/IP)", ja4tLabel, "n/a")
       + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit") + wireRow("QUIC transport params", w.quic_transport_params, "captured on your next visit");
-    var html = '<h2>Network / wire layer <span class="note">\\u2014 read from your raw connection by Kitsune\\u2019s edge</span></h2><div class="surfaces">' + cards + '</div>';
+    var html = '<div class="surfaces">' + cards + '</div>';
     var nc = d.network_contradictions || [];
     if (nc.length) {
       html += '<p class="note">' + nc.length + ' network/reputation signal(s) fired:</p><table class="detections"><tr><th>signal</th><th>category</th><th>why</th></tr>';
@@ -1135,8 +1054,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // Close the detection loop for the visitor: render the REAL detector's verdict (the /ingest response).
   function showVerdict(v) {
     var status = document.getElementById("ks-status"), out = document.getElementById("ks-result");
-    if (!v) { if (status) status.textContent = "no verdict (no session?)"; return; }
-    if (status) status.textContent = "";
+    document.body.classList.add("ks-done");  // stop the scanning stepper
+    if (!v) { if (status) status.textContent = "Couldn\\u2019t score this visit \\u2014 no edge session was established. Re-run, or reload the page."; return; }
+    if (status) status.textContent = "Scan complete \\u00b7 only a de-identified verdict leaves your browser.";
     var label = String(v.label || "?"), pct = Math.round((v.score || 0) * 100);
     var inc = Math.round((v.incoherence_score || 0) * 100);
     // Plain-English read of the verdict, instead of a bare second percentage.
@@ -1148,7 +1068,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     else explain = "Some signals don\\u2019t fit a coherent real browser, but there\\u2019s no hard bot signature.";
     var html = '<div class="verdict verdict-' + esc(label) + '">'
       + '<span class="label">' + esc(label.toUpperCase()) + '</span>'
-      + '<span class="score">' + pct + '% bot-likelihood</span></div>'
+      + '<span class="score">' + pct + '% overall bot-likelihood</span></div>'
       + '<p class="note">' + esc(explain) + '</p>';
     // Per-layer bars — how bot-like EACH layer looks (0 = human). The verdict is their combined
     // likelihood (not a sum), and a cross-layer contradiction counts toward it twice.
@@ -1165,6 +1085,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + (inc > 0 ? ' — yours is <b>' + inc + '%</b>' : '') + '.</p>';
     html += '<div class="layer-bars">' + bars + '</div>';
     if (out) out.innerHTML = html;  // #ks-result = the headline summary (verdict stamp + layer bars)
+    // Post-verdict next step — the visitor's CTA, conditioned on the result.
+    var cta = document.getElementById("ks-cta");
+    if (cta) {
+      var ch;
+      if (label === "human") ch = 'Clean across every layer. <a href="/how-it-works">How is that judged? \\u2192</a> &middot; try a stealth or antidetect browser and re-run.';
+      else if (label === "bot") ch = 'A layer gave you away \\u2014 open <em>Detections</em> below to see which check fired, or <a href="/how-it-works">how Kitsune works \\u2192</a>';
+      else ch = 'Borderline \\u2014 some signals don\\u2019t fit a coherent browser. <a href="/how-it-works">How Kitsune works \\u2192</a> &middot; <a href="/matrix">how real evaders score \\u2192</a>';
+      cta.innerHTML = '<div class="ks-cta"><p>' + ch + '</p></div>';
+    }
     // Publish the full verdict for automated consumers (the same fields the /ingest API returns).
     var rec = {}; for (var rk in v) { if (Object.prototype.hasOwnProperty.call(v, rk)) rec[rk] = v[rk]; }
     rec.status = "complete"; rec.session_id = sid();
@@ -1189,7 +1118,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   var id = sid();
   if (!id) { return; }
   var pts = [];
-  addEventListener("mousemove", function (e) { pts.push({ x: e.clientX, y: e.clientY, t: e.timeStamp }); });
+  addEventListener("mousemove", function (e) { pts.push({ x: e.clientX, y: e.clientY, t: e.timeStamp }); }, { passive: true });
   // Coalesced pointer events: real hardware movement is sampled faster than the browser dispatches
   // events, so getCoalescedEvents() batches the intermediate samples (length > 1). Synthetic movement
   // injected via CDP (Input.dispatchMouseEvent — how Playwright/Puppeteer/driverless tools fake a
@@ -1226,8 +1155,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   var swipeBuf = [], swipeForce = [], touchSwipeCVs = [], swipeStats = [];
   function _touchPt(e) { var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]); return t ? { x: t.clientX, y: t.clientY, t: e.timeStamp } : null; }
   function _touchForce(e) { var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]); return t && typeof t.force === "number" ? t.force : null; }
-  addEventListener("touchstart", function (e) { var p = _touchPt(e); if (p) { swipeBuf = [p]; swipeForce = []; var f = _touchForce(e); if (f != null) swipeForce.push(f); } }, true);
-  addEventListener("touchmove", function (e) { if (swipeBuf.length) { var p = _touchPt(e); if (p) swipeBuf.push(p); var f = _touchForce(e); if (f != null) swipeForce.push(f); } }, true);
+  addEventListener("touchstart", function (e) { var p = _touchPt(e); if (p) { swipeBuf = [p]; swipeForce = []; var f = _touchForce(e); if (f != null) swipeForce.push(f); } }, { passive: true, capture: true });
+  addEventListener("touchmove", function (e) { if (swipeBuf.length) { var p = _touchPt(e); if (p) swipeBuf.push(p); var f = _touchForce(e); if (f != null) swipeForce.push(f); } }, { passive: true, capture: true });
   addEventListener("touchend", function (e) {
     if (swipeBuf.length >= 5) {
       // Reuse the desktop biomech extractors on the touch trajectory. Only velocity-CV CONVICTS (grounded
@@ -2436,8 +2365,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var isMob = (navigator.maxTouchPoints > 0) && /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
     function _med(a) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }
 
-    // --- Desktop · mouse (mouse-calibrated; gated off mobile by the detector, G10) ---
-    var rows = bioHead("Desktop \\u00b7 mouse");
+    // --- Desktop · mouse (shown on non-touch devices; mouse-calibrated, gated off mobile by the detector, G10) ---
+    var rows = "";
+    if (!isMob) {
+    rows += bioHead("Desktop \\u00b7 mouse");
     rows += bioRow("pointer events", pts.length, fullPts ? "ok" : "collecting");
     rows += bioRow("mouse entropy", enoughPts ? entropy(pts).toFixed(3) : "\\u2014", enoughPts ? (entropy(pts) < 0.15 ? "bot" : "human") : "collecting");
     rows += bioRow("path straightness", enoughPts ? straightness(pts).toFixed(3) : "\\u2014", enoughPts ? (straightness(pts) > 0.97 ? "bot" : "human") : "collecting");
@@ -2445,7 +2376,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var ple = fullPts ? powerLawExp(pts) : null;
     rows += bioRow("power-law \\u03b2", ple !== null ? ple.toFixed(3) : "\\u2014", ple !== null ? (ple < 0.05 ? "bot" : "human") : "collecting");
 
-    // --- Mobile · touch (only swipe velocity CV convicts, BrainRun-grounded; the rest are informational) ---
+    }
+    // --- Mobile · touch (shown on touch devices; only swipe velocity CV convicts, BrainRun-grounded; rest informational) ---
+    if (isMob) {
     rows += bioHead("Mobile \\u00b7 touch");
     var medSwipe = -1;
     if (touchSwipeCVs.length) { var sc = touchSwipeCVs.slice().sort(function (a, b) { return a - b; }); medSwipe = sc[Math.floor(sc.length / 2)]; }
@@ -2464,6 +2397,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     rows += bioRow("swipe power-law \\u03b2", swPl != null ? swPl.toFixed(3) : "\\u2014", infoCls);
     rows += bioRow("touch pressure", swForce != null ? swForce.toFixed(2) : "\\u2014", forces.length ? "measured" : (haveSw ? "na" : "collecting"));
 
+    }
     // --- Keystroke · both (device-agnostic; the inter-key floor is mobile-aware: 80ms on mobile, 30ms desktop) ---
     rows += bioHead("Keystroke \\u00b7 both");
     rows += bioRow("keystrokes", keys.length, enoughKeys ? "ok" : "collecting");
@@ -2473,11 +2407,25 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     el.innerHTML = rows;
   }
   try {
-    var dots = document.querySelectorAll(".bio-dot");
-    for (var di = 0; di < dots.length; di++) dots[di].addEventListener("click", function () { this.classList.add("hit"); renderBio(); });
     var btxt = document.getElementById("ks-bio-text");
     if (btxt) btxt.addEventListener("input", renderBio);
     setInterval(renderBio, 600); // keep the live readout fresh as the visitor moves/types
+  } catch (e) {}
+  // Re-run + share controls — the explicit "try your setup" affordance the lab is built for.
+  try {
+    var rerun = document.getElementById("ks-rerun");
+    if (rerun) rerun.addEventListener("click", function () {
+      document.body.classList.remove("ks-done");
+      var st = document.getElementById("ks-status"); if (st) st.textContent = "Re-scanning\\u2026";
+      var sc = document.getElementById("ks-scan"); if (sc) { var steps = sc.querySelectorAll(".ks-step"); for (var i = 0; i < steps.length; i++) steps[i].className = "ks-step" + (i === 0 ? " run" : ""); }
+      send();
+    });
+    var share = document.getElementById("ks-share");
+    if (share) share.addEventListener("click", function () {
+      var url = location.href, btn = this;
+      if (navigator.share) { navigator.share({ title: "Kitsune \\u2014 bot-detection verdict", url: url }).catch(function () {}); }
+      else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { btn.textContent = "Link copied"; }).catch(function () {}); }
+    });
   } catch (e) {}
   // Score after a short delay (a fast first verdict). In full mode, if the visitor hasn't produced enough
   // input yet the behavioral layer is omitted (no penalty) and we AUTO-RE-SCORE once they move/type enough,
