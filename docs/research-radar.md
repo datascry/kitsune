@@ -459,10 +459,10 @@ not signal.** Genuine un-extracted signals, mostly cheap (bytes the edge already
 | # | seam | gap | groundable? | note |
 |---|---|---|---|---|
 | N1 | network (TCP/IP) | **JA4T value-parsing**: MSS value + window-scale value + window/MSS ratio + p0f IP quirks (DF, IP-ID, ECN, ToS, SACK-perm, TCP-timestamps). Edge parses TTL+option-ORDER+window but discards the values. | **in-sandbox (cheapest)** — SYN bytes already captured; unlocks VPN/tunnel/mobile-from-MSS (wire proxy tell, no CIDR). **Corrects G4** ("JA4T covered" was wrong — values not captured). |
-| N2 | network (TLS) | **Extension ORDER + GREASE placement** — JA4 sorts extensions; raw order is the strongest under-collected impostor tell (Chrome permutes legally per-conn; uTLS/curl-impersonate emit fixed/illegal orders). | **in-sandbox** — parse order from the CH already captured; verify it's a legal Chrome permutation. |
-| N3 | network (QUIC) | **QUIC transport_parameters (TLS ext 0x39)** — QUIC-stack fingerprint independent of inner TLS; JA4-over-QUIC OMITS it and no vendor ships it (a lead-not-follow surface). | **in-sandbox** — edge already decrypts the Initial CH that carries it. |
+| N2 | network (TLS) | **Extension ORDER + GREASE placement** — JA4 sorts extensions; raw order captured as `tls_ext_order`. | ⚠ EXTRACTED (display only) — conviction NOT shippable (2026-06-25): uTLS+curl-impersonate now permute per-conn, so no honest positive + FP-risk on Chrome's own permutation; unique catch is redundant with tls_vs_ua_browser/tls_grease_vs_ua. |
+| N3 | network (QUIC) | **QUIC transport_parameters (TLS ext 0x39)** — QUIC-stack fingerprint independent of inner TLS; raw order captured as `quic_transport_params`. | ⚠ EXTRACTED (display only) — conviction INFRA-BLOCKED (2026-06-25): same per-IP opportunistic QUIC-capture blocker that retired net.quic_*_vs_ua; revive when capture is per-connection w/ multi-packet reassembly. |
 | N4 | network (HTTP/1.1) | **h1 header order + casing** + "refuses h2/h3 is itself a tell". We serve h1, fingerprint nothing. | **in-sandbox** — mirror JA4H order onto the h1 path. |
-| N5 | network (TLS) | **CH micro-tells**: key_share share-vs-advertised, cert_compression list, padding/ECH presence (uTLS CVE family; extends G23). | ✅ **SHIPPED** 2026-06-25 — `tls_extras` signal + wire card (extract+display; convicting rule queued). |
+| N5 | network (TLS) | **CH micro-tells**: key_share share-vs-advertised, cert_compression list, padding/ECH presence (uTLS CVE family; extends G23). | ✅ SHIPPED 2026-06-25 (`tls_extras` signal + wire card, extract+display). Conviction NOT shippable: advertised==sent for all faithful clients → inert; advertised-side already = net.tls_pq_keyshare_vs_ua. |
 | N6 | network (HTTP/3) | **H3 SETTINGS/QPACK fingerprint** (the h2-Akamai analog for h3). | **in-sandbox-ish** — edge runs an H3 server; frontier, no vendor ships it. |
 | N7 | network (TLS/TCP) | **spoofable / handshake-completion** (GreyNoise) + **cipher-stunting / implausible-randomization-as-a-tell** (Akamai). | **in-sandbox** — cheap rules over data the edge sees. |
 | NX | network (latency/IP) | JA4L latency-vs-geo (proxy-by-physics), JA4 prevalence ratios, ASN/named-proxy intel. | **external-data-bound** — RTT capture groundable, geo/prevalence conviction not. |
@@ -529,3 +529,31 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   tests, 97.22%) green. **This completes the N1-N5 wire-fingerprint extraction wave**; the remaining radar
   network rows are N4-raw-h1 (deferred: needs a custom h1 reader), N6 (H3 SETTINGS/QPACK), N7 (handshake-
   completion / cipher-stunting rules), and the convicting-rules follow-up wave.
+- **2026-06-25 · Rules-wave conviction grounding pass (N2/N3/N5 → NO new convicting rule; saturation
+  confirmed)** — investigated turning the N2/N3/N5 *extraction* signals into *convicting* coherence rules
+  against the repo's grounding bar (real-browser NEGATIVE + live evader POSITIVE, FP-safe). Verdicts:
+  - **N2 (TLS extension order) — NOT shippable (marginal + FP-risky).** The premise that "uTLS/curl-impersonate
+    emit a fixed order" has DECAYED: both now SHUFFLE the ClientHello extension order PER CONNECTION (uTLS
+    `ShuffleChromeTLSExtensions`, curl-impersonate verified — 6 distinct orders / 6 requests). So (a) a
+    "static order = impostor" within-session rule has no honest positive (every real Chrome-faking tool
+    permutes), and (b) a single-shot "order ∉ legal Chrome set" rule FPs on Chrome's own per-connection
+    permutations. The only *unique* catch over the existing `net.tls_vs_ua_browser` (JA4 engine) +
+    `net.tls_grease_vs_ua` (GREASE) would be a stack that GREASEs AND matches Chrome's cipher JA4 yet emits a
+    non-Chrome order — which no faithful tool produces. Corrected the decayed premise in `edge/.../grease.go`;
+    `tls_ext_order` stays a display/inspection signal.
+  - **N5 (key_share advertised-but-not-sent) — NOT shippable (inert, no honest positive).** A faithful
+    template SENDS what it ADVERTISES, so `HasPostQuantumKeyShare()` (advertised) == `HasPQKeyShareSent()`
+    (sent) for every real client and every current evader; "advertised but not sent" is a pathological
+    hand-broken state nothing in the fleet produces. An active rule on it would be an unexercised
+    never-firing convicting rule (the anti-pattern). The advertised-side tell is already covered by
+    `net.tls_pq_keyshare_vs_ua`. The `HasPQKeyShareSent()` extraction stays (cheap, future-proof).
+  - **N3 (QUIC transport-param order vs claimed stack) — INFRA-BLOCKED.** Same blocker that RETIRED
+    `net.quic_grease_vs_ua` / `net.quic_pq_keyshare_vs_ua`: the QUIC Initial capture is opportunistic and
+    per-IP-attributed (`FingerprintByIP`), so it cannot be grounded FP-safe against a confirmed real-Chromium
+    QUIC positive in-sandbox. REVIVE together with those rules when the QUIC capture is per-CONNECTION
+    attributed with full multi-packet CRYPTO reassembly.
+  Net: the conviction wave hits the documented per-session saturation — the extraction (N1-N5) was the right
+  scope; the marginal order/micro-tell convictions are either redundant, inert, or infra-blocked. The one
+  honest path to a NEW N2 positive is a faithful red-team evader that GREASEs + matches Chrome ciphers but
+  pins a non-permuting order (a real anti-detect failure mode) — queued as a faithful-evader task, not a
+  rule to arm speculatively.
