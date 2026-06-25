@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.50`); regenerate with `task catalog`, do not edit by hand. **139 rules**: 101 active · 32 experimental · 6 retired; 91 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.51`); regenerate with `task catalog`, do not edit by hand. **140 rules**: 102 active · 32 experimental · 6 retired; 92 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (32)
+### network layer (33)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -41,6 +41,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
 | `net.ua_rotation_within_session` | coherence✦ | present | 0.7 | active | One session sent multiple distinct User-Agent strings (mid-session UA rotation) |
+| `net.web_bot_auth_invalid` | coherence✦ | present | 0.85 | active | A request presents a Web Bot Auth (RFC 9421) signature that fails Ed25519 verification |
 | `net.h2_continuation_flood` | automation✦ | present | 0.9 | active | HTTP/2 CONTINUATION flood (CVE-2024-27316) on this connection |
 | `net.h2_control_flood` | automation✦ | present | 0.9 | active | HTTP/2 control-frame flood (SETTINGS/PING — CVE-2019-9515/9512) |
 | `net.h2_rapid_reset` | automation✦ | present | 0.9 | active | HTTP/2 rapid-reset flood (CVE-2023-44487) on this connection |

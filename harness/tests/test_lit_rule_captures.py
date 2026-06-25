@@ -34,6 +34,7 @@ _LIT = {
     "go-tls-rotate": "net.ja4_unstable_within_session",
     "go-tls-h2-rotate": "net.h2_unstable_within_session",
     "go-tls-static-ext": "net.tls_ext_order_static_within_session",
+    "go-tls-web-bot-auth": "net.web_bot_auth_invalid",
     "ip-rotation": "net.ip_rotation_within_session",
     "mobile-emulation": "br.fingerprint_improbable",
     "camoufox-touch-incoherent": "br.pointer_touch_incoherent",

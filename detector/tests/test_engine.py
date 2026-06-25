@@ -362,6 +362,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.network, "tls_no_grease", True, Source.edge)], "net.tls_grease_vs_ua"),
         ([(Layer.network, "tls_no_pq_keyshare", True, Source.edge)], "net.tls_pq_keyshare_vs_ua"),
         ([(Layer.network, "h2_engine_unknown", True, Source.edge)], "net.h2_unknown_vs_ua"),
+        ([(Layer.network, "web_bot_auth_invalid", True, Source.edge)], "net.web_bot_auth_invalid"),
         # net.quic_grease_vs_ua (v0.74.32) AND net.quic_pq_keyshare_vs_ua (v0.74.34) both retired — same broken
         # QUIC ClientHello capture (IP cross-attribution + multi-packet mis-reassembly); covered by
         # test_engine_skips_retired_rules. The TLS PQ analog (line above) stays — reliable TLS capture.

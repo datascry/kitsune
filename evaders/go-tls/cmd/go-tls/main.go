@@ -5,7 +5,9 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	gotls "github.com/datascry/kitsune/evaders/go-tls"
@@ -285,10 +288,89 @@ func staticExt(target string) {
 	fmt.Println("__KS__" + string(out))
 }
 
+// Web Bot Auth test material: the RFC 9421 Appendix B.1.4 Ed25519 key the lab edge seeds, plus the draft's
+// own (now long-expired) Appendix A.2.2 example signature — what a scraper REPLAYS after capturing it.
+const (
+	wbaKeyID    = "poqkLGiymh_W0uP6PZFw-dvez3QJT5SolqXBCW38r0U"
+	wbaSeedB64  = "n4Ni-HpISpVObnQMW0wOhCKROaIKqKtW_2ZYb2p9KcU"
+	wbaStaleSI  = `sig2=("@authority" "signature-agent");created=1735689600;keyid="poqkLGiymh_W0uP6PZFw-dvez3QJT5SolqXBCW38r0U";alg="ed25519";expires=1735693200;nonce="e8N7S2MFd/qrd6T2R3tdfAuuANngKI7LFtKYI/vowzk4lAZYadIX6wW25MwG7DCT9RUKAJ0qVkU0mEeLElW1qg==";tag="web-bot-auth"`
+	wbaStaleSig = `sig2=:jdq0SqOwHdyHr9+r5jw3iYZH6aNGKijYp/EstF4RQTQdi5N5YYKrD+mCT1HA1nZDsi6nJKuHxUi/5Syp3rLWBA==:`
+)
+
+// webBotAuth drives ONE request that CLAIMS a known agent identity (a ClaudeBot UA). When valid=false it
+// REPLAYS a captured-but-expired Web Bot Auth signature — a real agent always signs live, so the edge convicts
+// the stale signature (web_bot_auth_invalid). When valid=true it signs a FRESH RFC 9421 signature with the
+// agent's Ed25519 key, which the edge verifies (web_bot_auth_verified, no conviction). The faithful red⇄blue
+// pair that grounds net.web_bot_auth_invalid.
+func webBotAuth(target string, valid bool) {
+	detector := os.Getenv("KITSUNE_DETECTOR")
+	if detector == "" {
+		detector = "http://detector:8080"
+	}
+	req, err := http.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ClaudeBot/1.0; +https://www.anthropic.com/claudebot)")
+	if valid {
+		authority := strings.TrimSuffix(strings.ToLower(reqHost(target)), ":443")
+		now := time.Now().Unix()
+		params := fmt.Sprintf(`("@authority");created=%d;keyid=%q;alg="ed25519";expires=%d;tag="web-bot-auth"`, now, wbaKeyID, now+3600)
+		base := `"@authority": ` + authority + "\n" + `"@signature-params": ` + params
+		seed, _ := base64.RawURLEncoding.DecodeString(wbaSeedB64) //nolint:errcheck
+		sig := ed25519.Sign(ed25519.NewKeyFromSeed(seed), []byte(base))
+		req.Header.Set("Signature-Input", "sig1="+params)
+		req.Header.Set("Signature", "sig1=:"+base64.StdEncoding.EncodeToString(sig)+":")
+	} else {
+		req.Header.Set("Signature-Agent", `"https://signature-agent.test"`)
+		req.Header.Set("Signature-Input", wbaStaleSI)
+		req.Header.Set("Signature", wbaStaleSig)
+	}
+	resp, err := gotls.RoundTripH2(context.Background(), utls.HelloChrome_Auto, req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck
+	resp.Body.Close()
+	var sid string
+	for _, c := range resp.Cookies() {
+		if c.Name == "ks_sid" {
+			sid = c.Value
+		}
+	}
+	if sid == "" {
+		log.Fatal("no ks_sid minted")
+	}
+	vr, err := http.Get(detector + "/verdict/" + sid) //nolint:noctx
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var verdict map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&verdict); err != nil {
+		log.Fatal(err)
+	}
+	verdict["mode"] = "go-tls-web-bot-auth-" + map[bool]string{true: "valid", false: "replay"}[valid]
+	verdict["session_id"] = sid
+	out, _ := json.Marshal(verdict) //nolint:errcheck
+	fmt.Println("__KS__" + string(out))
+}
+
+func reqHost(target string) string {
+	if u, err := url.Parse(target); err == nil {
+		return u.Host
+	}
+	return target
+}
+
 func main() {
 	target := os.Getenv("KITSUNE_EDGE")
 	if target == "" {
 		target = "https://localhost:8443/healthz"
+	}
+	if os.Getenv("KS_WEBBOTAUTH") != "" {
+		webBotAuth(target, os.Getenv("KS_WEBBOTAUTH") == "valid")
+		return
 	}
 	if os.Getenv("KS_STATICEXT") == "1" {
 		staticExt(target)
