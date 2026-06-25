@@ -584,3 +584,37 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   every other tell stays silent while the un-permuted order is the only contradiction. Net: N2 is the first of
   the N-series extractions to become a CONVICTION (N3 still QUIC-infra-blocked; N5 still inert). The arms-race
   ladder gained a rung on BOTH sides.
+- **2026-06-25 · Research SCAN cycle (mid-2025→mid-2026 sweep) — ONE new groundable lead (G25), else
+  saturation confirmed** — fanned out across USENIX/NDSS/CCS/IMC/PETS + arXiv + industry (Cloudflare/FoxIO/
+  DataDome/Fingerprint/GreyNoise), deduped against the coverage list AND this radar. Verdict: the in-sandbox
+  frontier is near-saturated; the genuinely-novel remainder is external-data-bound — with exactly one
+  self-contained exception worth grounding:
+  - **G25 (NEW, GROUNDABLE) → `net.web_bot_auth_unsigned_claimed_agent`** (network/coherence, convicting).
+    **Web Bot Auth** (IETF `draft-meunier-web-bot-auth-architecture`, chartered WG; Cloudflare edge-live
+    2026-03) lets a legitimate agent (GPTBot/ClaudeBot/Operator/Perplexity/Google/CommonCrawl) cryptographically
+    sign the request via RFC 9421 HTTP Message Signatures + Ed25519, attaching `Signature-Agent` /
+    `Signature-Input` (`tag="web-bot-auth"`, `keyid`=JWK thumbprint, `created`/`expires`) / `Signature`; the
+    verifier fetches the JWKS at `/.well-known/http-message-signatures-directory` ONCE, then validates OFFLINE.
+    The Kitsune incoherence: a request whose UA/Client-Hints CLAIM a known agent identity but carry NO valid
+    signature (missing headers / expired or future `created` / `keyid` not in the directory / failing
+    verification) is an impostor — a cross-layer coherence tell next to `net.h2_header_order_vs_ua`; a VALID
+    signature is a clean benign-actor allow-list (complements the FCrDNS check). GROUNDABLE in-sandbox: pure
+    RFC 9421/Ed25519 header crypto — publish a test JWKS at a local well-known URL, a faithful signed-agent
+    evader vs a "claims-ClaudeBot-but-unsigned" evader; no real traffic/proxy/device data. Lib:
+    github.com/cloudflare/web-bot-auth. Cites: blog.cloudflare.com/web-bot-auth/;
+    developers.cloudflare.com/bots/reference/bot-verification/web-bot-auth/. **This cycle's recommended PICK.**
+  - **X9 (external) → PAT / PACT** (Apple Private Access Tokens; cross-vendor Private Access Control Tokens,
+    Cloudflare+Chrome/Firefox/Edge/Shopify, 2026-06). Privacy-Pass human/device attestation without a CAPTCHA;
+    detection-relevant inverse = absent/malformed token. EXTERNAL: needs the four-party attester+issuer infra
+    to mint/validate real tokens. Cites: blog.cloudflare.com/private-attestation-token-device-posture/;
+    datadome.co PAT analysis.
+  - **X10 (external) → "Detecting Bot Detection" prevalence corpus** (arXiv 2606.14525) — 132 JS props in 3
+    confidence tiers + honeypot-property probing; the SIGNALS are already covered, the value is a prevalence
+    PRIOR for weight calibration (measurement data, not a new rule). Sibling to the Berke/Intoli calibration
+    feeds.
+  Confirms-coverage (not novel): FP-Inconsistent IMC 2025 final numbers (44.95–48.11% evasion cut at 96.84%
+  TNR vs 20 commercial services — strongest external validation of the incoherence thesis); CloakBrowser /
+  Wayfern / BotBrowser source-level Chromium forks (the G18 renderer-string-vs-stale-caps frontier);
+  TLS-bad-bot ML (arXiv 2602.09606, JA4 already shipped); DataDome behavioral-biomech + Cloudflare v9 ML
+  score. Net: SCAN done — queue is dry except G25; G25 is the one new in-sandbox rung (cryptographic
+  claimed-identity-vs-proof coherence — dead-on the thesis), recommended as the next red⇄blue PUMP.
