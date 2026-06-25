@@ -726,8 +726,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <div id="ks-coherence"></div>
   <!-- EVIDENCE: your fingerprint, layer by layer — collapsed by default so the verdict leads; drill in on demand -->
   <div id="ks-predict"></div>
-  <details class="ks-disclose"><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
-  <details class="ks-disclose"><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
+  <details class="ks-disclose" id="ks-wire-d"><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
+  <details class="ks-disclose" id="ks-surfaces-d"><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
   <!-- INTERACT: behavioral panel AFTER the fingerprint surfaces (listeners arm on load regardless of order). -->
   <section id="ks-bio" aria-label="behavioral biometrics">
     <h2>Your behavioral biometrics</h2>
@@ -736,7 +736,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
   </section>
   <!-- THE WHY: the full rule breakdown, collapsed after its evidence -->
-  <details class="ks-disclose"><summary>Detections <span class="note">&mdash; every check Kitsune ran, grouped by layer</span></summary><div id="ks-detections"></div></details>
+  <details class="ks-disclose" id="ks-detections-d"><summary>Detections <span class="note">&mdash; every check Kitsune ran, grouped by layer</span></summary><div id="ks-detections"></div></details>
 </section>
 <section id="how-it-works">
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
@@ -960,7 +960,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     try { var vs = (window.speechSynthesis && speechSynthesis.getVoices()) || []; if (!vs.length && _voices && _voices.length) vs = _voices; set("Speech voices", vs.length + " voice(s)" + (vs.length ? " \\u00b7 e.g. " + (vs[0].name || vs[0].lang || "") : "")); } catch (e) {}
     try { if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) { var devs = await navigator.mediaDevices.enumerateDevices(); var c = { audioinput: 0, videoinput: 0, audiooutput: 0 }; for (var i = 0; i < devs.length; i++) { if (c[devs[i].kind] != null) c[devs[i].kind]++; } set("Media devices", c.audioinput + " mic \\u00b7 " + c.videoinput + " cam \\u00b7 " + c.audiooutput + " out"); } } catch (e) {}
     window.__ksFpFull = fp;
-    renderSurfaces(fp, window.__ksFiredSet || {});
+    ksLazyTouch("ks-surfaces-d");  // re-paint only if the surfaces panel is open; else mark for first open
   }
   function renderFpId(fp) {
     var el = document.getElementById("ks-fpid"); if (!el) return; var parts = [];
@@ -1032,21 +1032,48 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       html += '</table>';
     }
     el.innerHTML = html;
-    // Full-stack fingerprint ID = browser FP \\u2295 wire FP — the cross-layer identifier a pure-JS tester can't form.
-    if (d.wire_fp && window.__ksBrowserFp) {
-      var full = fnv(window.__ksBrowserFp + "|" + d.wire_fp);
-      var fpel = document.getElementById("ks-fpid");
-      if (fpel) { var b = fpel.querySelectorAll("b"); if (b.length >= 3) { b[2].textContent = full; b[2].removeAttribute("title"); } }
-    }
+  }
+  // Full-stack fingerprint ID = browser FP \\u2295 wire FP — the cross-layer identifier a pure-JS tester can't
+  // form. Updated EAGERLY (it lives in the always-visible header), even though the wire PANEL render is lazy.
+  function updateFullStack(d) {
+    if (!d || !d.wire_fp || !window.__ksBrowserFp) return;
+    var full = fnv(window.__ksBrowserFp + "|" + d.wire_fp);
+    var fpel = document.getElementById("ks-fpid");
+    if (fpel) { var b = fpel.querySelectorAll("b"); if (b.length >= 3) { b[2].textContent = full; b[2].removeAttribute("title"); } }
+  }
+  // Lazy panel rendering: the dense evidence panels (wire / surfaces / detections) are collapsed by default,
+  // so building their DOM on load is wasted main-thread work that lengthens the load tasks. Render each only
+  // when its <details> first OPENS (or when its data updates while it is open). The verdict, the
+  // machine-readable window.ksResult (incl. the wire{} block), the header full-stack ID and the surfaces
+  // tamper COUNT all stay eager — only the hidden DOM is deferred, so detection and automation are unaffected.
+  var __ksLazy = {};
+  function ksLazyInit(detId, paint) {
+    var d = document.getElementById(detId); if (!d) return;
+    __ksLazy[detId] = { d: d, paint: paint, dirty: true };
+    d.addEventListener("toggle", function () { var L = __ksLazy[detId]; if (d.open && L.dirty) { L.paint(); L.dirty = false; } });
+  }
+  function ksLazyTouch(detId) {
+    var L = __ksLazy[detId]; if (!L) return;
+    if (L.d.open) { L.paint(); L.dirty = false; } else { L.dirty = true; }
+  }
+  function paintSurfaces() { renderSurfaces(window.__ksFpFull || window.__ksFp || rawFingerprint(), window.__ksFiredSet || {}); }
+  function paintDetections() { var det = document.getElementById("ks-detections"); if (det && window.__ksFiredMap) det.innerHTML = renderDetections(window.__ksFiredMap, window.__ksFiredCount || 0); }
+  function paintWire() { renderWire(window.__ksWireData); }
+  // Cheap tamper count for the collapsed summary (no DOM build) — keeps the at-a-glance "(N tampered)" signal.
+  function surfTamperCount(firedSet) {
+    firedSet = firedSet || {}; var n = 0;
+    for (var i = 0; i < KS_SURFACES.length; i++) { var s = KS_SURFACES[i]; for (var j = 0; j < s.tells.length; j++) { if (firedSet["br." + s.tells[j]]) { n++; break; } } }
+    return n;
   }
   function fetchWire() {
-    var id = sid(); if (!id) { renderWire(null); return; }
-    try { fetch("/inspect/" + encodeURIComponent(id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { renderWire(d); publishWire(d); }).catch(function () { renderWire(null); }); } catch (e) { renderWire(null); }
+    var id = sid();
+    if (!id) { window.__ksWireData = null; window.__ksWireHas = true; ksLazyTouch("ks-wire-d"); return; }
+    try { fetch("/inspect/" + encodeURIComponent(id)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { window.__ksWireData = d; window.__ksWireHas = true; publishWire(d); updateFullStack(d); ksLazyTouch("ks-wire-d"); }).catch(function () { window.__ksWireData = null; window.__ksWireHas = true; ksLazyTouch("ks-wire-d"); }); } catch (e) { window.__ksWireData = null; window.__ksWireHas = true; ksLazyTouch("ks-wire-d"); }
   }
   function renderClientImmediate() {
     try {
       var p = predict(); window.__ksFp = rawFingerprint();
-      renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); renderSurfaces(window.__ksFp, {});
+      renderFpId(window.__ksFp); renderCoherence(p); renderPredict(p); ksLazyTouch("ks-surfaces-d");
       enumerateSurfaces();  // async: enrich the panel with every profiled value surface (CH/WebGPU/audio/fonts/voices/…)
       fetchWire();
     } catch (e) {}
@@ -1102,18 +1129,25 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // built from the full rule registry (/rules.json) cross-referenced with the fired contradictions.
     var cs = v.contradictions || [], firedMap = {}, firedSet = {};
     for (var i = 0; i < cs.length; i++) { firedMap[cs[i].rule_id] = cs[i]; firedSet[cs[i].rule_id] = 1; }
-    window.__ksFiredSet = firedSet;  // remembered so an async surface re-render keeps tamper status
-    var det = document.getElementById("ks-detections");
-    if (det) det.innerHTML = renderDetections(firedMap, cs.length);
-    // Surface tamper-state reflects which browser rules fired (from the server verdict).
-    renderSurfaces(window.__ksFpFull || window.__ksFp || rawFingerprint(), firedSet);
-    // Pull the edge wire layer (JA3/JA4/TCP-OS/QUIC + IP) for this session and form the full-stack ID.
+    window.__ksFiredSet = firedSet; window.__ksFiredMap = firedMap; window.__ksFiredCount = cs.length;
+    // The dense detections + surfaces panels are collapsed; set the at-a-glance tamper count eagerly, then
+    // render their DOM only if open (else on first open) — presentation deferred, the verdict already shown.
+    var sc = document.getElementById("ks-surf-count"); if (sc) sc.textContent = " (" + surfTamperCount(firedSet) + " tampered)";
+    ksLazyTouch("ks-detections-d");
+    ksLazyTouch("ks-surfaces-d");
+    // Pull the edge wire layer (JA3/JA4/TCP-OS/QUIC + IP), publish it + the full-stack ID eagerly (the wire
+    // PANEL render is deferred to first open).
     fetchWire();
   }
   // Fetch the full rule registry (for layer-grouped detections + the passed-checks list), then paint the
   // client-side panels immediately — predicted browser, coherence, surfaces, composite ID — independent of
   // the server verdict (which arrives after collection).
   try { fetch("/rules.json").then(function (r) { return r.json(); }).then(function (d) { KS_RULES = d; }).catch(function () {}); } catch (e) {}
+  // Defer the collapsed evidence panels' DOM to first-open (they're hidden by default; building them on load
+  // is the bulk of the post-verdict main-thread task). Data + machine-readable result stay eager above.
+  ksLazyInit("ks-wire-d", paintWire);
+  ksLazyInit("ks-surfaces-d", paintSurfaces);
+  ksLazyInit("ks-detections-d", paintDetections);
   renderClientImmediate();
   var id = sid();
   if (!id) { return; }
