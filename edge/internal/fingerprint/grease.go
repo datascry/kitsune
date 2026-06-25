@@ -31,14 +31,16 @@ func (c *ClientHello) HasGREASE() bool {
 // orderWithGREASE renders a uint16 list in WIRE ORDER as a hyphen-joined hex string, normalizing GREASE
 // values to "g" — so the placement/order is captured while the random GREASE value stays stable across
 // handshakes. JA4 *sorts* these lists (for stability across Chrome's per-connection extension permutation);
-// this preserves the raw order for display/inspection.
+// this preserves the raw order.
 //
-// NB (2026-06-25 grounding pass, do not build a convicting order-rule on a stale premise): modern uTLS
-// HelloChrome_Auto AND curl-impersonate now SHUFFLE the extension order per connection too (uTLS
-// ShuffleChromeTLSExtensions), so a "fixed order = impostor" rule has no honest positive in the current
-// fleet, and "order ∉ known set" FPs on Chrome's own permutations. The remaining order-based tells are
-// either redundant with net.tls_vs_ua_browser / net.tls_grease_vs_ua or template-lag (net.tls_pq_keyshare
-// class). Kept as a display/inspection signal, not a conviction. See docs/research-radar.md N2.
+// NB (2026-06-25): a SINGLE-SHOT "order ∉ known Chrome set" rule is NOT viable — modern uTLS
+// HelloChrome_Auto and curl-impersonate also SHUFFLE the order per connection (uTLS
+// ShuffleChromeTLSExtensions), so there is no fixed legal-Chrome order to match and any single-hello check
+// FPs on Chrome's own permutations. But that per-connection shuffle is exactly what makes the WITHIN-SESSION
+// tell work: a real Chromium emits a DIFFERENT order on every connection, so a Chromium-JA4 session that
+// repeats ONE order across >=2 connections is a pinned template — convicted by
+// net.tls_ext_order_static_within_session (detector ingest._annotate_ext_order_static), grounded by the
+// go-tls KS_STATICEXT evader and tls_ext_order_test.go. See docs/research-radar.md N2.
 func orderWithGREASE(in []uint16) string {
 	parts := make([]string, 0, len(in))
 	for _, v := range in {

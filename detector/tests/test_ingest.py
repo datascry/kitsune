@@ -128,6 +128,64 @@ def test_h2_flag_is_sticky_after_revert() -> None:
     assert merged.value(Layer.network, "h2_unstable") is True
 
 
+# Within-session TLS extension-ORDER stability: Chromium PERMUTES its ClientHello extension order per
+# connection, so a Chromium-JA4 session repeating ONE tls_ext_order across >=2 connections is a pinned
+# template (net.tls_ext_order_static_within_session) — the INVERSE of the rotation family (fires on 1
+# distinct value, not >1), gated to a Chromium ja4_browser_hint (Firefox/Safari do not permute).
+_EXT_ORDER_A = "g-0-17-ff01-a-b-23-10-2b-2d-33-g"  # one legal (shuffled-once) Chrome order
+_EXT_ORDER_B = "g-2b-0-a-23-17-10-ff01-2d-33-b-g"  # a different legal Chrome permutation
+
+
+def _chrome_conn(order: str, secs: int, hint: str = "chrome") -> list[Signal]:
+    at = FIXED + timedelta(seconds=secs)
+    return [
+        make_signal("a", Layer.network, "ja4_browser_hint", hint, source=Source.edge, at=at),
+        make_signal("a", Layer.network, "tls_ext_order", order, source=Source.edge, at=at),
+    ]
+
+
+def test_static_ext_order_under_chrome_ja4_is_flagged() -> None:
+    # Two connections, IDENTICAL extension order, Chromium JA4 — a real Chromium permutes, so this is a
+    # pinned template (the go-tls KS_STATICEXT evader). The convicting positive.
+    c1 = group_signals(_chrome_conn(_EXT_ORDER_A, 0))[0]
+    c2 = group_signals(_chrome_conn(_EXT_ORDER_A, 2))[0]
+    merged = merge_sessions(c1, c2)
+    assert merged.value(Layer.network, "tls_ext_order_static") is True
+
+
+def test_permuted_ext_order_is_not_static() -> None:
+    # Real Chrome permutes per connection -> 2 distinct orders -> must NOT flag (the FP-safe negative).
+    c1 = group_signals(_chrome_conn(_EXT_ORDER_A, 0))[0]
+    c2 = group_signals(_chrome_conn(_EXT_ORDER_B, 2))[0]
+    merged = merge_sessions(c1, c2)
+    assert merged.value(Layer.network, "tls_ext_order_static") is MISSING
+
+
+def test_static_ext_order_without_chrome_hint_is_gated_off() -> None:
+    # Firefox does NOT permute its extension order, so a legitimately-static Firefox order must never
+    # convict — the JA4-engine gate (only a Chromium hint can fire the rule).
+    f1 = group_signals(_chrome_conn(_EXT_ORDER_A, 0, hint="firefox"))[0]
+    f2 = group_signals(_chrome_conn(_EXT_ORDER_A, 2, hint="firefox"))[0]
+    merged = merge_sessions(f1, f2)
+    assert merged.value(Layer.network, "tls_ext_order_static") is MISSING
+
+
+def test_single_connection_ext_order_is_not_static() -> None:
+    # One connection trivially has one order — needs >=2 connections to be a tell.
+    c1 = group_signals(_chrome_conn(_EXT_ORDER_A, 0))[0]
+    assert c1.value(Layer.network, "tls_ext_order_static") is MISSING
+
+
+def test_static_ext_order_flag_is_sticky() -> None:
+    # Flagged static, then a later connection finally varies — the flag must persist (sticky).
+    flagged = merge_sessions(
+        group_signals(_chrome_conn(_EXT_ORDER_A, 0))[0],
+        group_signals(_chrome_conn(_EXT_ORDER_A, 2))[0],
+    )
+    merged = merge_sessions(flagged, group_signals(_chrome_conn(_EXT_ORDER_B, 4))[0])
+    assert merged.value(Layer.network, "tls_ext_order_static") is True
+
+
 # Within-session IP rotation: >=3 distinct egress IPs under one session id is a rotating proxy pool. The
 # running set is accumulated across ingests in observed_ip_seen (the merge keeps only the latest
 # observed_ip), and ip_rotation trips at the conservative threshold (a real short session has 1-2 IPs).

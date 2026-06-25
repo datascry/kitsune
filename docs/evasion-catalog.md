@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **22 evader tools**, **96 exercised techniques** (86 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **22 evader tools**, **97 exercised techniques** (87 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (22)
 
@@ -37,7 +37,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `xtest-coalesce` | Python | pressure-test: can X11 XTEST motion injection defeat the coalesced tell? |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (96)
+### Techniques exercised — scored against the live ruleset (97)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -83,6 +83,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `go-tls` | bot | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
 | `go-tls-h2-rotate` | bot | `net.h2_unknown_vs_ua`, `net.h2_unstable_within_session`, `net.no_js_execution` |
 | `go-tls-rotate` | bot | `net.h2_unknown_vs_ua`, `net.ja4_unstable_within_session`, `net.no_js_execution`, `net.tls_grease_vs_ua`, `net.tls_pq_keyshare_vs_ua` |
+| `go-tls-static-ext` | bot | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_ext_order_static_within_session`, `net.tls_pq_keyshare_vs_ua` |
 | `h2-continuation-flood` | bot | `net.h2_continuation_flood`, `net.no_js_execution` |
 | `h2-control-flood` | bot | `net.h2_control_flood`, `net.no_js_execution` |
 | `h2-rapid-reset` | bot | `net.h2_rapid_reset`, `net.no_js_execution` |
