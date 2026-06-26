@@ -1,0 +1,168 @@
+# detector/arena_page — the public /arena page: challenge our gates, meet our detector.
+# In-browser SHA-256 PoW solver (hashcash/many-small) + the dual gate-vs-detector verdict, on owned gates only.
+
+"""The ``/arena`` page — the live, interactive reproduction of documented OPEN web challenge mechanisms.
+
+A visitor picks a gate, gets a real PoW challenge from the owned ``arena`` service (relayed by the detector),
+solves it in-browser (SHA-256 families) or brings their own solver (memory-hard), and sees TWO verdicts: the
+gate's (did you solve the proof-of-work?) and the detector's (does your client cohere?). The point the page
+makes live: a PoW gate is a *cost* test, not a bot/human discriminator — a script can pass the gate and still
+be convicted on the network layer. The gates only ever model documented open mechanisms and only ever talk to
+themselves; the page carries a vendor-neutral disclaimer.
+"""
+
+from __future__ import annotations
+
+from .styles import SHARED_CSS
+
+ARENA_PAGE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Arena — challenge the gates, meet the detector · Kitsune</title>
+<meta name="description" content="Faithful reproductions of documented open web challenge mechanisms (proof-of-work). Solve the gate in your browser and see what Kitsune's bot detector independently sees about your client.">
+<link rel="icon" href="/favicon.svg">
+<style>
+/*__SHARED_CSS__*/
+.arena-gates{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}
+.arena-gates button{font:inherit;padding:.5rem .9rem;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;min-height:44px}
+.arena-gates button[aria-pressed=true]{border-color:var(--fox);color:var(--fox);font-weight:600}
+.arena-run{font:inherit;font-weight:600;padding:.6rem 1.2rem;border:0;border-radius:8px;background:var(--fox);color:#fff;cursor:pointer;min-height:44px}
+.arena-run:disabled{opacity:.5;cursor:default}
+.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem}
+.vcard{border:1px solid var(--line);border-radius:10px;padding:1rem}
+.vcard h3{margin:0 0 .4rem;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.vcard .big{font-size:1.4rem;font-weight:700}
+.vcard .pass{color:#1f9d55}.vcard .fail{color:var(--fox)}
+.vcard code{font-size:.8rem;word-break:break-all}
+.arena-log{font-family:ui-monospace,monospace;font-size:.78rem;background:rgba(127,127,127,.08);border-radius:8px;padding:.6rem .8rem;margin-top:.6rem;white-space:pre-wrap;min-height:1.4rem}
+@media (max-width:640px){.verdicts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="top"><a class="brand" href="/">KITSUNE</a> <a href="/">Detector</a> <a href="/arena">Arena</a> <a href="/detections">Detections</a></nav>
+<main>
+<h1 class="page">The Arena</h1>
+<p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; proof-of-work gates in the
+<abbr title="TecharoHQ/anubis">anubis</abbr>, <abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families.
+Pick a gate, solve its challenge in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
+<p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
+
+<section aria-label="challenge gate">
+  <h2>1 · Pick a gate</h2>
+  <div class="arena-gates" id="ks-gates">
+    <button data-gate="hashcash" aria-pressed="true">hashcash <span class="note">&middot; SHA-256 leading-zeros</span></button>
+    <button data-gate="many-small" aria-pressed="false">many-small <span class="note">&middot; N sub-puzzles</span></button>
+    <button data-gate="memory-hard" aria-pressed="false">memory-hard <span class="note">&middot; Argon2id</span></button>
+  </div>
+  <button class="arena-run" id="ks-run">Get a challenge &amp; solve it</button>
+  <div class="arena-log" id="ks-log">Ready.</div>
+</section>
+
+<div class="verdicts">
+  <div class="vcard">
+    <h3>Gate verdict</h3>
+    <div class="big" id="ks-gate-verdict">&mdash;</div>
+    <p class="note" id="ks-gate-note">Did your solution satisfy the proof-of-work?</p>
+    <div id="ks-token"></div>
+  </div>
+  <div class="vcard">
+    <h3>Detector verdict</h3>
+    <div class="big" id="ks-det-verdict">&mdash;</div>
+    <p class="note" id="ks-det-note">What Kitsune&rsquo;s coherence engine makes of your client over the edge. For your full fingerprint, run the <a href="/">detector</a>.</p>
+  </div>
+</div>
+
+<details class="ks-disclose" style="margin-top:1.5rem"><summary>How this works &amp; the ethics</summary>
+<p class="note">The gate is a self-hosted service Kitsune runs (the owned <code>arena</code> service). It reproduces the
+<i>documented, open</i> proof-of-work mechanisms above &mdash; it <b>never</b> contacts, proxies to, or solves a third-party
+challenge (Cloudflare Turnstile, reCAPTCHA, hCaptcha). The reference solvers only ever talk to our own gates. The detector
+verdict comes from the same coherence engine that scores the home page, reading your client over the edge.</p></details>
+
+</main>
+<footer><p>Kitsune &mdash; the blue-team side of a bot detection &#8644; evasion lab. The arena gates are reproductions of documented open mechanisms for detection research; <b>not affiliated with any named vendor</b>, and they never contact third-party endpoints. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p></footer>
+
+<script>
+(function(){
+  "use strict";
+  var enc = new TextEncoder();
+  function hexToBytes(h){ var a=new Uint8Array(h.length/2); for(var i=0;i<a.length;i++){ a[i]=parseInt(h.substr(i*2,2),16);} return a; }
+  function leadingZeroBits(d){ var n=0; for(var i=0;i<d.length;i++){ var b=d[i]; if(b===0){ n+=8; continue;} var x=b,c=0; while((x&0x80)===0){ c++; x=(x<<1)&0xff;} n+=c; break;} return n; }
+  // workDigest mirrors the Go gate: sha256( subNonce_bytes || nonce_bytes || uint64_le(counter) ).
+  async function workDigest(subNonce, nonceBytes, counter){
+    var sn=enc.encode(subNonce);
+    var buf=new Uint8Array(sn.length+nonceBytes.length+8);
+    buf.set(sn,0); buf.set(nonceBytes,sn.length);
+    new DataView(buf.buffer).setBigUint64(sn.length+nonceBytes.length, BigInt(counter), true);
+    var d=await crypto.subtle.digest("SHA-256", buf);
+    return new Uint8Array(d);
+  }
+  async function solvePuzzle(subNonce, nonceBytes, difficulty){
+    for(var c=0;c<5e7;c++){ var d=await workDigest(subNonce,nonceBytes,c); if(leadingZeroBits(d)>=difficulty){ return c; } }
+    throw new Error("gave up");
+  }
+  function subNonces(c){ if(c.class!=="many-small"){ return [""]; } var out=[]; var n=c.count||1; for(var i=0;i<n;i++){ out.push(i+":"); } return out; }
+
+  var gate="hashcash";
+  var log=document.getElementById("ks-log");
+  function say(m){ log.textContent=m; }
+  document.getElementById("ks-gates").addEventListener("click", function(e){
+    var b=e.target.closest("button[data-gate]"); if(!b) return;
+    gate=b.getAttribute("data-gate");
+    Array.prototype.forEach.call(this.querySelectorAll("button"), function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+  });
+
+  async function fetchDetectorVerdict(){
+    var m=document.cookie.match(/(?:^|; )ks_sid=([^;]+)/);
+    var out=document.getElementById("ks-det-verdict");
+    if(!m){ out.textContent="run via the edge"; return; }
+    try{
+      var r=await fetch("/verdict/"+encodeURIComponent(m[1]));
+      if(!r.ok){ out.textContent="scoring…"; return; }
+      var v=await r.json();
+      var label=String(v.label||"?");
+      out.textContent=label.toUpperCase();
+      out.className="big "+(label==="human"||label==="verified"?"pass":"fail");
+    }catch(_){ out.textContent="—"; }
+  }
+
+  document.getElementById("ks-run").addEventListener("click", async function(){
+    var btn=this; btn.disabled=true;
+    var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
+    gv.textContent="—"; gv.className="big"; tok.innerHTML="";
+    try{
+      // A modest difficulty keeps the in-browser SHA-256 solve near-instant; the gate accepts the param.
+      var diff = gate==="many-small" ? 10 : 16;
+      say("Requesting a "+gate+" challenge…");
+      var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
+      if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); btn.disabled=false; return; }
+      var c=await cr.json();
+      if(gate==="memory-hard"){
+        say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small here.\\nChallenge: "+JSON.stringify(c));
+        gn.textContent="Not solved in-browser — memory-hard is the GPU/ASIC-resistant family.";
+        btn.disabled=false; fetchDetectorVerdict(); return;
+      }
+      var nb=hexToBytes(c.nonce), subs=subNonces(c), counters=[];
+      var t0=performance.now();
+      for(var i=0;i<subs.length;i++){ say("Solving puzzle "+(i+1)+"/"+subs.length+" ("+c.difficulty+" bits)…"); counters.push(await solvePuzzle(subs[i], nb, c.difficulty)); }
+      var cost=Math.round(performance.now()-t0);
+      say("Solved in "+cost+" ms. Verifying with the gate…");
+      var body=Object.assign({}, c, {counters:counters});
+      var vr=await fetch("/arena/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+      var v=await vr.json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Proof-of-work accepted in "+cost+" ms (cost-per-token)."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Gate PASSED in "+cost+" ms."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="The gate rejected the solution."; say("Gate rejected the solution."); }
+    }catch(err){ say("Error: "+(err&&err.message||err)); }
+    btn.disabled=false;
+    fetchDetectorVerdict();
+  });
+
+  fetchDetectorVerdict();
+})();
+</script>
+</body>
+</html>
+"""
+
+ARENA_PAGE = ARENA_PAGE.replace("/*__SHARED_CSS__*/", SHARED_CSS.rstrip())

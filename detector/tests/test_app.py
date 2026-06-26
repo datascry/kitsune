@@ -253,3 +253,11 @@ def test_arena_unknown_gate_rejected(client: TestClient, monkeypatch: pytest.Mon
     monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
     assert client.get("/arena/challenge", params={"gate": "evil"}).status_code == 400
     assert client.get("/arena/challenge", params={"gate": "hashcash"}).status_code in (200, 502)
+
+
+def test_arena_page_renders(client: TestClient) -> None:
+    resp = client.get("/arena")
+    assert resp.status_code == 200
+    body = resp.text
+    assert "The Arena" in body and 'id="ks-run"' in body
+    assert "not affiliated with any named vendor" in body  # the vendor-neutral disclaimer ships
