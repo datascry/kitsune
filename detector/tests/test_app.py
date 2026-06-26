@@ -281,3 +281,16 @@ def test_arena_managed_allows_coherent_then_challenges_bot(client: TestClient) -
     bot_sid = load_example("session_bot.json")["session_id"]
     out = client.get("/arena/managed", headers={"cookie": f"ks_sid={bot_sid}"}).json()
     assert out["decision"] == "challenge" and out["label"] == "bot"
+
+
+def test_arena_captcha_guards(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Unconfigured → 503; an unknown captcha kind is refused before any upstream call.
+    assert client.get("/arena/captcha?kind=text").status_code == 503
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    assert client.get("/arena/captcha", params={"kind": "evil"}).status_code == 400
+    assert client.get("/arena/captcha", params={"kind": "math"}).status_code in (200, 502)
+
+
+def test_arena_page_lists_captcha_gates(client: TestClient) -> None:
+    body = client.get("/arena").text
+    assert 'data-gate="text"' in body and 'data-gate="math"' in body and 'data-gate="honeypot"' in body
