@@ -1,5 +1,6 @@
 // evaders/arena-solver — a browserless solver for the arena CAPTCHA gates (OWNED gates only).
-// Beats the parseable gates headlessly; the rasterized gates (text + image-select) resist it (need OCR/CV).
+// Beats them headlessly incl. image-select via real CV + slider/rotate via trajectory synthesis; only the
+// distorted-text gate resists it (needs real OCR). The detector convicts the no-JS client regardless.
 
 // The red side of the arena: no browser, just HTTP + parsing. It solves the text, math, honeypot,
 // image-select, rotate and slider gates against Kitsune's OWN arena (via the edge/detector relay), measuring
@@ -84,9 +85,9 @@ func main() {
 		}
 		fmt.Printf("%-13s gate %s in %4d ms%s\n", f.name, status, ms, extra)
 	}
-	fmt.Println("note: the rasterized gates (text + image-select) resist a markup parser — they need real OCR/CV;")
-	fmt.Println("      math/honeypot/rotate/slider still fall to a script. Either way the detector convicts the")
-	fmt.Println("      no-JS client — coherence, not the challenge, is the durable layer.")
+	fmt.Println("note: image-select falls to computer vision (classifyTilePNG); math/honeypot to scripting;")
+	fmt.Println("      slider/rotate to trajectory synthesis. Only the distorted-text gate resists this solver —")
+	fmt.Println("      it needs real OCR. Either way the detector convicts the no-JS client: coherence is durable.")
 }
 
 func getCaptcha(c *http.Client, base, kind string) (*captcha, error) {
@@ -161,7 +162,7 @@ func solveImageSelect(c *http.Client, base string) (bool, int64, error) {
 		target := targetShape(cap.Prompt)
 		var idx []string
 		for i, tile := range cap.Tiles {
-			if classifyTile(tile) == target {
+			if classifyTilePNG(tile) == target { // CV on the raster tile — the markup cheat is dead
 				idx = append(idx, strconv.Itoa(i))
 			}
 		}
