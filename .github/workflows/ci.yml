@@ -91,6 +91,17 @@ jobs:
       # it off the per-PR path so a random worker-budget hiccup never red-marks an unrelated PR.
       - run: go test ./... -cover
 
+  arena:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: arena } }
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with: { go-version: "1.26" }
+      - run: gofmt -l . | tee /dev/stderr | (! read)
+      - run: go vet ./...
+      - run: go test ./... -cover
+
   collector:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: collector } }
