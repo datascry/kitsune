@@ -772,3 +772,17 @@ Kitsune's bet: the arena proves a solved challenge ≠ a human, and **coherence 
   convicts the no-JS client).
 - **Defense (lead AD3):** model **PACT / Private Access Tokens** as a personhood-token arena gate — the human half of
   the Web Bot Auth coherence check Kitsune already ships.
+
+### Arena arms-race update (2026-06-26 — built from the frontier scan)
+
+- **AE3 OCR — confirmed, 6/6.** The off-the-shelf HF model `anuashok/ocr-captcha-v3` reads the arena's
+  distorted-text gate **6/6** with no fine-tune (~20-26s/solve on CPU — the cost asymmetry; the text gate is the
+  most expensive to evade, yet it falls). `evaders/arena-solver-ocr`. The detector still convicts the no-JS client.
+- **AD3 PACT — modelled (gate built).** `arena/pact.go` + `/arena/pact[/verify]`: a self-hosted issuer mints an
+  anonymous Ed25519 proof-of-personhood token (single-use, expiring); a valid token **skips** the challenge — the
+  Private Access Token behaviour, the human-personhood twin of the shipped Web Bot Auth good-bot identity. Honest
+  caveat (as with Web Bot Auth): the issuer mints freely in-sandbox, so any client can skip — the documented
+  bypass — and the detector convicts a no-JS one regardless. Real PACT issuers gate on device attestation (external).
+- **Net:** every arena gate now falls to the appropriate evader (markup / CV / trajectory synthesis / OCR), and
+  every defense (managed ladder, behavioral trajectory, PACT/Web-Bot-Auth attestation) is modelled — the arms race
+  is demonstrated end-to-end, both sides, confirming the thesis: coherence + attestation, not the challenge, is durable.

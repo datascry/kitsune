@@ -339,6 +339,34 @@ def create_app(
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
+    @app.get("/arena/pact", include_in_schema=False)
+    async def arena_pact() -> Response:
+        # Relay a self-hosted PACT / Private Access Token (anonymous proof-of-personhood) from the owned issuer.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/pact")
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/pact/verify", include_in_schema=False)
+    async def arena_pact_verify(request: Request) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 65536:
+            raise HTTPException(status_code=413, detail="token too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/pact/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
     @app.get("/arena/managed", include_in_schema=False)
     async def arena_managed(step: int = 0, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
         # The managed-challenge ladder (the Turnstile-style escalation, faithfully): the SILENT first step

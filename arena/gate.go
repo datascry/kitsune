@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	pow "github.com/datascry/kitsune/evaders/pow"
 )
@@ -53,6 +54,7 @@ func captchaKindOf(s string) CaptchaKind {
 func NewMux(secret []byte) http.Handler {
 	store := pow.NewNonceStore()
 	captchas := newCaptchaStore()
+	issuer := NewPACTIssuer()
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /arena/challenge", func(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +200,46 @@ func NewMux(secret []byte) http.Handler {
 		resp := map[string]any{"ok": ok, "kind": "rotate", "reason": reason}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, "rotate", body.ID)
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- PACT / Private Access Token: a valid anonymous PERSONHOOD token skips the challenge. The issuer mints
+	// freely here (no real attestation in-sandbox) — so this also demonstrates the bypass: any client can get a
+	// token, yet the detector still convicts a no-JS one on coherence (the honest caveat, like Web Bot Auth). ---
+	mux.HandleFunc("GET /arena/pact", func(w http.ResponseWriter, _ *http.Request) {
+		nonce := randHex(16)
+		expires := time.Now().Add(5 * time.Minute).Unix()
+		captchas.put("pact:"+nonce, "") // track for single-use redemption
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"token":   issuer.Issue(nonce, expires),
+			"expires": expires,
+			"note":    "anonymous proof-of-personhood token — present it at /arena/pact/verify to skip the challenge",
+		})
+	})
+
+	mux.HandleFunc("POST /arena/pact/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Token string `json:"token"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		ok, nonce, reason := issuer.Verify(body.Token, time.Now().Unix())
+		if ok {
+			_, known := captchas.take("pact:" + nonce) // single-use: a token cannot be replayed
+			ok = known
+			if !known {
+				reason = "token already redeemed"
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "decision": "challenge", "reason": reason}
+		if ok {
+			resp["decision"] = "allow" // valid personhood token ⇒ skip the challenge (the PACT behaviour)
+			resp["token"] = SignCaptchaToken(secret, "pact", nonce)
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})
