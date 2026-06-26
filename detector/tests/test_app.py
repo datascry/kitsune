@@ -294,3 +294,58 @@ def test_arena_captcha_guards(client: TestClient, monkeypatch: pytest.MonkeyPatc
 def test_arena_page_lists_captcha_gates(client: TestClient) -> None:
     body = client.get("/arena").text
     assert 'data-gate="text"' in body and 'data-gate="math"' in body and 'data-gate="honeypot"' in body
+
+
+def test_arena_slider_guards(client: TestClient) -> None:
+    assert client.get("/arena/slider").status_code == 503  # unconfigured
+    assert client.post("/arena/slider/verify", content=b"{}").status_code == 503
+    assert 'data-gate="slider"' in client.get("/arena").text
+
+
+class _FakeResp:
+    def __init__(self, status: int, content: bytes) -> None:
+        self.status_code = status
+        self.content = content
+
+    def json(self) -> dict:
+        import json as _j
+
+        return _j.loads(self.content)
+
+
+class _FakeClient:
+    """Stands in for httpx.AsyncClient so the arena relay paths are exercised without a live gate."""
+
+    def __init__(self, *a: object, **k: object) -> None:
+        pass
+
+    async def __aenter__(self) -> _FakeClient:
+        return self
+
+    async def __aexit__(self, *a: object) -> bool:
+        return False
+
+    async def get(self, url: str, params: dict | None = None) -> _FakeResp:
+        if url.endswith("/arena/slider"):
+            return _FakeResp(200, b'{"kind":"slider","id":"s1","gap_x":120,"track_w":300,"piece_w":42}')
+        if url.endswith("/arena/captcha"):
+            return _FakeResp(200, b'{"kind":"math","id":"c1","prompt":"What is 2 + 2?"}')
+        return _FakeResp(200, b'{"class":"hashcash","nonce":"abc","difficulty":12}')
+
+    async def post(self, url: str, content: bytes | None = None, headers: dict | None = None) -> _FakeResp:
+        return _FakeResp(200, b'{"ok":false}')
+
+
+def test_arena_relays_forward_to_gate(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Mock httpx so the relay's success path (forward + return upstream body) is genuinely exercised.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _FakeClient)
+    assert client.get("/arena/challenge", params={"gate": "hashcash"}).json()["class"] == "hashcash"
+    assert client.get("/arena/captcha", params={"kind": "math"}).json()["kind"] == "math"
+    assert client.get("/arena/slider").json()["kind"] == "slider"
+    assert client.post("/arena/verify", content=b'{"nonce":"abc","counters":[0]}').json()["ok"] is False
+    assert client.post("/arena/captcha/verify", content=b'{"kind":"math","id":"c1","answer":"4"}').status_code == 200
+    assert client.post("/arena/slider/verify", content=b'{"id":"s1","x":120,"trajectory":[]}').status_code == 200
+    # managed step-up relays a challenge for an incoherent (no-session) caller.
+    out = client.get("/arena/managed", params={"step": 1}).json()
+    assert out["decision"] == "challenge" and "challenge" in out

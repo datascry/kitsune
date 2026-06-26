@@ -134,6 +134,40 @@ func NewMux(secret []byte) http.Handler {
 		_ = json.NewEncoder(w).Encode(resp)
 	})
 
+	// --- SLIDER captcha (GeeTest-style): drag the piece into the gap; the gate verifies the drop position AND
+	// the drag trajectory's behavioural plausibility (the uniform-velocity discriminator). On-thesis, owned. ---
+	mux.HandleFunc("GET /arena/slider", func(w http.ResponseWriter, _ *http.Request) {
+		s, gap := MintSlider()
+		captchas.put(s.ID, gap)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(s)
+	})
+
+	mux.HandleFunc("POST /arena/slider/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID         string        `json:"id"`
+			X          float64       `json:"x"`
+			Trajectory []SliderPoint `json:"trajectory"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<18)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		gapStr, known := captchas.take(body.ID) // single-use
+		w.Header().Set("Content-Type", "application/json")
+		if !known {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "slider", "reason": "unknown or used"})
+			return
+		}
+		gap, _ := strconv.Atoi(gapStr)
+		ok, reason := CheckSlider(gap, body.X, body.Trajectory)
+		resp := map[string]any{"ok": ok, "kind": "slider", "reason": reason}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "slider", body.ID)
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
 	mux.HandleFunc("GET /arena/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("ok"))
 	})
