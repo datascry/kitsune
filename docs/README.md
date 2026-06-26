@@ -18,6 +18,7 @@ they live in [`detection-catalog.md`](detection-catalog.md) (generated from
 | Doc | Purpose |
 |---|---|
 | [`architecture.md`](architecture.md) | The whole system end to end: edge → detector → coherence engine → scoreboard, and the three collectors. Read this first. |
+| [`arena.md`](arena.md) | The public challenge-gate arena (PoW / CAPTCHA / slider / rotate / emoji & doodle image-select / checkbox / managed / PACT): the gate catalog, difficulty levels (a cost dial), image-source licences, and the per-gate evasion status — the live demo that a solved challenge ≠ a human. |
 | [`adr/`](adr/) | MADR architecture decision records — the load-bearing calls ([README](adr/README.md)): session-correlation pipeline, polyglot-with-contracts, rules-as-data, tiered coverage, per-connection QUIC attribution (ADR-0005). |
 
 ## Calibration & grounding
