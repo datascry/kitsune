@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1",
+  "session_id": "fleet-clone-1",
+  "remote_ip": null,
+  "first_seen": "2026-06-27T00:00:00Z",
+  "last_seen": "2026-06-27T00:00:00Z",
+  "request_count": 2,
+  "signals": {
+    "network": [
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "network",
+        "kind": "ja4",
+        "value": "t13d1516h2_a1a1a1a1a1a1_0a0a0a0a0a0a",
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "network",
+        "kind": "observed_ip",
+        "value": "10.10.0.2",
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "network",
+        "kind": "observed_ip_seen",
+        "value": [
+          "10.10.0.2"
+        ],
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "browser": [
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "browser",
+        "kind": "fp_hash",
+        "value": "9f2c7b41a0e8d35c",
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "browser",
+        "kind": "hardware_concurrency",
+        "value": 8,
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "browser",
+        "kind": "webdriver",
+        "value": true,
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-clone-1",
+        "layer": "browser",
+        "kind": "fp_seen",
+        "value": {
+          "hardware_concurrency": [
+            "8"
+          ]
+        },
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "behavioral": [],
+    "reputation": []
+  }
+}

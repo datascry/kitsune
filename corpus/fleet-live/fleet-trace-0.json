@@ -1,0 +1,99 @@
+{
+  "schema_version": "0.1",
+  "session_id": "fleet-trace-0",
+  "remote_ip": null,
+  "first_seen": "2026-06-27T00:00:00Z",
+  "last_seen": "2026-06-27T00:00:00Z",
+  "request_count": 2,
+  "signals": {
+    "network": [
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "network",
+        "kind": "ja4",
+        "value": "t13d1516h2_b2b2b2b2b2b2_0b0b0b0b0b0b",
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "network",
+        "kind": "observed_ip",
+        "value": "10.20.0.1",
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "network",
+        "kind": "observed_ip_seen",
+        "value": [
+          "10.20.0.1"
+        ],
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "browser": [
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "browser",
+        "kind": "fp_hash",
+        "value": "distinct-fp-0",
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "browser",
+        "kind": "hardware_concurrency",
+        "value": 8,
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "browser",
+        "kind": "fp_seen",
+        "value": {
+          "hardware_concurrency": [
+            "8"
+          ]
+        },
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "behavioral": [
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "behavioral",
+        "kind": "trace_hash",
+        "value": "7ab3e9f15c2d8061",
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "fleet-trace-0",
+        "layer": "behavioral",
+        "kind": "trace_seen",
+        "value": {
+          "7ab3e9f15c2d8061": [
+            "2026-06-27T00:00:00+00:00"
+          ]
+        },
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "reputation": []
+  }
+}

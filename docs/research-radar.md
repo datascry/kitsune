@@ -887,3 +887,27 @@ recognition, is the bottleneck**; licence-verified image sources). Three changes
 
 Net: text + image-select are now genuinely CV-hard (OCR and real-CV/VLM respectively), the heuristic `arena-solver`
 is held to math/honeypot/slider/rotate, and the detector still convicts the no-JS client at every gate and level.
+
+## Coordination — fleet axis live-grounded end-to-end (2026-06-27)
+
+The cross-session/fleet axis — the durable answer to "you can beat any single layer, but not coherence across
+all of them at fleet scale" — was scorer-built + offline-graded + live-consumer-unit-tested, but never proven
+against a **real detector** ingesting a real fleet. Closed that: `harness/tools/fleet_coordination_demo.py`
+POSTs a coordinated fleet through the live detector's `/ingest` (it correlates + stores them), then
+`coordination-live` pulls them back over `/scoreboard` + `/session` and grades. Live result (`task
+coordination-fleet-demo`), three clusters:
+
+- **fp-collision arm → `fleet` 1.00** — one cloned high-entropy `fp_hash` across 3 distinct source IPs + an
+  automation tell (the cloned-profile bot fleet).
+- **trace-collision arm → `fleet` 1.00** — one replayed pointer `trace_hash` across 3 distinct IPs (unambiguous).
+- **paradox-only control → `candidate` 0.97** — JS divergence under one JA4 from ONE IP, no convicting signal:
+  correctly NOT convicted (a real diverse cohort on one browser build produces this shape — the gate's honesty).
+
+Frozen as `corpus/fleet-live/` (the real detector-served sessions) + `test_fleet_coordination_grounding`
+(score_corpus → both arms `fleet`, paradox `candidate`) for CI. This proves the whole contract path —
+`/ingest` → correlate → store → `/scoreboard`/`/session` → live grading → conviction — works end-to-end. The
+one remaining external input is unchanged: **real residential-proxy egress** for *authentic* distinct source
+IPs (here distinct `observed_ip` signals stand in for it); the conviction LOGIC (every convicting signal needs
+≥2 distinct IPs) is now live-grounded. This is the load-bearing demonstration of the incoherence thesis at
+fleet scale: a fleet must randomize JS (→ the TLS/JS paradox) or clone one profile (→ the fp/trace collision)
+— it cannot do neither, and the collision is a property of the cluster no per-session spoof can hide.
