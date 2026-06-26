@@ -148,6 +148,12 @@ ARENA_CSS = """<style>
 #ks-captcha .tiles img{width:64px;height:64px;border:2px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
 #ks-captcha .tiles img.sel{border-color:var(--fox);box-shadow:0 0 0 2px var(--fox)}
 #ks-captcha .rot img{width:96px;height:96px;transition:transform .1s;touch-action:none}
+.arena-again-wrap{margin:.7rem 0 0}
+.arena-again{font-size:.78rem;color:var(--muted);text-decoration:none}
+.arena-again:hover{color:var(--fox)}
+.arena-endpoints{list-style:none;padding:0;margin:.5rem 0 0;display:flex;flex-direction:column;gap:.3rem}
+.arena-endpoints li code{color:var(--fox);font-size:.82rem}
+.arena-endpoints .m{display:inline-block;min-width:3rem;color:var(--muted)}
 @media (max-width:640px){.verdicts{grid-template-columns:1fr}}
 </style>"""
 
@@ -320,32 +326,35 @@ ARENA_JS = r"""
     }
   }
 
-  var runBtn=document.getElementById("ks-run");
-  if(runBtn){
-    runBtn.addEventListener("click", async function(){
-      var btn=this; btn.disabled=true;
-      var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
-      gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
-      try{
-        if(A.mode==="pact"){ await runPACT(gv, gn, tok); }
-        else if(A.mode==="slider"){ await runSlider(gv, gn, tok); }
-        else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
-        else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
-        else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
-        else if(A.mode==="managed"){ await runManaged(gv, gn, tok); }
-        else {
-          var diff = gate==="many-small" ? 10 : 16;
-          say("Requesting a "+gate+" challenge…");
-          var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
-          if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); btn.disabled=false; return; }
-          await solveAndVerify(await cr.json(), gv, gn, tok);
-        }
-      }catch(err){ say("Error: "+(err&&err.message||err)); }
-      btn.disabled=false;
-      fetchDetectorVerdict();
-    });
+  // The challenge serves itself: no "run" button — start() fires on page load and renders the widget (or
+  // auto-solves, for the non-interactive PoW / PACT / managed gates). A subtle "new challenge" link re-runs it.
+  var running=false;
+  async function start(){
+    if(running) return; running=true;
+    var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
+    gv.textContent="—"; gv.className="big"; gn.textContent="Did your solution satisfy the challenge?"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
+    try{
+      if(A.mode==="pact"){ await runPACT(gv, gn, tok); }
+      else if(A.mode==="slider"){ await runSlider(gv, gn, tok); }
+      else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
+      else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
+      else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
+      else if(A.mode==="managed"){ await runManaged(gv, gn, tok); }
+      else {
+        var diff = gate==="many-small" ? 10 : 16;
+        say("Requesting a "+gate+" challenge…");
+        var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
+        if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); }
+        else { await solveAndVerify(await cr.json(), gv, gn, tok); }
+      }
+    }catch(err){ say("Error: "+(err&&err.message||err)); }
+    running=false;
+    fetchDetectorVerdict();
   }
+  var again=document.getElementById("ks-again");
+  if(again){ again.addEventListener("click", function(e){ e.preventDefault(); start(); }); }
   fetchDetectorVerdict();
+  start();
 })();
 """
 
@@ -387,6 +396,34 @@ def _gate_script(slug: str, mode: str) -> str:
     return f"<script>window.__ARENA__={cfg};{ARENA_JS}</script>"
 
 
+def _endpoints(c: dict[str, str]) -> list[tuple[str, str]]:
+    """The owned arena-gate HTTP endpoints a scripted bypass targets for this challenge (method, path)."""
+    slug, mode = c["slug"], c["mode"]
+    if mode == "managed":
+        return [("GET", "/arena/managed?step=1")]
+    if mode == "pow":
+        return [("GET", f"/arena/challenge?gate={slug}"), ("POST", "/arena/verify")]
+    if mode == "captcha":
+        return [("GET", f"/arena/captcha?kind={slug}"), ("POST", "/arena/captcha/verify")]
+    if mode == "image-select":
+        return [("GET", "/arena/captcha?kind=image-select"), ("POST", "/arena/captcha/verify")]
+    if mode == "pact":
+        return [("GET", "/arena/pact"), ("POST", "/arena/pact/verify")]
+    return [("GET", f"/arena/{slug}"), ("POST", f"/arena/{slug}/verify")]  # slider, rotate
+
+
+def _endpoints_html(c: dict[str, str]) -> str:
+    """A disclosure listing the gate's HTTP endpoints so a bypass tester can script straight against it."""
+    rows = "".join(f'<li><span class="m">{method}</span> <code>{path}</code></li>' for method, path in _endpoints(c))
+    return (
+        '<details class="ks-disclose" style="margin-top:1rem"><summary>Endpoints &mdash; point your own '
+        "solver here</summary>"
+        '<p class="note">The gate is just an HTTP protocol on Kitsune&rsquo;s owned <code>arena</code> service '
+        "(allow-list-scoped &mdash; it only ever talks to itself). Script a bypass against:</p>"
+        f'<ul class="arena-endpoints">{rows}</ul></details>'
+    )
+
+
 def arena_index_html() -> str:
     """The ``/arena`` index: the thesis intro + a card grid linking to every challenge's own page."""
     cards = "".join(
@@ -398,13 +435,14 @@ def arena_index_html() -> str:
     )
     body = f"""
 <h1>The Arena</h1>
-<p class="lead">Faithful, self-hosted reproductions of <b>documented, open</b> web challenge mechanisms.
-Pick a gate, solve it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and
-what does Kitsune&rsquo;s detector independently make of your client over the edge?</p>
+<p class="lead">Faithful, self-hosted reproductions of <b>documented, open</b> web challenge mechanisms. Each
+gate has its <b>own page that auto-serves the challenge</b> &mdash; go there with a browser, a bot, or your own
+solver and <b>test the bypass</b>. You get <b>two verdicts at once</b>: did you pass the gate &mdash; and what does
+Kitsune&rsquo;s detector independently make of your client over the edge?</p>
 <p class="note">The punchline the arena makes live: a solved challenge is a <b>cost</b> or <b>Turing</b> test, not a
-bot/human discriminator. A script can pass any gate here and still be convicted on the network layer &mdash;
+bot/human discriminator. A script can bypass any gate here and still be convicted on the network layer &mdash;
 <b>coherence + attestation</b> is the durable signal, not the puzzle.</p>
-<h2>Pick a challenge</h2>
+<h2>Pick a gate to bypass</h2>
 <div class="cards">{cards}</div>
 {_ETHICS_HTML}
 """
@@ -424,21 +462,21 @@ def arena_gate_html(slug: str) -> str | None:
     c = challenge(slug)
     if c is None:
         return None
-    run_label = {
-        "managed": "Run the silent check",
-        "pact": "Get a token &amp; skip",
-    }.get(c["mode"], "Run the challenge")
     body = f"""
 <p class="crumb-back"><a href="/arena">&larr; All challenges</a></p>
 <h1>{c["label"]}</h1>
 <p class="arena-family">{c["family"]}</p>
 <p class="lead">{c["blurb"]}</p>
+<p class="note">This gate <b>auto-serves on load</b> &mdash; bring a browser, a bot, or your own solver and try to
+<b>bypass it</b>. You get two verdicts: did you pass the gate &mdash; and does Kitsune&rsquo;s detector independently
+convict your client over the edge?</p>
 <section class="arena-stage" aria-label="challenge">
-  <button class="arena-run" id="ks-run">{run_label}</button>
-  <div class="arena-log" id="ks-log">Ready.</div>
+  <div class="arena-log" id="ks-log">Loading the challenge&hellip;</div>
   <div id="ks-captcha"></div>
+  <p class="arena-again-wrap"><a href="#" id="ks-again" class="arena-again">&#8635; New challenge</a></p>
 </section>
 {_VERDICTS_HTML}
+{_endpoints_html(c)}
 {_ETHICS_HTML}
 {_gate_script(c["slug"], c["mode"])}
 """
