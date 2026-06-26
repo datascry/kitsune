@@ -50,6 +50,17 @@ services:
       ARENA_ADDR: "0.0.0.0:8095"
     restart: unless-stopped
 
+  # Red side vs the arena — a browserless solver that beats every arena CAPTCHA gate (owned gates only),
+  # while the detector convicts the no-JS client. `--profile arena-solver run --rm arena-solver`.
+  arena-solver:
+    build:
+      context: .
+      dockerfile: evaders/arena-solver/Dockerfile
+    environment:
+      KITSUNE_DETECTOR: "http://detector:8080"
+    depends_on: [detector, arena]
+    profiles: ["arena-solver"]
+
   # Red side — one-shot, only with `--profile evaders`.
   vanilla:
     build:
