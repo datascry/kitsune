@@ -14,6 +14,11 @@ from urllib.parse import urlparse
 #: Kitsune's own detector, reachable locally.
 _OWN_DETECTOR_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "detector", "edge"})
 
+#: Self-hosted ARENA replicas we run (the challenge-gate service + the PoW gate testbed). These are owned,
+#: loopback/compose-internal hostnames that model documented OPEN mechanisms — never a third-party endpoint.
+#: New self-hosted replicas are added here explicitly (the plan's §0.3); the list stays owned-only.
+_OWN_REPLICA_HOSTS = frozenset({"arena", "arena-gate", "pow-gate"})
+
 #: Public endpoints explicitly built for bot/fingerprint testing (see docs/architecture.md §13).
 #: Only DEDICATED test/demo hosts belong here — never a third-party production site, and never an
 #: over-broad host (e.g. ``www.google.com`` is EXCLUDED: it would permit all of Google, not just the
@@ -49,7 +54,7 @@ def is_allowed(url: str) -> bool:
     host = urlparse(url).hostname
     if host is None:
         return False
-    return host in _OWN_DETECTOR_HOSTS or host in ALLOWED_TEST_HOSTS
+    return host in _OWN_DETECTOR_HOSTS or host in _OWN_REPLICA_HOSTS or host in ALLOWED_TEST_HOSTS
 
 
 def assert_allowed(url: str) -> None:

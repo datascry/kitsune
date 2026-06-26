@@ -1,0 +1,17 @@
+{
+  "schema_version": "0.1",
+  "challenge_id": "ch_8f2a1c9e4b7d",
+  "gate": "memory-hard",
+  "difficulty": 3,
+  "salt": "a1b2c3d4e5f6",
+  "issued_at": "2026-06-26T12:00:00Z",
+  "expires_at": "2026-06-26T12:05:00Z",
+  "session_id": "0a60c0718ba8c1ca08b33ec805529f42",
+  "token": {
+    "challenge_id": "ch_8f2a1c9e4b7d",
+    "gate": "memory-hard",
+    "solved_at": "2026-06-26T12:00:04Z",
+    "cost_ms": 240.0,
+    "signature": "hmac-sha256:3b9f0e7c2d1a8b6f4e5c0d2a1b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c"
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitsune.dev/contracts/finding.schema.json",
+  "title": "Finding",
+  "description": "A red-team finding: a Kitsune control (a coherence rule or an arena gate) that an evader DEFEATED or that HELD, with cost economics and the remediation that closes it. The unit the suite's reporting layer emits — the detection delta made legible.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "finding_id", "title", "control", "evader", "layer", "outcome", "observed_at"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Contract version, MAJOR.MINOR."
+    },
+    "finding_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Stable id for the finding (dedupes across retests)."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "control": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "The tested control: a Kitsune rule id (e.g. net.ja4_unstable_within_session) or an arena gate (e.g. gate:memory-hard). Vendor-neutral — maps to Kitsune's own taxonomy, never a third-party label."
+    },
+    "evader": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "The evader/technique under test (a fleet evader, an arena solver, a coordination shape)."
+    },
+    "layer": {
+      "type": "string",
+      "enum": ["network", "browser", "behavioral", "reputation", "coordination", "challenge"],
+      "description": "The detection layer the finding sits in."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["defeated", "caught", "partial"],
+      "description": "defeated = the control failed to convict the evader; caught = the control held; partial = corroborating-only (capped at suspicious)."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "low", "medium", "high", "critical"]
+    },
+    "cost": {
+      "type": ["object", "null"],
+      "additionalProperties": true,
+      "description": "Optional cost economics, e.g. {\"per_token_ms\": 240, \"tokens_per_sec\": 4} — the before/after cost curve."
+    },
+    "remediation": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "The detection/rule that would (or did) close it."
+    },
+    "retest": {
+      "type": ["string", "null"],
+      "enum": ["open", "fixed", "regression-guarded", null],
+      "description": "Retest status after remediation."
+    },
+    "ruleset_version": {
+      "type": "string",
+      "description": "ruleset_version the finding was observed under (for drift tracking)."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
