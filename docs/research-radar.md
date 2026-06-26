@@ -728,3 +728,47 @@ infra. (Existing G1-G25/N1-N7/X1-X8 deduped out.)
   than a 2025-CVE conviction with a live evasion story). The behavioral/coordination/RTT/RESIP frontier stays
   external (X11-X21: H3-GREASE coherence, handshake-RTT proxy tells, TLS-PSK fleet reuse, USB-polling mouse
   lattice, Fitts submovements, DoLLM carpet-bombing, PACT/Private Access Tokens, Wasm/JS latency-ratio).
+
+## Arena defenses & evasions frontier (2026-06-26 research scan)
+
+A frontier scan for the self-hosted arena's arms race (defenses to model, evasions to expect). Groundable
+= buildable against our OWN gates in-sandbox; external = needs real attestation/traffic/paid models.
+
+### Defense frontier
+
+| # | technique | status in the wild | arena fit |
+|---|---|---|---|
+| AD1 | **Puzzles are dying → invisible signal-based** (PoW + behavioral + device intelligence) | the 2026 consensus (Turnstile, Friendly Captcha, Fingerprint) | **already modelled** — the `managed` ladder = silent coherence → PoW step-up |
+| AD2 | **Behavioral biometrics** as the durable interactive layer (drag speed/accel/jitter, full trajectory server-scored) | GeeTest Adaptive, Cloudflare heuristics | **modelled** — slider + rotate score the trajectory (velocity-CV); = Kitsune's `uniform_velocity` thesis |
+| AD3 | **PACT / Private Access (Control) Tokens** — anonymous proof-of-PERSONHOOD tokens; skip the challenge for token-carriers | Cloudflare + Chrome/Edge/Firefox, **launched 2026-06** (Privacy Pass family) | **LEAD (groundable + external)** — the token-verify mechanism is groundable like Web Bot Auth; the real secure-enclave attestation (Apple PAT) is external. Complements shipped **G25 Web Bot Auth** (good-bot half) with the **human-personhood half** |
+| AD4 | **Anti-LLM-solver CAPTCHA** + defensive eval | COGNITION (arXiv 2512.02318), NGCaptcha (arXiv 2512.16223) | external/research — the durable answer is coherence, not a harder puzzle |
+
+### Evasion frontier
+
+| # | technique | status in the wild | arena fit |
+|---|---|---|---|
+| AE1 | **Multimodal-LLM solvers** (GPT-4V/Claude vision) solve visual CAPTCHAs zero-shot ~96% on new types | Oedipus (CCS 2025), agentic-VLM "Are CAPTCHAs still bot-hard?" | the **text + image-select** gates fall to a VLM; our heuristic CV already does image-select, a VLM/OCR does text |
+| AE2 | **Behavioral trajectory synthesis** (Sigmoid/Softmax/ReLu/Tanh sim functions) | ~96% GeeTest, ~98% Netease | **shown** — `arena-solver` beats slider/rotate by synthesizing a variable-velocity trajectory |
+| AE3 | **HF OCR / CAPTCHA-solver models** (leverage, don't train) | mature | **the missing evader half** — beats the distorted-text gate the Go heuristic solver can't |
+
+### HF models to leverage (for the text-gate OCR evasion, against our OWN gate)
+
+- **`anuashok/ocr-captcha-v3`** — TrOCR fine-tuned on captchas, **CER ≈ 0.014** (~98.6% per-char). Best off-the-shelf fit.
+- **`DunnBC22/trocr-base-printed_captcha_ocr`** — TrOCR fine-tuned for captcha text.
+- **`microsoft/trocr-base-printed`** — general transformer OCR (baseline).
+- **`keras-io/ocr-for-captcha`** — classic CRNN+CTC captcha OCR.
+- Dataset for training our own: a ~1.8M synthetic-captcha set on HF.
+
+### The meta-finding (confirms the thesis)
+
+The whole frontier says the **puzzle layer is dead** — every gate (PoW, slider, image, text) falls to scripting /
+synthesis / CV / VLM-OCR, and the industry is moving to **behavioral + cryptographic attestation**. That is exactly
+Kitsune's bet: the arena proves a solved challenge ≠ a human, and **coherence + attestation** is the durable layer.
+
+### Next builds (arms race)
+
+- **Evasion:** a Python `arena-solver-ocr` using a HF TrOCR-captcha model to beat the text gate (own gate only) →
+  completes the solver; honest (the text gate's real-OCR barrier falls to a real OCR model, and the detector still
+  convicts the no-JS client).
+- **Defense (lead AD3):** model **PACT / Private Access Tokens** as a personhood-token arena gate — the human half of
+  the Web Bot Auth coherence check Kitsune already ships.
