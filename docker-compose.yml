@@ -61,6 +61,17 @@ services:
     depends_on: [detector, arena]
     profiles: ["arena-solver"]
 
+  # OCR evader vs the arena's distorted-text gate — a HF TrOCR captcha model reads it (owned gate only),
+  # while the detector convicts the no-JS client. Heavy (downloads the model). `--profile arena-solver`.
+  arena-solver-ocr:
+    build:
+      context: .
+      dockerfile: evaders/arena-solver-ocr/Dockerfile
+    environment:
+      KITSUNE_DETECTOR: "http://detector:8080"
+    depends_on: [detector, arena]
+    profiles: ["arena-solver"]
+
   # Red side — one-shot, only with `--profile evaders`.
   vanilla:
     build:

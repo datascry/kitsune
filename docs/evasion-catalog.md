@@ -8,15 +8,16 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **23 evader tools**, **99 exercised techniques** (89 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **24 evader tools**, **99 exercised techniques** (89 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
-### Fleet — the evader tools (23)
+### Fleet — the evader tools (24)
 
 | evader | lang | what it is |
 |---|---|---|
 | `agent` | Python | drive a remote Chromium with claude-chosen actions, read the verdict. |
 | `apify-fp-inject` | TS/Node | drive Playwright Chromium through the edge with an apify-injected fingerprint. |
 | `arena-solver` | Go | a browserless solver for the arena CAPTCHA gates (OWNED gates only). |
+| `arena-solver-ocr` | Python | OCR evader that beats the arena's distorted-text gate (owned gates only). |
 | `azuretls` | Go | drive azuretls-client (Go TLS/JA3 + HTTP/2 forger) through the edge. |
 | `brave` | TS/Node | drive Brave (farbling browser) through the edge and read the verdict. |
 | `camoufox` | Python | drive Camoufox (engine-level anti-detect Firefox) through the edge. |
