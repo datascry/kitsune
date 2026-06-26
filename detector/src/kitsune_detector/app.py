@@ -251,6 +251,41 @@ def create_app(
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
+    @app.get("/arena/managed", include_in_schema=False)
+    async def arena_managed(step: int = 0, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
+        # The managed-challenge ladder (the Turnstile-style escalation, faithfully): the SILENT first step
+        # IS Kitsune's coherence verdict. A coherent client (human/verified) is allowed silently — no puzzle;
+        # an incoherent one (suspicious/bot) is STEPPED UP to a non-interactive proof-of-work. Cookie-scoped
+        # to the caller's OWN session, so it is public (no admin gate) and exposes only a decision, not the
+        # full verdict. This is also the reCAPTCHA-v3-style "score, no challenge" behaviour: the detector AS
+        # a gate. Reproduces the documented escalation shape — it is not the branded vendor product.
+        session = store.get_session(ks_sid) if ks_sid else None
+        if session is None:
+            # No edge session / no signals yet → step up (the conservative managed default).
+            out: dict[str, object] = {"decision": "challenge", "step": "pow", "label": "unknown", "score": None}
+        else:
+            verdict = detector.score(session)
+            label = verdict.label.value
+            allow = label in ("human", "verified")
+            out = {
+                "decision": "allow" if allow else "challenge",
+                "step": "silent" if allow else "pow",
+                "label": label,
+                "score": round(verdict.score, 3),
+            }
+        # On a step-up (step=1), relay a non-interactive PoW the client can solve in-browser (the ladder's
+        # 2nd rung). The bare call (step=0, used to read the silent verdict) does not mint a puzzle.
+        if step and out["decision"] == "challenge" and ARENA_URL:
+            params = {"gate": "hashcash", "difficulty": "14"}
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    r = await client.get(f"{ARENA_URL}/arena/challenge", params=params)
+                if r.status_code == 200:
+                    out["challenge"] = r.json()
+            except httpx.HTTPError:
+                pass  # the gate being down doesn't break the decision; the page just shows the verdict
+        return out
+
     # --- Static brand assets + crawl/SEO infra (public, off the OpenAPI schema) ---
     def _asset(name: str, media_type: str) -> FileResponse:
         return FileResponse(

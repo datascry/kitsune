@@ -261,3 +261,23 @@ def test_arena_page_renders(client: TestClient) -> None:
     body = resp.text
     assert "The Arena" in body and 'id="ks-run"' in body
     assert "not affiliated with any named vendor" in body  # the vendor-neutral disclaimer ships
+
+
+def test_arena_managed_steps_up_without_session(client: TestClient) -> None:
+    # No edge session / no signals → the managed ladder steps up (the conservative default).
+    out = client.get("/arena/managed").json()
+    assert out["decision"] == "challenge"
+    assert out["label"] == "unknown"
+
+
+def test_arena_managed_allows_coherent_then_challenges_bot(client: TestClient) -> None:
+    # A coherent (human) session is allowed SILENTLY; an incoherent (bot) one is stepped up — the ladder.
+    client.post("/ingest", json=_signals_from("session_human.json"))
+    human_sid = load_example("session_human.json")["session_id"]
+    out = client.get("/arena/managed", headers={"cookie": f"ks_sid={human_sid}"}).json()
+    assert out["decision"] == "allow" and out["step"] == "silent" and out["label"] in ("human", "verified")
+
+    client.post("/ingest", json=_signals_from("session_bot.json"))
+    bot_sid = load_example("session_bot.json")["session_id"]
+    out = client.get("/arena/managed", headers={"cookie": f"ks_sid={bot_sid}"}).json()
+    assert out["decision"] == "challenge" and out["label"] == "bot"
