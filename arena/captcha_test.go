@@ -26,13 +26,14 @@ func TestMintCaptchaAndCheck(t *testing.T) {
 			t.Fatalf("%s: a wrong answer was accepted", kind)
 		}
 	}
-	// text: the answer is rendered as an SVG image and is NOT exposed in plaintext on the public challenge.
+	// text: the answer is rendered as a distorted RASTER PNG (not SVG markup), so it needs OCR — the plaintext
+	// answer is not parseable from the challenge (no <text> element; only base64 pixels).
 	c, answer := MintCaptcha(CaptchaText)
-	if !strings.Contains(c.Image, "svg") {
-		t.Fatal("text captcha did not render an SVG image")
+	if !strings.HasPrefix(c.Image, "data:image/png;base64,") {
+		t.Fatalf("text captcha is not a raster PNG: %.40s", c.Image)
 	}
-	if strings.Contains(c.Image, answer) {
-		t.Fatal("text captcha leaked the plaintext answer into the image markup")
+	if strings.Contains(c.Image, answer) || strings.Contains(c.Image, "<text") {
+		t.Fatal("text captcha leaked the answer / used parseable markup")
 	}
 	// honeypot: an EMPTY trap field passes; any value fails.
 	if !CheckCaptcha(CaptchaHoneypot, "", "") || CheckCaptcha(CaptchaHoneypot, "", "spam") {

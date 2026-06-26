@@ -16,7 +16,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"html"
 	"math"
 	"math/big"
 	"sort"
@@ -29,7 +28,7 @@ import (
 type CaptchaKind string
 
 const (
-	CaptchaText        CaptchaKind = "text"         // distorted-text image (server-rendered SVG)
+	CaptchaText        CaptchaKind = "text"         // distorted-text image (rasterized PNG — needs OCR)
 	CaptchaMath        CaptchaKind = "math"         // simple arithmetic
 	CaptchaHoneypot    CaptchaKind = "honeypot"     // hidden trap field that must stay empty
 	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (reCAPTCHA-v2 category)
@@ -39,7 +38,7 @@ const (
 // : rotate: how close (degrees) to upright counts as solved.
 const rotateTolDeg = 18
 
-// : image-select shapes — owned, generic SVG primitives (no vendor imagery).
+// : image-select shapes — owned, generic primitives, rendered as rotated raster PNG tiles.
 var imageShapes = []string{"circle", "square", "triangle", "star"}
 
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
@@ -51,9 +50,9 @@ type Captcha struct {
 	Kind   CaptchaKind `json:"kind"`
 	ID     string      `json:"id"`              // single-use nonce
 	Prompt string      `json:"prompt"`          // human instruction
-	Image  string      `json:"image,omitempty"` // text/rotate: a data: SVG (text: distorted code; rotate: the object)
+	Image  string      `json:"image,omitempty"` // text: rasterized PNG (needs OCR); rotate: an SVG arrow
 	Field  string      `json:"field,omitempty"` // honeypot: the trap field name that must stay empty to pass
-	Tiles  []string    `json:"tiles,omitempty"` // image-select: 9 owned SVG tiles (unlabelled — must be classified)
+	Tiles  []string    `json:"tiles,omitempty"` // image-select: 9 owned raster PNG tiles (must be classified by CV)
 	Angle  int         `json:"angle,omitempty"` // rotate: the initial rotation the user must undo to reach upright
 }
 
@@ -105,44 +104,6 @@ func randCode(n int) string {
 	return b.String()
 }
 
-// svgFor renders code as a small distorted-text SVG (per-char rotation + jitter + a couple of noise strokes),
-// returned as a data: URI. The plaintext code is NOT in the document the client receives — only this image is.
-func svgFor(code string) string {
-	var g strings.Builder
-	for i, ch := range code {
-		x := 14 + i*22
-		y := 26 + int(randInt(9)) - 4
-		rot := int(randInt(31)) - 15
-		fmt.Fprintf(&g, `<text x="%d" y="%d" transform="rotate(%d %d %d)" font-family="monospace" font-size="26" fill="#444">%s</text>`,
-			x, y, rot, x, y, html.EscapeString(string(ch)))
-	}
-	for i := 0; i < 3; i++ {
-		fmt.Fprintf(&g, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#999" stroke-width="1"/>`,
-			randInt(140), randInt(40), randInt(140), randInt(40))
-	}
-	svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="40" role="img" aria-label="text challenge">%s</svg>`,
-		14+len(code)*22, g.String())
-	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23", "\n", "").Replace(svg)
-}
-
-// shapeSVG renders one owned, generic primitive shape as a data: SVG (filled, unlabelled — a bot must
-// classify the geometry, not read a name).
-func shapeSVG(shape string) string {
-	var body string
-	switch shape {
-	case "square":
-		body = `<rect x="12" y="12" width="36" height="36" fill="#555"/>`
-	case "triangle":
-		body = `<polygon points="30,8 52,50 8,50" fill="#555"/>`
-	case "star":
-		body = `<polygon points="30,6 36,24 55,24 40,36 45,54 30,42 15,54 20,36 5,24 24,24" fill="#555"/>`
-	default: // circle
-		body = `<circle cx="30" cy="30" r="22" fill="#555"/>`
-	}
-	svg := `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">` + body + `</svg>`
-	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23", "\n", "").Replace(svg)
-}
-
 // arrowSVG renders an upright arrow (pointing up); the page rotates it by the challenge's initial angle, and
 // the human rotates it back to upright.
 func arrowSVG() string {
@@ -166,13 +127,13 @@ func MintCaptcha(kind CaptchaKind) (Captcha, string) {
 		var want []int
 		for i := range tiles {
 			s := imageShapes[randInt(int64(len(imageShapes)))]
-			tiles[i] = shapeSVG(s)
+			tiles[i] = rasterShape(s) // rotated/noisy PNG — must be CLASSIFIED, not read from markup
 			if s == target {
 				want = append(want, i)
 			}
 		}
 		if len(want) == 0 { // guarantee at least one target tile
-			tiles[0] = shapeSVG(target)
+			tiles[0] = rasterShape(target)
 			want = []int{0}
 		}
 		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + target + ".", Tiles: tiles}, joinInts(want)
@@ -181,7 +142,9 @@ func MintCaptcha(kind CaptchaKind) (Captcha, string) {
 		return Captcha{Kind: CaptchaRotate, ID: id, Prompt: "Rotate the arrow to point straight up.", Image: arrowSVG(), Angle: angle}, ""
 	default:
 		code := randCode(5)
-		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: svgFor(code)}, strings.ToUpper(code)
+		// Rendered as a DISTORTED RASTER PNG (not SVG): the answer is in the pixels, not the markup, so a
+		// browserless parser can no longer read it — solving the text gate now needs real OCR. See raster.go.
+		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: rasterText(code)}, strings.ToUpper(code)
 	}
 }
 
