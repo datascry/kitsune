@@ -16,7 +16,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -32,11 +31,7 @@ const (
 	CaptchaMath        CaptchaKind = "math"         // simple arithmetic
 	CaptchaHoneypot    CaptchaKind = "honeypot"     // hidden trap field that must stay empty
 	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (reCAPTCHA-v2 category)
-	CaptchaRotate      CaptchaKind = "rotate"       // rotate an object upright (Arkose/FunCaptcha category)
 )
-
-// : rotate: how close (degrees) to upright counts as solved.
-const rotateTolDeg = 18
 
 // : image-select shapes — owned, generic primitives, rendered as rotated raster PNG tiles.
 var imageShapes = []string{"circle", "square", "triangle", "star"}
@@ -104,13 +99,6 @@ func randCode(n int) string {
 	return b.String()
 }
 
-// arrowSVG renders an upright arrow (pointing up); the page rotates it by the challenge's initial angle, and
-// the human rotates it back to upright.
-func arrowSVG() string {
-	svg := `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90"><polygon points="45,10 70,55 50,55 50,80 40,80 40,55 20,55" fill="#7a5cff"/></svg>`
-	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23").Replace(svg)
-}
-
 // MintCaptcha builds a fresh challenge of the kind and returns it with the expected answer (the caller stores
 // the answer for verify; for honeypot/rotate the stored answer is "" — those verify structurally).
 func MintCaptcha(kind CaptchaKind) (Captcha, string) {
@@ -137,9 +125,6 @@ func MintCaptcha(kind CaptchaKind) (Captcha, string) {
 			want = []int{0}
 		}
 		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + target + ".", Tiles: tiles}, joinInts(want)
-	case CaptchaRotate:
-		angle := 40 + int(randInt(281)) // 40..320° off upright (well outside the solve tolerance)
-		return Captcha{Kind: CaptchaRotate, ID: id, Prompt: "Rotate the arrow to point straight up.", Image: arrowSVG(), Angle: angle}, ""
 	default:
 		code := randCode(5)
 		// Rendered as a DISTORTED RASTER PNG (not SVG): the answer is in the pixels, not the markup, so a
@@ -184,17 +169,6 @@ func CheckCaptcha(kind CaptchaKind, expected, submitted string) bool {
 		return strings.TrimSpace(submitted) == ""
 	case CaptchaImageSelect:
 		return normIndexSet(expected) == normIndexSet(submitted) && normIndexSet(submitted) != ""
-	case CaptchaRotate:
-		// submitted is the FINAL displayed angle; pass when it is within tolerance of upright (0° mod 360).
-		f, err := strconv.ParseFloat(strings.TrimSpace(submitted), 64)
-		if err != nil {
-			return false
-		}
-		d := math.Mod(math.Abs(f), 360)
-		if d > 180 {
-			d = 360 - d
-		}
-		return d <= rotateTolDeg
 	default:
 		return strings.EqualFold(strings.TrimSpace(submitted), strings.TrimSpace(expected))
 	}

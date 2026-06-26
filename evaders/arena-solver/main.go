@@ -171,12 +171,37 @@ func solveImageSelect(c *http.Client, base string) (bool, int64, error) {
 
 func solveRotate(c *http.Client, base string) (bool, int64, error) {
 	return timed(func() (bool, error) {
-		cap, err := getCaptcha(c, base, "rotate")
+		r, err := c.Get(base + "/arena/rotate")
 		if err != nil {
 			return false, err
 		}
-		// the target is always upright; a script submits 0 directly (the finding: no trajectory check).
-		return verifyCaptcha(c, base, map[string]any{"kind": "rotate", "id": cap.ID, "answer": "0"})
+		var rot struct {
+			ID    string  `json:"id"`
+			Angle float64 `json:"angle"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&rot)
+		r.Body.Close()
+		// The gate now scores the rotation trajectory, so "submit 0" no longer works — synthesize a
+		// variable-rate drag from the initial offset down to upright (smoothstep + jitter) that clears the
+		// angular-velocity floor. Behavioural checks raise the bar but fall to synthesis; the detector doesn't.
+		traj := make([]map[string]float64, 0, 24)
+		for i := 0; i <= 24; i++ {
+			f := float64(i) / 24
+			eased := f * f * (3 - 2*f)
+			traj = append(traj, map[string]float64{"t": f * 380, "angle": rot.Angle*(1-eased) + math.Sin(f*9)})
+		}
+		traj[len(traj)-1]["angle"] = 0
+		body, _ := json.Marshal(map[string]any{"id": rot.ID, "trajectory": traj})
+		vr, err := c.Post(base+"/arena/rotate/verify", "application/json", bytes.NewReader(body))
+		if err != nil {
+			return false, err
+		}
+		defer vr.Body.Close()
+		var out struct {
+			OK bool `json:"ok"`
+		}
+		_ = json.NewDecoder(vr.Body).Decode(&out)
+		return out.OK, nil
 	})
 }
 

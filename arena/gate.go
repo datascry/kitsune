@@ -45,8 +45,6 @@ func captchaKindOf(s string) CaptchaKind {
 		return CaptchaHoneypot
 	case "image-select":
 		return CaptchaImageSelect
-	case "rotate":
-		return CaptchaRotate
 	default:
 		return CaptchaText
 	}
@@ -168,6 +166,38 @@ func NewMux(secret []byte) http.Handler {
 		resp := map[string]any{"ok": ok, "kind": "slider", "reason": reason}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, "slider", body.ID)
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- ROTATE captcha (Arkose-style): drag the object upright; the gate scores the rotation TRAJECTORY
+	// (a bare angle no longer passes — same behavioural discriminator as the slider). On-thesis, owned. ---
+	mux.HandleFunc("GET /arena/rotate", func(w http.ResponseWriter, _ *http.Request) {
+		r, ans := MintRotate()
+		captchas.put(r.ID, ans)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(r)
+	})
+
+	mux.HandleFunc("POST /arena/rotate/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID         string        `json:"id"`
+			Trajectory []RotatePoint `json:"trajectory"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<18)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		_, known := captchas.take(body.ID) // single-use
+		w.Header().Set("Content-Type", "application/json")
+		if !known {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "rotate", "reason": "unknown or used"})
+			return
+		}
+		ok, reason := CheckRotate(body.Trajectory)
+		resp := map[string]any{"ok": ok, "kind": "rotate", "reason": reason}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "rotate", body.ID)
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})

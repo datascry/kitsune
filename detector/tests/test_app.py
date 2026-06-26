@@ -328,6 +328,8 @@ class _FakeClient:
     async def get(self, url: str, params: dict | None = None) -> _FakeResp:
         if url.endswith("/arena/slider"):
             return _FakeResp(200, b'{"kind":"slider","id":"s1","gap_x":120,"track_w":300,"piece_w":42}')
+        if url.endswith("/arena/rotate"):
+            return _FakeResp(200, b'{"kind":"rotate","id":"r1","image":"data:,","angle":120}')
         if url.endswith("/arena/captcha"):
             return _FakeResp(200, b'{"kind":"math","id":"c1","prompt":"What is 2 + 2?"}')
         return _FakeResp(200, b'{"class":"hashcash","nonce":"abc","difficulty":12}')
@@ -343,17 +345,21 @@ def test_arena_relays_forward_to_gate(client: TestClient, monkeypatch: pytest.Mo
     assert client.get("/arena/challenge", params={"gate": "hashcash"}).json()["class"] == "hashcash"
     assert client.get("/arena/captcha", params={"kind": "math"}).json()["kind"] == "math"
     assert client.get("/arena/slider").json()["kind"] == "slider"
+    assert client.get("/arena/rotate").json()["kind"] == "rotate"
     assert client.post("/arena/verify", content=b'{"nonce":"abc","counters":[0]}').json()["ok"] is False
     assert client.post("/arena/captcha/verify", content=b'{"kind":"math","id":"c1","answer":"4"}').status_code == 200
     assert client.post("/arena/slider/verify", content=b'{"id":"s1","x":120,"trajectory":[]}').status_code == 200
+    assert client.post("/arena/rotate/verify", content=b'{"id":"r1","trajectory":[]}').status_code == 200
     # managed step-up relays a challenge for an incoherent (no-session) caller.
     out = client.get("/arena/managed", params={"step": 1}).json()
     assert out["decision"] == "challenge" and "challenge" in out
 
 
-def test_arena_captcha_new_kinds_whitelisted(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_arena_image_select_and_rotate_endpoints(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # image-select is a captcha kind; rotate is now its own behavioural endpoint (drag-scored, not a kind).
+    assert client.get("/arena/rotate").status_code == 503  # unconfigured
     monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
-    for kind in ("image-select", "rotate"):
-        assert client.get("/arena/captcha", params={"kind": kind}).status_code in (200, 502)
+    assert client.get("/arena/captcha", params={"kind": "image-select"}).status_code in (200, 502)
+    assert client.get("/arena/captcha", params={"kind": "rotate"}).status_code == 400  # no longer a captcha kind
     body = client.get("/arena").text
     assert 'data-gate="image-select"' in body and 'data-gate="rotate"' in body

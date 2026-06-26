@@ -145,7 +145,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 #: spine runs fine without it). Gate names are whitelisted; the gate itself only ever talks to itself.
 ARENA_URL = os.environ.get("KITSUNE_ARENA_URL", "").rstrip("/")
 _ARENA_GATES = frozenset({"hashcash", "many-small", "memory-hard", "cap"})
-_ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot", "image-select", "rotate"})
+_ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot", "image-select"})
 #: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
 #: it reaches any HTML/SEO sink both 404s junk URLs and removes the reflected-XSS taint (no <, ", etc.).
 _SAFE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,80}")
@@ -306,6 +306,34 @@ def create_app(
             async with httpx.AsyncClient(timeout=10.0) as client:
                 r = await client.post(
                     f"{ARENA_URL}/arena/slider/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.get("/arena/rotate", include_in_schema=False)
+    async def arena_rotate() -> Response:
+        # Relay a self-hosted rotate (Arkose-style) challenge from the owned gate; verify scores the trajectory.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/rotate")
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/rotate/verify", include_in_schema=False)
+    async def arena_rotate_verify(request: Request) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 262144:
+            raise HTTPException(status_code=413, detail="trajectory too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/rotate/verify", content=body, headers={"content-type": "application/json"}
                 )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
