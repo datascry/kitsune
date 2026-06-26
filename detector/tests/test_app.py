@@ -271,7 +271,7 @@ def test_arena_index_renders_with_shell(client: TestClient) -> None:
 
 def test_arena_gate_pages_auto_serve(client: TestClient) -> None:
     # Each challenge is its own page that AUTO-SERVES on load (no run button) + the dual verdict, on the shell.
-    for slug in ("managed", "hashcash", "text", "slider", "rotate", "image-select", "pact"):
+    for slug in ("checkbox", "managed", "hashcash", "text", "slider", "rotate", "image-select", "pact"):
         resp = client.get(f"/arena/gate/{slug}")
         assert resp.status_code == 200, slug
         body = resp.text
@@ -292,6 +292,16 @@ def test_arena_gate_page_lists_endpoints(client: TestClient) -> None:
 
 def test_arena_unknown_gate_404s(client: TestClient) -> None:
     assert client.get("/arena/gate/evil").status_code == 404
+
+
+def test_arena_checkbox_gate(client: TestClient) -> None:
+    # The iconic "click to confirm you are human" checkbox — reCAPTCHA-v2/Turnstile style — on the managed
+    # mechanism. It's the first gate on the index and renders the checkbox widget; no difficulty axis.
+    idx = client.get("/arena").text
+    assert 'href="/arena/gate/checkbox"' in idx
+    body = client.get("/arena/gate/checkbox").text
+    assert body.count("ks-checkbox") and "Verify you are human" in body
+    assert '"mode": "checkbox"' in body and 'id="ks-levels"' not in body  # coherence-gated, no level dial
 
 
 def test_arena_gate_difficulty_selector(client: TestClient) -> None:

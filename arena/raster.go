@@ -46,34 +46,49 @@ func rasterText(code string, k textKnobs) string {
 		d := &font.Drawer{Dst: base, Src: image.NewUniform(color.RGBA{40, 40, 40, 255}), Face: captchaFace}
 		x := 16
 		for _, ch := range code {
-			d.Dot = fixed.P(x, 46+int(randInt(11))-5) // per-character vertical jitter
+			// Per-glyph colour variation (a different dark tone per char) defeats single-threshold binarization.
+			tone := uint8(20 + randInt(60))
+			d.Src = image.NewUniform(color.RGBA{tone, tone, tone, 255})
+			d.Dot = fixed.P(x, 46+int(randInt(13))-6) // per-character vertical jitter
 			d.DrawString(string(ch))
-			x += 27 + int(randInt(9)) - 4 // jittered advance
+			// Overlap shaves the advance so glyphs touch/overlap at harder levels — kills per-glyph segmentation.
+			x += 27 + int(randInt(9)) - 4 - k.Overlap
 		}
 	}
-	// Per-column vertical sine warp — defeats naive segmentation/OCR and any markup reading.
+	// 2D sine warp (vertical per-column + horizontal per-row) — defeats segmentation/OCR and any markup reading.
 	amp := k.WarpAmp + float64(randInt(3))
 	freq := 0.04 + float64(randInt(4))/100.0
 	phase := float64(randInt(628)) / 100.0
+	hAmp := k.HWarp
+	hFreq := 0.05 + float64(randInt(4))/100.0
+	hPhase := float64(randInt(628)) / 100.0
 	out := image.NewRGBA(base.Bounds())
 	draw.Draw(out, out.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
 	for x := 0; x < w; x++ {
 		shift := int(amp * math.Sin(float64(x)*freq+phase))
 		for y := 0; y < h; y++ {
+			sx := x + int(hAmp*math.Sin(float64(y)*hFreq+hPhase))
 			sy := y + shift
-			if sy >= 0 && sy < h {
-				out.Set(x, y, base.At(x, sy))
+			if sx >= 0 && sx < w && sy >= 0 && sy < h {
+				out.Set(x, y, base.At(sx, sy))
 			}
 		}
 	}
-	// Noise: a few strokes + speckle so background subtraction is harder (count scales with difficulty).
-	grey := color.RGBA{150, 150, 150, 255}
+	// Interference: straight strokes + curved (Bezier) lines crossing the glyphs (count scales with difficulty).
 	for i := 0; i < k.Lines; i++ {
 		x0, y0, x1, y1 := int(randInt(int64(w))), int(randInt(int64(h))), int(randInt(int64(w))), int(randInt(int64(h)))
-		drawLine(out, x0, y0, x1, y1, grey)
+		drawLine(out, x0, y0, x1, y1, noiseGrey())
 	}
+	for i := 0; i < k.Curves; i++ {
+		drawCurve(out,
+			int(randInt(int64(w/3))), int(randInt(int64(h))),
+			int(randInt(int64(w))), int(randInt(int64(h))),
+			w-1-int(randInt(int64(w/3))), int(randInt(int64(h))),
+			noiseGrey())
+	}
+	// Grey-varied speckle so background subtraction / denoising is harder (count scales with difficulty).
 	for i := 0; i < k.Speckle; i++ {
-		out.Set(int(randInt(int64(w))), int(randInt(int64(h))), grey)
+		out.Set(int(randInt(int64(w))), int(randInt(int64(h))), noiseGrey())
 	}
 	var buf bytes.Buffer
 	_ = png.Encode(&buf, out)
@@ -153,6 +168,27 @@ func pointInPolygon(x, y float64, poly []pt) bool {
 		}
 	}
 	return in
+}
+
+// noiseGrey returns a random mid-grey so speckle/lines vary in tone (a single threshold can't strip them).
+func noiseGrey() color.RGBA {
+	v := uint8(110 + randInt(90))
+	return color.RGBA{v, v, v, 255}
+}
+
+// drawCurve plots a quadratic Bézier (p0→ctrl→p1) by sampling — a curved interference line, harder to remove
+// than a straight stroke (it follows the text's own curvature). Sampled densely enough to be continuous.
+func drawCurve(img *image.RGBA, x0, y0, cx, cy, x1, y1 int, c color.Color) {
+	const steps = 60
+	px, py := x0, y0
+	for i := 1; i <= steps; i++ {
+		t := float64(i) / steps
+		mt := 1 - t
+		x := int(mt*mt*float64(x0) + 2*mt*t*float64(cx) + t*t*float64(x1))
+		y := int(mt*mt*float64(y0) + 2*mt*t*float64(cy) + t*t*float64(y1))
+		drawLine(img, px, py, x, y, c)
+		px, py = x, y
+	}
 }
 
 // drawLine plots a simple Bresenham line (noise stroke).
