@@ -20,22 +20,23 @@ func humanRotate(initial float64) []RotatePoint {
 }
 
 func TestMintRotate(t *testing.T) {
-	r, ans := MintRotate()
-	if r.Kind != "rotate" || r.Image == "" || r.Angle == 0 || ans != "" {
+	r, ans := MintRotate(LevelMedium)
+	if r.Kind != "rotate" || r.Image == "" || r.Angle == 0 || ans != "medium" {
 		t.Fatalf("bad rotate challenge: %+v ans=%q", r, ans)
 	}
 }
 
 func TestCheckRotateHumanVsBot(t *testing.T) {
-	if ok, why := CheckRotate(humanRotate(120)); !ok {
+	med := rotateParams(LevelMedium)
+	if ok, why := CheckRotate(humanRotate(120), med); !ok {
 		t.Fatalf("a human-like rotation was rejected: %s", why)
 	}
 	// a bare "upright" with no interaction (the old shortcut) — too few samples.
-	if ok, _ := CheckRotate([]RotatePoint{{T: 0, Angle: 0}}); ok {
+	if ok, _ := CheckRotate([]RotatePoint{{T: 0, Angle: 0}}, med); ok {
 		t.Fatal("a no-trajectory submit was accepted (the submit-0 shortcut is not closed)")
 	}
 	// teleport: 2 samples, 1ms.
-	if ok, _ := CheckRotate([]RotatePoint{{T: 0, Angle: 120}, {T: 1, Angle: 0}}); ok {
+	if ok, _ := CheckRotate([]RotatePoint{{T: 0, Angle: 120}, {T: 1, Angle: 0}}, med); ok {
 		t.Fatal("a teleport rotation was accepted")
 	}
 	// constant-rate spin (uniform angular velocity) → rejected.
@@ -44,7 +45,7 @@ func TestCheckRotateHumanVsBot(t *testing.T) {
 		f := float64(i) / 24
 		uniform = append(uniform, RotatePoint{T: f * 360, Angle: 120 * (1 - f)})
 	}
-	if ok, _ := CheckRotate(uniform); ok {
+	if ok, _ := CheckRotate(uniform, med); ok {
 		t.Fatal("a constant-rate spin was accepted")
 	}
 	// ends not-upright → rejected even with a good trajectory shape.
@@ -52,7 +53,21 @@ func TestCheckRotateHumanVsBot(t *testing.T) {
 	for i := range bad {
 		bad[i].Angle += 90
 	}
-	if ok, _ := CheckRotate(bad); ok {
+	if ok, _ := CheckRotate(bad, med); ok {
 		t.Fatal("a rotation that did not reach upright was accepted")
+	}
+}
+
+func TestRotateLevelsTightenTolerance(t *testing.T) {
+	// A ~12°-off ending passes at easy (tol 25°) but fails at hard (tol 8°) — difficulty tightens the bar.
+	near := humanRotate(120)
+	for i := range near {
+		near[i].Angle += 12
+	}
+	if ok, _ := CheckRotate(near, rotateParams(LevelEasy)); !ok {
+		t.Fatal("a 12°-off rotation should pass at easy (tol 25°)")
+	}
+	if ok, _ := CheckRotate(near, rotateParams(LevelHard)); ok {
+		t.Fatal("a 12°-off rotation should fail at hard (tol 8°)")
 	}
 }

@@ -15,7 +15,7 @@ import (
 
 func TestMintCaptchaAndCheck(t *testing.T) {
 	for _, kind := range []CaptchaKind{CaptchaText, CaptchaMath, CaptchaHoneypot} {
-		c, answer := MintCaptcha(kind)
+		c, answer := MintCaptcha(kind, LevelMedium)
 		if c.ID == "" || c.Kind != kind {
 			t.Fatalf("%s: bad challenge %+v", kind, c)
 		}
@@ -28,7 +28,7 @@ func TestMintCaptchaAndCheck(t *testing.T) {
 	}
 	// text: the answer is rendered as a distorted RASTER PNG (not SVG markup), so it needs OCR — the plaintext
 	// answer is not parseable from the challenge (no <text> element; only base64 pixels).
-	c, answer := MintCaptcha(CaptchaText)
+	c, answer := MintCaptcha(CaptchaText, LevelMedium)
 	if !strings.HasPrefix(c.Image, "data:image/png;base64,") {
 		t.Fatalf("text captcha is not a raster PNG: %.40s", c.Image)
 	}
@@ -45,7 +45,7 @@ func TestCaptchaHTTPFlowMath(t *testing.T) {
 	srv := httptest.NewServer(NewMux([]byte("test-secret-32-bytes-long-padxxx")))
 	defer srv.Close()
 
-	resp, err := http.Get(srv.URL + "/arena/captcha?kind=math")
+	resp, err := http.Get(srv.URL + "/arena/captcha?kind=math&level=easy") // easy is always "A + B"
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +101,7 @@ func TestCaptchaRejectsWrongAnswer(t *testing.T) {
 
 func TestImageSelect(t *testing.T) {
 	// image-select: the correct index set passes; a wrong set and an empty set fail. Tiles are raster PNGs.
-	c, ans := MintCaptcha(CaptchaImageSelect)
+	c, ans := MintCaptcha(CaptchaImageSelect, LevelMedium)
 	if len(c.Tiles) != 9 || ans == "" {
 		t.Fatalf("bad image-select challenge: tiles=%d ans=%q", len(c.Tiles), ans)
 	}
@@ -115,5 +115,28 @@ func TestImageSelect(t *testing.T) {
 	}
 	if CheckCaptcha(CaptchaImageSelect, ans, "") || CheckCaptcha(CaptchaImageSelect, ans, "99") {
 		t.Fatal("wrong/empty image-select set accepted")
+	}
+}
+
+func TestCaptchaLevelsScaleDifficulty(t *testing.T) {
+	// text: easy is 4 confusable-free chars, hard is 6 with the confusable alphabet allowed.
+	easy, ea := MintCaptcha(CaptchaText, LevelEasy)
+	hard, ha := MintCaptcha(CaptchaText, LevelHard)
+	if len(ea) != 4 || len(ha) != 6 {
+		t.Fatalf("text length per level wrong: easy=%d hard=%d", len(ea), len(ha))
+	}
+	if easy.Image == "" || hard.Image == "" {
+		t.Fatal("text image missing")
+	}
+	// math: easy is always addition; hard is always multiplication (bigger operands).
+	if em, _ := MintCaptcha(CaptchaMath, LevelEasy); !strings.Contains(em.Prompt, "+") {
+		t.Fatalf("easy math should be addition: %q", em.Prompt)
+	}
+	if hm, _ := MintCaptcha(CaptchaMath, LevelHard); !strings.Contains(hm.Prompt, "×") {
+		t.Fatalf("hard math should be multiplication: %q", hm.Prompt)
+	}
+	// image-select: easy has 6 tiles, medium/hard have 9.
+	if es, _ := MintCaptcha(CaptchaImageSelect, LevelEasy); len(es.Tiles) != 6 {
+		t.Fatalf("easy image-select should have 6 tiles, got %d", len(es.Tiles))
 	}
 }

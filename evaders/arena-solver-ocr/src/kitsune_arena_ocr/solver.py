@@ -14,10 +14,16 @@ edge/detector (mirrors ``harness/allowlist.py``); this never touches a third-par
 from __future__ import annotations
 
 import base64
+import re
 from typing import Protocol
 from urllib.parse import urlparse
 
 import httpx
+
+#: The text gate's answer alphabet is uppercase letters + digits. TrOCR occasionally appends a spurious
+#: separator (a trailing "/"), so the read-back is sanitised to this charset before submission — a known-charset
+#: clean-up that recovers those misses (the solver keeping pace as difficulty rises).
+_ANSWER_CHARS = re.compile(r"[^A-Z0-9]")
 
 #: Kitsune's own surfaces — the only hosts this evader may hit (the ethics invariant, in code).
 _OWN_TARGETS = frozenset({"edge", "detector", "localhost", "127.0.0.1", "::1", "arena", "arena-gate"})
@@ -46,14 +52,16 @@ def decode_png_data_uri(data_uri: str) -> bytes:
     return base64.b64decode(data_uri[comma + 1 :])
 
 
-def solve_text(base: str, recognizer: Recognizer, client: httpx.Client) -> tuple[bool, str]:
-    """Fetch the text gate, OCR the image, submit the read-back. Returns (passed, the_text_we_read)."""
+def solve_text(
+    base: str, recognizer: Recognizer, client: httpx.Client, level: str = "medium"
+) -> tuple[bool, str]:
+    """Fetch the text gate at the given level, OCR the image, submit the read-back. Returns (passed, read)."""
     base = base.rstrip("/")
     if not is_own_target(base):
         raise EthicsError(f"refusing {base!r} — arena-solver-ocr only hits Kitsune's own gates")
-    chal = client.get(f"{base}/arena/captcha", params={"kind": "text"}).json()
+    chal = client.get(f"{base}/arena/captcha", params={"kind": "text", "level": level}).json()
     png = decode_png_data_uri(chal["image"])
-    answer = recognizer.recognize(png).strip().upper()
+    answer = _ANSWER_CHARS.sub("", recognizer.recognize(png).strip().upper())
     out = client.post(
         f"{base}/arena/captcha/verify",
         json={"kind": "text", "id": chal["id"], "answer": answer},

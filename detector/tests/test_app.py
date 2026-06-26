@@ -294,6 +294,26 @@ def test_arena_unknown_gate_404s(client: TestClient) -> None:
     assert client.get("/arena/gate/evil").status_code == 404
 
 
+def test_arena_gate_difficulty_selector(client: TestClient) -> None:
+    # Gates with a real difficulty axis carry the easy/medium/hard selector + the cost-dial config.
+    body = client.get("/arena/gate/text").text
+    assert 'id="ks-levels"' in body and 'data-level="hard"' in body and '"levels": true' in body
+    assert "cost</b> dial" in body  # framed honestly, not as a security dial
+    # honeypot + pact are binary — no difficulty axis, no selector.
+    for slug in ("honeypot", "pact"):
+        b = client.get(f"/arena/gate/{slug}").text
+        assert 'id="ks-levels"' not in b and '"levels": false' in b
+
+
+def test_arena_level_defaults_to_medium() -> None:
+    from kitsune_detector.app import _arena_level
+
+    assert _arena_level("easy") == "easy"
+    assert _arena_level("hard") == "hard"
+    assert _arena_level("evil") == "medium"  # junk falls back, never errors (mirrors the gate's ParseLevel)
+    assert _arena_level(None) == "medium"
+
+
 def test_arena_gate_index_redirects(client: TestClient) -> None:
     resp = client.get("/arena/gate", follow_redirects=False)
     assert resp.status_code == 308 and resp.headers["location"] == "/arena"

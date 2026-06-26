@@ -45,7 +45,17 @@ type slider struct {
 	PieceW int    `json:"piece_w"`
 }
 
+// gateLevel is the difficulty the solver requests (KS_LEVEL=easy|medium|hard), so the same solver can be run
+// against every cost tier to find where it breaks. Empty/unknown → the gate defaults it to medium.
+var gateLevel = "medium"
+
+// lq returns the level query fragment ("&level=hard") to append to a gate-mint URL.
+func lq() string { return "&level=" + gateLevel }
+
 func main() {
+	if v := os.Getenv("KS_LEVEL"); v != "" {
+		gateLevel = v
+	}
 	// Target the detector relay over HTTP (the /arena/* routes live on the detector). Plain HTTP avoids
 	// trusting the edge's self-signed TLS — and the gate-solving (the red-side point) is identical either way.
 	base := os.Getenv("KITSUNE_DETECTOR")
@@ -91,7 +101,7 @@ func main() {
 }
 
 func getCaptcha(c *http.Client, base, kind string) (*captcha, error) {
-	r, err := c.Get(base + "/arena/captcha?kind=" + kind)
+	r, err := c.Get(base + "/arena/captcha?kind=" + kind + lq())
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +182,7 @@ func solveImageSelect(c *http.Client, base string) (bool, int64, error) {
 
 func solveRotate(c *http.Client, base string) (bool, int64, error) {
 	return timed(func() (bool, error) {
-		r, err := c.Get(base + "/arena/rotate")
+		r, err := c.Get(base + "/arena/rotate?level=" + gateLevel)
 		if err != nil {
 			return false, err
 		}
@@ -208,7 +218,7 @@ func solveRotate(c *http.Client, base string) (bool, int64, error) {
 
 func solveSlider(c *http.Client, base string) (bool, int64, error) {
 	return timed(func() (bool, error) {
-		r, err := c.Get(base + "/arena/slider")
+		r, err := c.Get(base + "/arena/slider?level=" + gateLevel)
 		if err != nil {
 			return false, err
 		}

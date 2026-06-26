@@ -38,17 +38,29 @@ func linearDrag(gapX int) []SliderPoint {
 
 func TestCheckSliderHumanVsBot(t *testing.T) {
 	gap := 180
-	if ok, why := CheckSlider(gap, float64(gap), humanDrag(gap)); !ok {
+	med := sliderParams(LevelMedium)
+	if ok, why := CheckSlider(gap, float64(gap), humanDrag(gap), med); !ok {
 		t.Fatalf("a human-like drag was rejected: %s", why)
 	}
-	if ok, _ := CheckSlider(gap, float64(gap), linearDrag(gap)); ok {
+	if ok, _ := CheckSlider(gap, float64(gap), linearDrag(gap), med); ok {
 		t.Fatal("a constant-velocity (uniform) drag was accepted")
 	}
-	if ok, _ := CheckSlider(gap, float64(gap), []SliderPoint{{T: 0, X: 0}, {T: 1, X: float64(gap)}}); ok {
+	if ok, _ := CheckSlider(gap, float64(gap), []SliderPoint{{T: 0, X: 0}, {T: 1, X: float64(gap)}}, med); ok {
 		t.Fatal("a teleport (2-point, 1ms) drag was accepted")
 	}
-	if ok, _ := CheckSlider(gap, float64(gap-40), humanDrag(gap)); ok {
+	if ok, _ := CheckSlider(gap, float64(gap-40), humanDrag(gap), med); ok {
 		t.Fatal("a drag that missed the gap was accepted")
+	}
+}
+
+func TestSliderLevelsTightenTolerance(t *testing.T) {
+	// A 10px-off drop passes at easy (tol 12) but fails at hard (tol 4) — difficulty tightens the fit.
+	gap := 180
+	if ok, _ := CheckSlider(gap, float64(gap-10), humanDrag(gap), sliderParams(LevelEasy)); !ok {
+		t.Fatal("a 10px-off drop should pass at easy (tol 12)")
+	}
+	if ok, _ := CheckSlider(gap, float64(gap-10), humanDrag(gap), sliderParams(LevelHard)); ok {
+		t.Fatal("a 10px-off drop should fail at hard (tol 4)")
 	}
 }
 

@@ -148,6 +148,11 @@ ARENA_CSS = """<style>
 #ks-captcha .tiles img{width:64px;height:64px;border:2px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
 #ks-captcha .tiles img.sel{border-color:var(--fox);box-shadow:0 0 0 2px var(--fox)}
 #ks-captcha .rot img{width:96px;height:96px;transition:transform .1s;touch-action:none}
+.arena-levels{display:inline-flex;border:1px solid var(--line-bright);border-radius:8px;overflow:hidden;margin:.2rem 0 .4rem}
+.arena-levels button{font:inherit;font-size:.78rem;padding:.4rem .9rem;border:0;border-right:1px solid var(--line-bright);background:var(--panel);color:var(--muted);cursor:pointer;min-height:40px}
+.arena-levels button:last-child{border-right:0}
+.arena-levels button[aria-pressed=true]{background:var(--fox);color:#fff;font-weight:600}
+.arena-levels-wrap{margin:.2rem 0 .8rem}
 .arena-again-wrap{margin:.7rem 0 0}
 .arena-again{font-size:.78rem;color:var(--muted);text-decoration:none}
 .arena-again:hover{color:var(--fox)}
@@ -164,6 +169,10 @@ ARENA_JS = r"""
   "use strict";
   var A = window.__ARENA__ || {slug:"managed", mode:"managed"};
   var gate = A.slug;
+  var LEVEL = A.level || "medium";
+  // Append the chosen difficulty to a gate MINT url (a cost dial — the gate raises work, never detection).
+  // Skipped for gates with no level axis (honeypot/pact) and for the verdict read (/arena/managed step 0).
+  function withLevel(u){ if(!A.levels) return u; return u + (u.indexOf("?")>=0?"&":"?") + "level=" + encodeURIComponent(LEVEL); }
   var enc = new TextEncoder();
   function hexToBytes(h){ var a=new Uint8Array(h.length/2); for(var i=0;i<a.length;i++){ a[i]=parseInt(h.substr(i*2,2),16);} return a; }
   function leadingZeroBits(d){ var n=0; for(var i=0;i<d.length;i++){ var b=d[i]; if(b===0){ n+=8; continue;} var x=b,c=0; while((x&0x80)===0){ c++; x=(x<<1)&0xff;} n+=c; break;} return n; }
@@ -199,6 +208,9 @@ ARENA_JS = r"""
   }
 
   async function solveAndVerify(c, gv, gn, tok){
+    if(!(window.crypto&&crypto.subtle&&crypto.subtle.digest)){
+      say("In-browser proof-of-work needs the Web Crypto API (a secure HTTPS context). Solve it with the reference evaders/pow solver against the endpoints below."); return false;
+    }
     if(c.class==="memory-hard"){
       say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small.\nChallenge: "+JSON.stringify(c));
       gn.textContent="Not solved in-browser — memory-hard is the GPU/ASIC-resistant family."; return false;
@@ -217,7 +229,7 @@ ARENA_JS = r"""
   async function runCaptcha(kind, gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     say("Requesting a "+kind+" CAPTCHA…");
-    var cr=await fetch("/arena/captcha?kind="+encodeURIComponent(kind));
+    var cr=await fetch(withLevel("/arena/captcha?kind="+encodeURIComponent(kind)));
     if(!cr.ok){ say("CAPTCHA gate unavailable ("+cr.status+")."); return; }
     var c=await cr.json();
     var wrap=document.createElement("div");
@@ -247,7 +259,7 @@ ARENA_JS = r"""
   async function runSlider(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     say("Requesting a slider challenge…");
-    var s=await (await fetch("/arena/slider")).json();
+    var s=await (await fetch(withLevel("/arena/slider"))).json();
     var hint=document.createElement("p"); hint.className="note"; hint.textContent="Drag the block into the dashed gap."; box.appendChild(hint);
     var track=document.createElement("div"); track.className="slider-track"; track.style.width=s.track_w+"px";
     var gap=document.createElement("div"); gap.className="slider-gap"; gap.style.left=s.gap_x+"px"; track.appendChild(gap);
@@ -268,7 +280,7 @@ ARENA_JS = r"""
 
   async function runImageSelect(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
-    var c=await (await fetch("/arena/captcha?kind=image-select")).json();
+    var c=await (await fetch(withLevel("/arena/captcha?kind=image-select"))).json();
     var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
     var grid=document.createElement("div"); grid.className="tiles"; var sel={};
     c.tiles.forEach(function(src,i){ var img=document.createElement("img"); img.src=src; img.alt="tile "+(i+1);
@@ -281,7 +293,7 @@ ARENA_JS = r"""
 
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
-    var c=await (await fetch("/arena/rotate")).json();
+    var c=await (await fetch(withLevel("/arena/rotate"))).json();
     var p=document.createElement("p"); p.className="note"; p.textContent="Drag the arrow to point straight up."; box.appendChild(p);
     var wrap=document.createElement("div"); wrap.className="rot";
     var img=document.createElement("img"); img.src=c.image; img.alt="rotate target"; img.draggable=false; img.style.transform="rotate("+c.angle+"deg)"; wrap.appendChild(img); box.appendChild(wrap);
@@ -313,7 +325,7 @@ ARENA_JS = r"""
 
   async function runManaged(gv, gn, tok){
     say("Managed challenge — reading your client silently…");
-    var m=await (await fetch("/arena/managed?step=1")).json();
+    var m=await (await fetch(withLevel("/arena/managed?step=1"))).json();
     if(m.decision==="allow"){
       gv.textContent="ALLOWED"; gv.className="big pass";
       gn.textContent="Passed silently — your client looks coherent ("+m.label+"). No puzzle shown, like a managed challenge's non-interactive success.";
@@ -341,9 +353,8 @@ ARENA_JS = r"""
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="managed"){ await runManaged(gv, gn, tok); }
       else {
-        var diff = gate==="many-small" ? 10 : 16;
-        say("Requesting a "+gate+" challenge…");
-        var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
+        say("Requesting a "+gate+" ("+LEVEL+") challenge…");
+        var cr=await fetch(withLevel("/arena/challenge?gate="+encodeURIComponent(gate)));
         if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); }
         else { await solveAndVerify(await cr.json(), gv, gn, tok); }
       }
@@ -353,6 +364,14 @@ ARENA_JS = r"""
   }
   var again=document.getElementById("ks-again");
   if(again){ again.addEventListener("click", function(e){ e.preventDefault(); start(); }); }
+  // Difficulty selector (cost dial): switch level → re-serve the challenge at the new cost.
+  var lvls=document.getElementById("ks-levels");
+  if(lvls){ lvls.addEventListener("click", function(e){
+    var b=e.target.closest("button[data-level]"); if(!b) return;
+    LEVEL=b.getAttribute("data-level");
+    Array.prototype.forEach.call(this.querySelectorAll("button"), function(x){ x.setAttribute("aria-pressed", String(x===b)); });
+    start();
+  }); }
   fetchDetectorVerdict();
   start();
 })();
@@ -390,9 +409,18 @@ _DESC = (
 )
 
 
-def _gate_script(slug: str, mode: str) -> str:
+# Gates with no difficulty axis (binary): honeypot is trap-or-not, pact is token-or-not.
+_NO_LEVEL_SLUGS = frozenset({"honeypot", "pact"})
+
+
+def _has_levels(c: dict[str, str]) -> bool:
+    """Whether this gate exposes an easy/medium/hard difficulty (a cost dial). False for honeypot/pact."""
+    return c["slug"] not in _NO_LEVEL_SLUGS
+
+
+def _gate_script(c: dict[str, str]) -> str:
     """The per-page <script>: pin window.__ARENA__ to this gate, then run the shared arena JS."""
-    cfg = json.dumps({"slug": slug, "mode": mode})
+    cfg = json.dumps({"slug": c["slug"], "mode": c["mode"], "level": "medium", "levels": _has_levels(c)})
     return f"<script>window.__ARENA__={cfg};{ARENA_JS}</script>"
 
 
@@ -462,6 +490,17 @@ def arena_gate_html(slug: str) -> str | None:
     c = challenge(slug)
     if c is None:
         return None
+    levels_html = ""
+    if _has_levels(c):
+        levels_html = (
+            '<div class="arena-levels-wrap"><div class="arena-levels" id="ks-levels" role="group" '
+            'aria-label="difficulty">'
+            '<button data-level="easy" aria-pressed="false">Easy</button>'
+            '<button data-level="medium" aria-pressed="true">Medium</button>'
+            '<button data-level="hard" aria-pressed="false">Hard</button></div>'
+            '<p class="note">Difficulty is a <b>cost</b> dial, not a security dial &mdash; harder = more work, '
+            "never a better bot/human test. The detector convicts at every level.</p></div>"
+        )
     body = f"""
 <p class="crumb-back"><a href="/arena">&larr; All challenges</a></p>
 <h1>{c["label"]}</h1>
@@ -470,6 +509,7 @@ def arena_gate_html(slug: str) -> str | None:
 <p class="note">This gate <b>auto-serves on load</b> &mdash; bring a browser, a bot, or your own solver and try to
 <b>bypass it</b>. You get two verdicts: did you pass the gate &mdash; and does Kitsune&rsquo;s detector independently
 convict your client over the edge?</p>
+{levels_html}
 <section class="arena-stage" aria-label="challenge">
   <div class="arena-log" id="ks-log">Loading the challenge&hellip;</div>
   <div id="ks-captcha"></div>
@@ -478,7 +518,7 @@ convict your client over the edge?</p>
 {_VERDICTS_HTML}
 {_endpoints_html(c)}
 {_ETHICS_HTML}
-{_gate_script(c["slug"], c["mode"])}
+{_gate_script(c)}
 """
     return render_doc_page(
         title=c["label"],

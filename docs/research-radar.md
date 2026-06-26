@@ -830,3 +830,36 @@ Kitsune's bet: the arena proves a solved challenge ≠ a human, and **coherence 
 - **Net:** every arena gate now falls to the appropriate evader (markup / CV / trajectory synthesis / OCR), and
   every defense (managed ladder, behavioral trajectory, PACT/Web-Bot-Auth attestation) is modelled — the arms race
   is demonstrated end-to-end, both sides, confirming the thesis: coherence + attestation, not the challenge, is durable.
+
+### Difficulty levels — per-gate cost dial (2026-06-26)
+
+Added **easy / medium / hard** to every gate with a real difficulty axis (`arena/levels.go`), framed honestly as a
+**cost dial, not a security dial**: harder = more work (more PoW bits/memory, heavier text distortion, tighter fit,
+a richer required trajectory), never a better bot/human discriminator. The behavioural gates (slider/rotate) hold
+the **velocity-CV human-detection floor CONSTANT** across levels — difficulty tightens tolerance + asks for a
+richer (but still human-reachable) trajectory, so a harder level never false-positives a real person. honeypot and
+pact have no axis (binary). Threaded through the detector relay (`?level=`, whitelisted) + a per-gate
+easy/medium/hard selector on each gate page; the detector convicts at **every** level (the point).
+
+**Evader re-verification, live at each level** (the standing rule — solvers must keep pace or the break is recorded):
+
+| gate | easy | medium | hard | evasion |
+|---|---|---|---|---|
+| hashcash PoW | ✅ 12b/15ms | ✅ 15b/58ms | ✅ 18b/545ms | SHA-256 solver — clean cost gradient |
+| many-small PoW | ✅ | ✅ | ✅ 24×12b | per-sub solver |
+| memory-hard PoW | 4MB | 8MB | 16MB | reference Argon2id solver (costly by design; not in-browser) |
+| math | ✅ | ✅ | ✅ | **solver upgraded** `+` → `+/−/×` (the re-verification caught the break) |
+| honeypot | ✅ | — | — | binary (leave trap empty) |
+| image-select (CV) | ✅ | ✅ | ✅ | radial-signature classifier survives heavy tile noise |
+| slider (synth) | ✅ | ✅ | ✅ | variable-velocity trajectory hits tol=4 + 12-pt/300ms bar |
+| rotate (synth) | ✅ | ✅ | ✅ | variable-rate drag |
+| text (OCR) | ✅ 4/4 | ✅ 3/4 | ✅ 3/4 (6 confusable chars + heavy noise) | TrOCR `anuashok/ocr-captcha-v3` |
+
+**Text-OCR breaking-point finding (live sweep, 4 rounds/level):** the off-the-shelf TrOCR model reads the text gate
+at **every** level — even hard (6 confusable chars + dense noise + strong warp) at 3/4. The misses were NOT the
+distortion winning: every one was the model appending a stray `/` (`'KEP7B/'`, `'1AXIV0/'`), and the answer charset
+is known alphanumeric — so the solver now strips non-`[A-Z0-9]`, recovering those misses (unit-tested
+`test_solve_text_strips_spurious_separator`). The honest lesson reinforces the thesis: heavier text distortion buys
+the gate only a marginal, recoverable cost — it does not stop OCR. The Go `arena-solver` keeps pace at every level
+except text (the OCR solver's job); PoW shows a clean cost gradient (12→18 bits, 15→545 ms). **Difficulty raises the
+bill; the detector's coherence verdict is unchanged at every tier — a cost dial, not a discriminator.**

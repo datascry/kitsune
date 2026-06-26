@@ -39,6 +39,9 @@ var imageShapes = []string{"circle", "square", "triangle", "star"}
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
 const captchaAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
+// the hard alphabet ADDS the confusable glyphs back (0/O, 1/I/L) — harder to OCR, used only at the hard level.
+const captchaAlphabetHard = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 // Captcha is the PUBLIC challenge shown to the client. The answer is NEVER included — it lives only in the
 // gate's store (text/math) or is structural (honeypot: the trap field must come back empty).
 type Captcha struct {
@@ -91,45 +94,78 @@ func randInt(maxExclusive int64) int64 {
 	return n.Int64()
 }
 
-func randCode(n int) string {
+func randCodeFrom(n int, alphabet string) string {
 	var b strings.Builder
 	for i := 0; i < n; i++ {
-		b.WriteByte(captchaAlphabet[randInt(int64(len(captchaAlphabet)))])
+		b.WriteByte(alphabet[randInt(int64(len(alphabet)))])
 	}
 	return b.String()
 }
 
-// MintCaptcha builds a fresh challenge of the kind and returns it with the expected answer (the caller stores
-// the answer for verify; for honeypot/rotate the stored answer is "" — those verify structurally).
-func MintCaptcha(kind CaptchaKind) (Captcha, string) {
+// mintMath builds an arithmetic prompt + answer scaled by level: easy single-digit addition, medium a small
+// +/-/× over 2..12, hard a multiplication of larger operands. Single-operation (no precedence ambiguity).
+func mintMath(lv Level) (string, string) {
+	switch lv {
+	case LevelEasy:
+		a, b := randInt(9)+1, randInt(9)+1
+		return fmt.Sprintf("What is %d + %d?", a, b), fmt.Sprintf("%d", a+b)
+	case LevelHard:
+		a, b := randInt(19)+11, randInt(19)+11 // 11..29
+		return fmt.Sprintf("What is %d × %d?", a, b), fmt.Sprintf("%d", a*b)
+	default:
+		a, b := randInt(11)+2, randInt(11)+2 // 2..12
+		switch randInt(3) {
+		case 0:
+			return fmt.Sprintf("What is %d × %d?", a, b), fmt.Sprintf("%d", a*b)
+		case 1:
+			if a < b {
+				a, b = b, a
+			}
+			return fmt.Sprintf("What is %d - %d?", a, b), fmt.Sprintf("%d", a-b)
+		default:
+			return fmt.Sprintf("What is %d + %d?", a, b), fmt.Sprintf("%d", a+b)
+		}
+	}
+}
+
+// MintCaptcha builds a fresh challenge of the kind at the given difficulty level and returns it with the
+// expected answer (the caller stores the answer for verify; for honeypot the stored answer is "" — it verifies
+// structurally). honeypot has no difficulty axis and ignores the level.
+func MintCaptcha(kind CaptchaKind, lv Level) (Captcha, string) {
 	id := randHex(16)
 	switch kind {
 	case CaptchaMath:
-		a, b := randInt(9)+1, randInt(9)+1
-		return Captcha{Kind: CaptchaMath, ID: id, Prompt: fmt.Sprintf("What is %d + %d?", a, b)}, fmt.Sprintf("%d", a+b)
+		prompt, ans := mintMath(lv)
+		return Captcha{Kind: CaptchaMath, ID: id, Prompt: prompt}, ans
 	case CaptchaHoneypot:
 		return Captcha{Kind: CaptchaHoneypot, ID: id, Prompt: "Submit without filling the hidden field.", Field: "website_url"}, ""
 	case CaptchaImageSelect:
+		k := imageParams(lv)
 		target := imageShapes[randInt(int64(len(imageShapes)))]
-		tiles := make([]string, 9)
+		tiles := make([]string, k.Tiles)
 		var want []int
 		for i := range tiles {
 			s := imageShapes[randInt(int64(len(imageShapes)))]
-			tiles[i] = rasterShape(s) // rotated/noisy PNG — must be CLASSIFIED, not read from markup
+			tiles[i] = rasterShape(s, k.Noise) // rotated/noisy PNG — must be CLASSIFIED, not read from markup
 			if s == target {
 				want = append(want, i)
 			}
 		}
 		if len(want) == 0 { // guarantee at least one target tile
-			tiles[0] = rasterShape(target)
+			tiles[0] = rasterShape(target, k.Noise)
 			want = []int{0}
 		}
 		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + target + ".", Tiles: tiles}, joinInts(want)
 	default:
-		code := randCode(5)
+		k := textParams(lv)
+		alphabet := captchaAlphabet
+		if k.Confusable {
+			alphabet = captchaAlphabetHard
+		}
+		code := randCodeFrom(k.Length, alphabet)
 		// Rendered as a DISTORTED RASTER PNG (not SVG): the answer is in the pixels, not the markup, so a
 		// browserless parser can no longer read it — solving the text gate now needs real OCR. See raster.go.
-		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: rasterText(code)}, strings.ToUpper(code)
+		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: rasterText(code, k)}, strings.ToUpper(code)
 	}
 }
 
