@@ -97,3 +97,32 @@ func TestCaptchaRejectsWrongAnswer(t *testing.T) {
 		t.Fatalf("a wrong answer was accepted: %v", out)
 	}
 }
+
+func TestImageSelectAndRotate(t *testing.T) {
+	// image-select: the correct index set passes; a wrong set and an empty set fail.
+	c, ans := MintCaptcha(CaptchaImageSelect)
+	if len(c.Tiles) != 9 || ans == "" {
+		t.Fatalf("bad image-select challenge: tiles=%d ans=%q", len(c.Tiles), ans)
+	}
+	if !CheckCaptcha(CaptchaImageSelect, ans, ans) {
+		t.Fatal("correct image-select set rejected")
+	}
+	if CheckCaptcha(CaptchaImageSelect, ans, "") || CheckCaptcha(CaptchaImageSelect, ans, "99") {
+		t.Fatal("wrong/empty image-select set accepted")
+	}
+	// rotate: upright (0, or within tolerance) passes; far-from-upright fails.
+	r, _ := MintCaptcha(CaptchaRotate)
+	if r.Image == "" || r.Angle == 0 {
+		t.Fatalf("bad rotate challenge: %+v", r)
+	}
+	for _, ok := range []string{"0", "10", "355"} {
+		if !CheckCaptcha(CaptchaRotate, "", ok) {
+			t.Fatalf("rotate near-upright %q rejected", ok)
+		}
+	}
+	for _, bad := range []string{"90", "180", "45"} {
+		if CheckCaptcha(CaptchaRotate, "", bad) {
+			t.Fatalf("rotate off-upright %q accepted", bad)
+		}
+	}
+}

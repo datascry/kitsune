@@ -44,6 +44,10 @@ ARENA_PAGE = """<!DOCTYPE html>
 #ks-captcha .slider-track{position:relative;height:44px;max-width:100%;background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;margin:.5rem 0;touch-action:none}
 #ks-captcha .slider-gap{position:absolute;top:5px;height:34px;width:42px;border:2px dashed var(--muted);border-radius:6px;box-sizing:border-box}
 #ks-captcha .slider-handle{position:absolute;top:3px;height:38px;width:42px;background:var(--fox);border-radius:6px;cursor:grab;box-sizing:border-box;touch-action:none}
+#ks-captcha .tiles{display:grid;grid-template-columns:repeat(3,60px);gap:6px;margin:.5rem 0}
+#ks-captcha .tiles img{width:60px;height:60px;border:2px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
+#ks-captcha .tiles img.sel{border-color:var(--fox);box-shadow:0 0 0 2px var(--fox)}
+#ks-captcha .rot img{width:90px;height:90px;transition:transform .1s}
 @media (max-width:640px){.verdicts{grid-template-columns:1fr}}
 </style>
 </head>
@@ -54,7 +58,8 @@ ARENA_PAGE = """<!DOCTYPE html>
 <p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; a <b>managed-challenge ladder</b>
 (Turnstile-style escalation), proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
 <abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families,
-and self-hosted <b>CAPTCHA</b> gates (distorted-text image, arithmetic, honeypot, and a GeeTest-style drag <b>slider</b>).
+and self-hosted <b>CAPTCHA</b> gates: distorted-text image, arithmetic, honeypot, a GeeTest-style drag <b>slider</b>,
+an <b>image-select</b> tile grid, and a <b>rotate</b>-upright puzzle.
 Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
 <p class="note">In the <b>managed</b> gate, the silent first step <i>is</i> the coherence detector: a coherent client passes with no puzzle; only an incoherent one is stepped up to a proof-of-work &mdash; exactly the documented managed-challenge ladder.</p>
 <p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
@@ -70,6 +75,8 @@ Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did yo
     <button data-gate="math" aria-pressed="false">captcha&middot;math <span class="note">&middot; arithmetic</span></button>
     <button data-gate="honeypot" aria-pressed="false">captcha&middot;honeypot <span class="note">&middot; hidden trap</span></button>
     <button data-gate="slider" aria-pressed="false">captcha&middot;slider <span class="note">&middot; GeeTest-style drag</span></button>
+    <button data-gate="image-select" aria-pressed="false">captcha&middot;image <span class="note">&middot; select matching tiles</span></button>
+    <button data-gate="rotate" aria-pressed="false">captcha&middot;rotate <span class="note">&middot; rotate upright</span></button>
   </div>
   <button class="arena-run" id="ks-run">Run the gate</button>
   <div class="arena-log" id="ks-log">Ready.</div>
@@ -217,12 +224,41 @@ verdict comes from the same coherence engine that scores the home page, reading 
     say("Drag the block into the gap.");
   }
 
+  // Image-select (reCAPTCHA-v2 category): pick the tiles matching the prompt. Tiles are unlabelled owned SVGs.
+  async function runImageSelect(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch("/arena/captcha?kind=image-select")).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var grid=document.createElement("div"); grid.className="tiles"; var sel={};
+    c.tiles.forEach(function(src,i){ var img=document.createElement("img"); img.src=src; img.alt="tile "+(i+1);
+      img.onclick=function(){ if(sel[i]){ delete sel[i]; img.classList.remove("sel"); } else { sel[i]=1; img.classList.add("sel"); } }; grid.appendChild(img); });
+    box.appendChild(grid);
+    var submit=document.createElement("button"); submit.textContent="Verify selection";
+    submit.onclick=function(){ var idx=Object.keys(sel).map(Number).sort(function(a,b){return a-b;}).join(","); verifyCaptcha("image-select", c.id, idx, gv, gn, tok); };
+    box.appendChild(submit); say("Select the matching tiles and verify.");
+  }
+  // Rotate (Arkose/FunCaptcha category): rotate the object upright. The page tracks the displayed angle.
+  async function runRotate(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch("/arena/captcha?kind=rotate")).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var cur=c.angle, wrap=document.createElement("div"); wrap.className="rot";
+    var img=document.createElement("img"); img.src=c.image; img.alt="rotate target"; img.style.transform="rotate("+cur+"deg)"; wrap.appendChild(img); box.appendChild(wrap);
+    var ctrl=document.createElement("div");
+    function mk(label,delta){ var b=document.createElement("button"); b.textContent=label; b.style.marginRight=".4rem"; b.onclick=function(){ cur=(cur+delta+360)%360; img.style.transform="rotate("+cur+"deg)"; }; return b; }
+    ctrl.appendChild(mk("\\u21ba \\u221215\\u00b0",-15)); ctrl.appendChild(mk("+15\\u00b0 \\u21bb",15));
+    var submit=document.createElement("button"); submit.textContent="Verify"; submit.onclick=function(){ verifyCaptcha("rotate", c.id, String(cur), gv, gn, tok); };
+    ctrl.appendChild(submit); box.appendChild(ctrl); say("Rotate the arrow upright and verify.");
+  }
+
   document.getElementById("ks-run").addEventListener("click", async function(){
     var btn=this; btn.disabled=true;
     var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
     gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
     try{
       if(gate==="slider"){ await runSlider(gv, gn, tok); btn.disabled=false; return; }
+      if(gate==="image-select"){ await runImageSelect(gv, gn, tok); btn.disabled=false; return; }
+      if(gate==="rotate"){ await runRotate(gv, gn, tok); btn.disabled=false; return; }
       if(CAPTCHA.indexOf(gate)>=0){ await runCaptcha(gate, gv, gn, tok); btn.disabled=false; return; }
       if(gate==="managed"){
         // The Turnstile-style ladder: the SILENT step is the detector's coherence verdict; only an

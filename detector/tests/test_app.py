@@ -349,3 +349,11 @@ def test_arena_relays_forward_to_gate(client: TestClient, monkeypatch: pytest.Mo
     # managed step-up relays a challenge for an incoherent (no-session) caller.
     out = client.get("/arena/managed", params={"step": 1}).json()
     assert out["decision"] == "challenge" and "challenge" in out
+
+
+def test_arena_captcha_new_kinds_whitelisted(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    for kind in ("image-select", "rotate"):
+        assert client.get("/arena/captcha", params={"kind": kind}).status_code in (200, 502)
+    body = client.get("/arena").text
+    assert 'data-gate="image-select"' in body and 'data-gate="rotate"' in body
