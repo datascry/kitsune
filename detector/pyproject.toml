@@ -62,6 +62,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 "src/kitsune_detector/demo.py" = ["E501"]
 "src/kitsune_detector/pages.py" = ["E501"]
 "src/kitsune_detector/styles.py" = ["E501"]
+"src/kitsune_detector/arena_page.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"

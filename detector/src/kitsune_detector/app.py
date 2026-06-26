@@ -23,6 +23,7 @@ from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from starlette.middleware.gzip import GZipMiddleware
 
+from .arena_page import ARENA_PAGE
 from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
@@ -204,6 +205,16 @@ def create_app(
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "ruleset_version": detector.ruleset_version}
+
+    @app.get("/arena", response_class=HTMLResponse)
+    def arena() -> HTMLResponse:
+        # The public arena page: solve an owned PoW gate in-browser, see the gate verdict + the detector's
+        # coherence verdict side by side. Same permissive CSP as the home page (inline script + subtle crypto).
+        resp = HTMLResponse(ARENA_PAGE)
+        resp.headers["Content-Security-Policy"] = (
+            "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self'"
+        )
+        return resp
 
     # --- Arena relay: forward the challenge/verify protocol to the owned arena gate (KITSUNE_ARENA_URL),
     # so a visitor reaches the gate on the SAME origin (through the edge) and the gate verdict can join the
