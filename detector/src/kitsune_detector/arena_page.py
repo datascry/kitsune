@@ -37,6 +37,10 @@ ARENA_PAGE = """<!DOCTYPE html>
 .vcard .pass{color:#1f9d55}.vcard .fail{color:var(--fox)}
 .vcard code{font-size:.8rem;word-break:break-all}
 .arena-log{font-family:ui-monospace,monospace;font-size:.78rem;background:rgba(127,127,127,.08);border-radius:8px;padding:.6rem .8rem;margin-top:.6rem;white-space:pre-wrap;min-height:1.4rem}
+#ks-captcha{margin-top:.8rem}
+#ks-captcha img{vertical-align:middle;border:1px solid var(--line);border-radius:6px;background:#fff;margin-bottom:.5rem}
+#ks-captcha input{font:inherit;padding:.5rem;border:1px solid var(--line);border-radius:6px;min-height:44px;margin-right:.5rem}
+#ks-captcha button{font:inherit;font-weight:600;padding:.5rem 1rem;border:0;border-radius:6px;background:var(--fox);color:#fff;cursor:pointer;min-height:44px}
 @media (max-width:640px){.verdicts{grid-template-columns:1fr}}
 </style>
 </head>
@@ -45,8 +49,9 @@ ARENA_PAGE = """<!DOCTYPE html>
 <main>
 <h1 class="page">The Arena</h1>
 <p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; a <b>managed-challenge ladder</b>
-(Turnstile-style escalation) and proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
-<abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families.
+(Turnstile-style escalation), proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
+<abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families,
+and self-hosted <b>CAPTCHA</b> gates (distorted-text image, arithmetic, honeypot).
 Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
 <p class="note">In the <b>managed</b> gate, the silent first step <i>is</i> the coherence detector: a coherent client passes with no puzzle; only an incoherent one is stepped up to a proof-of-work &mdash; exactly the documented managed-challenge ladder.</p>
 <p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
@@ -58,9 +63,13 @@ Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did yo
     <button data-gate="hashcash" aria-pressed="false">hashcash <span class="note">&middot; SHA-256 leading-zeros</span></button>
     <button data-gate="many-small" aria-pressed="false">many-small <span class="note">&middot; N sub-puzzles</span></button>
     <button data-gate="memory-hard" aria-pressed="false">memory-hard <span class="note">&middot; Argon2id</span></button>
+    <button data-gate="text" aria-pressed="false">captcha&middot;text <span class="note">&middot; distorted image</span></button>
+    <button data-gate="math" aria-pressed="false">captcha&middot;math <span class="note">&middot; arithmetic</span></button>
+    <button data-gate="honeypot" aria-pressed="false">captcha&middot;honeypot <span class="note">&middot; hidden trap</span></button>
   </div>
-  <button class="arena-run" id="ks-run">Get a challenge &amp; solve it</button>
+  <button class="arena-run" id="ks-run">Run the gate</button>
   <div class="arena-log" id="ks-log">Ready.</div>
+  <div id="ks-captcha"></div>
 </section>
 
 <div class="verdicts">
@@ -108,6 +117,7 @@ verdict comes from the same coherence engine that scores the home page, reading 
   function subNonces(c){ if(c.class!=="many-small"){ return [""]; } var out=[]; var n=c.count||1; for(var i=0;i<n;i++){ out.push(i+":"); } return out; }
 
   var gate="managed";
+  var CAPTCHA=["text","math","honeypot"]; // the self-hosted CAPTCHA families (human-answered, not auto-solved)
   var log=document.getElementById("ks-log");
   function say(m){ log.textContent=m; }
   document.getElementById("ks-gates").addEventListener("click", function(e){
@@ -147,11 +157,44 @@ verdict comes from the same coherence engine that scores the home page, reading 
     gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="The gate rejected the solution."; say("Gate rejected the solution."); return false;
   }
 
+  // CAPTCHA flow: fetch a self-hosted challenge, render it (image/prompt + answer box, or a honeypot trap),
+  // and verify the human's answer. A challenge is a Turing test, not a coherence test — see the detector panel.
+  async function runCaptcha(kind, gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    say("Requesting a "+kind+" CAPTCHA…");
+    var cr=await fetch("/arena/captcha?kind="+encodeURIComponent(kind));
+    if(!cr.ok){ say("CAPTCHA gate unavailable ("+cr.status+")."); return; }
+    var c=await cr.json();
+    var wrap=document.createElement("div");
+    if(c.image){ var img=document.createElement("img"); img.src=c.image; img.alt="text challenge"; wrap.appendChild(img); wrap.appendChild(document.createElement("br")); }
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; wrap.appendChild(p);
+    var submit=document.createElement("button");
+    if(kind==="honeypot"){
+      var hn=document.createElement("p"); hn.className="note"; hn.textContent="(A hidden field '"+c.field+"' must stay empty — a bot that fills every field trips it.)"; wrap.appendChild(hn);
+      submit.textContent="Submit form";
+      submit.onclick=function(){ verifyCaptcha(kind, c.id, "", gv, gn, tok); }; // the trap is left empty
+    } else {
+      var inp=document.createElement("input"); inp.type="text"; inp.autocomplete="off"; inp.placeholder="Your answer"; wrap.appendChild(inp);
+      submit.textContent="Submit answer";
+      submit.onclick=function(){ verifyCaptcha(kind, c.id, inp.value, gv, gn, tok); };
+      inp.addEventListener("keydown", function(e){ if(e.key==="Enter"){ submit.click(); } });
+    }
+    wrap.appendChild(submit); box.appendChild(wrap);
+    say("Solve the CAPTCHA and submit.");
+  }
+  async function verifyCaptcha(kind, id, answer, gv, gn, tok){
+    var v=await (await fetch("/arena/captcha/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({kind:kind,id:id,answer:answer})})).json();
+    if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="CAPTCHA solved — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("CAPTCHA PASSED."); }
+    else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong answer (or the challenge expired)."; say("CAPTCHA rejected."); }
+    document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+  }
+
   document.getElementById("ks-run").addEventListener("click", async function(){
     var btn=this; btn.disabled=true;
     var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
-    gv.textContent="—"; gv.className="big"; tok.innerHTML="";
+    gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
     try{
+      if(CAPTCHA.indexOf(gate)>=0){ await runCaptcha(gate, gv, gn, tok); btn.disabled=false; return; }
       if(gate==="managed"){
         // The Turnstile-style ladder: the SILENT step is the detector's coherence verdict; only an
         // incoherent client is stepped up to a proof-of-work.

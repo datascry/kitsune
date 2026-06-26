@@ -37,8 +37,20 @@ func classOf(s string) pow.Class {
 // NewMux builds the arena gate HTTP surface under /arena/*, signing tokens with secret and tracking issued
 // nonces for single-use (replay) resistance. The challenge wire format is the pow.Challenge JSON the
 // reference solver already understands; verify returns {ok, token}.
+func captchaKindOf(s string) CaptchaKind {
+	switch s {
+	case "math":
+		return CaptchaMath
+	case "honeypot":
+		return CaptchaHoneypot
+	default:
+		return CaptchaText
+	}
+}
+
 func NewMux(secret []byte) http.Handler {
 	store := pow.NewNonceStore()
+	captchas := newCaptchaStore()
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /arena/challenge", func(w http.ResponseWriter, r *http.Request) {
@@ -87,6 +99,37 @@ func NewMux(secret []byte) http.Handler {
 		resp := map[string]any{"ok": ok, "gate": string(c.Class)}
 		if ok {
 			resp["token"] = token
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- CAPTCHA gates: same shape as PoW (issue → answer → verify → single-use token), but the "work" is a
+	// human-readable test. Self-hosted, generic reproductions of documented mechanisms — not a vendor clone. ---
+	mux.HandleFunc("GET /arena/captcha", func(w http.ResponseWriter, r *http.Request) {
+		c, answer := MintCaptcha(captchaKindOf(r.URL.Query().Get("kind")))
+		captchas.put(c.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(c) // the answer is NOT serialised — only the public challenge is sent
+	})
+
+	mux.HandleFunc("POST /arena/captcha/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Kind   CaptchaKind `json:"kind"`
+			ID     string      `json:"id"`
+			Answer string      `json:"answer"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		// take() consumes the id (single-use): an unknown or already-redeemed id fails, so a token cannot
+		// be replayed and an answer cannot be brute-forced against a live challenge across requests.
+		expected, known := captchas.take(body.ID)
+		ok := known && CheckCaptcha(body.Kind, expected, body.Answer)
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": string(body.Kind)}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, body.Kind, body.ID)
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})
