@@ -79,8 +79,17 @@ def verified_agent(verified_present: bool, contradictions: Iterable[Contradictio
     SECURITY NOTE — it is an ALLOW-LIST, only as strong as the signing key's secrecy: the lab seeds the PUBLIC
     RFC 9421 test key, so in-sandbox ANY client can mint a 'verified' agent (the demonstrated bypass — go-tls
     KS_WEBBOTAUTH=valid). Production trusts real agent directories whose private keys are secret.
+
+    A forgery (net.web_bot_auth_invalid) OR an in-window nonce replay (net.web_bot_auth_nonce_replay) withholds
+    the allow-list: a replayed signature is genuine and in-window (so it also emits the verified marker), but a
+    reused nonce is a captured-credential replay, not a live signer — it must convict, not be allow-listed.
     """
-    return verified_present and not any(c.rule_id == "net.web_bot_auth_invalid" for c in contradictions)
+    return verified_present and not any(c.rule_id in _WBA_FORGERY_RULES for c in contradictions)
+
+
+# Web Bot Auth tells that DISQUALIFY the verified allow-list: a definitive forgery, or an in-window nonce
+# replay (a genuine-but-captured signature presented twice).
+_WBA_FORGERY_RULES = frozenset({"net.web_bot_auth_invalid", "net.web_bot_auth_nonce_replay"})
 
 
 def label_for(score: float, contradictions: Iterable[Contradiction] | None = None) -> Label:

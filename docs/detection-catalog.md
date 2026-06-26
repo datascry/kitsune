@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.52`); regenerate with `task catalog`, do not edit by hand. **142 rules**: 104 active · 32 experimental · 6 retired; 94 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.52`); regenerate with `task catalog`, do not edit by hand. **143 rules**: 105 active · 32 experimental · 6 retired; 95 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (34)
+### network layer (35)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -42,6 +42,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
 | `net.ua_rotation_within_session` | coherence✦ | present | 0.7 | active | One session sent multiple distinct User-Agent strings (mid-session UA rotation) |
 | `net.web_bot_auth_invalid` | coherence✦ | present | 0.85 | active | A request presents a Web Bot Auth (RFC 9421) signature that fails Ed25519 verification |
+| `net.web_bot_auth_nonce_replay` | coherence✦ | present | 0.85 | active | A valid Web Bot Auth (RFC 9421) signature reuses an in-window nonce — a captured-credential replay |
 | `net.h2_continuation_flood` | automation✦ | present | 0.9 | active | HTTP/2 CONTINUATION flood (CVE-2024-27316) on this connection |
 | `net.h2_control_flood` | automation✦ | present | 0.9 | active | HTTP/2 control-frame flood (SETTINGS/PING — CVE-2019-9515/9512) |
 | `net.h2_madeyoureset` | automation✦ | present | 0.9 | active | HTTP/2 MadeYouReset stream-reset coercion (CVE-2025-8671) on this connection |

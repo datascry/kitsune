@@ -389,6 +389,10 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.network, "h2_continuation_flood", True, Source.edge)], "net.h2_continuation_flood"),
         ([(Layer.network, "h2_control_flood", True, Source.edge)], "net.h2_control_flood"),
         ([(Layer.network, "h2_madeyoureset", True, Source.edge)], "net.h2_madeyoureset"),
+        (
+            [(Layer.network, "web_bot_auth_nonce_replay", True, Source.edge)],
+            "net.web_bot_auth_nonce_replay",
+        ),
         ([(Layer.browser, "rfp_browser", True, Source.collector)], "br.rfp_browser"),
         ([(Layer.browser, "canvas_noise", True, Source.collector)], "br.canvas_noise"),
         (

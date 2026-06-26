@@ -26,6 +26,8 @@ type Result struct {
 	Valid    bool   // the signature verified: Ed25519 OK over the RFC 9421 base AND within the created/expires window
 	KnownKey bool   // the claimed keyid resolved to a public key we hold (so a failure IS a forgery, not "we can't tell")
 	KeyID    string // the claimed keyid (RFC 7638 JWK SHA-256 thumbprint)
+	Nonce    string // the signature's nonce (RFC 9421 — unique per validity window); "" when absent
+	Expires  int64  // the signature's expires (unix seconds); 0 when absent — bounds the replay window
 	Reason   string // for diagnostics when !Valid: bad-signature / expired / future / unknown-key / malformed
 }
 
@@ -35,6 +37,7 @@ type KeyDir func(keyid string) (ed25519.PublicKey, bool)
 var (
 	reEntry  = regexp.MustCompile(`^([A-Za-z0-9_-]+)=(\(.*)$`) // label=(components);params...
 	reKeyid  = regexp.MustCompile(`;keyid="([^"]*)"`)
+	reNonce  = regexp.MustCompile(`;nonce="([^"]*)"`)
 	reExpire = regexp.MustCompile(`;expires=(\d+)`)
 	reCreate = regexp.MustCompile(`;created=(\d+)`)
 	reInList = regexp.MustCompile(`\(([^)]*)\)`)
@@ -58,7 +61,12 @@ func Verify(authority string, h http.Header, keys KeyDir, now time.Time) Result 
 		if !strings.Contains(params, `tag="`+Tag+`"`) {
 			continue
 		}
-		res := Result{Present: true, KeyID: submatch(reKeyid, params)}
+		res := Result{
+			Present: true,
+			KeyID:   submatch(reKeyid, params),
+			Nonce:   submatch(reNonce, params),
+			Expires: submatchInt(reExpire, params),
+		}
 		comps := componentList(params)
 		if comps == nil {
 			res.Reason = "malformed"
@@ -73,7 +81,7 @@ func Verify(authority string, h http.Header, keys KeyDir, now time.Time) Result 
 			return res
 		}
 		res.KnownKey = true
-		if exp := submatchInt(reExpire, params); exp > 0 && now.Unix() > exp {
+		if res.Expires > 0 && now.Unix() > res.Expires {
 			res.Reason = "expired" // a real agent signs live; a stale signature is a replay
 			return res
 		}

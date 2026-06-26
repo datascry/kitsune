@@ -36,6 +36,7 @@ _LIT = {
     "go-tls-static-ext": "net.tls_ext_order_static_within_session",
     "go-tls-web-bot-auth": "net.web_bot_auth_invalid",
     "go-tls-madeyoureset": "net.h2_madeyoureset",
+    "go-tls-web-bot-auth-replay": "net.web_bot_auth_nonce_replay",
     "ip-rotation": "net.ip_rotation_within_session",
     "mobile-emulation": "br.fingerprint_improbable",
     "camoufox-touch-incoherent": "br.pointer_touch_incoherent",
@@ -57,6 +58,20 @@ def test_capture_trips_its_target_rule(capture: str, rule_id: str) -> None:
     fired = {c.rule_id for c in verdict.contradictions}
     assert rule_id in fired, f"{capture} no longer trips {rule_id} (fired: {sorted(fired)})"
     assert verdict.label.value == "bot"
+
+
+def test_web_bot_auth_replay_is_not_allow_listed() -> None:
+    # G32's whole point: a captured-credential replay carries a GENUINE signature, so the session also emits
+    # web_bot_auth_verified (req 1 of the capture) — yet the reused nonce (req 2) must WITHHOLD the verified
+    # allow-list and convict. The capture must trip net.web_bot_auth_nonce_replay and label bot, NOT verified.
+    session = Session.model_validate(json.loads((_CORPUS / "go-tls-web-bot-auth-replay.json").read_text()))
+    g = session.signals
+    kinds = {s.kind for grp in (g.network, g.browser, g.behavioral, g.reputation) for s in grp}
+    assert "web_bot_auth_verified" in kinds, "the capture should carry a genuine verified signature (req 1)"
+    verdict = Detector().score(session)
+    fired = {c.rule_id for c in verdict.contradictions}
+    assert "net.web_bot_auth_nonce_replay" in fired
+    assert verdict.label.value == "bot"  # the verified marker did NOT allow-list it
 
 
 def test_madeyoureset_evades_rapid_reset() -> None:

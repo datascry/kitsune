@@ -36,7 +36,7 @@ func req(t *testing.T, cookie string) *http.Request {
 }
 
 func TestPrepareMintsSession(t *testing.T) {
-	prep, err := prepare(req(t, ""), helloFixture(t), nil, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(req(t, ""), helloFixture(t), nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestPrepareMintsSession(t *testing.T) {
 }
 
 func TestPrepareReusesCookie(t *testing.T) {
-	prep, err := prepare(req(t, "abc"), helloFixture(t), nil, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(req(t, "abc"), helloFixture(t), nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestPrepareReusesCookie(t *testing.T) {
 }
 
 func TestPrepareNilHello(t *testing.T) {
-	prep, err := prepare(req(t, "abc"), nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(req(t, "abc"), nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestPrepareEmitsH2Signals(t *testing.T) {
 		WindowUpdate:      15663105,
 		PseudoHeaderOrder: "m,a,s,p",
 	}
-	prep, err := prepare(req(t, "abc"), nil, h2fp, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(req(t, "abc"), nil, h2fp, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestPrepareEmitsH2EngineUnknown(t *testing.T) {
 		if ua != "" {
 			r.Header.Set("User-Agent", ua)
 		}
-		prep, err := prepare(r, nil, fp, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+		prep, err := prepare(r, nil, fp, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -151,7 +151,7 @@ func TestPrepareEmitsFakeDeclaredCrawler(t *testing.T) {
 		r.RemoteAddr = "203.0.113.7:443" // a non-crawler address
 		r.Header.Set("User-Agent", ua)
 		res := stubResolver{addrErr: &net.DNSError{IsNotFound: true}}
-		prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), res)
+		prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), res, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -171,7 +171,7 @@ func TestPrepareEmitsFakeDeclaredCrawler(t *testing.T) {
 }
 
 func TestPrepareIDFailure(t *testing.T) {
-	if _, err := prepare(req(t, ""), nil, nil, fingerprint.HintTable{}, failID, time.Now(), nil); err == nil {
+	if _, err := prepare(req(t, ""), nil, nil, fingerprint.HintTable{}, failID, time.Now(), nil, nil); err == nil {
 		t.Error("expected error when id minting fails")
 	}
 }
@@ -305,7 +305,7 @@ func TestAcceptLanguagePrimary(t *testing.T) {
 func TestPrepareEmitsAcceptLanguage(t *testing.T) {
 	r := req(t, "abc")
 	r.Header.Set("Accept-Language", "de-DE,de;q=0.9")
-	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +391,7 @@ func TestCHUAVersionMismatch(t *testing.T) {
 func TestPrepareEmitsCHUABrowser(t *testing.T) {
 	r := req(t, "abc")
 	r.Header.Set("Sec-CH-UA", `"Chromium";v="126", "Google Chrome";v="126", "Not.A/Brand";v="99"`)
-	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,7 +409,7 @@ func TestPrepareEmitsCHUABrowser(t *testing.T) {
 func TestPrepareEmitsCHPlatform(t *testing.T) {
 	r := req(t, "abc")
 	r.Header.Set("Sec-CH-UA-Platform", `"macOS"`)
-	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil)
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
