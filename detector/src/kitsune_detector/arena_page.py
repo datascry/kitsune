@@ -237,18 +237,25 @@ verdict comes from the same coherence engine that scores the home page, reading 
     submit.onclick=function(){ var idx=Object.keys(sel).map(Number).sort(function(a,b){return a-b;}).join(","); verifyCaptcha("image-select", c.id, idx, gv, gn, tok); };
     box.appendChild(submit); say("Select the matching tiles and verify.");
   }
-  // Rotate (Arkose/FunCaptcha category): rotate the object upright. The page tracks the displayed angle.
+  // Rotate (Arkose/FunCaptcha category): DRAG the arrow upright. The gate scores the rotation trajectory, so
+  // a bare angle won't pass — you must actually drag it round (variable angular velocity = human).
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
-    var c=await (await fetch("/arena/captcha?kind=rotate")).json();
-    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
-    var cur=c.angle, wrap=document.createElement("div"); wrap.className="rot";
-    var img=document.createElement("img"); img.src=c.image; img.alt="rotate target"; img.style.transform="rotate("+cur+"deg)"; wrap.appendChild(img); box.appendChild(wrap);
-    var ctrl=document.createElement("div");
-    function mk(label,delta){ var b=document.createElement("button"); b.textContent=label; b.style.marginRight=".4rem"; b.onclick=function(){ cur=(cur+delta+360)%360; img.style.transform="rotate("+cur+"deg)"; }; return b; }
-    ctrl.appendChild(mk("\\u21ba \\u221215\\u00b0",-15)); ctrl.appendChild(mk("+15\\u00b0 \\u21bb",15));
-    var submit=document.createElement("button"); submit.textContent="Verify"; submit.onclick=function(){ verifyCaptcha("rotate", c.id, String(cur), gv, gn, tok); };
-    ctrl.appendChild(submit); box.appendChild(ctrl); say("Rotate the arrow upright and verify.");
+    var c=await (await fetch("/arena/rotate")).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent="Drag the arrow to point straight up."; box.appendChild(p);
+    var wrap=document.createElement("div"); wrap.className="rot";
+    var img=document.createElement("img"); img.src=c.image; img.alt="rotate target"; img.draggable=false; img.style.transform="rotate("+c.angle+"deg)"; wrap.appendChild(img); box.appendChild(wrap);
+    var dragging=false, t0=0, traj=[], cur=c.angle;
+    function angleAt(e){ var r=img.getBoundingClientRect(); var a=Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2))*180/Math.PI; return a+90; } // cursor-up ⇒ 0°
+    img.addEventListener("pointerdown", function(e){ dragging=true; t0=performance.now(); traj=[]; img.setPointerCapture(e.pointerId); e.preventDefault(); });
+    img.addEventListener("pointermove", function(e){ if(!dragging) return; cur=angleAt(e); img.style.transform="rotate("+cur+"deg)"; traj.push({t:performance.now()-t0, angle:cur}); });
+    img.addEventListener("pointerup", async function(){ if(!dragging) return; dragging=false; say("Verifying the rotation…");
+      var v=await (await fetch("/arena/rotate/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, trajectory:traj})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Rotated upright with a human-like drag."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Rotate PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Rejected: "+(v.reason||"try again"); say("Rotate rejected: "+(v.reason||"")); }
+      box.innerHTML=""; fetchDetectorVerdict();
+    });
+    say("Drag the arrow to point up.");
   }
 
   document.getElementById("ks-run").addEventListener("click", async function(){
