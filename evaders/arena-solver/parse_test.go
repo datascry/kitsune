@@ -14,20 +14,6 @@ func TestExtractSVGTextReadsTheCode(t *testing.T) {
 	}
 }
 
-func TestClassifyTile(t *testing.T) {
-	cases := map[string]string{
-		`data:image/svg+xml;utf8,<svg><circle cx="30" cy="30" r="22"/></svg>`:                                              "circle",
-		`data:image/svg+xml;utf8,<svg><rect x="12" y="12" width="36" height="36"/></svg>`:                                  "square",
-		`data:image/svg+xml;utf8,<svg><polygon points="30,8 52,50 8,50"/></svg>`:                                           "triangle",
-		`data:image/svg+xml;utf8,<svg><polygon points="30,6 36,24 55,24 40,36 45,54 30,42 15,54 20,36 5,24 24,24"/></svg>`: "star",
-	}
-	for svg, want := range cases {
-		if got := classifyTile(svg); got != want {
-			t.Fatalf("classifyTile = %q, want %q", got, want)
-		}
-	}
-}
-
 func TestSolveMathAndTarget(t *testing.T) {
 	if got := solveMath("What is 7 + 5?"); got != "12" {
 		t.Fatalf("solveMath = %q, want 12", got)

@@ -15,9 +15,8 @@ import (
 )
 
 var (
-	reText    = regexp.MustCompile(`(?s)<text[^>]*>([^<]+)</text>`)
-	rePolyPts = regexp.MustCompile(`points="([^"]+)"`)
-	reMath    = regexp.MustCompile(`What is (\d+) \+ (\d+)`)
+	reText = regexp.MustCompile(`(?s)<text[^>]*>([^<]+)</text>`)
+	reMath = regexp.MustCompile(`What is (\d+) \+ (\d+)`)
 )
 
 // decodeDataSVG strips the `data:image/svg+xml;utf8,` prefix and undoes the %23→# encoding the gate applies,
@@ -44,26 +43,6 @@ func extractSVGText(dataURI string) string {
 		b.WriteString(strings.TrimSpace(m[1]))
 	}
 	return b.String()
-}
-
-// classifyTile names the shape of an owned SVG tile from its geometry (the finding for `image-select`: an
-// unlabelled vector tile is trivially classified by markup — circle/rect/polygon point-count).
-func classifyTile(dataURI string) string {
-	svg := decodeDataSVG(dataURI)
-	switch {
-	case strings.Contains(svg, "<circle"):
-		return "circle"
-	case strings.Contains(svg, "<rect"):
-		return "square"
-	case strings.Contains(svg, "<polygon"):
-		if m := rePolyPts.FindStringSubmatch(svg); m != nil {
-			if len(strings.Fields(m[1])) <= 3 {
-				return "triangle"
-			}
-			return "star"
-		}
-	}
-	return ""
 }
 
 // solveMath parses "What is A + B?" and returns the sum as a string (the trivial `math` solve).
