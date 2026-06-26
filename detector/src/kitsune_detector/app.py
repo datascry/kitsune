@@ -18,7 +18,8 @@ import re
 from collections.abc import Callable
 from pathlib import Path
 
-from fastapi import Cookie, Depends, FastAPI, Header, HTTPException
+import httpx
+from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -136,6 +137,13 @@ LLMS_TXT = """# Kitsune
 
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
+
+#: The public arena challenge-gate (the owned `arena/` Go service). The detector relays /arena/challenge and
+#: /arena/verify to it so a visitor hits ONE origin (through the edge) — the gate verdict then joins the
+#: detector's coherence verdict client-side on ks_sid. Empty/unset → the arena routes return 503 (the live
+#: spine runs fine without it). Gate names are whitelisted; the gate itself only ever talks to itself.
+ARENA_URL = os.environ.get("KITSUNE_ARENA_URL", "").rstrip("/")
+_ARENA_GATES = frozenset({"hashcash", "many-small", "memory-hard", "cap"})
 #: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
 #: it reaches any HTML/SEO sink both 404s junk URLs and removes the reflected-XSS taint (no <, ", etc.).
 _SAFE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,80}")
@@ -196,6 +204,41 @@ def create_app(
     @app.get("/healthz")
     def healthz() -> dict[str, str]:
         return {"status": "ok", "ruleset_version": detector.ruleset_version}
+
+    # --- Arena relay: forward the challenge/verify protocol to the owned arena gate (KITSUNE_ARENA_URL),
+    # so a visitor reaches the gate on the SAME origin (through the edge) and the gate verdict can join the
+    # detector verdict on ks_sid. The detector never imports the gate — it speaks HTTP, contracts-only. ---
+    @app.get("/arena/challenge", include_in_schema=False)
+    async def arena_challenge(gate: str = "hashcash", difficulty: int | None = None) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        if gate not in _ARENA_GATES:
+            raise HTTPException(status_code=400, detail="unknown gate")
+        params = {"gate": gate}
+        if difficulty is not None:
+            params["difficulty"] = str(difficulty)
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/challenge", params=params)
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/verify", include_in_schema=False)
+    async def arena_verify(request: Request) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 1_048_576:  # bound the relayed body — the gate is owned, but the relay is public
+            raise HTTPException(status_code=413, detail="solution too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     # --- Static brand assets + crawl/SEO infra (public, off the OpenAPI schema) ---
     def _asset(name: str, media_type: str) -> FileResponse:

@@ -240,3 +240,16 @@ def test_ingest_accumulates_across_calls(client: TestClient) -> None:
     sig = client.get("/session/acc").json()["signals"]
     assert len(sig["network"]) == 1
     assert len(sig["browser"]) == 1
+
+
+def test_arena_unconfigured_returns_503(client: TestClient) -> None:
+    # With no KITSUNE_ARENA_URL the relay is inert — the live spine runs fine without the arena gate.
+    assert client.get("/arena/challenge").status_code == 503
+    assert client.post("/arena/verify", content=b"{}").status_code == 503
+
+
+def test_arena_unknown_gate_rejected(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Gate names are whitelisted at the relay; an arbitrary value is refused before any upstream call.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    assert client.get("/arena/challenge", params={"gate": "evil"}).status_code == 400
+    assert client.get("/arena/challenge", params={"gate": "hashcash"}).status_code in (200, 502)

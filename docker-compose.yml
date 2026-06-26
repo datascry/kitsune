@@ -8,6 +8,10 @@ services:
       dockerfile: detector/Dockerfile
     # No host port publish by default (services talk over the compose network); add
     # `ports: ["8080:8080"]` to reach the detector from the host.
+    # KITSUNE_ARENA_URL points at the owned arena challenge-gate; the detector relays /arena/* to it so a
+    # visitor reaches the gate on one origin (through the edge). Absent -> the /arena routes return 503.
+    environment:
+      KITSUNE_ARENA_URL: "http://arena:8095"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
       interval: 5s
@@ -34,6 +38,17 @@ services:
     depends_on:
       detector:
         condition: service_healthy
+
+  # The public arena challenge-gate (owned infra) — a long-running service in the live spine. Reproduces
+  # documented OPEN PoW mechanisms (anubis/friendlycaptcha/altcha) for visitors to challenge; the detector
+  # relays /arena/* here. It only ever talks to itself — never a third-party endpoint.
+  arena:
+    build:
+      context: .
+      dockerfile: arena/Dockerfile
+    environment:
+      ARENA_ADDR: "0.0.0.0:8095"
+    restart: unless-stopped
 
   # Red side — one-shot, only with `--profile evaders`.
   vanilla:
