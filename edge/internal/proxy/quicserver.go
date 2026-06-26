@@ -79,8 +79,9 @@ func (qs *QUICServer) handle(w http.ResponseWriter, r *http.Request) {
 	// hello/h2fp are TCP-path artifacts (a peeked TLS ClientHello / HTTP/2 preface); over H3 they are absent,
 	// and the QUIC fingerprint replaces them. prepare still derives ks_sid + the header-level network signals.
 	// nil resolver: FCrDNS crawler verification is skipped over HTTP/3 (declared crawlers connect over TCP);
-	// the TCP path in ServeHTTP runs it.
-	prep, err := prepare(r, nil, nil, qs.hints, qs.newID, qs.now(), nil)
+	// the TCP path in ServeHTTP runs it. nil replay store: Web Bot Auth nonce-replay tracking lives on the
+	// TCP/h2 path (the agent fleet signs over h2); H3 capture is infra-blocked (ADR-0005).
+	prep, err := prepare(r, nil, nil, qs.hints, qs.newID, qs.now(), nil, nil)
 	if err != nil {
 		http.Error(w, "could not mint session id", http.StatusInternalServerError)
 		return

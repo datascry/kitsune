@@ -356,6 +356,74 @@ func webBotAuth(target string, valid bool) {
 	fmt.Println("__KS__" + string(out))
 }
 
+// webBotAuthReplay grounds G32 (net.web_bot_auth_nonce_replay): it signs ONE genuine, in-window RFC 9421
+// signature that carries a NONCE, then presents that SAME signed request TWICE under one ks_sid. The first
+// verifies cleanly (a live signer) and allow-lists the session; the second reuses the nonce within its
+// window — a captured-credential replay the G25 expiry/forgery check passes but the nonce single-use rule
+// convicts. A real agent mints a fresh nonce per request, so it never trips this. Reports the live verdict.
+func webBotAuthReplay(target string) {
+	detector := os.Getenv("KITSUNE_DETECTOR")
+	if detector == "" {
+		detector = "http://detector:8080"
+	}
+	authority := strings.TrimSuffix(strings.ToLower(reqHost(target)), ":443")
+	now := time.Now().Unix()
+	const nonce = "kitsune-replay-nonce-fixed-0001" // the SAME nonce on both requests = the replay tell
+	params := fmt.Sprintf(
+		`("@authority");created=%d;keyid=%q;alg="ed25519";expires=%d;nonce=%q;tag="web-bot-auth"`,
+		now, wbaKeyID, now+3600, nonce,
+	)
+	base := `"@authority": ` + authority + "\n" + `"@signature-params": ` + params
+	seed, _ := base64.RawURLEncoding.DecodeString(wbaSeedB64) //nolint:errcheck
+	sig := ed25519.Sign(ed25519.NewKeyFromSeed(seed), []byte(base))
+	sigInput := "sig1=" + params
+	sigHeader := "sig1=:" + base64.StdEncoding.EncodeToString(sig) + ":"
+
+	var sid string
+	for i := 0; i < 2; i++ { // first request verifies; the second replays the same nonce
+		req, err := http.NewRequest(http.MethodGet, target, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; ClaudeBot/1.0; +https://www.anthropic.com/claudebot)")
+		req.Header.Set("Signature-Input", sigInput)
+		req.Header.Set("Signature", sigHeader)
+		if sid != "" {
+			req.AddCookie(&http.Cookie{Name: "ks_sid", Value: sid})
+		}
+		resp, err := gotls.RoundTripH2(context.Background(), utls.HelloChrome_Auto, req)
+		if err != nil {
+			log.Fatal(err)
+		}
+		io.Copy(io.Discard, resp.Body) //nolint:errcheck
+		resp.Body.Close()
+		if sid == "" {
+			for _, c := range resp.Cookies() {
+				if c.Name == "ks_sid" {
+					sid = c.Value
+				}
+			}
+		}
+		log.Printf("req %d (nonce=%s) -> %s (sid=%s)", i, nonce, resp.Status, sid)
+	}
+	if sid == "" {
+		log.Fatal("no ks_sid minted")
+	}
+	vr, err := http.Get(detector + "/verdict/" + sid) //nolint:noctx
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var verdict map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&verdict); err != nil {
+		log.Fatal(err)
+	}
+	verdict["mode"] = "go-tls-web-bot-auth-replay"
+	verdict["session_id"] = sid
+	out, _ := json.Marshal(verdict) //nolint:errcheck
+	fmt.Println("__KS__" + string(out))
+}
+
 func reqHost(target string) string {
 	if u, err := url.Parse(target); err == nil {
 		return u.Host
@@ -369,7 +437,11 @@ func main() {
 		target = "https://localhost:8443/healthz"
 	}
 	if os.Getenv("KS_WEBBOTAUTH") != "" {
-		webBotAuth(target, os.Getenv("KS_WEBBOTAUTH") == "valid")
+		if os.Getenv("KS_WEBBOTAUTH") == "replay" {
+			webBotAuthReplay(target)
+		} else {
+			webBotAuth(target, os.Getenv("KS_WEBBOTAUTH") == "valid")
+		}
 		return
 	}
 	if os.Getenv("KS_STATICEXT") == "1" {

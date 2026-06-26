@@ -57,6 +57,7 @@ func prepare(
 	newID IDFunc,
 	now time.Time,
 	resolver fingerprint.Resolver,
+	wbaReplay *webbotauth.ReplayStore,
 ) (prepared, error) {
 	var out prepared
 	if c, err := r.Cookie(session.CookieName); err == nil {
@@ -162,9 +163,16 @@ func prepare(
 	// An unknown keyid is unjudgeable (we just lack that agent's key), so it never convicts — only a known-key
 	// verification FAILURE does, which keeps it FP-safe against legit agents whose directories we don't hold.
 	if wba := webbotauth.Verify(reqAuthority(r), r.Header, webbotauth.DefaultKeyDir(), now); wba.Present {
-		if wba.Valid {
+		switch {
+		case wba.Valid && wbaReplay != nil && wbaReplay.Replay(wba.KeyID, wba.Nonce, wba.Expires, now):
+			// A VALID signature whose nonce was already used in this window: a captured-credential replay.
+			// G25's expiry/forgery check passes it (the signature is genuine and in-window); the nonce reuse
+			// is the only tell — RFC 9421 nonces are single-use, so a real signer never repeats one. Convicts,
+			// and withholds the verified allow-list (the detector's verified_agent gate excludes this rule).
+			out.signals = append(out.signals, signal.Network(out.sessionID, "web_bot_auth_nonce_replay", true, now))
+		case wba.Valid:
 			out.signals = append(out.signals, signal.Network(out.sessionID, "web_bot_auth_verified", true, now))
-		} else if wba.KnownKey {
+		case wba.KnownKey:
 			out.signals = append(out.signals, signal.Network(out.sessionID, "web_bot_auth_invalid", true, now))
 		}
 	}
@@ -434,10 +442,11 @@ type ReverseProxy struct {
 	newID       IDFunc
 	now         func() time.Time
 	client      *http.Client
-	synStore    *tcpfp.Store         // source-IP -> TCP/IP kernel family; nil when capture is unavailable
-	quic        *QUICCapturer        // source-IP -> QUIC ClientHello; nil when QUIC is not enabled
-	altSvc      string               // Alt-Svc header advertising h3, so browsers attempt QUIC; "" when disabled
-	resolver    fingerprint.Resolver // for FCrDNS crawler verification; nil disables the check
+	synStore    *tcpfp.Store            // source-IP -> TCP/IP kernel family; nil when capture is unavailable
+	quic        *QUICCapturer           // source-IP -> QUIC ClientHello; nil when QUIC is not enabled
+	altSvc      string                  // Alt-Svc header advertising h3, so browsers attempt QUIC; "" when disabled
+	resolver    fingerprint.Resolver    // for FCrDNS crawler verification; nil disables the check
+	wbaReplay   *webbotauth.ReplayStore // tracks Web Bot Auth nonces to catch an in-window credential replay
 }
 
 // NewReverseProxy builds a reverse proxy forwarding to backendURL and reporting to detectorURL.
@@ -454,13 +463,14 @@ func NewReverseProxy(backendURL, detectorURL string, hints fingerprint.HintTable
 		now:         time.Now,
 		client:      &http.Client{Timeout: 5 * time.Second},
 		resolver:    net.DefaultResolver,
+		wbaReplay:   webbotauth.NewReplayStore(),
 	}, nil
 }
 
 func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hello, _ := r.Context().Value(helloKey).(*fingerprint.ClientHello)
 	h2fp, _ := r.Context().Value(h2Key).(*fingerprint.H2Fingerprint)
-	prep, err := prepare(r, hello, h2fp, p.hints, p.newID, p.now(), p.resolver)
+	prep, err := prepare(r, hello, h2fp, p.hints, p.newID, p.now(), p.resolver, p.wbaReplay)
 	if err != nil {
 		http.Error(w, "could not mint session id", http.StatusInternalServerError)
 		return

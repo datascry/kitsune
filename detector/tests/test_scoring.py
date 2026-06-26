@@ -28,6 +28,9 @@ def test_verified_agent_allow_lists_a_valid_signature() -> None:
     assert scoring.verified_agent(False, []) is False
     # A forged signature (web_bot_auth_invalid fired) is NOT a verified agent even if the marker is present.
     assert scoring.verified_agent(True, [_rule("net.web_bot_auth_invalid")]) is False
+    # An in-window nonce replay (G32) also withholds the allow-list: the replayed signature is genuine, so the
+    # verified marker is present, but a reused nonce is a captured-credential replay, not a live signer.
+    assert scoring.verified_agent(True, [_rule("net.web_bot_auth_nonce_replay")]) is False
 
 
 def test_noisy_or() -> None:
