@@ -1,0 +1,199 @@
+{
+  "schema_version": "0.1",
+  "session_id": "661313351b19ab6d683261950b32b47f",
+  "remote_ip": null,
+  "first_seen": "2026-06-26T07:39:04Z",
+  "last_seen": "2026-06-26T07:39:04Z",
+  "request_count": 18,
+  "signals": {
+    "network": [
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "ja3",
+        "value": "7764404dc91f1a6a42752ba008144902",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "ja4",
+        "value": "t13d1516h2_8daaf6152771_d8a2da3f94cd",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "ja4_browser_hint",
+        "value": "chrome",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "tls_ext_order",
+        "value": "g-2d-23-10-2b-1b-44cd-17-5-ff01-fe0d-0-33-12-b-d-a-g",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "tls_cipher_order",
+        "value": "g-1301-1302-1303-c02b-c02f-c02c-c030-cca9-cca8-c013-c014-9c-9d-2f-35",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "tls_extras",
+        "value": "ECH \u00b7 ALPS \u00b7 cert-comp:brotli \u00b7 key-share:g+mlkem768+x25519",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "h2",
+        "value": "|0|1001:0:1001:0,1003:0:1003:0,1005:0:1005:0,1007:0:1007:0,1009:0:1009:0,1011:0:1011:0,1013:0:1013:0,1015:0:1015:0,1017:0:1017:0,1019:0:1019:0,1021:0:1021:0,1023:0:1023:0,1025:0:1025:0,1027:0:1027:0,1029:0:1029:0,1031:0:1031:0,1033:0:1033:0,1035:0:1035:0,1037:0:1037:0,1039:0:1039:0,1041:0:1041:0,1043:0:1043:0,1045:0:1045:0,1047:0:1047:0,1049:0:1049:0,1051:0:1051:0,1053:0:1053:0,1055:0:1055:0,1057:0:1057:0,1059:0:1059:0,1061:0:1061:0,1063:0:1063:0,1065:0:1065:0,1067:0:1067:0,1069:0:1069:0,1071:0:1071:0,1073:0:1073:0,1075:0:1075:0,1077:0:1077:0,1079:0:1079:0,1081:0:1081:0,1083:0:1083:0,1085:0:1085:0,1087:0:1087:0,1089:0:1089:0,1091:0:1091:0,1093:0:1093:0,1095:0:1095:0,1097:0:1097:0,1099:0:1099:0,1101:0:1101:0,1103:0:1103:0,1105:0:1105:0,1107:0:1107:0,1109:0:1109:0,1111:0:1111:0,1113:0:1113:0,1115:0:1115:0,1117:0:1117:0,1119:0:1119:0|m,s,a,p",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "h2_engine_unknown",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "h2_header_order_non_chromium",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "observed_ip",
+        "value": "172.22.0.5",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "http_version",
+        "value": "h2",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "http_user_agent",
+        "value": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "sec_fetch_missing",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "accept_encoding_no_brotli",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "ua_kernel",
+        "value": "linux",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "tcp_kernel",
+        "value": "linux",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "ja4t",
+        "value": "64240_2-4-8-1-3_1460_7",
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "h2_madeyoureset",
+        "value": true,
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "observed_ip_seen",
+        "value": [
+          "172.22.0.5"
+        ],
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "661313351b19ab6d683261950b32b47f",
+        "layer": "network",
+        "kind": "ua_seen",
+        "value": [
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        ],
+        "source": "edge",
+        "observed_at": "2026-06-26T07:39:04Z"
+      }
+    ],
+    "browser": [],
+    "behavioral": [],
+    "reputation": []
+  }
+}

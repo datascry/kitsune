@@ -508,6 +508,11 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if sc.ControlFrameFlood() {
 			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_control_flood", true, p.now()))
 		}
+		// MadeYouReset (CVE-2025-8671): malformed control frames coerce server resets while the client sends
+		// no RST_STREAM of its own, so the rapid-reset signal above stays silent — this closes that gap.
+		if sc.MadeYouReset() {
+			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_madeyoureset", true, p.now()))
+		}
 	}
 	p.forward(prep.signals)
 	p.backend.ServeHTTP(w, r)

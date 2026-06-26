@@ -540,6 +540,18 @@ rules:
     last_validated: "2026-06-20"
     source: "CVE-2019-9515 (SETTINGS flood) / CVE-2019-9512 (PING flood) — control-frame amplification DoS"
 
+  - id: net.h2_madeyoureset
+    title: HTTP/2 MadeYouReset stream-reset coercion (CVE-2025-8671) on this connection
+    layers: [network]
+    reads: [network.h2_madeyoureset]
+    predicate: present
+    weight: 0.9
+    status: active
+    category: automation
+    added: "2026-06-26"
+    last_validated: "2026-06-26"
+    source: "CVE-2025-8671 (MadeYouReset); malformed WINDOW_UPDATE/PRIORITY coerce server RST_STREAM with no client RST — evades the rapid-reset rung; spec violations no browser emits"
+
   - id: br.headless_ua
     title: User-Agent advertises a headless browser
     layers: [browser]
