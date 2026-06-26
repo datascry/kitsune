@@ -59,7 +59,8 @@ ARENA_PAGE = """<!DOCTYPE html>
 (Turnstile-style escalation), proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
 <abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families,
 and self-hosted <b>CAPTCHA</b> gates: distorted-text image, arithmetic, honeypot, a GeeTest-style drag <b>slider</b>,
-an <b>image-select</b> tile grid, and a <b>rotate</b>-upright puzzle.
+an <b>image-select</b> tile grid, and a <b>rotate</b>-upright puzzle. Plus <b>PACT</b> &mdash; an anonymous
+proof-of-personhood token (Private Access Tokens) that <b>skips</b> the challenge, the frontier defense.
 Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
 <p class="note">In the <b>managed</b> gate, the silent first step <i>is</i> the coherence detector: a coherent client passes with no puzzle; only an incoherent one is stepped up to a proof-of-work &mdash; exactly the documented managed-challenge ladder.</p>
 <p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
@@ -77,6 +78,7 @@ Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did yo
     <button data-gate="slider" aria-pressed="false">captcha&middot;slider <span class="note">&middot; GeeTest-style drag</span></button>
     <button data-gate="image-select" aria-pressed="false">captcha&middot;image <span class="note">&middot; select matching tiles</span></button>
     <button data-gate="rotate" aria-pressed="false">captcha&middot;rotate <span class="note">&middot; rotate upright</span></button>
+    <button data-gate="pact" aria-pressed="false">pact <span class="note">&middot; personhood token (skip)</span></button>
   </div>
   <button class="arena-run" id="ks-run">Run the gate</button>
   <div class="arena-log" id="ks-log">Ready.</div>
@@ -258,11 +260,28 @@ verdict comes from the same coherence engine that scores the home page, reading 
     say("Drag the arrow to point up.");
   }
 
+  // PACT / Private Access Token: obtain an anonymous proof-of-personhood token and present it to SKIP the
+  // challenge. The honest caveat: the issuer mints freely here, so any client (incl. this one) can skip — and
+  // the detector still convicts a no-JS client. A token is only as strong as the issuer's personhood proof.
+  async function runPACT(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    say("Requesting an anonymous personhood token from the issuer…");
+    var t=await (await fetch("/arena/pact")).json();
+    var v=await (await fetch("/arena/pact/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({token:t.token})})).json();
+    if(v.decision==="allow"){
+      gv.textContent="SKIPPED"; gv.className="big pass";
+      gn.textContent="Valid personhood token → challenge skipped (the PACT behaviour). Note: the issuer mints freely in-sandbox, so this is also the bypass — a token is only as strong as the issuer's proof + key secrecy.";
+      tok.innerHTML='<p class="note">token <code>'+String(t.token||"").slice(0,28)+'…</code></p>'; say("PACT: challenge skipped on a valid token.");
+    } else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Token rejected: "+(v.reason||""); say("PACT rejected: "+(v.reason||"")); }
+    fetchDetectorVerdict();
+  }
+
   document.getElementById("ks-run").addEventListener("click", async function(){
     var btn=this; btn.disabled=true;
     var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
     gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
     try{
+      if(gate==="pact"){ await runPACT(gv, gn, tok); btn.disabled=false; return; }
       if(gate==="slider"){ await runSlider(gv, gn, tok); btn.disabled=false; return; }
       if(gate==="image-select"){ await runImageSelect(gv, gn, tok); btn.disabled=false; return; }
       if(gate==="rotate"){ await runRotate(gv, gn, tok); btn.disabled=false; return; }

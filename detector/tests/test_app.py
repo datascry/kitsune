@@ -330,6 +330,8 @@ class _FakeClient:
             return _FakeResp(200, b'{"kind":"slider","id":"s1","gap_x":120,"track_w":300,"piece_w":42}')
         if url.endswith("/arena/rotate"):
             return _FakeResp(200, b'{"kind":"rotate","id":"r1","image":"data:,","angle":120}')
+        if url.endswith("/arena/pact"):
+            return _FakeResp(200, b'{"token":"body.sig","expires":9999999999}')
         if url.endswith("/arena/captcha"):
             return _FakeResp(200, b'{"kind":"math","id":"c1","prompt":"What is 2 + 2?"}')
         return _FakeResp(200, b'{"class":"hashcash","nonce":"abc","difficulty":12}')
@@ -346,6 +348,8 @@ def test_arena_relays_forward_to_gate(client: TestClient, monkeypatch: pytest.Mo
     assert client.get("/arena/captcha", params={"kind": "math"}).json()["kind"] == "math"
     assert client.get("/arena/slider").json()["kind"] == "slider"
     assert client.get("/arena/rotate").json()["kind"] == "rotate"
+    assert client.get("/arena/pact").json()["token"] == "body.sig"
+    assert client.post("/arena/pact/verify", content=b'{"token":"body.sig"}').status_code == 200
     assert client.post("/arena/verify", content=b'{"nonce":"abc","counters":[0]}').json()["ok"] is False
     assert client.post("/arena/captcha/verify", content=b'{"kind":"math","id":"c1","answer":"4"}').status_code == 200
     assert client.post("/arena/slider/verify", content=b'{"id":"s1","x":120,"trajectory":[]}').status_code == 200
