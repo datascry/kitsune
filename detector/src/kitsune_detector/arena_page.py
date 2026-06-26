@@ -41,6 +41,9 @@ ARENA_PAGE = """<!DOCTYPE html>
 #ks-captcha img{vertical-align:middle;border:1px solid var(--line);border-radius:6px;background:#fff;margin-bottom:.5rem}
 #ks-captcha input{font:inherit;padding:.5rem;border:1px solid var(--line);border-radius:6px;min-height:44px;margin-right:.5rem}
 #ks-captcha button{font:inherit;font-weight:600;padding:.5rem 1rem;border:0;border-radius:6px;background:var(--fox);color:#fff;cursor:pointer;min-height:44px}
+#ks-captcha .slider-track{position:relative;height:44px;max-width:100%;background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;margin:.5rem 0;touch-action:none}
+#ks-captcha .slider-gap{position:absolute;top:5px;height:34px;width:42px;border:2px dashed var(--muted);border-radius:6px;box-sizing:border-box}
+#ks-captcha .slider-handle{position:absolute;top:3px;height:38px;width:42px;background:var(--fox);border-radius:6px;cursor:grab;box-sizing:border-box;touch-action:none}
 @media (max-width:640px){.verdicts{grid-template-columns:1fr}}
 </style>
 </head>
@@ -51,7 +54,7 @@ ARENA_PAGE = """<!DOCTYPE html>
 <p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; a <b>managed-challenge ladder</b>
 (Turnstile-style escalation), proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
 <abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families,
-and self-hosted <b>CAPTCHA</b> gates (distorted-text image, arithmetic, honeypot).
+and self-hosted <b>CAPTCHA</b> gates (distorted-text image, arithmetic, honeypot, and a GeeTest-style drag <b>slider</b>).
 Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
 <p class="note">In the <b>managed</b> gate, the silent first step <i>is</i> the coherence detector: a coherent client passes with no puzzle; only an incoherent one is stepped up to a proof-of-work &mdash; exactly the documented managed-challenge ladder.</p>
 <p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
@@ -66,6 +69,7 @@ Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did yo
     <button data-gate="text" aria-pressed="false">captcha&middot;text <span class="note">&middot; distorted image</span></button>
     <button data-gate="math" aria-pressed="false">captcha&middot;math <span class="note">&middot; arithmetic</span></button>
     <button data-gate="honeypot" aria-pressed="false">captcha&middot;honeypot <span class="note">&middot; hidden trap</span></button>
+    <button data-gate="slider" aria-pressed="false">captcha&middot;slider <span class="note">&middot; GeeTest-style drag</span></button>
   </div>
   <button class="arena-run" id="ks-run">Run the gate</button>
   <div class="arena-log" id="ks-log">Ready.</div>
@@ -189,11 +193,36 @@ verdict comes from the same coherence engine that scores the home page, reading 
     document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
   }
 
+  // Slider (GeeTest-style): drag the block into the gap. The gate checks the drop position AND the drag
+  // trajectory's velocity variation — a constant-velocity glide or a teleport is rejected (the on-thesis part).
+  async function runSlider(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    say("Requesting a slider challenge…");
+    var s=await (await fetch("/arena/slider")).json();
+    var hint=document.createElement("p"); hint.className="note"; hint.textContent="Drag the block into the dashed gap."; box.appendChild(hint);
+    var track=document.createElement("div"); track.className="slider-track"; track.style.width=s.track_w+"px";
+    var gap=document.createElement("div"); gap.className="slider-gap"; gap.style.left=s.gap_x+"px"; track.appendChild(gap);
+    var handle=document.createElement("div"); handle.className="slider-handle"; handle.style.left="0px"; track.appendChild(handle);
+    box.appendChild(track);
+    var dragging=false, t0=0, traj=[], hx=0, maxX=s.track_w-s.piece_w, half=s.piece_w/2;
+    handle.addEventListener("pointerdown", function(e){ dragging=true; t0=performance.now(); traj=[]; handle.setPointerCapture(e.pointerId); e.preventDefault(); });
+    handle.addEventListener("pointermove", function(e){ if(!dragging) return; var rect=track.getBoundingClientRect(); hx=Math.max(0, Math.min(maxX, e.clientX-rect.left-half)); handle.style.left=hx+"px"; traj.push({t:performance.now()-t0, x:hx}); });
+    handle.addEventListener("pointerup", async function(){ if(!dragging) return; dragging=false;
+      say("Verifying the drag…");
+      var v=await (await fetch("/arena/slider/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:s.id, x:hx, trajectory:traj})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Slider fit the gap with a human-like drag."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Slider PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Rejected: "+(v.reason||"try again"); say("Slider rejected: "+(v.reason||"")); }
+      box.innerHTML=""; fetchDetectorVerdict();
+    });
+    say("Drag the block into the gap.");
+  }
+
   document.getElementById("ks-run").addEventListener("click", async function(){
     var btn=this; btn.disabled=true;
     var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
     gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
     try{
+      if(gate==="slider"){ await runSlider(gv, gn, tok); btn.disabled=false; return; }
       if(CAPTCHA.indexOf(gate)>=0){ await runCaptcha(gate, gv, gn, tok); btn.disabled=false; return; }
       if(gate==="managed"){
         // The Turnstile-style ladder: the SILENT step is the detector's coherence verdict; only an

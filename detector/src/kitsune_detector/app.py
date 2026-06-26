@@ -283,6 +283,34 @@ def create_app(
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
+    @app.get("/arena/slider", include_in_schema=False)
+    async def arena_slider() -> Response:
+        # Relay a self-hosted slider (GeeTest-style) challenge from the owned gate.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/slider")
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/slider/verify", include_in_schema=False)
+    async def arena_slider_verify(request: Request) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 262144:  # a drag trajectory is many points but bounded
+            raise HTTPException(status_code=413, detail="trajectory too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/slider/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
     @app.get("/arena/managed", include_in_schema=False)
     async def arena_managed(step: int = 0, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
         # The managed-challenge ladder (the Turnstile-style escalation, faithfully): the SILENT first step
