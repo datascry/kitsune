@@ -863,3 +863,27 @@ is known alphanumeric — so the solver now strips non-`[A-Z0-9]`, recovering th
 the gate only a marginal, recoverable cost — it does not stop OCR. The Go `arena-solver` keeps pace at every level
 except text (the OCR solver's job); PoW shows a clean cost gradient (12→18 bits, 15→545 ms). **Difficulty raises the
 bill; the detector's coherence verdict is unchanged at every tier — a cost dial, not a discriminator.**
+
+### Captcha hardening pass (2026-06-26) — text noise, emoji image-select, checkbox
+
+Driven by a captcha-library + public-image-source research pass (Bursztein WOOT'14: **segmentation, not
+recognition, is the bottleneck**; licence-verified image sources). Three changes:
+
+- **Text gate — anti-segmentation noise** (`arena/raster.go`): the old render was almost all anti-recognition;
+  added the research's top moves, level-scaled — **negative kerning / glyph overlap** (the #1 anti-segmentation
+  technique), **2D sine warp** (H+V), **curved Bézier interference lines** through the glyphs, **per-glyph colour
+  variation** (beats single-threshold binarization), denser grey-varied speckle. Hard now renders 6 confusable
+  overlapping warped chars; easy stays a clean 4-char read.
+- **Image-select — real emoji glyphs** (`arena/emoji.go`, Noto Emoji **OFL 1.1**, vendored `assets/`): replaced the
+  4 synthetic shapes (circle/square/triangle/star) with categorised emoji tiles ("select every animal/food/vehicle").
+  RED RE-VERIFY: the `arena-solver` radial-signature classifier (`classifyTilePNG`) **now FAILS image-select live** —
+  emoji glyphs have no clean contour, so the heuristic CV breaks. This is the intended needle-move: the gate now
+  forces a real CV/VLM solver (the documented frontier), not a shape heuristic. Licence-clean (OFL, no per-image
+  attribution; OFL.txt bundled). Traps avoided per the research: CIFAR (no licence), ImageNet/Tiny-ImageNet
+  (non-commercial), Unsplash/Pexels (proprietary), OpenMoji (CC BY-SA ShareAlike). Quick, Draw! (CC BY 4.0) is the
+  queued richer second source ("emoji now, doodles later").
+- **Checkbox gate** — the iconic reCAPTCHA-v2 / Turnstile "click to confirm you are human" checkbox on the managed
+  mechanism (click → coherence check → pass-on-click or PoW step-up).
+
+Net: text + image-select are now genuinely CV-hard (OCR and real-CV/VLM respectively), the heuristic `arena-solver`
+is held to math/honeypot/slider/rotate, and the detector still convicts the no-JS client at every gate and level.
