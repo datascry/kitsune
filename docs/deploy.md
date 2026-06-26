@@ -151,9 +151,16 @@ cost of integrating the ACME TLS-ALPN challenge into the edge's custom TLS liste
 ## Continuous deployment (pull-based: GHCR + Watchtower)
 
 Release-gated, no inbound CI→VPS access. On each **release** (release-please publishes it when its release
-PR merges), `.github/workflows/build-push.yml` builds the `detector` + `edge` images and pushes them to
-`ghcr.io/datascry/kitsune-{detector,edge}`. On the VPS, a **Watchtower** container polls GHCR and pulls +
-restarts the new images in place — the whole CD loop is `release → build-push → Watchtower pull`.
+PR merges), `.github/workflows/build-push.yml` builds the `detector` + `edge` + `arena` images and pushes them
+to `ghcr.io/datascry/kitsune-{detector,edge,arena}`. On the VPS, a **Watchtower** container polls GHCR and
+pulls + restarts the new images in place — the whole CD loop is `release → build-push → Watchtower pull`.
+
+The **arena** (the public challenge-gate at `/arena`) ships as part of this stack: the detector relays
+`/arena/*` to the internal `arena` service (`KITSUNE_ARENA_URL=http://arena:8095`, set in the base file), so a
+visitor reaches the gate on one origin (through the edge). Adding the arena to an already-running deployment is
+a **one-time `up -d`** — Watchtower auto-updates *existing* labelled containers but never *creates* a new
+service, so the first time you must `pull` + `up -d` to start the arena container; subsequent releases update it
+automatically. Without the arena service running, `/arena` returns 503.
 
 One-time, on the VPS, switch to the pull-based stack (adds the deploy overlay):
 
@@ -167,7 +174,7 @@ $C up -d       # detector/edge now run the GHCR images; watchtower auto-updates 
   and `docker login ghcr.io` on the VPS with a `read:packages` token.
 - **State survives updates:** the `detector-data` (SQLite) and `letsencrypt` volumes persist, so a Watchtower
   restart loses nothing — and the edge restart also picks up a freshly renewed cert.
-- **Scope:** Watchtower is label-scoped to `detector` + `edge` only (it won't touch certbot or itself).
+- **Scope:** Watchtower is label-scoped to `detector` + `edge` + `arena` only (it won't touch certbot or itself).
 - **Security note:** Watchtower mounts the Docker socket (root-equivalent) — acceptable on a single research
   box; on a hardened host use a socket-proxy or the SSH-deploy model instead.
 - **Auto-update cadence:** every 5 min (`WATCHTOWER_POLL_INTERVAL`); deployments are gated to releases because

@@ -15,14 +15,23 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
 
-  # Watches GHCR for new detector/edge image tags and pulls + restarts them in place. A release ->
+  # The public arena challenge-gate (owned infra). The base file builds it from source; here it runs the
+  # GHCR image (build-push publishes kitsune-arena on every release) so the pull-based stack picks it up and
+  # Watchtower auto-updates it alongside detector/edge. The detector relays /arena/* to it (KITSUNE_ARENA_URL
+  # = http://arena:8095, set in the base file) — without this service running, /arena returns 503.
+  arena:
+    image: ghcr.io/datascry/kitsune-arena:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # Watches GHCR for new detector/edge/arena image tags and pulls + restarts them in place. A release ->
   # build-push -> Watchtower pull is the whole CD loop, with no inbound CI->VPS access.
   watchtower:
     image: containrrr/watchtower:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # NOTE: socket access is root-equivalent (single-box trade-off)
     environment:
-      WATCHTOWER_LABEL_ENABLE: "true" # update only the labelled containers (detector, edge), not itself/certbot
+      WATCHTOWER_LABEL_ENABLE: "true" # update only the labelled containers (detector, edge, arena), not itself/certbot
       WATCHTOWER_POLL_INTERVAL: "300" # check every 5 min
       WATCHTOWER_CLEANUP: "true" # remove the superseded image after a successful update
     restart: unless-stopped
