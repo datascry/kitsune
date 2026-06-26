@@ -44,15 +44,18 @@ ARENA_PAGE = """<!DOCTYPE html>
 <nav class="top"><a class="brand" href="/">KITSUNE</a> <a href="/">Detector</a> <a href="/arena">Arena</a> <a href="/detections">Detections</a></nav>
 <main>
 <h1 class="page">The Arena</h1>
-<p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; proof-of-work gates in the
-<abbr title="TecharoHQ/anubis">anubis</abbr>, <abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families.
-Pick a gate, solve its challenge in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
+<p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; a <b>managed-challenge ladder</b>
+(Turnstile-style escalation) and proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
+<abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families.
+Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
+<p class="note">In the <b>managed</b> gate, the silent first step <i>is</i> the coherence detector: a coherent client passes with no puzzle; only an incoherent one is stepped up to a proof-of-work &mdash; exactly the documented managed-challenge ladder.</p>
 <p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
 
 <section aria-label="challenge gate">
   <h2>1 · Pick a gate</h2>
   <div class="arena-gates" id="ks-gates">
-    <button data-gate="hashcash" aria-pressed="true">hashcash <span class="note">&middot; SHA-256 leading-zeros</span></button>
+    <button data-gate="managed" aria-pressed="true">managed <span class="note">&middot; Turnstile-style ladder</span></button>
+    <button data-gate="hashcash" aria-pressed="false">hashcash <span class="note">&middot; SHA-256 leading-zeros</span></button>
     <button data-gate="many-small" aria-pressed="false">many-small <span class="note">&middot; N sub-puzzles</span></button>
     <button data-gate="memory-hard" aria-pressed="false">memory-hard <span class="note">&middot; Argon2id</span></button>
   </div>
@@ -104,7 +107,7 @@ verdict comes from the same coherence engine that scores the home page, reading 
   }
   function subNonces(c){ if(c.class!=="many-small"){ return [""]; } var out=[]; var n=c.count||1; for(var i=0;i<n;i++){ out.push(i+":"); } return out; }
 
-  var gate="hashcash";
+  var gate="managed";
   var log=document.getElementById("ks-log");
   function say(m){ log.textContent=m; }
   document.getElementById("ks-gates").addEventListener("click", function(e){
@@ -113,13 +116,13 @@ verdict comes from the same coherence engine that scores the home page, reading 
     Array.prototype.forEach.call(this.querySelectorAll("button"), function(x){ x.setAttribute("aria-pressed", String(x===b)); });
   });
 
+  // The detector panel reads the PUBLIC, cookie-scoped /arena/managed (only your OWN session's decision) —
+  // not the admin-gated /verdict — so it works on the live site too.
   async function fetchDetectorVerdict(){
-    var m=document.cookie.match(/(?:^|; )ks_sid=([^;]+)/);
     var out=document.getElementById("ks-det-verdict");
-    if(!m){ out.textContent="run via the edge"; return; }
     try{
-      var r=await fetch("/verdict/"+encodeURIComponent(m[1]));
-      if(!r.ok){ out.textContent="scoring…"; return; }
+      var r=await fetch("/arena/managed");
+      if(!r.ok){ out.textContent="—"; return; }
       var v=await r.json();
       var label=String(v.label||"?");
       out.textContent=label.toUpperCase();
@@ -127,32 +130,51 @@ verdict comes from the same coherence engine that scores the home page, reading 
     }catch(_){ out.textContent="—"; }
   }
 
+  // Solve a PoW challenge in-browser (SHA-256 families) and verify it with the gate. Returns true on PASS.
+  async function solveAndVerify(c, gv, gn, tok){
+    if(c.class==="memory-hard"){
+      say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small here.\\nChallenge: "+JSON.stringify(c));
+      gn.textContent="Not solved in-browser — memory-hard is the GPU/ASIC-resistant family."; return false;
+    }
+    var nb=hexToBytes(c.nonce), subs=subNonces(c), counters=[];
+    var t0=performance.now();
+    for(var i=0;i<subs.length;i++){ say("Solving puzzle "+(i+1)+"/"+subs.length+" ("+c.difficulty+" bits)…"); counters.push(await solvePuzzle(subs[i], nb, c.difficulty)); }
+    var cost=Math.round(performance.now()-t0);
+    say("Solved in "+cost+" ms. Verifying with the gate…");
+    var vr=await fetch("/arena/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.assign({},c,{counters:counters}))});
+    var v=await vr.json();
+    if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Proof-of-work accepted in "+cost+" ms (cost-per-token)."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Gate PASSED in "+cost+" ms."); return true; }
+    gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="The gate rejected the solution."; say("Gate rejected the solution."); return false;
+  }
+
   document.getElementById("ks-run").addEventListener("click", async function(){
     var btn=this; btn.disabled=true;
     var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
     gv.textContent="—"; gv.className="big"; tok.innerHTML="";
     try{
-      // A modest difficulty keeps the in-browser SHA-256 solve near-instant; the gate accepts the param.
-      var diff = gate==="many-small" ? 10 : 16;
-      say("Requesting a "+gate+" challenge…");
-      var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
-      if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); btn.disabled=false; return; }
-      var c=await cr.json();
-      if(gate==="memory-hard"){
-        say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small here.\\nChallenge: "+JSON.stringify(c));
-        gn.textContent="Not solved in-browser — memory-hard is the GPU/ASIC-resistant family.";
-        btn.disabled=false; fetchDetectorVerdict(); return;
+      if(gate==="managed"){
+        // The Turnstile-style ladder: the SILENT step is the detector's coherence verdict; only an
+        // incoherent client is stepped up to a proof-of-work.
+        say("Managed challenge — reading your client silently…");
+        var m=await (await fetch("/arena/managed?step=1")).json();
+        if(m.decision==="allow"){
+          gv.textContent="ALLOWED"; gv.className="big pass";
+          gn.textContent="Passed silently — your client looks coherent ("+m.label+"). No puzzle shown, like a managed challenge's non-interactive success.";
+          say("Allowed silently (label "+m.label+").");
+        } else {
+          gn.textContent="Stepping up — your client looks "+(m.label||"unknown")+", so the ladder escalates to a proof-of-work.";
+          say("Step-up: solving the escalated proof-of-work…");
+          if(m.challenge){ await solveAndVerify(m.challenge, gv, gn, tok); }
+          else { gv.textContent="STEP-UP"; gv.className="big fail"; say("Step-up required, but the PoW gate is unavailable."); }
+        }
+      } else {
+        // A modest difficulty keeps the in-browser SHA-256 solve near-instant; the gate accepts the param.
+        var diff = gate==="many-small" ? 10 : 16;
+        say("Requesting a "+gate+" challenge…");
+        var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
+        if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); btn.disabled=false; return; }
+        await solveAndVerify(await cr.json(), gv, gn, tok);
       }
-      var nb=hexToBytes(c.nonce), subs=subNonces(c), counters=[];
-      var t0=performance.now();
-      for(var i=0;i<subs.length;i++){ say("Solving puzzle "+(i+1)+"/"+subs.length+" ("+c.difficulty+" bits)…"); counters.push(await solvePuzzle(subs[i], nb, c.difficulty)); }
-      var cost=Math.round(performance.now()-t0);
-      say("Solved in "+cost+" ms. Verifying with the gate…");
-      var body=Object.assign({}, c, {counters:counters});
-      var vr=await fetch("/arena/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-      var v=await vr.json();
-      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Proof-of-work accepted in "+cost+" ms (cost-per-token)."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Gate PASSED in "+cost+" ms."); }
-      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="The gate rejected the solution."; say("Gate rejected the solution."); }
     }catch(err){ say("Error: "+(err&&err.message||err)); }
     btn.disabled=false;
     fetchDetectorVerdict();
