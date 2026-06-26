@@ -1,0 +1,76 @@
+{
+  "schema_version": "0.1",
+  "session_id": "paradox-ctl-1",
+  "remote_ip": null,
+  "first_seen": "2026-06-27T00:00:00Z",
+  "last_seen": "2026-06-27T00:00:00Z",
+  "request_count": 2,
+  "signals": {
+    "network": [
+      {
+        "schema_version": "0.1",
+        "session_id": "paradox-ctl-1",
+        "layer": "network",
+        "kind": "ja4",
+        "value": "t13d1516h2_c3c3c3c3c3c3_0c0c0c0c0c0c",
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "paradox-ctl-1",
+        "layer": "network",
+        "kind": "observed_ip",
+        "value": "10.30.0.9",
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "paradox-ctl-1",
+        "layer": "network",
+        "kind": "observed_ip_seen",
+        "value": [
+          "10.30.0.9"
+        ],
+        "source": "edge",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "browser": [
+      {
+        "schema_version": "0.1",
+        "session_id": "paradox-ctl-1",
+        "layer": "browser",
+        "kind": "fp_hash",
+        "value": "solo-fp-1",
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "paradox-ctl-1",
+        "layer": "browser",
+        "kind": "hardware_concurrency",
+        "value": 16,
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      },
+      {
+        "schema_version": "0.1",
+        "session_id": "paradox-ctl-1",
+        "layer": "browser",
+        "kind": "fp_seen",
+        "value": {
+          "hardware_concurrency": [
+            "16"
+          ]
+        },
+        "source": "collector",
+        "observed_at": "2026-06-27T00:00:00Z"
+      }
+    ],
+    "behavioral": [],
+    "reputation": []
+  }
+}

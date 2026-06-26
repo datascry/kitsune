@@ -82,6 +82,13 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.live_coordination {{.CLI_ARGS}}"]
 
+  coordination-fleet-demo:
+    desc: "End-to-end fleet demo: ingest a coordinated fleet into a LIVE detector, then grade it (KITSUNE_DETECTOR)"
+    dir: harness
+    cmds:
+      - uv run python tools/fleet_coordination_demo.py
+      - uv run python -m kitsune_harness.live_coordination {{.CLI_ARGS}}
+
   calibrate-intoli:
     desc: "Corroborate the calibration against a second real-traffic source (Intoli user-agents dataset)"
     dir: harness
