@@ -34,6 +34,8 @@ _SCHEMA_FILES = (
     "session.schema.json",
     "verdict.schema.json",
     "coherence-rule.schema.json",
+    "challenge.schema.json",
+    "finding.schema.json",
 )
 
 

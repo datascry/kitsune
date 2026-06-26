@@ -33,3 +33,16 @@ def test_fixtures_score_as_labelled(detector: Detector) -> None:
     bot = Session.model_validate(load_example("session_bot.json"))
     assert detector.score(human).label is Label.human
     assert detector.score(bot).label is Label.bot
+
+
+@pytest.mark.parametrize(
+    ("name", "schema"),
+    [
+        ("challenge_memory_hard.json", "challenge.schema.json"),
+        ("finding_pow_cost.json", "finding.schema.json"),
+    ],
+)
+def test_arena_contract_fixtures_validate(name: str, schema: str) -> None:
+    # The arena/reporting contracts (challenge, finding) gain golden fixtures that must validate, so the
+    # schemas are exercised before any arena code consumes them (contracts-first, like session/verdict).
+    validate(load_example(name), schema)

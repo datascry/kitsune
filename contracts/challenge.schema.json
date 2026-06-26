@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitsune.dev/contracts/challenge.schema.json",
+  "title": "Challenge",
+  "description": "An arena proof-of-work challenge issued by a self-hosted gate, plus the pass token minted on a valid solve. Models documented OPEN PoW mechanisms (anubis/friendlycaptcha/altcha); the gate only ever runs on Kitsune-owned infra and is never a third-party endpoint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "challenge_id", "gate", "difficulty", "issued_at", "expires_at"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Contract version, MAJOR.MINOR."
+    },
+    "challenge_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Unique, single-use challenge id (nonce-bound, replay-resistant)."
+    },
+    "gate": {
+      "type": "string",
+      "enum": ["hashcash", "many-small", "memory-hard", "cap"],
+      "description": "PoW family: hashcash (anubis-style SHA-256 leading-zeros), many-small (friendlycaptcha-style N small puzzles), memory-hard (altcha-style Argon2id), cap (PoW fused with a browser-instrumentation probe)."
+    },
+    "difficulty": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Work parameter: leading-zero bits (hashcash/many-small) or Argon2 cost (memory-hard)."
+    },
+    "salt": {
+      "type": "string",
+      "maxLength": 256,
+      "description": "Server-chosen salt/seed binding the puzzle to this issuance."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC issuance time."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC end of the validity window."
+    },
+    "session_id": {
+      "type": ["string", "null"],
+      "maxLength": 128,
+      "description": "Edge ks_sid the attempt is bound to — joins the gate verdict to the detector's coherence verdict for the same client."
+    },
+    "token": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "The pass token minted on a valid solve; null until solved. Verifiable only by the issuing gate.",
+      "required": ["challenge_id", "gate", "solved_at", "cost_ms", "signature"],
+      "properties": {
+        "challenge_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "gate": { "type": "string", "enum": ["hashcash", "many-small", "memory-hard", "cap"] },
+        "solved_at": { "type": "string", "format": "date-time" },
+        "cost_ms": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Solver wall-clock cost in ms — the cost-per-token economics the arena measures."
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HMAC over the token fields, signed by the issuing gate (single-use)."
+        }
+      }
+    }
+  }
+}

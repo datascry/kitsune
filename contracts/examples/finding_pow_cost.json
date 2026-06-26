@@ -1,0 +1,15 @@
+{
+  "schema_version": "0.1",
+  "finding_id": "f_pow_memory_hard_cost",
+  "title": "Raw memory-hard PoW gate is a cost mechanism, not a bot/human discriminator",
+  "control": "gate:memory-hard",
+  "evader": "pow-solver (native, no browser)",
+  "layer": "challenge",
+  "outcome": "defeated",
+  "severity": "info",
+  "cost": { "per_token_ms": 240.0, "tokens_per_sec": 4 },
+  "remediation": "PoW adds cost only; the durable discriminator is the detector's server-observed coherence (net.no_js_execution convicts the no-browser solver). No new rule.",
+  "retest": "regression-guarded",
+  "ruleset_version": "0.74.52",
+  "observed_at": "2026-06-26T12:00:05Z"
+}

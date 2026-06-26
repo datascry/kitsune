@@ -12,8 +12,10 @@ schemas.
 | `session.schema.json` | All signals sharing a `session_id`, grouped by layer — the unit coherence runs over. |
 | `verdict.schema.json` | The scored result: per-layer scores, the contradictions that fired (each with evidence), and the final `score`/`label`. |
 | `coherence-rule.schema.json` | The shape of one coherence rule (rules are data, not code). |
+| `challenge.schema.json` | An arena proof-of-work challenge + the pass token minted on a valid solve (self-hosted gates only — models documented open mechanisms, never a third-party endpoint). |
+| `finding.schema.json` | A red-team finding — a Kitsune control (a rule or an arena gate) an evader defeated or that held, with cost + remediation; the reporting layer's unit. |
 | `rules/registry.yaml` | The live coherence-rule registry. |
-| `examples/` | Golden fixtures (`session_bot.json`, `session_human.json`); validated against the schemas in CI and reused as detector test oracles. |
+| `examples/` | Golden fixtures (`session_bot.json`, `session_human.json`, `challenge_memory_hard.json`, `finding_pow_cost.json`); validated against the schemas in CI and reused as detector test oracles. |
 
 ## The four layers
 
