@@ -20,10 +20,17 @@ from pathlib import Path
 
 import httpx
 from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from starlette.middleware.gzip import GZipMiddleware
 
-from .arena_page import ARENA_PAGE
+from .arena_page import CHALLENGES as ARENA_CHALLENGES
+from .arena_page import arena_gate_html, arena_index_html
 from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
@@ -207,15 +214,31 @@ def create_app(
     def healthz() -> dict[str, str]:
         return {"status": "ok", "ruleset_version": detector.ruleset_version}
 
-    @app.get("/arena", response_class=HTMLResponse)
-    def arena() -> HTMLResponse:
-        # The public arena page: solve an owned PoW gate in-browser, see the gate verdict + the detector's
-        # coherence verdict side by side. Same permissive CSP as the home page (inline script + subtle crypto).
-        resp = HTMLResponse(ARENA_PAGE)
+    def _arena_html(body: str) -> HTMLResponse:
+        # The gate pages run inline SubtleCrypto solvers, so they need the home page's permissive CSP. img-src
+        # MUST allow data: — the CAPTCHA/slider/rotate images are PNG/SVG data URIs minted by the gate.
+        resp = HTMLResponse(body)
         resp.headers["Content-Security-Policy"] = (
-            "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self'"
+            "default-src * data: blob: 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:"
         )
         return resp
+
+    @app.get("/arena", response_class=HTMLResponse)
+    def arena() -> HTMLResponse:
+        # The arena index: the thesis intro + a card grid linking to every challenge's own page.
+        return _arena_html(arena_index_html())
+
+    @app.get("/arena/gate", include_in_schema=False)
+    def arena_gate_index() -> RedirectResponse:
+        return RedirectResponse("/arena", status_code=308)
+
+    @app.get("/arena/gate/{name}", response_class=HTMLResponse, include_in_schema=False)
+    def arena_gate(name: str) -> HTMLResponse:
+        # One challenge per page: its widget + the dual (gate vs detector) verdict, on the shared doc shell.
+        page = arena_gate_html(name)
+        if page is None:
+            raise HTTPException(status_code=404, detail="unknown challenge")
+        return _arena_html(page)
 
     # --- Arena relay: forward the challenge/verify protocol to the owned arena gate (KITSUNE_ARENA_URL),
     # so a visitor reaches the gate on the SAME origin (through the edge) and the gate verdict can join the
@@ -450,6 +473,7 @@ def create_app(
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap() -> Response:
         urls = ["/"] + [f"/{slug}" for slug in DOC_PAGES]
+        urls += ["/arena"] + [f"/arena/gate/{c['slug']}" for c in ARENA_CHALLENGES]
         urls += [f"/detections/{rid}" for rid in rules_by_id]
         urls += [f"/evasions/{s}" for s in dict.fromkeys([*evaders, *fleet])]
         locs = "".join(f"<url><loc>{SITE_ORIGIN}{u}</loc></url>" for u in urls)
