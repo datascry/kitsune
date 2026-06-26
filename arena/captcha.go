@@ -30,7 +30,8 @@ const (
 	CaptchaText        CaptchaKind = "text"         // distorted-text image (rasterized PNG — needs OCR)
 	CaptchaMath        CaptchaKind = "math"         // simple arithmetic
 	CaptchaHoneypot    CaptchaKind = "honeypot"     // hidden trap field that must stay empty
-	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (reCAPTCHA-v2 category)
+	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (emoji-glyph grid)
+	CaptchaImageDoodle CaptchaKind = "image-doodle" // pick the tiles matching a prompt (Quick, Draw! doodles)
 )
 
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
@@ -153,6 +154,23 @@ func MintCaptcha(kind CaptchaKind, lv Level) (Captcha, string) {
 			want = []int{0}
 		}
 		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + emojiCategories[target].noun + ".", Tiles: tiles}, joinInts(want)
+	case CaptchaImageDoodle:
+		k := imageParams(lv)
+		target := randDoodleGroup()
+		tiles := make([]string, k.Tiles)
+		var want []int
+		for i := range tiles {
+			g := randDoodleGroup()
+			tiles[i] = rasterDoodle(randDoodleFrom(g), k.Noise) // hand-drawn sketch — needs real CV to read
+			if g == target {
+				want = append(want, i)
+			}
+		}
+		if len(want) == 0 { // guarantee at least one target tile
+			tiles[0] = rasterDoodle(randDoodleFrom(target), k.Noise)
+			want = []int{0}
+		}
+		return Captcha{Kind: CaptchaImageDoodle, ID: id, Prompt: "Select every " + doodleNoun[target] + ".", Tiles: tiles}, joinInts(want)
 	default:
 		k := textParams(lv)
 		alphabet := captchaAlphabet
@@ -200,7 +218,7 @@ func CheckCaptcha(kind CaptchaKind, expected, submitted string) bool {
 	switch kind {
 	case CaptchaHoneypot:
 		return strings.TrimSpace(submitted) == ""
-	case CaptchaImageSelect:
+	case CaptchaImageSelect, CaptchaImageDoodle:
 		return normIndexSet(expected) == normIndexSet(submitted) && normIndexSet(submitted) != ""
 	default:
 		return strings.EqualFold(strings.TrimSpace(submitted), strings.TrimSpace(expected))

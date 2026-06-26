@@ -294,6 +294,15 @@ def test_arena_unknown_gate_404s(client: TestClient) -> None:
     assert client.get("/arena/gate/evil").status_code == 404
 
 
+def test_arena_doodle_gate(client: TestClient) -> None:
+    # The Quick, Draw! doodle image-select variant: its own page + the image-doodle captcha kind + attribution.
+    idx = client.get("/arena").text
+    assert 'href="/arena/gate/doodle"' in idx
+    body = client.get("/arena/gate/doodle").text
+    assert '"kind": "image-doodle"' in body and "Quick, Draw!" in body
+    assert "/arena/captcha?kind=image-doodle" in body  # endpoint surfaced for bypass testers
+
+
 def test_arena_checkbox_gate(client: TestClient) -> None:
     # The iconic "click to confirm you are human" checkbox — reCAPTCHA-v2/Turnstile style — on the managed
     # mechanism. It's the first gate on the index and renders the checkbox widget; no difficulty axis.
