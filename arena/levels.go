@@ -32,24 +32,29 @@ func ParseLevel(s string) Level {
 	}
 }
 
-// textKnobs parametrise the rasterised text gate: more characters, stronger warp, denser noise, and (at hard)
-// a confusable alphabet make OCR progressively harder.
+// textKnobs parametrise the rasterised text gate. The hardening ladder mirrors what established CAPTCHA
+// libraries do: stronger 2D wave warp, denser grey-varied speckle, curved (Bezier) AND straight interference
+// lines, character OVERLAP (negative kerning — defeats per-glyph segmentation), and (at hard) a confusable
+// alphabet. Each knob makes OCR / binarization / segmentation progressively harder.
 type textKnobs struct {
 	Length     int
-	WarpAmp    float64 // base sine-warp amplitude (px)
-	Speckle    int     // number of noise pixels
-	Lines      int     // number of noise strokes
+	WarpAmp    float64 // vertical sine-warp amplitude (px)
+	HWarp      float64 // horizontal sine-warp amplitude (px) — 2D distortion
+	Speckle    int     // number of grey-varied noise pixels
+	Lines      int     // number of straight interference strokes
+	Curves     int     // number of curved (quadratic-Bezier) interference lines
+	Overlap    int     // px shaved off each glyph's advance so characters touch/overlap (anti-segmentation)
 	Confusable bool    // include visually ambiguous glyphs (0/O, 1/I/L) — only at hard
 }
 
 func textParams(lv Level) textKnobs {
 	switch lv {
 	case LevelEasy:
-		return textKnobs{Length: 4, WarpAmp: 2, Speckle: 25, Lines: 1, Confusable: false}
+		return textKnobs{Length: 4, WarpAmp: 2, HWarp: 0, Speckle: 40, Lines: 1, Curves: 0, Overlap: 0, Confusable: false}
 	case LevelHard:
-		return textKnobs{Length: 6, WarpAmp: 7, Speckle: 140, Lines: 3, Confusable: true}
+		return textKnobs{Length: 6, WarpAmp: 8, HWarp: 4, Speckle: 320, Lines: 2, Curves: 3, Overlap: 7, Confusable: true}
 	default:
-		return textKnobs{Length: 5, WarpAmp: 4, Speckle: 70, Lines: 2, Confusable: false}
+		return textKnobs{Length: 5, WarpAmp: 5, HWarp: 2, Speckle: 150, Lines: 1, Curves: 2, Overlap: 3, Confusable: false}
 	}
 }
 

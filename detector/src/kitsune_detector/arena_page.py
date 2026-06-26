@@ -25,6 +25,15 @@ from .pages import SITE_ORIGIN, render_doc_page
 #: ``family`` is the documented open mechanism it reproduces (vendor-neutral), ``blurb`` the one-line pitch.
 CHALLENGES: list[dict[str, str]] = [
     {
+        "slug": "checkbox",
+        "label": "Verify-you-are-human checkbox",
+        "family": "reCAPTCHA-v2 / Turnstile checkbox",
+        "mode": "checkbox",
+        "blurb": 'The familiar "click to confirm you are human" checkbox. The click triggers a silent '
+        "coherence check — a coherent client passes on the click with no puzzle; an incoherent one is "
+        "stepped up to a proof-of-work. The detector AS the gate.",
+    },
+    {
         "slug": "managed",
         "label": "Managed challenge",
         "family": "Turnstile-style ladder",
@@ -153,6 +162,19 @@ ARENA_CSS = """<style>
 .arena-levels button:last-child{border-right:0}
 .arena-levels button[aria-pressed=true]{background:var(--fox);color:#fff;font-weight:600}
 .arena-levels-wrap{margin:.2rem 0 .8rem}
+.ks-checkbox{display:inline-flex;align-items:center;gap:.8rem;border:1px solid var(--line-bright);background:var(--panel);border-radius:6px;padding:.7rem 1rem;cursor:pointer;min-width:300px;user-select:none}
+.ks-checkbox:hover{border-color:var(--muted)}
+.ks-cb-box{position:relative;width:26px;height:26px;border:2px solid var(--line-bright);border-radius:4px;background:var(--bg);flex:none}
+.ks-cb-mark{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--jade);font-weight:700;font-size:18px;line-height:1}
+.ks-cb-spin{position:absolute;inset:3px;display:none;border:2px solid var(--line-bright);border-top-color:var(--fox);border-radius:50%;animation:ks-spin .7s linear infinite}
+.ks-checkbox.checking{cursor:default}
+.ks-checkbox.checking .ks-cb-spin{display:block}
+.ks-checkbox.ok .ks-cb-mark{display:flex}
+.ks-checkbox.ok .ks-cb-box{border-color:var(--jade)}
+.ks-checkbox.fail .ks-cb-box{border-color:var(--fox)}
+.ks-cb-label{font-size:.95rem;color:var(--ink)}
+.ks-cb-brand{margin-left:auto;font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+@keyframes ks-spin{to{transform:rotate(360deg)}}
 .arena-again-wrap{margin:.7rem 0 0}
 .arena-again{font-size:.78rem;color:var(--muted);text-decoration:none}
 .arena-again:hover{color:var(--fox)}
@@ -323,6 +345,43 @@ ARENA_JS = r"""
     fetchDetectorVerdict();
   }
 
+  // reCAPTCHA-v2 / Turnstile-style checkbox: render the "Verify you are human" box; the CLICK triggers the
+  // managed coherence check. A coherent client passes on the click (no puzzle, the silent success); an
+  // incoherent one is stepped up to a proof-of-work — the documented managed ladder, behind the iconic widget.
+  async function runCheckbox(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var cb=document.createElement("div"); cb.className="ks-checkbox"; cb.id="ks-cb";
+    cb.setAttribute("role","checkbox"); cb.setAttribute("aria-checked","false"); cb.tabIndex=0;
+    cb.innerHTML='<span class="ks-cb-box"><span class="ks-cb-mark">✓</span><span class="ks-cb-spin"></span></span>'+
+      '<span class="ks-cb-label">Verify you are human</span><span class="ks-cb-brand">Kitsune&nbsp;Arena</span>';
+    box.appendChild(cb);
+    say("Click the box to verify.");
+    var done=false;
+    async function go(){
+      if(done) return; done=true;
+      cb.classList.add("checking"); cb.setAttribute("aria-busy","true"); say("Verifying…");
+      try{
+        var m=await (await fetch("/arena/managed?step=1")).json();
+        if(m.decision==="allow"){
+          cb.classList.remove("checking"); cb.classList.add("ok"); cb.setAttribute("aria-checked","true");
+          gv.textContent="VERIFIED"; gv.className="big pass";
+          gn.textContent="Passed on the click — your client looks coherent ("+m.label+"). A human clicks and is through, no puzzle (the Turnstile/reCAPTCHA-v2 checkbox behaviour).";
+          say("Verified — passed on the click, no challenge.");
+        } else {
+          gn.textContent="Stepping up — your client looks "+(m.label||"unknown")+", so the checkbox escalates to a proof-of-work.";
+          say("Additional verification — solving the escalated proof-of-work…");
+          var ok=false; if(m.challenge){ ok=await solveAndVerify(m.challenge, gv, gn, tok); }
+          cb.classList.remove("checking");
+          if(ok){ cb.classList.add("ok"); cb.setAttribute("aria-checked","true"); }
+          else { cb.classList.add("fail"); if(!m.challenge){ gv.textContent="STEP-UP"; gv.className="big fail"; say("Step-up required, but the PoW gate is unavailable."); } }
+        }
+      }catch(err){ cb.classList.remove("checking"); cb.classList.add("fail"); say("Error: "+(err&&err.message||err)); }
+      fetchDetectorVerdict();
+    }
+    cb.addEventListener("click", go);
+    cb.addEventListener("keydown", function(e){ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); go(); } });
+  }
+
   async function runManaged(gv, gn, tok){
     say("Managed challenge — reading your client silently…");
     var m=await (await fetch(withLevel("/arena/managed?step=1"))).json();
@@ -346,7 +405,8 @@ ARENA_JS = r"""
     var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
     gv.textContent="—"; gv.className="big"; gn.textContent="Did your solution satisfy the challenge?"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
     try{
-      if(A.mode==="pact"){ await runPACT(gv, gn, tok); }
+      if(A.mode==="checkbox"){ await runCheckbox(gv, gn, tok); }
+      else if(A.mode==="pact"){ await runPACT(gv, gn, tok); }
       else if(A.mode==="slider"){ await runSlider(gv, gn, tok); }
       else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
@@ -409,8 +469,9 @@ _DESC = (
 )
 
 
-# Gates with no difficulty axis (binary): honeypot is trap-or-not, pact is token-or-not.
-_NO_LEVEL_SLUGS = frozenset({"honeypot", "pact"})
+# Gates with no difficulty axis: honeypot (trap-or-not), pact (token-or-not), checkbox + managed
+# (coherence-gated — the difficulty is the client's own coherence, not an operator dial).
+_NO_LEVEL_SLUGS = frozenset({"honeypot", "pact", "checkbox", "managed"})
 
 
 def _has_levels(c: dict[str, str]) -> bool:
@@ -427,7 +488,7 @@ def _gate_script(c: dict[str, str]) -> str:
 def _endpoints(c: dict[str, str]) -> list[tuple[str, str]]:
     """The owned arena-gate HTTP endpoints a scripted bypass targets for this challenge (method, path)."""
     slug, mode = c["slug"], c["mode"]
-    if mode == "managed":
+    if mode in ("managed", "checkbox"):
         return [("GET", "/arena/managed?step=1")]
     if mode == "pow":
         return [("GET", f"/arena/challenge?gate={slug}"), ("POST", "/arena/verify")]
