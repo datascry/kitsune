@@ -100,8 +100,9 @@ CHALLENGES: list[dict[str, str]] = [
         "label": "Image-select grid",
         "family": "CAPTCHA · reCAPTCHA-v2 style",
         "mode": "image-select",
-        "blurb": "Pick the tiles matching the prompt from an unlabelled grid — the category-image task "
-        "a computer-vision classifier must beat.",
+        "blurb": 'Pick every tile matching the prompt ("select every animal") from a grid of real emoji '
+        "glyphs (Noto Emoji, OFL) — a category-recognition task that needs a real CV/VLM, not a shape "
+        "classifier.",
     },
     {
         "slug": "rotate",

@@ -33,9 +33,6 @@ const (
 	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (reCAPTCHA-v2 category)
 )
 
-// : image-select shapes — owned, generic primitives, rendered as rotated raster PNG tiles.
-var imageShapes = []string{"circle", "square", "triangle", "star"}
-
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
 const captchaAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
@@ -141,21 +138,21 @@ func MintCaptcha(kind CaptchaKind, lv Level) (Captcha, string) {
 		return Captcha{Kind: CaptchaHoneypot, ID: id, Prompt: "Submit without filling the hidden field.", Field: "website_url"}, ""
 	case CaptchaImageSelect:
 		k := imageParams(lv)
-		target := imageShapes[randInt(int64(len(imageShapes)))]
+		target := randEmojiCategory()
 		tiles := make([]string, k.Tiles)
 		var want []int
 		for i := range tiles {
-			s := imageShapes[randInt(int64(len(imageShapes)))]
-			tiles[i] = rasterShape(s, k.Noise) // rotated/noisy PNG — must be CLASSIFIED, not read from markup
-			if s == target {
+			cat := randEmojiCategory()
+			tiles[i] = rasterEmoji(randEmojiFrom(cat), k.Noise) // glyph PNG — must be RECOGNISED, not parsed
+			if cat == target {
 				want = append(want, i)
 			}
 		}
 		if len(want) == 0 { // guarantee at least one target tile
-			tiles[0] = rasterShape(target, k.Noise)
+			tiles[0] = rasterEmoji(randEmojiFrom(target), k.Noise)
 			want = []int{0}
 		}
-		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + target + ".", Tiles: tiles}, joinInts(want)
+		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + emojiCategories[target].noun + ".", Tiles: tiles}, joinInts(want)
 	default:
 		k := textParams(lv)
 		alphabet := captchaAlphabet

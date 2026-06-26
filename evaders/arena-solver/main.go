@@ -95,9 +95,10 @@ func main() {
 		}
 		fmt.Printf("%-13s gate %s in %4d ms%s\n", f.name, status, ms, extra)
 	}
-	fmt.Println("note: image-select falls to computer vision (classifyTilePNG); math/honeypot to scripting;")
-	fmt.Println("      slider/rotate to trajectory synthesis. Only the distorted-text gate resists this solver —")
-	fmt.Println("      it needs real OCR. Either way the detector convicts the no-JS client: coherence is durable.")
+	fmt.Println("note: math/honeypot fall to scripting; slider/rotate to trajectory synthesis. The TEXT gate needs")
+	fmt.Println("      real OCR (evaders/arena-solver-ocr), and IMAGE-SELECT now uses real emoji glyphs (Noto Emoji) —")
+	fmt.Println("      the radial-shape classifier no longer reads them; it needs a real CV/VLM. Either way the")
+	fmt.Println("      detector convicts the no-JS client: coherence is durable, the puzzle is not.")
 }
 
 func getCaptcha(c *http.Client, base, kind string) (*captcha, error) {
