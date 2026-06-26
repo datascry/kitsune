@@ -255,12 +255,38 @@ def test_arena_unknown_gate_rejected(client: TestClient, monkeypatch: pytest.Mon
     assert client.get("/arena/challenge", params={"gate": "hashcash"}).status_code in (200, 502)
 
 
-def test_arena_page_renders(client: TestClient) -> None:
+def test_arena_index_renders_with_shell(client: TestClient) -> None:
     resp = client.get("/arena")
     assert resp.status_code == 200
     body = resp.text
-    assert "The Arena" in body and 'id="ks-run"' in body
-    assert "not affiliated with any named vendor" in body  # the vendor-neutral disclaimer ships
+    assert "The Arena" in body
+    # The index links to each challenge's own page (no inline gate-picker any more).
+    assert 'href="/arena/gate/hashcash"' in body and 'href="/arena/gate/slider"' in body
+    # The CSS regression guard: the page carries the full design system (the old page injected only the
+    # token sheet and rendered unstyled). DOC_CSS applies the body palette + the shared nav.
+    assert "background:var(--bg)" in body and 'class="brand"' in body
+    # vendor-neutral: it reproduces documented mechanisms and never contacts a third-party challenge.
+    assert "never" in body and "third-party" in body
+
+
+def test_arena_gate_pages_render(client: TestClient) -> None:
+    # Each challenge is its own page with the run button + the dual (gate vs detector) verdict, on the shell.
+    for slug in ("managed", "hashcash", "text", "slider", "rotate", "image-select", "pact"):
+        resp = client.get(f"/arena/gate/{slug}")
+        assert resp.status_code == 200, slug
+        body = resp.text
+        assert 'id="ks-run"' in body and 'id="ks-det-verdict"' in body
+        assert f'"slug": "{slug}"' in body  # the per-page __ARENA__ config pins this gate
+        assert 'class="brand"' in body  # the shared nav/shell is present
+
+
+def test_arena_unknown_gate_404s(client: TestClient) -> None:
+    assert client.get("/arena/gate/evil").status_code == 404
+
+
+def test_arena_gate_index_redirects(client: TestClient) -> None:
+    resp = client.get("/arena/gate", follow_redirects=False)
+    assert resp.status_code == 308 and resp.headers["location"] == "/arena"
 
 
 def test_arena_managed_steps_up_without_session(client: TestClient) -> None:
@@ -291,15 +317,19 @@ def test_arena_captcha_guards(client: TestClient, monkeypatch: pytest.MonkeyPatc
     assert client.get("/arena/captcha", params={"kind": "math"}).status_code in (200, 502)
 
 
-def test_arena_page_lists_captcha_gates(client: TestClient) -> None:
+def test_arena_index_lists_captcha_gates(client: TestClient) -> None:
     body = client.get("/arena").text
-    assert 'data-gate="text"' in body and 'data-gate="math"' in body and 'data-gate="honeypot"' in body
+    assert (
+        'href="/arena/gate/text"' in body
+        and 'href="/arena/gate/math"' in body
+        and 'href="/arena/gate/honeypot"' in body
+    )
 
 
 def test_arena_slider_guards(client: TestClient) -> None:
     assert client.get("/arena/slider").status_code == 503  # unconfigured
     assert client.post("/arena/slider/verify", content=b"{}").status_code == 503
-    assert 'data-gate="slider"' in client.get("/arena").text
+    assert 'href="/arena/gate/slider"' in client.get("/arena").text
 
 
 class _FakeResp:
@@ -366,4 +396,4 @@ def test_arena_image_select_and_rotate_endpoints(client: TestClient, monkeypatch
     assert client.get("/arena/captcha", params={"kind": "image-select"}).status_code in (200, 502)
     assert client.get("/arena/captcha", params={"kind": "rotate"}).status_code == 400  # no longer a captcha kind
     body = client.get("/arena").text
-    assert 'data-gate="image-select"' in body and 'data-gate="rotate"' in body
+    assert 'href="/arena/gate/image-select"' in body and 'href="/arena/gate/rotate"' in body

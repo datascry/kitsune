@@ -671,6 +671,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
 <nav class="top" aria-label="Primary">
   <a class="brand" href="/">Kitsune</a>
   <a href="/" class="active" aria-current="page">Test</a>
+  <a href="/arena">Arena</a>
   <a href="/how-it-works">How it works</a>
   <a href="/matrix">Matrix</a>
   <a href="/detections">Detections</a>

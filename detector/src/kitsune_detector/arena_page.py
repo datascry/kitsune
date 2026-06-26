@@ -1,120 +1,166 @@
-# detector/arena_page — the public /arena page: challenge our gates, meet our detector.
-# In-browser SHA-256 PoW solver (hashcash/many-small) + the dual gate-vs-detector verdict, on owned gates only.
+# detector/arena_page — the public /arena: an index of challenge gates, each on its own page.
+# Reuses the doc-page shell (nav + footer + design system) so every gate renders in the site's aesthetic.
 
-"""The ``/arena`` page — the live, interactive reproduction of documented OPEN web challenge mechanisms.
+"""The ``/arena`` section — a live, interactive reproduction of documented OPEN web challenge mechanisms.
 
-A visitor picks a gate, gets a real PoW challenge from the owned ``arena`` service (relayed by the detector),
-solves it in-browser (SHA-256 families) or brings their own solver (memory-hard), and sees TWO verdicts: the
-gate's (did you solve the proof-of-work?) and the detector's (does your client cohere?). The point the page
-makes live: a PoW gate is a *cost* test, not a bot/human discriminator — a script can pass the gate and still
-be convicted on the network layer. The gates only ever model documented open mechanisms and only ever talk to
-themselves; the page carries a vendor-neutral disclaimer.
+The arena is now a small site of its own: ``/arena`` lists every gate as a card, and each gate gets its
+own page at ``/arena/gate/<slug>`` with just that challenge's widget plus the dual verdict (the gate's: did
+you solve it? — and the detector's: does your client cohere?). Every page is built on the shared doc-page
+shell (:func:`kitsune_detector.pages.render_doc_page`), so it carries the site nav, footer, SEO head, and —
+crucially — the full design system, instead of the half-styled standalone page this used to be.
+
+The gates only ever model documented, open mechanisms and only ever talk to the owned ``arena`` service
+(relayed by the detector); the page carries a vendor-neutral disclaimer. The thesis the arena makes live:
+a solved challenge is a *cost* or *Turing* test, not a bot/human discriminator — a script can pass the gate
+and still be convicted on the network layer. Coherence + attestation is the durable signal, not the puzzle.
 """
 
 from __future__ import annotations
 
-from .styles import SHARED_CSS
+import json
 
-ARENA_PAGE = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Arena — challenge the gates, meet the detector · Kitsune</title>
-<meta name="description" content="Faithful reproductions of documented open web challenge mechanisms (proof-of-work). Solve the gate in your browser and see what Kitsune's bot detector independently sees about your client.">
-<link rel="icon" href="/favicon.svg">
-<style>
-/*__SHARED_CSS__*/
-.arena-gates{display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0}
-.arena-gates button{font:inherit;padding:.5rem .9rem;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink);cursor:pointer;min-height:44px}
-.arena-gates button[aria-pressed=true]{border-color:var(--fox);color:var(--fox);font-weight:600}
+from .pages import SITE_ORIGIN, render_doc_page
+
+#: The challenge registry. Each gate is its own page; ``mode`` selects the in-browser flow (see ARENA_JS).
+#: ``family`` is the documented open mechanism it reproduces (vendor-neutral), ``blurb`` the one-line pitch.
+CHALLENGES: list[dict[str, str]] = [
+    {
+        "slug": "managed",
+        "label": "Managed challenge",
+        "family": "Turnstile-style ladder",
+        "mode": "managed",
+        "blurb": "A silent coherence check first — a coherent client passes with no puzzle; only an "
+        "incoherent one is stepped up to a proof-of-work. The detector AS the gate.",
+    },
+    {
+        "slug": "hashcash",
+        "label": "Hashcash proof-of-work",
+        "family": "Proof-of-work · anubis",
+        "mode": "pow",
+        "blurb": "A SHA-256 leading-zeros proof-of-work, solved in your browser. A cost gate — not a "
+        "human test: a script solves it just as well.",
+    },
+    {
+        "slug": "many-small",
+        "label": "Many-small proof-of-work",
+        "family": "Proof-of-work · friendly-captcha",
+        "mode": "pow",
+        "blurb": "N small SHA-256 sub-puzzles (the friendly-captcha shape), solved in-browser.",
+    },
+    {
+        "slug": "memory-hard",
+        "label": "Memory-hard proof-of-work",
+        "family": "Proof-of-work · Argon2id",
+        "mode": "pow",
+        "blurb": "An Argon2id memory-hard puzzle — GPU/ASIC-resistant by design. Bring the reference "
+        "solver; the browser just shows the challenge.",
+    },
+    {
+        "slug": "text",
+        "label": "Distorted-text CAPTCHA",
+        "family": "CAPTCHA · distorted image",
+        "mode": "captcha",
+        "blurb": "Read the warped, noisy text rendered to an image — the answer is in pixels, not markup, "
+        "so it falls only to OCR. The gate the HuggingFace TrOCR evader beats.",
+    },
+    {
+        "slug": "math",
+        "label": "Arithmetic CAPTCHA",
+        "family": "CAPTCHA · logic",
+        "mode": "captcha",
+        "blurb": "Answer a small arithmetic question — the classic text Turing test.",
+    },
+    {
+        "slug": "honeypot",
+        "label": "Honeypot trap",
+        "family": "CAPTCHA · hidden field",
+        "mode": "captcha",
+        "blurb": "A hidden field a human never sees but a naive form-filling bot fills. Leave it empty "
+        "to pass — submitting a value trips the trap.",
+    },
+    {
+        "slug": "slider",
+        "label": "Slider puzzle",
+        "family": "CAPTCHA · GeeTest-style drag",
+        "mode": "slider",
+        "blurb": "Drag the block into the gap. The gate scores the drop position AND the drag "
+        "trajectory's velocity variation — a constant-velocity glide or a teleport is rejected.",
+    },
+    {
+        "slug": "image-select",
+        "label": "Image-select grid",
+        "family": "CAPTCHA · reCAPTCHA-v2 style",
+        "mode": "image-select",
+        "blurb": "Pick the tiles matching the prompt from an unlabelled grid — the category-image task "
+        "a computer-vision classifier must beat.",
+    },
+    {
+        "slug": "rotate",
+        "label": "Rotate-upright puzzle",
+        "family": "CAPTCHA · Arkose/FunCaptcha style",
+        "mode": "rotate",
+        "blurb": "Drag the object upright. The gate scores the rotation trajectory, so a bare submitted "
+        "angle won't pass — you must actually drag it round (variable angular velocity = human).",
+    },
+    {
+        "slug": "pact",
+        "label": "PACT personhood token",
+        "family": "Defense · Private Access Tokens",
+        "mode": "pact",
+        "blurb": "An anonymous proof-of-personhood token that SKIPS the challenge — the frontier defense. "
+        "The honest caveat: the issuer mints freely here, so it is also the documented bypass.",
+    },
+]
+
+_BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
+
+
+def challenge(slug: str) -> dict[str, str] | None:
+    """Return the registry entry for ``slug``, or ``None`` if it is not a known gate."""
+    return _BY_SLUG.get(slug)
+
+
+# The arena component CSS — injected into the doc shell's <head> via render_doc_page(extra_head=...). The
+# layout / nav / footer / typography come from the shared DOC_CSS; only the widget-specific rules live here.
+ARENA_CSS = """<style>
+.arena-family{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;margin:.1rem 0 1rem}
+.note{color:var(--muted);font-size:.82rem}
+.crumb-back{margin:.2rem 0 .8rem;font-size:.8rem}
+.crumb-back a{color:var(--muted);text-decoration:none}.crumb-back a:hover{color:var(--fox)}
+.arena-stage{margin:1.1rem 0}
 .arena-run{font:inherit;font-weight:600;padding:.6rem 1.2rem;border:0;border-radius:8px;background:var(--fox);color:#fff;cursor:pointer;min-height:44px}
 .arena-run:disabled{opacity:.5;cursor:default}
-.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.25rem}
-.vcard{border:1px solid var(--line);border-radius:10px;padding:1rem}
-.vcard h3{margin:0 0 .4rem;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.verdicts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem}
+.vcard{border:1px solid var(--line);border-radius:10px;padding:1rem;background:var(--panel)}
+.vcard h3{margin:0 0 .4rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .vcard .big{font-size:1.4rem;font-weight:700}
-.vcard .pass{color:#1f9d55}.vcard .fail{color:var(--fox)}
-.vcard code{font-size:.8rem;word-break:break-all}
-.arena-log{font-family:ui-monospace,monospace;font-size:.78rem;background:rgba(127,127,127,.08);border-radius:8px;padding:.6rem .8rem;margin-top:.6rem;white-space:pre-wrap;min-height:1.4rem}
+.vcard .pass{color:var(--jade)}.vcard .fail{color:var(--fox)}
+.vcard code{font-size:.78rem;word-break:break-all;color:var(--fox)}
+.arena-log{font-family:var(--mono);font-size:.78rem;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;margin-top:.6rem;white-space:pre-wrap;min-height:1.4rem;color:var(--ink)}
 #ks-captcha{margin-top:.8rem}
 #ks-captcha img{vertical-align:middle;border:1px solid var(--line);border-radius:6px;background:#fff;margin-bottom:.5rem}
-#ks-captcha input{font:inherit;padding:.5rem;border:1px solid var(--line);border-radius:6px;min-height:44px;margin-right:.5rem}
+#ks-captcha input{font:inherit;padding:.5rem;border:1px solid var(--line-bright);border-radius:6px;min-height:44px;margin-right:.5rem;background:var(--panel);color:var(--ink)}
 #ks-captcha button{font:inherit;font-weight:600;padding:.5rem 1rem;border:0;border-radius:6px;background:var(--fox);color:#fff;cursor:pointer;min-height:44px}
-#ks-captcha .slider-track{position:relative;height:44px;max-width:100%;background:rgba(127,127,127,.12);border:1px solid var(--line);border-radius:8px;margin:.5rem 0;touch-action:none}
+#ks-captcha .slider-track{position:relative;height:44px;max-width:100%;background:var(--panel-2);border:1px solid var(--line-bright);border-radius:8px;margin:.6rem 0;touch-action:none}
 #ks-captcha .slider-gap{position:absolute;top:5px;height:34px;width:42px;border:2px dashed var(--muted);border-radius:6px;box-sizing:border-box}
 #ks-captcha .slider-handle{position:absolute;top:3px;height:38px;width:42px;background:var(--fox);border-radius:6px;cursor:grab;box-sizing:border-box;touch-action:none}
-#ks-captcha .tiles{display:grid;grid-template-columns:repeat(3,60px);gap:6px;margin:.5rem 0}
-#ks-captcha .tiles img{width:60px;height:60px;border:2px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
+#ks-captcha .tiles{display:grid;grid-template-columns:repeat(3,64px);gap:6px;margin:.6rem 0}
+#ks-captcha .tiles img{width:64px;height:64px;border:2px solid var(--line);border-radius:6px;cursor:pointer;background:#fff}
 #ks-captcha .tiles img.sel{border-color:var(--fox);box-shadow:0 0 0 2px var(--fox)}
-#ks-captcha .rot img{width:90px;height:90px;transition:transform .1s}
+#ks-captcha .rot img{width:96px;height:96px;transition:transform .1s;touch-action:none}
 @media (max-width:640px){.verdicts{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<nav class="top"><a class="brand" href="/">KITSUNE</a> <a href="/">Detector</a> <a href="/arena">Arena</a> <a href="/detections">Detections</a></nav>
-<main>
-<h1 class="page">The Arena</h1>
-<p class="lead">Faithful reproductions of <b>documented, open</b> web challenge mechanisms &mdash; a <b>managed-challenge ladder</b>
-(Turnstile-style escalation), proof-of-work gates in the <abbr title="TecharoHQ/anubis">anubis</abbr>,
-<abbr title="friendlycaptcha">friendly-captcha</abbr> and <abbr title="altcha-org/altcha">altcha</abbr> families,
-and self-hosted <b>CAPTCHA</b> gates: distorted-text image, arithmetic, honeypot, a GeeTest-style drag <b>slider</b>,
-an <b>image-select</b> tile grid, and a <b>rotate</b>-upright puzzle. Plus <b>PACT</b> &mdash; an anonymous
-proof-of-personhood token (Private Access Tokens) that <b>skips</b> the challenge, the frontier defense.
-Pick a gate, run it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and what does Kitsune&rsquo;s detector independently make of your client?</p>
-<p class="note">In the <b>managed</b> gate, the silent first step <i>is</i> the coherence detector: a coherent client passes with no puzzle; only an incoherent one is stepped up to a proof-of-work &mdash; exactly the documented managed-challenge ladder.</p>
-<p class="note">The punchline: a proof-of-work gate is a <b>cost</b> test, not a bot/human test. A script can solve the gate and still be convicted on the network layer &mdash; coherence is the durable signal, not cost.</p>
+</style>"""
 
-<section aria-label="challenge gate">
-  <h2>1 · Pick a gate</h2>
-  <div class="arena-gates" id="ks-gates">
-    <button data-gate="managed" aria-pressed="true">managed <span class="note">&middot; Turnstile-style ladder</span></button>
-    <button data-gate="hashcash" aria-pressed="false">hashcash <span class="note">&middot; SHA-256 leading-zeros</span></button>
-    <button data-gate="many-small" aria-pressed="false">many-small <span class="note">&middot; N sub-puzzles</span></button>
-    <button data-gate="memory-hard" aria-pressed="false">memory-hard <span class="note">&middot; Argon2id</span></button>
-    <button data-gate="text" aria-pressed="false">captcha&middot;text <span class="note">&middot; distorted image</span></button>
-    <button data-gate="math" aria-pressed="false">captcha&middot;math <span class="note">&middot; arithmetic</span></button>
-    <button data-gate="honeypot" aria-pressed="false">captcha&middot;honeypot <span class="note">&middot; hidden trap</span></button>
-    <button data-gate="slider" aria-pressed="false">captcha&middot;slider <span class="note">&middot; GeeTest-style drag</span></button>
-    <button data-gate="image-select" aria-pressed="false">captcha&middot;image <span class="note">&middot; select matching tiles</span></button>
-    <button data-gate="rotate" aria-pressed="false">captcha&middot;rotate <span class="note">&middot; rotate upright</span></button>
-    <button data-gate="pact" aria-pressed="false">pact <span class="note">&middot; personhood token (skip)</span></button>
-  </div>
-  <button class="arena-run" id="ks-run">Run the gate</button>
-  <div class="arena-log" id="ks-log">Ready.</div>
-  <div id="ks-captcha"></div>
-</section>
-
-<div class="verdicts">
-  <div class="vcard">
-    <h3>Gate verdict</h3>
-    <div class="big" id="ks-gate-verdict">&mdash;</div>
-    <p class="note" id="ks-gate-note">Did your solution satisfy the proof-of-work?</p>
-    <div id="ks-token"></div>
-  </div>
-  <div class="vcard">
-    <h3>Detector verdict</h3>
-    <div class="big" id="ks-det-verdict">&mdash;</div>
-    <p class="note" id="ks-det-note">What Kitsune&rsquo;s coherence engine makes of your client over the edge. For your full fingerprint, run the <a href="/">detector</a>.</p>
-  </div>
-</div>
-
-<details class="ks-disclose" style="margin-top:1.5rem"><summary>How this works &amp; the ethics</summary>
-<p class="note">The gate is a self-hosted service Kitsune runs (the owned <code>arena</code> service). It reproduces the
-<i>documented, open</i> proof-of-work mechanisms above &mdash; it <b>never</b> contacts, proxies to, or solves a third-party
-challenge (Cloudflare Turnstile, reCAPTCHA, hCaptcha). The reference solvers only ever talk to our own gates. The detector
-verdict comes from the same coherence engine that scores the home page, reading your client over the edge.</p></details>
-
-</main>
-<footer><p>Kitsune &mdash; the blue-team side of a bot detection &#8644; evasion lab. The arena gates are reproductions of documented open mechanisms for detection research; <b>not affiliated with any named vendor</b>, and they never contact third-party endpoints. <a href="https://github.com/datascry/kitsune">Source on GitHub</a>.</p></footer>
-
-<script>
+# The shared client. window.__ARENA__ = {slug, mode} is injected per page (see _gate_script); this script
+# runs ONLY that gate. Identical solver logic across pages — each page just dispatches its own mode.
+ARENA_JS = r"""
 (function(){
   "use strict";
+  var A = window.__ARENA__ || {slug:"managed", mode:"managed"};
+  var gate = A.slug;
   var enc = new TextEncoder();
   function hexToBytes(h){ var a=new Uint8Array(h.length/2); for(var i=0;i<a.length;i++){ a[i]=parseInt(h.substr(i*2,2),16);} return a; }
   function leadingZeroBits(d){ var n=0; for(var i=0;i<d.length;i++){ var b=d[i]; if(b===0){ n+=8; continue;} var x=b,c=0; while((x&0x80)===0){ c++; x=(x<<1)&0xff;} n+=c; break;} return n; }
-  // workDigest mirrors the Go gate: sha256( subNonce_bytes || nonce_bytes || uint64_le(counter) ).
   async function workDigest(subNonce, nonceBytes, counter){
     var sn=enc.encode(subNonce);
     var buf=new Uint8Array(sn.length+nonceBytes.length+8);
@@ -129,20 +175,13 @@ verdict comes from the same coherence engine that scores the home page, reading 
   }
   function subNonces(c){ if(c.class!=="many-small"){ return [""]; } var out=[]; var n=c.count||1; for(var i=0;i<n;i++){ out.push(i+":"); } return out; }
 
-  var gate="managed";
-  var CAPTCHA=["text","math","honeypot"]; // the self-hosted CAPTCHA families (human-answered, not auto-solved)
   var log=document.getElementById("ks-log");
-  function say(m){ log.textContent=m; }
-  document.getElementById("ks-gates").addEventListener("click", function(e){
-    var b=e.target.closest("button[data-gate]"); if(!b) return;
-    gate=b.getAttribute("data-gate");
-    Array.prototype.forEach.call(this.querySelectorAll("button"), function(x){ x.setAttribute("aria-pressed", String(x===b)); });
-  });
+  function say(m){ if(log) log.textContent=m; }
 
   // The detector panel reads the PUBLIC, cookie-scoped /arena/managed (only your OWN session's decision) —
   // not the admin-gated /verdict — so it works on the live site too.
   async function fetchDetectorVerdict(){
-    var out=document.getElementById("ks-det-verdict");
+    var out=document.getElementById("ks-det-verdict"); if(!out) return;
     try{
       var r=await fetch("/arena/managed");
       if(!r.ok){ out.textContent="—"; return; }
@@ -153,10 +192,9 @@ verdict comes from the same coherence engine that scores the home page, reading 
     }catch(_){ out.textContent="—"; }
   }
 
-  // Solve a PoW challenge in-browser (SHA-256 families) and verify it with the gate. Returns true on PASS.
   async function solveAndVerify(c, gv, gn, tok){
     if(c.class==="memory-hard"){
-      say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small here.\\nChallenge: "+JSON.stringify(c));
+      say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small.\nChallenge: "+JSON.stringify(c));
       gn.textContent="Not solved in-browser — memory-hard is the GPU/ASIC-resistant family."; return false;
     }
     var nb=hexToBytes(c.nonce), subs=subNonces(c), counters=[];
@@ -170,8 +208,6 @@ verdict comes from the same coherence engine that scores the home page, reading 
     gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="The gate rejected the solution."; say("Gate rejected the solution."); return false;
   }
 
-  // CAPTCHA flow: fetch a self-hosted challenge, render it (image/prompt + answer box, or a honeypot trap),
-  // and verify the human's answer. A challenge is a Turing test, not a coherence test — see the detector panel.
   async function runCaptcha(kind, gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     say("Requesting a "+kind+" CAPTCHA…");
@@ -185,7 +221,7 @@ verdict comes from the same coherence engine that scores the home page, reading 
     if(kind==="honeypot"){
       var hn=document.createElement("p"); hn.className="note"; hn.textContent="(A hidden field '"+c.field+"' must stay empty — a bot that fills every field trips it.)"; wrap.appendChild(hn);
       submit.textContent="Submit form";
-      submit.onclick=function(){ verifyCaptcha(kind, c.id, "", gv, gn, tok); }; // the trap is left empty
+      submit.onclick=function(){ verifyCaptcha(kind, c.id, "", gv, gn, tok); };
     } else {
       var inp=document.createElement("input"); inp.type="text"; inp.autocomplete="off"; inp.placeholder="Your answer"; wrap.appendChild(inp);
       submit.textContent="Submit answer";
@@ -202,8 +238,6 @@ verdict comes from the same coherence engine that scores the home page, reading 
     document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
   }
 
-  // Slider (GeeTest-style): drag the block into the gap. The gate checks the drop position AND the drag
-  // trajectory's velocity variation — a constant-velocity glide or a teleport is rejected (the on-thesis part).
   async function runSlider(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     say("Requesting a slider challenge…");
@@ -226,7 +260,6 @@ verdict comes from the same coherence engine that scores the home page, reading 
     say("Drag the block into the gap.");
   }
 
-  // Image-select (reCAPTCHA-v2 category): pick the tiles matching the prompt. Tiles are unlabelled owned SVGs.
   async function runImageSelect(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch("/arena/captcha?kind=image-select")).json();
@@ -239,8 +272,7 @@ verdict comes from the same coherence engine that scores the home page, reading 
     submit.onclick=function(){ var idx=Object.keys(sel).map(Number).sort(function(a,b){return a-b;}).join(","); verifyCaptcha("image-select", c.id, idx, gv, gn, tok); };
     box.appendChild(submit); say("Select the matching tiles and verify.");
   }
-  // Rotate (Arkose/FunCaptcha category): DRAG the arrow upright. The gate scores the rotation trajectory, so
-  // a bare angle won't pass — you must actually drag it round (variable angular velocity = human).
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch("/arena/rotate")).json();
@@ -248,7 +280,7 @@ verdict comes from the same coherence engine that scores the home page, reading 
     var wrap=document.createElement("div"); wrap.className="rot";
     var img=document.createElement("img"); img.src=c.image; img.alt="rotate target"; img.draggable=false; img.style.transform="rotate("+c.angle+"deg)"; wrap.appendChild(img); box.appendChild(wrap);
     var dragging=false, t0=0, traj=[], cur=c.angle;
-    function angleAt(e){ var r=img.getBoundingClientRect(); var a=Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2))*180/Math.PI; return a+90; } // cursor-up ⇒ 0°
+    function angleAt(e){ var r=img.getBoundingClientRect(); var a=Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2))*180/Math.PI; return a+90; }
     img.addEventListener("pointerdown", function(e){ dragging=true; t0=performance.now(); traj=[]; img.setPointerCapture(e.pointerId); e.preventDefault(); });
     img.addEventListener("pointermove", function(e){ if(!dragging) return; cur=angleAt(e); img.style.transform="rotate("+cur+"deg)"; traj.push({t:performance.now()-t0, angle:cur}); });
     img.addEventListener("pointerup", async function(){ if(!dragging) return; dragging=false; say("Verifying the rotation…");
@@ -260,9 +292,6 @@ verdict comes from the same coherence engine that scores the home page, reading 
     say("Drag the arrow to point up.");
   }
 
-  // PACT / Private Access Token: obtain an anonymous proof-of-personhood token and present it to SKIP the
-  // challenge. The honest caveat: the issuer mints freely here, so any client (incl. this one) can skip — and
-  // the detector still convicts a no-JS client. A token is only as strong as the issuer's personhood proof.
   async function runPACT(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     say("Requesting an anonymous personhood token from the issuer…");
@@ -276,49 +305,152 @@ verdict comes from the same coherence engine that scores the home page, reading 
     fetchDetectorVerdict();
   }
 
-  document.getElementById("ks-run").addEventListener("click", async function(){
-    var btn=this; btn.disabled=true;
-    var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
-    gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
-    try{
-      if(gate==="pact"){ await runPACT(gv, gn, tok); btn.disabled=false; return; }
-      if(gate==="slider"){ await runSlider(gv, gn, tok); btn.disabled=false; return; }
-      if(gate==="image-select"){ await runImageSelect(gv, gn, tok); btn.disabled=false; return; }
-      if(gate==="rotate"){ await runRotate(gv, gn, tok); btn.disabled=false; return; }
-      if(CAPTCHA.indexOf(gate)>=0){ await runCaptcha(gate, gv, gn, tok); btn.disabled=false; return; }
-      if(gate==="managed"){
-        // The Turnstile-style ladder: the SILENT step is the detector's coherence verdict; only an
-        // incoherent client is stepped up to a proof-of-work.
-        say("Managed challenge — reading your client silently…");
-        var m=await (await fetch("/arena/managed?step=1")).json();
-        if(m.decision==="allow"){
-          gv.textContent="ALLOWED"; gv.className="big pass";
-          gn.textContent="Passed silently — your client looks coherent ("+m.label+"). No puzzle shown, like a managed challenge's non-interactive success.";
-          say("Allowed silently (label "+m.label+").");
-        } else {
-          gn.textContent="Stepping up — your client looks "+(m.label||"unknown")+", so the ladder escalates to a proof-of-work.";
-          say("Step-up: solving the escalated proof-of-work…");
-          if(m.challenge){ await solveAndVerify(m.challenge, gv, gn, tok); }
-          else { gv.textContent="STEP-UP"; gv.className="big fail"; say("Step-up required, but the PoW gate is unavailable."); }
-        }
-      } else {
-        // A modest difficulty keeps the in-browser SHA-256 solve near-instant; the gate accepts the param.
-        var diff = gate==="many-small" ? 10 : 16;
-        say("Requesting a "+gate+" challenge…");
-        var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
-        if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); btn.disabled=false; return; }
-        await solveAndVerify(await cr.json(), gv, gn, tok);
-      }
-    }catch(err){ say("Error: "+(err&&err.message||err)); }
-    btn.disabled=false;
-    fetchDetectorVerdict();
-  });
+  async function runManaged(gv, gn, tok){
+    say("Managed challenge — reading your client silently…");
+    var m=await (await fetch("/arena/managed?step=1")).json();
+    if(m.decision==="allow"){
+      gv.textContent="ALLOWED"; gv.className="big pass";
+      gn.textContent="Passed silently — your client looks coherent ("+m.label+"). No puzzle shown, like a managed challenge's non-interactive success.";
+      say("Allowed silently (label "+m.label+").");
+    } else {
+      gn.textContent="Stepping up — your client looks "+(m.label||"unknown")+", so the ladder escalates to a proof-of-work.";
+      say("Step-up: solving the escalated proof-of-work…");
+      if(m.challenge){ await solveAndVerify(m.challenge, gv, gn, tok); }
+      else { gv.textContent="STEP-UP"; gv.className="big fail"; say("Step-up required, but the PoW gate is unavailable."); }
+    }
+  }
 
+  var runBtn=document.getElementById("ks-run");
+  if(runBtn){
+    runBtn.addEventListener("click", async function(){
+      var btn=this; btn.disabled=true;
+      var gv=document.getElementById("ks-gate-verdict"), gn=document.getElementById("ks-gate-note"), tok=document.getElementById("ks-token");
+      gv.textContent="—"; gv.className="big"; tok.innerHTML=""; document.getElementById("ks-captcha").innerHTML="";
+      try{
+        if(A.mode==="pact"){ await runPACT(gv, gn, tok); }
+        else if(A.mode==="slider"){ await runSlider(gv, gn, tok); }
+        else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
+        else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
+        else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
+        else if(A.mode==="managed"){ await runManaged(gv, gn, tok); }
+        else {
+          var diff = gate==="many-small" ? 10 : 16;
+          say("Requesting a "+gate+" challenge…");
+          var cr=await fetch("/arena/challenge?gate="+encodeURIComponent(gate)+"&difficulty="+diff);
+          if(!cr.ok){ say("Gate unavailable ("+cr.status+")."); btn.disabled=false; return; }
+          await solveAndVerify(await cr.json(), gv, gn, tok);
+        }
+      }catch(err){ say("Error: "+(err&&err.message||err)); }
+      btn.disabled=false;
+      fetchDetectorVerdict();
+    });
+  }
   fetchDetectorVerdict();
 })();
-</script>
-</body>
-</html>
 """
 
-ARENA_PAGE = ARENA_PAGE.replace("/*__SHARED_CSS__*/", SHARED_CSS.rstrip())
+# Reused HTML fragments (trusted markup; inserted raw into the doc-shell <main>).
+_VERDICTS_HTML = """
+<div class="verdicts">
+  <div class="vcard">
+    <h3>Gate verdict</h3>
+    <div class="big" id="ks-gate-verdict">&mdash;</div>
+    <p class="note" id="ks-gate-note">Did your solution satisfy the challenge?</p>
+    <div id="ks-token"></div>
+  </div>
+  <div class="vcard">
+    <h3>Detector verdict</h3>
+    <div class="big" id="ks-det-verdict">&mdash;</div>
+    <p class="note" id="ks-det-note">What Kitsune&rsquo;s coherence engine independently makes of your client over the edge. For your full fingerprint, run the <a href="/">detector</a>.</p>
+  </div>
+</div>
+"""
+
+_ETHICS_HTML = """
+<details class="ks-disclose" style="margin-top:1.5rem"><summary>How this works &amp; the ethics</summary>
+<p class="note">The gate is a self-hosted service Kitsune runs (the owned <code>arena</code> service). It reproduces the
+<i>documented, open</i> mechanism above &mdash; it <b>never</b> contacts, proxies to, or solves a third-party
+challenge (Cloudflare Turnstile, reCAPTCHA, hCaptcha). The reference solvers only ever talk to our own gates. The detector
+verdict comes from the same coherence engine that scores the home page, reading your client over the edge.</p></details>
+"""
+
+_DESC = (
+    "Faithful reproductions of documented open web challenge mechanisms — proof-of-work, CAPTCHA, "
+    "slider, rotate, and a PACT personhood token. Solve a gate in your browser and see what Kitsune's "
+    "bot detector independently makes of your client."
+)
+
+
+def _gate_script(slug: str, mode: str) -> str:
+    """The per-page <script>: pin window.__ARENA__ to this gate, then run the shared arena JS."""
+    cfg = json.dumps({"slug": slug, "mode": mode})
+    return f"<script>window.__ARENA__={cfg};{ARENA_JS}</script>"
+
+
+def arena_index_html() -> str:
+    """The ``/arena`` index: the thesis intro + a card grid linking to every challenge's own page."""
+    cards = "".join(
+        f'<a class="card" href="/arena/gate/{c["slug"]}">'
+        f'<div class="cn">{c["label"]}</div>'
+        f'<div class="cm">{c["family"]}</div>'
+        f'<div class="cd">{c["blurb"]}</div></a>'
+        for c in CHALLENGES
+    )
+    body = f"""
+<h1>The Arena</h1>
+<p class="lead">Faithful, self-hosted reproductions of <b>documented, open</b> web challenge mechanisms.
+Pick a gate, solve it in your browser, and see <b>two verdicts at once</b>: did you pass the gate &mdash; and
+what does Kitsune&rsquo;s detector independently make of your client over the edge?</p>
+<p class="note">The punchline the arena makes live: a solved challenge is a <b>cost</b> or <b>Turing</b> test, not a
+bot/human discriminator. A script can pass any gate here and still be convicted on the network layer &mdash;
+<b>coherence + attestation</b> is the durable signal, not the puzzle.</p>
+<h2>Pick a challenge</h2>
+<div class="cards">{cards}</div>
+{_ETHICS_HTML}
+"""
+    return render_doc_page(
+        title="The Arena — challenge the gates, meet the detector",
+        description=_DESC,
+        canonical_path="/arena",
+        body_html=body,
+        page_type="CollectionPage",
+        keywords="captcha, proof of work, bot detection, challenge, turnstile, recaptcha, arena",
+        extra_head=ARENA_CSS,
+    )
+
+
+def arena_gate_html(slug: str) -> str | None:
+    """A single challenge's page at ``/arena/gate/<slug>`` — its widget + the dual verdict. ``None`` if unknown."""
+    c = challenge(slug)
+    if c is None:
+        return None
+    run_label = {
+        "managed": "Run the silent check",
+        "pact": "Get a token &amp; skip",
+    }.get(c["mode"], "Run the challenge")
+    body = f"""
+<p class="crumb-back"><a href="/arena">&larr; All challenges</a></p>
+<h1>{c["label"]}</h1>
+<p class="arena-family">{c["family"]}</p>
+<p class="lead">{c["blurb"]}</p>
+<section class="arena-stage" aria-label="challenge">
+  <button class="arena-run" id="ks-run">{run_label}</button>
+  <div class="arena-log" id="ks-log">Ready.</div>
+  <div id="ks-captcha"></div>
+</section>
+{_VERDICTS_HTML}
+{_ETHICS_HTML}
+{_gate_script(c["slug"], c["mode"])}
+"""
+    return render_doc_page(
+        title=c["label"],
+        description=f"{c['blurb']} A self-hosted reproduction of the {c['family']} mechanism.",
+        canonical_path=f"/arena/gate/{slug}",
+        body_html=body,
+        page_type="WebPage",
+        extra_head=ARENA_CSS,
+    )
+
+
+#: Canonical URLs for every gate page, for the sitemap.
+ARENA_URLS: list[str] = [f"{SITE_ORIGIN}/arena"] + [f"{SITE_ORIGIN}/arena/gate/{c['slug']}" for c in CHALLENGES]

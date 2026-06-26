@@ -25,12 +25,15 @@ _SECTION_NAMES: dict[str, str] = {
     "detections": "Detection catalog",
     "how-it-works": "How it works",
     "research": "Research",
+    "arena": "Arena",
+    "gate": "Challenge",
 }
 
 #: Top-nav links shared across the doc pages (and mirrored in the live page's nav). Ordered to follow the
 #: visitor journey: test → understand → explore the evidence catalogs → research.
 NAV_LINKS: list[tuple[str, str]] = [
     ("/", "Test"),
+    ("/arena", "Arena"),
     ("/how-it-works", "How it works"),
     ("/matrix", "Matrix"),
     ("/detections", "Detections"),
@@ -266,11 +269,13 @@ def render_doc_page(
     page_type: str = "WebPage",
     keywords: str | None = None,
     extra_ld: list[dict[str, Any]] | None = None,
+    extra_head: str = "",
 ) -> str:
     """Wrap ``body_html`` in the shared shell with a full per-page SEO head (noindex for thin pages).
 
     ``page_type`` sets the JSON-LD type (WebPage / CollectionPage / TechArticle); ``keywords`` and
-    ``extra_ld`` enrich the structured data for catalog and drill-down pages.
+    ``extra_ld`` enrich the structured data for catalog and drill-down pages. ``extra_head`` injects
+    page-specific markup before ``</head>`` (e.g. a component ``<style>`` block for the arena widgets).
     """
     t, d = _esc(title), _esc(description)
     # Escape the canonical/OG url: canonical_path can carry a path param (drill-down slug/rule id), so
@@ -302,7 +307,7 @@ def render_doc_page(
         '<link rel="icon" href="/favicon.ico" sizes="any">'
         '<link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">'
         f"{_ld_json(title, description, canonical_path, page_type, keywords, extra_ld)}"
-        f"<style>{DOC_CSS}</style></head><body>"
+        f"<style>{DOC_CSS}</style>{extra_head}</head><body>"
         '<a class="skip-link" href="#main">Skip to content</a>'
         f"{_nav(canonical_path)}{_crumbs_html(canonical_path, title)}"
         f'<main id="main" class="doc">{body_html}</main>'
