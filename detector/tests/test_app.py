@@ -269,15 +269,25 @@ def test_arena_index_renders_with_shell(client: TestClient) -> None:
     assert "never" in body and "third-party" in body
 
 
-def test_arena_gate_pages_render(client: TestClient) -> None:
-    # Each challenge is its own page with the run button + the dual (gate vs detector) verdict, on the shell.
+def test_arena_gate_pages_auto_serve(client: TestClient) -> None:
+    # Each challenge is its own page that AUTO-SERVES on load (no run button) + the dual verdict, on the shell.
     for slug in ("managed", "hashcash", "text", "slider", "rotate", "image-select", "pact"):
         resp = client.get(f"/arena/gate/{slug}")
         assert resp.status_code == 200, slug
         body = resp.text
-        assert 'id="ks-run"' in body and 'id="ks-det-verdict"' in body
+        assert 'id="ks-run"' not in body  # no button — the challenge serves itself
+        assert 'id="ks-log"' in body and 'id="ks-captcha"' in body and 'id="ks-det-verdict"' in body
+        assert "start();" in body and "auto-serves on load" in body  # the page runs the gate on load
         assert f'"slug": "{slug}"' in body  # the per-page __ARENA__ config pins this gate
         assert 'class="brand"' in body  # the shared nav/shell is present
+
+
+def test_arena_gate_page_lists_endpoints(client: TestClient) -> None:
+    # A bypass tester gets the gate's HTTP endpoints to script against, on each page.
+    body = client.get("/arena/gate/text").text
+    assert "/arena/captcha?kind=text" in body and "/arena/captcha/verify" in body
+    sl = client.get("/arena/gate/slider").text
+    assert "/arena/slider" in sl and "/arena/slider/verify" in sl
 
 
 def test_arena_unknown_gate_404s(client: TestClient) -> None:
