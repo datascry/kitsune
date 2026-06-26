@@ -97,12 +97,23 @@ CHALLENGES: list[dict[str, str]] = [
     },
     {
         "slug": "image-select",
-        "label": "Image-select grid",
+        "label": "Image-select grid (emoji)",
         "family": "CAPTCHA · reCAPTCHA-v2 style",
         "mode": "image-select",
+        "kind": "image-select",
         "blurb": 'Pick every tile matching the prompt ("select every animal") from a grid of real emoji '
         "glyphs (Noto Emoji, OFL) — a category-recognition task that needs a real CV/VLM, not a shape "
         "classifier.",
+    },
+    {
+        "slug": "doodle",
+        "label": "Image-select grid (doodles)",
+        "family": "CAPTCHA · reCAPTCHA-v2 style",
+        "mode": "image-select",
+        "kind": "image-doodle",
+        "blurb": 'Pick every tile matching the prompt ("select every animal") from a grid of hand-drawn '
+        "sketches (Google Quick, Draw!, CC BY 4.0) — open wobbly polylines with huge intra-class variance, "
+        "even harder for CV than the emoji grid.",
     },
     {
         "slug": "rotate",
@@ -303,14 +314,15 @@ ARENA_JS = r"""
 
   async function runImageSelect(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
-    var c=await (await fetch(withLevel("/arena/captcha?kind=image-select"))).json();
+    var kind=A.kind||"image-select"; // emoji grid or Quick-Draw doodle grid
+    var c=await (await fetch(withLevel("/arena/captcha?kind="+kind))).json();
     var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
     var grid=document.createElement("div"); grid.className="tiles"; var sel={};
     c.tiles.forEach(function(src,i){ var img=document.createElement("img"); img.src=src; img.alt="tile "+(i+1);
       img.onclick=function(){ if(sel[i]){ delete sel[i]; img.classList.remove("sel"); } else { sel[i]=1; img.classList.add("sel"); } }; grid.appendChild(img); });
     box.appendChild(grid);
     var submit=document.createElement("button"); submit.textContent="Verify selection";
-    submit.onclick=function(){ var idx=Object.keys(sel).map(Number).sort(function(a,b){return a-b;}).join(","); verifyCaptcha("image-select", c.id, idx, gv, gn, tok); };
+    submit.onclick=function(){ var idx=Object.keys(sel).map(Number).sort(function(a,b){return a-b;}).join(","); verifyCaptcha(kind, c.id, idx, gv, gn, tok); };
     box.appendChild(submit); say("Select the matching tiles and verify.");
   }
 
@@ -482,7 +494,15 @@ def _has_levels(c: dict[str, str]) -> bool:
 
 def _gate_script(c: dict[str, str]) -> str:
     """The per-page <script>: pin window.__ARENA__ to this gate, then run the shared arena JS."""
-    cfg = json.dumps({"slug": c["slug"], "mode": c["mode"], "level": "medium", "levels": _has_levels(c)})
+    cfg = json.dumps(
+        {
+            "slug": c["slug"],
+            "mode": c["mode"],
+            "kind": c.get("kind", c["mode"]),  # image-select gates carry the captcha kind (emoji vs doodle)
+            "level": "medium",
+            "levels": _has_levels(c),
+        }
+    )
     return f"<script>window.__ARENA__={cfg};{ARENA_JS}</script>"
 
 
@@ -496,7 +516,8 @@ def _endpoints(c: dict[str, str]) -> list[tuple[str, str]]:
     if mode == "captcha":
         return [("GET", f"/arena/captcha?kind={slug}"), ("POST", "/arena/captcha/verify")]
     if mode == "image-select":
-        return [("GET", "/arena/captcha?kind=image-select"), ("POST", "/arena/captcha/verify")]
+        kind = c.get("kind", "image-select")
+        return [("GET", f"/arena/captcha?kind={kind}"), ("POST", "/arena/captcha/verify")]
     if mode == "pact":
         return [("GET", "/arena/pact"), ("POST", "/arena/pact/verify")]
     return [("GET", f"/arena/{slug}"), ("POST", f"/arena/{slug}/verify")]  # slider, rotate

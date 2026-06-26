@@ -118,6 +118,25 @@ func TestImageSelect(t *testing.T) {
 	}
 }
 
+func TestImageDoodle(t *testing.T) {
+	// image-doodle: Quick-Draw sketch tiles. Correct index set passes; wrong/empty fail. Tiles are PNGs.
+	c, ans := MintCaptcha(CaptchaImageDoodle, LevelMedium)
+	if len(c.Tiles) != 9 || ans == "" {
+		t.Fatalf("bad image-doodle challenge: tiles=%d ans=%q", len(c.Tiles), ans)
+	}
+	for _, tile := range c.Tiles {
+		if !strings.HasPrefix(tile, "data:image/png;base64,") {
+			t.Fatalf("image-doodle tile is not a raster PNG: %.40s", tile)
+		}
+	}
+	if !CheckCaptcha(CaptchaImageDoodle, ans, ans) {
+		t.Fatal("correct image-doodle set rejected")
+	}
+	if CheckCaptcha(CaptchaImageDoodle, ans, "") || CheckCaptcha(CaptchaImageDoodle, ans, "99") {
+		t.Fatal("wrong/empty image-doodle set accepted")
+	}
+}
+
 func TestCaptchaLevelsScaleDifficulty(t *testing.T) {
 	// text: easy is 4 confusable-free chars, hard is 6 with the confusable alphabet allowed.
 	easy, ea := MintCaptcha(CaptchaText, LevelEasy)

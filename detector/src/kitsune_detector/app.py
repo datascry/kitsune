@@ -152,7 +152,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 #: spine runs fine without it). Gate names are whitelisted; the gate itself only ever talks to itself.
 ARENA_URL = os.environ.get("KITSUNE_ARENA_URL", "").rstrip("/")
 _ARENA_GATES = frozenset({"hashcash", "many-small", "memory-hard", "cap"})
-_ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot", "image-select"})
+_ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot", "image-select", "image-doodle"})
 #: Difficulty level (a cost dial — see arena/levels.go). Anything else falls back to medium, mirroring the
 #: gate's own ParseLevel, so a junk ?level= never errors — it just gets the default.
 _ARENA_LEVELS = frozenset({"easy", "medium", "hard"})

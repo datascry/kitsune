@@ -84,6 +84,8 @@ func captchaKindOf(s string) CaptchaKind {
 		return CaptchaHoneypot
 	case "image-select":
 		return CaptchaImageSelect
+	case "image-doodle":
+		return CaptchaImageDoodle
 	default:
 		return CaptchaText
 	}
