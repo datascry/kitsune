@@ -113,6 +113,19 @@ jobs:
       - run: go vet ./...
       - run: go test ./... -cover
 
+  arena-solver-ocr:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: evaders/arena-solver-ocr } }
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with: { python-version: "3.12" }
+      # Unit deps only — the TrOCR recognizer (transformers/torch) is tier-2 IO, off the unit gate.
+      - run: pip install ruff mypy pytest pytest-cov httpx
+      - run: ruff check .
+      - run: PYTHONPATH=src mypy --strict src/kitsune_arena_ocr/solver.py src/kitsune_arena_ocr/__init__.py
+      - run: PYTHONPATH=src python -m pytest tests/ -q
+
   collector:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: collector } }
