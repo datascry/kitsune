@@ -17,7 +17,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"html"
+	"math"
 	"math/big"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -26,10 +29,18 @@ import (
 type CaptchaKind string
 
 const (
-	CaptchaText     CaptchaKind = "text"     // distorted-text image (server-rendered SVG)
-	CaptchaMath     CaptchaKind = "math"     // simple arithmetic
-	CaptchaHoneypot CaptchaKind = "honeypot" // hidden trap field that must stay empty
+	CaptchaText        CaptchaKind = "text"         // distorted-text image (server-rendered SVG)
+	CaptchaMath        CaptchaKind = "math"         // simple arithmetic
+	CaptchaHoneypot    CaptchaKind = "honeypot"     // hidden trap field that must stay empty
+	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (reCAPTCHA-v2 category)
+	CaptchaRotate      CaptchaKind = "rotate"       // rotate an object upright (Arkose/FunCaptcha category)
 )
+
+// : rotate: how close (degrees) to upright counts as solved.
+const rotateTolDeg = 18
+
+// : image-select shapes — owned, generic SVG primitives (no vendor imagery).
+var imageShapes = []string{"circle", "square", "triangle", "star"}
 
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
 const captchaAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
@@ -40,8 +51,10 @@ type Captcha struct {
 	Kind   CaptchaKind `json:"kind"`
 	ID     string      `json:"id"`              // single-use nonce
 	Prompt string      `json:"prompt"`          // human instruction
-	Image  string      `json:"image,omitempty"` // text: a data: SVG of the distorted code (answer not in plaintext)
+	Image  string      `json:"image,omitempty"` // text/rotate: a data: SVG (text: distorted code; rotate: the object)
 	Field  string      `json:"field,omitempty"` // honeypot: the trap field name that must stay empty to pass
+	Tiles  []string    `json:"tiles,omitempty"` // image-select: 9 owned SVG tiles (unlabelled — must be classified)
+	Angle  int         `json:"angle,omitempty"` // rotate: the initial rotation the user must undo to reach upright
 }
 
 // captchaStore holds id -> expected answer for single-use verification (the text/math families need the
@@ -112,8 +125,33 @@ func svgFor(code string) string {
 	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23", "\n", "").Replace(svg)
 }
 
+// shapeSVG renders one owned, generic primitive shape as a data: SVG (filled, unlabelled — a bot must
+// classify the geometry, not read a name).
+func shapeSVG(shape string) string {
+	var body string
+	switch shape {
+	case "square":
+		body = `<rect x="12" y="12" width="36" height="36" fill="#555"/>`
+	case "triangle":
+		body = `<polygon points="30,8 52,50 8,50" fill="#555"/>`
+	case "star":
+		body = `<polygon points="30,6 36,24 55,24 40,36 45,54 30,42 15,54 20,36 5,24 24,24" fill="#555"/>`
+	default: // circle
+		body = `<circle cx="30" cy="30" r="22" fill="#555"/>`
+	}
+	svg := `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60">` + body + `</svg>`
+	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23", "\n", "").Replace(svg)
+}
+
+// arrowSVG renders an upright arrow (pointing up); the page rotates it by the challenge's initial angle, and
+// the human rotates it back to upright.
+func arrowSVG() string {
+	svg := `<svg xmlns="http://www.w3.org/2000/svg" width="90" height="90"><polygon points="45,10 70,55 50,55 50,80 40,80 40,55 20,55" fill="#7a5cff"/></svg>`
+	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23").Replace(svg)
+}
+
 // MintCaptcha builds a fresh challenge of the kind and returns it with the expected answer (the caller stores
-// the answer for verify; for honeypot the answer is "" — the trap field must come back empty).
+// the answer for verify; for honeypot/rotate the stored answer is "" — those verify structurally).
 func MintCaptcha(kind CaptchaKind) (Captcha, string) {
 	id := randHex(16)
 	switch kind {
@@ -122,19 +160,81 @@ func MintCaptcha(kind CaptchaKind) (Captcha, string) {
 		return Captcha{Kind: CaptchaMath, ID: id, Prompt: fmt.Sprintf("What is %d + %d?", a, b)}, fmt.Sprintf("%d", a+b)
 	case CaptchaHoneypot:
 		return Captcha{Kind: CaptchaHoneypot, ID: id, Prompt: "Submit without filling the hidden field.", Field: "website_url"}, ""
+	case CaptchaImageSelect:
+		target := imageShapes[randInt(int64(len(imageShapes)))]
+		tiles := make([]string, 9)
+		var want []int
+		for i := range tiles {
+			s := imageShapes[randInt(int64(len(imageShapes)))]
+			tiles[i] = shapeSVG(s)
+			if s == target {
+				want = append(want, i)
+			}
+		}
+		if len(want) == 0 { // guarantee at least one target tile
+			tiles[0] = shapeSVG(target)
+			want = []int{0}
+		}
+		return Captcha{Kind: CaptchaImageSelect, ID: id, Prompt: "Select every " + target + ".", Tiles: tiles}, joinInts(want)
+	case CaptchaRotate:
+		angle := 40 + int(randInt(281)) // 40..320° off upright (well outside the solve tolerance)
+		return Captcha{Kind: CaptchaRotate, ID: id, Prompt: "Rotate the arrow to point straight up.", Image: arrowSVG(), Angle: angle}, ""
 	default:
 		code := randCode(5)
 		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: svgFor(code)}, strings.ToUpper(code)
 	}
 }
 
+func joinInts(xs []int) string {
+	sort.Ints(xs)
+	parts := make([]string, len(xs))
+	for i, x := range xs {
+		parts[i] = strconv.Itoa(x)
+	}
+	return strings.Join(parts, ",")
+}
+
+// normIndexSet sorts + dedupes a comma-separated index list into a canonical form for set comparison.
+func normIndexSet(s string) string {
+	seen := map[int]bool{}
+	var xs []int
+	for _, p := range strings.Split(s, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		n, err := strconv.Atoi(p)
+		if err != nil || seen[n] {
+			continue
+		}
+		seen[n] = true
+		xs = append(xs, n)
+	}
+	return joinInts(xs)
+}
+
 // CheckCaptcha reports whether submitted answers the challenge: case-insensitive exact match for text/math;
 // for honeypot the submitted trap-field value must be EMPTY (a bot that fills every field fails).
 func CheckCaptcha(kind CaptchaKind, expected, submitted string) bool {
-	if kind == CaptchaHoneypot {
+	switch kind {
+	case CaptchaHoneypot:
 		return strings.TrimSpace(submitted) == ""
+	case CaptchaImageSelect:
+		return normIndexSet(expected) == normIndexSet(submitted) && normIndexSet(submitted) != ""
+	case CaptchaRotate:
+		// submitted is the FINAL displayed angle; pass when it is within tolerance of upright (0° mod 360).
+		f, err := strconv.ParseFloat(strings.TrimSpace(submitted), 64)
+		if err != nil {
+			return false
+		}
+		d := math.Mod(math.Abs(f), 360)
+		if d > 180 {
+			d = 360 - d
+		}
+		return d <= rotateTolDeg
+	default:
+		return strings.EqualFold(strings.TrimSpace(submitted), strings.TrimSpace(expected))
 	}
-	return strings.EqualFold(strings.TrimSpace(submitted), strings.TrimSpace(expected))
 }
 
 // SignCaptchaToken mints the HMAC pass token for a solved CAPTCHA (verifiable only by the issuing gate).

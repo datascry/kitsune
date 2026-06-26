@@ -145,7 +145,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 #: spine runs fine without it). Gate names are whitelisted; the gate itself only ever talks to itself.
 ARENA_URL = os.environ.get("KITSUNE_ARENA_URL", "").rstrip("/")
 _ARENA_GATES = frozenset({"hashcash", "many-small", "memory-hard", "cap"})
-_ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot"})
+_ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot", "image-select", "rotate"})
 #: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
 #: it reaches any HTML/SEO sink both 404s junk URLs and removes the reflected-XSS taint (no <, ", etc.).
 _SAFE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,80}")

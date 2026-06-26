@@ -43,6 +43,10 @@ func captchaKindOf(s string) CaptchaKind {
 		return CaptchaMath
 	case "honeypot":
 		return CaptchaHoneypot
+	case "image-select":
+		return CaptchaImageSelect
+	case "rotate":
+		return CaptchaRotate
 	default:
 		return CaptchaText
 	}
