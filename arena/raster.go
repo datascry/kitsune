@@ -36,8 +36,9 @@ func init() {
 }
 
 // rasterText renders code as a distorted-text PNG (warped + noisy), returned as a base64 data URI. The
-// plaintext answer exists only as pixels — there is no <text> element to parse.
-func rasterText(code string) string {
+// plaintext answer exists only as pixels — there is no <text> element to parse. The difficulty knobs scale
+// the warp amplitude, the noise density and the stroke count (a harder level is heavier to OCR).
+func rasterText(code string, k textKnobs) string {
 	w, h := 30*len(code)+30, 64
 	base := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(base, base.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
@@ -51,7 +52,7 @@ func rasterText(code string) string {
 		}
 	}
 	// Per-column vertical sine warp — defeats naive segmentation/OCR and any markup reading.
-	amp := 4.0 + float64(randInt(3))
+	amp := k.WarpAmp + float64(randInt(3))
 	freq := 0.04 + float64(randInt(4))/100.0
 	phase := float64(randInt(628)) / 100.0
 	out := image.NewRGBA(base.Bounds())
@@ -65,13 +66,13 @@ func rasterText(code string) string {
 			}
 		}
 	}
-	// Noise: a few strokes + speckle so background subtraction is harder.
+	// Noise: a few strokes + speckle so background subtraction is harder (count scales with difficulty).
 	grey := color.RGBA{150, 150, 150, 255}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < k.Lines; i++ {
 		x0, y0, x1, y1 := int(randInt(int64(w))), int(randInt(int64(h))), int(randInt(int64(w))), int(randInt(int64(h)))
 		drawLine(out, x0, y0, x1, y1, grey)
 	}
-	for i := 0; i < 70; i++ {
+	for i := 0; i < k.Speckle; i++ {
 		out.Set(int(randInt(int64(w))), int(randInt(int64(h))), grey)
 	}
 	var buf bytes.Buffer
@@ -83,7 +84,7 @@ func rasterText(code string) string {
 // CLASSIFIED from pixels (computer vision), not read from SVG markup. (Honest limit: four primitives are still
 // CV-tractable; a production image-select uses a photo/ML set we will not reproduce. This kills the trivial
 // markup-parse cheat, which is the shortcut that mattered.)
-func rasterShape(shape string) string {
+func rasterShape(shape string, noise int) string {
 	const sz = 60
 	cx, cy := 29.5, 29.5
 	theta := float64(randInt(360)) * math.Pi / 180.0
@@ -111,7 +112,7 @@ func rasterShape(shape string) string {
 		}
 	}
 	grey := color.RGBA{150, 150, 150, 255}
-	for i := 0; i < 45; i++ {
+	for i := 0; i < noise; i++ {
 		img.Set(int(randInt(sz)), int(randInt(sz)), grey)
 	}
 	var buf bytes.Buffer

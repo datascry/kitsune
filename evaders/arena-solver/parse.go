@@ -16,7 +16,7 @@ import (
 
 var (
 	reText = regexp.MustCompile(`(?s)<text[^>]*>([^<]+)</text>`)
-	reMath = regexp.MustCompile(`What is (\d+) \+ (\d+)`)
+	reMath = regexp.MustCompile(`What is (\d+) ([+\-×x*]) (\d+)`)
 )
 
 // decodeDataSVG strips the `data:image/svg+xml;utf8,` prefix and undoes the %23→# encoding the gate applies,
@@ -45,15 +45,23 @@ func extractSVGText(dataURI string) string {
 	return b.String()
 }
 
-// solveMath parses "What is A + B?" and returns the sum as a string (the trivial `math` solve).
+// solveMath parses "What is A OP B?" (OP ∈ + − ×) and evaluates it — the trivial `math` solve at every
+// level (easy is addition, medium mixes +/−/×, hard is multiplication of larger operands).
 func solveMath(prompt string) string {
 	m := reMath.FindStringSubmatch(prompt)
 	if m == nil {
 		return ""
 	}
 	a, _ := strconv.Atoi(m[1])
-	b, _ := strconv.Atoi(m[2])
-	return strconv.Itoa(a + b)
+	b, _ := strconv.Atoi(m[3])
+	switch m[2] {
+	case "-":
+		return strconv.Itoa(a - b)
+	case "×", "x", "*":
+		return strconv.Itoa(a * b)
+	default:
+		return strconv.Itoa(a + b)
+	}
 }
 
 // targetShape pulls the target shape out of an image-select prompt ("Select every triangle.").

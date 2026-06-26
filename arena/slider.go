@@ -41,12 +41,12 @@ type SliderPoint struct {
 	X float64 `json:"x"`
 }
 
-// MintSlider builds a fresh slider challenge and returns it with the target gap X (stored for verify).
-func MintSlider() (Slider, string) {
+// MintSlider builds a fresh slider challenge at the given level and returns it with the stored verify state
+// "gapX:level" (the level is needed at verify to apply the right tolerance + trajectory bar).
+func MintSlider(lv Level) (Slider, string) {
 	gap := sliderMinGapX + int(randInt(int64(sliderMaxGapX-sliderMinGapX)))
 	return Slider{Kind: "slider", ID: randHex(16), GapX: gap, TrackW: sliderTrackW, PieceW: sliderPieceW},
-		// the stored "answer" is the gap X as a string, reusing the captcha store
-		itoa(gap)
+		itoa(gap) + ":" + string(lv)
 }
 
 func itoa(n int) string {
@@ -74,15 +74,15 @@ func itoa(n int) string {
 // CheckSlider reports whether the drag fits the gap AND looks human. It fails a teleport (too few points / too
 // fast) and a constant-velocity robotic glide (velocity coefficient-of-variation below the floor) — the same
 // uniform-velocity discriminator the detector uses. Returns (ok, reason) so the page can explain a rejection.
-func CheckSlider(gapX int, finalX float64, traj []SliderPoint) (bool, string) {
-	if math.Abs(finalX-float64(gapX)) > sliderTol {
+func CheckSlider(gapX int, finalX float64, traj []SliderPoint, k behaviorKnobs) (bool, string) {
+	if math.Abs(finalX-float64(gapX)) > k.Tol {
 		return false, "missed the gap"
 	}
-	if len(traj) < sliderMinPts {
+	if len(traj) < k.MinPts {
 		return false, "no real drag (teleport)"
 	}
 	dur := traj[len(traj)-1].T - traj[0].T
-	if dur < sliderMinMs {
+	if dur < k.MinMs {
 		return false, "drag too fast to be human"
 	}
 	// Per-segment velocity; a human drag accelerates then settles (high CV), a script gli­des at one speed (CV~0).
@@ -94,7 +94,7 @@ func CheckSlider(gapX int, finalX float64, traj []SliderPoint) (bool, string) {
 		}
 		vs = append(vs, math.Abs(traj[i].X-traj[i-1].X)/dt)
 	}
-	if cvOf(vs) < sliderMinCV {
+	if cvOf(vs) < k.MinCV {
 		return false, "drag velocity too uniform (synthetic)"
 	}
 	return true, "ok"

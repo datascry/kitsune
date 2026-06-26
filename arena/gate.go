@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	pow "github.com/datascry/kitsune/evaders/pow"
@@ -32,6 +33,43 @@ func classOf(s string) pow.Class {
 		return pow.ClassMemoryHard
 	default:
 		return pow.ClassHashcash
+	}
+}
+
+// powLevelParams maps a PoW class + difficulty level to (bit-difficulty, sub-puzzle count, Argon2 memory KiB).
+// It is the COST dial for the proof-of-work gates: harder = more hashing / more sub-puzzles / more memory. The
+// SHA-256 classes (hashcash/many-small) carry a high bit-target; memory-hard stays LOW-bit because each
+// Argon2id evaluation already costs ~1000x a SHA-256 hash, and scales its memory instead.
+func powLevelParams(class pow.Class, lv Level) (difficulty, count int, memKiB uint32) {
+	switch class {
+	case pow.ClassMemoryHard:
+		switch lv {
+		case LevelEasy:
+			return 6, 1, 4096
+		case LevelHard:
+			return 10, 1, 16384
+		default:
+			return 8, 1, 8192
+		}
+	case pow.ClassManySmall:
+		switch lv {
+		case LevelEasy:
+			return 8, 8, 8192
+		case LevelHard:
+			return 12, 24, 8192
+		default:
+			return 10, 16, 8192
+		}
+	default: // hashcash (count is unused for a single-puzzle class). Kept in-browser-solvable: the JS solver
+		// awaits one SHA-256 digest per attempt, so bits stay modest (a higher target would take minutes).
+		switch lv {
+		case LevelEasy:
+			return 12, 1, 8192
+		case LevelHard:
+			return 18, 1, 8192
+		default:
+			return 15, 1, 8192
+		}
 	}
 }
 
@@ -59,15 +97,10 @@ func NewMux(secret []byte) http.Handler {
 
 	mux.HandleFunc("GET /arena/challenge", func(w http.ResponseWriter, r *http.Request) {
 		class := classOf(r.URL.Query().Get("gate"))
-		// Per-class defaults: SHA-256 classes can afford a high bit-target; memory-hard uses a LOW target
-		// because each Argon2id evaluation is ~1000x costlier than a SHA-256 hash (so a low target still costs).
-		diff := 20
-		count := 16 // friendlycaptcha-style sub-puzzle count
-		var memKiB uint32 = 8192
-		if class == pow.ClassMemoryHard {
-			diff = 8
-		}
-		if v := r.URL.Query().Get("difficulty"); v != "" {
+		// Difficulty is a COST dial (easy/medium/hard) — more work, never a better bot/human test (see levels.go).
+		// Memory-hard uses a LOW bit-target because each Argon2id evaluation is ~1000x costlier than a SHA-256 hash.
+		diff, count, memKiB := powLevelParams(class, ParseLevel(r.URL.Query().Get("level")))
+		if v := r.URL.Query().Get("difficulty"); v != "" { // explicit override (capped) for power users
 			if n, err := strconv.Atoi(v); err == nil && n > 0 && n <= MaxDifficulty {
 				diff = n
 			}
@@ -110,7 +143,7 @@ func NewMux(secret []byte) http.Handler {
 	// --- CAPTCHA gates: same shape as PoW (issue → answer → verify → single-use token), but the "work" is a
 	// human-readable test. Self-hosted, generic reproductions of documented mechanisms — not a vendor clone. ---
 	mux.HandleFunc("GET /arena/captcha", func(w http.ResponseWriter, r *http.Request) {
-		c, answer := MintCaptcha(captchaKindOf(r.URL.Query().Get("kind")))
+		c, answer := MintCaptcha(captchaKindOf(r.URL.Query().Get("kind")), ParseLevel(r.URL.Query().Get("level")))
 		captchas.put(c.ID, answer)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(c) // the answer is NOT serialised — only the public challenge is sent
@@ -140,9 +173,9 @@ func NewMux(secret []byte) http.Handler {
 
 	// --- SLIDER captcha (GeeTest-style): drag the piece into the gap; the gate verifies the drop position AND
 	// the drag trajectory's behavioural plausibility (the uniform-velocity discriminator). On-thesis, owned. ---
-	mux.HandleFunc("GET /arena/slider", func(w http.ResponseWriter, _ *http.Request) {
-		s, gap := MintSlider()
-		captchas.put(s.ID, gap)
+	mux.HandleFunc("GET /arena/slider", func(w http.ResponseWriter, r *http.Request) {
+		s, state := MintSlider(ParseLevel(r.URL.Query().Get("level")))
+		captchas.put(s.ID, state)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(s)
 	})
@@ -157,14 +190,15 @@ func NewMux(secret []byte) http.Handler {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		gapStr, known := captchas.take(body.ID) // single-use
+		state, known := captchas.take(body.ID) // single-use; state is "gapX:level"
 		w.Header().Set("Content-Type", "application/json")
 		if !known {
 			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "slider", "reason": "unknown or used"})
 			return
 		}
+		gapStr, lvStr, _ := strings.Cut(state, ":")
 		gap, _ := strconv.Atoi(gapStr)
-		ok, reason := CheckSlider(gap, body.X, body.Trajectory)
+		ok, reason := CheckSlider(gap, body.X, body.Trajectory, sliderParams(ParseLevel(lvStr)))
 		resp := map[string]any{"ok": ok, "kind": "slider", "reason": reason}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, "slider", body.ID)
@@ -174,11 +208,11 @@ func NewMux(secret []byte) http.Handler {
 
 	// --- ROTATE captcha (Arkose-style): drag the object upright; the gate scores the rotation TRAJECTORY
 	// (a bare angle no longer passes — same behavioural discriminator as the slider). On-thesis, owned. ---
-	mux.HandleFunc("GET /arena/rotate", func(w http.ResponseWriter, _ *http.Request) {
-		r, ans := MintRotate()
-		captchas.put(r.ID, ans)
+	mux.HandleFunc("GET /arena/rotate", func(w http.ResponseWriter, req *http.Request) {
+		rc, state := MintRotate(ParseLevel(req.URL.Query().Get("level")))
+		captchas.put(rc.ID, state)
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(r)
+		_ = json.NewEncoder(w).Encode(rc)
 	})
 
 	mux.HandleFunc("POST /arena/rotate/verify", func(w http.ResponseWriter, r *http.Request) {
@@ -190,13 +224,13 @@ func NewMux(secret []byte) http.Handler {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		_, known := captchas.take(body.ID) // single-use
+		lvStr, known := captchas.take(body.ID) // single-use; stored value is the level
 		w.Header().Set("Content-Type", "application/json")
 		if !known {
 			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "rotate", "reason": "unknown or used"})
 			return
 		}
-		ok, reason := CheckRotate(body.Trajectory)
+		ok, reason := CheckRotate(body.Trajectory, rotateParams(ParseLevel(lvStr)))
 		resp := map[string]any{"ok": ok, "kind": "rotate", "reason": reason}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, "rotate", body.ID)

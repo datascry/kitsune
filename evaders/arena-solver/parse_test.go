@@ -16,7 +16,13 @@ func TestExtractSVGTextReadsTheCode(t *testing.T) {
 
 func TestSolveMathAndTarget(t *testing.T) {
 	if got := solveMath("What is 7 + 5?"); got != "12" {
-		t.Fatalf("solveMath = %q, want 12", got)
+		t.Fatalf("solveMath + = %q, want 12", got)
+	}
+	if got := solveMath("What is 9 - 4?"); got != "5" {
+		t.Fatalf("solveMath - = %q, want 5", got)
+	}
+	if got := solveMath("What is 13 × 14?"); got != "182" {
+		t.Fatalf("solveMath × = %q, want 182", got)
 	}
 	if got := targetShape("Select every triangle."); got != "triangle" {
 		t.Fatalf("targetShape = %q, want triangle", got)

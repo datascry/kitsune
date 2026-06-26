@@ -47,10 +47,11 @@ func arrowSVG() string {
 	return "data:image/svg+xml;utf8," + strings.NewReplacer("#", "%23").Replace(svg)
 }
 
-// MintRotate builds a fresh rotate challenge with a random initial offset from upright.
-func MintRotate() (Rotate, string) {
+// MintRotate builds a fresh rotate challenge at the given level with a random initial offset from upright.
+// The stored verify state is the level string (the trajectory bar + upright tolerance depend on it).
+func MintRotate(lv Level) (Rotate, string) {
 	angle := rotateMinAngle + int(randInt(int64(rotateMaxAngle-rotateMinAngle)))
-	return Rotate{Kind: "rotate", ID: randHex(16), Image: arrowSVG(), Angle: angle}, ""
+	return Rotate{Kind: "rotate", ID: randHex(16), Image: arrowSVG(), Angle: angle}, string(lv)
 }
 
 // distToUpright returns the angular distance (0..180) of a (mod-360) angle from upright.
@@ -66,14 +67,14 @@ func distToUpright(a float64) float64 {
 // (too few samples / too fast) and a constant-rate spin (angular-velocity CV below the floor). Returns
 // (ok, reason). The final orientation is taken from the trajectory's last sample, so a bare angle with no
 // trajectory cannot pass.
-func CheckRotate(traj []RotatePoint) (bool, string) {
-	if len(traj) < rotateMinPts {
+func CheckRotate(traj []RotatePoint, k behaviorKnobs) (bool, string) {
+	if len(traj) < k.MinPts {
 		return false, "no real rotation (submit a drag, not an angle)"
 	}
-	if distToUpright(traj[len(traj)-1].Angle) > rotateTol {
+	if distToUpright(traj[len(traj)-1].Angle) > k.Tol {
 		return false, "not upright"
 	}
-	if traj[len(traj)-1].T-traj[0].T < rotateMinMs {
+	if traj[len(traj)-1].T-traj[0].T < k.MinMs {
 		return false, "rotation too fast to be human"
 	}
 	vs := make([]float64, 0, len(traj)-1)
@@ -84,7 +85,7 @@ func CheckRotate(traj []RotatePoint) (bool, string) {
 		}
 		vs = append(vs, math.Abs(traj[i].Angle-traj[i-1].Angle)/dt)
 	}
-	if cvOf(vs) < rotateMinCV {
+	if cvOf(vs) < k.MinCV {
 		return false, "rotation rate too uniform (synthetic)"
 	}
 	return true, "ok"
