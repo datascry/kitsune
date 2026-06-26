@@ -16,7 +16,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 |---|---|---|
 | `agent` | Python | drive a remote Chromium with claude-chosen actions, read the verdict. |
 | `apify-fp-inject` | TS/Node | drive Playwright Chromium through the edge with an apify-injected fingerprint. |
-| `arena-solver` | Go | a browserless solver that beats every arena CAPTCHA gate (OWNED gates only). |
+| `arena-solver` | Go | a browserless solver for the arena CAPTCHA gates (OWNED gates only). |
 | `azuretls` | Go | drive azuretls-client (Go TLS/JA3 + HTTP/2 forger) through the edge. |
 | `brave` | TS/Node | drive Brave (farbling browser) through the edge and read the verdict. |
 | `camoufox` | Python | drive Camoufox (engine-level anti-detect Firefox) through the edge. |
