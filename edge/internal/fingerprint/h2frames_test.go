@@ -145,6 +145,100 @@ func TestH2FrameScannerEmptyAndPartial(t *testing.T) {
 	}
 }
 
+// buildMadeYouResetStream writes a preface, one real HEADERS, then nWU zero-increment WINDOW_UPDATE frames
+// and nPrio malformed PRIORITY frames (alternating wrong-length and self-dependent) — the MadeYouReset
+// (CVE-2025-8671) coercion shape: the server is forced to reset streams, yet the client sends NO RST_STREAM.
+func buildMadeYouResetStream(t *testing.T, nWU, nPrio int) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	buf.WriteString(http2.ClientPreface)
+	fr := http2.NewFramer(&buf, nil)
+	if err := fr.WriteHeaders(http2.HeadersFrameParam{StreamID: 1, BlockFragment: []byte{0x88}, EndHeaders: true}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < nWU; i++ {
+		// A zero-increment WINDOW_UPDATE (RFC 9113 §6.9 PROTOCOL_ERROR) via a raw 4-byte zero payload —
+		// the framer's WriteWindowUpdate rejects a zero increment, which is the whole point.
+		if err := fr.WriteRawFrame(http2.FrameWindowUpdate, 0, uint32(2*i+3), []byte{0, 0, 0, 0}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 0; i < nPrio; i++ {
+		sid := uint32(2*i + 101)
+		if i%2 == 0 {
+			// Wrong length: a PRIORITY payload that is not 5 bytes (FRAME_SIZE_ERROR).
+			if err := fr.WriteRawFrame(http2.FramePriority, 0, sid, []byte{0, 0, 0, 0}); err != nil {
+				t.Fatal(err)
+			}
+		} else {
+			// Self-dependency: stream depends on itself (dep == own stream id), a 5-byte payload.
+			payload := []byte{byte(sid >> 24), byte(sid >> 16), byte(sid >> 8), byte(sid), 0}
+			if err := fr.WriteRawFrame(http2.FramePriority, 0, sid, payload); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	return buf.Bytes()
+}
+
+func TestH2FrameScannerMadeYouReset(t *testing.T) {
+	var s H2FrameScanner
+	s.Feed(buildMadeYouResetStream(t, 12, 12))
+	if got := s.MadeYouResets.Load(); got != 24 {
+		t.Fatalf("madeyouresets=%d, want 24", got)
+	}
+	if !s.MadeYouReset() {
+		t.Error("24 malformed coercion frames should match the MadeYouReset signature")
+	}
+	// The defining property: it coerces server resets WITHOUT client RST_STREAM, so rapid-reset stays quiet.
+	if s.RapidReset() {
+		t.Error("MadeYouReset sends zero RST_STREAM — it must NOT trip the rapid-reset heuristic")
+	}
+	if s.ContinuationFlood() || s.ControlFrameFlood() {
+		t.Error("MadeYouReset must not be misclassified as another flood")
+	}
+}
+
+func TestH2FrameScannerMadeYouResetChunkBoundaries(t *testing.T) {
+	raw := buildMadeYouResetStream(t, 12, 12)
+	var s H2FrameScanner
+	for i := 0; i < len(raw); i += 3 { // tiny chunks so the inspected payload prefix straddles Feed calls
+		end := i + 3
+		if end > len(raw) {
+			end = len(raw)
+		}
+		s.Feed(raw[i:end])
+	}
+	if got := s.MadeYouResets.Load(); got != 24 {
+		t.Fatalf("chunked madeyouresets=%d, want 24", got)
+	}
+}
+
+func TestH2FrameScannerLegitWindowUpdateAndPriorityQuiet(t *testing.T) {
+	// A normal session: real WINDOW_UPDATE frames (non-zero increments) and a well-formed PRIORITY that
+	// depends on another stream — exactly what a real browser emits. None is a coercion primitive.
+	var buf bytes.Buffer
+	buf.WriteString(http2.ClientPreface)
+	fr := http2.NewFramer(&buf, nil)
+	for i := 0; i < 50; i++ {
+		if err := fr.WriteWindowUpdate(uint32(2*i+1), 65535); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A valid PRIORITY: stream 3 depends on stream 0 (the implicit root) — not self-dependent.
+	if err := fr.WritePriority(3, http2.PriorityParam{StreamDep: 0, Weight: 15}); err != nil {
+		t.Fatal(err)
+	}
+	var s H2FrameScanner
+	s.Feed(buf.Bytes())
+	if got := s.MadeYouResets.Load(); got != 0 {
+		t.Fatalf("legit WINDOW_UPDATE/PRIORITY must count zero coercion frames, got %d", got)
+	}
+	if s.MadeYouReset() {
+		t.Error("normal flow-control + priority traffic must not trip MadeYouReset")
+	}
+}
+
 // TestH2FrameScannerConcurrentFeedAndReadIsRaceFree pins GAP-2: Feed (the http2 read goroutine) increments
 // counters while the flood detectors are read from concurrent handler goroutines. With atomic counters this
 // is race-free; `go test -race` would flag the old plain-uint64 fields.
@@ -171,6 +265,7 @@ func TestH2FrameScannerConcurrentFeedAndReadIsRaceFree(t *testing.T) {
 			_ = s.RapidReset()
 			_ = s.ContinuationFlood()
 			_ = s.ControlFrameFlood()
+			_ = s.MadeYouReset()
 		}
 	}
 }

@@ -376,6 +376,10 @@ func main() {
 		staticExt(target)
 		return
 	}
+	if os.Getenv("KS_MADEYOURESET") == "1" {
+		madeYouReset(target)
+		return
+	}
 	if os.Getenv("KS_ROTATE") == "1" {
 		rotateJA4(target)
 		return

@@ -63,12 +63,12 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**135 live rules** (103 active · 32 experimental; 6 retired, ruleset `0.74.52`) — each a small predicate over the correlated session. **93 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**136 live rules** (104 active · 32 experimental; 6 retired, ruleset `0.74.52`) — each a small predicate over the correlated session. **94 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
 | **coherence** | 54 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
-| **automation** | 24 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
+| **automation** | 25 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 15 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
 | **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |
 | **behavioral** | 11 | — | mouse/keystroke biomechanics — path straightness, velocity CV, entropy floors |
@@ -110,7 +110,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**89 of 99 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.52`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
+**90 of 100 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.52`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
 Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
 

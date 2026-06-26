@@ -35,6 +35,7 @@ _LIT = {
     "go-tls-h2-rotate": "net.h2_unstable_within_session",
     "go-tls-static-ext": "net.tls_ext_order_static_within_session",
     "go-tls-web-bot-auth": "net.web_bot_auth_invalid",
+    "go-tls-madeyoureset": "net.h2_madeyoureset",
     "ip-rotation": "net.ip_rotation_within_session",
     "mobile-emulation": "br.fingerprint_improbable",
     "camoufox-touch-incoherent": "br.pointer_touch_incoherent",
@@ -56,3 +57,13 @@ def test_capture_trips_its_target_rule(capture: str, rule_id: str) -> None:
     fired = {c.rule_id for c in verdict.contradictions}
     assert rule_id in fired, f"{capture} no longer trips {rule_id} (fired: {sorted(fired)})"
     assert verdict.label.value == "bot"
+
+
+def test_madeyoureset_evades_rapid_reset() -> None:
+    # G26's whole point: MadeYouReset (CVE-2025-8671) coerces server resets WITHOUT a client RST_STREAM, so
+    # it slips past the rapid-reset rung (CVE-2023-44487). The live capture must trip net.h2_madeyoureset
+    # while net.h2_rapid_reset stays SILENT — proving the new rung closes the exact gap the attack opened.
+    session = Session.model_validate(json.loads((_CORPUS / "go-tls-madeyoureset.json").read_text()))
+    fired = {c.rule_id for c in Detector().score(session).contradictions}
+    assert "net.h2_madeyoureset" in fired
+    assert "net.h2_rapid_reset" not in fired

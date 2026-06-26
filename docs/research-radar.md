@@ -672,6 +672,29 @@ N2 (extension order) and N5; QUIC Hunter encodes the N3 transport-param→stack 
   capture + display + the software-vs-high-end tell); the broader renderer↔caps profile match across more GPU
   tiers stays a follow-up needing the `real-browser-capture-profiles` run on real GPUs (capture-profile-bound).
 
+- **2026-06-26 · /loop tick — G26 SHIPPED — net.h2_madeyoureset (CVE-2025-8671), red⇄blue grounded.** Drained
+  the 12-lane fan-out's RECOMMENDED NEXT PUMP. KEY PROPERTY: MadeYouReset coerces server-side stream resets with
+  MALFORMED control frames and sends NO client RST_STREAM, so it slips past the rapid-reset rung (CVE-2023-44487,
+  which keys on client RST). BLUE: extended `H2FrameScanner` (the same client-byte tee that powers rapid-reset /
+  CONTINUATION / control-flood) to buffer + inspect the WINDOW_UPDATE (4-byte increment) and PRIORITY (5-byte
+  dependency) payloads it previously skipped, counting three RFC-9113 coercion primitives — zero-increment
+  WINDOW_UPDATE, mis-sized PRIORITY (FRAME_SIZE_ERROR), self-dependent PRIORITY (PROTOCOL_ERROR) — none of which
+  a conformant browser ever emits; `MadeYouReset()` fires at a floor of 10 → `network.h2_madeyoureset` →
+  `net.h2_madeyoureset` (automation, w0.9). RED: `go-tls KS_MADEYOURESET` forges a Chrome ClientHello (uTLS),
+  then on the raw h2 connection floods 60 self-dependent PRIORITY frames BEFORE the real request (so the edge's
+  in-order tee has counted them by the time the request's handler emits the signal), with zero client RST.
+  Self-dependency is the chosen live primitive because Go's h2 server treats it as a STREAM error (connection
+  survives, so the request still mints a session); the scanner's unit tests cover all three primitives + chunk
+  boundaries. GROUNDED BOTH WAYS: in-process (`edge h2frames_test.go` — the three primitives count, legit
+  WINDOW_UPDATE/PRIORITY stay at zero, rapid-reset stays quiet) AND LIVE through the rebuilt edge→detector stack
+  (label bot, score 1.0, `net.h2_madeyoureset` fires while `net.h2_rapid_reset` is SILENT — proving it closes the
+  exact evaded gap), frozen as `corpus/sessions/go-tls-madeyoureset.json` + `test_madeyoureset_evades_rapid_reset`
+  + the `test_lit_rule_captures` guard. Edge + detector + harness (258, 97.13%) + go-tls evader all green; catalog
+  / matrix / README regenerated. Deferred: the half-closed HEADERS/DATA + window-overflow primitives need
+  per-stream state tracking (the 3 frame-level primitives already close the rapid-reset evasion). Next groundable
+  from the fan-out batch: G27 (GREASE-ECH AEAD, CVE-2026-27017), G30 (HTTP/2-Bomb, CVE-2026-49975), G28
+  (deviceMemory spec-invariant), G32 (WBA nonce-replay).
+
 ## Detection/evasion surface fan-out (2026-06-25, 12-lane research radar · 54 agents)
 
 A breadth+depth fan-out across every Kitsune seam (TLS/QUIC, HTTP/2-3, TCP/IP, browser-coherence,
@@ -686,7 +709,7 @@ infra. (Existing G1-G25/N1-N7/X1-X8 deduped out.)
 
 | # | seam | technique / signal | evasion / tool | source | status |
 |---|---|---|---|---|---|
-| G26 | http2 (DDoS L7) | **MadeYouReset (CVE-2025-8671)** — client COERCES server RST via 6 RFC-9113 PROTOCOL_ERROR primitives (WINDOW_UPDATE 0 / >2^31-1, PRIORITY len≠5 / self-dependent, HEADERS/DATA on half-closed) while NEVER sending its own RST_STREAM → evades the client-RST rapid-reset rung. Extend `H2FrameScanner` (client bytes already tee'd) to parse the WINDOW_UPDATE/PRIORITY payloads → `network.h2_madeyoureset` → `net.h2_madeyoureset` (automation, w~0.9). Single-frame conviction FP-safe (spec violations no browser emits). | go-tls KS_MADEYOURESET (fires each primitive, no client RST) | CERT/CC VU#767506; Imperva MadeYouReset; CVE-2025-8671 (2025-08-13) | **lead (groundable, high) — RECOMMENDED NEXT PUMP.** Positive: trips `h2_madeyoureset` while `h2_rapid_reset` stays QUIET (proves it closes the exact evaded gap). Negative: real browsers + all single-conn evaders emit zero malformed frames. |
+| G26 | http2 (DDoS L7) | **MadeYouReset (CVE-2025-8671)** — client COERCES server RST via RFC-9113 PROTOCOL_ERROR primitives (WINDOW_UPDATE 0, PRIORITY len≠5 / self-dependent) while NEVER sending its own RST_STREAM → evades the client-RST rapid-reset rung. Extend `H2FrameScanner` (client bytes already tee'd) to parse the WINDOW_UPDATE/PRIORITY payloads → `network.h2_madeyoureset` → `net.h2_madeyoureset` (automation, w0.9). FP-safe (spec violations no browser emits). | go-tls KS_MADEYOURESET (fires each primitive, no client RST) | CERT/CC VU#767506; Imperva MadeYouReset; CVE-2025-8671 (2025-08-13) | **done** → `net.h2_madeyoureset` (ruleset 0.74.52). Scanner now parses WINDOW_UPDATE (zero-increment) + PRIORITY (mis-sized / self-dependent) prefixes; floor 10. RED `go-tls KS_MADEYOURESET` floods self-dependent PRIORITY (Go's h2 server treats it as a stream error → connection survives → request still mints a session) with ZERO client RST. GROUNDED live (edge→detector): label bot, `net.h2_madeyoureset` fires while `net.h2_rapid_reset` stays QUIET — frozen as `corpus/sessions/go-tls-madeyoureset.json` + `test_madeyoureset_evades_rapid_reset`. The half-closed HEADERS/DATA + window-overflow primitives need stream-state tracking → deferred (the 3 frame-level primitives close the gap). |
 | G27 | tls | **GREASE-ECH HPKE-AEAD vs outer-AEAD (CVE-2026-27017)** — real Chrome gates BOTH outer AEAD pref and GREASE-ECH HPKE aead_id on the same AES-NI bit; uTLS<1.8.1 picks the ECH AEAD randomly → ~50% emit impossible AES-outer + ChaCha20-ECH. Extend `extECH` (0xfe0d) parse to read kdf_id+aead_id; convict Chrome-claim AND AES-first-outer AND ECH-aead==ChaCha20. Both fields cleartext. | uTLS Chrome parrots <1.8.1 (go-tls/primp/curl-impersonate) w/ ECH GREASE | GHSA-7m29-f4hw-g2vx / CVE-2026-27017; utls 1.8.1 changelog; RFC 9849 | **lead (groundable, high).** Positive: pinned vulnerable parrot fires on ~50% of handshakes. Negative: real Chrome + patched 1.8.1 lock the two AEADs. |
 | G28 | browser-coherence | **navigator.deviceMemory spec-invariant** — Chromium clamps to {0.25,0.5,1,2,4,8}; any >8 / non-pow2, or the Chromium-only API PRESENT under Gecko/WebKit UA, is impossible. (A) `br.devicememory_out_of_set` (Chromium-UA-gated), (B) `br.devicememory_on_non_chromium`. Deterministic, not rarity. | browserforge/GoLogin/Octo profile mixers leaking host RAM (16/32); non-Chromium-UA spoof leaking the API | Castle.io deviceMemory deep-dive (2025); W3C Device Memory clamp | **lead (groundable, high).** Forward `browser.device_memory_value`; positive: override=16/=3 under Chrome UA, or native value under FF UA. Negative: real Chrome/Edge/Brave (legal set) + real FF/WebKit (absent). |
 | G29 | http2 | **RFC 9218 priority-scheme vs engine** — Chrome 105+ sends ZERO standalone PRIORITY frames (uses PRIORITY_UPDATE / `priority:` header); a Chromium-classified h2 stack emitting legacy PRIORITY frames is a non-Chrome stack (Go x/net/http2, stale uTLS) in Chrome's clothes. ASYMMETRIC/engine-keyed (not version) → `net.h2_priority_scheme_vs_engine`. | curl-impersonate / surf / go-tls KS_H2PRIORITY (legacy PRIORITY under Chrome UA) | RFC 9218; Chromium I2S priority header; Scrapfly h2/h3 FP (2025-26) | **lead (groundable, high).** Crosses h2-frame ↔ JA4/pseudo-order engine identity; gates off FF/Safari/unknown. |

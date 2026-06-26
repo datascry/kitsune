@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **24 evader tools**, **99 exercised techniques** (89 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **24 evader tools**, **100 exercised techniques** (90 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (24)
 
@@ -39,7 +39,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `xtest-coalesce` | Python | pressure-test: can X11 XTEST motion injection defeat the coalesced tell? |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (99)
+### Techniques exercised — scored against the live ruleset (100)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -84,6 +84,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `full-stealth` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.permissions_anomaly`, `br.plugins_spoofed`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_os_vs_ua`, `br.webgl_worker_vs_main`, `net.ch_ua_version_vs_ua` |
 | `go-tls` | bot | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
 | `go-tls-h2-rotate` | bot | `net.h2_unknown_vs_ua`, `net.h2_unstable_within_session`, `net.no_js_execution` |
+| `go-tls-madeyoureset` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_madeyoureset`, `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` |
 | `go-tls-rotate` | bot | `net.h2_unknown_vs_ua`, `net.ja4_unstable_within_session`, `net.no_js_execution`, `net.tls_grease_vs_ua`, `net.tls_pq_keyshare_vs_ua` |
 | `go-tls-static-ext` | bot | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_ext_order_static_within_session`, `net.tls_pq_keyshare_vs_ua` |
 | `go-tls-web-bot-auth` | bot | `net.no_js_execution`, `net.web_bot_auth_invalid` |

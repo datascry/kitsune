@@ -38,6 +38,13 @@ func dialUTLS(ctx context.Context, addr string, helloID utls.ClientHelloID) (net
 	return uconn, nil
 }
 
+// DialH2Raw opens a uTLS connection parroting helloID (Chrome advertises ALPN h2) and returns the raw
+// conn so a caller can drive HTTP/2 frames directly — the lever for malformed-frame evaders (e.g. the
+// MadeYouReset coercion) that the high-level http2.Transport will not emit. The caller owns the conn.
+func DialH2Raw(ctx context.Context, addr string, helloID utls.ClientHelloID) (net.Conn, error) {
+	return dialUTLS(ctx, addr, helloID)
+}
+
 // Client returns an http.Client whose TLS handshakes parrot the given browser fingerprint (HTTP/1.1
 // transport — used to inspect the forged ClientHello at the TLS layer).
 func Client(helloID utls.ClientHelloID) *http.Client {
