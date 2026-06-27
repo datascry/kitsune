@@ -1051,3 +1051,24 @@ so the stagger is real. GROUNDED live (`skulk run staggered` → real detector):
 evidence "arrivals spread over 600s — no lockstep" (rate 0.3/min, not the 360/min of a lockstep burst), yet the
 fp-collision + automation binding convicts unchanged. Scenario `fleet-staggered` (arrivals 10min apart) holds
 precision/recall at 100%. Timing-stagger is a weak evasion: it costs only the lockstep bonus, not the verdict.
+
+### Validation — audit of active convicting rules with no live capture (2026-06-27)
+
+Swept all 86 active convicting (coherence/automation/artifact) rules against every committed corpus capture: 83
+fire on at least one, 3 had NO corpus positive — the "unexercised active rules need live positives" liability
+(an active CONVICTING rule that has never been shown to fire on a real capture). Triaged by in-sandbox
+groundability:
+
+- **`br.mobile_no_touch` → GROUNDED (closed).** A real headful Chromium with an iPhone UA but maxTouchPoints=0
+  (`harness/tools/mobile_no_touch_capture.mjs`) trips it through edge→detector — the classic desktop-faking-mobile
+  spoof (CDP UA override without touch emulation). Frozen as `corpus/sessions/mobile-no-touch.json` +
+  `test_lit_rule_captures`. It had only a synthetic-fingerprint grounding before; this closes the real-capture gap.
+- **`br.voice_os_vs_ua` → external-data-bound.** Needs real OS speech-synthesis voices to derive `voice_os_hint`;
+  the in-sandbox container Chromium has NONE (it fires `br.voices_empty`), so the voice→OS coherence can't be
+  exercised here. Needs a real-OS browser with a populated TTS voice list.
+- **`br.webgpu_vendor_vs_webgl` → external-data-bound.** Needs a functional WebGPU adapter to read the adapter
+  vendor; the container reports `webgpu_no_adapter` (navigator.gpu present but requestAdapter() → null under
+  headless SwiftShader), so there is no adapter vendor to contradict the WebGL one. Needs a real-GPU device.
+
+Net: the in-sandbox-groundable share of the unexercised set is now lit; the remaining two join the Tier-3
+real-GPU / real-OS queue alongside the WebGL-worker rules.
