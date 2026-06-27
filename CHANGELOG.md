@@ -5,6 +5,46 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.9.0](https://github.com/datascry/kitsune/compare/v1.8.0...v1.9.0) (2026-06-27)
+
+
+### Features
+
+* **arena:** add Quick, Draw! doodle image-select (CC BY 4.0) — the second image source ([204135e](https://github.com/datascry/kitsune/commit/204135e484784553631a9d18bfd0d32e8cff8eea))
+* **arena:** emoji image-select gate (Noto Emoji, OFL) — real CV, not shapes ([ca17fa4](https://github.com/datascry/kitsune/commit/ca17fa465392525eb739dec86153bd30531d6f4c))
+* **arena:** harden text-captcha noise + add the verify-you-are-human checkbox ([823f658](https://github.com/datascry/kitsune/commit/823f658e2155f71bbb05d01ac3bde9811aafafcf))
+* **arena:** image-select + rotate captcha gates (the interactive visual families) ([eec1ba8](https://github.com/datascry/kitsune/commit/eec1ba85907b1222e698364742c550367e2dc13a))
+* **arena:** pact / private-access-token gate — skip the challenge on a personhood token ([2f9f1c9](https://github.com/datascry/kitsune/commit/2f9f1c9cfb14b086d5e423b931875a89f8d2737d))
+* **arena:** per-gate difficulty levels (easy/medium/hard) as a cost dial ([1bbd748](https://github.com/datascry/kitsune/commit/1bbd74850822c2ac7ca63aaf680cd1e34193d9ff))
+* **arena:** public challenge-gate service + detector relay (arena MVP backend) ([0b28193](https://github.com/datascry/kitsune/commit/0b28193b323c67d6d2e8d09fa9e79a02861d75bc))
+* **arena:** self-hosted CAPTCHA gates (text image · math · honeypot) ([2c28549](https://github.com/datascry/kitsune/commit/2c285499f3968b837d88f094cc39eb2af58a64bf))
+* **arena:** slider captcha — drag-to-fit + behavioural trajectory check (GeeTest-style) ([dbe4579](https://github.com/datascry/kitsune/commit/dbe4579f16543311d6af0693a4ec97fec1558d02))
+* **contracts:** arena scope-as-code — challenge + finding contracts, owned-only allow-list ([2cefd46](https://github.com/datascry/kitsune/commit/2cefd46fbd8ed74a8e774527d8fe6f4c46b479f6))
+* **detector:** arena gates auto-serve on load as bypass-testing pages ([5b517a7](https://github.com/datascry/kitsune/commit/5b517a7493510b2a6cac52f3e1f375584773d134))
+* **detector:** managed-challenge ladder gate (Turnstile-style) on the arena ([2821040](https://github.com/datascry/kitsune/commit/2821040e3f8fda3c496b96ccadbc0abb6f08e789))
+* **detector:** pull geo data keylessly at deploy so the wire panel resolves it ([db178ad](https://github.com/datascry/kitsune/commit/db178ad74fbb532ee01c31f610b76b22b54e136c))
+* **detector:** rebuild the arena as per-challenge pages on the shared site shell ([8dbe333](https://github.com/datascry/kitsune/commit/8dbe3338907eefedd885f40e8d8948aaeff929b6))
+* **detector:** the public /arena page — in-browser solver + dual verdict ([3cebc5a](https://github.com/datascry/kitsune/commit/3cebc5a1d197ffe14e45aad48b19e5c07ccb911c))
+* **edge:** capture reused TLS-resumption ticket; add the ticket-reuse coordination binding ([c286721](https://github.com/datascry/kitsune/commit/c2867216271637a5f8dd50ad803bb7cae3578c08))
+* **edge:** detect HTTP/2 MadeYouReset stream-reset coercion (CVE-2025-8671) ([748bca6](https://github.com/datascry/kitsune/commit/748bca68daaea5428ae4d7ace2be43cf86c7ad01))
+* **edge:** detect Web Bot Auth in-window nonce replay (RFC 9421 / G32) ([dbcce67](https://github.com/datascry/kitsune/commit/dbcce675eb7c94792e24dbf56a7d92558706270f))
+* **evaders:** browserless arena-solver that beats every arena gate (owned gates only) ([d5710af](https://github.com/datascry/kitsune/commit/d5710affd0661bcab06620e84eaf2b80a2f622f0))
+* **evaders:** computer-vision classifier beats the hardened image-select gate ([7eeeeae](https://github.com/datascry/kitsune/commit/7eeeeae49fde6be9ed8559d3440700f5e40aa654))
+* **evaders:** solve the arena distorted-text gate with a HuggingFace OCR model ([77a1045](https://github.com/datascry/kitsune/commit/77a104535480a6afa94715467fb052e1b1c35a90))
+* **fleet:** add fuzzy-rotate fleet + measure the cross-JA4 similarity FP boundary ([83402e5](https://github.com/datascry/kitsune/commit/83402e5dae40bc04635b8fb66835138457571c30))
+* **fleet:** add Skulk, a fleet adversary-emulation kit for coordination-defense testing ([22b4621](https://github.com/datascry/kitsune/commit/22b46219f1122b2c41ae6e610c2feb33f333191d))
+* **harness:** add template-similarity coordination rung (closes the fuzzy-trace gap) ([506a837](https://github.com/datascry/kitsune/commit/506a83730bc7f5579ecd9cba0f318378d055af39))
+* **harness:** live-ground the fleet-coordination axis end-to-end ([1210d7b](https://github.com/datascry/kitsune/commit/1210d7b5e32d8273c957ebf183ae3d6a3a2107a7))
+
+
+### Bug Fixes
+
+* **arena:** make rotate behavioural — score the drag trajectory, not a submitted angle ([20fd62e](https://github.com/datascry/kitsune/commit/20fd62eb6cb829d1f270040ea3c1d3bceb92a952))
+* **arena:** rasterize the text + image-select gates so they need OCR/CV, not markup ([6713eac](https://github.com/datascry/kitsune/commit/6713eac5185579adb694f72d0bf7b80780c4f9be))
+* **detector:** open the network/wire panel by default too ([b6db2ab](https://github.com/datascry/kitsune/commit/b6db2ab7db10b53bd614776e3803b873ded9afc2))
+* **detector:** stack the detections table into cards on mobile ([3b509c6](https://github.com/datascry/kitsune/commit/3b509c647ecd9759eddd14af3264533f0472b2f6))
+* **repo:** run the arena in the pull-based production deploy ([454367a](https://github.com/datascry/kitsune/commit/454367af6761aaea1b05bc0ed36891b7829c4cad))
+
 ## [1.8.0](https://github.com/datascry/kitsune/compare/v1.7.0...v1.8.0) (2026-06-25)
 
 
