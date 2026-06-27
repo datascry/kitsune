@@ -4,6 +4,7 @@
 package arena
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -57,6 +58,46 @@ func TestClientIP(t *testing.T) {
 	r.Header.Set("X-Forwarded-For", "9.8.7.6, 10.0.0.1")
 	if got := clientIP(r); got != "9.8.7.6" {
 		t.Errorf("XFF client = %q", got)
+	}
+}
+
+func TestClientIPv6FoldsToSlash64(t *testing.T) {
+	// An IPv6 client must key by /64, not /128: a subscriber owns a whole /64 and can mint unlimited /128s for
+	// free, so a per-/128 bucket gives unlimited RPS by rotating the low 64 bits. Two /128s in one /64 → one key.
+	r := httptest.NewRequest("GET", "/arena/rate", nil)
+	r.RemoteAddr = "[2001:db8:abcd:1::dead]:443" // bracketed IPv6 + port (the bug the old LastIndexByte mangled)
+	got := clientIP(r)
+	if got != "2001:db8:abcd:1::/64" {
+		t.Fatalf("bracketed IPv6 RemoteAddr keyed as %q, want the /64 origin", got)
+	}
+	r2 := httptest.NewRequest("GET", "/arena/rate", nil)
+	r2.Header.Set("X-Forwarded-For", "2001:db8:abcd:1:ffff::9, 10.0.0.1")
+	if got2 := clientIP(r2); got2 != got {
+		t.Errorf("a different /128 in the same /64 keyed as %q, want the same bucket %q", got2, got)
+	}
+	// a different /64 must be a distinct key (real distinct origins still get independent budgets)
+	r3 := httptest.NewRequest("GET", "/arena/rate", nil)
+	r3.Header.Set("X-Forwarded-For", "2001:db8:abcd:2::1")
+	if got3 := clientIP(r3); got3 == got {
+		t.Errorf("a different /64 keyed as the same bucket %q — distinct origins must not share", got3)
+	}
+}
+
+func TestRateGateThrottlesIPv6Slash128Rotation(t *testing.T) {
+	// End-to-end: a fleet rotating /128s within ONE /64 must still hit one shared bucket and get throttled —
+	// the IPv6 rate-limit bypass closed. Without the /64 fold every rotated /128 would get a fresh full burst.
+	rl := newRateLimiter(5, 5)
+	t0 := time.Unix(4000, 0)
+	var throttled int
+	for i := 0; i < 12; i++ {
+		// each iteration a distinct /128, all inside 2001:db8:1:1::/64 → ipOrigin folds them to one key
+		key := ipOrigin(fmt.Sprintf("2001:db8:1:1::%x", i+1))
+		if !rl.allow(key, t0) {
+			throttled++
+		}
+	}
+	if throttled == 0 {
+		t.Fatal("rotating /128s within one /64 must share a bucket and trip the budget — IPv6 bypass not closed")
 	}
 }
 

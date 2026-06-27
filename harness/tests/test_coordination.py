@@ -277,6 +277,48 @@ def test_profile_reuse_fleet_is_caught() -> None:
     assert any("cloned-profile reuse" in e for e in v.evidence)
 
 
+def test_ipv6_cloned_fleet_across_distinct_64s_convicts() -> None:
+    # IPv6 origin unit: a cloned fleet spanning genuinely DISTINCT /64s (two real subscriptions) still convicts.
+    # Each node sits on its own /64 (the /128 differs by interface-id), folds to 2 distinct ORIGINS >= 2, so the
+    # fp-collision fires exactly as it does for distinct IPv4s. The /64 fold does not weaken real detection.
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="2001:db8:1::a1", fp_hash="dead", webdriver=True)),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="2001:db8:2::b2", fp_hash="dead", webdriver=True)),
+        ("c", _sess("c", "X", 8, "Windows", observed_ip="2001:db8:3::c3", fp_hash="dead", webdriver=True)),
+    ]
+    v = score_cluster("X", members)
+    assert v.label == "fleet"
+    assert v.cloned_fingerprint == "dead"
+    assert v.distinct_observed_ips == 3  # three distinct /64 origins
+
+
+def test_ipv6_128_rotation_within_one_64_folds_to_one_origin() -> None:
+    # The IPv6 fold: a single subscriber owns a whole /64 and mints unlimited /128s inside it (SLAAC + RFC 4941
+    # privacy addresses rotate hourly). Many /128s within ONE /64 must collapse to ONE origin — so an identical
+    # fp across them is one machine over many sessions (the >=2-DISTINCT-IP gate's benign case), NOT a multi-
+    # origin coordination signal. Even WITH a corroborator (webdriver) it must not read as a cloned-IP fleet:
+    # without the fold the four /128s would look like four distinct source IPs and manufacture a false collision.
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="2001:db8:7::1", fp_hash="dead", webdriver=True)),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="2001:db8:7::2", fp_hash="dead", webdriver=True)),
+        ("c", _sess("c", "X", 8, "Windows", observed_ip="2001:db8:7:0:abcd::3", fp_hash="dead", webdriver=True)),
+        ("d", _sess("d", "X", 8, "Windows", observed_ip="2001:db8:7::dead:4", fp_hash="dead", webdriver=True)),
+    ]
+    v = score_cluster("X", members)
+    assert v.distinct_observed_ips == 1  # all four /128s fold to the single /64 origin
+    assert v.cloned_fingerprint is None  # no collision: one origin can't collide with itself
+    assert v.label != "fleet"
+
+
+def test_ip_origin_folds_ipv6_to_64_leaves_ipv4_and_garbage() -> None:
+    from kitsune_harness.coordination import _ip_origin
+
+    assert _ip_origin("203.0.113.7") == "203.0.113.7"  # IPv4 address is its own origin
+    assert _ip_origin("2001:db8:abcd:1::1") == _ip_origin("2001:db8:abcd:1:ffff::9")  # same /64 → same origin
+    assert _ip_origin("2001:db8:abcd:1::1") != _ip_origin("2001:db8:abcd:2::1")  # different /64 → different
+    assert _ip_origin("not-an-ip") == "not-an-ip"  # unparseable passes through unchanged
+
+
 def test_datacenter_ip_corroborates_a_clean_clone() -> None:
     # The IP-reputation disambiguator: a CLEAN native clone (no automation tell) sharing one fp across distinct
     # DATACENTER IPs IS a bot fleet — the reputation.asn_is_datacenter flag corroborates the fp-collision where

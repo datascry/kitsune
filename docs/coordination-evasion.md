@@ -62,6 +62,31 @@ builds; Skulk's `fuzzy-rotate` strategy models that synthetically, and the cross
 recovery still catches it IF any binding (fp/trace/origin/ticket) leaks. A fleet that rotates JA4 AND leaks no
 binding is the pure cross-JA4 case — ungradeable in-sandbox, and external-data-bound to convict (see below).
 
+## IPv6: the origin is the /64, not the /128
+
+JA4 is **transport-agnostic** — the TLS ClientHello is byte-identical over IPv4 and IPv6, so every JA4/JA4H/JA4T
+binding carries over unchanged. The IPv6 implication is one layer down, in the **IP-keyed** logic. Every convicting
+binding above gates on ">= 2 **distinct** source IPs" (one machine over many sessions is one IP — it can't collide
+with itself), and the arena rate gate keys its token bucket per IP. On IPv6 the *address* is the wrong unit: a
+subscriber is handed a whole **/64** (often a /56), and a host mints unlimited **/128s** for free (SLAAC + RFC 4941
+privacy addresses rotate hourly).
+
+So the detector folds every source IP to its **origin** — the IPv4 address, or the IPv6 **/64** prefix
+(`coordination._ip_origin`, applied at every distinct-IP counting site; the arena rate gate keys per /64 via
+`ipOrigin`). "Distinct source IPs" means distinct origins. This closes both failure modes at once:
+
+| | raw /128 counting (wrong) | /64 origin fold (correct) |
+|---|---|---|
+| **FP** — one real user, RFC 4941 privacy rotation within their /64 | N "distinct IPs" → looks like an N-node cloned fleet | 1 origin → one machine over many sessions, no collision |
+| **Evasion** — rate-limit bypass / faked spread by spraying /128s in one /64 | N buckets / N apparent origins for free | 1 bucket / 1 origin — the spray buys nothing |
+
+Grounded live (Skulk `ipv6-rotate` → live detector): a cloned fleet spraying **6 /128s across 2 /64s** scores
+`fleet 1.00` with `distinct_observed_ips=2` (folded from 6 — the spray adds no apparent spread) and convicts on the
+fp-collision across the two origins; the same cloned profile confined to **one /64** folds to a single origin,
+fires no collision, and caps at `candidate` (the FP boundary — a single subscriber is not a coordinated fleet). The
+lesson is the same economic bind as the rest of this doc: real IP spread costs **genuinely distinct /64
+subscriptions** — IPv6 abundance does not hand a fleet free origins.
+
 ## What would still convict it — the external-data frontier
 
 1. **IP reputation.** Those nodes ran on private container IPs (no rep flag). On real **datacenter/proxy**

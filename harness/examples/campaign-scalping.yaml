@@ -1,0 +1,19 @@
+# harness/examples/campaign-scalping — a fraud-scenario campaign: limited-drop scalping.
+# Recon-scope the rate budget, then a cloned checkout fleet spikes the drop. Gate prices it (rate-limit /
+# waiting-room); the detector convicts the cloned fleet on fp_collision.
+#
+# Run (spine up):  task coordination-fleet-manage -- --campaign examples/campaign-scalping.yaml --detector http://localhost:8099 --report scalping.json
+
+name: scalping
+edge: https://edge:8443/
+worker_detector: http://detector:8080
+retries: 2
+waves:
+  - name: recon-rps # scope the drop endpoint's rate budget before the spike
+    scout: http://detector:8080/arena/rate?level=hard
+    rates: [1, 2, 5, 10, 20]
+  - name: checkout-spike # cloned checkout fleet hammering the drop
+    nodes:
+      - evasion: zendriver-uach
+        replicas: 4
+        task: browse

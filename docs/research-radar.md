@@ -70,6 +70,7 @@ rule (redundant / FP-unsafe / superseded by another rung). Shipped rows name the
 | G22 | coherence (hardware) | **WASM/SIMD CPU-microarchitecture ↔ claimed platform** — a WASM probe measuring NEON vs SSE/AVX availability / register width runs BELOW the JS shim every spoofer patches; cross-check the inferred CPU arch against the UA/WebGL/WebGPU platform story (e.g. WASM says Apple-ARM but UA/WebGL claim x86 Windows). Defeats engine-fork browsers that beat every JS-visible check. | engine-fork anti-detect browsers (Wayfern/BotBrowser); cross-arch emulation/VM hosting | TheGP/untidetect-tools; arxiv 2509.09950; scrappey WASM-fingerprinting; topics fan-out 2026-06-24 | **lead (groundable)** → Docker WASM probe + ARM-vs-x86 mismatch synthesis. NB heavy/noisy — calibrate FP carefully; likely corroborating. |
 | G23 | network (TLS) | **uTLS preset coherence breaks** — (1) `HelloChrome_120` omits the `padding` extension real Chrome adds when the CH is <512 B → a single-packet length tell; (2) presets hardcode the AES cipher pref but randomize the ECH cipher → ~50 % outer-vs-inner ChaCha20/AES mismatch real Chrome never produces (CVE-2026-26995 / -27017). uTLS is already an evader fixture. | uTLS-based stealth clients pinned to a fixed `HelloChrome_*` preset | scrapfly PQ-TLS disclosure; topics fan-out 2026-06-24 | **lead (groundable)** → add ClientHello-length + ECH-cipher-vs-outer-cipher checks against the uTLS evader; convicting if the length/mismatch is structurally impossible for the claimed browser. |
 | G24 | coherence (temporal) | **Client-timestamp ↔ server-clock coherence** — cross-check client-reported event timestamps against the detector's own ingest time AND the `performance.now()` time-origin; a replayed/synthetic sensor payload desyncs these (DataDome's own "fake-vs-real timestamp" check). The detector already holds both clocks. | replayed/forwarded sensor payloads; relay/token-replay clients | joekav/SlideCaptcha (DataDome); topics fan-out 2026-06-24 | **lead (groundable)** → clock-drift rule with an FP-safe band for legit NTP/skew. Adjacent to `bh.trace_replay_within_session` (replay on the temporal axis rather than the trace axis). |
+| G25 | network (IPv6 origin unit) | **The "distinct source IP" unit is wrong for IPv6.** Every coordination binding (fp/trace/ticket collision, IP-spread) gates on ">= 2 DISTINCT observed IPs", and the rate gate keys per IP. On IPv6 the address is the wrong unit: a subscriber owns a whole /64 (often /56) and mints unlimited /128s for free (SLAAC + RFC 4941 privacy addresses rotate hourly). Raw /128 counting both **false-fires** (one real user's hourly privacy rotation looks like a multi-IP fleet) and is **evadable** (rate-limit bypass by spraying /128s; faking IP spread). JA4 itself is transport-agnostic — identical on v4/v6 — so the fix is purely the IP-keyed logic. | a fleet rotating /128s inside one /64 to bypass per-IP rate limits / fake spread; a real user's RFC 4941 rotation (the FP side) | IPv6 v4-vs-v6 JA4 analysis 2026-06-27 (in-session); RFC 4941 (privacy addrs); RFC 6177 (/56–/64 allocation) | **done** → `coordination._ip_origin` folds every observed_ip to its ORIGIN (IPv4 address / IPv6 /64) at every distinct-IP counting site (fp/trace/ticket collision, `_distinct_origins`, `_collision_clusters`); `arena/rate.go` `clientIP` keys per /64 origin (+ fixed the bracketed-IPv6 `net.SplitHostPort` parse the old `LastIndexByte(':')` mangled); Skulk `ipv6-rotate` strategy (cloned fleet spraying /128s across a few /64s). GROUNDED live: 6 /128s across 2 /64s → `fleet 1.00` with `distinct_observed_ips=2` (folded from 6 — the spray bought no spread, conviction held); 4 /128s within ONE /64 → `candidate 0.52`, `distinct_observed_ips=1`, no fp-collision (a single subscriber isn't a coordination fleet — the FP boundary, and without the fold those 4 would have read as 4 IPs → false `fleet`). Go + harness + fleet suites green. |
 
 ## External-data-bound leads (queue — need real data the lab can't self-generate)
 
@@ -1307,13 +1308,48 @@ JA4TScan (active port scan), JA4L*S* (server→client latency).
 **The one genuinely-new leverageable concept — JA4L (client latency / light-distance):** measure the handshake
 RTT, derive the max physical distance light could travel in that RTT, and flag when the IP's CLAIMED geo (we
 already have `detector/geo.py`, City+ASN MMDB) is FARTHER than light-speed allows → a proxy/VPN tell that needs
-NO IP reputation (the residential-proxy frontier). Pairs perfectly with our existing geo. BUT: (a) EXTERNAL-DATA-
-BOUND to ground — in-sandbox all traffic is localhost (RTT ~0, no distance), so a live positive needs a real
-distant client behind a proxy; and (b) JA4+ (everything beyond JA4) is **FoxIO License 1.1 + patent-pending**, so
-a public lab must NOT adopt JA4+ code and should tread carefully even reimplementing the method. VERDICT: record
-the RTT-vs-geo light-distance COHERENCE idea as an external-data-bound lead (reimplement the physics independently
-under our own name if/when pursued + legal check); do NOT ship an ungrounded, patent-adjacent rule now.
+NO IP reputation (the residential-proxy frontier). Pairs perfectly with our existing geo. The one real blocker is
+**external-data grounding**: in-sandbox all traffic is localhost (RTT ~0, no distance), so a live positive needs a
+real distant client behind a proxy. On licensing — FoxIO License 1.1 **permits free / non-commercial / research
+use** (only monetized / OEM products need the commercial + patent licence), so a free public lab like Kitsune may
+use the method; we still implement cleanroom (from the published concept, under our own name, never vendoring their
+code) as we do for base JA4. VERDICT: record the RTT-vs-geo light-distance COHERENCE idea as an external-data-bound
+lead; do NOT ship an ungrounded rule now (the bar is grounding, not licensing).
 
 **Marginal:** JA4's a_b_c locality lets you cluster by `a_c` (drop the cipher hash) to catch a CIPHER-only
 randomizing fleet — but no real tool randomizes ciphers-but-not-extensions, and full JA4 rotation is already
 caught by the cross-JA4 `_collision_clusters` recovery. Not worth a build.
+
+### Network — IPv6 origin unit: detection + evasion (G25, 2026-06-27)
+
+"What are the implications of JA4 fingerprinting on IPv4 vs IPv6?" → **JA4 is transport-agnostic** (the TLS
+ClientHello is identical over v4 and v6, so JA4/JA4H/JA4T-equiv all carry over unchanged). The real implication
+is one layer down: **the per-IP defenses break on IPv6.** Every coordination binding gates on ">= 2 DISTINCT
+observed IPs" and the arena rate gate keys per IP — but on IPv6 the *address* is the wrong unit. A subscriber is
+handed a whole **/64** (often a /56) and a host mints unlimited **/128s** for free (SLAAC + RFC 4941 privacy
+addresses rotate hourly). Counting raw /128s is both a **false positive** (one real user's hourly privacy
+rotation looks like a multi-IP fleet) and an **evasion** (rate-limit bypass + faked IP spread by spraying /128s
+inside one /64). Cleanroom: this is plain networking (a /64 prefix mask), zero FoxIO IP involved.
+
+Built (detection + evasion together):
+- **`coordination._ip_origin(ip)`** folds every source IP to its ORIGIN — IPv4 address, IPv6 /64 (`ipaddress`) —
+  applied at every distinct-IP counting site: `_fp_collision`, `_trace_collision`, `_shared_ticket`,
+  `_template_similarity`, the new `_distinct_origins` (IP-spread / proxy-fleet scoring), and `_collision_clusters`.
+  "Distinct source IPs" now means distinct origins everywhere.
+- **`arena/rate.go` `clientIP`** keys the token bucket per /64 origin (`ipOrigin`), and the rewrite fixes the
+  bracketed-IPv6 `RemoteAddr` parse the old `LastIndexByte(':')` mangled (now `net.SplitHostPort` + `net.ParseIP`).
+- **Skulk `ipv6-rotate`** strategy: a cloned fleet spraying distinct /128s across a FEW real /64s — models the
+  "use IPv6 to fake spread for free" attacker. Skulk's self-grader folds to /64 too (`grade._origin`).
+
+GROUNDED live against the running detector (`live_coordination.score_live`):
+- 6 /128s across **2 /64s** → `fleet 1.00`, `distinct_observed_ips=2` (folded from 6 — the /128 spray bought no
+  apparent spread) → fp-collision convicts across the 2 origins. The evasion buys nothing; real spread still costs
+  genuinely distinct /64 subscriptions.
+- 4 /128s within **ONE /64** → `candidate 0.52`, `distinct_observed_ips=1`, no fp-collision — a single subscriber
+  rotating privacy addresses is not a coordination fleet (the FP boundary; without the fold those 4 would have
+  read as 4 IPs → false `fleet`).
+
+Tests: harness `test_coordination` (cloned across distinct /64s convicts; /128 rotation within one /64 folds to one
+origin; `_ip_origin` unit), fleet `test_skulk` (the spray folds + the one-/64 FP boundary), arena `rate_test`
+(bracketed-IPv6 keying, /128-rotation throttled). Go + harness + fleet suites green; see
+[`docs/coordination-evasion.md`](coordination-evasion.md) §IPv6.
