@@ -1013,3 +1013,29 @@ The JA4-rotating fleet now has **two** edge-captured surviving-binding catches (
 ticket); a fleet that rotates JA4, fuzzes fp/trace, AND leaks neither binding remains the external-data-bound
 case above (needs a production-scale real-trace population for the corpus-wide similarity floor). Next: a
 `staggered` timing strategy (defeat the lockstep window — corroborating-only, so lower-value).
+
+### Browser-coherence — WebGL caps worker-vs-main (the hardened cross-realm GPU tell) (2026-06-27, G37b)
+
+`br.webgl_worker_vs_main` (existing, experimental) compares the WebGL renderer STRING across the main realm and
+a Worker OffscreenCanvas — but that is ONE value a spoofer can cheaply patch into Worker scope to defeat it.
+Built the hardened complement: `br.webgl_caps_worker_vs_main` compares the high-entropy **capability VECTOR**
+(MAX_TEXTURE_SIZE, MAX_RENDERBUFFER_SIZE, MAX_VIEWPORT_DIMS, the uniform/varying/attrib limits,
+MAX_COMBINED_TEXTURE_IMAGE_UNITS, supported-extension count) across the same two realms. One physical GPU yields
+one limit set, so a real browser matches; a main-realm WebGL fake that matched the renderer string but did not
+reproduce the whole limit vector inside the Worker diverges here.
+
+- **Collector:** `demo.py` (authoritative) + `livepage/probes.ts` now compute a `glCapsDigest` in the main
+  realm and an identical digest inside the Worker OffscreenCanvas, and emit `browser.webgl_caps_worker_divergence`
+  when they differ. Rule: `br.webgl_caps_worker_vs_main` (coherence, weight 0.6, reads the divergence signal).
+- **GROUNDED headful, both directions (real browsers, through edge→detector):**
+  - **FP-safe:** a real (SwiftShader) Chromium reports an identical caps digest in both realms → signal ABSENT,
+    rule does NOT fire (labelled bot only for its Playwright automation tells, not this rule).
+  - **Positive, clean:** a capture that fakes MAX_TEXTURE_SIZE in the MAIN realm only (renderer left untouched)
+    → renderer MATCHES across realms (`br.webgl_worker_vs_main` stays quiet) but the caps digest diverges →
+    `br.webgl_caps_worker_vs_main` fires. This is exactly the case the renderer-string check misses by
+    construction. Frozen as `corpus/sessions/webgl-caps-worker-spoof.json` +
+    `test_lit_rule_captures[webgl-caps-worker-spoof]`; the grounding capture is `harness/tools/webgl_caps_spoof_capture.mjs`.
+- **EXPERIMENTAL** on the same caveat as the renderer sibling: grounded only on software rendering here (no real
+  GPU in-sandbox). A real-hardware browser whose Worker OffscreenCanvas software-falls-back could diverge
+  legitimately, so it stays experimental (for review) until validated against a Tier-3 real-GPU device — that
+  real-GPU validation is the external-data-bound follow-up.

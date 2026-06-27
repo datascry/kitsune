@@ -1503,6 +1503,25 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       };
     } catch (e) { return null; }
   }
+  // capsDigest folds the high-entropy WebGL capability VECTOR (numeric limits + extension count) into one
+  // stable string, computed identically in the main realm and a Worker so the two can be compared. This is the
+  // HARDENED cross-realm GPU tell: the renderer STRING (webgl_worker_divergence) is one value a spoofer can
+  // cheaply patch into Worker scope too, but faithfully replicating this whole limit vector across realms is
+  // much harder — a main-realm WebGL fake that doesn't reproduce the same limits inside the Worker diverges here
+  // even after it has matched the renderer string. Uses gl.getContext('webgl') (not webgl2) to match the Worker.
+  function glCapsDigest(gl) {
+    if (!gl) return null;
+    try {
+      var n = function (k) { var v = gl.getParameter(gl[k]); return (v && v.length) ? Array.prototype.slice.call(v).join("x") : v; };
+      return [n("MAX_TEXTURE_SIZE"), n("MAX_RENDERBUFFER_SIZE"), n("MAX_VIEWPORT_DIMS"),
+        n("MAX_VERTEX_UNIFORM_VECTORS"), n("MAX_FRAGMENT_UNIFORM_VECTORS"), n("MAX_VARYING_VECTORS"),
+        n("MAX_COMBINED_TEXTURE_IMAGE_UNITS"), n("MAX_VERTEX_ATTRIBS"),
+        (gl.getSupportedExtensions() || []).length].join("|");
+    } catch (e) { return null; }
+  }
+  function mainGlCapsDigest() {
+    try { return glCapsDigest(document.createElement("canvas").getContext("webgl")); } catch (e) { return null; }
+  }
   // capsHash folds the capability fingerprint into one short stable id for the surfaces panel + the signal.
   function capsSummary(caps) {
     if (!caps) return "";
@@ -1567,15 +1586,21 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       } catch (err) { resolve(null); }
     });
   }
-  // The WebGL UNMASKED_RENDERER from an OffscreenCanvas inside a Worker. A getParameter spoof patches the
-  // main realm but not Worker scope, so a Worker reports the real GPU. Null on any failure → never fires.
-  function workerGlRenderer() {
+  // The WebGL UNMASKED_RENDERER and the capability digest from an OffscreenCanvas inside a Worker. A
+  // getParameter spoof patches the main realm but not Worker scope, so a Worker reports the real GPU — both the
+  // renderer string (r) and the limit vector (c). Resolves {r,c} (either may be null) or null on any failure →
+  // never fires. The Worker computes c with the SAME field list + formatting as glCapsDigest so the two compare.
+  function workerGl() {
     return new Promise(function (resolve) {
       try {
         var code = 'onmessage=function(){try{' +
           "var c=new OffscreenCanvas(8,8);var gl=c.getContext('webgl');" +
           "var d=gl&&gl.getExtension('WEBGL_debug_renderer_info');" +
-          'postMessage(d?String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)):null);' +
+          "var n=function(k){var v=gl.getParameter(gl[k]);return (v&&v.length)?Array.prototype.slice.call(v).join('x'):v;};" +
+          "var caps=gl?[n('MAX_TEXTURE_SIZE'),n('MAX_RENDERBUFFER_SIZE'),n('MAX_VIEWPORT_DIMS')," +
+          "n('MAX_VERTEX_UNIFORM_VECTORS'),n('MAX_FRAGMENT_UNIFORM_VECTORS'),n('MAX_VARYING_VECTORS')," +
+          "n('MAX_COMBINED_TEXTURE_IMAGE_UNITS'),n('MAX_VERTEX_ATTRIBS'),(gl.getSupportedExtensions()||[]).length].join('|'):null;" +
+          "postMessage({r:d?String(gl.getParameter(d.UNMASKED_RENDERER_WEBGL)):null,c:caps});" +
           '}catch(e){postMessage(null);}}';
         var w = new Worker(URL.createObjectURL(new Blob([code], { type: "application/javascript" })));
         var t = setTimeout(function () { resolve(null); }, 1500);
@@ -2314,9 +2339,16 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker OffscreenCanvas
     // (one physical GPU). A getParameter spoof patches the main realm but never the Worker → divergence.
-    var wglr = await workerGlRenderer();
-    if (wglr && wg.renderer && wglr !== wg.renderer) {
+    var wgl = await workerGl();
+    if (wgl && wgl.r && wg.renderer && wgl.r !== wg.renderer) {
       sigs.push(S("browser", "webgl_worker_divergence", true));
+    }
+    // GPU realm coherence, HARDENED: the WebGL capability VECTOR (limits + extension count) must also agree
+    // across realms — one physical GPU yields one limit set. A spoof that patched the renderer STRING into the
+    // Worker (to beat webgl_worker_divergence) but did not reproduce the whole limit vector there still diverges.
+    var mainCaps = mainGlCapsDigest();
+    if (wgl && wgl.c && mainCaps && wgl.c !== mainCaps) {
+      sigs.push(S("browser", "webgl_caps_worker_divergence", true));
     }
     var mch = mainCanvasHashCW();
     var wch = await workerCanvasHashCW();
