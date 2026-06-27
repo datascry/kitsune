@@ -1387,3 +1387,26 @@ sets a browser hint never a client hint (unit-tested); `task calibrate` 500 brow
 JA4 and are out of scope by construction — exactly what cross-layer coherence BEYOND JA4 is for. The external
 full-feed import (ja4db.com / vendor threat intel) stays queued: the long tail (malware C2, exotic libs) needs
 real traffic to FP-validate, and ja4db use is free but must be cleanroomed.
+
+### Coordination — known-automation-tool JA4 as a corroborator (G26 follow-on, 2026-06-28)
+
+The corroboration twin of the no-JS scraper rule. The coordination conviction gate elevates an AMBIGUOUS binding
+(fp-collision / JA4_c divergence / template-similarity / reused TLS ticket) to a `fleet` only when corroborated —
+previously by an unambiguous binding, a per-session JS automation tell, or a datacenter/proxy IP-reputation flag.
+A NO-JS automation-tool fleet (curl/Go/Python scrapers) fell through that gate: it runs no JavaScript (no
+webdriver/CDP tell) and can sit on CLEAN residential IPs (no IP-rep flag), yet still shares a network-layer
+ambiguous binding — a reused TLS-resumption ticket, or divergent JA4_c. Such a cluster capped at `candidate`
+even though its handshake is provably non-browser.
+
+Added `coordination._has_known_automation_ja4` — a 4th corroborator that fires when any cluster member carries
+`network.ja4_client_hint` (the edge's JA4→tool classification from G26). It is the network-layer twin of the JS
+automation tell: a non-browser TLS handshake IS proof the client is automation, so an ambiguous binding shared
+across a tool-JA4 cluster convicts without needing a JS tell or a datacenter flag. FP-safe: it only ELEVATES an
+existing ambiguous binding (a tool-JA4 cluster with no binding stays candidate), and a real diverse cohort runs
+browsers (a browser hint, never a client hint).
+
+Skulk gains `tool-fleet` (a no-JS tool fleet bound by a reused ticket on residential IPs, ja4_client set,
+no automation/datacenter) and FleetMember a `ja4_client` field (emits ja4_client_hint). GROUNDED live: the
+tool-fleet → `fleet 1.00` corroborated explicitly by the tool-JA4; the IDENTICAL ticket-reuse shape WITHOUT the
+tool-JA4 (a roaming-user-like residential cohort) stays `candidate` — the corroborator is exactly what flips it.
+harness + fleet suites green; README/matrix/scoreboard regenerated.

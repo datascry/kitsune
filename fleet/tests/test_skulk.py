@@ -114,6 +114,18 @@ def test_ipv6_rotate_sprays_128s_but_folds_to_few_64_origins() -> None:
     assert not assess(one_net).detectable
 
 
+def test_tool_fleet_is_no_js_ticket_bound_with_client_hint() -> None:
+    members = get("tool-fleet").members(3, seed=11)
+    assert len({m.tls_ticket_id for m in members}) == 1  # one reused TLS ticket (the ambiguous binding)
+    assert all(m.ja4_client == "go-http" for m in members)  # the non-browser JA4 corroborator
+    assert all(not m.automation and not m.datacenter for m in members)  # no JS tell, clean residential IPs
+    assert all(m.fp_hash is None and m.trace_hash is None for m in members)  # no JS → no fp/trace collisions
+    # the member emits ja4_client_hint on the wire (the signal the detector corroborates on)
+    kinds = {(s["layer"], s["kind"]) for s in members[0].signals("sid", "2026-06-28T00:00:00Z")}
+    assert ("network", "ja4_client_hint") in kinds and ("network", "tls_ticket_id") in kinds
+    assert assess(members).detectable  # Skulk's own check: the reused ticket is detectable
+
+
 def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("cloned").members(3, 1)).detectable  # fp-collision
     assert assess(get("trace-replay").members(3, 1)).detectable  # trace-collision

@@ -34,6 +34,11 @@ two escape routes a coordinated fleet has and their evolution:
                        true origin count (one /64 = one subscriber), so it cannot fake distinct-IP spread — and a
                        cloned fp across >=2 distinct /64s still convicts on fp-collision. The IPv6 evasion that
                        buys nothing: spread still costs genuinely distinct /64 subscriptions.
+  * ``tool-fleet``   — a NO-JS automation-tool fleet (curl/Go/Python) sharing one tool JA4, bound by a reused
+                       TLS ticket across clean RESIDENTIAL IPs. It carries no JS automation tell (it runs no
+                       JavaScript) and no datacenter flag, so the only corroborator is the non-browser JA4 itself
+                       (``ja4_client_hint``) — the network-layer twin of the automation tell that closes the
+                       no-JS coordination gap (a real cohort runs browsers, not curl/Go).
   * ``staggered``    — a cloned-profile fleet whose arrivals are SPREAD OVER TIME (beyond the lockstep window)
                        to look organic. The timing axis: it sheds only the lockstep CORROBORATION, never the
                        conviction — the fp-collision + automation binding convicts whatever the arrival spread.
@@ -269,6 +274,36 @@ class IPv6Rotate:
                 hardware_concurrency=8,
                 platform="Win32",
                 automation=True,  # corroborates the (ambiguous) fp-collision as a bot fleet, not a cohort
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class ToolFleet:
+    name = "tool-fleet"
+    summary = (
+        "A no-JS automation-tool fleet (curl/Go/Python) sharing one tool JA4, bound by a reused TLS ticket "
+        "across clean residential IPs — no JS tell, no datacenter flag; the non-browser JA4 corroborates the "
+        "ambiguous ticket-reuse binding as a bot fleet (the no-JS coordination gap)."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # Scripted HTTP clients run NO JavaScript (no fp_hash/trace, no webdriver tell) on CLEAN residential IPs
+        # (no datacenter flag), so the only corroborator is the JA4 itself — the edge classifies it as a
+        # non-browser HTTP stack (ja4_client). They share ONE reused TLS-resumption ticket, the ambiguous binding
+        # a no-JS fleet CAN produce (fp/trace collisions need a browser). A real captured go-http JA4 prefix.
+        ja4 = "t13d131100_f57a46bbacb6_" + _h("toolext", seed)[:12]
+        ticket = _h("toolticket", seed)
+        return [
+            FleetMember(
+                f"tool-{i}",
+                ja4,
+                _ip(seed, i),
+                tls_ticket_id=ticket,  # the surviving ambiguous binding: one TLS session reused fleet-wide
+                ja4_client="go-http",  # the corroborator: a non-browser HTTP stack (no JS tell needed)
+                automation=False,  # no JS → no webdriver/CDP tell
+                datacenter=False,  # clean residential egress → no IP-reputation flag
             )
             for i in range(n)
         ]

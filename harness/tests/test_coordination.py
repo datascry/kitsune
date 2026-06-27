@@ -187,6 +187,7 @@ def _sess(
     trace_hash: str | None = None,
     trace_descriptor: list[float] | None = None,
     tls_ticket_id: str | None = None,
+    ja4_client: str | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
 ) -> Session:
@@ -206,6 +207,8 @@ def _sess(
         sigs.append(mk(Layer.behavioral, "trace_descriptor", trace_descriptor, Source.collector))
     if tls_ticket_id is not None:
         sigs.append(mk(Layer.network, "tls_ticket_id", tls_ticket_id, Source.edge))
+    if ja4_client is not None:  # edge JA4→client hint: a non-browser HTTP stack (curl/go-http/python-urllib)
+        sigs.append(mk(Layer.network, "ja4_client_hint", ja4_client, Source.edge))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
@@ -340,6 +343,34 @@ def test_datacenter_ip_corroborates_a_clean_clone() -> None:
     v = score_cluster("X", members)
     assert v.cloned_fingerprint == "clean-clone"
     assert v.label == "fleet"  # datacenter IP-reputation flag corroborates the collision — no automation needed
+
+
+def test_tool_ja4_corroborates_no_js_ticket_fleet() -> None:
+    # A NO-JS automation-tool fleet (curl/Go/Python): shares one reused TLS ticket across distinct IPs (the
+    # ambiguous binding a no-JS fleet CAN produce — fp/trace need a browser), on CLEAN residential IPs (no
+    # datacenter flag) with no JS automation tell. The non-browser JA4 (ja4_client_hint) is the corroborator
+    # that convicts it — the network-layer twin of the automation tell, closing the no-JS gap.
+    members = [
+        ("t0", _sess("t0", "X", observed_ip="71.1.1.1", tls_ticket_id="tkt", ja4_client="go-http")),
+        ("t1", _sess("t1", "X", observed_ip="71.2.2.2", tls_ticket_id="tkt", ja4_client="go-http")),
+        ("t2", _sess("t2", "X", observed_ip="71.3.3.3", tls_ticket_id="tkt", ja4_client="go-http")),
+    ]
+    v = score_cluster("X", members)
+    assert v.shared_ticket == "tkt"
+    assert v.label == "fleet"  # tool-JA4 corroborates the ambiguous ticket-reuse → convicts
+    assert any("automation-tool JA4" in e for e in v.evidence)
+
+
+def test_tool_ja4_without_ambiguous_binding_is_not_a_fleet() -> None:
+    # FP guard: a tool-JA4 cluster with NO ambiguous coordination binding (no ticket reuse, no JA4_c divergence,
+    # no fp/trace — they run no JS) is just N scripted clients sharing an engine. The corroborator only ELEVATES
+    # an existing ambiguous tell; on its own it must not manufacture a fleet conviction.
+    members = [
+        ("t0", _sess("t0", "X", observed_ip="71.1.1.1", ja4_client="go-http")),
+        ("t1", _sess("t1", "X", observed_ip="71.2.2.2", ja4_client="go-http")),
+    ]
+    v = score_cluster("X", members)
+    assert v.label != "fleet"
 
 
 def test_corporate_fleet_fp_collision_is_not_convicted() -> None:
