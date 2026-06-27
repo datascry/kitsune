@@ -1072,3 +1072,27 @@ groundability:
 
 Net: the in-sandbox-groundable share of the unexercised set is now lit; the remaining two join the Tier-3
 real-GPU / real-OS queue alongside the WebGL-worker rules.
+
+### Red-team — managed fleet orchestration + zendriver-docker investigation (2026-06-27)
+
+Built the orchestration layer the authentic fleet path lacked. `fleet_capture.sh` runs N copies of ONE image
+and silently drops any node that flakes; `kitsune_harness.fleet_manager` is the stateful, self-healing upgrade:
+a declarative `FleetPlan` of **heterogeneous** nodes (mix camoufox + zendriver + …), each with its own env
+(KS_UACH/KS_LINUX/…) and **per-node egress proxy**, launched concurrently with **per-node retry** (a transient
+Chrome-sandbox flake re-runs instead of shrinking the fleet — observed live), then every minted session is
+pulled and graded as one coordination cluster, with a per-node health report. Ethics-gated in code: the target
+is checked against the harness allow-list FIRST (`assert_allowed`) — owned edge/detector/arena only, no botnet.
+Docker + the detector fetch are injected, so the orchestration (retry, concurrency, health, grading) is unit-
+tested without containers; the real-Docker launch is `# pragma: no cover`. **GROUNDED live** (`task
+coordination-fleet-manage`): 3 zendriver workers → 3/3 sessions → graded **`fleet` 1.00** (deterministic
+cloned-profile fp-collision across distinct container IPs). Note the worker↔manager detector split: workers get
+the network name `detector:8080`, the off-network manager fetches the host port `localhost:8099`.
+
+**zendriver-docker investigation** (github.com/cdpdriver/zendriver-docker): a SINGLE-INSTANCE template on
+`swayvnc-chrome` (Sway/Wayland + VNC on :5910, `RENDER_GROUP_GID` for GPU). It handles the Chrome sandbox via a
+containerized Wayland session (not `--no-sandbox`) and is **GPU-accelerated** — but has no pooling, proxy, or
+session management, so it is NOT a fleet manager (the orchestration above is the complementary piece). The
+genuinely useful lead: its **host-GPU passthrough** (`RENDER_GROUP_GID` + Wayland) is a concrete path to ground
+the Tier-3 real-GPU rules (`br.webgl_caps_worker_vs_main`, `br.webgpu_vendor_vs_webgl`) — a real GPU adapter
+inside the worker would finally exercise the worker-OffscreenCanvas-vs-main caps comparison on real hardware.
+Filed as the worker-image option for the real-GPU queue (needs a GPU host).
