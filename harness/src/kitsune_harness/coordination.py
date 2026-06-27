@@ -84,6 +84,14 @@ _TEMPLATE_SIMILARITY_BONUS = 0.55
 # `task template-calibrate`) and well above a one-humanizer family (median ≈ 0.05-0.07). See template_calibration.
 _TEMPLATE_EPSILON = 0.10
 _TEMPLATE_MIN_MEMBERS = 3  # < 3 traces can't yield a meaningful median, and a 2-IP pair could be one human
+# A reused TLS-resumption ticket (pre_shared_key / session_ticket id, captured by the edge) shared across distinct
+# IPs. A resumption ticket is client-specific session material the server issued to ONE client, so the same id
+# from distinct source IPs is one TLS identity shared across machines — a binding that survives JA4 rotation AND
+# fp/trace fuzzing (the last thing a fully-fuzzed JA4-rotating fleet still shares if it reuses one session).
+# AMBIGUOUS like fp_collision (a single roaming user CAN resume from a second IP — home then mobile — and some
+# servers permit ticket reuse), so it convicts only when corroborated; a clean roaming user on residential IPs
+# caps at candidate.
+_TICKET_BONUS = 0.55
 # A *confirmed* spoofing fleet (paradox or JA4_c) that is also spread across many distinct source IPs is
 # the residential-proxy botnet pattern: the IP diversity is there to look like distinct users and defeat
 # IP rate-limiting / datacenter-ASN rules, but the shared engine identity binds them. A modest escalation
@@ -110,6 +118,7 @@ class FleetVerdict:
     cloned_fingerprint: str | None = None  # one high-entropy fp_hash shared across distinct IPs (reuse)
     cloned_trace: str | None = None  # one pointer-trajectory trace_hash shared across distinct IPs (replay)
     template_radius: float | None = None  # median pairwise trace-descriptor distance when below the human floor
+    shared_ticket: str | None = None  # one TLS-resumption ticket id reused across distinct IPs (session reuse)
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
     arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
@@ -203,6 +212,25 @@ def _trace_collision(sessions: list[Session]) -> tuple[str, int] | None:
     for th, ips in by_hash.items():
         if len(ips) >= 2 and (best is None or len(ips) > best[1]):
             best = (th, len(ips))
+    return best
+
+
+def _shared_ticket(sessions: list[Session]) -> tuple[str, int] | None:
+    """A TLS-resumption ``tls_ticket_id`` shared by members spanning >= 2 *distinct* observed IPs — the
+    session-reuse binding. Identical to :func:`_fp_collision` in shape (same id from one IP is one client over
+    many sessions; the discriminator is distinct sources). Returns ``(ticket_id, distinct_ip_count)`` for the
+    widest such reuse, else ``None``."""
+    by_ticket: dict[str, set[str]] = {}
+    for session in sessions:
+        tid = session.value(Layer.network, "tls_ticket_id")
+        ip = session.value(Layer.network, "observed_ip")
+        if tid is MISSING or ip is MISSING:
+            continue
+        by_ticket.setdefault(str(tid), set()).add(str(ip))
+    best: tuple[str, int] | None = None
+    for tid, ips in by_ticket.items():
+        if len(ips) >= 2 and (best is None or len(ips) > best[1]):
+            best = (tid, len(ips))
     return best
 
 
@@ -351,6 +379,18 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
             f"per node (distinct trace_hash per instance, so exact-match found nothing)"
         )
 
+    # Shared TLS-resumption ticket: a binding that survives JA4 rotation AND fp/trace fuzzing. One ticket id
+    # across distinct IPs is one TLS session reused across machines. Ambiguous (a roaming user could resume from
+    # a second IP), so corroboration-gated below alongside fp_collision / template_similarity.
+    ticket = _shared_ticket(sessions)
+    shared_ticket = ticket[0] if ticket else None
+    if ticket is not None:
+        score += _TICKET_BONUS
+        evidence.append(
+            f"reused TLS-resumption ticket `{ticket[0]}` across {ticket[1]} distinct source IPs — one TLS "
+            f"session shared across machines (a resumption ticket is client-specific; survives JA4 rotation)"
+        )
+
     span = _first_seen_span(sessions)
     if span is not None and span <= _LOCKSTEP_WINDOW_S:
         score += _LOCKSTEP_BONUS
@@ -418,14 +458,18 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
     # spread above the floor), so its only innocent source is one person's own sessions, which the same
     # automation-tell / IP-reputation corroboration disambiguates.
     template_convicts = template is not None and corroborated
-    convicting = unambiguous or fp_collision_convicts or ja4c_convicts or template_convicts
-    if (collision is not None or ja4c_divergent or template is not None) and not corroborated:
+    # A reused TLS ticket is ambiguous like fp_collision (a roaming user can resume from a second IP), so it
+    # convicts only when corroborated.
+    ticket_convicts = ticket is not None and corroborated
+    convicting = unambiguous or fp_collision_convicts or ja4c_convicts or template_convicts or ticket_convicts
+    if (collision is not None or ja4c_divergent or template is not None or ticket is not None) and not corroborated:
         which = " + ".join(
             w
             for w, on in (
                 ("identical-fingerprint collision", collision is not None),
                 ("JA4_c divergence", ja4c_divergent),
                 ("template-similar traces", template is not None),
+                ("reused TLS ticket", ticket is not None),
             )
             if on
         )
@@ -459,6 +503,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
         cloned_fingerprint=cloned_fingerprint,
         cloned_trace=cloned_trace,
         template_radius=template_radius,
+        shared_ticket=shared_ticket,
         shared_real_ip=shared_real_ip,
         request_volume=request_volume,
         arrival_rate_per_min=arrival_rate,
@@ -473,6 +518,7 @@ _COLLISION_KEYS: list[tuple[Layer, str, str]] = [
     (Layer.browser, "fp_hash", "cloned fingerprint"),
     (Layer.behavioral, "trace_hash", "replayed pointer trace"),
     (Layer.browser, "webrtc_public_ip", "shared WebRTC origin"),
+    (Layer.network, "tls_ticket_id", "reused TLS session ticket"),
 ]
 
 

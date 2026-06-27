@@ -984,3 +984,32 @@ floor, median 0.054" — despite a distinct JA4, fp, AND trace_hash per node. Th
 - **Next groundable rung:** a `ticket-reuse` binding (a reused TLS session ticket / PSK shared across the
   rotated-JA4 nodes — another invariant that survives rotation, an exact collision key like the WebRTC origin),
   which needs the Go edge to capture + forward the resumption-ticket identity.
+
+### Coordination — TLS-ticket-reuse binding (the edge-captured rung that survives JA4 rotation) (2026-06-27)
+
+Built the next binding flagged above: a fleet that rotates its JA4 AND fuzzes fp/trace can still be bound by a
+**reused TLS-resumption ticket** — a fleet that resumes ONE TLS session across its nodes (to skip full
+handshakes) presents the same ticket from every node. A resumption ticket (TLS 1.3 `pre_shared_key` identity /
+TLS 1.2 `session_ticket`) is **client-specific session material the server issued to one client**, so the same
+ticket id arriving from distinct source IPs is one TLS identity shared across machines — a binding JA4 rotation
+and fp/trace fuzzing cannot touch.
+
+- **Edge (Go):** `clienthello.go` now parses `pre_shared_key` (0x29 — first PskIdentity, ignoring the per-
+  connection `obfuscated_ticket_age` so the id is stable) and `session_ticket` (0x23 — non-empty body only; an
+  empty body is a resumption *request*, not a presented ticket). `tls_extras.TLSTicketID()` hashes the opaque
+  ticket to a fixed-width, secret-free id; the edge forwards it as `network.tls_ticket_id`. Go-tested (parse,
+  stability, empty-ticket-is-not-an-id, distinct-tickets-differ).
+- **Blue:** `tls_ticket_id` joins `_COLLISION_KEYS` (recovers the fleet across rotated JA4) + `_shared_ticket`
+  in `score_cluster`. **AMBIGUOUS / corroboration-gated** like `fp_collision`: a single ROAMING user can resume
+  from a second IP (home → mobile) and some servers permit ticket reuse, so it convicts only with an automation
+  tell / IP-reputation flag; a clean roaming user on residential IPs caps at candidate.
+- **Red (`ticket-reuse` Skulk strategy):** rotated JA4 + fuzzed fp/trace + one shared `tls_ticket_id`, on
+  datacenter egress. **GROUNDED live** (`skulk run ticket-reuse` → real detector): graded **`fleet` 1.00** —
+  cluster recovered by "reused TLS session ticket", `shared_ticket` fires, datacenter corroborates — despite a
+  distinct JA4/fp/trace per node. Scenarios at 100% precision/recall: `fleet-ticket-reuse` convicts,
+  `legit-roaming-ticket` (one user, 2 residential IPs, sequential) caps at candidate.
+
+The JA4-rotating fleet now has **two** edge-captured surviving-binding catches (shared WebRTC origin, reused TLS
+ticket); a fleet that rotates JA4, fuzzes fp/trace, AND leaks neither binding remains the external-data-bound
+case above (needs a production-scale real-trace population for the corpus-wide similarity floor). Next: a
+`staggered` timing strategy (defeat the lockstep window — corroborating-only, so lower-value).

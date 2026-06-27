@@ -107,6 +107,70 @@ func TestParseClientHello(t *testing.T) {
 	}
 }
 
+// helloWithExts assembles a ClientHello whose extension block is exactly `exts`.
+func helloWithExts(exts []byte) []byte {
+	chBody := cat(
+		u16b(0x0303), make([]byte, 32), []byte{0x00},
+		u16ListB(0x1301), []byte{0x01, 0x00},
+		append(u16b(uint16(len(exts))), exts...),
+	)
+	hs := cat([]byte{0x01, byte(len(chBody) >> 16), byte(len(chBody) >> 8), byte(len(chBody))}, chBody)
+	return cat([]byte{0x16, 0x03, 0x01, byte(len(hs) >> 8), byte(len(hs))}, hs)
+}
+
+// pskExt builds a pre_shared_key (0x29) body: identities<> (one identity + ticket-age) + dummy binders<>.
+func pskExt(identity []byte) []byte {
+	ident := cat(u16b(uint16(len(identity))), identity, u32b(0)) // identity + obfuscated_ticket_age
+	idents := append(u16b(uint16(len(ident))), ident...)
+	binders := append(u16b(3), 0x20, 0x00, 0x00) // a (bogus) binder list; we never parse it
+	return extB(extPreSharedKey, cat(idents, binders))
+}
+
+func u32b(v uint32) []byte {
+	return []byte{byte(v >> 24), byte(v >> 16), byte(v >> 8), byte(v)}
+}
+
+func TestTLSTicketID(t *testing.T) {
+	t.Run("pre_shared_key", func(t *testing.T) {
+		c, err := ParseClientHello(helloWithExts(pskExt([]byte("ticket-A"))))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(c.PSKIdentity) != "ticket-A" || c.TLSTicketID() == "" {
+			t.Errorf("psk identity=%q id=%q", c.PSKIdentity, c.TLSTicketID())
+		}
+	})
+	t.Run("session_ticket non-empty", func(t *testing.T) {
+		c, _ := ParseClientHello(helloWithExts(extB(extSessionTicket, []byte("tls12-ticket"))))
+		if c.TLSTicketID() == "" {
+			t.Error("a presented TLS-1.2 session ticket should yield an id")
+		}
+	})
+	t.Run("session_ticket empty is a request, not a ticket", func(t *testing.T) {
+		c, _ := ParseClientHello(helloWithExts(extB(extSessionTicket, nil)))
+		if c.TLSTicketID() != "" {
+			t.Errorf("empty session_ticket (resumption REQUEST) must not be an id, got %q", c.TLSTicketID())
+		}
+	})
+	t.Run("none", func(t *testing.T) {
+		c, _ := ParseClientHello(buildClientHello())
+		if c.TLSTicketID() != "" {
+			t.Errorf("no ticket extension should yield empty id, got %q", c.TLSTicketID())
+		}
+	})
+	t.Run("same ticket collides, different tickets differ", func(t *testing.T) {
+		a, _ := ParseClientHello(helloWithExts(pskExt([]byte("shared-ticket"))))
+		b, _ := ParseClientHello(helloWithExts(pskExt([]byte("shared-ticket"))))
+		c, _ := ParseClientHello(helloWithExts(pskExt([]byte("other-ticket"))))
+		if a.TLSTicketID() != b.TLSTicketID() {
+			t.Error("the same ticket must yield the same id (the coordination collision)")
+		}
+		if a.TLSTicketID() == c.TLSTicketID() {
+			t.Error("distinct tickets must yield distinct ids")
+		}
+	})
+}
+
 func TestParseRejectsMalformed(t *testing.T) {
 	good := buildClientHello()
 	cases := map[string][]byte{

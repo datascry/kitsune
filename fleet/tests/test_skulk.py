@@ -84,6 +84,15 @@ def test_fuzzy_rotate_rotates_ja4_and_shares_one_origin() -> None:
     assert len({m.observed_ip for m in members}) == 4
 
 
+def test_ticket_reuse_rotates_ja4_and_shares_one_ticket() -> None:
+    members = get("ticket-reuse").members(3, seed=4)
+    assert len({m.ja4 for m in members}) == 3  # rotated JA4
+    assert len({m.fp_hash for m in members}) == 3  # fuzzed
+    assert len({m.trace_hash for m in members}) == 3  # fuzzed
+    assert len({m.tls_ticket_id for m in members}) == 1  # ...one reused TLS ticket survives
+    assert all(m.datacenter for m in members)  # the corroborator for the ambiguous tell
+
+
 def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("cloned").members(3, 1)).detectable  # fp-collision
     assert assess(get("trace-replay").members(3, 1)).detectable  # trace-collision
@@ -91,6 +100,8 @@ def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert sim.detectable and sim.signal == "template_similarity"
     rot = assess(get("fuzzy-rotate").members(3, 1))  # rotated JA4 + fuzzed, caught by the surviving origin
     assert rot.detectable and rot.signal == "shared_origin"
+    tkt = assess(get("ticket-reuse").members(3, 1))  # rotated JA4 + fuzzed, caught by the reused TLS ticket
+    assert tkt.detectable and tkt.signal == "shared_ticket"
     assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier (no descriptor, no co-binding)
     assert not assess(get("randomizer").members(3, 1)).detectable
 

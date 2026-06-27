@@ -73,6 +73,12 @@ func FromClientHello(
 	if extras := ch.TLSExtras(); extras != "" {
 		out = append(out, Network(sessionID, "tls_extras", extras, at))
 	}
+	// TLS-resumption ticket id (pre_shared_key / session_ticket). A resumption ticket is client-specific session
+	// material, so the same id arriving from distinct source IPs is one TLS identity shared across machines — a
+	// coordination binding that survives JA4 rotation AND fp/trace fuzzing (the detector clusters on it).
+	if tid := ch.TLSTicketID(); tid != "" {
+		out = append(out, Network(sessionID, "tls_ticket_id", tid, at))
+	}
 	return out
 }
 

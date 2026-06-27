@@ -4,9 +4,24 @@
 package fingerprint
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"strconv"
 	"strings"
 )
+
+// TLSTicketID is a stable short id for the TLS-resumption ticket the client presented (the pre_shared_key
+// identity or the TLS-1.2 session_ticket), or "" if none. It hashes the opaque ticket bytes so the value is
+// fixed-width and carries no secret, while two clients presenting the SAME ticket collide on the same id — the
+// coordination tell: a resumption ticket is client-specific session material, so one ticket arriving from
+// distinct source IPs is one TLS identity shared across machines (a binding that survives JA4 rotation).
+func (c *ClientHello) TLSTicketID() string {
+	if len(c.PSKIdentity) == 0 {
+		return ""
+	}
+	sum := sha256.Sum256(c.PSKIdentity)
+	return hex.EncodeToString(sum[:8])
+}
 
 // tlsGroupNames maps the common named groups to short labels for display (others fall back to hex).
 var tlsGroupNames = map[uint16]string{
