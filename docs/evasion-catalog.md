@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **24 evader tools**, **102 exercised techniques** (92 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **24 evader tools**, **103 exercised techniques** (93 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (24)
 
@@ -39,7 +39,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `xtest-coalesce` | Python | pressure-test: can X11 XTEST motion injection defeat the coalesced tell? |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (102)
+### Techniques exercised — scored against the live ruleset (103)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -106,6 +106,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `max-stealth` | bot | `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_spoofed` |
 | `measuretext-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.measuretext_offscreen_vs`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `mobile-emulation` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.font_os_vs_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
+| `mobile-no-touch` | bot | `br.apple_ua_nonwebkit`, `br.automation_globals`, `br.error_engine_vs_ua`, `br.mobile_no_touch`, `br.navplatform_vs_ua`, `br.safari_ua_no_webkit_api`, `br.ua_platform_vs_ch_platform`, `br.webdriver_present`, `net.ch_ua_mobile_vs_ua`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.tcp_os_vs_ua`, `net.tls_ext_order_static_within_session`, `net.tls_vs_ua_browser` |
 | `naive-tz-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.timezone_inconsistent`, `br.timezone_offset_vs_intl`, `br.timezone_worker_vs_main`, `br.webdriver_getter_tampered` |
 | `native-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.native_invariant_violated`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.webgl_worker_vs_main` |
 | `nodriver` | bot | `br.headless_ua` |

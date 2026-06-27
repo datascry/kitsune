@@ -46,6 +46,7 @@ _LIT = {
     "trace-replay": "bh.trace_replay_within_session",
     "webgl-renderer-spoof": "br.webgl_renderer_caps_mismatch",
     "webgl-caps-worker-spoof": "br.webgl_caps_worker_vs_main",
+    "mobile-no-touch": "br.mobile_no_touch",
     "worker-proxy": "br.worker_constructor_tampered",
     "worker-proxy-fix": "br.worker_source_rewritten",
     "brave-fake-proxy": "br.brave_spoofed",
