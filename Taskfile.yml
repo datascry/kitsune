@@ -109,6 +109,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.fleet_manager {{.CLI_ARGS}}"]
 
+  scope-rps:
+    desc: "Recon: scope a target's request-rate budget (ramp RPS, find the throttle/challenge/saturation knee). Authorized targets only. e.g. task scope-rps -- http://localhost:8099/healthz --rates 1,5,10,25,50,100"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.rps_scout {{.CLI_ARGS}}"]
+
   calibrate-intoli:
     desc: "Corroborate the calibration against a second real-traffic source (Intoli user-agents dataset)"
     dir: harness

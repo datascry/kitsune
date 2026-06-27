@@ -1193,3 +1193,17 @@ scrape-scroll → graded `fleet` 1.00 via fp_collision, outcome "caught". The ca
 candidate. NB the `rate` field is an informational scale/RPS hint — ACTIVE RPS scoping (probing the target's
 throttle/challenge thresholds in a recon wave) is the distinct rate dimension this sets up but does not yet
 drive; the recon wave today is a fingerprint/coordination baseline, not rate reconnaissance.
+
+### Red-team — RPS scoping (the recon RATE dimension) (2026-06-27)
+
+Closed the recon rate gap. The fleet manager scoped a target's fingerprint/coordination posture but never its
+RATE posture. `kitsune_harness.rps_scout` is the recon rate probe: `scout_rps(url, rates=…)` ramps a short,
+bounded probe through ascending target RPS against an ALLOW-LISTED url (ethics-gated by `assert_allowed`),
+classifies each request (ok / throttled 429 / blocked 403,503 / challenged — a PoW/CAPTCHA/rate-limit gate
+marker in the body) + latency percentiles, and reports the BUDGET (the highest clean RPS before the knee) and
+what degraded (throttled/blocked/challenged/latency). It stops ramping at the first knee — a bounded recon
+probe, NOT a flood. CLI `python -m kitsune_harness.rps_scout <url>` / `task scope-rps`; HTTP + the pacing sleep
+are injected so the ramp/budget/knee logic is unit-tested without a network. GROUNDED live on Kitsune: ramped
+1→100 RPS against the detector /healthz → all clean (latency flat ~2ms), budget 100 rps, knee none (an honest
+finding: no rate limit on healthz up to 100 RPS). The knee paths (throttle/blocked/challenge/saturation) are
+unit-grounded. This is the recon rate dimension an archetype's `rate` profile now has a tool to measure against.
