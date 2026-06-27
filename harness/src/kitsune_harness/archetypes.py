@@ -17,17 +17,19 @@ dimension that probes the target's throttle/challenge thresholds; this catalog s
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 
 @dataclass(frozen=True)
 class ArchetypeNode:
-    """One node type in an archetype's fleet: a named evasion, a replica count, an optional behavioral task."""
+    """One node type in an archetype's fleet: a named evasion, a replica count, an optional behavioral task, and
+    optional extra env (e.g. ``KS_TASK_SEED`` to pin a canned-replay trace fleet-wide)."""
 
     evasion: str
     replicas: int
     task: str | None = None
+    env: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -45,7 +47,13 @@ class Archetype:
     def to_plan_obj(self, **overrides: Any) -> dict[str, Any]:
         """A ``plan_from_obj``-shaped dict (so the fleet manager builds it without importing this module)."""
         nodes = [
-            {"evasion": n.evasion, "replicas": n.replicas, **({"task": n.task} if n.task else {})} for n in self.nodes
+            {
+                "evasion": n.evasion,
+                "replicas": n.replicas,
+                **({"task": n.task} if n.task else {}),
+                **({"env": n.env} if n.env else {}),
+            }
+            for n in self.nodes
         ]
         return {"name": self.name, "nodes": nodes, **overrides}
 
@@ -109,6 +117,21 @@ _reg(
         binding="none",
         expected="candidate",
         rate="low and slow — a few accounts, spread over time, to avoid scale tells",
+    )
+)
+_reg(
+    Archetype(
+        name="review-farmer",
+        threat="review-fraud",
+        # The BEHAVIORAL binding (distinct from the fp_collision personas): camoufox gives each node a DISTINCT
+        # fingerprint (randomized per launch → no fp_collision), but a pinned KS_TASK_SEED makes every node
+        # replay the IDENTICAL canned humanized trace → one shared trace_hash across distinct IPs → trace_collision
+        # convicts (two real users never trace the same path). The engagement/review-farm shape.
+        summary="engagement/review farm: distinct fingerprints (camoufox) but ONE canned humanized trace replayed",
+        nodes=[ArchetypeNode("camoufox-linux", 3, task="browse", env={"KS_TASK_SEED": "424242"})],
+        binding="trace_collision",
+        expected="caught",
+        rate="steady — a stream of fake reviews/engagements over time",
     )
 )
 _reg(

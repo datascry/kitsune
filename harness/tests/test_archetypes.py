@@ -54,6 +54,10 @@ def test_binding_matches_tool_fingerprint_behaviour() -> None:
             assert get_evasion(a.nodes[0].evasion).family != "camoufox", f"{a.name}: camoufox randomizes — no fp"
         if a.binding == "none":
             assert all(get_evasion(n.evasion).family == "camoufox" for n in a.nodes), f"{a.name}: not fp-diverse"
+        if a.binding == "trace_collision":
+            # a canned-replay persona: DISTINCT fingerprints (camoufox) but ONE shared trace via a pinned seed.
+            assert all(get_evasion(n.evasion).family == "camoufox" for n in a.nodes), f"{a.name}: needs distinct fps"
+            assert all(n.env.get("KS_TASK_SEED") and n.task for n in a.nodes), f"{a.name}: needs a seeded task"
 
 
 def test_catalog_spans_caught_and_evaded() -> None:
