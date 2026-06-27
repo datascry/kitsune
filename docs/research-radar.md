@@ -70,6 +70,7 @@ rule (redundant / FP-unsafe / superseded by another rung). Shipped rows name the
 | G22 | coherence (hardware) | **WASM/SIMD CPU-microarchitecture ↔ claimed platform** — a WASM probe measuring NEON vs SSE/AVX availability / register width runs BELOW the JS shim every spoofer patches; cross-check the inferred CPU arch against the UA/WebGL/WebGPU platform story (e.g. WASM says Apple-ARM but UA/WebGL claim x86 Windows). Defeats engine-fork browsers that beat every JS-visible check. | engine-fork anti-detect browsers (Wayfern/BotBrowser); cross-arch emulation/VM hosting | TheGP/untidetect-tools; arxiv 2509.09950; scrappey WASM-fingerprinting; topics fan-out 2026-06-24 | **lead (groundable)** → Docker WASM probe + ARM-vs-x86 mismatch synthesis. NB heavy/noisy — calibrate FP carefully; likely corroborating. |
 | G23 | network (TLS) | **uTLS preset coherence breaks** — (1) `HelloChrome_120` omits the `padding` extension real Chrome adds when the CH is <512 B → a single-packet length tell; (2) presets hardcode the AES cipher pref but randomize the ECH cipher → ~50 % outer-vs-inner ChaCha20/AES mismatch real Chrome never produces (CVE-2026-26995 / -27017). uTLS is already an evader fixture. | uTLS-based stealth clients pinned to a fixed `HelloChrome_*` preset | scrapfly PQ-TLS disclosure; topics fan-out 2026-06-24 | **lead (groundable)** → add ClientHello-length + ECH-cipher-vs-outer-cipher checks against the uTLS evader; convicting if the length/mismatch is structurally impossible for the claimed browser. |
 | G24 | coherence (temporal) | **Client-timestamp ↔ server-clock coherence** — cross-check client-reported event timestamps against the detector's own ingest time AND the `performance.now()` time-origin; a replayed/synthetic sensor payload desyncs these (DataDome's own "fake-vs-real timestamp" check). The detector already holds both clocks. | replayed/forwarded sensor payloads; relay/token-replay clients | joekav/SlideCaptcha (DataDome); topics fan-out 2026-06-24 | **lead (groundable)** → clock-drift rule with an FP-safe band for legit NTP/skew. Adjacent to `bh.trace_replay_within_session` (replay on the temporal axis rather than the trace axis). |
+| G26 | network (JA4 threat intel) | **JA4 → known-client enrichment as a coherence input** — the on-thesis slice of "JA4/JA3 threat intel." A blocklist of malware JA4s is the off-thesis bad-signal denylist Kitsune exists to beat (evadable by fingerprint rotation, FP-prone via JA4 collision); the VALUE is JA4→client identity used cross-layer. The lazy-scraper gap: `net.tls_vs_ua_browser` reads the JS `browser.ua_browser`, absent for a no-JS client, so a curl/Go/Python scraper spoofing a browser UA in the HTTP *header* over its default TLS stack evaded it. | curl / Go net/http / Python urllib / requests with a spoofed browser UA (the default-TLS + fake-UA lazy scraper); NOT the high-fidelity impersonators (curl-impersonate/uTLS emit a Chrome-identical JA4 — out of scope by design) | abuse.ch SSLBL (JA3 feed retired — skip JA3); ja4db.com (FoxIO community DB, free-use OK, cleanroom); self-generated from the evader fleet | **done** → `net.ja4_tool_vs_ua` (coherence, w0.75, active). Captured live tool JA4s through the edge (curl `t13d3012h2_1d37bd780c83`, Go `t13d131100_f57a46bbacb6`, Python `t13d171100_ab0a1bf427ad`); added a `Client` hint field → edge emits `network.ja4_client_hint` + a new `network.ua_header_browser` (UA family parsed edge-side, available for no-JS clients). Rule fires when both present (disjoint vocabularies → not_equal ≡ tool-JA4 wearing a browser UA). GROUNDED live confirm-evades-first: curl+Chrome-UA evaded (ja4_browser_hint=None) → now FIRES; curl+honest-UA + real browser do NOT. Calibrate clean (browserforge has no JA4 → 0 FP). External feed (full ja4db/threat import) stays queued — long-tail mappings need real traffic to FP-validate (JA4 collisions). |
 | G25 | network (IPv6 origin unit) | **The "distinct source IP" unit is wrong for IPv6.** Every coordination binding (fp/trace/ticket collision, IP-spread) gates on ">= 2 DISTINCT observed IPs", and the rate gate keys per IP. On IPv6 the address is the wrong unit: a subscriber owns a whole /64 (often /56) and mints unlimited /128s for free (SLAAC + RFC 4941 privacy addresses rotate hourly). Raw /128 counting both **false-fires** (one real user's hourly privacy rotation looks like a multi-IP fleet) and is **evadable** (rate-limit bypass by spraying /128s; faking IP spread). JA4 itself is transport-agnostic — identical on v4/v6 — so the fix is purely the IP-keyed logic. | a fleet rotating /128s inside one /64 to bypass per-IP rate limits / fake spread; a real user's RFC 4941 rotation (the FP side) | IPv6 v4-vs-v6 JA4 analysis 2026-06-27 (in-session); RFC 4941 (privacy addrs); RFC 6177 (/56–/64 allocation) | **done** → `coordination._ip_origin` folds every observed_ip to its ORIGIN (IPv4 address / IPv6 /64) at every distinct-IP counting site (fp/trace/ticket collision, `_distinct_origins`, `_collision_clusters`); `arena/rate.go` `clientIP` keys per /64 origin (+ fixed the bracketed-IPv6 `net.SplitHostPort` parse the old `LastIndexByte(':')` mangled); Skulk `ipv6-rotate` strategy (cloned fleet spraying /128s across a few /64s). GROUNDED live: 6 /128s across 2 /64s → `fleet 1.00` with `distinct_observed_ips=2` (folded from 6 — the spray bought no spread, conviction held); 4 /128s within ONE /64 → `candidate 0.52`, `distinct_observed_ips=1`, no fp-collision (a single subscriber isn't a coordination fleet — the FP boundary, and without the fold those 4 would have read as 4 IPs → false `fleet`). Go + harness + fleet suites green. |
 
 ## External-data-bound leads (queue — need real data the lab can't self-generate)
@@ -1353,3 +1354,36 @@ Tests: harness `test_coordination` (cloned across distinct /64s convicts; /128 r
 origin; `_ip_origin` unit), fleet `test_skulk` (the spray folds + the one-/64 FP boundary), arena `rate_test`
 (bracketed-IPv6 keying, /128-rotation throttled). Go + harness + fleet suites green; see
 [`docs/coordination-evasion.md`](coordination-evasion.md) §IPv6.
+
+### Network — JA4 threat intel: the no-JS lazy-scraper tell (G26, 2026-06-28)
+
+"Can we leverage JA3/JA4 threat intel?" → the honest answer is the on-thesis *slice*, not a blocklist. A
+denylist of known-bad JA4 hashes is the canonical bad-signal Kitsune exists to beat (trivially evaded by the
+fingerprint rotation the lab already models, FP-prone via JA4 collision). The value is JA4 used as a
+**client-identity coherence input** — the lab already does this for browser engines (`ja4_hints.json` →
+`net.tls_vs_ua_browser`/`net.tls_os_vs_tcp_os`) and for IP reputation (curated CIDR feed → the coordination
+corroborator). **Skip JA3 entirely**: MD5-era, unstable under TLS 1.3 + GREASE, abuse.ch retired its JA3 feed.
+
+The gap closed: `net.tls_vs_ua_browser` reads the JS `browser.ua_browser`, which a no-JS client never sends, so
+a curl/Go/Python scraper that spoofs a browser UA in the HTTP *header* over its default TLS stack evaded it
+(GROUNDED baseline: curl with a Chrome UA → `ja4_browser_hint=None` → the rule was unevaluable). Built the no-JS
+complement, entirely from self-generated ground truth (no external feed, license-clean):
+
+- Captured the real tool JA4s by running each client through the live edge: curl `t13d3012h2_1d37bd780c83`,
+  Go net/http `t13d131100_f57a46bbacb6`, Python urllib `t13d171100_ab0a1bf427ad`.
+- Added a `Client` field to the edge hint (`hints.go`) — mutually exclusive with `Browser` (a JA4 is a browser
+  engine OR a known automation stack). The edge emits `network.ja4_client_hint` (`signal.go`) and a new
+  `network.ua_header_browser` (`reverseproxy.go::uaHeaderBrowser`, the UA family parsed edge-side — the operand
+  that exists for a no-JS client, unlike the JS `browser.ua_browser`).
+- Rule `net.ja4_tool_vs_ua` (coherence, w0.75, active): `not_equal` over the two. Disjoint vocabularies
+  (tool name vs browser name) → it fires iff BOTH are present, i.e. a known automation-tool TLS handshake
+  wearing a browser User-Agent.
+
+GROUNDED live end-to-end (ruleset 0.74.53): curl+Chrome-UA, which EVADED before, now FIRES; honest curl+`curl/8.x`
+does NOT (ua_header_browser withheld); Go+Chrome-UA also classified (`go-http`). FP-safe: a real browser's JA4
+sets a browser hint never a client hint (unit-tested); `task calibrate` 500 browserforge profiles → **bot 0%**,
+`net.ja4_tool_vs_ua` never fires (browserforge carries no JA4). Honest scope: this catches the LAZY scraper
+(default-library fingerprint); the high-fidelity impersonators (curl-impersonate/uTLS) emit a Chrome-identical
+JA4 and are out of scope by construction — exactly what cross-layer coherence BEYOND JA4 is for. The external
+full-feed import (ja4db.com / vendor threat intel) stays queued: the long tail (malware C2, exotic libs) needs
+real traffic to FP-validate, and ja4db use is free but must be cleanroomed.

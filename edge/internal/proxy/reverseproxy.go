@@ -140,6 +140,13 @@ func prepare(
 	// that keeps JA4/h2/OS coherent and so slips past every cross-layer UA rule.
 	if ua := r.Header.Get("User-Agent"); ua != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "http_user_agent", ua, now))
+		// The browser family the User-Agent HEADER claims — derived edge-side from the raw UA string, NOT the
+		// JS navigator (which a no-JS scraper never sends). This is the operand net.ja4_tool_vs_ua compares
+		// against ja4_client_hint: a known automation-tool JA4 under a browser-claiming UA is the lazy-scraper
+		// tell that net.tls_vs_ua_browser misses (it reads the JS browser.ua_browser, absent for a no-JS client).
+		if b := uaHeaderBrowser(ua); b != "" {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "ua_header_browser", b, now))
+		}
 		// Forward-confirmed reverse DNS for a DECLARED crawler: a UA claiming Googlebot/Bingbot/etc. whose
 		// connecting IP does not FCrDNS-confirm to that crawler's official domain is an impersonator. This is
 		// the crawlers' OWN documented verification method, so a real crawler always confirms; a transient DNS
@@ -352,6 +359,27 @@ func clientIP(r *http.Request) string {
 func isModernBrowserUA(ua string) bool {
 	return strings.Contains(ua, "Chrome/") || strings.Contains(ua, "Firefox/") ||
 		strings.Contains(ua, "Edg/") || (strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"))
+}
+
+// uaHeaderBrowser classifies a User-Agent HEADER string into the same coarse browser vocabulary the JS
+// collector reports for browser.ua_browser (chrome/firefox/safari/edge), or "" for a non-browser UA
+// (curl/8.x, python-urllib, Go-http-client — they make no browser claim, so there is nothing to contradict).
+// It is the edge-visible counterpart to browser.ua_browser, computed for EVERY request incl. no-JS clients.
+// Order matters: Edge and Brave UAs also contain "Chrome/", so the Edg/ check precedes Chrome; Safari claims
+// only count with the Version/ token (Chrome/Edge embed "Safari/" too) and after Chrome is ruled out.
+func uaHeaderBrowser(ua string) string {
+	switch {
+	case strings.Contains(ua, "Edg/"):
+		return "edge"
+	case strings.Contains(ua, "Firefox/"):
+		return "firefox"
+	case strings.Contains(ua, "Chrome/"):
+		return "chrome"
+	case strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"):
+		return "safari"
+	default:
+		return ""
+	}
 }
 
 // uaHasKnownH2Order reports whether the UA's engine has a POSITIVELY-identified HTTP/2 pseudo-header order

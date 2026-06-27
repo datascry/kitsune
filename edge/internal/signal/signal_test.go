@@ -77,6 +77,25 @@ func TestFromClientHelloBrowserHintOnlyNoOS(t *testing.T) {
 	}
 }
 
+func TestFromClientHelloEmitsClientHintForToolJA4(t *testing.T) {
+	ch := &fingerprint.ClientHello{Transport: "t", Version: 0x0304, CipherSuites: []uint16{0x1301}}
+	// A non-browser HTTP-client entry: a Client label, no Browser/OS. The edge must emit ja4_client_hint
+	// (the operand net.ja4_tool_vs_ua compares against ua_header_browser) and NOT ja4_browser_hint.
+	table := fingerprint.HintTable{ch.JA4(): {Client: "curl"}}
+	sigs := FromClientHello("sess", ch, table, at)
+	if len(sigs) != 5 {
+		t.Fatalf("want 5 signals (ja3, ja4, client_hint, ext-order, cipher-order), got %d", len(sigs))
+	}
+	if sigs[2].Kind != "ja4_client_hint" || sigs[2].Value != "curl" {
+		t.Errorf("client hint: %+v", sigs[2])
+	}
+	for _, s := range sigs {
+		if s.Kind == "ja4_browser_hint" || s.Kind == "ja4_os_hint" {
+			t.Fatalf("a tool hint must not emit %s", s.Kind)
+		}
+	}
+}
+
 func TestFromH2(t *testing.T) {
 	fp := fingerprint.H2Fingerprint{
 		Settings:          []fingerprint.H2Setting{{ID: 1, Value: 65536}},

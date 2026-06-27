@@ -49,6 +49,24 @@ func TestRealSafariFirefoxJA4Hints(t *testing.T) {
 	}
 }
 
+func TestToolJA4ClientHints(t *testing.T) {
+	// Live-captured non-browser HTTP-client JA4s (through the edge): a Client hint, no Browser. The prefix
+	// fallback classifies them JA4_c-independently, so they catch the tool regardless of the trailing hash.
+	table := DefaultHints()
+	for _, tc := range []struct {
+		ja4, client string
+	}{
+		{"t13d3012h2_1d37bd780c83_882d495ac381", "curl"},
+		{"t13d131100_f57a46bbacb6_ab7e3b40a677", "go-http"},
+		{"t13d171100_ab0a1bf427ad_8e6e362c5eac", "python-urllib"},
+	} {
+		h, ok := table.Lookup(tc.ja4)
+		if !ok || h.Client != tc.client || h.Browser != "" {
+			t.Errorf("%s: got %+v ok=%v, want client=%q browser=\"\"", tc.ja4, h, ok, tc.client)
+		}
+	}
+}
+
 func TestLookupRejectsNonMatches(t *testing.T) {
 	table := DefaultHints()
 	if _, ok := table.Lookup("t13d9999h2_deadbeefcafe_0123456789ab"); ok {

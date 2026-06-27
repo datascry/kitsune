@@ -60,6 +60,12 @@ func FromClientHello(
 		if hint.OS != "" && hint.OS != "unknown" {
 			out = append(out, Network(sessionID, "ja4_os_hint", hint.OS, at))
 		}
+		// A NON-browser HTTP client (curl / Go / Python …): the JA4 belongs to a known automation stack, not
+		// a browser engine. Paired with a browser User-Agent (ua_header_browser) this is the lazy-scraper tell
+		// — a default TLS library wearing a spoofed Chrome/Firefox UA. Emitted only when the hint names a client.
+		if hint.Client != "" && hint.Client != "unknown" {
+			out = append(out, Network(sessionID, "ja4_client_hint", hint.Client, at))
+		}
 	}
 	// Raw wire-order fingerprints JA4 sorts away (the stronger impostor tell — a pinned TLS template emits a
 	// fixed/Chrome-impossible order; GREASE normalized to "g" so placement is captured). Appended last so the

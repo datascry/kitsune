@@ -406,6 +406,36 @@ func TestPrepareEmitsCHUABrowser(t *testing.T) {
 	}
 }
 
+func TestPrepareEmitsUAHeaderBrowser(t *testing.T) {
+	r := req(t, "abc")
+	r.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, s := range prep.signals {
+		if s.Kind == "ua_header_browser" && s.Value == "chrome" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected ua_header_browser=chrome signal, got %+v", prep.signals)
+	}
+	// A non-browser UA makes no browser claim → the signal must be withheld (nothing to contradict).
+	r2 := req(t, "abc")
+	r2.Header.Set("User-Agent", "curl/8.7.1")
+	prep2, err := prepare(r2, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range prep2.signals {
+		if s.Kind == "ua_header_browser" {
+			t.Errorf("a non-browser UA must not emit ua_header_browser, got %+v", s)
+		}
+	}
+}
+
 func TestPrepareEmitsCHPlatform(t *testing.T) {
 	r := req(t, "abc")
 	r.Header.Set("Sec-CH-UA-Platform", `"macOS"`)
@@ -579,6 +609,28 @@ func TestUAGreasesHandshake(t *testing.T) {
 	for _, c := range cases {
 		if got := uaGreasesHandshake(c.ua); got != c.want {
 			t.Errorf("%s: uaGreasesHandshake=%v want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestUAHeaderBrowser(t *testing.T) {
+	// Classify the UA HEADER into the browser vocabulary (or "" for a non-browser client). Edge must precede
+	// Chrome (Edge UAs embed Chrome/); Safari needs Version/ and must lose to Chrome (Chrome embeds Safari/).
+	cases := []struct {
+		name, ua, want string
+	}{
+		{"chrome", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "chrome"},
+		{"edge", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0", "edge"},
+		{"firefox", "Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0", "firefox"},
+		{"safari", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "safari"},
+		{"curl (non-browser)", "curl/8.7.1", ""},
+		{"python urllib (non-browser)", "Python-urllib/3.12", ""},
+		{"go http (non-browser)", "Go-http-client/1.1", ""},
+		{"bare Safari token without Version (not a browser claim)", "SomeBot/1.0 Safari/537.36", ""},
+	}
+	for _, c := range cases {
+		if got := uaHeaderBrowser(c.ua); got != c.want {
+			t.Errorf("%s: uaHeaderBrowser=%q want %q", c.name, got, c.want)
 		}
 	}
 }
