@@ -1,0 +1,29 @@
+# harness/examples/campaign-account-takeover — a declarative MULTI-WAVE campaign for the fleet manager.
+# An engagement as a timeline: a quiet recon wave, then the coordinated credential-stuffing wave.
+#
+# Each wave is a full managed fleet, run in sequence and graded in ISOLATION (the manager grades only the
+# sessions each wave minted, so the recon wave does not pollute the attack wave's coordination cluster even
+# though both hit the same detector). The campaign report aggregates which waves the defense caught vs evaded.
+# Campaign-level edge/detector/retries are inherited by every wave unless a wave overrides them.
+#
+# Run (spine up):  task coordination-fleet-manage -- --campaign examples/campaign-account-takeover.yaml --detector http://localhost:8099 --report campaign.json
+
+name: account-takeover
+edge: https://edge:8443/
+worker_detector: http://detector:8080
+retries: 2
+
+waves:
+  # Wave 1 — recon: one stock browser to baseline what the defense sees on a clean session.
+  - name: recon
+    nodes:
+      - evasion: vanilla
+        replicas: 1
+
+  # Wave 2 — the coordinated credential-stuffing fleet: one cloned hardened profile fanned across the nodes,
+  # each replaying a form-fill behavioral script. The fp-collision binding convicts the cluster.
+  - name: credential-stuffing
+    nodes:
+      - evasion: camoufox-hardened
+        replicas: 3
+        task: form-fill
