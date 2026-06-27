@@ -39,6 +39,29 @@ Every convicting binding is gone. The only shared signal left is the **JA4 ciphe
 which is ambiguous (a real cohort shares it), plus corroborating-only signals (the TLS/JS paradox, IP spread,
 lockstep). It **evades conviction**.
 
+## The distinct-builds lever (grounded)
+
+The one remaining shared signal above is the **JA4 cipher prefix** — one browser build. The lever to drop it is
+**distinct builds**: put nodes on different engines/builds so the fleet spans multiple JA4 prefixes and no single
+cluster binds it. The fleet manager now reports this fragmentation (`fragmented`, per-cluster breakdown).
+
+GROUNDED live: a mixed-engine fleet (camoufox ×2 [Firefox] + zendriver ×2 [Chrome]) **fragmented into two JA4
+clusters** — and both graded `candidate`:
+
+```
+fragmented: True | outcome: evaded
+  cluster candidate 1.00  members [camoufox-linux-0, camoufox-linux-1]   (Firefox JA4)
+  cluster candidate 0.42  members [zendriver-uach-0, zendriver-uach-1]   (Chrome JA4)
+```
+
+So distinct builds works as a lever — the JA4 prefix no longer binds the whole fleet, and each sub-cluster is
+small + uncorroborated → evades. Its in-sandbox LIMIT: real browsers give only a few engine families (Firefox /
+Chrome), and a same-engine sub-fleet still collides on fp if its tool is deterministic (a Chromium clone). Full
+PER-NODE distinct builds (a unique JA4 per node) needs uTLS (the Go TLS-client tools — non-browser) or many real
+builds; Skulk's `fuzzy-rotate` strategy models that synthetically, and the cross-JA4 `_collision_clusters`
+recovery still catches it IF any binding (fp/trace/origin/ticket) leaks. A fleet that rotates JA4 AND leaks no
+binding is the pure cross-JA4 case — ungradeable in-sandbox, and external-data-bound to convict (see below).
+
 ## What would still convict it — the external-data frontier
 
 1. **IP reputation.** Those nodes ran on private container IPs (no rep flag). On real **datacenter/proxy**

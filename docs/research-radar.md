@@ -1272,3 +1272,17 @@ real-distinct-hardware fps (survive template_similarity). The bind/thesis: doing
 N genuinely independent real users at N× cost — coordination detection forces the fleet to cost as much as N
 real users, which is why the residual is an economic / external-data frontier, not in-sandbox-solvable (it is
 saturated in-sandbox).
+
+### Red-team — distinct-builds lever + fragmentation reporting (2026-06-27)
+
+Built the lever that drops the last shared signal of a diversified fleet (the JA4 cipher prefix = one build):
+put nodes on different engines/builds so the fleet spans multiple JA4 prefixes and no single cluster binds it.
+The engagement report now surfaces this — FleetReport holds ALL graded clusters (not just the top); report_dict
+adds `fragmented` + a per-cluster breakdown, and the outcome is CAUGHT iff ANY cluster convicts. GROUNDED live: a
+mixed-engine fleet (camoufox ×2 + zendriver ×2) FRAGMENTED into two JA4 clusters (Firefox + Chrome), both
+`candidate` → fully evaded — the JA4 prefix no longer binds the fleet. In-sandbox LIMIT: only a few engine
+families exist and a same-engine deterministic-fp sub-fleet still collides; full per-node distinct builds needs
+uTLS (non-browser Go tools) or many real builds — Skulk's fuzzy-rotate models it synthetically, and the cross-JA4
+`_collision_clusters` recovery still catches it if any binding leaks. Also surfaced a fidelity note: a small
+Chromium-clone sub-fleet did NOT always fp-collide (zendriver fp has some run-to-run variance), so a 2-node
+clone is less reliably caught than a 3+-node one. docs/coordination-evasion.md updated with the grounded result.
