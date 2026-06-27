@@ -1039,3 +1039,15 @@ reproduce the whole limit vector inside the Worker diverges here.
   GPU in-sandbox). A real-hardware browser whose Worker OffscreenCanvas software-falls-back could diverge
   legitimately, so it stays experimental (for review) until validated against a Tier-3 real-GPU device — that
   real-GPU validation is the external-data-bound follow-up.
+
+### Coordination — staggered-timing strategy: lockstep is corroborating-only (2026-06-27)
+
+Closed the last Skulk roadmap strategy. A `staggered` fleet spreads its arrivals over time (beyond the engine's
+120s lockstep window) to look like organic traffic rather than a synchronized burst. The lesson it grounds:
+the lockstep tell is **corroborating-only**, never load-bearing for conviction. Skulk's `staggered` strategy is
+a cloned-profile fleet (one fp + automation across distinct IPs) with arrivals 300s apart; the runner stamps
+each member's `observed_at` at base + offset, and the detector derives `first_seen` from it (`min(observed_at)`),
+so the stagger is real. GROUNDED live (`skulk run staggered` → real detector): graded **`fleet` 1.00** with
+evidence "arrivals spread over 600s — no lockstep" (rate 0.3/min, not the 360/min of a lockstep burst), yet the
+fp-collision + automation binding convicts unchanged. Scenario `fleet-staggered` (arrivals 10min apart) holds
+precision/recall at 100%. Timing-stagger is a weak evasion: it costs only the lockstep bonus, not the verdict.

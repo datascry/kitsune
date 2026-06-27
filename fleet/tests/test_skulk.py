@@ -102,8 +102,18 @@ def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert rot.detectable and rot.signal == "shared_origin"
     tkt = assess(get("ticket-reuse").members(3, 1))  # rotated JA4 + fuzzed, caught by the reused TLS ticket
     assert tkt.detectable and tkt.signal == "shared_ticket"
+    assert assess(get("staggered").members(3, 1)).detectable  # spread in time, but the fp-collision still convicts
     assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier (no descriptor, no co-binding)
     assert not assess(get("randomizer").members(3, 1)).detectable
+
+
+def test_staggered_shares_one_fp_but_spreads_arrivals_in_time() -> None:
+    members = get("staggered").members(3, seed=2)
+    assert len({m.fp_hash for m in members}) == 1  # one cloned profile — the convicting binding
+    assert all(m.automation for m in members)  # the corroboration
+    offsets = [m.offset_seconds for m in members]
+    assert offsets == sorted(offsets) and offsets[0] == 0.0  # increasing arrival offsets
+    assert max(offsets) > 120.0  # spread beyond the engine's lockstep window → no lockstep bonus
 
 
 def test_strategies_are_deterministic_in_seed() -> None:
@@ -156,3 +166,35 @@ def test_run_emits_to_ingest_when_authorized(monkeypatch: pytest.MonkeyPatch) ->
     # each POST is one member's signal envelopes, sharing the replayed trace
     traces = {s["value"] for p in posted for s in p["body"] if s["kind"] == "trace_hash"}
     assert len(traces) == 1
+
+
+def test_staggered_run_stamps_members_at_spread_times(monkeypatch: pytest.MonkeyPatch) -> None:
+    posted: list[dict[str, object]] = []
+
+    class _Resp:
+        def __enter__(self) -> _Resp:
+            return self
+
+        def __exit__(self, *a: object) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return b""
+
+    def _fake_urlopen(req: object, timeout: float = 0) -> _Resp:
+        posted.append({"body": json.loads(req.data)})  # type: ignore[attr-defined]
+        return _Resp()
+
+    monkeypatch.setattr("skulk.runner.urllib.request.urlopen", _fake_urlopen)
+    run(
+        target="http://detector:8080",
+        strategy=get("staggered"),
+        nodes=3,
+        seed=1,
+        scope=Scope(),
+        when="2026-06-27T00:00:00Z",
+    )
+    # the per-member observed_at must be spread in time (the runner stamps base + offset), so the detector's
+    # first_seen span exceeds the lockstep window — distinct stamps across the three members.
+    stamps = [next(s["observed_at"] for s in p["body"]) for p in posted]
+    assert len(set(stamps)) == 3 and stamps[0] == "2026-06-27T00:00:00Z"
