@@ -82,7 +82,17 @@ class NodeResult:
 @dataclass
 class FleetReport:
     nodes: list[NodeResult]
-    verdict: FleetVerdict | None  # the graded coordination cluster over the nodes that minted a session
+    clusters: list[FleetVerdict]  # ALL graded coordination clusters; >1 means the fleet FRAGMENTED across builds
+
+    @property
+    def verdict(self) -> FleetVerdict | None:
+        """The strongest cluster (back-compat single-verdict view)."""
+        return self.clusters[0] if self.clusters else None
+
+    @property
+    def fragmented(self) -> bool:
+        """True when the fleet split into multiple JA4/binding clusters — the distinct-builds evasion shape."""
+        return len(self.clusters) > 1
 
     @property
     def ok(self) -> list[NodeResult]:
@@ -181,8 +191,9 @@ def run_fleet(
                 result.error = f"session fetch failed: {exc}"
                 continue
             corpus.append((result.label, session))
-    verdict = score_corpus(corpus)[0] if len(corpus) >= 2 else None
-    return FleetReport(nodes=results, verdict=verdict)
+    # ALL graded clusters: a build-diversified fleet spans several JA4 prefixes and fragments into >1 cluster.
+    clusters = score_corpus(corpus) if len(corpus) >= 2 else []
+    return FleetReport(nodes=results, clusters=clusters)
 
 
 def homogeneous_plan(
@@ -305,16 +316,22 @@ def report_dict(report: FleetReport, *, name: str = "") -> dict[str, Any]:
     reviewable, diffable artifact a run produces. ``outcome`` is ``caught`` (defense convicted the fleet),
     ``evaded`` (the fleet ran but the defense did not convict — the honest boundary), or ``inconclusive`` (too
     few sessions to form a cluster)."""
-    v = report.verdict
-    outcome = "inconclusive" if v is None else "caught" if v.label == "fleet" else "evaded"
+    # A build-diversified fleet fragments into >1 cluster; outcome is CAUGHT if ANY cluster convicts. The primary
+    # verdict reported is the strongest CONVICTED cluster if one exists, else the top cluster.
+    caught_clusters = [c for c in report.clusters if c.label == "fleet"]
+    v = caught_clusters[0] if caught_clusters else report.verdict
+    outcome = "caught" if caught_clusters else "evaded" if report.clusters else "inconclusive"
     minted, requested = len(report.ok), len(report.nodes)
     images = sorted({n.image for n in report.nodes})
+    frag = f" (fleet FRAGMENTED across {len(report.clusters)} build clusters)" if report.fragmented else ""
     if outcome == "caught" and v is not None:
-        assessment = f"the {minted}-node fleet {images} was CAUGHT — graded `fleet` {v.score:.2f} via {_binding(v)}"
+        assessment = (
+            f"the {minted}-node fleet {images} was CAUGHT — graded `fleet` {v.score:.2f} via {_binding(v)}{frag}"
+        )
     elif outcome == "evaded" and v is not None:
         assessment = (
-            f"the {minted}-node fleet {images} EVADED conviction — graded `{v.label}` {v.score:.2f}, no convicting "
-            f"coordination signal (the honest boundary: this shape is also a real diverse cohort)"
+            f"the {minted}-node fleet {images} EVADED conviction — strongest cluster `{v.label}` {v.score:.2f}, "
+            f"no convicting signal (a real diverse cohort produces this shape){frag}"
         )
     else:
         assessment = f"only {minted} session(s) captured — too few to form a coordination cluster"
@@ -322,6 +339,11 @@ def report_dict(report: FleetReport, *, name: str = "") -> dict[str, Any]:
         "name": name,
         "outcome": outcome,
         "assessment": assessment,
+        "fragmented": report.fragmented,
+        "clusters": [
+            {"label": c.label, "score": round(c.score, 3), "binding": _binding(c), "members": c.members}
+            for c in report.clusters
+        ],
         "fleet": {"requested": requested, "minted": minted, "failed": len(report.failed), "images": images},
         "nodes": [
             {

@@ -261,6 +261,44 @@ def test_report_caught_outcome_with_binding() -> None:
     assert all(n["status"] == "ok" for n in d["nodes"])
 
 
+def test_distinct_builds_fleet_fragments_into_multiple_clusters() -> None:
+    # The distinct-builds lever: nodes on DIFFERENT engines land in different JA4 prefixes → the fleet fragments
+    # into >1 cluster. A Chrome sub-fleet (shared JA4 + cloned fp) is caught; a Firefox node sits in its own
+    # cluster. The report surfaces the fragmentation and stays CAUGHT if any cluster convicts.
+    def _mixed_get(url: str) -> dict[str, Any]:
+        sid = url.rsplit("/", 1)[-1]
+        ipn = abs(hash(sid)) % 200 + 1
+        if "chrome" in sid:  # two Chrome nodes: same JA4 + same fp on datacenter → fp_collision → caught
+            return _session_json(sid, "t13d1516h2_chrome", f"10.0.0.{ipn}", "CLONED", datacenter=True)
+        return _session_json(sid, "t13d1717h2_firefox", f"10.0.1.{ipn}", f"ff-{sid}")  # distinct Firefox prefix
+
+    plan = FleetPlan(
+        nodes=[
+            NodeSpec("kitsune-zendriver:latest", label="chrome-0"),
+            NodeSpec("kitsune-zendriver:latest", label="chrome-1"),
+            NodeSpec("kitsune-camoufox:latest", label="firefox-0"),
+            NodeSpec("kitsune-camoufox:latest", label="firefox-1"),
+        ],
+        max_concurrency=1,
+    )
+
+    class _LabelLauncher:
+        def __init__(self) -> None:
+            self.n = 0
+
+        def __call__(self, *, image: str, env: dict[str, str], network: str, proxy: str | None, timeout: float) -> str:
+            self.n += 1  # unique sid per call; engine tag drives the JA4/fp shape in _mixed_get
+            tag = "chrome" if "zendriver" in image else "firefox"
+            return "__KS__" + json.dumps({"session_id": f"{tag}-{self.n}"})
+
+    report = run_fleet(plan, launcher=_LabelLauncher(), get_json=_mixed_get)
+    d = report_dict(report)
+    assert d["fragmented"] is True and len(d["clusters"]) >= 2  # the JA4 prefix no longer binds the whole fleet
+    assert d["outcome"] == "caught"  # but the same-engine Chrome sub-fleet still fp-collides
+    labels = {c["label"] for c in d["clusters"]}
+    assert "fleet" in labels and "candidate" in labels  # Chrome caught, Firefox evaded — partial evasion
+
+
 def test_report_evaded_outcome() -> None:
     # distinct fps on residential IPs → shared JA4 but no convicting binding → `candidate` = the fleet EVADED.
     plan = homogeneous_plan("kitsune-zendriver:latest", 3, max_concurrency=1)
