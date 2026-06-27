@@ -46,6 +46,7 @@ Each strategy models a real attacker class and grounds a specific blue coordinat
 | `randomizer` | Multilogin/GoLogin multi-accounting — coherent per-instance fingerprints, one JA4 | the TLS/JS paradox (corroborating; needs an automation tell or IP-rep flag to convict) | 🔶 `candidate` unless corroborated |
 | `fuzzy` | **the evolved adversary** — jitter the fingerprint *and* the trace per instance | **none yet** — defeats exact-hash matching | ❌ `candidate` — **the frontier** |
 | `similarity` | the same evolved adversary, **profiled** — its jittered traces all come from one humanizer model | `template_similarity` (descriptors cluster below the human floor; corroboration-gated like `fp_collision`) | ✅ `fleet` (with corroboration) |
+| `fuzzy-rotate` | the hardest shape — **rotate JA4 per node** AND fuzz fp/trace; defeats prefix clustering *and* exact collision | `shared_real_ip` (one WebRTC origin survives rotation; recovered by collision-clustering) + `template_similarity` corroborates | ✅ `fleet` *iff a binding leaks*; otherwise **uncatchable in-sandbox** (see note) |
 
 `fuzzy` was the point of the tool: once an attacker knows we hash, they perturb just enough to dodge
 *exact-match* collision. It exposed the next blue rung — **template-similarity clustering** (N near-identical
@@ -56,10 +57,22 @@ so on datacenter/proxy egress the IP-reputation flag corroborates the cluster an
 
 ### Grounded live (Kitsune detector, ruleset 0.74.52)
 ```
-skulk run cloned      →  detector grades `fleet` 1.00   (cloned-profile reuse caught)
-skulk run similarity  →  detector grades `fleet` 1.00   (humanizer-model descriptors cluster below the human floor)
-skulk run fuzzy       →  detector grades `candidate`    (no descriptor profiled — still evades; the open frontier)
+skulk run cloned        →  detector grades `fleet` 1.00   (cloned-profile reuse caught)
+skulk run similarity    →  detector grades `fleet` 1.00   (humanizer-model descriptors cluster below the human floor)
+skulk run fuzzy-rotate  →  detector grades `fleet` 1.00   (rotated JA4 + fuzzed fp/trace; the shared WebRTC origin
+                                                          survives, template-similarity corroborates)
+skulk run fuzzy         →  detector grades `candidate`    (no descriptor profiled — still evades; the open frontier)
 ```
+
+> **Why `fuzzy-rotate` needs a leaked binding.** A fleet that rotates its JA4 *and* fuzzes fp/trace lands as N
+> singleton clusters — descriptor *similarity* alone cannot recover it FP-safely. Measured
+> (`task template-calibrate`): without a binding to constrain the candidate set, a population of *distinct*
+> humans always contains a coincidentally-tighter trace subset than a real fleet, and that false-cluster floor
+> *drops as the corpus grows*. So similarity is a within-cluster **corroborator**, never a primary cross-corpus
+> key. `fuzzy-rotate` is convicted only when an unambiguous binding survives the rotation (a shared WebRTC
+> origin here; a reused TLS session ticket next). A fleet that leaks *neither* is genuinely indistinguishable
+> in-sandbox — catching it is external-data-bound (a production-scale real-trace population to calibrate the
+> floor), and the lab marks it so rather than shipping an FP-unsafe rule.
 
 ## Scenarios this is for
 
@@ -81,9 +94,10 @@ sybil attacks. In every one the attacker makes each session look like a distinct
 
 Add a strategy by duck-typing `skulk.strategy.Strategy` (`name`, `summary`, `members(n, seed) -> [FleetMember]`)
 and decorating it with `@register`. Keep it deterministic in `seed` so runs are reproducible and fixtures are
-stable. The `similarity` strategy + template-similarity clustering (the blue rung) is **done** — see above. The
-roadmap now: a `ticket-reuse` strategy (shared TLS session ticket across IPs); a `staggered` timing strategy; a
-JA4-rotating *fuzzy-trace* fleet (similarity clustering across rotated JA4s, not just within one JA4 prefix).
+stable. The `similarity` (template-similarity) and `fuzzy-rotate` (rotated-JA4, caught by the surviving origin)
+strategies + their blue rungs are **done** — see above. The roadmap now: a `ticket-reuse` strategy (a reused TLS
+session ticket / PSK across IPs — the next binding that survives JA4 rotation, needs the edge to forward the
+ticket identity); a `staggered` timing strategy (defeat the lockstep window).
 
 ## Design
 

@@ -13,9 +13,11 @@ class FleetMember:
     browser ``fp_hash`` (canvas+audio+WebGL), the behavioural ``trace_hash`` (pointer trajectory), and the
     JS traits (``hardware_concurrency`` / ``platform``) a randomizer fleet diverges. ``trace_descriptor`` is the
     motion-feature vector of the pointer path (the SIMILARITY analog of ``trace_hash`` — a humanizer fleet's are
-    near-identical even when each ``trace_hash`` differs). ``automation`` marks a per-session headless/automation
-    tell and ``datacenter`` an IP-reputation flag — either corroborates an AMBIGUOUS coordination tell (an
-    fp-collision or a template-similarity cluster) as a bot fleet rather than a benign cohort.
+    near-identical even when each ``trace_hash`` differs). ``webrtc_public_ip`` is the WebRTC-leaked real origin —
+    one shared value behind distinct proxy IPs is an unambiguous same-origin binding that SURVIVES JA4 rotation
+    (the only thing that catches a fleet which rotates its JA4 AND fuzzes fp/trace). ``automation`` marks a
+    per-session headless/automation tell and ``datacenter`` an IP-reputation flag — either corroborates an
+    AMBIGUOUS coordination tell (an fp-collision or a template-similarity cluster) as a bot fleet, not a cohort.
     """
 
     node_id: str
@@ -24,6 +26,7 @@ class FleetMember:
     fp_hash: str | None = None
     trace_hash: str | None = None
     trace_descriptor: list[float] | None = None
+    webrtc_public_ip: str | None = None
     hardware_concurrency: int | None = None
     platform: str | None = None
     automation: bool = False
@@ -42,6 +45,8 @@ class FleetMember:
             sigs.append(_sig(session_id, "behavioral", "trace_hash", self.trace_hash, when, "collector"))
         if self.trace_descriptor is not None:
             sigs.append(_sig(session_id, "behavioral", "trace_descriptor", self.trace_descriptor, when, "collector"))
+        if self.webrtc_public_ip is not None:
+            sigs.append(_sig(session_id, "browser", "webrtc_public_ip", self.webrtc_public_ip, when, "collector"))
         if self.hardware_concurrency is not None:
             sigs.append(
                 _sig(session_id, "browser", "hardware_concurrency", self.hardware_concurrency, when, "collector")

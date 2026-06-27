@@ -21,6 +21,10 @@ two escape routes a coordinated fleet has and their evolution:
                        humanizer model, so the collector's trace DESCRIPTORS cluster below the human floor even
                        though every ``trace_hash`` differs. The blue rung that closes ``fuzzy`` — caught by
                        template-similarity when corroborated (it runs on datacenter/proxy egress).
+  * ``fuzzy-rotate`` — the hardest shape: ROTATE the JA4 per node (defeats prefix clustering) AND fuzz fp/trace
+                       (defeats exact collision). Pure similarity clustering can't convict it FP-safely; it is
+                       caught only by the binding that survives rotation — one shared WebRTC origin behind the
+                       proxies — with template-similarity corroborating inside the recovered cluster.
 
 To add a strategy: subclass / duck-type :class:`~skulk.strategy.Strategy` and ``register`` it.
 """
@@ -63,6 +67,12 @@ def _ip(seed: int, i: int) -> str:
 def _ja4(seed: int) -> str:
     """One shared JA4 (the TLS engine the whole fleet runs — below the JS spoofing layer)."""
     return "t13d1516h2_" + _h("ja4", seed)[:12] + "_" + _h("ext", seed)[:12]
+
+
+def _ja4_rot(seed: int, i: int) -> str:
+    """A DISTINCT JA4 per node (a uTLS-randomized / mixed-build fleet) — defeats JA4-prefix clustering, so each
+    node lands in its own singleton cluster and is never graded by the prefix path."""
+    return "t13d" + _h("rotpre", seed, i)[:4] + "h2_" + _h("rotja4", seed, i)[:12] + "_" + _h("rotext", seed, i)[:12]
 
 
 @register
@@ -143,6 +153,39 @@ class Similarity:
                 platform="Win32",
                 automation=False,
                 datacenter=True,
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class FuzzyRotate:
+    name = "fuzzy-rotate"
+    summary = (
+        "JA4-rotating + fuzzed: a distinct JA4, fp AND trace per node (defeats prefix clustering AND exact "
+        "collision) — caught ONLY by the binding that survives rotation: one shared WebRTC origin behind the proxies."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # The hardest fleet shape: rotate the JA4 per node (so JA4-prefix clustering files each as a singleton)
+        # AND fuzz fp/trace per node (so no exact collision). Pure descriptor-similarity clustering CANNOT
+        # convict this FP-safely (a large distinct-human population always contains a coincidentally-tighter
+        # subset — grounded in template_calibration's cross-JA4 measurement). What DOES catch it is the binding
+        # rotation can't touch: one WebRTC-leaked real origin behind the distinct proxy IPs (unambiguous,
+        # same-origin). Template-similarity then corroborates within that recovered cluster.
+        origin = "198.51." + str(seed % 254) + "." + str(seed % 200 + 1)
+        return [
+            FleetMember(
+                f"rot-{i}",
+                _ja4_rot(seed, i),  # DISTINCT JA4 per node
+                _ip(seed, i),
+                fp_hash=_h("rotfp", seed, i),  # fuzzed → no fp-collision
+                trace_hash=_h("rottrace", seed, i),  # fuzzed → no exact trace-collision
+                trace_descriptor=_descriptor(seed, i),  # one humanizer (corroborating, not primary)
+                webrtc_public_ip=origin,  # the surviving binding: one origin behind the proxies
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,
             )
             for i in range(n)
         ]
