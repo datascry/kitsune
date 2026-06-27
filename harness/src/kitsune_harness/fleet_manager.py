@@ -37,6 +37,8 @@ from .archetypes import get as get_archetype
 from .coordination import FleetVerdict, score_corpus
 from .evasions import families
 from .evasions import get as get_evasion
+from .rps_scout import Requester, RpsReport, Sleeper
+from .rps_scout import scout_rps as _scout_rps
 from .tasks import get_preset, task_from_obj
 
 
@@ -351,11 +353,20 @@ def report_dict(report: FleetReport, *, name: str = "") -> dict[str, Any]:
 
 
 @dataclass(frozen=True)
+class ScoutSpec:
+    """A RECON-rate wave: ramp RPS against a target to scope its request budget (no fleet)."""
+
+    url: str
+    rates: list[int]
+
+
+@dataclass(frozen=True)
 class Wave:
-    """One phase of a campaign: a named fleet plan run in sequence."""
+    """One phase of a campaign: EITHER a named fleet plan OR an RPS-recon scout, run in sequence."""
 
     name: str
-    plan: FleetPlan
+    plan: FleetPlan | None = None
+    scout: ScoutSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -367,7 +378,8 @@ class CampaignPlan:
 @dataclass
 class WaveResult:
     name: str
-    report: FleetReport
+    report: FleetReport | None = None  # a fleet wave's engagement report
+    rps: RpsReport | None = None  # a recon-rate wave's RPS budget
 
 
 @dataclass
@@ -390,6 +402,10 @@ def campaign_from_obj(obj: Mapping[str, Any]) -> CampaignPlan:
     waves: list[Wave] = []
     for entry in raw:
         wave_name = str(entry.get("name") or f"wave-{len(waves)}")
+        if entry.get("scout") is not None:  # a recon-rate wave: ramp RPS against a target, no fleet
+            rates = [int(r) for r in entry.get("rates", [1, 2, 5, 10, 20, 50])]
+            waves.append(Wave(name=wave_name, scout=ScoutSpec(url=str(entry["scout"]), rates=rates)))
+            continue
         body = {**shared, **{k: v for k, v in entry.items() if k != "name"}}
         waves.append(Wave(name=wave_name, plan=plan_from_obj(body)))
     return CampaignPlan(name=str(obj.get("name", "campaign")), waves=waves)
@@ -403,29 +419,51 @@ def load_campaign(path: str) -> CampaignPlan:
 
 
 def run_campaign(
-    campaign: CampaignPlan, *, launcher: Launcher = _docker_launch, get_json: JsonGetter = _http_get_json
+    campaign: CampaignPlan,
+    *,
+    launcher: Launcher = _docker_launch,
+    get_json: JsonGetter = _http_get_json,
+    scout_requester: Requester | None = None,
+    scout_sleep: Sleeper | None = None,
 ) -> CampaignReport:
-    """Run each wave in sequence (each a full managed fleet, independently captured + graded). Waves are graded
-    in isolation — run_fleet grades only the sessions IT minted — so a recon wave does not pollute the attack
-    wave's coordination cluster even though both hit the same detector store."""
-    return CampaignReport(
-        name=campaign.name,
-        waves=[WaveResult(w.name, run_fleet(w.plan, launcher=launcher, get_json=get_json)) for w in campaign.waves],
-    )
+    """Run each wave in sequence. A FLEET wave is a managed fleet graded in isolation (run_fleet grades only the
+    sessions IT minted, so a recon fleet does not pollute the attack wave's cluster). A SCOUT wave ramps RPS to
+    scope the target's rate budget — recon that literally includes RPS scoping."""
+    results: list[WaveResult] = []
+    for wave in campaign.waves:
+        if wave.scout is not None:
+            kw: dict[str, Any] = {"rates": wave.scout.rates}
+            if scout_requester is not None:
+                kw["requester"] = scout_requester
+            if scout_sleep is not None:
+                kw["sleep"] = scout_sleep
+            results.append(WaveResult(wave.name, rps=_scout_rps(wave.scout.url, **kw)))
+        else:
+            assert wave.plan is not None
+            results.append(WaveResult(wave.name, report=run_fleet(wave.plan, launcher=launcher, get_json=get_json)))
+    return CampaignReport(name=campaign.name, waves=results)
+
+
+def _wave_dict(w: WaveResult) -> dict[str, Any]:
+    if w.rps is not None:  # a recon-rate wave
+        return {"wave": w.name, "kind": "rps-scope", "rps": w.rps.to_dict()}
+    assert w.report is not None
+    return {"wave": w.name, "kind": "fleet", **report_dict(w.report, name=w.name)}
 
 
 def campaign_report_dict(report: CampaignReport) -> dict[str, Any]:
-    """The aggregated campaign FINDING: each wave's engagement report + the campaign-level outcome (which waves
-    the defense caught vs which evaded)."""
-    waves = [{"wave": w.name, **report_dict(w.report, name=w.name)} for w in report.waves]
-    caught = [w["wave"] for w in waves if w["outcome"] == "caught"]
-    evaded = [w["wave"] for w in waves if w["outcome"] == "evaded"]
+    """The aggregated campaign FINDING: each wave (fleet engagement report OR RPS recon budget) + the campaign-
+    level outcome (which fleet waves the defense caught vs which evaded)."""
+    waves = [_wave_dict(w) for w in report.waves]
+    fleet_waves = [w for w in waves if w["kind"] == "fleet"]
+    caught = [w["wave"] for w in fleet_waves if w["outcome"] == "caught"]
+    evaded = [w["wave"] for w in fleet_waves if w["outcome"] == "evaded"]
     if caught:
-        assessment = f"the defense CAUGHT {len(caught)}/{len(waves)} wave(s): {', '.join(caught)}"
+        assessment = f"the defense CAUGHT {len(caught)}/{len(fleet_waves)} fleet wave(s): {', '.join(caught)}"
     elif evaded:
-        assessment = f"all graded waves EVADED conviction ({', '.join(evaded)}) — no wave was caught"
+        assessment = f"all graded fleet waves EVADED conviction ({', '.join(evaded)}) — no wave was caught"
     else:
-        assessment = "no wave formed a gradeable coordination cluster"
+        assessment = "no fleet wave formed a gradeable coordination cluster"
     return {
         "name": report.name,
         "assessment": assessment,
@@ -440,9 +478,13 @@ def render_campaign(report: CampaignReport) -> str:
     d = campaign_report_dict(report)
     lines = [f"# Campaign `{report.name}` — {len(report.waves)} waves", "", f"_{d['assessment']}_", ""]
     for w in d["waves"]:
-        coord = w["coordination"]
-        verdict = f"`{coord['label']}` {coord['score']:.2f}" if coord else "no cluster"
-        lines.append(f"- **{w['wave']}** → {w['outcome'].upper()} ({w['fleet']['minted']} nodes, {verdict})")
+        if w["kind"] == "rps-scope":
+            r = w["rps"]
+            lines.append(f"- **{w['wave']}** → RPS-SCOPE (budget {r['budget_rps']} rps, knee {r['knee']})")
+        else:
+            coord = w["coordination"]
+            verdict = f"`{coord['label']}` {coord['score']:.2f}" if coord else "no cluster"
+            lines.append(f"- **{w['wave']}** → {w['outcome'].upper()} ({w['fleet']['minted']} nodes, {verdict})")
     return "\n".join(lines) + "\n"
 
 
@@ -487,11 +529,14 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
 
     if args.campaign:
         campaign = load_campaign(args.campaign)
-        if args.detector != "http://detector:8080":  # override every wave's manager-fetch target off-network
+        if args.detector != "http://detector:8080":  # override each FLEET wave's manager-fetch target off-network
             campaign = CampaignPlan(
                 name=campaign.name,
                 waves=[
-                    Wave(w.name, FleetPlan(**{**w.plan.__dict__, "detector": args.detector})) for w in campaign.waves
+                    w
+                    if w.plan is None
+                    else Wave(w.name, plan=FleetPlan(**{**w.plan.__dict__, "detector": args.detector}))
+                    for w in campaign.waves
                 ],
             )
         cresult = run_campaign(campaign)
