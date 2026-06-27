@@ -1,0 +1,24 @@
+# harness/examples/engagement-mixed-randomizer — a declarative fleet plan for the fleet manager.
+# Models multi-accounting / sockpuppet fraud: a HETEROGENEOUS fleet of distinct per-instance fingerprints.
+#
+# Scenario: a Multilogin/GoLogin-style operator runs many accounts, each on a different stealth tool/profile
+# so no two fingerprints match. There is no fp-collision to convict on — instead the cluster shares one TLS
+# engine identity (JA4) while its JS diverges per instance (the TLS-vs-JS paradox). That is CORROBORATING,
+# not convicting on its own (a real diverse cohort looks the same), so this fleet correctly grades `candidate`
+# until an IP-reputation flag or automation tell corroborates it — the honest blue boundary the mixed fleet
+# demonstrates. Mix the families to make the JS divergence real.
+#
+# Run (spine up):  task coordination-fleet-manage -- --plan examples/engagement-mixed-randomizer.yaml --detector http://localhost:8099
+
+name: mixed-randomizer-multiaccounting
+edge: https://edge:8443/
+worker_detector: http://detector:8080
+retries: 1
+
+nodes:
+  - evasion: camoufox-linux # Firefox-engine instances (per-launch fingerprint randomization)
+    replicas: 2
+  - evasion: zendriver-uach # Chromium-CDP instances, UA-CH coherent
+    replicas: 2
+  - evasion: nodriver # a third tool to widen the JS divergence
+    replicas: 1

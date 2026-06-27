@@ -24,8 +24,9 @@ import concurrent.futures
 import json
 import subprocess
 import urllib.request
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 from kitsune_detector.models import Session
@@ -200,6 +201,53 @@ def evasion_node(
     return NodeSpec(image=ev.image, env=ev.env_with(extra_env), proxy=proxy, label=label or name)
 
 
+def _image_base(image: str) -> str:
+    return image.split(":")[0].rsplit("/", 1)[-1].removeprefix("kitsune-")
+
+
+def plan_from_obj(obj: Mapping[str, Any]) -> FleetPlan:
+    """Build a :class:`FleetPlan` from a declarative engagement spec (a parsed YAML/JSON mapping). Each entry in
+    ``nodes`` is ``{evasion|image, replicas?, proxy?, env?}``; ``replicas`` expands to that many labelled nodes.
+    A version-controllable, shareable engagement: the reusable form for education + authorized engagements."""
+    raw = obj.get("nodes")
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("fleet plan needs a non-empty 'nodes' list")
+    nodes: list[NodeSpec] = []
+    for entry in raw:
+        evasion, image = entry.get("evasion"), entry.get("image")
+        if bool(evasion) == bool(image):
+            raise ValueError(f"node {entry!r} needs exactly one of 'evasion' or 'image'")
+        replicas = int(entry.get("replicas", 1))
+        proxy = entry.get("proxy")
+        extra_env = {str(k): str(v) for k, v in (entry.get("env") or {}).items()}
+        base_label = evasion if evasion else _image_base(str(image))
+        for rep in range(replicas):
+            label = f"{base_label}-{rep}"
+            if evasion:
+                spec = evasion_node(str(evasion), proxy=proxy, label=label, extra_env=extra_env)
+            else:
+                spec = NodeSpec(image=str(image), env=extra_env, proxy=proxy, label=label)
+            nodes.append(spec)
+    defaults = FleetPlan(nodes=[])
+    return FleetPlan(
+        nodes=nodes,
+        edge=str(obj.get("edge", defaults.edge)),
+        detector=str(obj.get("detector", defaults.detector)),
+        worker_detector=str(obj.get("worker_detector", defaults.worker_detector)),
+        network=str(obj.get("network", defaults.network)),
+        retries=int(obj.get("retries", defaults.retries)),
+        timeout=float(obj.get("timeout", defaults.timeout)),
+        max_concurrency=int(obj.get("max_concurrency", defaults.max_concurrency)),
+    )
+
+
+def load_plan(path: str) -> FleetPlan:
+    """Load an engagement plan from a YAML or JSON file (YAML is a JSON superset, so one parser covers both)."""
+    import yaml
+
+    return plan_from_obj(yaml.safe_load(Path(path).read_text()))
+
+
 def render(report: FleetReport) -> str:
     """Markdown: per-node health (with retries) + the graded coordination verdict."""
     lines = [f"# Fleet — {len(report.ok)}/{len(report.nodes)} nodes minted a session", ""]
@@ -224,6 +272,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     import argparse
 
     ap = argparse.ArgumentParser(description="Run a managed fleet of real evader workers (authorized targets only).")
+    ap.add_argument("--plan", help="declarative engagement plan (YAML/JSON); overrides --evasion/--image/--n")
     ap.add_argument(
         "--evasion", action="append", default=[], help="NAMED evasion from the registry; repeat for a MIXED fleet"
     )
@@ -244,6 +293,13 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
             print(f"\n{fam}:")
             for ev in evs:
                 print(f"  {ev.name:24} {ev.summary}")
+        return 0
+
+    if args.plan:
+        plan = load_plan(args.plan)
+        if args.detector != "http://detector:8080":  # let --detector override the plan for off-network runs
+            plan = FleetPlan(**{**plan.__dict__, "detector": args.detector})
+        print(render(run_fleet(plan)), end="")
         return 0
 
     env = dict(kv.split("=", 1) for kv in args.env)

@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import threading
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -20,9 +21,13 @@ from kitsune_harness.fleet_manager import (
     _session_id,
     evasion_node,
     homogeneous_plan,
+    load_plan,
+    plan_from_obj,
     render,
     run_fleet,
 )
+
+_EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
 _WHEN = datetime(2026, 6, 27, 12, 0, 0, tzinfo=UTC)
 
@@ -145,6 +150,46 @@ def test_mixed_named_evasion_fleet_runs_and_labels() -> None:
     report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)
     assert {n.label for n in report.ok} == {"camoufox-linux", "zendriver-uach"}
     assert {n.image for n in report.ok} == {"kitsune-camoufox:latest", "kitsune-zendriver:latest"}
+
+
+def test_plan_from_obj_expands_replicas_and_overlays_env() -> None:
+    plan = plan_from_obj(
+        {
+            "edge": "https://edge:8443/",
+            "retries": 3,
+            "nodes": [
+                {"evasion": "camoufox-linux", "replicas": 2, "proxy": "socks5://p", "env": {"KS_REPEAT": 2}},
+                {"image": "kitsune-pydoll:latest", "env": {"FOO": "bar"}},
+            ],
+        }
+    )
+    assert plan.retries == 3 and len(plan.nodes) == 3
+    cam = [n for n in plan.nodes if n.label.startswith("camoufox-linux")]
+    assert len(cam) == 2 and all(n.proxy == "socks5://p" for n in cam)
+    assert cam[0].env == {"KS_LINUX": "1", "KS_REPEAT": "2"}  # evasion env + overlay, values coerced to str
+    assert cam[0].label == "camoufox-linux-0" and cam[1].label == "camoufox-linux-1"
+    img = next(n for n in plan.nodes if n.image == "kitsune-pydoll:latest")
+    assert img.env == {"FOO": "bar"} and img.label == "pydoll-0"
+
+
+def test_plan_node_needs_exactly_one_of_evasion_or_image() -> None:
+    with pytest.raises(ValueError, match="exactly one"):
+        plan_from_obj({"nodes": [{"replicas": 2}]})  # neither
+    with pytest.raises(ValueError, match="exactly one"):
+        plan_from_obj({"nodes": [{"evasion": "vanilla", "image": "x"}]})  # both
+
+
+def test_plan_requires_nodes() -> None:
+    with pytest.raises(ValueError, match="non-empty 'nodes'"):
+        plan_from_obj({"edge": "https://edge:8443/"})
+
+
+def test_committed_example_plans_load_and_build() -> None:
+    # Every shipped engagement template must parse into a runnable, allow-listed plan.
+    for path in sorted(_EXAMPLES.glob("*.yaml")):
+        plan = load_plan(str(path))
+        assert plan.nodes and plan.edge.startswith("https://edge")
+        run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)  # ethics gate passes + it executes
 
 
 def test_node_label_default_and_explicit() -> None:
