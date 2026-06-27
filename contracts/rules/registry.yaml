@@ -1018,6 +1018,18 @@ rules:
     last_validated: "2026-06-19"
     source: "The GPU analog of worker_divergence. A getParameter GPU spoof patches the main realm's WebGLRenderingContext.prototype but cannot reach Worker scope, so a Worker's OffscreenCanvas WebGL reports the REAL UNMASKED_RENDERER while the main thread reports the spoofed one — one physical GPU cannot render as two. Catches a GPU spoof that is otherwise coherent (correct OS, native invariants preserved) but forgets the Worker realm. Grounded headless: a real (SwiftShader) browser reports the identical renderer in both realms (no fire); a main-only getParameter spoof diverges. EXPERIMENTAL: grounded only on software rendering (no GPU here) — a real-hardware browser whose Worker OffscreenCanvas software-falls-back could diverge legitimately, so it stays corroborating until validated against a Tier-3 real-GPU device."
 
+  - id: br.webgl_caps_worker_vs_main
+    title: WebGL capability vector (limits + extensions) differs between the main thread and a Worker OffscreenCanvas
+    layers: [browser]
+    reads: [browser.webgl_caps_worker_divergence]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-06-27"
+    last_validated: "2026-06-27"
+    source: "The HARDENED complement of br.webgl_worker_vs_main. That rule compares the renderer STRING across realms; a spoofer that learns of it can cheaply patch the UNMASKED_RENDERER into Worker scope too (one value) and defeat it while keeping the renderer matched. This rule compares the high-entropy CAPABILITY VECTOR — MAX_TEXTURE_SIZE, MAX_RENDERBUFFER_SIZE, MAX_VIEWPORT_DIMS, the uniform/varying/attrib limits, MAX_COMBINED_TEXTURE_IMAGE_UNITS, and the supported-extension count — computed identically (gl.getContext('webgl')) in the main realm and a Worker OffscreenCanvas. One physical GPU yields one limit set, so a real browser matches in both realms; a main-realm WebGL fake that matched the renderer string but did not reproduce the whole limit vector inside the Worker diverges here. Grounded headful (2026-06-27): a real (SwiftShader) Chromium reports an identical caps digest in both realms (no fire), while a main+worker renderer-string spoof that leaks the real Worker limits fires webgl_caps_worker_divergence. EXPERIMENTAL on the same caveat as br.webgl_worker_vs_main: grounded only on software rendering here — a real-hardware browser whose Worker OffscreenCanvas software-falls-back could diverge legitimately, so it stays for review until validated against a Tier-3 real-GPU device."
+
   # --- v0.9.0 bulk ramp: coherence + headless tells (CreepJS / Sannysoft / fpscanner / BotD) ---
 
   - id: br.vendor_vs_ua
