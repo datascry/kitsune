@@ -1110,3 +1110,16 @@ GROUNDED live: `--evasion zendriver-uach --n 3` → 3 real workers labelled `zen
 `fleet` 1.00 (cloned-profile fp-collision). The registry is the long-pending authored source the evasion-catalog
 can eventually generate from; the stealth tool's single-session artifact modes (electron-leak/canvas-lie/…) stay
 lit via the per-rule captures, not fleet nodes, so only the stealth BASE mode is registered.
+
+### Red-team — declarative engagement plans for the fleet manager (2026-06-27)
+
+Made the managed fleet shareable + reusable for engagements: a **declarative plan file** (YAML/JSON) defines a
+whole multi-evasion fleet — `kitsune_harness.fleet_manager.load_plan(path)` / `plan_from_obj(obj)` parse a spec
+whose `nodes` are `{evasion|image, replicas?, proxy?, env?}` into a `FleetPlan` (replicas expand to labelled
+nodes, env overlays the evasion's, the allow-list still gates the target). CLI: `--plan engagement.yaml`. Two
+worked templates ship in `harness/examples/`: `engagement-cloned-residential.yaml` (one cloned hardened profile
+fanned across residential proxies — the account-fraud/credential-stuffing shape that convicts on fp-collision)
+and `engagement-mixed-randomizer.yaml` (a heterogeneous camoufox+zendriver+nodriver fleet — the multi-accounting
+shape that correctly caps at `candidate` until corroborated). GROUNDED live: a 3-node zendriver plan via `--plan`
+→ 3/3 sessions → graded `fleet` 1.00. The plans are the version-controllable, reviewable engagement artifact the
+"reusable for education + active engagements" goal wanted.

@@ -1,0 +1,21 @@
+# harness/examples/engagement-cloned-residential — a declarative fleet plan for the fleet manager.
+# Models account-fraud / credential-stuffing: ONE cloned anti-detect profile across many residential proxies.
+#
+# Scenario: an attacker clones a single hardened stealth profile and fans it out behind residential proxy
+# egress to defeat IP rate-limiting. Per session each node looks like a clean distinct user — but the
+# high-entropy fingerprint is byte-identical across the distinct egress IPs, so the coordination detector
+# convicts the cluster on fp-collision (a binding no per-session spoof can hide). Drop in real proxy URLs
+# under each node's `proxy:` to exercise the rep.* / proxy-topology signals; without them the manager uses
+# distinct container IPs (the in-sandbox analog).
+#
+# Run (spine up):  task coordination-fleet-manage -- --plan examples/engagement-cloned-residential.yaml --detector http://localhost:8099
+
+name: cloned-residential-fraud
+edge: https://edge:8443/
+worker_detector: http://detector:8080
+retries: 2 # residential workers flake more; re-run a transient failure rather than shrink the fleet
+
+nodes:
+  - evasion: camoufox-hardened # the cloned profile, fanned out
+    replicas: 4
+    # proxy: socks5://user:pass@residential-1.example:1080   # ← real egress per node for the proxy frontier
