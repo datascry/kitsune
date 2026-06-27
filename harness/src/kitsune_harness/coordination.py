@@ -339,6 +339,19 @@ def _has_ip_reputation_flag(sessions: list[Session]) -> bool:
     )
 
 
+def _has_known_automation_ja4(sessions: list[Session]) -> bool:
+    """True iff any cluster member's JA4 is classified as a KNOWN NON-BROWSER HTTP client (curl / Go net/http /
+    Python urllib …) — the edge's ``network.ja4_client_hint`` (see ``net.ja4_tool_vs_ua``). It is the
+    network-layer twin of :func:`_has_automation_tell`: a per-session automation tell (webdriver, CDP) is a JS
+    signal absent from a no-JS scraper, but a non-browser TLS handshake is itself proof the client is an
+    automation tool, not a real browser. So a cluster of automation-tool clients sharing an AMBIGUOUS
+    coordination binding (a reused TLS ticket, divergent JA4_c) is a bot fleet even on clean residential IPs
+    with no JS automation tell — the no-JS gap the datacenter/proxy IP-reputation flag alone could not close. A
+    real diverse cohort runs real BROWSERS (a browser hint, never a client hint), so this can only flag a
+    genuine automation-tool cluster."""
+    return any(session.value(Layer.network, "ja4_client_hint") is not MISSING for session in sessions)
+
+
 def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = "JA4 cipher prefix") -> FleetVerdict:
     """Grade one cluster of >= 2 sessions sharing a binding invariant. ``basis`` names that invariant: the
     default ``JA4 cipher prefix`` (the cipher-suite engine identity) or, for a JA4-ROTATING fleet caught by
@@ -474,11 +487,20 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
     # (datacenter/proxy = bot, residential = legit), the still-blocked coordination half. The JS-divergence
     # paradox, IP spread and lockstep stay corroborating-only (a real diverse cohort produces them too).
     unambiguous = trace_collision is not None or shared_real_ip is not None
-    # Corroboration = an unambiguous signal, a per-session automation tell, OR an IP-reputation flag
-    # (datacenter/proxy/Tor exit). The IP-reputation flag is the production disambiguator: a bot fleet runs on
-    # datacenter/proxy infrastructure (flagged), a corporate / multi-version real cohort on residential IPs
-    # (never flagged), so it convicts a CLEAN native clone on datacenter IPs that carries no automation tell.
-    corroborated = unambiguous or _has_automation_tell(sessions) or _has_ip_reputation_flag(sessions)
+    # Corroboration = an unambiguous signal, a per-session automation tell, an IP-reputation flag
+    # (datacenter/proxy/Tor exit), OR a known-automation-tool JA4 (network.ja4_client_hint — curl/Go/Python).
+    # The IP-reputation flag is the production disambiguator: a bot fleet runs on datacenter/proxy infrastructure
+    # (flagged), a corporate / multi-version real cohort on residential IPs (never flagged), so it convicts a
+    # CLEAN native clone on datacenter IPs that carries no automation tell. The tool-JA4 flag is the network-layer
+    # twin for a NO-JS fleet: a curl/Go/Python cluster carries no JS automation tell and may run on clean
+    # residential IPs, but its non-browser TLS handshake proves it is automation — so an ambiguous binding it
+    # shares (a reused TLS ticket, divergent JA4_c) convicts where datacenter/automation corroboration is absent.
+    corroborated = (
+        unambiguous
+        or _has_automation_tell(sessions)
+        or _has_ip_reputation_flag(sessions)
+        or _has_known_automation_ja4(sessions)
+    )
     fp_collision_convicts = collision is not None and corroborated
     ja4c_convicts = ja4c_divergent and corroborated
     # template-similarity is ambiguous (one humanizer OR one real human across sessions), so it convicts only
@@ -490,7 +512,13 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
     # convicts only when corroborated.
     ticket_convicts = ticket is not None and corroborated
     convicting = unambiguous or fp_collision_convicts or ja4c_convicts or template_convicts or ticket_convicts
-    if (collision is not None or ja4c_divergent or template is not None or ticket is not None) and not corroborated:
+    _any_ambiguous = collision is not None or ja4c_divergent or template is not None or ticket is not None
+    if _any_ambiguous and _has_known_automation_ja4(sessions):
+        evidence.append(
+            "cluster shares a known automation-tool JA4 (non-browser HTTP client) — corroborates the ambiguous "
+            "coordination binding as a bot fleet (a real cohort runs browsers, not curl/Go/Python)"
+        )
+    if _any_ambiguous and not corroborated:
         which = " + ".join(
             w
             for w, on in (
@@ -502,9 +530,9 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
             if on
         )
         evidence.append(
-            f"{which} is UNCORROBORATED (no automation tell, cloned trace or shared origin) — ambiguous "
-            f"between a bot fleet and a real cohort (standardized hardware hashes alike; a multi-version "
-            f"cohort diverges JA4_c); capped at candidate pending IP reputation"
+            f"{which} is UNCORROBORATED (no automation tell, tool-JA4, cloned trace or shared origin) — "
+            f"ambiguous between a bot fleet and a real cohort (standardized hardware hashes alike; a multi-"
+            f"version cohort diverges JA4_c); capped at candidate pending IP reputation"
         )
     score = max(0.0, min(1.0, score))
     if score >= 0.60 and convicting:

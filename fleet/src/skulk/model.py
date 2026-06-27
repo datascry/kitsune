@@ -34,6 +34,7 @@ class FleetMember:
     trace_descriptor: list[float] | None = None
     webrtc_public_ip: str | None = None
     tls_ticket_id: str | None = None
+    ja4_client: str | None = None  # edge JA4→client hint: a NON-browser HTTP stack (curl/go-http/python-urllib)
     hardware_concurrency: int | None = None
     platform: str | None = None
     automation: bool = False
@@ -57,6 +58,8 @@ class FleetMember:
             sigs.append(_sig(session_id, "browser", "webrtc_public_ip", self.webrtc_public_ip, when, "collector"))
         if self.tls_ticket_id is not None:
             sigs.append(_sig(session_id, "network", "tls_ticket_id", self.tls_ticket_id, when, "edge"))
+        if self.ja4_client is not None:
+            sigs.append(_sig(session_id, "network", "ja4_client_hint", self.ja4_client, when, "edge"))
         if self.hardware_concurrency is not None:
             sigs.append(
                 _sig(session_id, "browser", "hardware_concurrency", self.hardware_concurrency, when, "collector")
