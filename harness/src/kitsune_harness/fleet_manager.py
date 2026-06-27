@@ -349,6 +349,50 @@ def report_dict(report: FleetReport, *, name: str = "") -> dict[str, Any]:
     }
 
 
+@dataclass
+class ArchetypeOutcome:
+    name: str
+    expected: str  # "caught" | "candidate"
+    actual: str  # the engagement outcome: caught | evaded | inconclusive
+    match: bool
+    binding: str | None
+
+
+def validate_archetypes(
+    *,
+    detector: str = "http://detector:8080",
+    launcher: Launcher = _docker_launch,
+    get_json: JsonGetter = _http_get_json,
+) -> list[ArchetypeOutcome]:
+    """Run EVERY archetype's fleet against the detector and check its real coordination outcome matches the
+    catalog's declared ``expected`` — turns the catalog from documentation into a tested contract. Archetypes
+    whose binding is external-data-bound (e.g. shared_origin needs real proxy egress) are reported as ``skipped``.
+    """
+    out: list[ArchetypeOutcome] = []
+    for a in all_archetypes():
+        expected = "caught" if a.expected.startswith("caught") else "candidate"
+        if a.binding == "shared_origin":  # needs real proxy egress + WebRTC leak — not gradeable in-sandbox
+            out.append(ArchetypeOutcome(a.name, expected, "skipped (external)", True, a.binding))
+            continue
+        report = run_fleet(archetype_plan(a.name, detector=detector), launcher=launcher, get_json=get_json)
+        d = report_dict(report, name=a.name)
+        actual = d["outcome"]
+        match = (actual == "caught") == (expected == "caught")
+        binding = d["coordination"]["binding"] if d["coordination"] else None
+        out.append(ArchetypeOutcome(a.name, expected, actual, match, binding))
+    return out
+
+
+def render_archetype_validation(outcomes: list[ArchetypeOutcome]) -> str:
+    passed = sum(1 for o in outcomes if o.match)
+    lines = [f"# Archetype validation — {passed}/{len(outcomes)} match the catalog", ""]
+    for o in outcomes:
+        mark = "✅" if o.match else "❌"
+        via = f" via {o.binding}" if o.binding else ""
+        lines.append(f"- {mark} `{o.name}`: expected {o.expected}, got {o.actual}{via}")
+    return "\n".join(lines) + "\n"
+
+
 # --- multi-wave campaigns: an engagement as a SEQUENCE of fleet waves (recon → coordinated attack → …) ---
 
 
@@ -500,6 +544,9 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     ap.add_argument("--archetype", help="a named adversary persona (e.g. credential-stuffer, scalper, sybil-farmer)")
     ap.add_argument("--list-evasions", action="store_true", help="print the evasion registry and exit")
     ap.add_argument("--list-archetypes", action="store_true", help="print the adversary archetype catalog and exit")
+    ap.add_argument(
+        "--validate-archetypes", action="store_true", help="run EVERY archetype live and check outcome vs catalog"
+    )
     ap.add_argument("--n", type=int, default=3, help="replicas per --evasion/--image")
     ap.add_argument("--env", action="append", default=[], help="KEY=VALUE applied to every node (repeatable)")
     ap.add_argument("--proxy", action="append", default=[], help="egress proxy URL; round-robin across nodes")
@@ -525,6 +572,10 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
             print(f"  {a.name:20} [{a.threat}] {a.expected} via {a.binding}")
             print(f"  {'':20} {a.summary}")
             print(f"  {'':20} rate: {a.rate}\n")
+        return 0
+
+    if args.validate_archetypes:
+        print(render_archetype_validation(validate_archetypes(detector=args.detector)), end="")
         return 0
 
     if args.campaign:

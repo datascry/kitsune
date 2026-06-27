@@ -61,8 +61,13 @@ _reg(
     Archetype(
         name="credential-stuffer",
         threat="account-fraud",
-        summary="one cloned hardened profile fanned across nodes, replaying a login form — credential stuffing",
-        nodes=[ArchetypeNode("camoufox-hardened", 3, task="form-fill")],
+        # A cloned credential stuffer needs a tool that is BOTH deterministic-fingerprint (so the clones collide
+        # fleet-wide → fp_collision) AND task-aware (so the form-fill actually replays): a Chromium CDP anti-
+        # detect. NB camoufox would NOT collide — it randomizes its fingerprint per launch (no fp_collision; see
+        # sybil-farmer), a fidelity bug the archetype-validation harness caught. The persona is the SCENARIO
+        # (threat + task + rate), so it shares the deterministic zendriver worker with scalper/scraper.
+        summary="one cloned Chromium profile fanned across nodes, replaying a login form — credential stuffing",
+        nodes=[ArchetypeNode("zendriver-uach", 3, task="form-fill")],
         binding="fp_collision",
         expected="caught",
         rate="burst — many login attempts in a short window",
@@ -94,12 +99,13 @@ _reg(
     Archetype(
         name="sybil-farmer",
         threat="sybil",
-        summary="multi-accounting: DIVERSE evasions per node (no shared fingerprint) to look like distinct users",
-        nodes=[
-            ArchetypeNode("camoufox-linux", 1),
-            ArchetypeNode("zendriver-uach", 1),
-            ArchetypeNode("nodriver", 1),
-        ],
+        # Multi-accounting wants DISTINCT fingerprints per node. The diversity comes from camoufox's PER-LAUNCH
+        # fingerprint randomization — a fleet of camoufox instances has distinct fps (no fp_collision) sharing one
+        # Firefox JA4 (the TLS/JS paradox), so it caps at candidate. NB mixing Chromium tools does NOT diversify:
+        # zendriver + nodriver render identically (same fp) and COLLIDE → caught (a fidelity bug the validation
+        # harness caught — the first sybil-farmer used a Chromium mix and was wrongly convicted).
+        summary="multi-accounting: camoufox instances, each randomizing its fingerprint → distinct 'users'",
+        nodes=[ArchetypeNode("camoufox-linux", 3)],
         binding="none",
         expected="candidate",
         rate="low and slow — a few accounts, spread over time, to avoid scale tells",

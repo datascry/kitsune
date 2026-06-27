@@ -20,9 +20,11 @@ def test_catalog_is_populated_and_well_formed() -> None:
 def test_known_archetypes_resolve() -> None:
     stuffer = get("credential-stuffer")
     assert stuffer.threat == "account-fraud" and stuffer.binding == "fp_collision"
-    assert stuffer.nodes[0].evasion == "camoufox-hardened" and stuffer.nodes[0].task == "form-fill"
+    # a cloned-fp persona must use a DETERMINISTIC-fingerprint tool (not camoufox, which randomizes per launch)
+    assert stuffer.nodes[0].evasion == "zendriver-uach" and stuffer.nodes[0].task == "form-fill"
     sybil = get("sybil-farmer")
-    assert sybil.expected == "candidate" and len({n.evasion for n in sybil.nodes}) >= 3  # diverse → no collision
+    # diversity via camoufox's per-launch fp randomization (NOT a Chromium mix, which would collide → caught)
+    assert sybil.expected == "candidate" and all(n.evasion.startswith("camoufox") for n in sybil.nodes)
 
 
 def test_unknown_archetype_lists_known() -> None:
@@ -38,6 +40,20 @@ def test_to_plan_obj_is_plan_shaped() -> None:
     # a node with no task omits the key
     sybil = get("sybil-farmer").to_plan_obj()
     assert all("task" not in n for n in sybil["nodes"])
+
+
+def test_binding_matches_tool_fingerprint_behaviour() -> None:
+    # The structural contract the live validator taught: fp_collision needs a DETERMINISTIC-fingerprint Chromium
+    # clone (one tool, NOT camoufox — it randomizes per launch); a `none`/diverse persona avoids collision via
+    # camoufox's per-launch randomization (a Chromium-tool mix would COLLIDE — zendriver+nodriver render alike).
+    from kitsune_harness.evasions import get as get_evasion
+
+    for a in all_archetypes():
+        if a.binding == "fp_collision":
+            assert len({n.evasion for n in a.nodes}) == 1, f"{a.name}: a cloned persona must use ONE tool"
+            assert get_evasion(a.nodes[0].evasion).family != "camoufox", f"{a.name}: camoufox randomizes — no fp"
+        if a.binding == "none":
+            assert all(get_evasion(n.evasion).family == "camoufox" for n in a.nodes), f"{a.name}: not fp-diverse"
 
 
 def test_catalog_spans_caught_and_evaded() -> None:
