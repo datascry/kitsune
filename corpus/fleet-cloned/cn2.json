@@ -1,510 +1,563 @@
 {
  "schema_version": "0.1",
- "session_id": "563839d803d9edcdd5d04e97630a93be",
+ "session_id": "f85aa105b00f009c7fb2af2966accdc5",
  "remote_ip": null,
- "first_seen": "2026-06-19T14:18:05Z",
- "last_seen": "2026-06-19T14:18:07Z",
- "request_count": 28,
+ "first_seen": "2026-06-27T01:28:04Z",
+ "last_seen": "2026-06-27T01:28:06Z",
+ "request_count": 54,
  "signals": {
   "network": [
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ch_platform_header",
     "value": "Windows",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ch_ua_browser",
     "value": "chrome",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ch_ua_version_mismatch",
     "value": true,
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "h2",
     "value": "1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "h2_browser_hint",
     "value": "chrome",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "h2_settings_hint",
     "value": "chrome",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "http_user_agent",
+    "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "http_version",
+    "value": "h2",
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ja3",
-    "value": "be57a4332f1f0053882c80b7808df18e",
+    "value": "22fb4c1111809c9c9b78fd294dbd2724",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ja4",
     "value": "t13d1516h2_8daaf6152771_d8a2da3f94cd",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ja4_browser_hint",
     "value": "chrome",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "ja4t",
+    "value": "64240_2-4-8-1-3_1460_7",
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "observed_ip",
-    "value": "172.22.0.4",
+    "value": "172.22.0.5",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "network",
-    "kind": "quic_no_grease",
-    "value": true,
-    "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "network",
-    "kind": "quic_observed",
-    "value": true,
-    "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "tcp_kernel",
     "value": "linux",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "tls_cipher_order",
+    "value": "g-1303-1301-1302-cca9-cca8-c02b-c02f-c02c-c030-c013-c014-9c-9d-2f-35",
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "tls_ext_order",
+    "value": "g-10-5-1b-a-33-d-17-2d-ff01-23-12-fe0d-2b-44cd-0-b-g",
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "tls_extras",
+    "value": "ECH \u00b7 ALPS \u00b7 cert-comp:brotli \u00b7 key-share:g+mlkem768+x25519",
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "network",
     "kind": "ua_kernel",
     "value": "windows",
     "source": "edge",
-    "observed_at": "2026-06-19T14:18:07Z"
+    "observed_at": "2026-06-27T01:28:06Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "tls_ext_order_static",
+    "value": true,
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:04Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "observed_ip_seen",
+    "value": [
+     "172.22.0.5"
+    ],
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:04Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "network",
+    "kind": "ua_seen",
+    "value": [
+     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
+    ],
+    "source": "edge",
+    "observed_at": "2026-06-27T01:28:04Z"
    }
   ],
   "browser": [
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "browser",
+    "kind": "automation_globals",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-06-27T01:28:05.784000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "cdp_runtime_enabled",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ch_he_headless",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ch_he_version_vs_ua",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ch_platform",
     "value": "Windows",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "chrome_no_pdfviewer",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "chrome_object_missing",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "codec_os_incoherent",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "color_depth",
     "value": 24,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "font_linux_leak",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "fp_hash",
     "value": "bf779223",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "hardware_concurrency",
     "value": 12,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "media_devices_empty",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "mimetypes_empty",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "nav_language_primary",
     "value": "en",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "nav_platform_os",
     "value": "Linux",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "notification_denied",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "permissions_anomaly",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "plugins_count",
     "value": 0,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "productsub_render",
     "value": "webkit",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "screen_resolution",
     "value": "1280x720",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ua_browser",
     "value": "chrome",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ua_engine",
     "value": "chromium",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ua_platform",
     "value": "Windows",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "ua_render",
     "value": "webkit",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "vendor_engine",
     "value": "chromium",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "voices_empty",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "webdriver",
     "value": false,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "webdriver_spoofed",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "browser",
+    "kind": "webgl_caps",
+    "value": "tex 8192 \u00b7 vp 8192x8192 \u00b7 rb 8192 \u00b7 vu 4096 \u00b7 fu 4096 \u00b7 varyings 31 \u00b7 35 ext",
+    "source": "collector",
+    "observed_at": "2026-06-27T01:28:05.784000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "browser",
+    "kind": "webgl_max_texture",
+    "value": 8192,
+    "source": "collector",
+    "observed_at": "2026-06-27T01:28:05.784000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "webgl_renderer",
     "value": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "webgl_software",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "webgl_vendor",
     "value": "Google Inc. (Google)",
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "browser",
     "kind": "webgpu_no_adapter",
     "value": true,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
+    "layer": "browser",
+    "kind": "fp_seen",
+    "value": {
+     "nav_platform_os": [
+      "Linux"
+     ],
+     "webgl_renderer": [
+      "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+     ],
+     "webgl_vendor": [
+      "Google Inc. (Google)"
+     ],
+     "hardware_concurrency": [
+      "12"
+     ]
+    },
+    "source": "collector",
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    }
   ],
   "behavioral": [
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "behavioral",
     "kind": "keystroke_entropy",
-    "value": 0,
+    "value": 0.5032583347756457,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    },
    {
     "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
+    "session_id": "f85aa105b00f009c7fb2af2966accdc5",
     "layer": "behavioral",
-    "kind": "mouse_entropy",
-    "value": 0.5500074738827848,
+    "kind": "keystroke_interval_ms",
+    "value": 97.59999990463257,
     "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "mouse_straightness",
-    "value": 0.4113096797457176,
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "mouse_velocity_cv",
-    "value": 1.5490219006712143,
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "pause_ratio",
-    "value": 0.3333333333333333,
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "pointer_event_count",
-    "value": 13,
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "power_law_exponent",
-    "value": 0.39089453214096864,
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "submovement_count",
-    "value": 1,
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
-   },
-   {
-    "schema_version": "0.1",
-    "session_id": "563839d803d9edcdd5d04e97630a93be",
-    "layer": "behavioral",
-    "kind": "trace_hash",
-    "value": "94ecd446",
-    "source": "collector",
-    "observed_at": "2026-06-19T14:18:06.649000Z"
+    "observed_at": "2026-06-27T01:28:05.784000Z"
    }
   ],
   "reputation": []

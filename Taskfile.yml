@@ -89,6 +89,12 @@ tasks:
       - uv run python tools/fleet_coordination_demo.py
       - uv run python -m kitsune_harness.live_coordination {{.CLI_ARGS}}
 
+  coordination-fleet-capture:
+    desc: "AUTHENTIC live fleet: run N concurrent real evader containers (distinct container IPs) through the edge, then grade the cloned-profile collision. Spine must be up (edge+detector). Env: IMAGE, N (e.g. IMAGE=kitsune-stealth:latest N=3)."
+    cmds:
+      - OUT=/tmp/ks-fleet bash harness/tools/fleet_capture.sh
+      - cd harness && uv run python -m kitsune_harness.coordination /tmp/ks-fleet
+
   calibrate-intoli:
     desc: "Corroborate the calibration against a second real-traffic source (Intoli user-agents dataset)"
     dir: harness
