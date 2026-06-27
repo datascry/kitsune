@@ -1,0 +1,247 @@
+# harness/fleet_manager — orchestrate a managed fleet of REAL evader-browser workers (camoufox/zendriver/…).
+# The stateful, self-healing layer over fleet_capture.sh: mixed images, per-node proxy, retry, capture + grade.
+
+"""A managed fleet runner for real adversary-emulation.
+
+``fleet_capture.sh`` launches N copies of ONE evader image and drops any node that flakes. This is the
+orchestrated upgrade the engagement use-case wants: a declarative :class:`FleetPlan` of heterogeneous nodes
+(mix camoufox + zendriver + …), each with its own env + proxy, launched concurrently with **per-node retry**
+(so a transient Chrome-sandbox flake re-runs instead of silently shrinking the fleet), then every minted session
+is pulled from the detector and graded as one coordination cluster.
+
+Ethics: this drives REAL browsers, so the target is checked against the harness allow-list FIRST
+(:func:`~kitsune_harness.allowlist.assert_allowed`) — it points only at Kitsune's own edge/detector/arena or the
+approved test endpoints, and refuses anything else. It is adversary-emulation for testing our OWN coordination
+defenses (the red half of the lab), authorization-scoped in code — not a scraping/attack botnet.
+
+The real Docker launch and the detector HTTP fetch are injected (``launcher`` / ``get_json``) so the orchestration
+logic — retry, concurrency, health accounting, grading — is unit-tested without Docker or a live detector.
+"""
+
+from __future__ import annotations
+
+import concurrent.futures
+import json
+import subprocess
+import urllib.request
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any, Protocol
+
+from kitsune_detector.models import Session
+
+from .allowlist import assert_allowed
+from .coordination import FleetVerdict, score_corpus
+
+
+@dataclass(frozen=True)
+class NodeSpec:
+    """One fleet node: which evader image, its env knobs (KS_UACH/KS_LINUX/…), and an optional egress proxy."""
+
+    image: str
+    env: dict[str, str] = field(default_factory=dict)
+    proxy: str | None = None
+    label: str = ""  # display label; defaults to a short image-derived name
+
+
+@dataclass(frozen=True)
+class FleetPlan:
+    """A declarative fleet: heterogeneous nodes + the (allow-listed) targets and run policy."""
+
+    nodes: list[NodeSpec]
+    edge: str = "https://edge:8443/"  # worker target (KITSUNE_EDGE) — network-internal hostname
+    detector: str = "http://detector:8080"  # where the MANAGER fetches /session — host port when run off-network
+    worker_detector: str = "http://detector:8080"  # KITSUNE_DETECTOR given to workers — always the network name
+    network: str = "kitsune_default"
+    retries: int = 1  # extra attempts per node on a transient failure (the Chrome-sandbox flake)
+    timeout: float = 120.0
+    max_concurrency: int = 8
+
+
+@dataclass
+class NodeResult:
+    """The outcome for one node: did it mint a session, after how many attempts, else why not."""
+
+    label: str
+    image: str
+    status: str  # "ok" | "failed"
+    session_id: str | None = None
+    attempts: int = 0
+    error: str | None = None
+
+
+@dataclass
+class FleetReport:
+    nodes: list[NodeResult]
+    verdict: FleetVerdict | None  # the graded coordination cluster over the nodes that minted a session
+
+    @property
+    def ok(self) -> list[NodeResult]:
+        return [n for n in self.nodes if n.status == "ok"]
+
+    @property
+    def failed(self) -> list[NodeResult]:
+        return [n for n in self.nodes if n.status != "ok"]
+
+
+class Launcher(Protocol):
+    """Runs one evader container to completion and returns its stdout (which carries the ``__KS__`` marker)."""
+
+    def __call__(self, *, image: str, env: dict[str, str], network: str, proxy: str | None, timeout: float) -> str: ...
+
+
+JsonGetter = Callable[[str], Any]
+
+
+def _docker_launch(  # pragma: no cover - real Docker I/O
+    *, image: str, env: dict[str, str], network: str, proxy: str | None, timeout: float
+) -> str:
+    """Real launcher: ``docker run --rm --network <net> -e …  <image>``."""
+    args = ["docker", "run", "--rm", "--network", network]
+    for key, value in env.items():
+        args += ["-e", f"{key}={value}"]
+    if proxy:
+        args += ["-e", f"KS_PROXY={proxy}"]
+    args.append(image)
+    done = subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=False)
+    return done.stdout
+
+
+def _http_get_json(url: str) -> Any:  # pragma: no cover - thin network shim
+    with urllib.request.urlopen(url, timeout=10) as resp:
+        return json.loads(resp.read())
+
+
+def _session_id(stdout: str) -> str | None:
+    """Extract the ``ks_sid`` a worker reports via its ``__KS__{…}`` line, or None if it never minted one."""
+    for line in stdout.splitlines():
+        if line.startswith("__KS__"):
+            try:
+                sid = json.loads(line[len("__KS__") :]).get("session_id")
+            except (json.JSONDecodeError, AttributeError):
+                return None
+            return str(sid) if sid else None
+    return None
+
+
+def _node_label(spec: NodeSpec, index: int) -> str:
+    if spec.label:
+        return spec.label
+    base = spec.image.split(":")[0].rsplit("/", 1)[-1].removeprefix("kitsune-")
+    return f"{base}-{index}"
+
+
+def _launch_node(spec: NodeSpec, plan: FleetPlan, launcher: Launcher, label: str) -> NodeResult:
+    """Run one node, RE-RUNNING up to ``plan.retries`` times on a transient failure (no session / launch error)."""
+    env = {"KITSUNE_EDGE": plan.edge, "KITSUNE_DETECTOR": plan.worker_detector, **spec.env}
+    last_err = "no __KS__ session marker (worker minted no session)"
+    for attempt in range(1, plan.retries + 2):
+        try:
+            out = launcher(image=spec.image, env=env, network=plan.network, proxy=spec.proxy, timeout=plan.timeout)
+        except Exception as exc:
+            last_err = f"launch error: {exc}"
+            continue
+        sid = _session_id(out)
+        if sid:
+            return NodeResult(label, spec.image, "ok", sid, attempt)
+    return NodeResult(label, spec.image, "failed", None, plan.retries + 1, last_err)
+
+
+def run_fleet(
+    plan: FleetPlan, *, launcher: Launcher = _docker_launch, get_json: JsonGetter = _http_get_json
+) -> FleetReport:
+    """Launch the plan's nodes concurrently (with per-node retry), capture each minted session, and grade the
+    cluster. The allow-list check runs FIRST and raises ``EthicsError`` before any browser is launched."""
+    assert_allowed(plan.edge)  # ETHICS GATE — refuses a non-allow-listed target before anything runs
+    labels = [_node_label(spec, i) for i, spec in enumerate(plan.nodes)]
+    by_index: dict[int, NodeResult] = {}
+    workers = min(plan.max_concurrency, len(plan.nodes)) or 1
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_launch_node, spec, plan, launcher, labels[i]): i for i, spec in enumerate(plan.nodes)}
+        for future in concurrent.futures.as_completed(futures):
+            by_index[futures[future]] = future.result()
+    results = [by_index[i] for i in range(len(plan.nodes))]
+
+    corpus: list[tuple[str, Session]] = []
+    for result in results:
+        if result.status == "ok" and result.session_id:
+            try:
+                session = Session.model_validate(get_json(f"{plan.detector.rstrip('/')}/session/{result.session_id}"))
+            except Exception as exc:
+                result.status = "failed"
+                result.error = f"session fetch failed: {exc}"
+                continue
+            corpus.append((result.label, session))
+    verdict = score_corpus(corpus)[0] if len(corpus) >= 2 else None
+    return FleetReport(nodes=results, verdict=verdict)
+
+
+def homogeneous_plan(
+    image: str, n: int, *, env: dict[str, str] | None = None, proxies: list[str] | None = None, **kw: Any
+) -> FleetPlan:
+    """N identical nodes (one image) — the fleet_capture.sh shape, with per-node proxy round-robin if given."""
+    proxies = proxies or []
+    nodes = [
+        NodeSpec(image=image, env=dict(env or {}), proxy=(proxies[i % len(proxies)] if proxies else None))
+        for i in range(n)
+    ]
+    return FleetPlan(nodes=nodes, **kw)
+
+
+def render(report: FleetReport) -> str:
+    """Markdown: per-node health (with retries) + the graded coordination verdict."""
+    lines = [f"# Fleet — {len(report.ok)}/{len(report.nodes)} nodes minted a session", ""]
+    for n in report.nodes:
+        if n.status == "ok":
+            retry = f" (after {n.attempts} attempts)" if n.attempts > 1 else ""
+            lines.append(f"- ✅ `{n.label}` [{n.image}] → session `{n.session_id}`{retry}")
+        else:
+            lines.append(f"- ❌ `{n.label}` [{n.image}] → {n.error}")
+    lines.append("")
+    v = report.verdict
+    if v is None:
+        lines.append("_fewer than 2 sessions captured — no coordination cluster to grade_")
+    else:
+        lines.append(f"## Coordination — `{v.label}` score **{v.score:.2f}** · {len(v.members)} nodes")
+        for e in v.evidence:
+            lines.append(f"- {e}")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Run a managed fleet of real evader workers (authorized targets only).")
+    ap.add_argument("--image", action="append", default=[], help="evader image; repeat for a MIXED fleet")
+    ap.add_argument("--n", type=int, default=3, help="replicas per --image")
+    ap.add_argument("--env", action="append", default=[], help="KEY=VALUE applied to every node (repeatable)")
+    ap.add_argument("--proxy", action="append", default=[], help="egress proxy URL; round-robin across nodes")
+    ap.add_argument("--edge", default="https://edge:8443/")
+    ap.add_argument("--detector", default="http://detector:8080", help="where the MANAGER fetches /session")
+    ap.add_argument("--worker-detector", default="http://detector:8080", help="KITSUNE_DETECTOR for workers")
+    ap.add_argument("--network", default="kitsune_default")
+    ap.add_argument("--retries", type=int, default=1)
+    args = ap.parse_args(argv)
+
+    env = dict(kv.split("=", 1) for kv in args.env)
+    proxies = args.proxy or None
+    images = args.image or ["kitsune-zendriver:latest"]
+    nodes: list[NodeSpec] = []
+    for image in images:
+        for _ in range(args.n):
+            px = proxies[len(nodes) % len(proxies)] if proxies else None
+            nodes.append(NodeSpec(image=image, env=dict(env), proxy=px))
+    plan = FleetPlan(
+        nodes=nodes,
+        edge=args.edge,
+        detector=args.detector,
+        worker_detector=args.worker_detector,
+        network=args.network,
+        retries=args.retries,
+    )
+    print(render(run_fleet(plan)), end="")
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

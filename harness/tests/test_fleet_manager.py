@@ -1,0 +1,164 @@
+# harness/tests/test_fleet_manager — the managed-fleet orchestration: ethics gate, retry, mixed, capture+grade.
+# Docker + detector are injected (fake launcher / get_json) so the logic is covered without containers.
+
+from __future__ import annotations
+
+import json
+import threading
+from datetime import UTC, datetime
+from typing import Any
+
+import pytest
+from kitsune_detector.ingest import group_signals
+from kitsune_detector.models import Layer, Signal, Source
+
+from kitsune_harness.allowlist import EthicsError
+from kitsune_harness.fleet_manager import (
+    FleetPlan,
+    NodeSpec,
+    _node_label,
+    _session_id,
+    homogeneous_plan,
+    render,
+    run_fleet,
+)
+
+_WHEN = datetime(2026, 6, 27, 12, 0, 0, tzinfo=UTC)
+
+
+def _session_json(sid: str, ja4: str, ip: str, fp: str) -> dict[str, Any]:
+    sigs = [
+        Signal(session_id=sid, layer=Layer.network, kind="ja4", value=ja4, source=Source.edge, observed_at=_WHEN),
+        Signal(
+            session_id=sid, layer=Layer.network, kind="observed_ip", value=ip, source=Source.edge, observed_at=_WHEN
+        ),
+        Signal(
+            session_id=sid, layer=Layer.browser, kind="fp_hash", value=fp, source=Source.collector, observed_at=_WHEN
+        ),
+    ]
+    return group_signals(sigs)[0].model_dump(mode="json")
+
+
+def _get_json(url: str) -> dict[str, Any]:
+    sid = url.rsplit("/", 1)[-1]
+    ipn = abs(hash(sid)) % 200 + 1
+    return _session_json(sid, "t13d1516h2_aaaabbbbcccc", f"10.0.0.{ipn}", f"fp-{sid}")  # one JA4 → a cluster
+
+
+class _FakeLauncher:
+    """A Docker stand-in: returns a ``__KS__`` line (a minted session) unless the image is told to flake."""
+
+    def __init__(self, *, never: tuple[str, ...] = (), fail_first: tuple[str, ...] = ()) -> None:
+        self.never = set(never)
+        self.fail_first = set(fail_first)
+        self._lock = threading.Lock()
+        self._n = 0
+        self._per_image: dict[str, int] = {}
+
+    def __call__(self, *, image: str, env: dict[str, str], network: str, proxy: str | None, timeout: float) -> str:
+        with self._lock:
+            self._n += 1
+            n = self._n
+            self._per_image[image] = self._per_image.get(image, 0) + 1
+            first = self._per_image[image] == 1
+        if image in self.never:
+            return "booting…\nno session minted\n"
+        if image in self.fail_first and first:
+            return "Chrome failed to start: running as root without --no-sandbox\n"
+        return "__KS__" + json.dumps({"session_id": f"sid{n}", "mode": "m"})
+
+
+def test_ethics_gate_refuses_non_allowlisted_edge() -> None:
+    plan = FleetPlan(nodes=[NodeSpec("kitsune-zendriver:latest")], edge="https://evil.example/")
+    with pytest.raises(EthicsError):
+        run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)
+
+
+def test_basic_fleet_captures_and_grades() -> None:
+    plan = homogeneous_plan("kitsune-zendriver:latest", 3, max_concurrency=1)
+    report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)
+    assert len(report.ok) == 3 and not report.failed
+    assert report.verdict is not None and len(report.verdict.members) == 3  # graded as one cluster
+
+
+def test_retry_heals_a_transient_sandbox_flake() -> None:
+    # The node flakes once (the Chrome-sandbox error seen live) then succeeds — the manager re-runs it.
+    plan = FleetPlan(nodes=[NodeSpec("kitsune-camoufox:latest")], retries=1, max_concurrency=1)
+    report = run_fleet(plan, launcher=_FakeLauncher(fail_first=("kitsune-camoufox:latest",)), get_json=_get_json)
+    assert report.ok and report.ok[0].attempts == 2 and report.ok[0].status == "ok"
+
+
+def test_node_failing_all_attempts_is_reported_not_dropped() -> None:
+    plan = FleetPlan(nodes=[NodeSpec("kitsune-broken:latest")], retries=1, max_concurrency=1)
+    report = run_fleet(plan, launcher=_FakeLauncher(never=("kitsune-broken:latest",)), get_json=_get_json)
+    assert not report.ok and len(report.failed) == 1
+    assert report.failed[0].attempts == 2 and report.failed[0].error
+    assert report.verdict is None  # <2 sessions → nothing to grade
+
+
+def test_mixed_image_fleet() -> None:
+    plan = FleetPlan(
+        nodes=[NodeSpec("kitsune-camoufox:latest"), NodeSpec("kitsune-zendriver:latest", env={"KS_UACH": "1"})],
+        max_concurrency=1,
+    )
+    report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)
+    images = {n.image for n in report.ok}
+    assert images == {"kitsune-camoufox:latest", "kitsune-zendriver:latest"}  # heterogeneous fleet
+    assert {n.label for n in report.nodes} == {"camoufox-0", "zendriver-1"}
+
+
+def test_launch_exception_is_retried_then_reported() -> None:
+    class _Boom:
+        def __call__(self, **_kw: Any) -> str:
+            raise RuntimeError("docker daemon down")
+
+    plan = FleetPlan(nodes=[NodeSpec("kitsune-zendriver:latest")], retries=1, max_concurrency=1)
+    report = run_fleet(plan, launcher=_Boom(), get_json=_get_json)
+    assert report.failed[0].status == "failed" and "docker daemon down" in (report.failed[0].error or "")
+
+
+def test_session_fetch_failure_demotes_the_node() -> None:
+    def _bad_get(url: str) -> dict[str, Any]:
+        raise OSError("detector unreachable")
+
+    plan = FleetPlan(nodes=[NodeSpec("kitsune-zendriver:latest")], max_concurrency=1)
+    report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_bad_get)
+    assert report.failed and "session fetch failed" in (report.failed[0].error or "")
+
+
+def test_homogeneous_plan_round_robins_proxies() -> None:
+    plan = homogeneous_plan("kitsune-zendriver:latest", 4, proxies=["socks5://p1", "socks5://p2"])
+    assert [n.proxy for n in plan.nodes] == ["socks5://p1", "socks5://p2", "socks5://p1", "socks5://p2"]
+
+
+def test_node_label_default_and_explicit() -> None:
+    assert _node_label(NodeSpec("registry.io/kitsune-camoufox:latest"), 2) == "camoufox-2"
+    assert _node_label(NodeSpec("x", label="lead"), 0) == "lead"
+
+
+def test_session_id_parsing_edge_cases() -> None:
+    assert _session_id("__KS__" + json.dumps({"session_id": "abc"})) == "abc"
+    assert _session_id("no marker here") is None
+    assert _session_id("__KS__{not json}") is None
+    assert _session_id("__KS__[1,2]") is None  # valid json but not an object → no .get
+    assert _session_id("__KS__" + json.dumps({"mode": "m"})) is None  # no session_id key
+
+
+def test_render_with_and_without_verdict() -> None:
+    plan = homogeneous_plan("kitsune-zendriver:latest", 2, max_concurrency=1)
+    out = render(run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json))
+    assert "2/2 nodes minted a session" in out and "Coordination" in out
+
+    one = render(
+        run_fleet(FleetPlan(nodes=[NodeSpec("kitsune-zendriver:latest")]), launcher=_FakeLauncher(), get_json=_get_json)
+    )
+    assert "no coordination cluster" in one
+
+    flaked = render(
+        run_fleet(
+            FleetPlan(nodes=[NodeSpec("kitsune-broken:latest")]),
+            launcher=_FakeLauncher(never=("kitsune-broken:latest",)),
+            get_json=_get_json,
+        )
+    )
+    assert "❌" in flaked
