@@ -186,6 +186,7 @@ def _sess(
     fp_hash: str | None = None,
     trace_hash: str | None = None,
     trace_descriptor: list[float] | None = None,
+    tls_ticket_id: str | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
 ) -> Session:
@@ -203,6 +204,8 @@ def _sess(
         sigs.append(mk(Layer.reputation, "asn_is_datacenter", True, Source.detector))
     if trace_descriptor is not None:
         sigs.append(mk(Layer.behavioral, "trace_descriptor", trace_descriptor, Source.collector))
+    if tls_ticket_id is not None:
+        sigs.append(mk(Layer.network, "tls_ticket_id", tls_ticket_id, Source.edge))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
@@ -501,6 +504,59 @@ def test_pure_cross_ja4_fuzzy_fleet_is_not_clustered() -> None:
         for i in range(3)
     ]
     assert score_corpus(corpus) == []  # each node a singleton JA4, no cross-instance binding → never graded
+
+
+def test_ticket_reuse_fleet_caught_across_rotated_ja4() -> None:
+    # A reused TLS-resumption ticket is the binding that survives JA4 rotation AND fp/trace fuzzing: distinct
+    # JA4/fp/trace per node, but ONE tls_ticket_id across distinct IPs — recovered as one cluster (not 3
+    # singletons) by the ticket. Ambiguous (a roaming user could resume from a 2nd IP), so corroborated by
+    # datacenter IPs here → convicts. The edge captures the id from pre_shared_key / session_ticket.
+    corpus = [
+        (
+            f"tk{i}",
+            _sess(
+                f"tk{i}",
+                f"t13d{i:04d}h2_rot{i:04d}_x{i:04d}",  # rotated JA4
+                8,
+                "Windows",
+                observed_ip=f"{10 + i}.{i}.{i}.{i}",
+                fp_hash=f"tf{i}",  # fuzzed
+                trace_hash=f"tt{i}",  # fuzzed
+                tls_ticket_id="one-shared-ticket",  # the surviving binding
+                datacenter=True,  # corroborates the ambiguous ticket-reuse tell
+            ),
+        )
+        for i in range(3)
+    ]
+    verdicts = score_corpus(corpus)
+    assert len(verdicts) == 1  # recovered as ONE cluster by the reused ticket, not 3 singleton JA4 clusters
+    v = verdicts[0]
+    assert v.shared_ticket == "one-shared-ticket"
+    assert v.label == "fleet", v.evidence
+
+
+def test_ticket_reuse_uncorroborated_is_a_roaming_user_not_a_fleet() -> None:
+    # FP guard: a reused ticket across 2 residential IPs with NO automation/datacenter flag is also a single
+    # roaming user resuming from home then mobile. Ambiguous → must cap at candidate, not botnet-label a person.
+    corpus = [
+        (
+            f"rm{i}",
+            _sess(
+                f"rm{i}",
+                f"t13d{i:04d}h2_rot{i:04d}_x{i:04d}",
+                8,
+                "Windows",
+                observed_ip=f"{73 + i}.1.1.1",
+                fp_hash=f"rf{i}",
+                tls_ticket_id="roaming-ticket",
+            ),
+        )
+        for i in range(2)
+    ]
+    v = score_corpus(corpus)[0]
+    assert v.shared_ticket == "roaming-ticket"  # the tell fired
+    assert v.label != "fleet"  # but uncorroborated → not convicted
+    assert any("UNCORROBORATED" in e for e in v.evidence)
 
 
 def test_larger_fleet_scores_higher() -> None:

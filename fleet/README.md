@@ -47,6 +47,7 @@ Each strategy models a real attacker class and grounds a specific blue coordinat
 | `fuzzy` | **the evolved adversary** — jitter the fingerprint *and* the trace per instance | **none yet** — defeats exact-hash matching | ❌ `candidate` — **the frontier** |
 | `similarity` | the same evolved adversary, **profiled** — its jittered traces all come from one humanizer model | `template_similarity` (descriptors cluster below the human floor; corroboration-gated like `fp_collision`) | ✅ `fleet` (with corroboration) |
 | `fuzzy-rotate` | the hardest shape — **rotate JA4 per node** AND fuzz fp/trace; defeats prefix clustering *and* exact collision | `shared_real_ip` (one WebRTC origin survives rotation; recovered by collision-clustering) + `template_similarity` corroborates | ✅ `fleet` *iff a binding leaks*; otherwise **uncatchable in-sandbox** (see note) |
+| `ticket-reuse` | rotated JA4 + fuzzed, bound by a **reused TLS-resumption ticket** (one TLS session across the nodes) | `shared_ticket` (one `tls_ticket_id` across distinct IPs; the edge captures it from pre_shared_key / session_ticket; corroboration-gated — a roaming user resumes too) | ✅ `fleet` (with corroboration) |
 
 `fuzzy` was the point of the tool: once an attacker knows we hash, they perturb just enough to dodge
 *exact-match* collision. It exposed the next blue rung — **template-similarity clustering** (N near-identical
@@ -61,6 +62,8 @@ skulk run cloned        →  detector grades `fleet` 1.00   (cloned-profile reus
 skulk run similarity    →  detector grades `fleet` 1.00   (humanizer-model descriptors cluster below the human floor)
 skulk run fuzzy-rotate  →  detector grades `fleet` 1.00   (rotated JA4 + fuzzed fp/trace; the shared WebRTC origin
                                                           survives, template-similarity corroborates)
+skulk run ticket-reuse  →  detector grades `fleet` 1.00   (rotated JA4 + fuzzed; one reused TLS-resumption ticket
+                                                          survives the rotation, datacenter corroborates)
 skulk run fuzzy         →  detector grades `candidate`    (no descriptor profiled — still evades; the open frontier)
 ```
 
@@ -94,10 +97,10 @@ sybil attacks. In every one the attacker makes each session look like a distinct
 
 Add a strategy by duck-typing `skulk.strategy.Strategy` (`name`, `summary`, `members(n, seed) -> [FleetMember]`)
 and decorating it with `@register`. Keep it deterministic in `seed` so runs are reproducible and fixtures are
-stable. The `similarity` (template-similarity) and `fuzzy-rotate` (rotated-JA4, caught by the surviving origin)
-strategies + their blue rungs are **done** — see above. The roadmap now: a `ticket-reuse` strategy (a reused TLS
-session ticket / PSK across IPs — the next binding that survives JA4 rotation, needs the edge to forward the
-ticket identity); a `staggered` timing strategy (defeat the lockstep window).
+stable. The `similarity` (template-similarity), `fuzzy-rotate` (surviving WebRTC origin), and `ticket-reuse`
+(reused TLS-resumption ticket — the edge now captures `tls_ticket_id` from pre_shared_key / session_ticket)
+strategies + their blue rungs are **done** — see above. The roadmap now: a `staggered` timing strategy (defeat
+the lockstep window); and the external-data-bound corpus-wide trace-similarity floor (see `docs/research-radar.md`).
 
 ## Design
 

@@ -48,6 +48,7 @@ def _session(
     fp_hash: str | None = None,
     trace_hash: str | None = None,
     trace_descriptor: list[float] | None = None,
+    tls_ticket_id: str | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
 ) -> Session:
@@ -75,6 +76,8 @@ def _session(
         sigs.append(mk(Layer.behavioral, "trace_hash", trace_hash))
     if trace_descriptor is not None:
         sigs.append(mk(Layer.behavioral, "trace_descriptor", trace_descriptor))
+    if tls_ticket_id is not None:
+        sigs.append(mk(Layer.network, "tls_ticket_id", tls_ticket_id))
     return group_signals(sigs)[0]
 
 
@@ -371,6 +374,59 @@ def scenarios() -> list[Scenario]:
                     ),
                 )
                 for i in range(4)
+            ],
+        )
+    )
+    # A JA4-rotating + fuzzed fleet bound by a REUSED TLS-resumption ticket (one TLS session across the nodes) —
+    # the binding that survives JA4 rotation and fp/trace fuzzing. Ambiguous (a roaming user resumes too), so
+    # corroborated by datacenter IPs. The edge captures the id from pre_shared_key / session_ticket.
+    out.append(
+        Scenario(
+            "fleet-ticket-reuse",
+            True,
+            "rotated JA4 + fuzzed fp/trace, but ONE reused TLS-resumption ticket across distinct DATACENTER IPs — "
+            "one TLS session shared fleet-wide; the IP-reputation flag corroborates the ambiguous ticket-reuse tell",
+            [
+                (
+                    f"tk{i}",
+                    _session(
+                        f"tk{i}",
+                        f"{_PREFIX}_rot{i:04d}",  # rotated JA4_c per node
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash=f"tkfp{i}",  # fuzzed
+                        tls_ticket_id="one-fleet-ticket",  # the surviving binding
+                        datacenter=True,
+                    ),
+                )
+                for i in range(3)
+            ],
+        )
+    )
+    # FP control: the SAME reused ticket across 2 residential IPs with no automation/datacenter is one roaming
+    # user (home → mobile resumption). Must cap at candidate, not botnet-label a person.
+    out.append(
+        Scenario(
+            "legit-roaming-ticket",
+            False,
+            "one user resuming a TLS session from two residential IPs (home → mobile) — a reused ticket across 2 "
+            "IPs with NO automation/datacenter flag is a roaming person, not a fleet; must cap at candidate",
+            [
+                (
+                    f"rm{i}",
+                    _session(
+                        f"rm{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        offset_s=i * 600.0,  # sequential, not lockstep — a person roaming over time
+                        observed_ip=_ip(i),
+                        fp_hash=f"rmfp{i}",
+                        tls_ticket_id="roaming-user-ticket",
+                    ),
+                )
+                for i in range(2)
             ],
         )
     )

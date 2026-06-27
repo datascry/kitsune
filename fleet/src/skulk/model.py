@@ -15,7 +15,10 @@ class FleetMember:
     motion-feature vector of the pointer path (the SIMILARITY analog of ``trace_hash`` — a humanizer fleet's are
     near-identical even when each ``trace_hash`` differs). ``webrtc_public_ip`` is the WebRTC-leaked real origin —
     one shared value behind distinct proxy IPs is an unambiguous same-origin binding that SURVIVES JA4 rotation
-    (the only thing that catches a fleet which rotates its JA4 AND fuzzes fp/trace). ``automation`` marks a
+    (the only thing that catches a fleet which rotates its JA4 AND fuzzes fp/trace). ``tls_ticket_id`` is the
+    reused TLS-resumption ticket (the edge captures it from pre_shared_key / session_ticket) — another binding
+    that survives JA4 rotation: one ticket across distinct IPs is one TLS session shared fleet-wide. ``automation``
+    marks a
     per-session headless/automation tell and ``datacenter`` an IP-reputation flag — either corroborates an
     AMBIGUOUS coordination tell (an fp-collision or a template-similarity cluster) as a bot fleet, not a cohort.
     """
@@ -27,6 +30,7 @@ class FleetMember:
     trace_hash: str | None = None
     trace_descriptor: list[float] | None = None
     webrtc_public_ip: str | None = None
+    tls_ticket_id: str | None = None
     hardware_concurrency: int | None = None
     platform: str | None = None
     automation: bool = False
@@ -47,6 +51,8 @@ class FleetMember:
             sigs.append(_sig(session_id, "behavioral", "trace_descriptor", self.trace_descriptor, when, "collector"))
         if self.webrtc_public_ip is not None:
             sigs.append(_sig(session_id, "browser", "webrtc_public_ip", self.webrtc_public_ip, when, "collector"))
+        if self.tls_ticket_id is not None:
+            sigs.append(_sig(session_id, "network", "tls_ticket_id", self.tls_ticket_id, when, "edge"))
         if self.hardware_concurrency is not None:
             sigs.append(
                 _sig(session_id, "browser", "hardware_concurrency", self.hardware_concurrency, when, "collector")

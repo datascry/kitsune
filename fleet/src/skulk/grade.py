@@ -53,6 +53,20 @@ def assess(members: list[FleetMember]) -> Assessment:
                 f"one WebRTC origin `{origin}` behind {len(ips)} distinct IPs — same-origin fleet "
                 f"(survives JA4 rotation + fp/trace fuzzing; convicts unambiguously)",
             )
+    # A reused TLS-resumption ticket across distinct IPs is one TLS session shared fleet-wide — another binding
+    # that survives JA4 rotation + fp/trace fuzzing (corroboration-gated; a roaming user could resume elsewhere).
+    tickets: dict[str, set[str]] = {}
+    for m in members:
+        if m.tls_ticket_id is not None:
+            tickets.setdefault(m.tls_ticket_id, set()).add(m.observed_ip)
+    for tid, ips in tickets.items():
+        if len(ips) >= 2:
+            return Assessment(
+                True,
+                "shared_ticket",
+                f"one TLS ticket `{tid}` reused across {len(ips)} distinct IPs — shared TLS session "
+                f"(survives JA4 rotation + fp/trace fuzzing; convicts with corroboration)",
+            )
     for kind, attr in (("fp_hash", "fp_hash"), ("trace_hash", "trace_hash")):
         by_value: dict[str, set[str]] = {}
         for m in members:

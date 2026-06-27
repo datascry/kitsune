@@ -17,6 +17,8 @@ const (
 	extALPN                uint16 = 0x0010
 	extPadding             uint16 = 0x0015
 	extCertCompression     uint16 = 0x001b
+	extSessionTicket       uint16 = 0x0023
+	extPreSharedKey        uint16 = 0x0029
 	extSupportedVersions   uint16 = 0x002b
 	extKeyShare            uint16 = 0x0033
 	extQUICTransportParams uint16 = 0x0039
@@ -40,6 +42,7 @@ type ClientHello struct {
 	QUICTransportParams []byte   // raw quic_transport_parameters (ext 0x39) body; QUIC ClientHellos only
 	KeyShareGroups      []uint16 // groups that actually carry a key_share (ext 0x33) — NOT just advertised
 	CertCompressAlgs    []uint16 // certificate_compression algorithms (ext 0x1b), in order
+	PSKIdentity         []byte   // first TLS-resumption ticket: pre_shared_key identity (0x29) or session_ticket (0x23)
 }
 
 // reader is a bounds-checked big-endian byte cursor; once it overflows, err sticks.
@@ -222,6 +225,22 @@ func parseExtensionBody(etype uint16, data []byte, out *ClientHello) {
 		_ = d.u8() // algorithms list length (bytes)
 		for d.i < len(d.b) && d.err == nil {
 			out.CertCompressAlgs = append(out.CertCompressAlgs, d.u16())
+		}
+	case extSessionTicket:
+		// TLS 1.2 SessionTicket (RFC 5077): the extension body IS the opaque ticket. Empty = the client is
+		// REQUESTING a ticket (no resumption material), so only a non-empty body is a presented ticket.
+		if len(data) > 0 {
+			out.PSKIdentity = append([]byte(nil), data...)
+		}
+	case extPreSharedKey:
+		// TLS 1.3 pre_shared_key (RFC 8446 §4.2.11): OfferedPsks = PskIdentity identities<> + binders<>. Each
+		// PskIdentity is opaque identity<1..2^16-1> + uint32 obfuscated_ticket_age. We take the FIRST identity's
+		// bytes (the resumption ticket) and ignore the age (varies per connection) so the id is stable per ticket.
+		_ = d.u16() // identities-list total length
+		idLen := int(d.u16())
+		id := d.take(idLen)
+		if d.err == nil && idLen > 0 {
+			out.PSKIdentity = append([]byte(nil), id...)
 		}
 	}
 }

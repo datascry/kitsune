@@ -25,6 +25,10 @@ two escape routes a coordinated fleet has and their evolution:
                        (defeats exact collision). Pure similarity clustering can't convict it FP-safely; it is
                        caught only by the binding that survives rotation — one shared WebRTC origin behind the
                        proxies — with template-similarity corroborating inside the recovered cluster.
+  * ``ticket-reuse`` — the same rotated-JA4 + fuzzed shape, but the surviving binding is a reused TLS-resumption
+                       ticket (one ``tls_ticket_id`` across distinct IPs — a fleet resuming ONE TLS session
+                       fleet-wide). The edge captures it from pre_shared_key / session_ticket; corroboration-gated
+                       (a roaming user could resume from a second IP), so it runs on datacenter egress.
 
 To add a strategy: subclass / duck-type :class:`~skulk.strategy.Strategy` and ``register`` it.
 """
@@ -186,6 +190,37 @@ class FuzzyRotate:
                 hardware_concurrency=8,
                 platform="Win32",
                 automation=False,
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class TicketReuse:
+    name = "ticket-reuse"
+    summary = (
+        "JA4-rotating + fuzzed, bound by a reused TLS-resumption ticket: distinct JA4/fp/trace per node but ONE "
+        "shared tls_ticket_id across the IPs — the session-reuse binding that survives rotation (corroboration-gated)."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # Like fuzzy-rotate but the surviving binding is a reused TLS session ticket (a fleet that resumes ONE
+        # TLS session across nodes to save full handshakes) rather than a WebRTC origin. The edge captures the
+        # pre_shared_key / session_ticket id; one id across distinct IPs is one TLS identity shared fleet-wide.
+        # Ambiguous (a roaming user could resume from a 2nd IP), so it runs on datacenter egress to corroborate.
+        ticket = _h("ticket", seed)
+        return [
+            FleetMember(
+                f"tkt-{i}",
+                _ja4_rot(seed, i),  # rotated JA4
+                _ip(seed, i),
+                fp_hash=_h("tktfp", seed, i),  # fuzzed
+                trace_hash=_h("tkttrace", seed, i),  # fuzzed
+                tls_ticket_id=ticket,  # the surviving binding: ONE reused resumption ticket
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,
+                datacenter=True,  # corroborates the ambiguous ticket-reuse tell
             )
             for i in range(n)
         ]
