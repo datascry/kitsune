@@ -14,9 +14,11 @@ from kitsune_detector.ingest import group_signals
 from kitsune_detector.models import Layer, Signal, Source
 
 from kitsune_harness.allowlist import EthicsError
+from kitsune_harness.coordination import FleetVerdict
 from kitsune_harness.fleet_manager import (
     FleetPlan,
     NodeSpec,
+    _binding,
     _node_label,
     _session_id,
     evasion_node,
@@ -24,6 +26,7 @@ from kitsune_harness.fleet_manager import (
     load_plan,
     plan_from_obj,
     render,
+    report_dict,
     run_fleet,
 )
 
@@ -32,7 +35,7 @@ _EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 _WHEN = datetime(2026, 6, 27, 12, 0, 0, tzinfo=UTC)
 
 
-def _session_json(sid: str, ja4: str, ip: str, fp: str) -> dict[str, Any]:
+def _session_json(sid: str, ja4: str, ip: str, fp: str, *, datacenter: bool = False) -> dict[str, Any]:
     sigs = [
         Signal(session_id=sid, layer=Layer.network, kind="ja4", value=ja4, source=Source.edge, observed_at=_WHEN),
         Signal(
@@ -42,6 +45,17 @@ def _session_json(sid: str, ja4: str, ip: str, fp: str) -> dict[str, Any]:
             session_id=sid, layer=Layer.browser, kind="fp_hash", value=fp, source=Source.collector, observed_at=_WHEN
         ),
     ]
+    if datacenter:  # an IP-reputation flag corroborates an fp-collision as a convicted fleet
+        sigs.append(
+            Signal(
+                session_id=sid,
+                layer=Layer.reputation,
+                kind="asn_is_datacenter",
+                value=True,
+                source=Source.detector,
+                observed_at=_WHEN,
+            )
+        )
     return group_signals(sigs)[0].model_dump(mode="json")
 
 
@@ -190,6 +204,47 @@ def test_committed_example_plans_load_and_build() -> None:
         plan = load_plan(str(path))
         assert plan.nodes and plan.edge.startswith("https://edge")
         run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)  # ethics gate passes + it executes
+
+
+def _cloned_get(url: str) -> dict[str, Any]:
+    # every node returns the SAME high-entropy fp on a DATACENTER IP → fp-collision + corroboration → `fleet`.
+    sid = url.rsplit("/", 1)[-1]
+    ipn = abs(hash(sid)) % 200 + 1
+    return _session_json(sid, "t13d1516h2_cloned", f"10.0.0.{ipn}", "CLONED-FP", datacenter=True)
+
+
+def test_report_caught_outcome_with_binding() -> None:
+    plan = homogeneous_plan("kitsune-camoufox:latest", 3, max_concurrency=1)
+    d = report_dict(run_fleet(plan, launcher=_FakeLauncher(), get_json=_cloned_get), name="acct-fraud")
+    assert d["name"] == "acct-fraud" and d["outcome"] == "caught"
+    assert d["coordination"]["label"] == "fleet" and d["coordination"]["binding"] == "fp_collision"
+    assert "CAUGHT" in d["assessment"]
+    assert d["fleet"] == {"requested": 3, "minted": 3, "failed": 0, "images": ["kitsune-camoufox:latest"]}
+    assert all(n["status"] == "ok" for n in d["nodes"])
+
+
+def test_report_evaded_outcome() -> None:
+    # distinct fps on residential IPs → shared JA4 but no convicting binding → `candidate` = the fleet EVADED.
+    plan = homogeneous_plan("kitsune-zendriver:latest", 3, max_concurrency=1)
+    d = report_dict(run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json))
+    assert d["outcome"] == "evaded" and d["coordination"]["label"] != "fleet"
+    assert d["coordination"]["binding"] is None and "EVADED" in d["assessment"]
+
+
+def test_binding_names_each_signal() -> None:
+    base = dict(ja4="x", members=["a", "b"], diverged_traits={}, score=0.7, label="fleet")
+    assert _binding(FleetVerdict(**base, cloned_fingerprint="fp")) == "fp_collision"
+    assert _binding(FleetVerdict(**base, cloned_trace="t")) == "trace_collision"
+    assert _binding(FleetVerdict(**base, shared_ticket="tk")) == "ticket_reuse"
+    assert _binding(FleetVerdict(**base, template_radius=0.05)) == "template_similarity"
+    assert _binding(FleetVerdict(**base)) is None
+
+
+def test_report_inconclusive_and_proxy_recorded() -> None:
+    plan = FleetPlan(nodes=[NodeSpec("kitsune-zendriver:latest", proxy="socks5://p")], max_concurrency=1)
+    d = report_dict(run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json))
+    assert d["outcome"] == "inconclusive" and d["coordination"] is None  # 1 session → no cluster
+    assert d["nodes"][0]["proxy"] == "socks5://p"  # egress recorded as engagement evidence
 
 
 def test_node_label_default_and_explicit() -> None:

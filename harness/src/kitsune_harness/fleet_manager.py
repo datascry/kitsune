@@ -71,6 +71,7 @@ class NodeResult:
     session_id: str | None = None
     attempts: int = 0
     error: str | None = None
+    proxy: str | None = None  # the egress proxy this node ran behind (engagement evidence), if any
 
 
 @dataclass
@@ -146,8 +147,8 @@ def _launch_node(spec: NodeSpec, plan: FleetPlan, launcher: Launcher, label: str
             continue
         sid = _session_id(out)
         if sid:
-            return NodeResult(label, spec.image, "ok", sid, attempt)
-    return NodeResult(label, spec.image, "failed", None, plan.retries + 1, last_err)
+            return NodeResult(label, spec.image, "ok", sid, attempt, proxy=spec.proxy)
+    return NodeResult(label, spec.image, "failed", None, plan.retries + 1, last_err, proxy=spec.proxy)
 
 
 def run_fleet(
@@ -268,6 +269,73 @@ def render(report: FleetReport) -> str:
     return "\n".join(lines) + "\n"
 
 
+_BINDINGS = (
+    ("cloned_fingerprint", "fp_collision"),
+    ("cloned_trace", "trace_collision"),
+    ("shared_real_ip", "shared_origin"),
+    ("shared_ticket", "ticket_reuse"),
+)
+
+
+def _binding(v: FleetVerdict) -> str | None:
+    """The convicting/clustering binding the verdict rests on (fp_collision / trace_collision / …), or None."""
+    for attr, name in _BINDINGS:
+        if getattr(v, attr) is not None:
+            return name
+    if v.template_radius is not None:
+        return "template_similarity"
+    return None
+
+
+def report_dict(report: FleetReport, *, name: str = "") -> dict[str, Any]:
+    """A structured engagement FINDING: per-node health + the coordination verdict + the red⇄blue OUTCOME — the
+    reviewable, diffable artifact a run produces. ``outcome`` is ``caught`` (defense convicted the fleet),
+    ``evaded`` (the fleet ran but the defense did not convict — the honest boundary), or ``inconclusive`` (too
+    few sessions to form a cluster)."""
+    v = report.verdict
+    outcome = "inconclusive" if v is None else "caught" if v.label == "fleet" else "evaded"
+    minted, requested = len(report.ok), len(report.nodes)
+    images = sorted({n.image for n in report.nodes})
+    if outcome == "caught" and v is not None:
+        assessment = f"the {minted}-node fleet {images} was CAUGHT — graded `fleet` {v.score:.2f} via {_binding(v)}"
+    elif outcome == "evaded" and v is not None:
+        assessment = (
+            f"the {minted}-node fleet {images} EVADED conviction — graded `{v.label}` {v.score:.2f}, no convicting "
+            f"coordination signal (the honest boundary: this shape is also a real diverse cohort)"
+        )
+    else:
+        assessment = f"only {minted} session(s) captured — too few to form a coordination cluster"
+    return {
+        "name": name,
+        "outcome": outcome,
+        "assessment": assessment,
+        "fleet": {"requested": requested, "minted": minted, "failed": len(report.failed), "images": images},
+        "nodes": [
+            {
+                "label": n.label,
+                "image": n.image,
+                "status": n.status,
+                "session_id": n.session_id,
+                "attempts": n.attempts,
+                "proxy": n.proxy,
+                "error": n.error,
+            }
+            for n in report.nodes
+        ],
+        "coordination": None
+        if v is None
+        else {
+            "label": v.label,
+            "score": round(v.score, 3),
+            "severity": v.severity,
+            "binding": _binding(v),
+            "members": v.members,
+            "distinct_ips": v.distinct_observed_ips,
+            "evidence": v.evidence,
+        },
+    }
+
+
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     import argparse
 
@@ -286,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     ap.add_argument("--worker-detector", default="http://detector:8080", help="KITSUNE_DETECTOR for workers")
     ap.add_argument("--network", default="kitsune_default")
     ap.add_argument("--retries", type=int, default=1)
+    ap.add_argument("--report", help="write the structured engagement finding (JSON) to this path")
     args = ap.parse_args(argv)
 
     if args.list_evasions:
@@ -295,33 +364,38 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
                 print(f"  {ev.name:24} {ev.summary}")
         return 0
 
+    name = "fleet"
     if args.plan:
         plan = load_plan(args.plan)
+        name = Path(args.plan).stem
         if args.detector != "http://detector:8080":  # let --detector override the plan for off-network runs
             plan = FleetPlan(**{**plan.__dict__, "detector": args.detector})
-        print(render(run_fleet(plan)), end="")
-        return 0
+    else:
+        env = dict(kv.split("=", 1) for kv in args.env)
+        proxies = args.proxy or None
+        nodes: list[NodeSpec] = []
+        specs = [evasion_node(n) for n in args.evasion] + [NodeSpec(image=img) for img in args.image]
+        if not specs:
+            specs = [evasion_node("zendriver-uach")]
+        for spec in specs:
+            for rep in range(args.n):
+                px = proxies[len(nodes) % len(proxies)] if proxies else None
+                label = f"{spec.label}-{rep}" if spec.label else ""  # unique per evasion+replica
+                nodes.append(NodeSpec(image=spec.image, env={**spec.env, **env}, proxy=px, label=label))
+        plan = FleetPlan(
+            nodes=nodes,
+            edge=args.edge,
+            detector=args.detector,
+            worker_detector=args.worker_detector,
+            network=args.network,
+            retries=args.retries,
+        )
 
-    env = dict(kv.split("=", 1) for kv in args.env)
-    proxies = args.proxy or None
-    nodes: list[NodeSpec] = []
-    specs = [evasion_node(name) for name in args.evasion] + [NodeSpec(image=img) for img in args.image]
-    if not specs:
-        specs = [evasion_node("zendriver-uach")]
-    for spec in specs:
-        for rep in range(args.n):
-            px = proxies[len(nodes) % len(proxies)] if proxies else None
-            label = f"{spec.label}-{rep}" if spec.label else ""  # unique per evasion+replica
-            nodes.append(NodeSpec(image=spec.image, env={**spec.env, **env}, proxy=px, label=label))
-    plan = FleetPlan(
-        nodes=nodes,
-        edge=args.edge,
-        detector=args.detector,
-        worker_detector=args.worker_detector,
-        network=args.network,
-        retries=args.retries,
-    )
-    print(render(run_fleet(plan)), end="")
+    result = run_fleet(plan)
+    print(render(result), end="")
+    if args.report:
+        Path(args.report).write_text(json.dumps(report_dict(result, name=name), indent=2) + "\n")
+        print(f"\nengagement report → {args.report}")
     return 0
 
 

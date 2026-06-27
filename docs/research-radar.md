@@ -1123,3 +1123,15 @@ and `engagement-mixed-randomizer.yaml` (a heterogeneous camoufox+zendriver+nodri
 shape that correctly caps at `candidate` until corroborated). GROUNDED live: a 3-node zendriver plan via `--plan`
 → 3/3 sessions → graded `fleet` 1.00. The plans are the version-controllable, reviewable engagement artifact the
 "reusable for education + active engagements" goal wanted.
+
+### Red-team — structured engagement report (the red⇄blue finding) (2026-06-27)
+
+A fleet run now produces a reviewable, diffable **finding**, not just stdout. `fleet_manager.report_dict(report)`
+emits a structured JSON engagement report — per-node health (status/attempts/proxy/session), the coordination
+verdict (label/score/severity/binding/evidence), and the top-line **outcome**: `caught` (the defense convicted
+the fleet), `evaded` (the fleet ran but the defense did not convict — the honest boundary), or `inconclusive`
+(too few sessions to cluster), with a one-line assessment naming the convicting binding (fp_collision /
+trace_collision / shared_origin / ticket_reuse / template_similarity). CLI: `--report engagement.json`.
+GROUNDED end-to-end live on Kitsune: `--evasion zendriver-uach --n 3 --report engagement.json` → 3/3 sessions →
+`{"outcome": "caught", "assessment": "the 3-node fleet … was CAUGHT — graded \`fleet\` 1.00 via fp_collision", …}`.
+This is the deliverable an engagement produces: plan in → finding out.
