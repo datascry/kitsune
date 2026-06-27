@@ -911,3 +911,16 @@ IPs (here distinct `observed_ip` signals stand in for it); the conviction LOGIC 
 ≥2 distinct IPs) is now live-grounded. This is the load-bearing demonstration of the incoherence thesis at
 fleet scale: a fleet must randomize JS (→ the TLS/JS paradox) or clone one profile (→ the fp/trace collision)
 — it cannot do neither, and the collision is a property of the cluster no per-session spoof can hide.
+
+### Coordination — authentic real-evader fleet re-grounded LIVE (2026-06-27, ruleset 0.74.52)
+
+Beyond the synthetic /ingest-path demo: ran the AUTHENTIC fleet path on the current stack — 3 concurrent real
+stealth-browser containers (`fleet_capture.sh`, `task coordination-fleet-capture`) through the live edge,
+each holding a GENUINELY distinct container IP (172.22.0.4/5/6 — the in-sandbox analog of proxy egress, not an
+injected `observed_ip`). All three produced the SAME deterministic high-entropy `fp_hash` (`bf779223`, one
+cloned anti-detect profile) → graded **`fleet` 1.00** via fp-collision across 3 distinct REAL IPs, severity
+HIGH (198 requests). This closes the "distinct IPs stand in" caveat with authentic traffic: the fp collision
+is real (3 actual browser instances hashing identically) and the distinct sources are real. Refreshed
+`corpus/fleet-cloned/cn{1,2,3}.json` to these current-ruleset captures (the `test_real_cloned_*` regression
+still convicts). The fleet axis is now maximally grounded in-sandbox; the only remaining input is real
+residential-proxy egress (the `PROXIES=` turnkey path in `fleet_capture.sh`), which is external by nature.
