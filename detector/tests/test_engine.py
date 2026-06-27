@@ -194,6 +194,15 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             ],
             "net.ch_ua_vs_ua_browser",
         ),
+        (
+            # A non-browser HTTP-client JA4 (curl) wearing a browser UA header — the no-JS lazy-scraper that
+            # net.tls_vs_ua_browser misses (it reads the absent JS ua_browser). Both reads are edge-derived.
+            [
+                (Layer.network, "ja4_client_hint", "curl", Source.edge),
+                (Layer.network, "ua_header_browser", "chrome", Source.edge),
+            ],
+            "net.ja4_tool_vs_ua",
+        ),
         ([(Layer.browser, "ua_is_headless", True, Source.collector)], "br.headless_ua"),
         (
             [(Layer.behavioral, "keystroke_entropy", 0.05, Source.collector)],
@@ -447,6 +456,21 @@ def test_matching_h2_engine_does_not_fire() -> None:
     session = group_signals(sigs)[0]
     fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}
     assert not ({"net.h2_vs_ua_browser", "net.h2_vs_tls_browser", "net.h2_settings_vs_order"} & fired)
+
+
+def test_ja4_tool_vs_ua_fp_safe() -> None:
+    # An HONEST non-browser client sends its OWN UA (curl/8.x) → ua_header_browser is never emitted → the rule
+    # has only one operand → inert. And a real browser's JA4 sets a browser hint, never a client hint → inert.
+    honest_tool = group_signals([make_signal("s", Layer.network, "ja4_client_hint", "curl", source=Source.edge)])[0]
+    real_browser = group_signals(
+        [
+            make_signal("s", Layer.network, "ja4_browser_hint", "chrome", source=Source.edge),
+            make_signal("s", Layer.network, "ua_header_browser", "chrome", source=Source.edge),
+        ]
+    )[0]
+    eng = CoherenceEngine(load_registry())
+    assert "net.ja4_tool_vs_ua" not in {c.rule_id for c in eng.evaluate(honest_tool)}
+    assert "net.ja4_tool_vs_ua" not in {c.rule_id for c in eng.evaluate(real_browser)}
 
 
 def test_matching_accept_language_does_not_fire() -> None:

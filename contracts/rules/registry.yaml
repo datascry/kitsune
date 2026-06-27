@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.52"
+ruleset_version: "0.74.53"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -59,6 +59,18 @@ rules:
     added: "2026-06-17"
     last_validated: "2026-06-19"
     source: "Akamai h2 fingerprint (Black Hat EU 2017). v0.74.30 FP FIX (GROUNDED on real Microsoft Edge 149): predicate not_equal -> not_equal_browser, same Chromium-family fix as net.tls_vs_ua_browser — Edge's h2 stack is Chromium's (h2_browser_hint 'chrome') under an 'edge' UA, which a literal not_equal convicted. The family-aware predicate collapses edge/brave/opera/vivaldi -> chrome so a Chromium-engine UA matches the 'chrome' h2 hint; a non-Chrome h2 stack under a Chrome-family UA (httpx/curl faking Chrome) still fires."
+
+  - id: net.ja4_tool_vs_ua
+    title: JA4 is a non-browser HTTP client but the User-Agent claims a browser
+    layers: [network]
+    reads: [network.ja4_client_hint, network.ua_header_browser]
+    predicate: not_equal
+    category: coherence
+    weight: 0.75
+    status: active
+    added: "2026-06-28"
+    last_validated: "2026-06-28"
+    source: "The no-JS complement of net.tls_vs_ua_browser. That rule reads the JS browser.ua_browser, which a no-JS client never sends, so a curl/Go/Python scraper that spoofs a browser UA in the HTTP HEADER (the default-TLS-stack + fake-UA lazy-scraper pattern) evaded it (GROUNDED: curl with a Chrome UA → ja4_browser_hint=None → net.tls_vs_ua_browser unevaluable). This rule compares two EDGE-derived network-layer signals available for every request: ja4_client_hint (the JA4 belongs to a known non-browser HTTP stack — curl t13d3012h2_1d37bd780c83, Go net/http t13d131100_f57a46bbacb6, Python urllib t13d171100_ab0a1bf427ad, captured live through the edge) and ua_header_browser (the browser family the UA header claims, parsed edge-side). The two are disjoint vocabularies (tool name vs browser name), so not_equal fires iff BOTH are present — i.e. a known automation-tool TLS handshake wearing a browser User-Agent. FP-safe: an honest tool sends its own UA (curl/8.x, python-urllib) → ua_header_browser empty → inert; a real browser's JA4 sets a browser hint, never a client hint → inert. Catches the LAZY scraper (default library fingerprint); the high-fidelity impersonators (curl-impersonate/uTLS) emit a Chrome-identical JA4 and are out of scope by design — that is what cross-layer coherence beyond JA4 is for. GROUNDED live end-to-end: curl+Chrome-UA fires, curl+curl-UA and real Chrome do not. browserforge calibration carries no JA4, so promotion cannot raise its legit flag rate."
 
   - id: br.automation_globals
     title: Automation-framework global or webdriver DOM attribute present

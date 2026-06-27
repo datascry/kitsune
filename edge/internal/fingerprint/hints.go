@@ -5,10 +5,14 @@ package fingerprint
 
 import "strings"
 
-// Hint is a coarse browser/OS label derived from a fingerprint.
+// Hint is a coarse browser/OS label derived from a fingerprint. Client names a NON-browser HTTP client
+// (curl / Go net/http / Python urllib …) when the JA4 belongs to a known automation stack rather than a
+// browser engine — the two are mutually exclusive (a browser entry sets Browser, a tool entry sets Client),
+// so a Client hint over a browser User-Agent is the lazy-scraper tell (default TLS stack + spoofed UA).
 type Hint struct {
 	Browser string `json:"browser"`
 	OS      string `json:"os"`
+	Client  string `json:"client"`
 }
 
 // Unknown is returned when a fingerprint is not in the table.
