@@ -231,7 +231,13 @@ def test_committed_examples_load_and_build() -> None:
         if "waves" in obj:
             campaign = load_campaign(str(path))
             assert campaign.waves
-            run_campaign(campaign, launcher=_FakeLauncher(), get_json=_get_json)
+            run_campaign(
+                campaign,
+                launcher=_FakeLauncher(),
+                get_json=_get_json,
+                scout_requester=lambda _u: (200, 1.0, "ok"),  # don't hit the network for a scout wave
+                scout_sleep=lambda _s: None,
+            )
         else:
             plan = load_plan(str(path))
             assert plan.nodes and plan.edge.startswith("https://edge")
@@ -332,6 +338,42 @@ def test_run_campaign_grades_each_wave_and_aggregates() -> None:
     assert "Campaign" in render_campaign(result)
 
 
+def test_campaign_with_rps_recon_wave() -> None:
+    # The recon phase literally includes RPS scoping: a scout wave (no fleet) + a fleet attack wave.
+    campaign = campaign_from_obj(
+        {
+            "waves": [
+                {"name": "recon-rps", "scout": "http://detector:8080/arena/rate?level=hard", "rates": [1, 2, 5]},
+                {"name": "attack", "nodes": [{"image": "kitsune-camoufox:latest", "replicas": 3}]},
+            ],
+            "max_concurrency": 1,
+        }
+    )
+
+    def throttling(_url: str) -> tuple[int, float, str]:
+        with _lock:
+            _seen["n"] += 1
+            n = _seen["n"]
+        return (429, 2.0, "") if n > 4 else (200, 2.0, "ok")
+
+    _seen = {"n": 0}
+    import threading as _t
+
+    _lock = _t.Lock()
+    result = run_campaign(
+        campaign,
+        launcher=_FakeLauncher(),
+        get_json=_cloned_get,
+        scout_requester=throttling,
+        scout_sleep=lambda _s: None,
+    )
+    d = campaign_report_dict(result)
+    recon = d["waves"][0]
+    assert recon["kind"] == "rps-scope" and recon["rps"]["knee"] == "throttled"
+    assert d["waves_caught"] == ["attack"] and "1/1 fleet wave" in d["assessment"]  # only the FLEET wave counts
+    assert "RPS-SCOPE" in render_campaign(result)
+
+
 def test_campaign_all_waves_evaded_assessment() -> None:
     campaign = campaign_from_obj(
         {"waves": [{"name": "w", "nodes": [{"evasion": "zendriver-uach", "replicas": 3}]}], "max_concurrency": 1}
@@ -344,7 +386,7 @@ def test_campaign_no_gradeable_cluster_assessment() -> None:
     campaign = campaign_from_obj({"waves": [{"name": "solo", "nodes": [{"evasion": "vanilla", "replicas": 1}]}]})
     result = run_campaign(campaign, launcher=_FakeLauncher(), get_json=_get_json)
     d = campaign_report_dict(result)
-    assert d["waves_caught"] == [] and d["waves_evaded"] == [] and "no wave" in d["assessment"]
+    assert d["waves_caught"] == [] and d["waves_evaded"] == [] and "no fleet wave" in d["assessment"]
     assert "no cluster" in render_campaign(result)  # the render no-coordination branch
 
 

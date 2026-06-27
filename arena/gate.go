@@ -280,6 +280,25 @@ func NewMux(secret []byte) http.Handler {
 		_ = json.NewEncoder(w).Encode(resp)
 	})
 
+	// Rate-limit gate (the documented CDN/WAF token-bucket): 200 under the per-level RPS budget, 429 above it.
+	// A rate-BASED challenge gate — what RPS reconnaissance (harness rps_scout) ramps against to find the knee.
+	// One limiter per level, keyed by client origin, so the budget is per-source and survives across requests.
+	rateLimiters := map[Level]*rateLimiter{}
+	for _, lv := range []Level{LevelEasy, LevelMedium, LevelHard} {
+		limit, burst := rateParams(lv)
+		rateLimiters[lv] = newRateLimiter(limit, burst)
+	}
+	mux.HandleFunc("GET /arena/rate", func(w http.ResponseWriter, r *http.Request) {
+		lv := ParseLevel(r.URL.Query().Get("level"))
+		if !rateLimiters[lv].allow(clientIP(r), time.Now()) {
+			w.Header().Set("Retry-After", "1")
+			http.Error(w, "rate limit exceeded — too many requests", http.StatusTooManyRequests)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "level": string(lv), "note": "under the rate budget"})
+	})
+
 	mux.HandleFunc("GET /arena/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("ok"))
 	})

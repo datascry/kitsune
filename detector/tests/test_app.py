@@ -246,6 +246,14 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
     # With no KITSUNE_ARENA_URL the relay is inert — the live spine runs fine without the arena gate.
     assert client.get("/arena/challenge").status_code == 503
     assert client.post("/arena/verify", content=b"{}").status_code == 503
+    assert client.get("/arena/rate").status_code == 503  # the rate gate relay is inert too when unconfigured
+
+
+def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Configured, the rate gate relays to the upstream (502 here since no real arena is up — proves the route
+    # is wired and forwards, not a 404/whitelist miss).
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    assert client.get("/arena/rate", params={"level": "hard"}).status_code in (200, 429, 502)
 
 
 def test_arena_unknown_gate_rejected(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:

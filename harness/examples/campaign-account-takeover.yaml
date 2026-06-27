@@ -14,13 +14,19 @@ worker_detector: http://detector:8080
 retries: 2
 
 waves:
-  # Wave 1 — recon: one stock browser to baseline what the defense sees on a clean session.
-  - name: recon
+  # Wave 1 — RECON, rate dimension: ramp RPS against the rate gate to scope the request budget before attacking.
+  # `scout` is an operator-reachable URL (off-network use the host port, e.g. http://localhost:8099/arena/rate).
+  - name: recon-rps
+    scout: http://detector:8080/arena/rate?level=hard
+    rates: [1, 2, 5, 10, 20]
+
+  # Wave 2 — recon, fingerprint dimension: one stock browser to baseline what the defense sees on a clean session.
+  - name: recon-baseline
     nodes:
       - evasion: vanilla
         replicas: 1
 
-  # Wave 2 — the coordinated credential-stuffing fleet: one cloned hardened profile fanned across the nodes,
+  # Wave 3 — the coordinated credential-stuffing fleet: one cloned hardened profile fanned across the nodes,
   # each replaying a form-fill behavioral script. The fp-collision binding convicts the cluster.
   - name: credential-stuffing
     nodes:

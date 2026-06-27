@@ -286,6 +286,24 @@ def create_app(
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
+    @app.get("/arena/rate", include_in_schema=False)
+    async def arena_rate(request: Request, level: str | None = None) -> Response:
+        # Relay the rate-limit gate, forwarding the REAL client IP (X-Forwarded-For) so the gate's per-origin
+        # token bucket budgets each visitor, not the detector's aggregate. Returns the gate's 200/429 verbatim.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        client_ip = request.client.host if request.client else "0.0.0.0"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(
+                    f"{ARENA_URL}/arena/rate",
+                    params={"level": _arena_level(level)},
+                    headers={"x-forwarded-for": client_ip},
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
     @app.get("/arena/captcha", include_in_schema=False)
     async def arena_captcha(kind: str = "text", level: str | None = None) -> Response:
         # Relay a self-hosted CAPTCHA challenge (text/math/honeypot) from the owned gate — same pattern as the

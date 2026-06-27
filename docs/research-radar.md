@@ -1207,3 +1207,18 @@ are injected so the ramp/budget/knee logic is unit-tested without a network. GRO
 1→100 RPS against the detector /healthz → all clean (latency flat ~2ms), budget 100 rps, knee none (an honest
 finding: no rate limit on healthz up to 100 RPS). The knee paths (throttle/blocked/challenge/saturation) are
 unit-grounded. This is the recon rate dimension an archetype's `rate` profile now has a tool to measure against.
+
+### Red-team/blue — RPS-gated arena + RPS recon as a campaign wave (2026-06-27)
+
+Built the rate-based challenge gate the RPS scout needed and wired RPS scoping into the recon phase. BLUE: a new
+arena gate `GET /arena/rate` (arena/rate.go) — a per-client token-bucket rate limiter (the documented CDN/WAF
+mechanism), 200 under the per-level RPS budget and 429 above it, with the difficulty cost dial (easy 50 / medium
+20 / hard 5 rps). The detector relays it (`/arena/rate`, forwarding X-Forwarded-For so the budget is per real
+origin) so it's on the unified origin like the other gates. RED/recon: a campaign wave can now be a `scout:`
+(RPS recon) instead of `nodes:` (fleet) — run_campaign ramps RPS against the gate and reports the budget + knee,
+so the recon phase LITERALLY includes RPS scoping. GROUNDED end-to-end live on Kitsune: rps_scout vs the hard
+gate → budget 5 rps, knee throttled (the gate's exact threshold); and a 2-wave campaign → recon-rps RPS-SCOPE
+(budget 5 rps, throttled) + attack-fleet CAUGHT `fleet` 1.00. Example campaign-account-takeover.yaml updated so
+its recon-rps wave scopes the rate budget before the credential-stuffing fleet. Go vet/gofmt clean + arena tests;
+detector relay tested; harness 346 pass. This closes the "does recon include RPS scoping" gap with a real gate
+to scope against.
