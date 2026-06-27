@@ -31,6 +31,7 @@ from kitsune_detector.ingest import group_signals
 from kitsune_detector.models import Layer, Session, Signal, Source
 
 from .coordination import FleetVerdict, score_cluster
+from .template_calibration import distinct_human_descriptors, humanizer_descriptors
 
 _BASE = datetime(2026, 6, 19, 12, 0, 0, tzinfo=UTC)
 
@@ -46,6 +47,7 @@ def _session(
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
     trace_hash: str | None = None,
+    trace_descriptor: list[float] | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
 ) -> Session:
@@ -71,6 +73,8 @@ def _session(
         sigs.append(mk(Layer.browser, "fp_hash", fp_hash))
     if trace_hash is not None:
         sigs.append(mk(Layer.behavioral, "trace_hash", trace_hash))
+    if trace_descriptor is not None:
+        sigs.append(mk(Layer.behavioral, "trace_descriptor", trace_descriptor))
     return group_signals(sigs)[0]
 
 
@@ -310,6 +314,63 @@ def scenarios() -> list[Scenario]:
                     ),
                 )
                 for i in range(3)
+            ],
+        )
+    )
+    # The SIMILARITY frontier: a fleet that jitters its pointer trace per node (one humanizer model sampled N
+    # times) so every trace_hash differs — the exact trace-collision rule finds nothing — but the traces cluster
+    # below the human floor. Ambiguous (could be one human's own sessions), so corroborated by datacenter IPs.
+    _model = [list(d) for d in humanizer_descriptors(3)]
+    out.append(
+        Scenario(
+            "fleet-template-similarity",
+            True,
+            "humanizer fleet: distinct fps AND distinct trace_hashes (jittered), but pointer-trace descriptors "
+            "cluster below the human floor across distinct DATACENTER IPs — one humanization model sampled per "
+            "node; the IP-reputation flag corroborates the similarity tell (defeats exact trace-collision)",
+            [
+                (
+                    f"sim{i}",
+                    _session(
+                        f"sim{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash=f"simfp{i}",
+                        trace_hash=f"simtrace{i}",  # DISTINCT per node — exact trace-collision finds nothing
+                        trace_descriptor=_model[i],
+                        datacenter=True,
+                    ),
+                )
+                for i in range(3)
+            ],
+        )
+    )
+    # The FP control for the rung: distinct real humans share a JA4 but their trace descriptors spread WIDE
+    # (motor noise) on residential IPs — must NOT trip template-similarity (median above the floor).
+    _humans = [list(d) for d in distinct_human_descriptors(4)]
+    out.append(
+        Scenario(
+            "legit-distinct-traces",
+            False,
+            "4 distinct real users on one build, residential IPs, each with a genuinely different pointer trace "
+            "(descriptors spread above the human floor) — must NOT trip template-similarity",
+            [
+                (
+                    f"ht{i}",
+                    _session(
+                        f"ht{i}",
+                        _CHROME,
+                        hw=[4, 8, 12, 16][i],
+                        plat=["Windows", "MacIntel", "Windows", "Linux x86_64"][i],
+                        offset_s=i * 120.0,
+                        observed_ip=_ip(i),
+                        fp_hash=f"htfp{i}",
+                        trace_descriptor=_humans[i],
+                    ),
+                )
+                for i in range(4)
             ],
         )
     )

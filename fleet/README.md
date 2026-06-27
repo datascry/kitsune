@@ -45,15 +45,20 @@ Each strategy models a real attacker class and grounds a specific blue coordinat
 | `trace-replay` | engagement / review farms — one canned "humanised" mouse path replayed | `trace_collision` (unambiguous) | ✅ `fleet` |
 | `randomizer` | Multilogin/GoLogin multi-accounting — coherent per-instance fingerprints, one JA4 | the TLS/JS paradox (corroborating; needs an automation tell or IP-rep flag to convict) | 🔶 `candidate` unless corroborated |
 | `fuzzy` | **the evolved adversary** — jitter the fingerprint *and* the trace per instance | **none yet** — defeats exact-hash matching | ❌ `candidate` — **the frontier** |
+| `similarity` | the same evolved adversary, **profiled** — its jittered traces all come from one humanizer model | `template_similarity` (descriptors cluster below the human floor; corroboration-gated like `fp_collision`) | ✅ `fleet` (with corroboration) |
 
-`fuzzy` is the point of the tool: once an attacker knows we hash, they perturb just enough to dodge
-*exact-match* collision. It exposes the next blue rung — **template-similarity clustering** (N near-identical
-traces across distinct IPs = one humanization model, not N humans). Skulk lets you prove that gap on demand.
+`fuzzy` was the point of the tool: once an attacker knows we hash, they perturb just enough to dodge
+*exact-match* collision. It exposed the next blue rung — **template-similarity clustering** (N near-identical
+traces across distinct IPs = one humanization model, not N humans) — which `similarity` now grounds: every node
+jitters its `trace_hash` distinct (exact-match finds nothing), but the collector's motion-feature *descriptors*
+cluster below the human floor (calibrated against real human motion — `task template-calibrate`, SapiMouse),
+so on datacenter/proxy egress the IP-reputation flag corroborates the cluster and it convicts.
 
 ### Grounded live (Kitsune detector, ruleset 0.74.52)
 ```
-skulk run cloned  →  detector grades `fleet` 1.00   (cloned-profile reuse caught)
-skulk run fuzzy   →  detector grades `candidate`    (evades exact-hash — the frontier)
+skulk run cloned      →  detector grades `fleet` 1.00   (cloned-profile reuse caught)
+skulk run similarity  →  detector grades `fleet` 1.00   (humanizer-model descriptors cluster below the human floor)
+skulk run fuzzy       →  detector grades `candidate`    (no descriptor profiled — still evades; the open frontier)
 ```
 
 ## Scenarios this is for
@@ -76,8 +81,9 @@ sybil attacks. In every one the attacker makes each session look like a distinct
 
 Add a strategy by duck-typing `skulk.strategy.Strategy` (`name`, `summary`, `members(n, seed) -> [FleetMember]`)
 and decorating it with `@register`. Keep it deterministic in `seed` so runs are reproducible and fixtures are
-stable. The roadmap: a `similarity`/`fuzzy-trace` strategy paired with template-similarity clustering on the
-blue side; a `ticket-reuse` strategy (shared TLS session ticket across IPs); a `staggered` timing strategy.
+stable. The `similarity` strategy + template-similarity clustering (the blue rung) is **done** — see above. The
+roadmap now: a `ticket-reuse` strategy (shared TLS session ticket across IPs); a `staggered` timing strategy; a
+JA4-rotating *fuzzy-trace* fleet (similarity clustering across rotated JA4s, not just within one JA4 prefix).
 
 ## Design
 

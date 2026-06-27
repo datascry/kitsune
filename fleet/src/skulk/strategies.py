@@ -17,6 +17,10 @@ two escape routes a coordinated fleet has and their evolution:
   * ``fuzzy``        — the EVOLVED adversary: jitter the fingerprint AND the trace per instance so NOTHING is
                        byte-identical. It defeats exact-hash collision (caps a per-session-saturated scorer at
                        *candidate*) — the frontier that needs template-SIMILARITY clustering, not exact match.
+  * ``similarity``   — the SAME evolved adversary, now profiled: its jittered traces are all sampled from ONE
+                       humanizer model, so the collector's trace DESCRIPTORS cluster below the human floor even
+                       though every ``trace_hash`` differs. The blue rung that closes ``fuzzy`` — caught by
+                       template-similarity when corroborated (it runs on datacenter/proxy egress).
 
 To add a strategy: subclass / duck-type :class:`~skulk.strategy.Strategy` and ``register`` it.
 """
@@ -33,6 +37,22 @@ from .strategy import register
 def _h(*parts: object) -> str:
     """A stable 16-hex digest of the parts — stands in for a high-entropy fp_hash / trace_hash."""
     return hashlib.sha256("|".join(str(p) for p in parts).encode()).hexdigest()[:16]
+
+
+# A plausible point in the collector's normalized trace-descriptor space (power-law exponent, fit, sub-movement
+# rate, pause ratio, velocity CV, straightness — each in [0,1]) for one humanizer model. The `similarity`
+# strategy emits this base with tiny per-node jitter, modelling what the collector would compute for a fleet
+# whose pointer paths are all sampled from ONE humanizer: distinct trace_hashes, but descriptors that cluster
+# far below the human floor. (Skulk models the collector's OUTPUT, as it does for fp_hash — the realism of the
+# tightness is grounded harness-side against real human motion in template_calibration.)
+_HUMANIZER_DESCRIPTOR = (0.22, 0.60, 0.10, 0.20, 0.30, 0.70)
+_DESCRIPTOR_JITTER = 0.012  # stddev per component -> median pairwise ~0.04, well under the 0.10 floor
+
+
+def _descriptor(seed: int, i: int) -> list[float]:
+    """One humanizer-model trace descriptor with small per-node jitter (a tight, sub-floor family)."""
+    rng = random.Random(_h("descriptor", seed, i))
+    return [min(1.0, max(0.0, c + rng.gauss(0, _DESCRIPTOR_JITTER))) for c in _HUMANIZER_DESCRIPTOR]
 
 
 def _ip(seed: int, i: int) -> str:
@@ -94,6 +114,37 @@ class TraceReplay:
         ja4, trace = _ja4(seed), _h("trace", seed)
         return [
             FleetMember(f"trace-{i}", ja4, _ip(seed, i), fp_hash=_h("tfp", seed, i), trace_hash=trace) for i in range(n)
+        ]
+
+
+@register
+class Similarity:
+    name = "similarity"
+    summary = (
+        "EVOLVED + profiled: one humanizer model sampled per node — distinct trace_hashes but near-identical "
+        "trace DESCRIPTORS; caught by template-similarity when corroborated (the blue rung that closes fuzzy)."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        ja4 = _ja4(seed)
+        # Each node jitters its fingerprint AND its trace_hash (so every EXACT hash differs — exact-match finds
+        # nothing, exactly like `fuzzy`). But all pointer paths come from ONE humanizer model, so the collector's
+        # trace DESCRIPTORS cluster below the human floor. On datacenter/proxy egress (the realistic botnet
+        # infrastructure) the IP-reputation flag corroborates the similarity tell → the cluster convicts.
+        return [
+            FleetMember(
+                f"sim-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("simfp", seed, i),
+                trace_hash=_h("simtrace", seed, i),
+                trace_descriptor=_descriptor(seed, i),
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,
+                datacenter=True,
+            )
+            for i in range(n)
         ]
 
 
