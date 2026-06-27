@@ -1151,3 +1151,14 @@ example `harness/examples/engagement-scraper-fleet.yaml` (a zendriver fleet runn
 the DSL + plumbing are universal but execution needs a task-aware evader (today zendriver); others ignore
 `KS_TASK` harmlessly. The behavioral analog of the engagement plan: a fleet now models a real flow, not just
 navigate-and-mint.
+
+### Red-team — behavioral task DSL portable to a second backend (camoufox) (2026-06-27)
+
+Extended the behavioral task executor to a SECOND evader, proving the DSL is portable across automation
+backends. camoufox (Firefox engine, sync Playwright — not CDP) now reads the same `KS_TASK` script and replays
+it via `page.mouse.move/click/wheel` + `page.keyboard.type` (the Gecko twin of zendriver's CDP `_run_task`,
+each step best-effort). GROUNDED live on Kitsune: `--evasion camoufox-linux --task browse` → the session carries
+pointer_event_count=27, submovement_count=8, mouse_entropy=0.43 — real interaction features from the Playwright
+backend, the same DSL zendriver runs via CDP. The harness owns the DSL; each evader owns its execution; two
+backends (Chromium-CDP + Firefox-Playwright) now prove the portability. `engagement-scraper-fleet.yaml` updated
+to a mixed cross-backend task fleet. Task-aware evaders today: zendriver, camoufox.

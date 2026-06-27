@@ -73,6 +73,11 @@ FPROTATE = os.environ.get("KS_FPROTATE") == "1"
 # (engine-spoof + coherent OS + behavioral synthesis) — the cross-layer-coherent identity, the STACK vein's
 # Gecko corner that the Chromium zendriver-uach-behave already covers.
 BEHAVE = os.environ.get("KS_BEHAVE") == "1"
+# KS_TASK: a JSON behavioral SCRIPT (the kitsune_harness.tasks DSL) the fleet manager passes per node — the
+# Gecko executor of the same DSL zendriver runs, proving it is portable across automation backends (here
+# sync Playwright/Firefox, not CDP). Replays {move:[x,y]}/{click:[x,y]}/{scroll:dy}/{type:"…"}/{wait:ms} so the
+# captured session carries a real interaction flow. Supersedes KS_BEHAVE when set.
+TASK = os.environ.get("KS_TASK")
 _BASE_MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
@@ -84,7 +89,7 @@ _BASE_MODE = (
     else "camoufox-linux" if LINUX
     else "camoufox"
 )
-MODE = _BASE_MODE + ("-behave" if BEHAVE else "")
+MODE = _BASE_MODE + ("-task" if TASK else "-behave" if BEHAVE else "")
 HARDENED_KW: dict[str, object] = {
     "os": "linux",  # coherent with the Linux host: dodges the macOS dpr/font tells AND net.tcp_os_vs_ua
     "block_webrtc": False,  # keep WebRTC → avoid webrtc_unavailable
@@ -121,6 +126,37 @@ def _synth_behavior(page: object) -> None:
         page.wait_for_timeout(random.choice([55, 80, 95, 120, 150, 240]))  # type: ignore[attr-defined]
 
 
+def _run_task(page: object, steps: list[dict]) -> None:
+    """Replay a behavioral task script (the harness DSL) via sync Playwright/Firefox input — the Gecko twin of
+    zendriver's CDP _run_task. Each step is best-effort so a flaky action never loses the session."""
+    x, y = 200.0, 200.0
+    for step in steps:
+        try:
+            ((action, param),) = step.items()
+            if action in ("move", "click"):
+                tx, ty = float(param[0]), float(param[1])
+                steps_n = random.randint(8, 14)
+                for s in range(steps_n):  # curved, non-constant-velocity path (clears the biomech floor)
+                    t = (s + 1) / steps_n
+                    ease = t * t * (3 - 2 * t)
+                    x += (tx - x) * ease * 0.5 + random.uniform(-3, 3)
+                    y += (ty - y) * ease * 0.5 + random.uniform(-3, 3)
+                    page.mouse.move(x, y)  # type: ignore[attr-defined]
+                    page.wait_for_timeout(random.choice([6, 9, 12, 16, 24]))  # type: ignore[attr-defined]
+                x, y = tx, ty
+                if action == "click":
+                    page.mouse.click(x, y)  # type: ignore[attr-defined]
+            elif action == "scroll":
+                page.mouse.wheel(0, float(param))  # type: ignore[attr-defined]
+                page.wait_for_timeout(random.randint(80, 160))  # type: ignore[attr-defined]
+            elif action == "type":
+                page.keyboard.type(str(param), delay=random.randint(40, 90))  # type: ignore[attr-defined]
+            elif action == "wait":
+                page.wait_for_timeout(int(param))  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001 — one flaky step never loses the session
+            continue
+
+
 def _capture(browser: object) -> dict[str, object]:
     context = browser.new_context(ignore_https_errors=True)  # type: ignore[attr-defined]
     try:
@@ -128,6 +164,13 @@ def _capture(browser: object) -> dict[str, object]:
         if FAST:
             page.goto(EDGE + ("&fast" if "?" in EDGE else "?fast"), wait_until="load")
             page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+        elif TASK:
+            page.goto(EDGE, wait_until="load")
+            _run_task(page, json.loads(TASK))  # the scripted behavioral flow (supersedes KS_BEHAVE)
+            try:
+                page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+            except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
+                page.wait_for_timeout(2000)
         elif BEHAVE:
             page.goto(EDGE, wait_until="load")
             _synth_behavior(page)

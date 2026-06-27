@@ -1,11 +1,12 @@
 # harness/examples/engagement-scraper-fleet — a declarative fleet plan with per-node BEHAVIORAL tasks.
-# Models distributed scraping: a fleet of CDP workers each crawling a long page (scroll-and-pause), not idle.
+# Models distributed scraping: a fleet of workers each crawling a long page (scroll-and-pause), not idle.
 #
 # Scenario: a scraper fans out across nodes, each replaying a `scrape-scroll` behavioral script (repeated
 # scroll + pause) so the captured sessions carry genuine pointer/scroll input — not the zero-input navigate-
 # and-mint shape that trips the behavioral floor. The `task:` field is the harness behavioral DSL (a preset
-# name or inline steps); the fleet manager serializes it to KS_TASK, which a TASK-AWARE evader replays via
-# trusted CDP input. NB only task-aware evaders execute it (today: zendriver); other images ignore KS_TASK
+# name or inline steps); the fleet manager serializes it to KS_TASK, which a TASK-AWARE evader replays. The DSL
+# is portable across automation backends: zendriver executes it via CDP, camoufox via Playwright/Firefox — both
+# shown below. NB only task-aware evaders execute it (today: zendriver + camoufox); other images ignore KS_TASK
 # harmlessly, so keep `task:` on the evaders that support it.
 #
 # Run (spine up):  task coordination-fleet-manage -- --plan examples/engagement-scraper-fleet.yaml --detector http://localhost:8099 --report scrape.json
@@ -16,6 +17,9 @@ worker_detector: http://detector:8080
 retries: 1
 
 nodes:
-  - evasion: zendriver-uach
-    replicas: 3
+  - evasion: zendriver-uach # Chromium-CDP backend
+    replicas: 2
     task: scrape-scroll # repeated scroll-and-pause — a crawler working a long page
+  - evasion: camoufox-linux # Firefox-Playwright backend — the SAME task DSL, different engine
+    replicas: 1
+    task: scrape-scroll
