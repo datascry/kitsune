@@ -186,6 +186,24 @@ def test_plan_from_obj_expands_replicas_and_overlays_env() -> None:
     assert img.env == {"FOO": "bar"} and img.label == "pydoll-0"
 
 
+def test_plan_node_task_becomes_ks_task_env() -> None:
+    import json as _json
+
+    plan = plan_from_obj(
+        {
+            "nodes": [
+                {"evasion": "zendriver-uach", "task": "browse"},  # a preset name
+                {"image": "kitsune-zendriver:latest", "task": [{"scroll": 400}, {"wait": 100}]},  # inline steps
+            ]
+        }
+    )
+    preset_node = plan.nodes[0]
+    assert preset_node.env["KS_UACH"] == "1" and "KS_TASK" in preset_node.env
+    assert any("scroll" in s for s in _json.loads(preset_node.env["KS_TASK"]))
+    inline_node = plan.nodes[1]
+    assert _json.loads(inline_node.env["KS_TASK"]) == [{"scroll": 400}, {"wait": 100}]
+
+
 def test_plan_node_needs_exactly_one_of_evasion_or_image() -> None:
     with pytest.raises(ValueError, match="exactly one"):
         plan_from_obj({"nodes": [{"replicas": 2}]})  # neither

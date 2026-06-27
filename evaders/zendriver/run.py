@@ -34,6 +34,48 @@ UACH = os.environ.get("KS_UACH") == "1"
 # isTrusted, unlike JS dispatchEvent), defeating the behavioral half → the residual collapses to ONLY the
 # external-hardware-gated environment floor. Grounds the precise saturation boundary of in-sandbox evasion.
 BEHAVE = os.environ.get("KS_BEHAVE") == "1"
+# KS_TASK: a JSON behavioral SCRIPT (the kitsune_harness.tasks DSL) the fleet manager passes per node — a list
+# of single-action steps ({move:[x,y]} / {click:[x,y]} / {scroll:dy} / {type:"…"} / {wait:ms}). Replayed via
+# trusted CDP input so the captured session carries a real interaction flow (a reader/scraper/form-fill), not
+# just the navigate-and-mint zero-input shape. Supersedes the hardcoded KS_BEHAVE path when set.
+TASK = os.environ.get("KS_TASK")
+
+
+async def _move_to(tab: object, x: float, y: float, tx: float, ty: float) -> None:
+    """Dispatch a curved, jittered cursor path from (x,y) to (tx,ty) — trusted mouseMoved events."""
+    for i in range(12):
+        t = (i + 1) / 12
+        cx = x + (tx - x) * t + random.uniform(-6, 6)
+        cy = y + (ty - y) * t + random.uniform(-6, 6)
+        await tab.send(cdp.input_.dispatch_mouse_event(type_="mouseMoved", x=cx, y=cy))  # type: ignore[attr-defined]
+        await asyncio.sleep(0.015 + random.random() * 0.04)
+
+
+async def _run_task(tab: object, steps: list[dict]) -> None:
+    """Replay a behavioral task script (the harness DSL) via CDP. Each step is best-effort — a CDP hiccup on one
+    action must not lose the session — so the worker still mints and reports."""
+    x, y = 240.0, 220.0
+    left = cdp.input_.MouseButton.LEFT
+    for step in steps:
+        try:
+            (action, param), = step.items()
+            if action in ("move", "click"):
+                tx, ty = float(param[0]), float(param[1])
+                await _move_to(tab, x, y, tx, ty)
+                x, y = tx, ty
+                if action == "click":
+                    await tab.send(cdp.input_.dispatch_mouse_event(type_="mousePressed", x=x, y=y, button=left, click_count=1))  # type: ignore[attr-defined]
+                    await asyncio.sleep(0.05 + random.random() * 0.08)
+                    await tab.send(cdp.input_.dispatch_mouse_event(type_="mouseReleased", x=x, y=y, button=left, click_count=1))  # type: ignore[attr-defined]
+            elif action == "scroll":
+                await tab.send(cdp.input_.dispatch_mouse_event(type_="mouseWheel", x=x, y=y, delta_x=0, delta_y=float(param)))  # type: ignore[attr-defined]
+                await asyncio.sleep(0.1 + random.random() * 0.1)
+            elif action == "type":
+                await tab.send(cdp.input_.insert_text(text=str(param)))  # type: ignore[attr-defined]
+            elif action == "wait":
+                await asyncio.sleep(int(param) / 1000.0)
+        except Exception:  # noqa: BLE001 - one flaky step never loses the session
+            continue
 
 
 async def _human_mouse(tab: object) -> None:
@@ -85,7 +127,9 @@ async def main() -> None:
         tab = browser.main_tab or await browser.get("about:blank")
         await tab.send(_coherent_ua_override())  # coherent Sec-CH-UA before the edge request
     tab = await browser.get(EDGE)
-    if BEHAVE:
+    if TASK:
+        await _run_task(tab, json.loads(TASK))  # the scripted behavioral flow (supersedes KS_BEHAVE)
+    elif BEHAVE:
         await _human_mouse(tab)  # behavioral synthesis before the collector's send window closes
     await asyncio.sleep(4)  # margin for the collector's async probes (WebRTC/audio) to POST
     cookies = await browser.cookies.get_all()
@@ -96,6 +140,8 @@ async def main() -> None:
     with urllib.request.urlopen(f"{DETECTOR}/verdict/{sid}") as resp:
         verdict = json.load(resp)
     mode = "zendriver-uach-behave" if (UACH and BEHAVE) else "zendriver-uach" if UACH else "zendriver"
+    if TASK:
+        mode = "zendriver-uach-task" if UACH else "zendriver-task"
     print("__KS__" + json.dumps({"mode": mode, **verdict}))
 
 
