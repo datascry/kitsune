@@ -39,6 +39,20 @@ class Assessment:
 
 def assess(members: list[FleetMember]) -> Assessment:
     """Exact-match self-assessment of an emitted fleet."""
+    # A shared WebRTC-leaked origin across >= 2 distinct IPs is an unambiguous same-origin binding that SURVIVES
+    # JA4 rotation and fp/trace fuzzing — the only tell that catches a `fuzzy-rotate` fleet. Check it first.
+    origins: dict[str, set[str]] = {}
+    for m in members:
+        if m.webrtc_public_ip is not None:
+            origins.setdefault(m.webrtc_public_ip, set()).add(m.observed_ip)
+    for origin, ips in origins.items():
+        if len(ips) >= 2:
+            return Assessment(
+                True,
+                "shared_origin",
+                f"one WebRTC origin `{origin}` behind {len(ips)} distinct IPs — same-origin fleet "
+                f"(survives JA4 rotation + fp/trace fuzzing; convicts unambiguously)",
+            )
     for kind, attr in (("fp_hash", "fp_hash"), ("trace_hash", "trace_hash")):
         by_value: dict[str, set[str]] = {}
         for m in members:

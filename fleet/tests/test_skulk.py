@@ -75,12 +75,23 @@ def test_similarity_jitters_hashes_but_clusters_descriptors() -> None:
     assert all(m.datacenter for m in members)
 
 
+def test_fuzzy_rotate_rotates_ja4_and_shares_one_origin() -> None:
+    members = get("fuzzy-rotate").members(4, seed=9)
+    assert len({m.ja4 for m in members}) == 4  # JA4 rotated per node (defeats prefix clustering)
+    assert len({m.fp_hash for m in members}) == 4  # fuzzed
+    assert len({m.trace_hash for m in members}) == 4  # fuzzed
+    assert len({m.webrtc_public_ip for m in members}) == 1  # ...but ONE shared origin survives the rotation
+    assert len({m.observed_ip for m in members}) == 4
+
+
 def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("cloned").members(3, 1)).detectable  # fp-collision
     assert assess(get("trace-replay").members(3, 1)).detectable  # trace-collision
     sim = assess(get("similarity").members(3, 1))  # the rung that closes fuzzy
     assert sim.detectable and sim.signal == "template_similarity"
-    assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier (no descriptor)
+    rot = assess(get("fuzzy-rotate").members(3, 1))  # rotated JA4 + fuzzed, caught by the surviving origin
+    assert rot.detectable and rot.signal == "shared_origin"
+    assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier (no descriptor, no co-binding)
     assert not assess(get("randomizer").members(3, 1)).detectable
 
 

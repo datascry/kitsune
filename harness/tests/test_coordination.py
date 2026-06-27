@@ -447,6 +447,62 @@ def test_template_similarity_needs_distinct_ips_and_three_members() -> None:
     assert score_cluster("X", one_ip).template_radius is None  # one source IP
 
 
+def test_ja4_rotating_fuzzy_fleet_caught_by_surviving_origin() -> None:
+    # The hardest fleet shape: ROTATE the JA4 per node (each a singleton prefix cluster) AND fuzz fp/trace per
+    # node (no exact collision). Pure descriptor-similarity clustering CANNOT convict this FP-safely (a large
+    # distinct-human population always contains a coincidentally-tighter subset — measured in template_calibration).
+    # What catches it is the binding rotation can't touch: ONE shared WebRTC origin behind the distinct IPs
+    # (recovered by _collision_clusters), with template-similarity corroborating inside the recovered cluster.
+    desc = _model_traces(3)
+    corpus = [
+        (
+            f"r{i}",
+            _sess(
+                f"r{i}",
+                f"t13d{i:04d}h2_rot{i:04d}_x{i:04d}",  # DISTINCT JA4 per node
+                8,
+                "Windows",
+                observed_ip=f"{10 + i}.{i}.{i}.{i}",
+                webrtc_ip="198.51.100.9",  # the surviving binding
+                fp_hash=f"fz{i}",  # fuzzed → no fp-collision
+                trace_hash=f"tz{i}",  # fuzzed → no exact trace-collision
+                trace_descriptor=desc[i],
+            ),
+        )
+        for i in range(3)
+    ]
+    verdicts = score_corpus(corpus)
+    assert len(verdicts) == 1  # recovered as ONE cluster by the shared origin, not 3 singleton JA4 clusters
+    v = verdicts[0]
+    assert v.label == "fleet" and v.shared_real_ip == "198.51.100.9"  # unambiguous origin convicts
+    assert v.template_radius is not None  # template-similarity corroborates inside the recovered cluster
+
+
+def test_pure_cross_ja4_fuzzy_fleet_is_not_clustered() -> None:
+    # The FP-safe boundary (locked, like test_canvas_randomized_cloned_profile_fleet_caps_at_candidate): the SAME
+    # fleet WITHOUT any surviving binding — rotated JA4, fuzzed fp/trace, NO shared origin — must NOT be clustered
+    # or convicted. Catching it by descriptor similarity alone is FP-unsafe (the cross-JA4 false-cluster floor
+    # drops below a real fleet's tightness as the corpus grows), so it is correctly left ungraded, not forced.
+    desc = _model_traces(3)
+    corpus = [
+        (
+            f"n{i}",
+            _sess(
+                f"n{i}",
+                f"t13d{i:04d}h2_rot{i:04d}_x{i:04d}",
+                8,
+                "Windows",
+                observed_ip=f"{10 + i}.{i}.{i}.{i}",
+                fp_hash=f"fz{i}",
+                trace_hash=f"tz{i}",
+                trace_descriptor=desc[i],
+            ),
+        )
+        for i in range(3)
+    ]
+    assert score_corpus(corpus) == []  # each node a singleton JA4, no cross-instance binding → never graded
+
+
 def test_larger_fleet_scores_higher() -> None:
     small = score_cluster("X", [("a", _sess("a", "X", 8)), ("b", _sess("b", "X", 32))])
     big = score_cluster("X", [(n, _sess(n, "X", hw)) for n, hw in [("a", 8), ("b", 32), ("c", 16), ("d", 4)]])

@@ -951,5 +951,36 @@ N distinct humans do. Built the rung that exploits that — **template-similarit
   the human floor, median 0.059 ≤ 0.1, across 3 distinct IPs — exact-match found nothing"); `skulk run fuzzy`
   (no descriptor profiled) → still `candidate` 0.47, the contrast proving the rung closed exactly the humanizer
   gap and nothing more. Scenarios hold precision/recall at 100% (`fleet-template-similarity` convicts,
-  `legit-distinct-traces` caps at candidate). **Open frontier moved on:** a JA4-ROTATING fuzzy-trace fleet
-  (similarity clustering must recover across rotated JA4 prefixes, not only within one) — the next rung.
+  `legit-distinct-traces` caps at candidate).
+
+### Coordination — JA4-rotating fuzzy fleet: a measured FP boundary, not a new similarity key (2026-06-27)
+
+The next shape after `similarity`: a fleet that **rotates its JA4 per node** (uTLS-randomized / mixed builds —
+each node a singleton JA4-prefix cluster, never graded) AND fuzzes fp/trace. The tempting fix — run
+template-similarity as a *primary, corpus-wide* clustering key (not just within a JA4 cluster) — was
+**measured and rejected as FP-unsafe** before building. Using the shipped descriptor + a realistic kNN clusterer
+(`template_calibration`): a one-humanizer fleet's tightest cluster sits at median ≈ 0.06, but a population of
+**distinct** humans always contains a *coincidentally tighter* subset, and that false-cluster floor **drops as
+the corpus grows** (worst-case coincidental-k median: 0.046 at M=40 → 0.031 at M=200, *below* the real fleet at
+every size k=4–6). Without a binding to constrain the candidate set first, cherry-picking the tightest subset of
+a large distinct-human population manufactures false fleets. **So descriptor similarity is a within-cluster
+CORROBORATOR, never a primary cross-corpus key** — the within-JA4 rung is FP-safe precisely *because* JA4 binds
+the candidates first.
+
+The faithful catch: a JA4-rotating fuzzy fleet is convicted only when an **unambiguous binding survives the
+rotation** — here a shared WebRTC origin (recovered by `_collision_clusters`), with template-similarity
+corroborating inside the recovered cluster. **GROUNDED live** (`skulk run fuzzy-rotate` → real detector): graded
+**`fleet` 1.00** via `shared_real_ip` "3 proxy IPs front one real IP (WebRTC)" + "traces cluster below the human
+floor, median 0.054" — despite a distinct JA4, fp, AND trace_hash per node. The FP-safe boundary is locked: the
+**same fleet with NO surviving binding** (rotated JA4 + fuzzed fp/trace + no shared origin) grades **0 clusters**
+— correctly left ungraded, not forced (`test_pure_cross_ja4_fuzzy_fleet_is_not_clustered`).
+
+- **Groundable, done:** the `fuzzy-rotate` Skulk strategy + the surviving-origin catch + template corroboration.
+- **External-data-bound (queued):** a fleet that rotates JA4, fuzzes fp/trace, AND leaks *no* binding is
+  indistinguishable from coincidentally-similar distinct humans in-sandbox. Convicting it FP-safely needs a
+  **production-scale real diverse-trace population** to calibrate the false-cluster floor at the corpus + cluster
+  size where the margin is real — data the lab can't self-generate (SapiMouse's 120 subjects bound the *within*-
+  cluster floor, not the corpus-wide cherry-pick floor).
+- **Next groundable rung:** a `ticket-reuse` binding (a reused TLS session ticket / PSK shared across the
+  rotated-JA4 nodes — another invariant that survives rotation, an exact collision key like the WebRTC origin),
+  which needs the Go edge to capture + forward the resumption-ticket identity.
