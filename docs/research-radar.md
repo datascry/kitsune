@@ -1257,3 +1257,18 @@ is identical fleet-wide — a real canned-replay, not byte-faked. GROUNDED live:
 `fleet` 1.00 via trace_collision ("identical pointer trace across 3 distinct source IPs — replayed canned
 trajectory"). The catalog now spans four bindings (fp_collision ×3 / trace_collision / none / shared_origin),
 all live-validated 6/6 by `task archetype-validate`. ArchetypeNode gained an `env` field (carries the seed).
+
+### Analysis — coordinating a fleet without correlation: the evasion frontier (2026-06-27)
+
+Synthesized the coordination red⇄blue into docs/coordination-evasion.md (the answer to "how to coordinate a
+large fleet without fleet correlation"). To evade conviction a fleet must remove EVERY binding a real cohort
+can't produce — diverse fps (no fp_collision/template_similarity), distinct JA4 (and survive cross-JA4 recovery),
+distinct behavioral models (no trace_collision/template_similarity), distinct residential origin (no shared_origin
+/ticket/datacenter rep). GROUNDED: the maximal in-sandbox version (sybil-farmer, camoufox ×3, diverse fps +
+distinct traces + distinct IPs) evades to `candidate` 1.00 — its only shared signal is the JA4 cipher prefix
+(one build, ambiguous) + corroborating-only paradox/IP-spread/lockstep. What still convicts it is external-data-
+bound: IP reputation (real datacenter/proxy egress), different real browser BUILDS (drop the JA4 prefix), and
+real-distinct-hardware fps (survive template_similarity). The bind/thesis: doing all of it at scale reconstructs
+N genuinely independent real users at N× cost — coordination detection forces the fleet to cost as much as N
+real users, which is why the residual is an economic / external-data frontier, not in-sandbox-solvable (it is
+saturated in-sandbox).
