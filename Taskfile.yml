@@ -105,7 +105,7 @@ tasks:
       - cd harness && uv run python -m kitsune_harness.coordination /tmp/ks-fleet
 
   coordination-fleet-manage:
-    desc: "Run a MANAGED real-evader fleet (mixed images, per-node proxy, per-node retry) and grade it. Spine must be up (edge+detector). Off-network, pass --detector http://localhost:8099. e.g. task coordination-fleet-manage -- --image kitsune-zendriver:latest --n 3 --env KS_UACH=1 --detector http://localhost:8099"
+    desc: "Run a MANAGED real-evader fleet from NAMED evasions (mixed, per-node proxy + retry) and grade it. `-- --list-evasions` to see the registry. Spine up; off-network pass --detector http://localhost:8099. e.g. task coordination-fleet-manage -- --evasion camoufox-linux --evasion zendriver-uach --n 2 --detector http://localhost:8099"
     dir: harness
     cmds: ["uv run python -m kitsune_harness.fleet_manager {{.CLI_ARGS}}"]
 

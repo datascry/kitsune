@@ -1096,3 +1096,17 @@ genuinely useful lead: its **host-GPU passthrough** (`RENDER_GROUP_GID` + Waylan
 the Tier-3 real-GPU rules (`br.webgl_caps_worker_vs_main`, `br.webgpu_vendor_vs_webgl`) — a real GPU adapter
 inside the worker would finally exercise the worker-OffscreenCanvas-vs-main caps comparison on real hardware.
 Filed as the worker-image option for the real-GPU queue (needs a GPU host).
+
+### Red-team — bake the evasion ladder into the fleet manager (2026-06-27)
+
+The managed fleet manager could run any evader image+env, but the operator had to know image tags and KS_*
+flags. Built the structured **evasion registry** (`kitsune_harness.evasions`) the generated evasion-catalog
+always implied — each fleet-relevant evasion as a named `Evasion(name, image, env, family, summary)`: the
+Camoufox family (default/linux/macos/hardened/behave/headful/touch), the Chromium-CDP class
+(zendriver{,-uach,-uach-behave}/nodriver/pydoll/undetected/selenium-driverless), the stealth/brave/playwright-extra
+browsers, and the vanilla control. The fleet manager now composes from NAMED evasions: `evasion_node("camoufox-linux")`
+resolves the registry entry, and the CLI takes `--evasion <name>` (repeat for a MIXED fleet) + `--list-evasions`.
+GROUNDED live: `--evasion zendriver-uach --n 3` → 3 real workers labelled `zendriver-uach-{0,1,2}` → graded
+`fleet` 1.00 (cloned-profile fp-collision). The registry is the long-pending authored source the evasion-catalog
+can eventually generate from; the stealth tool's single-session artifact modes (electron-leak/canvas-lie/…) stay
+lit via the per-rule captures, not fleet nodes, so only the stealth BASE mode is registered.

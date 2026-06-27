@@ -32,6 +32,8 @@ from kitsune_detector.models import Session
 
 from .allowlist import assert_allowed
 from .coordination import FleetVerdict, score_corpus
+from .evasions import families
+from .evasions import get as get_evasion
 
 
 @dataclass(frozen=True)
@@ -188,6 +190,16 @@ def homogeneous_plan(
     return FleetPlan(nodes=nodes, **kw)
 
 
+def evasion_node(
+    name: str, *, proxy: str | None = None, label: str | None = None, extra_env: dict[str, str] | None = None
+) -> NodeSpec:
+    """A :class:`NodeSpec` for a NAMED evasion from the registry (e.g. ``camoufox-linux``) — the baked-in form,
+    so a fleet is composed from the existing red-team ladder, not raw image+env. ``extra_env`` overlays the
+    evasion's env (e.g. a per-node KS_PROXY); ``label`` defaults to the evasion name."""
+    ev = get_evasion(name)
+    return NodeSpec(image=ev.image, env=ev.env_with(extra_env), proxy=proxy, label=label or name)
+
+
 def render(report: FleetReport) -> str:
     """Markdown: per-node health (with retries) + the graded coordination verdict."""
     lines = [f"# Fleet — {len(report.ok)}/{len(report.nodes)} nodes minted a session", ""]
@@ -212,8 +224,12 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     import argparse
 
     ap = argparse.ArgumentParser(description="Run a managed fleet of real evader workers (authorized targets only).")
-    ap.add_argument("--image", action="append", default=[], help="evader image; repeat for a MIXED fleet")
-    ap.add_argument("--n", type=int, default=3, help="replicas per --image")
+    ap.add_argument(
+        "--evasion", action="append", default=[], help="NAMED evasion from the registry; repeat for a MIXED fleet"
+    )
+    ap.add_argument("--image", action="append", default=[], help="raw evader image (alternative to --evasion)")
+    ap.add_argument("--list-evasions", action="store_true", help="print the evasion registry and exit")
+    ap.add_argument("--n", type=int, default=3, help="replicas per --evasion/--image")
     ap.add_argument("--env", action="append", default=[], help="KEY=VALUE applied to every node (repeatable)")
     ap.add_argument("--proxy", action="append", default=[], help="egress proxy URL; round-robin across nodes")
     ap.add_argument("--edge", default="https://edge:8443/")
@@ -223,14 +239,24 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     ap.add_argument("--retries", type=int, default=1)
     args = ap.parse_args(argv)
 
+    if args.list_evasions:
+        for fam, evs in families().items():
+            print(f"\n{fam}:")
+            for ev in evs:
+                print(f"  {ev.name:24} {ev.summary}")
+        return 0
+
     env = dict(kv.split("=", 1) for kv in args.env)
     proxies = args.proxy or None
-    images = args.image or ["kitsune-zendriver:latest"]
     nodes: list[NodeSpec] = []
-    for image in images:
-        for _ in range(args.n):
+    specs = [evasion_node(name) for name in args.evasion] + [NodeSpec(image=img) for img in args.image]
+    if not specs:
+        specs = [evasion_node("zendriver-uach")]
+    for spec in specs:
+        for rep in range(args.n):
             px = proxies[len(nodes) % len(proxies)] if proxies else None
-            nodes.append(NodeSpec(image=image, env=dict(env), proxy=px))
+            label = f"{spec.label}-{rep}" if spec.label else ""  # unique per evasion+replica
+            nodes.append(NodeSpec(image=spec.image, env={**spec.env, **env}, proxy=px, label=label))
     plan = FleetPlan(
         nodes=nodes,
         edge=args.edge,
