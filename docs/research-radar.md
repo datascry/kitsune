@@ -1286,3 +1286,34 @@ uTLS (non-browser Go tools) or many real builds — Skulk's fuzzy-rotate models 
 `_collision_clusters` recovery still catches it if any binding leaks. Also surfaced a fidelity note: a small
 Chromium-clone sub-fleet did NOT always fp-collide (zendriver fp has some run-to-run variance), so a 2-node
 clone is less reliably caught than a 3+-node one. docs/coordination-evasion.md updated with the grounded result.
+
+## FoxIO JA4+ suite — leverage scan (2026-06-27)
+
+Scanned github.com/FoxIO-LLC/ja4 for anything not already covered. Result: Kitsune already implements the
+JA4+ value, independently — and is AHEAD on the headline use-case.
+
+**Already covered (independent Kitsune implementations):**
+- JA4 (TLS client) — `edge/fingerprint/ja4.go` (the JA4 TLS-client spec is BSD-3 open; our code is our own).
+- JA4H (HTTP client) — h2 header-order / `net.h2_header_order_vs_ua`.
+- JA4T-equivalent (TCP client OS) — `edge/tcpfp` (p0f-style) + the `net.tls_os_vs_tcp_os` coherence rule.
+- QUIC/H3 ClientHello fingerprint.
+- **The JA4+ cross-validation THESIS itself** — JA4+'s headline ("detect spoofed fingerprints by comparing
+  JA4/JA4S/JA4H/JA4T consistency") IS Kitsune's coherence engine, and the JA4+ README explicitly does NOT detail
+  the cross-layer algorithms Kitsune already ships (tls-vs-tcp OS, JA4H-vs-UA, accept-lang-vs-nav-lang, …).
+
+**Out of scope (not web-bot detection):** JA4S (server hello), JA4X (X.509 cert), JA4SSH, JA4D/JA4D6 (DHCP),
+JA4TScan (active port scan), JA4L*S* (server→client latency).
+
+**The one genuinely-new leverageable concept — JA4L (client latency / light-distance):** measure the handshake
+RTT, derive the max physical distance light could travel in that RTT, and flag when the IP's CLAIMED geo (we
+already have `detector/geo.py`, City+ASN MMDB) is FARTHER than light-speed allows → a proxy/VPN tell that needs
+NO IP reputation (the residential-proxy frontier). Pairs perfectly with our existing geo. BUT: (a) EXTERNAL-DATA-
+BOUND to ground — in-sandbox all traffic is localhost (RTT ~0, no distance), so a live positive needs a real
+distant client behind a proxy; and (b) JA4+ (everything beyond JA4) is **FoxIO License 1.1 + patent-pending**, so
+a public lab must NOT adopt JA4+ code and should tread carefully even reimplementing the method. VERDICT: record
+the RTT-vs-geo light-distance COHERENCE idea as an external-data-bound lead (reimplement the physics independently
+under our own name if/when pursued + legal check); do NOT ship an ungrounded, patent-adjacent rule now.
+
+**Marginal:** JA4's a_b_c locality lets you cluster by `a_c` (drop the cipher hash) to catch a CIPHER-only
+randomizing fleet — but no real tool randomizes ciphers-but-not-extensions, and full JA4 rotation is already
+caught by the cross-JA4 `_collision_clusters` recovery. Not worth a build.
