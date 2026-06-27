@@ -35,6 +35,7 @@ from .allowlist import assert_allowed
 from .coordination import FleetVerdict, score_corpus
 from .evasions import families
 from .evasions import get as get_evasion
+from .tasks import get_preset, task_from_obj
 
 
 @dataclass(frozen=True)
@@ -221,6 +222,8 @@ def plan_from_obj(obj: Mapping[str, Any]) -> FleetPlan:
         replicas = int(entry.get("replicas", 1))
         proxy = entry.get("proxy")
         extra_env = {str(k): str(v) for k, v in (entry.get("env") or {}).items()}
+        if entry.get("task") is not None:  # a behavioral script the worker replays via CDP (KS_TASK)
+            extra_env["KS_TASK"] = task_from_obj(entry["task"]).to_env()
         base_label = evasion if evasion else _image_base(str(image))
         for rep in range(replicas):
             label = f"{base_label}-{rep}"
@@ -354,6 +357,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     ap.add_argument("--worker-detector", default="http://detector:8080", help="KITSUNE_DETECTOR for workers")
     ap.add_argument("--network", default="kitsune_default")
     ap.add_argument("--retries", type=int, default=1)
+    ap.add_argument("--task", help="behavioral task preset every node replays (e.g. browse, scrape-scroll)")
     ap.add_argument("--report", help="write the structured engagement finding (JSON) to this path")
     args = ap.parse_args(argv)
 
@@ -372,6 +376,8 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
             plan = FleetPlan(**{**plan.__dict__, "detector": args.detector})
     else:
         env = dict(kv.split("=", 1) for kv in args.env)
+        if args.task:
+            env["KS_TASK"] = get_preset(args.task).to_env()
         proxies = args.proxy or None
         nodes: list[NodeSpec] = []
         specs = [evasion_node(n) for n in args.evasion] + [NodeSpec(image=img) for img in args.image]

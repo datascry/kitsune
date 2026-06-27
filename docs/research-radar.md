@@ -1135,3 +1135,19 @@ trace_collision / shared_origin / ticket_reuse / template_similarity). CLI: `--r
 GROUNDED end-to-end live on Kitsune: `--evasion zendriver-uach --n 3 --report engagement.json` → 3/3 sessions →
 `{"outcome": "caught", "assessment": "the 3-node fleet … was CAUGHT — graded \`fleet\` 1.00 via fp_collision", …}`.
 This is the deliverable an engagement produces: plan in → finding out.
+
+### Red-team — behavioral task scripts for fleet workers (2026-06-27)
+
+A fleet worker that only navigates and mints sends ZERO input — no realistic interaction. Added a behavioral
+task DSL (`kitsune_harness.tasks`): a `BehavioralTask` is a declarative list of single-action steps
+(`{move:[x,y]}` / `{click:[x,y]}` / `{scroll:dy}` / `{type:"…"}` / `{wait:ms}`) with named presets (`idle-cursor`,
+`browse`, `scrape-scroll`, `form-fill`). A plan node's `task:` (a preset name or inline steps) serializes to the
+`KS_TASK` env via the fleet manager; a TASK-AWARE evader replays it through trusted CDP input. Generalized
+zendriver's hardcoded `_human_mouse` into a `_run_task` CDP executor (move/click/scroll/type/wait, each step
+best-effort so a flaky action never loses the session). GROUNDED end-to-end live on Kitsune: `--task browse` →
+the session carries pointer_event_count=21, submovement_count=6, mouse_entropy=0.64 (real interaction features),
+versus a navigate-and-mint node where the behavioral signals are ABSENT (zero input). CLI `--task <preset>` +
+example `harness/examples/engagement-scraper-fleet.yaml` (a zendriver fleet running `scrape-scroll`). Caveat:
+the DSL + plumbing are universal but execution needs a task-aware evader (today zendriver); others ignore
+`KS_TASK` harmlessly. The behavioral analog of the engagement plan: a fleet now models a real flow, not just
+navigate-and-mint.
