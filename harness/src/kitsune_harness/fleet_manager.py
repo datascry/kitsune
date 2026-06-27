@@ -32,6 +32,8 @@ from typing import Any, Protocol
 from kitsune_detector.models import Session
 
 from .allowlist import assert_allowed
+from .archetypes import all_archetypes
+from .archetypes import get as get_archetype
 from .coordination import FleetVerdict, score_corpus
 from .evasions import families
 from .evasions import get as get_evasion
@@ -252,6 +254,12 @@ def load_plan(path: str) -> FleetPlan:
     return plan_from_obj(yaml.safe_load(Path(path).read_text()))
 
 
+def archetype_plan(name: str, **overrides: Any) -> FleetPlan:
+    """Build a :class:`FleetPlan` from a named adversary archetype (e.g. ``credential-stuffer``) — the persona's
+    fleet shape (evasions + replicas + behavioral task) resolved into a runnable plan."""
+    return plan_from_obj(get_archetype(name).to_plan_obj(**overrides))
+
+
 def render(report: FleetReport) -> str:
     """Markdown: per-node health (with retries) + the graded coordination verdict."""
     lines = [f"# Fleet — {len(report.ok)}/{len(report.nodes)} nodes minted a session", ""]
@@ -447,7 +455,9 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
         "--evasion", action="append", default=[], help="NAMED evasion from the registry; repeat for a MIXED fleet"
     )
     ap.add_argument("--image", action="append", default=[], help="raw evader image (alternative to --evasion)")
+    ap.add_argument("--archetype", help="a named adversary persona (e.g. credential-stuffer, scalper, sybil-farmer)")
     ap.add_argument("--list-evasions", action="store_true", help="print the evasion registry and exit")
+    ap.add_argument("--list-archetypes", action="store_true", help="print the adversary archetype catalog and exit")
     ap.add_argument("--n", type=int, default=3, help="replicas per --evasion/--image")
     ap.add_argument("--env", action="append", default=[], help="KEY=VALUE applied to every node (repeatable)")
     ap.add_argument("--proxy", action="append", default=[], help="egress proxy URL; round-robin across nodes")
@@ -468,6 +478,13 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
                 print(f"  {ev.name:24} {ev.summary}")
         return 0
 
+    if args.list_archetypes:
+        for a in all_archetypes():
+            print(f"  {a.name:20} [{a.threat}] {a.expected} via {a.binding}")
+            print(f"  {'':20} {a.summary}")
+            print(f"  {'':20} rate: {a.rate}\n")
+        return 0
+
     if args.campaign:
         campaign = load_campaign(args.campaign)
         if args.detector != "http://detector:8080":  # override every wave's manager-fetch target off-network
@@ -485,7 +502,10 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
         return 0
 
     name = "fleet"
-    if args.plan:
+    if args.archetype:
+        plan = archetype_plan(args.archetype, detector=args.detector)
+        name = args.archetype
+    elif args.plan:
         plan = load_plan(args.plan)
         name = Path(args.plan).stem
         if args.detector != "http://detector:8080":  # let --detector override the plan for off-network runs
