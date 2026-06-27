@@ -1222,3 +1222,25 @@ gate → budget 5 rps, knee throttled (the gate's exact threshold); and a 2-wave
 its recon-rps wave scopes the rate budget before the credential-stuffing fleet. Go vet/gofmt clean + arena tests;
 detector relay tested; harness 346 pass. This closes the "does recon include RPS scoping" gap with a real gate
 to scope against.
+
+### Red-team/blue — archetype validation harness (the catalog as a tested contract) (2026-06-27)
+
+Answered "can we create arena tests for the adversary archetypes": yes — built a validation harness that runs
+EVERY archetype's real fleet against the live detector and checks the actual coordination outcome matches the
+catalog's declared `expected`, turning each persona from documentation into a tested contract.
+`validate_archetypes()` + CLI `--validate-archetypes` / `task archetype-validate`; archetypes whose binding is
+external-data-bound (proxy-botnet → shared_origin needs real proxy egress) are reported `skipped`. Running it
+live IMMEDIATELY caught two fidelity bugs in the catalog:
+
+1. **credential-stuffer used camoufox-hardened** — but camoufox RANDOMIZES its fingerprint per launch, so a
+   camoufox fleet has distinct fps (no fp_collision) → it graded `candidate`, not the cataloged `caught`. Fixed
+   to a deterministic-fingerprint Chromium clone (zendriver, which is also task-aware so the form-fill replays).
+2. **sybil-farmer mixed camoufox + zendriver + nodriver** — but zendriver and nodriver are BOTH Chromium and
+   render identically, so those two COLLIDED on fp → graded `caught`, not the cataloged `candidate`. Fixed to a
+   camoufox-only fleet: per-launch randomization gives genuinely distinct fps → no collision → `candidate`.
+
+After the corrections the live validation is 5/5. The lesson (now a CI structural test): fp_collision needs ONE
+deterministic Chromium clone (never camoufox); a diverse/sybil fleet gets its fp-diversity from camoufox's
+per-launch randomization, NOT from mixing Chromium tools (which collide). The archetype `expected` is now
+grounded against reality, and a future catalog/scoring change that breaks a persona's outcome is caught by
+`task archetype-validate`. harness 347 pass.

@@ -109,6 +109,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.fleet_manager {{.CLI_ARGS}}"]
 
+  archetype-validate:
+    desc: "Run EVERY adversary archetype's real fleet against the live detector and check the outcome matches the catalog (turns each persona's `expected` into a tested contract). Spine up; off-network pass --detector http://localhost:8099."
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.fleet_manager --validate-archetypes {{.CLI_ARGS}}"]
+
   scope-rps:
     desc: "Recon: scope a target's request-rate budget (ramp RPS, find the throttle/challenge/saturation knee). Authorized targets only. e.g. task scope-rps -- http://localhost:8099/healthz --rates 1,5,10,25,50,100"
     dir: harness
