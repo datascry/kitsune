@@ -95,6 +95,26 @@ Two browserless solvers, both allow-list-scoped to our own gates:
 The image-select hardening is the on-thesis move: the gate got harder than the heuristic solver, forcing a
 real CV/VLM (the frontier) — and at the end of every chain the **detector convicts the no-JS client anyway**.
 
+## Which gate addresses which adversary archetype
+
+Gates impose **cost**; the **detector convicts** (see `kitsune_harness.archetypes` + `task archetype-validate`).
+Together they cover the persona ladder:
+
+| Archetype | Detector verdict | Gate(s) that price it | Public mechanism reproduced |
+|---|---|---|---|
+| credential-stuffer | caught (fp_collision) | `rate` + PoW + `checkbox`/captcha | rate-limit · Turnstile · mCaptcha |
+| scalper | caught (fp_collision) | `rate` + PoW | rate-limit · PoW · *waiting-room (gap)* |
+| scraper | caught (fp_collision) | `rate` + PoW/page | rate-limit · Turnstile |
+| review-farmer | caught (trace_collision) | captcha + `slider` (behavioral) | behavioral biometrics |
+| proxy-botnet | caught (shared_origin) | `rate` (per-origin) + IP-rep | IP reputation · PAT |
+| **sybil-farmer** | **candidate — evades detection** | **`pact`** | **Private Access Tokens** |
+
+The synthesis: the `sybil-farmer` is the one archetype detection cannot convict (diversify fingerprints →
+`candidate`). The **`pact`** gate covers exactly that — you can fake infinite fingerprints, but not N anonymous
+personhood tokens without N attested devices. **The gate addresses what detection can't.** The one public
+mechanism not yet reproduced is a **waiting-room / virtual queue** (Queue-it / Cloudflare Waiting Room) — the
+canonical scalper defense (admit N/sec, queue the rest), fairer than `rate`'s hard 429.
+
 ## Ethics (enforced)
 
 The evaders may target **only** Kitsune's own detector/arena + the approved public endpoints in
