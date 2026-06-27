@@ -103,6 +103,7 @@ layer uses the ecosystem that's genuinely best for it — which also happens to 
 | `collector/` | **TypeScript** | Runs in the browser — no choice. Probes ported from CreepJS / BotD / fp-collect plus Kitsune-original realm-coherence checks. |
 | `harness/` | **Python** | Orchestration, scoreboard, calibration gate, coordination scorer; shares the detector's models via the contracts. |
 | `evaders/` | **Py / TS / Go** | A red-team ladder of *real* tools, each in its native language (see below) — the point is to score genuine anti-detect software, not toy clients. |
+| `fleet/` | **Python** | **Skulk** — a standalone, authorization-scoped fleet adversary-emulation kit. Generates coordinated fleet shapes (cloned/randomizer/trace-replay/fuzzy) and emits them to a detector's `/ingest` to test the coordination/fleet axis red⇄blue. Stdlib-only, contracts-only. See [`../fleet/README.md`](../fleet/README.md). |
 | `arena/` | **Go** | The public, self-hosted **challenge-gate** service (PoW / CAPTCHA / slider / rotate / image-select / checkbox / managed / PACT). Reproduces documented *open* mechanisms on owned infra; the detector relays `/arena/*` and shows the gate verdict beside its own coherence verdict — the demo that a solved challenge ≠ a human. See [`arena.md`](arena.md). |
 
 The evader fleet spans all three languages because the real tools do: Python (vanilla `httpx` control,

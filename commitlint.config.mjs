@@ -7,7 +7,7 @@ export default {
     "scope-enum": [
       1,
       "always",
-      ["contracts", "detector", "harness", "edge", "collector", "evaders", "docs", "ci", "repo"],
+      ["contracts", "detector", "harness", "edge", "collector", "evaders", "arena", "fleet", "docs", "ci", "repo"],
     ],
   },
 };
