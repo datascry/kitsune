@@ -339,6 +339,105 @@ def report_dict(report: FleetReport, *, name: str = "") -> dict[str, Any]:
     }
 
 
+# --- multi-wave campaigns: an engagement as a SEQUENCE of fleet waves (recon → coordinated attack → …) ---
+
+
+@dataclass(frozen=True)
+class Wave:
+    """One phase of a campaign: a named fleet plan run in sequence."""
+
+    name: str
+    plan: FleetPlan
+
+
+@dataclass(frozen=True)
+class CampaignPlan:
+    name: str
+    waves: list[Wave]
+
+
+@dataclass
+class WaveResult:
+    name: str
+    report: FleetReport
+
+
+@dataclass
+class CampaignReport:
+    name: str
+    waves: list[WaveResult]
+
+
+_PLAN_GLOBALS = ("edge", "detector", "worker_detector", "network", "retries", "timeout", "max_concurrency")
+
+
+def campaign_from_obj(obj: Mapping[str, Any]) -> CampaignPlan:
+    """Build a :class:`CampaignPlan` from a declarative spec: a ``waves`` list, each wave a fleet-plan body
+    (``nodes`` + optional overrides) with a ``name``. Campaign-level targets/policy (``edge``/``detector``/…)
+    are inherited by every wave unless the wave overrides them — so an engagement is one timeline-shaped file."""
+    raw = obj.get("waves")
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("campaign needs a non-empty 'waves' list")
+    shared = {k: obj[k] for k in _PLAN_GLOBALS if k in obj}
+    waves: list[Wave] = []
+    for entry in raw:
+        wave_name = str(entry.get("name") or f"wave-{len(waves)}")
+        body = {**shared, **{k: v for k, v in entry.items() if k != "name"}}
+        waves.append(Wave(name=wave_name, plan=plan_from_obj(body)))
+    return CampaignPlan(name=str(obj.get("name", "campaign")), waves=waves)
+
+
+def load_campaign(path: str) -> CampaignPlan:
+    """Load a multi-wave campaign from a YAML/JSON file."""
+    import yaml
+
+    return campaign_from_obj(yaml.safe_load(Path(path).read_text()))
+
+
+def run_campaign(
+    campaign: CampaignPlan, *, launcher: Launcher = _docker_launch, get_json: JsonGetter = _http_get_json
+) -> CampaignReport:
+    """Run each wave in sequence (each a full managed fleet, independently captured + graded). Waves are graded
+    in isolation — run_fleet grades only the sessions IT minted — so a recon wave does not pollute the attack
+    wave's coordination cluster even though both hit the same detector store."""
+    return CampaignReport(
+        name=campaign.name,
+        waves=[WaveResult(w.name, run_fleet(w.plan, launcher=launcher, get_json=get_json)) for w in campaign.waves],
+    )
+
+
+def campaign_report_dict(report: CampaignReport) -> dict[str, Any]:
+    """The aggregated campaign FINDING: each wave's engagement report + the campaign-level outcome (which waves
+    the defense caught vs which evaded)."""
+    waves = [{"wave": w.name, **report_dict(w.report, name=w.name)} for w in report.waves]
+    caught = [w["wave"] for w in waves if w["outcome"] == "caught"]
+    evaded = [w["wave"] for w in waves if w["outcome"] == "evaded"]
+    if caught:
+        assessment = f"the defense CAUGHT {len(caught)}/{len(waves)} wave(s): {', '.join(caught)}"
+    elif evaded:
+        assessment = f"all graded waves EVADED conviction ({', '.join(evaded)}) — no wave was caught"
+    else:
+        assessment = "no wave formed a gradeable coordination cluster"
+    return {
+        "name": report.name,
+        "assessment": assessment,
+        "waves_caught": caught,
+        "waves_evaded": evaded,
+        "waves": waves,
+    }
+
+
+def render_campaign(report: CampaignReport) -> str:
+    """Markdown campaign summary: one line per wave + the aggregated finding."""
+    d = campaign_report_dict(report)
+    lines = [f"# Campaign `{report.name}` — {len(report.waves)} waves", "", f"_{d['assessment']}_", ""]
+    for w in d["waves"]:
+        coord = w["coordination"]
+        verdict = f"`{coord['label']}` {coord['score']:.2f}" if coord else "no cluster"
+        lines.append(f"- **{w['wave']}** → {w['outcome'].upper()} ({w['fleet']['minted']} nodes, {verdict})")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     import argparse
 
@@ -358,6 +457,7 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
     ap.add_argument("--network", default="kitsune_default")
     ap.add_argument("--retries", type=int, default=1)
     ap.add_argument("--task", help="behavioral task preset every node replays (e.g. browse, scrape-scroll)")
+    ap.add_argument("--campaign", help="declarative multi-wave campaign (YAML/JSON); runs each wave in sequence")
     ap.add_argument("--report", help="write the structured engagement finding (JSON) to this path")
     args = ap.parse_args(argv)
 
@@ -366,6 +466,22 @@ def main(argv: list[str] | None = None) -> int:  # pragma: no cover - thin CLI
             print(f"\n{fam}:")
             for ev in evs:
                 print(f"  {ev.name:24} {ev.summary}")
+        return 0
+
+    if args.campaign:
+        campaign = load_campaign(args.campaign)
+        if args.detector != "http://detector:8080":  # override every wave's manager-fetch target off-network
+            campaign = CampaignPlan(
+                name=campaign.name,
+                waves=[
+                    Wave(w.name, FleetPlan(**{**w.plan.__dict__, "detector": args.detector})) for w in campaign.waves
+                ],
+            )
+        cresult = run_campaign(campaign)
+        print(render_campaign(cresult), end="")
+        if args.report:
+            Path(args.report).write_text(json.dumps(campaign_report_dict(cresult), indent=2) + "\n")
+            print(f"\ncampaign report → {args.report}")
         return 0
 
     name = "fleet"

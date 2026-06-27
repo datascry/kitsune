@@ -1162,3 +1162,18 @@ pointer_event_count=27, submovement_count=8, mouse_entropy=0.43 — real interac
 backend, the same DSL zendriver runs via CDP. The harness owns the DSL; each evader owns its execution; two
 backends (Chromium-CDP + Firefox-Playwright) now prove the portability. `engagement-scraper-fleet.yaml` updated
 to a mixed cross-backend task fleet. Task-aware evaders today: zendriver, camoufox.
+
+### Red-team — multi-wave campaigns (an engagement as a timeline) (2026-06-27)
+
+The top layer of the adversary-emulation tool: a `CampaignPlan` is a SEQUENCE of named fleet waves (recon →
+coordinated attack → …), each a full managed fleet run in sequence and graded in ISOLATION (run_fleet grades
+only the sessions each wave minted, so a recon wave does not pollute the attack wave's coordination cluster even
+though both hit the same detector store). `campaign_from_obj` / `load_campaign` parse a `{name, waves:[…]}` spec
+where campaign-level edge/detector/retries are inherited by every wave; `run_campaign` executes them; the
+`campaign_report_dict` aggregates which waves the defense caught vs evaded with a top-line assessment. CLI
+`--campaign campaign.yaml` (+ `--report`). Example `harness/examples/campaign-account-takeover.yaml` (a quiet
+recon wave, then a cloned-hardened credential-stuffing fleet running a form-fill task). GROUNDED end-to-end live
+on Kitsune: a 2-wave campaign → recon INCONCLUSIVE (baseline), attack-fleet CAUGHT `fleet` 1.00 → "the defense
+CAUGHT 1/2 wave(s): attack-fleet". The full adversary-emulation arc: campaign timeline → mixed named-evasion
+fleets with per-node proxy + behavioral tasks (cross-backend) → self-healing capture → coordination grade →
+aggregated red⇄blue finding.

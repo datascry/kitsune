@@ -21,12 +21,17 @@ from kitsune_harness.fleet_manager import (
     _binding,
     _node_label,
     _session_id,
+    campaign_from_obj,
+    campaign_report_dict,
     evasion_node,
     homogeneous_plan,
+    load_campaign,
     load_plan,
     plan_from_obj,
     render,
+    render_campaign,
     report_dict,
+    run_campaign,
     run_fleet,
 )
 
@@ -216,12 +221,20 @@ def test_plan_requires_nodes() -> None:
         plan_from_obj({"edge": "https://edge:8443/"})
 
 
-def test_committed_example_plans_load_and_build() -> None:
-    # Every shipped engagement template must parse into a runnable, allow-listed plan.
+def test_committed_examples_load_and_build() -> None:
+    # Every shipped engagement/campaign template must parse into a runnable, allow-listed plan.
+    import yaml
+
     for path in sorted(_EXAMPLES.glob("*.yaml")):
-        plan = load_plan(str(path))
-        assert plan.nodes and plan.edge.startswith("https://edge")
-        run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)  # ethics gate passes + it executes
+        obj = yaml.safe_load(path.read_text())
+        if "waves" in obj:
+            campaign = load_campaign(str(path))
+            assert campaign.waves
+            run_campaign(campaign, launcher=_FakeLauncher(), get_json=_get_json)
+        else:
+            plan = load_plan(str(path))
+            assert plan.nodes and plan.edge.startswith("https://edge")
+            run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)  # ethics gate passes + it executes
 
 
 def _cloned_get(url: str) -> dict[str, Any]:
@@ -263,6 +276,62 @@ def test_report_inconclusive_and_proxy_recorded() -> None:
     d = report_dict(run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json))
     assert d["outcome"] == "inconclusive" and d["coordination"] is None  # 1 session → no cluster
     assert d["nodes"][0]["proxy"] == "socks5://p"  # egress recorded as engagement evidence
+
+
+def test_campaign_from_obj_inherits_globals_and_names_waves() -> None:
+    campaign = campaign_from_obj(
+        {
+            "name": "atk",
+            "edge": "https://edge:8443/",
+            "retries": 2,
+            "waves": [
+                {"name": "recon", "nodes": [{"evasion": "vanilla", "replicas": 1}]},
+                {"nodes": [{"evasion": "camoufox-hardened", "replicas": 3}]},  # unnamed → wave-1
+            ],
+        }
+    )
+    assert campaign.name == "atk" and [w.name for w in campaign.waves] == ["recon", "wave-1"]
+    assert all(w.plan.retries == 2 for w in campaign.waves)  # campaign globals inherited
+    assert len(campaign.waves[1].plan.nodes) == 3
+
+
+def test_campaign_needs_waves() -> None:
+    with pytest.raises(ValueError, match="non-empty 'waves'"):
+        campaign_from_obj({"name": "x"})
+
+
+def test_run_campaign_grades_each_wave_and_aggregates() -> None:
+    campaign = campaign_from_obj(
+        {
+            "waves": [
+                {"name": "recon", "nodes": [{"evasion": "vanilla", "replicas": 1}]},  # 1 node → inconclusive
+                {"name": "fraud", "nodes": [{"image": "kitsune-camoufox:latest", "replicas": 3}]},  # cloned → caught
+            ],
+            "max_concurrency": 1,
+        }
+    )
+    result = run_campaign(campaign, launcher=_FakeLauncher(), get_json=_cloned_get)
+    d = campaign_report_dict(result)
+    assert d["waves_caught"] == ["fraud"] and "recon" not in d["waves_caught"]
+    assert "CAUGHT 1/2" in d["assessment"]
+    assert d["waves"][0]["outcome"] == "inconclusive" and d["waves"][1]["outcome"] == "caught"
+    assert "Campaign" in render_campaign(result)
+
+
+def test_campaign_all_waves_evaded_assessment() -> None:
+    campaign = campaign_from_obj(
+        {"waves": [{"name": "w", "nodes": [{"evasion": "zendriver-uach", "replicas": 3}]}], "max_concurrency": 1}
+    )
+    d = campaign_report_dict(run_campaign(campaign, launcher=_FakeLauncher(), get_json=_get_json))
+    assert d["waves_caught"] == [] and "EVADED" in d["assessment"]
+
+
+def test_campaign_no_gradeable_cluster_assessment() -> None:
+    campaign = campaign_from_obj({"waves": [{"name": "solo", "nodes": [{"evasion": "vanilla", "replicas": 1}]}]})
+    result = run_campaign(campaign, launcher=_FakeLauncher(), get_json=_get_json)
+    d = campaign_report_dict(result)
+    assert d["waves_caught"] == [] and d["waves_evaded"] == [] and "no wave" in d["assessment"]
+    assert "no cluster" in render_campaign(result)  # the render no-coordination branch
 
 
 def test_node_label_default_and_explicit() -> None:
