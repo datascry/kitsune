@@ -5,6 +5,14 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.10.0](https://github.com/datascry/kitsune/compare/v1.9.0...v1.10.0) (2026-06-27)
+
+
+### Features
+
+* **detector:** add br.webgl_caps_worker_vs_main — the hardened cross-realm GPU tell ([b56fd93](https://github.com/datascry/kitsune/commit/b56fd9345630be1ad855aa59927cf98a16ad723a))
+* **fleet:** add the staggered-timing Skulk strategy — lockstep is corroborating-only ([3db9e3a](https://github.com/datascry/kitsune/commit/3db9e3a9bb8a3a775f65c0617c0131559c41c133))
+
 ## [1.9.0](https://github.com/datascry/kitsune/compare/v1.8.0...v1.9.0) (2026-06-27)
 
 
