@@ -1244,3 +1244,16 @@ deterministic Chromium clone (never camoufox); a diverse/sybil fleet gets its fp
 per-launch randomization, NOT from mixing Chromium tools (which collide). The archetype `expected` is now
 grounded against reality, and a future catalog/scoring change that breaks a persona's outcome is caught by
 `task archetype-validate`. harness 347 pass.
+
+### Red-team — review-farmer archetype: the behavioral (trace_collision) binding (2026-06-27)
+
+Broadened the archetype catalog to a NEW coordination binding. All caught personas convicted on fp_collision
+(a cloned fingerprint); none exercised the BEHAVIORAL binding. Added `review-farmer` (engagement/review fraud):
+camoufox ×3 — each randomizes its fingerprint per launch (DISTINCT fps, no fp_collision) — but a pinned
+`KS_TASK_SEED` makes every node replay the IDENTICAL canned humanized trace → one shared trace_hash across
+distinct IPs → trace_collision convicts (two real users never trace the same path). Mechanism: the task
+executors (zendriver CDP + camoufox Playwright) now seed their RNG from KS_TASK_SEED, so the per-instance jitter
+is identical fleet-wide — a real canned-replay, not byte-faked. GROUNDED live: `--archetype review-farmer` →
+`fleet` 1.00 via trace_collision ("identical pointer trace across 3 distinct source IPs — replayed canned
+trajectory"). The catalog now spans four bindings (fp_collision ×3 / trace_collision / none / shared_origin),
+all live-validated 6/6 by `task archetype-validate`. ArchetypeNode gained an `env` field (carries the seed).

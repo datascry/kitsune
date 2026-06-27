@@ -39,6 +39,9 @@ BEHAVE = os.environ.get("KS_BEHAVE") == "1"
 # trusted CDP input so the captured session carries a real interaction flow (a reader/scraper/form-fill), not
 # just the navigate-and-mint zero-input shape. Supersedes the hardcoded KS_BEHAVE path when set.
 TASK = os.environ.get("KS_TASK")
+# KS_TASK_SEED: pin the task RNG so a fleet replays the IDENTICAL humanized path → one shared trace_hash (the
+# canned-replay / review-farm shape). Absent → distinct jitter per node.
+TASK_SEED = os.environ.get("KS_TASK_SEED")
 
 
 async def _move_to(tab: object, x: float, y: float, tx: float, ty: float) -> None:
@@ -54,6 +57,8 @@ async def _move_to(tab: object, x: float, y: float, tx: float, ty: float) -> Non
 async def _run_task(tab: object, steps: list[dict]) -> None:
     """Replay a behavioral task script (the harness DSL) via CDP. Each step is best-effort — a CDP hiccup on one
     action must not lose the session — so the worker still mints and reports."""
+    if TASK_SEED is not None:
+        random.seed(int(TASK_SEED))  # canned replay: identical jittered path fleet-wide → shared trace_hash
     x, y = 240.0, 220.0
     left = cdp.input_.MouseButton.LEFT
     for step in steps:

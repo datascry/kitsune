@@ -78,6 +78,11 @@ BEHAVE = os.environ.get("KS_BEHAVE") == "1"
 # sync Playwright/Firefox, not CDP). Replays {move:[x,y]}/{click:[x,y]}/{scroll:dy}/{type:"…"}/{wait:ms} so the
 # captured session carries a real interaction flow. Supersedes KS_BEHAVE when set.
 TASK = os.environ.get("KS_TASK")
+# KS_TASK_SEED: pin the task executor's RNG so a FLEET replays the IDENTICAL humanized path → one shared
+# trace_hash across nodes (the canned-replay / review-farm shape). The trace_hash is coordinate-based, so a
+# fixed seed makes the per-instance jitter identical fleet-wide → coordination._trace_collision convicts even
+# though the fingerprints diverge (camoufox randomizes them). Absent → distinct jitter per node (no collision).
+TASK_SEED = os.environ.get("KS_TASK_SEED")
 _BASE_MODE = (
     "camoufox-hardened" if HARDENED
     else "baseline-firefox" if BASELINE
@@ -129,6 +134,8 @@ def _synth_behavior(page: object) -> None:
 def _run_task(page: object, steps: list[dict]) -> None:
     """Replay a behavioral task script (the harness DSL) via sync Playwright/Firefox input — the Gecko twin of
     zendriver's CDP _run_task. Each step is best-effort so a flaky action never loses the session."""
+    if TASK_SEED is not None:
+        random.seed(int(TASK_SEED))  # canned replay: identical jittered path fleet-wide → shared trace_hash
     x, y = 200.0, 200.0
     for step in steps:
         try:
