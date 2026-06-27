@@ -18,6 +18,7 @@ from kitsune_harness.fleet_manager import (
     NodeSpec,
     _node_label,
     _session_id,
+    evasion_node,
     homogeneous_plan,
     render,
     run_fleet,
@@ -129,6 +130,21 @@ def test_session_fetch_failure_demotes_the_node() -> None:
 def test_homogeneous_plan_round_robins_proxies() -> None:
     plan = homogeneous_plan("kitsune-zendriver:latest", 4, proxies=["socks5://p1", "socks5://p2"])
     assert [n.proxy for n in plan.nodes] == ["socks5://p1", "socks5://p2", "socks5://p1", "socks5://p2"]
+
+
+def test_evasion_node_resolves_a_named_evasion() -> None:
+    node = evasion_node("zendriver-uach")
+    assert node.image == "kitsune-zendriver:latest" and node.env == {"KS_UACH": "1"} and node.label == "zendriver-uach"
+    proxied = evasion_node("camoufox-linux", proxy="socks5://p", extra_env={"KS_REPEAT": "2"})
+    assert proxied.proxy == "socks5://p" and proxied.env == {"KS_LINUX": "1", "KS_REPEAT": "2"}
+
+
+def test_mixed_named_evasion_fleet_runs_and_labels() -> None:
+    # Compose a fleet from the BAKED-IN ladder: a camoufox node + a zendriver node, by name.
+    plan = FleetPlan(nodes=[evasion_node("camoufox-linux"), evasion_node("zendriver-uach")], max_concurrency=1)
+    report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)
+    assert {n.label for n in report.ok} == {"camoufox-linux", "zendriver-uach"}
+    assert {n.image for n in report.ok} == {"kitsune-camoufox:latest", "kitsune-zendriver:latest"}
 
 
 def test_node_label_default_and_explicit() -> None:
