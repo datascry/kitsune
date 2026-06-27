@@ -21,6 +21,7 @@ from kitsune_harness.fleet_manager import (
     _binding,
     _node_label,
     _session_id,
+    archetype_plan,
     campaign_from_obj,
     campaign_report_dict,
     evasion_node,
@@ -276,6 +277,19 @@ def test_report_inconclusive_and_proxy_recorded() -> None:
     d = report_dict(run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json))
     assert d["outcome"] == "inconclusive" and d["coordination"] is None  # 1 session → no cluster
     assert d["nodes"][0]["proxy"] == "socks5://p"  # egress recorded as engagement evidence
+
+
+def test_archetype_plan_builds_a_runnable_fleet() -> None:
+    plan = archetype_plan("credential-stuffer", detector="http://localhost:8099")
+    assert plan.detector == "http://localhost:8099" and len(plan.nodes) == 3
+    assert all(n.image == "kitsune-camoufox:latest" and "KS_TASK" in n.env for n in plan.nodes)
+    report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_cloned_get)
+    assert report.verdict is not None and report.verdict.label == "fleet"  # cloned persona → caught
+
+
+def test_archetype_sybil_farmer_is_diverse() -> None:
+    plan = archetype_plan("sybil-farmer")
+    assert len({n.image for n in plan.nodes}) >= 3  # mixed images → no fp-collision (the evading shape)
 
 
 def test_campaign_from_obj_inherits_globals_and_names_waves() -> None:

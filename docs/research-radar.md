@@ -1177,3 +1177,19 @@ on Kitsune: a 2-wave campaign → recon INCONCLUSIVE (baseline), attack-fleet CA
 CAUGHT 1/2 wave(s): attack-fleet". The full adversary-emulation arc: campaign timeline → mixed named-evasion
 fleets with per-node proxy + behavioral tasks (cross-backend) → self-healing capture → coordination grade →
 aggregated red⇄blue finding.
+
+### Red-team — adversary archetype catalog (named personas) (2026-06-27)
+
+Answered "do we have a variety of adversary archetypes": built a structured catalog (`kitsune_harness.archetypes`)
+of named personas, each packaging a fleet SHAPE (evasions + replicas + behavioral task) + the threat class + the
+coordination binding it exhibits + a rate/scale profile. Five today: `credential-stuffer` (cloned hardened
+camoufox + form-fill → fp_collision, caught), `scalper` (cloned checkout burst → fp_collision), `scraper`
+(cloned crawler + scrape-scroll → fp_collision), `sybil-farmer` (DIVERSE evasions, no shared binding → candidate
+— the honest evading shape), `proxy-botnet` (diverse behind one origin → shared_origin, needs real proxy
+egress). `archetype_plan(name)` resolves a persona to a runnable FleetPlan; CLI `--archetype <name>` +
+`--list-archetypes`. GROUNDED live on Kitsune: `--archetype scraper` → 3-node zendriver fleet running
+scrape-scroll → graded `fleet` 1.00 via fp_collision, outcome "caught". The catalog spans the ladder honestly:
+4 personas are caught (fp_collision / shared_origin), the deliberately-diversified sybil-farmer evades to
+candidate. NB the `rate` field is an informational scale/RPS hint — ACTIVE RPS scoping (probing the target's
+throttle/challenge thresholds in a recon wave) is the distinct rate dimension this sets up but does not yet
+drive; the recon wave today is a fingerprint/coordination baseline, not rate reconnaissance.
