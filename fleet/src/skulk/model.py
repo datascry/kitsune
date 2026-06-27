@@ -21,6 +21,9 @@ class FleetMember:
     marks a
     per-session headless/automation tell and ``datacenter`` an IP-reputation flag — either corroborates an
     AMBIGUOUS coordination tell (an fp-collision or a template-similarity cluster) as a bot fleet, not a cohort.
+    ``offset_seconds`` is the member's arrival time relative to the run base (the runner stamps each member's
+    signals at base + offset): a `staggered` fleet spreads these beyond the lockstep window to shed the timing
+    tell, which only costs it the lockstep corroboration — the binding still convicts.
     """
 
     node_id: str
@@ -35,6 +38,7 @@ class FleetMember:
     platform: str | None = None
     automation: bool = False
     datacenter: bool = False
+    offset_seconds: float = 0.0  # arrival time relative to the run base — a `staggered` fleet spreads these out
 
     def signals(self, session_id: str, when: str) -> list[dict[str, object]]:
         """The detector ``/ingest`` signal envelopes for this member — the stable wire contract (Skulk speaks

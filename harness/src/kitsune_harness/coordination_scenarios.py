@@ -430,6 +430,33 @@ def scenarios() -> list[Scenario]:
             ],
         )
     )
+    # A cloned-profile fleet that SPREADS its arrivals over time (beyond the 120s lockstep window) to look
+    # organic. It sheds only the lockstep CORROBORATION — the fp-collision + automation binding still convicts,
+    # proving timing-stagger is a weak evasion (lockstep was never load-bearing for conviction).
+    out.append(
+        Scenario(
+            "fleet-staggered",
+            True,
+            "cloned fp across distinct IPs + automation, but arrivals spread 10min apart (no lockstep) — the "
+            "binding convicts whatever the timing; staggering only costs the lockstep corroboration",
+            [
+                (
+                    f"sg{i}",
+                    _session(
+                        f"sg{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        offset_s=i * 600.0,  # 10 min apart → span 1200s, well beyond the 120s lockstep window
+                        observed_ip=_ip(i),
+                        fp_hash="staggered-clone-fp",
+                        webdriver=True,
+                    ),
+                )
+                for i in range(3)
+            ],
+        )
+    )
     out.append(
         Scenario(
             "fleet-shared-origin",

@@ -22,8 +22,19 @@ class RunResult:
     emitted: bool
 
 
+_STAMP_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+
 def _now() -> str:
-    return datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.datetime.now(datetime.UTC).strftime(_STAMP_FMT)
+
+
+def _stamp_at(base: str, offset_seconds: float) -> str:
+    """``base`` (an ISO ``...Z`` stamp) shifted by ``offset_seconds`` — the member's staggered arrival time."""
+    if not offset_seconds:
+        return base
+    dt = datetime.datetime.strptime(base, _STAMP_FMT).replace(tzinfo=datetime.UTC)
+    return (dt + datetime.timedelta(seconds=offset_seconds)).strftime(_STAMP_FMT)
 
 
 def _post_ingest(target: str, signals: list[dict[str, object]], timeout: float) -> None:
@@ -55,6 +66,8 @@ def run(
     for i, m in enumerate(members):
         sid = f"skulk-{strategy.name}-{seed}-{i}"
         if not dry_run:
-            _post_ingest(target, m.signals(sid, stamp), timeout)
+            # Stamp each member at base + its offset so a `staggered` fleet's arrivals spread in time (the
+            # detector derives first_seen from the signal observed_at, so this models real staggering).
+            _post_ingest(target, m.signals(sid, _stamp_at(stamp, m.offset_seconds)), timeout)
         sids.append(sid)
     return RunResult(host=host, strategy=strategy.name, members=members, session_ids=sids, emitted=not dry_run)

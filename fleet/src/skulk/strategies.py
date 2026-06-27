@@ -29,6 +29,9 @@ two escape routes a coordinated fleet has and their evolution:
                        ticket (one ``tls_ticket_id`` across distinct IPs — a fleet resuming ONE TLS session
                        fleet-wide). The edge captures it from pre_shared_key / session_ticket; corroboration-gated
                        (a roaming user could resume from a second IP), so it runs on datacenter egress.
+  * ``staggered``    — a cloned-profile fleet whose arrivals are SPREAD OVER TIME (beyond the lockstep window)
+                       to look organic. The timing axis: it sheds only the lockstep CORROBORATION, never the
+                       conviction — the fp-collision + automation binding convicts whatever the arrival spread.
 
 To add a strategy: subclass / duck-type :class:`~skulk.strategy.Strategy` and ``register`` it.
 """
@@ -221,6 +224,35 @@ class TicketReuse:
                 platform="Win32",
                 automation=False,
                 datacenter=True,  # corroborates the ambiguous ticket-reuse tell
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class Staggered:
+    name = "staggered"
+    summary = (
+        "A cloned-profile fleet whose arrivals are SPREAD OVER TIME (beyond the lockstep window) to look "
+        "organic — sheds only the lockstep corroboration; the fp-collision binding still convicts."
+    )
+
+    # Members arrive this far apart (seconds). > the engine's 120s lockstep window, so the cluster earns no
+    # lockstep bonus — the educational point: timing-stagger defeats a CORROBORATING tell, not the conviction.
+    _STEP_S = 300.0
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        ja4, fp = _ja4(seed), _h("stagfp", seed)
+        return [
+            FleetMember(
+                f"stag-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=fp,  # one cloned profile across distinct IPs — the convicting binding
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=True,  # the corroboration; fp_collision + automation convicts regardless of timing
+                offset_seconds=i * self._STEP_S,  # spread arrivals beyond the lockstep window
             )
             for i in range(n)
         ]
