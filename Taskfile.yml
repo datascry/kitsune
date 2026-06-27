@@ -124,6 +124,11 @@ tasks:
     dir: harness
     cmds: ["uv run python -m kitsune_harness.sapimouse_corpus"]
 
+  template-calibrate:
+    desc: "Ground the template-similarity floor: in-sandbox humanizer-vs-humans separation + SapiMouse 2nd source (set KITSUNE_SAPIMOUSE_DIR)"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.template_calibration"]
+
   prevalence-real-corroborate:
     desc: "Tier-3: corroborate the prevalence prior vs a REAL-traffic fingerprint CSV (run LOCALLY; raw data not committed)"
     dir: harness

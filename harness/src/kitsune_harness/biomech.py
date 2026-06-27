@@ -129,3 +129,71 @@ def extract(traj: list[Sample]) -> BiomechFeatures:
         submovement_count=submovement_count(traj),
         pause_ratio=pause_ratio(traj),
     )
+
+
+# Trace descriptor — the SIMILARITY analog of the exact ``trace_hash``. A fleet that jitters its pointer
+# trace per instance (one "humanizer" model sampled N times) defeats the exact-hash ``trace_collision`` rule:
+# every node's hash is distinct, so exact matching finds nothing. But all N traces are drawn from ONE
+# generative model, so they cluster TIGHTLY in motion-feature space — far tighter than N distinct humans, whose
+# motor noise spreads them wide (grounded against SapiMouse: see ``template_calibration``). This descriptor is
+# the low-dimensional, jitter-stable feature vector that clustering operates on: each component is a normalized,
+# bounded motion statistic, so the vector lives in a fixed [0,1]^d space whoever computes it (the collector in
+# production, this extractor for calibration), and Euclidean distance in that space is directly comparable to
+# the SapiMouse-derived human floor. The collector emits it as a ``behavioral.trace_descriptor`` signal exactly
+# as it emits ``trace_hash`` today — same pointer stream, a feature vector instead of a digest.
+DESCRIPTOR_DIM = 6
+_DEFAULT_BETA = 0.33  # a real hand's power-law exponent — the stand-in when a path is too straight to fit
+
+
+def _clamp01(x: float) -> float:
+    return 0.0 if x < 0.0 else 1.0 if x > 1.0 else x
+
+
+def _velocity_cv(traj: list[Sample]) -> float:
+    """Coefficient of variation (std/mean) of per-step speed — a humanizer's speed profile is far more
+    regular than a real hand's, so this separates generative models from people."""
+    speeds = _speeds(traj)
+    if len(speeds) < 2:
+        return 0.0
+    mean = sum(speeds) / len(speeds)
+    if mean <= 0:
+        return 0.0
+    var = sum((s - mean) ** 2 for s in speeds) / len(speeds)
+    return math.sqrt(var) / mean
+
+
+def _straightness(traj: list[Sample]) -> float:
+    """Net displacement / path length ∈ [0,1]: 1.0 is a perfectly straight reach, lower is curvier."""
+    if len(traj) < 2:
+        return 1.0
+    path = sum(_dist(a, b) for a, b in itertools.pairwise(traj))
+    if path <= 0:
+        return 1.0
+    return _clamp01(_dist(traj[0], traj[-1]) / path)
+
+
+def trace_descriptor(traj: list[Sample]) -> tuple[float, ...]:
+    """A normalized, jitter-stable feature vector of one pointer trajectory (length :data:`DESCRIPTOR_DIM`).
+
+    Each component is squashed to ``[0,1]`` so the descriptor sits in a fixed space regardless of who computes
+    it, making the inter-descriptor :func:`descriptor_distance` comparable to the calibrated human floor. The
+    features are the motion structure a "humanizer" reproduces near-identically across samples but distinct
+    humans spread on: the power-law exponent + fit, sub-movement rate, pause ratio, velocity regularity, and
+    path straightness. Too-short/degenerate inputs fall back to neutral component values (never raises)."""
+    pl = power_law(traj)
+    beta = _DEFAULT_BETA if pl is None else pl[0]
+    r2 = 0.0 if pl is None else pl[1]
+    n = max(len(traj), 1)
+    return (
+        _clamp01(beta / 1.5),  # power-law exponent (real hand ≈ 0.33 → ≈ 0.22)
+        _clamp01(r2),  # log-log fit goodness
+        _clamp01(submovement_count(traj) / n),  # corrective sub-movement rate
+        _clamp01(pause_ratio(traj)),  # hesitation/dwell fraction
+        _clamp01(_velocity_cv(traj) / 3.0),  # speed-profile irregularity
+        _straightness(traj),  # net displacement / path length
+    )
+
+
+def descriptor_distance(a: tuple[float, ...], b: tuple[float, ...]) -> float:
+    """Euclidean distance between two trace descriptors in the normalized feature space (max √DIM)."""
+    return math.dist(a, b)

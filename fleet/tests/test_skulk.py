@@ -65,10 +65,22 @@ def test_fuzzy_has_no_byte_identical_collision() -> None:
     assert len({m.trace_hash for m in members}) == 4
 
 
+def test_similarity_jitters_hashes_but_clusters_descriptors() -> None:
+    members = get("similarity").members(4, seed=9)
+    # every EXACT hash differs (defeats exact-match, like fuzzy)...
+    assert len({m.fp_hash for m in members}) == 4
+    assert len({m.trace_hash for m in members}) == 4
+    # ...but all carry a trace descriptor from ONE humanizer model, on datacenter egress (the corroborator).
+    assert all(m.trace_descriptor is not None and len(m.trace_descriptor) == 6 for m in members)
+    assert all(m.datacenter for m in members)
+
+
 def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("cloned").members(3, 1)).detectable  # fp-collision
     assert assess(get("trace-replay").members(3, 1)).detectable  # trace-collision
-    assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier
+    sim = assess(get("similarity").members(3, 1))  # the rung that closes fuzzy
+    assert sim.detectable and sim.signal == "template_similarity"
+    assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier (no descriptor)
     assert not assess(get("randomizer").members(3, 1)).detectable
 
 
@@ -82,6 +94,13 @@ def test_member_signals_carry_the_coordination_layers() -> None:
     kinds = {(s["layer"], s["kind"]) for s in sigs}
     assert ("network", "ja4") in kinds and ("network", "observed_ip") in kinds
     assert ("browser", "fp_hash") in kinds and ("browser", "webdriver") in kinds
+
+
+def test_similarity_member_emits_descriptor_and_reputation_signals() -> None:
+    m = get("similarity").members(1, 1)[0]
+    kinds = {(s["layer"], s["kind"]) for s in m.signals("sid-s", "2026-06-27T00:00:00Z")}
+    assert ("behavioral", "trace_descriptor") in kinds
+    assert ("reputation", "asn_is_datacenter") in kinds
 
 
 def test_run_dry_run_does_not_emit_but_is_scope_checked() -> None:

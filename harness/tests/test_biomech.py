@@ -6,13 +6,16 @@ from __future__ import annotations
 import math
 
 from kitsune_harness.biomech import (
+    DESCRIPTOR_DIM,
     Sample,
     _linregress,
     _menger_curvature,
+    descriptor_distance,
     extract,
     pause_ratio,
     power_law,
     submovement_count,
+    trace_descriptor,
 )
 
 
@@ -110,3 +113,28 @@ def test_extract_full_and_short() -> None:
 
     short = extract([(0.0, 0.0, 0.0)])
     assert short.power_law_exponent is None and short.submovement_count == 0
+
+
+def test_trace_descriptor_is_bounded_and_fixed_length() -> None:
+    d = trace_descriptor(_arc(40.0, 40, 0.0, 3.0))
+    assert len(d) == DESCRIPTOR_DIM
+    assert all(0.0 <= c <= 1.0 for c in d)
+
+
+def test_trace_descriptor_degenerate_never_raises() -> None:
+    # Too-short / single-point / stationary inputs fall back to neutral components (no power-law fit, etc.).
+    for traj in ([], [(0.0, 0.0, 0.0)], [(5.0, 5.0, 0.0)] * 4):
+        d = trace_descriptor(traj)
+        assert len(d) == DESCRIPTOR_DIM and all(0.0 <= c <= 1.0 for c in d)
+
+
+def test_descriptor_distance_is_jitter_stable() -> None:
+    # The core property the similarity rung rests on: a small positional jitter moves the descriptor only a
+    # little, while a structurally different reach moves it a lot.
+    base = _arc(40.0, 50, 0.0, 3.0)
+    jittered = [(x + 0.4, y - 0.3, t) for x, y, t in base]
+    straight = [(float(i), 0.0, float(i)) for i in range(50)]
+    near = descriptor_distance(trace_descriptor(base), trace_descriptor(jittered))
+    far = descriptor_distance(trace_descriptor(base), trace_descriptor(straight))
+    assert near < far
+    assert descriptor_distance(trace_descriptor(base), trace_descriptor(base)) == 0.0

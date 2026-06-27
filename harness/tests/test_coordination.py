@@ -18,6 +18,7 @@ from kitsune_harness.coordination import (
     score_corpus,
 )
 from kitsune_harness.corpus import load_corpus
+from kitsune_harness.template_calibration import distinct_human_descriptors, humanizer_descriptors
 
 from .conftest import FIXED
 
@@ -184,7 +185,9 @@ def _sess(
     webrtc_ip: str | None = None,
     fp_hash: str | None = None,
     trace_hash: str | None = None,
+    trace_descriptor: list[float] | None = None,
     webdriver: bool = False,
+    datacenter: bool = False,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -196,6 +199,10 @@ def _sess(
         sigs.append(mk(Layer.network, "ja4", ja4, Source.edge))
     if webdriver:  # per-session automation tell — corroborates an fp-collision as a cloned bot fleet
         sigs.append(mk(Layer.browser, "webdriver", True, Source.collector))
+    if datacenter:  # IP-reputation flag — corroborates an ambiguous tell (fp-collision / template-similarity)
+        sigs.append(mk(Layer.reputation, "asn_is_datacenter", True, Source.detector))
+    if trace_descriptor is not None:
+        sigs.append(mk(Layer.behavioral, "trace_descriptor", trace_descriptor, Source.collector))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
@@ -355,6 +362,89 @@ def test_distinct_fingerprints_are_not_a_collision() -> None:
     v = score_cluster("X", members)
     assert v.cloned_fingerprint is None
     assert v.label == "candidate"
+
+
+def _model_traces(n: int) -> list[list[float]]:
+    """``n`` trace descriptors from ONE humanizer model (tight, sub-floor) — the evolved fuzzy-trace fleet."""
+    return [list(d) for d in humanizer_descriptors(n)]
+
+
+def _human_traces(n: int) -> list[list[float]]:
+    """``n`` descriptors from DISTINCT human reaches (spread above the floor) — the FP control."""
+    return [list(d) for d in distinct_human_descriptors(n)]
+
+
+def test_template_similarity_fleet_is_caught() -> None:
+    # The SIMILARITY frontier the exact trace-collision misses: a fleet that samples ONE humanizer model per
+    # node jitters every trace_hash distinct (no exact collision) AND every fp distinct (no fp-collision), yet
+    # the pointer-trace DESCRIPTORS cluster below the human floor. On datacenter IPs the IP-reputation flag
+    # corroborates the ambiguous similarity tell → convicts. This is the rung that closes the `fuzzy` gap.
+    desc = _model_traces(3)
+    members = [
+        (
+            f"sim{i}",
+            _sess(
+                f"sim{i}",
+                "X",
+                8,
+                "Windows",
+                observed_ip=f"{10 + i}.{i}.{i}.{i}",
+                fp_hash=f"simfp{i}",  # distinct → no fp-collision
+                trace_hash=f"simtrace{i}",  # distinct → exact trace-collision finds nothing
+                trace_descriptor=desc[i],
+                datacenter=True,  # corroborates the ambiguous template-similarity tell
+            ),
+        )
+        for i in range(3)
+    ]
+    v = score_cluster("X", members)
+    assert v.cloned_trace is None and v.cloned_fingerprint is None  # both EXACT collision tells stay silent
+    assert v.template_radius is not None and v.template_radius <= 0.10
+    assert v.label == "fleet", v.evidence
+    assert any("human floor" in e for e in v.evidence)
+
+
+def test_template_similarity_uncorroborated_caps_at_candidate() -> None:
+    # AMBIGUOUS like fp-collision: a tight trace cluster across distinct IPs could be one real human across their
+    # own sessions. Without corroboration (no automation tell, no datacenter flag) it must cap at candidate, not
+    # botnet-label a person on home+mobile+work — the FP-safe boundary.
+    desc = _model_traces(3)
+    members = [
+        (f"u{i}", _sess(f"u{i}", "X", 8, "Windows", observed_ip=f"{73 + i}.1.1.1", trace_descriptor=desc[i]))
+        for i in range(3)
+    ]
+    v = score_cluster("X", members)
+    assert v.template_radius is not None  # the tell DID fire
+    assert v.label != "fleet"  # but uncorroborated → not convicted
+    assert any("UNCORROBORATED" in e for e in v.evidence)
+
+
+def test_distinct_human_traces_do_not_trip_template_similarity() -> None:
+    # FP control: 4 distinct real users on one build, residential IPs, genuinely different pointer paths —
+    # descriptors spread ABOVE the human floor, so template-similarity never fires (even on datacenter it would
+    # have nothing to corroborate). Grounded against the same generator template_calibration validates vs SapiMouse.
+    desc = _human_traces(4)
+    members = [
+        (f"h{i}", _sess(f"h{i}", "X", hw, "Windows", observed_ip=f"{20 + i}.{i}.{i}.{i}", trace_descriptor=desc[i]))
+        for i, hw in enumerate([4, 8, 12, 16])
+    ]
+    v = score_cluster("X", members)
+    assert v.template_radius is None  # spread above the floor — no tell
+    assert v.label != "fleet"
+
+
+def test_template_similarity_needs_distinct_ips_and_three_members() -> None:
+    # The discriminators that keep it FP-safe: a tight pair (2 members) could be one human on two networks, and a
+    # tight cluster from ONE IP is one machine over sessions. Both must NOT fire the tell.
+    desc = _model_traces(3)
+
+    def m(name: str, ip: str, i: int) -> tuple[str, Session]:
+        return name, _sess(name, "X", 8, "Windows", observed_ip=ip, trace_descriptor=desc[i])
+
+    pair = [m(f"p{i}", f"9.9.9.{i}", i) for i in range(2)]
+    assert score_cluster("X", pair).template_radius is None  # only 2 members
+    one_ip = [m(f"o{i}", "9.9.9.9", i) for i in range(3)]
+    assert score_cluster("X", one_ip).template_radius is None  # one source IP
 
 
 def test_larger_fleet_scores_higher() -> None:

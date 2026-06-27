@@ -1,5 +1,5 @@
 # fleet/skulk/cli — the `skulk` command: list/describe strategies, run a fleet against an AUTHORIZED target.
-# Prints the ethics banner + the fleet shape + Skulk's exact-match self-assessment; --dry-run never emits.
+# Prints the ethics banner + the fleet shape + Skulk's coordination self-assessment; --dry-run never emits.
 
 from __future__ import annotations
 
@@ -33,8 +33,8 @@ def _cmd_describe(args: argparse.Namespace) -> int:
     for m in members:
         print(f"  {m.node_id:10} ip={m.observed_ip:14} fp={m.fp_hash} trace={m.trace_hash} auto={m.automation}")
     a = assess(members)
-    verdict = "DETECTABLE" if a.detectable else "EVADES exact-match"
-    print(f"\nexact-match self-assessment: {verdict} ({a.signal})\n  {a.detail}")
+    verdict = "DETECTABLE" if a.detectable else "EVADES"
+    print(f"\ncoordination self-assessment: {verdict} ({a.signal})\n  {a.detail}")
     return 0
 
 
@@ -58,7 +58,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
     for m, sid in zip(result.members, result.session_ids, strict=True):
         print(f"  {sid:28} ip={m.observed_ip:14} fp={m.fp_hash} trace={m.trace_hash}")
     a = assess(result.members)
-    print(f"\nexact-match self-assessment: {'DETECTABLE' if a.detectable else 'EVADES exact-match'} — {a.detail}")
+    print(f"\ncoordination self-assessment: {'DETECTABLE' if a.detectable else 'EVADES'} — {a.detail}")
     if not args.dry_run:
         print("\ngrade it on the target's own coordination view (Kitsune: `task coordination-live`).")
     return 0

@@ -924,3 +924,32 @@ is real (3 actual browser instances hashing identically) and the distinct source
 `corpus/fleet-cloned/cn{1,2,3}.json` to these current-ruleset captures (the `test_real_cloned_*` regression
 still convicts). The fleet axis is now maximally grounded in-sandbox; the only remaining input is real
 residential-proxy egress (the `PROXIES=` turnkey path in `fleet_capture.sh`), which is external by nature.
+
+### Coordination — template-similarity rung closes the fuzzy-trace gap (2026-06-27, G37)
+
+The `fuzzy` adversary (Skulk) was the open coordination frontier: jitter the fingerprint AND the pointer trace
+per node so every `fp_hash`/`trace_hash` differs → the EXACT collision rules (`fp_collision`, `trace_collision`)
+find nothing and the cluster caps at `candidate`. But a real fuzzing fleet draws all N "different" traces from
+**one humanizer model** (a Bézier/GAN mouse generator), so they cluster in motion-feature space far tighter than
+N distinct humans do. Built the rung that exploits that — **template-similarity clustering**:
+
+- **Signal:** a normalized, jitter-stable `behavioral.trace_descriptor` (6-D motion vector: power-law exponent +
+  fit, sub-movement rate, pause ratio, velocity CV, straightness — `harness/biomech.trace_descriptor`), the
+  similarity analog of `trace_hash`. The collector emits it from the same pointer stream.
+- **Blue (`coordination._template_similarity`):** among cluster members spanning ≥2 distinct IPs, the MEDIAN
+  pairwise descriptor distance below the human floor `_TEMPLATE_EPSILON = 0.10` is one model sampled per node.
+  **AMBIGUOUS / corroboration-gated** like `fp_collision` (a tight cluster could be one real person across their
+  own sessions), so it convicts only with an automation tell or IP-reputation flag; needs ≥3 members (a 2-IP
+  pair could be one human on home+mobile).
+- **Floor grounded, not picked:** `harness/template_calibration` measures one-humanizer median ≈ 0.05–0.07 vs
+  the tightest distinct-human cohort ≈ 0.166 in-sandbox (synthetic Bézier reaches through the SHIPPED
+  extractor), with SapiMouse (120 real subjects) as the local second source (`task template-calibrate`) — the
+  same two-source discipline as the biomech power-law floor.
+- **Red (Skulk `similarity`):** the evolved adversary, profiled — distinct `fp_hash`/`trace_hash` per node but a
+  one-humanizer descriptor family, on datacenter egress (the corroborator). **GROUNDED live** (skulk → real
+  detector `/ingest` → `coordination-live`): `skulk run similarity` → **`fleet` 1.00** ("traces cluster below
+  the human floor, median 0.059 ≤ 0.1, across 3 distinct IPs — exact-match found nothing"); `skulk run fuzzy`
+  (no descriptor profiled) → still `candidate` 0.47, the contrast proving the rung closed exactly the humanizer
+  gap and nothing more. Scenarios hold precision/recall at 100% (`fleet-template-similarity` convicts,
+  `legit-distinct-traces` caps at candidate). **Open frontier moved on:** a JA4-ROTATING fuzzy-trace fleet
+  (similarity clustering must recover across rotated JA4 prefixes, not only within one) — the next rung.

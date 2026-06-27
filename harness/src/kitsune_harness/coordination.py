@@ -31,6 +31,8 @@ reuse one identity (collision); it cannot do neither.
 
 from __future__ import annotations
 
+import itertools
+import statistics
 from dataclasses import dataclass, field
 
 from kitsune_detector.models import MISSING, Layer, Session
@@ -68,6 +70,20 @@ _JA4C_BONUS = 0.30
 # an identical fp_hash across *distinct* source IPs cannot be organic — it is one cloned profile behind
 # proxies. Strong on its own: a homogeneous cluster this catches would otherwise read as a real cohort.
 _FP_COLLISION_BONUS = 0.55
+# The SIMILARITY analog of the exact trace-collision. A fleet that jitters its pointer trace per instance (one
+# "humanizer" model sampled N times) defeats exact-hash trace_collision — every node's trace_hash differs — yet
+# all N traces are drawn from ONE generative model, so their motion-feature descriptors cluster far tighter than
+# N distinct humans' do. AMBIGUOUS like fp_collision (not unambiguous like the EXACT trace-collision): a tight
+# trace cluster across distinct IPs cannot be N distinct humans (their motor noise spreads them well above the
+# floor — grounded vs SapiMouse in template_calibration), but COULD be one real human across their own few
+# sessions, so it convicts only when corroborated (automation tell / IP-reputation flag), exactly as fp_collision
+# does for the standardized-corporate-fleet case.
+_TEMPLATE_SIMILARITY_BONUS = 0.55
+# The human floor: median pairwise descriptor distance BELOW which a cluster is one model, not N people. Set
+# safely under the tightest distinct-human cohort (synthetic floor ≈ 0.166; SapiMouse second source via
+# `task template-calibrate`) and well above a one-humanizer family (median ≈ 0.05-0.07). See template_calibration.
+_TEMPLATE_EPSILON = 0.10
+_TEMPLATE_MIN_MEMBERS = 3  # < 3 traces can't yield a meaningful median, and a 2-IP pair could be one human
 # A *confirmed* spoofing fleet (paradox or JA4_c) that is also spread across many distinct source IPs is
 # the residential-proxy botnet pattern: the IP diversity is there to look like distinct users and defeat
 # IP rate-limiting / datacenter-ASN rules, but the shared engine identity binds them. A modest escalation
@@ -93,6 +109,7 @@ class FleetVerdict:
     distinct_observed_ips: int = 0  # distinct source IPs across the cluster (proxy spread)
     cloned_fingerprint: str | None = None  # one high-entropy fp_hash shared across distinct IPs (reuse)
     cloned_trace: str | None = None  # one pointer-trajectory trace_hash shared across distinct IPs (replay)
+    template_radius: float | None = None  # median pairwise trace-descriptor distance when below the human floor
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
     arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
@@ -187,6 +204,41 @@ def _trace_collision(sessions: list[Session]) -> tuple[str, int] | None:
         if len(ips) >= 2 and (best is None or len(ips) > best[1]):
             best = (th, len(ips))
     return best
+
+
+def _as_descriptor(value: object) -> tuple[float, ...] | None:
+    """Parse a wire ``trace_descriptor`` (a JSON array of numbers) into a float tuple, or None if malformed."""
+    if not isinstance(value, (list, tuple)) or not value:
+        return None
+    try:
+        return tuple(float(x) for x in value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _template_similarity(sessions: list[Session]) -> tuple[float, int] | None:
+    """The SIMILARITY analog of :func:`_trace_collision`. Among members carrying a ``trace_descriptor`` and
+    spanning >= 2 DISTINCT observed IPs, return ``(median_pairwise_distance, distinct_ip_count)`` when that
+    median sits BELOW the human floor ``_TEMPLATE_EPSILON`` — i.e. the traces are too mutually similar to be N
+    distinct humans (one humanizer model sampled per node), even though every ``trace_hash`` differs so the
+    exact-collision rule found nothing. Needs >= ``_TEMPLATE_MIN_MEMBERS`` descriptors (a meaningful median; a
+    2-member pair could be one real person on two networks). Returns ``None`` otherwise. The median (not max)
+    is the cohesion statistic so a single mixed-in real trace cannot mask an otherwise tight fleet cluster."""
+    pairs = [
+        (d, str(ip))
+        for s in sessions
+        if (d := _as_descriptor(s.value(Layer.behavioral, "trace_descriptor"))) is not None
+        and (ip := s.value(Layer.network, "observed_ip")) is not MISSING
+    ]
+    if len(pairs) < _TEMPLATE_MIN_MEMBERS or len({ip for _, ip in pairs}) < 2:
+        return None
+    from .biomech import descriptor_distance
+
+    dists = [descriptor_distance(a, b) for (a, _), (b, _) in itertools.combinations(pairs, 2)]
+    median = statistics.median(dists)
+    if median <= _TEMPLATE_EPSILON:
+        return round(median, 4), len({ip for _, ip in pairs})
+    return None
 
 
 # Per-session AUTOMATION / headless / injection tells a clean corporate real browser never carries. Their
@@ -285,6 +337,20 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
             f"source IPs — replayed canned trajectory (two real users never trace the same path)"
         )
 
+    # Template-similarity: the SIMILARITY analog of the trace collision. Members whose pointer-trace descriptors
+    # cluster below the human floor are one humanizer model sampled per node — caught even though each instance
+    # jittered its trace to a distinct trace_hash (defeating the EXACT trace-collision rule). Ambiguous, so
+    # corroboration-gated below alongside fp_collision.
+    template = _template_similarity(sessions)
+    template_radius = template[0] if template else None
+    if template is not None:
+        score += _TEMPLATE_SIMILARITY_BONUS
+        evidence.append(
+            f"pointer traces cluster below the human floor (median descriptor distance {template[0]:.3f} "
+            f"≤ {_TEMPLATE_EPSILON}) across {template[1]} distinct source IPs — one humanizer model sampled "
+            f"per node (distinct trace_hash per instance, so exact-match found nothing)"
+        )
+
     span = _first_seen_span(sessions)
     if span is not None and span <= _LOCKSTEP_WINDOW_S:
         score += _LOCKSTEP_BONUS
@@ -347,13 +413,19 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
     corroborated = unambiguous or _has_automation_tell(sessions) or _has_ip_reputation_flag(sessions)
     fp_collision_convicts = collision is not None and corroborated
     ja4c_convicts = ja4c_divergent and corroborated
-    convicting = unambiguous or fp_collision_convicts or ja4c_convicts
-    if (collision is not None or ja4c_divergent) and not corroborated:
+    # template-similarity is ambiguous (one humanizer OR one real human across sessions), so it convicts only
+    # when corroborated — exactly like fp_collision. A real diverse cohort never produces it (their traces
+    # spread above the floor), so its only innocent source is one person's own sessions, which the same
+    # automation-tell / IP-reputation corroboration disambiguates.
+    template_convicts = template is not None and corroborated
+    convicting = unambiguous or fp_collision_convicts or ja4c_convicts or template_convicts
+    if (collision is not None or ja4c_divergent or template is not None) and not corroborated:
         which = " + ".join(
             w
             for w, on in (
                 ("identical-fingerprint collision", collision is not None),
                 ("JA4_c divergence", ja4c_divergent),
+                ("template-similar traces", template is not None),
             )
             if on
         )
@@ -386,6 +458,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
         distinct_observed_ips=distinct_observed,
         cloned_fingerprint=cloned_fingerprint,
         cloned_trace=cloned_trace,
+        template_radius=template_radius,
         shared_real_ip=shared_real_ip,
         request_volume=request_volume,
         arrival_rate_per_min=arrival_rate,
