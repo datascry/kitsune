@@ -1,0 +1,18 @@
+# harness/examples/campaign-account-creation — a fraud-scenario campaign: mass fraudulent account creation.
+# The hard one: the sybil fleet uses DIVERSE fingerprints (camoufox randomizes), so coordination detection
+# EVADES (candidate) — this is the persona the detector can't convict. The gate that addresses it is the
+# signup CAPTCHA + PACT (proof-of-personhood): you can fake N fingerprints but not N attested humans. In-sandbox
+# the PACT issuer mints freely (the documented bypass), so this scenario grounds the HONEST gap: detection caps
+# at candidate AND the gate is bypassable without real attestation — mass signup is a gate-side, external problem.
+#
+# Run (spine up):  task coordination-fleet-manage -- --campaign examples/campaign-account-creation.yaml --detector http://localhost:8099 --report account-creation.json
+
+name: fraudulent-account-creation
+edge: https://edge:8443/
+worker_detector: http://detector:8080
+retries: 1
+waves:
+  - name: signup-fleet # diverse identities (camoufox randomizes fp) → coordination detection EVADES (candidate)
+    nodes:
+      - evasion: camoufox-linux
+        replicas: 3

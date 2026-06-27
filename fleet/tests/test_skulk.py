@@ -93,6 +93,27 @@ def test_ticket_reuse_rotates_ja4_and_shares_one_ticket() -> None:
     assert all(m.datacenter for m in members)  # the corroborator for the ambiguous tell
 
 
+def test_ipv6_rotate_sprays_128s_but_folds_to_few_64_origins() -> None:
+    from skulk.grade import _origin
+    from skulk.model import FleetMember
+
+    members = get("ipv6-rotate").members(6, seed=8)
+    assert len({m.fp_hash for m in members}) == 1  # one cloned profile
+    assert len({m.observed_ip for m in members}) == 6  # 6 distinct /128s (free interface-id rotation)
+    # ...but they fold to only 2 distinct /64 ORIGINS — the /128 spray buys no extra apparent spread.
+    assert len({_origin(m.observed_ip) for m in members}) == 2
+    # a cloned fp across >=2 distinct /64 origins still convicts on fp-collision (the spray didn't help evade)...
+    assert assess(members).detectable and assess(members).signal == "fp_hash"
+    # ...and the FP boundary: a cloned profile confined to ONE /64 folds to a single origin → NOT a collision
+    # (indistinguishable from one real subscriber rotating RFC 4941 privacy addresses — must not false-fire).
+    one_net = [
+        FleetMember(f"v6-{i}", members[0].ja4, f"2001:db8:1:1::{i:x}", fp_hash="cloned", automation=True)
+        for i in range(4)
+    ]
+    assert len({_origin(m.observed_ip) for m in one_net}) == 1
+    assert not assess(one_net).detectable
+
+
 def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("cloned").members(3, 1)).detectable  # fp-collision
     assert assess(get("trace-replay").members(3, 1)).detectable  # trace-collision

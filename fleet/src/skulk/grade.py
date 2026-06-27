@@ -19,6 +19,7 @@ verdict on the generated members in two passes:
 
 from __future__ import annotations
 
+import ipaddress
 import itertools
 import math
 import statistics
@@ -28,6 +29,19 @@ from .model import FleetMember
 
 # The human floor, mirrored from harness ``coordination._TEMPLATE_EPSILON`` (grounded in template_calibration).
 _TEMPLATE_EPSILON = 0.10
+
+
+def _origin(ip: str) -> str:
+    """Fold a source IP to its origin — IPv4 address / IPv6 /64 — mirroring harness ``coordination._ip_origin``
+    so Skulk's self-check counts distinct ORIGINS, not raw addresses. A fleet that rotates IPv6 /128s inside one
+    /64 collapses to a single origin here exactly as it does at the detector (it cannot fake distinct-IP spread)."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 6:
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False).network_address)
+    return ip
 
 
 @dataclass
@@ -44,7 +58,7 @@ def assess(members: list[FleetMember]) -> Assessment:
     origins: dict[str, set[str]] = {}
     for m in members:
         if m.webrtc_public_ip is not None:
-            origins.setdefault(m.webrtc_public_ip, set()).add(m.observed_ip)
+            origins.setdefault(m.webrtc_public_ip, set()).add(_origin(m.observed_ip))
     for origin, ips in origins.items():
         if len(ips) >= 2:
             return Assessment(
@@ -58,7 +72,7 @@ def assess(members: list[FleetMember]) -> Assessment:
     tickets: dict[str, set[str]] = {}
     for m in members:
         if m.tls_ticket_id is not None:
-            tickets.setdefault(m.tls_ticket_id, set()).add(m.observed_ip)
+            tickets.setdefault(m.tls_ticket_id, set()).add(_origin(m.observed_ip))
     for tid, ips in tickets.items():
         if len(ips) >= 2:
             return Assessment(
@@ -73,7 +87,7 @@ def assess(members: list[FleetMember]) -> Assessment:
             v = getattr(m, attr)
             if v is None:
                 continue
-            by_value.setdefault(str(v), set()).add(m.observed_ip)
+            by_value.setdefault(str(v), set()).add(_origin(m.observed_ip))
         for value, ips in by_value.items():
             if len(ips) >= 2:
                 return Assessment(
@@ -83,7 +97,7 @@ def assess(members: list[FleetMember]) -> Assessment:
                 )
     # No exact collision — try template similarity: pointer-trace descriptors that cluster below the human
     # floor across >= 2 distinct IPs are one humanizer model sampled per node (the `similarity` fleet).
-    descns = [(m.trace_descriptor, m.observed_ip) for m in members if m.trace_descriptor is not None]
+    descns = [(m.trace_descriptor, _origin(m.observed_ip)) for m in members if m.trace_descriptor is not None]
     if len(descns) >= 3 and len({ip for _, ip in descns}) >= 2:
         dists = [math.dist(a, b) for (a, _), (b, _) in itertools.combinations(descns, 2)]
         median = statistics.median(dists)
@@ -99,7 +113,7 @@ def assess(members: list[FleetMember]) -> Assessment:
     # No exact collision and no tight descriptor cluster: a paradox/fuzzy fleet — one JA4 + distinct
     # fingerprints, traces unprofiled. Caps at candidate today.
     ja4s = {m.ja4 for m in members}
-    ips = {m.observed_ip for m in members}
+    ips = {_origin(m.observed_ip) for m in members}
     return Assessment(
         False,
         "none",

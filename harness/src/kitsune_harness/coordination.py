@@ -31,11 +31,31 @@ reuse one identity (collision); it cannot do neither.
 
 from __future__ import annotations
 
+import ipaddress
 import itertools
 import statistics
 from dataclasses import dataclass, field
 
 from kitsune_detector.models import MISSING, Layer, Session
+
+
+def _ip_origin(ip: str) -> str:
+    """Normalize a source IP to its *origin* — the unit a single subscriber controls — so "distinct source
+    IPs" counts distinct ORIGINS, not distinct addresses. For IPv4 the address is the origin. For IPv6 the
+    origin is the /64 prefix: every residential / mobile subscriber is handed a whole /64 (often a /56 or
+    larger), and a single host freely mints unlimited /128s inside it (SLAAC + RFC 4941 privacy addresses
+    rotate hourly). Counting raw /128s would (a) FALSE-FIRE — one real user's privacy-address rotation within
+    their /64 looks like a multi-IP "fleet" — and (b) be EVADABLE — a cloned fleet on one /64 could manufacture
+    "distinct" /128s for free to fake IP spread / satisfy the >=2-distinct-IP collision gate. Bucketing to /64
+    closes both. A malformed/private/unparseable value is returned unchanged (e.g. a hostname placeholder)."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 6:
+        return str(ipaddress.ip_network(f"{ip}/64", strict=False).network_address)
+    return ip
+
 
 # JS-visible traits an anti-detect tool randomizes per instance to fake diversity. A real
 # same-JA4 cohort is homogeneous here; divergence across a JA4 cluster is the paradox.
@@ -176,6 +196,14 @@ def _distinct_values(sessions: list[Session], layer: Layer, kind: str) -> set[ob
     return vals
 
 
+def _distinct_origins(sessions: list[Session]) -> set[str]:
+    """The set of distinct source-IP *origins* (IPv4 address / IPv6 /64 — see :func:`_ip_origin`) across the
+    cluster. This is the "distinct source IPs" unit for IP-spread scoring: one IPv6 subscriber's many privacy
+    addresses collapse to their single /64 origin, so they neither inflate the proxy-spread bonus nor let a
+    one-/64 fleet fake IP diversity."""
+    return {_ip_origin(str(ip)) for ip in _distinct_values(sessions, Layer.network, "observed_ip")}
+
+
 def _fp_collision(sessions: list[Session]) -> tuple[str, int] | None:
     """A high-entropy ``fp_hash`` shared by members spanning >= 2 *distinct* observed IPs — the cloned-
     profile-reuse tell. Identical fp_hash from one IP is one machine over many sessions (benign), so the
@@ -187,7 +215,7 @@ def _fp_collision(sessions: list[Session]) -> tuple[str, int] | None:
         ip = session.value(Layer.network, "observed_ip")
         if fp is MISSING or ip is MISSING:
             continue
-        by_hash.setdefault(str(fp), set()).add(str(ip))
+        by_hash.setdefault(str(fp), set()).add(_ip_origin(str(ip)))
     best: tuple[str, int] | None = None
     for fp, ips in by_hash.items():
         if len(ips) >= 2 and (best is None or len(ips) > best[1]):
@@ -207,7 +235,7 @@ def _trace_collision(sessions: list[Session]) -> tuple[str, int] | None:
         ip = session.value(Layer.network, "observed_ip")
         if th is MISSING or ip is MISSING:
             continue
-        by_hash.setdefault(str(th), set()).add(str(ip))
+        by_hash.setdefault(str(th), set()).add(_ip_origin(str(ip)))
     best: tuple[str, int] | None = None
     for th, ips in by_hash.items():
         if len(ips) >= 2 and (best is None or len(ips) > best[1]):
@@ -226,7 +254,7 @@ def _shared_ticket(sessions: list[Session]) -> tuple[str, int] | None:
         ip = session.value(Layer.network, "observed_ip")
         if tid is MISSING or ip is MISSING:
             continue
-        by_ticket.setdefault(str(tid), set()).add(str(ip))
+        by_ticket.setdefault(str(tid), set()).add(_ip_origin(str(ip)))
     best: tuple[str, int] | None = None
     for tid, ips in by_ticket.items():
         if len(ips) >= 2 and (best is None or len(ips) > best[1]):
@@ -253,7 +281,7 @@ def _template_similarity(sessions: list[Session]) -> tuple[float, int] | None:
     2-member pair could be one real person on two networks). Returns ``None`` otherwise. The median (not max)
     is the cohesion statistic so a single mixed-in real trace cannot mask an otherwise tight fleet cluster."""
     pairs = [
-        (d, str(ip))
+        (d, _ip_origin(str(ip)))
         for s in sessions
         if (d := _as_descriptor(s.value(Layer.behavioral, "trace_descriptor"))) is not None
         and (ip := s.value(Layer.network, "observed_ip")) is not MISSING
@@ -399,7 +427,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
         evidence.append(f"arrivals spread over {span:.0f}s — no lockstep")
 
     # IP topology: residential-proxy spread + same-origin-behind-proxies (the bots/DDoS frontier).
-    observed = _distinct_values(sessions, Layer.network, "observed_ip")
+    observed = _distinct_origins(sessions)
     webrtc = _distinct_values(sessions, Layer.browser, "webrtc_public_ip")
     distinct_observed = len(observed)
     shared_real_ip: str | None = None
@@ -544,7 +572,7 @@ def _collision_clusters(
                 continue
             by_val.setdefault(str(value), {})[name] = (name, session)
         for value, members in by_val.items():
-            ips = {m[1].value(Layer.network, "observed_ip") for m in members.values()}
+            ips = {_ip_origin(str(m[1].value(Layer.network, "observed_ip"))) for m in members.values()}
             if len(members) >= 2 and len(ips) >= 2:
                 out[(kind, value)] = (basis, list(members.values()))
     return out

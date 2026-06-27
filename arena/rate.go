@@ -4,6 +4,7 @@
 package arena
 
 import (
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -64,16 +65,33 @@ func (rl *rateLimiter) allow(key string, now time.Time) bool {
 
 // clientIP keys the bucket by the originating address — the proxy-forwarded client if present, else RemoteAddr
 // (host part only). A fleet behind one egress shares a bucket, which is the point: the rate budget is per-origin.
+// The key is normalized to the ORIGIN via ipOrigin: an IPv4 address, or an IPv6 /64 prefix. Without the /64
+// fold an IPv6 client trivially bypasses the limit — every subscriber controls a whole /64 (often /56) and a
+// host mints unlimited /128s for free, so a per-/128 bucket gives unlimited RPS by rotating the low 64 bits.
 func clientIP(r *http.Request) string {
 	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		first := xff
 		if i := strings.IndexByte(xff, ','); i >= 0 {
-			return strings.TrimSpace(xff[:i])
+			first = xff[:i]
 		}
-		return strings.TrimSpace(xff)
+		return ipOrigin(strings.TrimSpace(first))
 	}
 	host := r.RemoteAddr
-	if i := strings.LastIndexByte(host, ':'); i >= 0 {
-		host = host[:i]
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
 	}
-	return host
+	return ipOrigin(host)
+}
+
+// ipOrigin folds an IP to the unit one subscriber controls: the address for IPv4, the /64 network for IPv6.
+// A non-IP string (already a bare host, or a placeholder) is returned unchanged so keying still degrades safely.
+func ipOrigin(host string) string {
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return host
+	}
+	if ip.To4() != nil {
+		return ip.String()
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
 }

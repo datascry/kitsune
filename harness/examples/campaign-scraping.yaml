@@ -1,0 +1,19 @@
+# harness/examples/campaign-scraping — a fraud-scenario campaign: distributed scraping.
+# Recon-scope the rate budget, then a crawler fleet scrolls long pages at a sustained rate. Gate prices it
+# (rate-limit); the detector convicts the same-tool fleet on fp_collision.
+#
+# Run (spine up):  task coordination-fleet-manage -- --campaign examples/campaign-scraping.yaml --detector http://localhost:8099 --report scraping.json
+
+name: distributed-scraping
+edge: https://edge:8443/
+worker_detector: http://detector:8080
+retries: 1
+waves:
+  - name: recon-rps
+    scout: http://detector:8080/arena/rate?level=medium
+    rates: [1, 5, 10, 20, 50]
+  - name: crawl
+    nodes:
+      - evasion: zendriver-uach
+        replicas: 3
+        task: scrape-scroll

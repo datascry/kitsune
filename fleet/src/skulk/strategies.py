@@ -29,6 +29,11 @@ two escape routes a coordinated fleet has and their evolution:
                        ticket (one ``tls_ticket_id`` across distinct IPs — a fleet resuming ONE TLS session
                        fleet-wide). The edge captures it from pre_shared_key / session_ticket; corroboration-gated
                        (a roaming user could resume from a second IP), so it runs on datacenter egress.
+  * ``ipv6-rotate``  — a cloned fleet that rotates IPv6 /128s inside a FEW real /64s to inflate its apparent IP
+                       count (free interface-id rotation). The /64 origin-fold collapses the spray back to its
+                       true origin count (one /64 = one subscriber), so it cannot fake distinct-IP spread — and a
+                       cloned fp across >=2 distinct /64s still convicts on fp-collision. The IPv6 evasion that
+                       buys nothing: spread still costs genuinely distinct /64 subscriptions.
   * ``staggered``    — a cloned-profile fleet whose arrivals are SPREAD OVER TIME (beyond the lockstep window)
                        to look organic. The timing axis: it sheds only the lockstep CORROBORATION, never the
                        conviction — the fp-collision + automation binding convicts whatever the arrival spread.
@@ -69,6 +74,16 @@ def _descriptor(seed: int, i: int) -> list[float]:
 def _ip(seed: int, i: int) -> str:
     """A distinct source IP per node (the in-sandbox analog of one proxy egress per fleet member)."""
     return f"10.77.{seed % 254 + 1}.{i + 1}"
+
+
+def _ip6(seed: int, i: int, nets: int) -> str:
+    """A distinct IPv6 /128 per node, but only ``nets`` distinct /64 PREFIXES across the fleet — models a fleet
+    that rotates the interface-id (low 64 bits) inside a FEW real /64 subscriptions to inflate its apparent IP
+    count. The /64 fold (harness ``coordination._ip_origin``) collapses each /128 back to its /64 origin, so the
+    fleet's true origin count is ``nets`` no matter how many /128s it sprays."""
+    prefix = i % nets  # which of the few real /64 subscriptions this node sits in
+    suffix = _h("v6suffix", seed, i)[:4]  # a free, distinct interface-id (low 64 bits) per node
+    return f"2001:db8:{seed % 0xFFFF:x}:{prefix}::{suffix}"
 
 
 def _ja4(seed: int) -> str:
@@ -224,6 +239,36 @@ class TicketReuse:
                 platform="Win32",
                 automation=False,
                 datacenter=True,  # corroborates the ambiguous ticket-reuse tell
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class IPv6Rotate:
+    name = "ipv6-rotate"
+    summary = (
+        "A cloned fleet rotating IPv6 /128s inside a FEW real /64s to inflate apparent IP count — folds to the "
+        "true origin count (one /64 = one subscriber), so it cannot fake spread and a cloned fp across distinct "
+        "/64s still convicts."
+    )
+
+    # The distinct /64 subscriptions the fleet actually holds. Every node sprays its own /128 inside one of these,
+    # but the /64 fold collapses the fleet to exactly this many origins — so it still spans >=2 origins (convicts
+    # via fp-collision) without the /128 rotation buying any extra apparent spread.
+    _NETS = 2
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        ja4, fp = _ja4(seed), _h("v6fp", seed)
+        return [
+            FleetMember(
+                f"v6rot-{i}",
+                ja4,
+                _ip6(seed, i, self._NETS),
+                fp_hash=fp,  # one cloned profile across the /64s — convicts on >=2 distinct origins
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=True,  # corroborates the (ambiguous) fp-collision as a bot fleet, not a cohort
             )
             for i in range(n)
         ]
