@@ -150,7 +150,7 @@ func TestPrepareEmitsFakeDeclaredCrawler(t *testing.T) {
 		r := req(t, "abc")
 		r.RemoteAddr = "203.0.113.7:443" // a non-crawler address
 		r.Header.Set("User-Agent", ua)
-		res := stubResolver{addrErr: &net.DNSError{IsNotFound: true}}
+		res := &fingerprint.CrawlerVerifier{Resolver: stubResolver{addrErr: &net.DNSError{IsNotFound: true}}}
 		prep, err := prepare(r, nil, nil, fingerprint.HintTable{}, fixedID, time.Now(), res, nil)
 		if err != nil {
 			t.Fatal(err)
