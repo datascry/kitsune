@@ -1757,3 +1757,36 @@ real adversary, and it is the thesis made concrete: the fully-diversified real f
 diverse cohort here, so the conviction that closes it is external-data-bound (a real-traffic organic baseline for
 axis A's absolute thresholds, real IP reputation, real-hardware fps). To evade both is to be N independent real
 users — the economic bind, now demonstrated on both detection axes against a real, goal-driven, diversified fleet.
+
+### Red — reducing correlation / increasing diversity: the lever map + the stagger lever (2026-06-28)
+
+"How do we reduce correlation and increase diversity" → each axis-A dimension has a red lever that breaks it:
+
+| axis-A dimension | lever | in-sandbox |
+|---|---|---|
+| ja4_prefix | distinct builds/engines per node (Chromium/Firefox/WebKit, version spread, per-node uTLS) | partial (few real engines) |
+| descriptor | distinct behavioral MODELS per node — descriptors spread ABOVE the 0.15 soft eps (not one tuned humanizer) | yes (KS_NODE_SEED) |
+| lockstep | STAGGER/drip arrivals beyond the 120s window | **now built** |
+| origin_reputation | clean residential/mobile egress (no datacenter/proxy/abuse) | external |
+| prevalence_tail | real-hardware fingerprints (out of the generated-fp tail) | external |
+
+Each lever removes one dimension; axis A needs >=2 shared dims to form a community and >=3 dense to convict, so
+dropping below those is the goal. Built the missing in-sandbox lever — **stagger**: `FleetPlan.stagger_seconds`
+delays each node's launch so arrivals SPREAD instead of lockstep (drips the fleet; >120s drops the per-binding
+lockstep corroboration AND axis A's lockstep dimension + its time-block candidate generation). Unit-tested
+(elapsed >= (n-1)*stagger; all nodes still run).
+
+Measured effect, grounded in the showcase (also hardened: deterministic component-offset descriptors at exactly
+d*sqrt(2) instead of boundary-jittered, and grading isolated to the shape's own sessions so it is store-state-
+independent): adding a `diffuse-staggered` row — identical to diffuse-campaign but spread in time —
+
+```
+  diffuse-campaign    per-binding CANDIDATE   axis A CAMPAIGN     (ja4 + descriptor + lockstep)
+  diffuse-staggered   per-binding CANDIDATE   axis A CANDIDATE    (stagger drops lockstep -> 2 dims)
+  diversified         per-binding —           axis A —            (distinct builds too -> evades both)
+```
+
+So the stagger lever alone downgrades CAMPAIGN -> CANDIDATE; stacking distinct-builds + spread-descriptors on top
+reaches the `diversified` evades-both frontier. The maximal in-sandbox diversification (stagger + distinct builds
++ distinct behaviour) evades both axes; the LAST two levers (clean residential egress, real-hardware fps) are
+external-data-bound — i.e. fully reducing correlation = becoming N independent real users, the economic bind.

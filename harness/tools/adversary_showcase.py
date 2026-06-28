@@ -28,7 +28,8 @@ import json
 import urllib.request
 from datetime import UTC, datetime, timedelta
 
-from kitsune_harness.live_coordination import score_campaigns_live, score_live
+from kitsune_harness.coordination import score_campaigns, score_corpus
+from kitsune_harness.live_coordination import fetch_live_corpus
 
 _BASE_TS = datetime(2026, 6, 28, 12, 0, 0, tzinfo=UTC)
 _HUMANIZER = (0.22, 0.60, 0.10, 0.20, 0.30, 0.70)
@@ -61,12 +62,13 @@ def _post(detector: str, sigs: list[dict[str, object]]) -> None:
         resp.read()
 
 
-def _descriptor(seed: str, i: int, jitter: float) -> list[float]:
-    # deterministic per-node descriptor: the humanizer base + seeded jitter (jitter tunes the pairwise spread)
-    out = []
-    for k, c in enumerate(_HUMANIZER):
-        frac = int(_h(seed, i, k), 16) / 0xFFFFFFFFFFFFFFFF - 0.5
-        out.append(min(1.0, max(0.0, c + frac * 2 * jitter)))
+def _descriptor(i: int, d: float) -> list[float]:
+    # Deterministic per-node descriptor: offset ONE distinct component of the humanizer base by ``d``. Two nodes
+    # then differ in two components by ``d`` each, so EVERY pairwise distance is exactly d*sqrt(2) — no boundary
+    # jitter. d=0.085 -> 0.12 (tight: above the 0.10 template floor, within axis A's 0.15 soft eps); d=0.30 ->
+    # 0.42 (spread, beyond the soft eps). Robust + reproducible regardless of store state.
+    out = list(_HUMANIZER)
+    out[i % len(out)] = min(1.0, out[i % len(out)] + d)
     return out
 
 
@@ -79,8 +81,10 @@ def _emit(detector: str, shape: str, n: int = 4) -> list[str]:
     for i in range(n):
         sid = f"showcase-{shape}-{i}"
         sids.append(sid)
-        # arrivals: lockstep (same instant) for coordinated shapes; spread for the diversified control
-        when = (_BASE_TS + timedelta(seconds=(i * 600 if shape == "diversified" else i))).strftime("%Y-%m-%dT%H:%M:%SZ")
+        # arrivals: lockstep for coordinated shapes; SPREAD (>120s window) for the staggered + diversified shapes
+        # — the timing diversification lever that drops axis A's lockstep dimension.
+        spread = shape in ("diffuse-staggered", "diversified")
+        when = (_BASE_TS + timedelta(seconds=(i * 600 if spread else i))).strftime("%Y-%m-%dT%H:%M:%SZ")
         node_ja4 = (
             ("t13d" + _h("rot", shape, i)[:4] + "h2_" + _h("rj", shape, i)[:12]) if shape == "diversified" else ja4
         )
@@ -94,22 +98,25 @@ def _emit(detector: str, shape: str, n: int = 4) -> list[str]:
         elif shape == "trace-replay":
             sigs.append(_sig(sid, "browser", "fp_hash", _h("fp", shape, i), when, "collector"))
             sigs.append(_sig(sid, "behavioral", "trace_hash", canned_trace, when, "collector"))
-        elif shape == "diffuse-campaign":
+        elif shape in ("diffuse-campaign", "diffuse-staggered"):
+            # diffuse-staggered = diffuse-campaign with ONLY arrival timing changed — isolates the stagger lever.
             sigs.append(_sig(sid, "browser", "fp_hash", _h("fp", shape, i), when, "collector"))
             sigs.append(_sig(sid, "behavioral", "trace_hash", _h("tr", shape, i), when, "collector"))
-            sigs.append(_sig(sid, "behavioral", "trace_descriptor", _descriptor(shape, i, 0.06), when, "collector"))
+            sigs.append(_sig(sid, "behavioral", "trace_descriptor", _descriptor(i, 0.085), when, "collector"))
         else:  # diversified — distinct everything, spread descriptors, spread arrivals
             sigs.append(_sig(sid, "browser", "fp_hash", _h("fp", shape, i), when, "collector"))
             sigs.append(_sig(sid, "behavioral", "trace_hash", _h("tr", shape, i), when, "collector"))
-            sigs.append(_sig(sid, "behavioral", "trace_descriptor", _descriptor(shape, i, 0.30), when, "collector"))
+            sigs.append(_sig(sid, "behavioral", "trace_descriptor", _descriptor(i, 0.30), when, "collector"))
         _post(detector, sigs)
     return sids
 
 
 def _grade(detector: str, sids: set[str]) -> tuple[str, str]:
-    """Return (per-binding label, axis-A label) for the cluster/community holding these sids."""
-    pb = next((v.label for v in score_live(detector) if sids & set(v.members)), "—")
-    ax = next((c.label for c in score_campaigns_live(detector) if sids & set(c.members)), "—")
+    """Return (per-binding label, axis-A label) graded over JUST this shape's sessions — isolating the verdict
+    from whatever else is in the live store, so the showcase is deterministic regardless of accumulated state."""
+    corpus = [(n, s) for n, s in fetch_live_corpus(detector) if n in sids]
+    pb = next((v.label for v in score_corpus(corpus) if sids & set(v.members)), "—")
+    ax = next((c.label for c in score_campaigns(corpus) if sids & set(c.members)), "—")
     return pb, ax
 
 
@@ -120,7 +127,7 @@ def main() -> None:
     args = ap.parse_args()
 
     rows = []
-    for shape in ("cloned", "trace-replay", "diffuse-campaign", "diversified"):
+    for shape in ("cloned", "trace-replay", "diffuse-campaign", "diffuse-staggered", "diversified"):
         sids = set(_emit(args.detector, shape, args.n))
         pb, ax = _grade(args.detector, sids)
         rows.append((shape, pb, ax))

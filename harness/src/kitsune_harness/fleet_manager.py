@@ -23,6 +23,7 @@ from __future__ import annotations
 import concurrent.futures
 import json
 import subprocess
+import time
 import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -70,6 +71,10 @@ class FleetPlan:
     retries: int = 1  # extra attempts per node on a transient failure (the Chrome-sandbox flake)
     timeout: float = 120.0
     max_concurrency: int = 8
+    # Diversification lever (the timing axis): seconds to wait between launching each node, so arrivals SPREAD
+    # instead of lockstep. >120s drops the coordination scorer's lockstep corroboration AND axis A's lockstep
+    # dimension + its time-block candidate generation — a slow-drip fleet looks organic in time. 0 = concurrent.
+    stagger_seconds: float = 0.0
 
 
 @dataclass
@@ -182,7 +187,13 @@ def run_fleet(
     by_index: dict[int, NodeResult] = {}
     workers = min(plan.max_concurrency, len(plan.nodes)) or 1
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(_launch_node, spec, plan, launcher, labels[i]): i for i, spec in enumerate(plan.nodes)}
+        futures: dict[concurrent.futures.Future[NodeResult], int] = {}
+        for i, spec in enumerate(plan.nodes):
+            # Stagger: delay each launch so arrivals spread (the timing diversification lever). The first node
+            # launches immediately; concurrency still bounds in-flight workers (a drip, not a thundering herd).
+            if plan.stagger_seconds > 0 and i > 0:
+                time.sleep(plan.stagger_seconds)
+            futures[pool.submit(_launch_node, spec, plan, launcher, labels[i])] = i
         for future in concurrent.futures.as_completed(futures):
             by_index[futures[future]] = future.result()
     results = [by_index[i] for i in range(len(plan.nodes))]
@@ -281,6 +292,7 @@ def plan_from_obj(obj: Mapping[str, Any]) -> FleetPlan:
         retries=int(obj.get("retries", defaults.retries)),
         timeout=float(obj.get("timeout", defaults.timeout)),
         max_concurrency=int(obj.get("max_concurrency", defaults.max_concurrency)),
+        stagger_seconds=float(obj.get("stagger_seconds", defaults.stagger_seconds)),
     )
 
 
@@ -478,7 +490,16 @@ class CampaignReport:
     waves: list[WaveResult]
 
 
-_PLAN_GLOBALS = ("edge", "detector", "worker_detector", "network", "retries", "timeout", "max_concurrency")
+_PLAN_GLOBALS = (
+    "edge",
+    "detector",
+    "worker_detector",
+    "network",
+    "retries",
+    "timeout",
+    "max_concurrency",
+    "stagger_seconds",
+)
 
 
 def campaign_from_obj(obj: Mapping[str, Any]) -> CampaignPlan:
