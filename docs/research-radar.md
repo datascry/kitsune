@@ -1706,3 +1706,28 @@ changing the verdicts:
 
 This makes axis A deploy-grade (the #2 next-step). The remaining axis-A work is external-data-bound: the absolute
 organic-density thresholds that would turn `campaign` from candidate-grade into convicting need real traffic.
+
+### Red fleet — Objective work-sharding: driving a coordinated fleet at a goal (2026-06-28)
+
+The task/archetype layer gave every worker the SAME action script (same typed text, same clicks) — unrealistic
+and itself a coordination tell. Added an `Objective` abstraction (`objectives.py`): a named goal + a WORK SET
+(one dict of fields per item) + a TASK TEMPLATE with `{field}` placeholders. `Objective.compile(n)` round-robin-
+shards the work across n workers and fills the template per item, yielding one DISTINCT
+:class:`BehavioralTask` per worker. The fleet manager's plan builder takes `objective:` on a node entry and drops
+each worker's compiled task into its `KS_TASK` (alongside its distinct `KS_NODE_SEED`), so the fleet pursues one
+goal with DISTRIBUTED, non-identical work — cred-stuffer worker i tries credential batch i, etc.
+
+Shipped objectives: `credential-stuffing` and `account-creation` (sharded SYNTHETIC identities — `example.test`,
+no real auth — typed into the lab's OWN form; the same allow-list scope the archetype catalog enforces). ETHICS
+is explicit in code: these MODEL an adversary's objective against Kitsune's own form/gate to measure whether
+coordination detection catches the fleet; no third-party target, no real credential.
+
+GROUNDED: unit tests prove the work set is sharded disjointly + completely and each worker compiles a distinct
+filled task (worker 0 → creds[0::n], etc.); plan tests prove the objective node expands to per-worker distinct
+`KS_TASK` + seeds covering the whole set. Live: a zendriver worker ran its compiled objective task end-to-end
+(typed its shard `user0@example.test`/`user3…`, mode `zendriver-uach-task`, session posted) — the
+objective→shard→per-worker-task→execute loop, the existing KS_TASK executor unchanged. harness 365 green.
+
+This completes the coordinated-fleet picture: a fleet that is fingerprint-diverse (camoufox), behaviorally real
+(KS_REAL_INPUT), behaviorally diverse (per-node seed), AND productively pursuing a goal with distributed work
+(Objective) — the full adversary, against which the coordination scorer + axis A campaign detector are measured.

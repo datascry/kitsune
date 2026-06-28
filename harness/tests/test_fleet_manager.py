@@ -212,6 +212,27 @@ def test_plan_node_task_becomes_ks_task_env() -> None:
     assert _json.loads(inline_node.env["KS_TASK"]) == [{"scroll": 400}, {"wait": 100}]
 
 
+def test_plan_objective_shards_distinct_tasks_across_replicas() -> None:
+    import json as _json
+
+    from kitsune_harness.objectives import get as get_objective
+
+    plan = plan_from_obj({"nodes": [{"evasion": "real-input", "replicas": 3, "objective": "credential-stuffing"}]})
+    assert len(plan.nodes) == 3
+    typed = [[s["type"] for s in _json.loads(n.env["KS_TASK"]) if "type" in s] for n in plan.nodes]
+    # each worker typed a DISTINCT batch of credentials (sharded), each with its own trajectory seed
+    assert typed[0] != typed[1] and typed[1] != typed[2] and all(typed)
+    assert [n.env["KS_NODE_SEED"] for n in plan.nodes] == ["0", "1", "2"]
+    # the fleet collectively covers the whole synthetic work set — each credential used exactly once
+    flat = sorted(c for batch in typed for c in batch)
+    assert flat == sorted(item["cred"] for item in get_objective("credential-stuffing").work)
+
+
+def test_plan_node_rejects_both_task_and_objective() -> None:
+    with pytest.raises(ValueError, match="both 'task' and 'objective'"):
+        plan_from_obj({"nodes": [{"evasion": "vanilla", "task": "browse", "objective": "credential-stuffing"}]})
+
+
 def test_plan_node_needs_exactly_one_of_evasion_or_image() -> None:
     with pytest.raises(ValueError, match="exactly one"):
         plan_from_obj({"nodes": [{"replicas": 2}]})  # neither
