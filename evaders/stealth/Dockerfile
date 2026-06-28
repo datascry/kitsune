@@ -31,4 +31,9 @@ RUN npm install --silent --no-audit --no-fund \
     && (npx playwright install chromium || true) \
     && (npx patchright install chromium || true)
 COPY run.mjs ./
-ENTRYPOINT ["node", "run.mjs"]
+# HEADFUL needs a real X server (and KS_REAL_INPUT's XTEST input goes through $DISPLAY); auto-wrap in xvfb-run
+# when HEADFUL=1 so the fleet manager can launch a real-input node with a plain `docker run -e HEADFUL=1`
+# (no entrypoint override). Headless modes (the default) run node directly.
+# xvfb-run stays a CHILD of this sh (PID 1) — not exec'd — so PID 1 reaps Chromium's grandchild zombies
+# (exec'ing xvfb-run as PID 1 hangs the run under Chromium's process tree). Headless exec's node directly.
+ENTRYPOINT ["sh", "-c", "if [ \"$HEADFUL\" = \"1\" ]; then xvfb-run -a node run.mjs; else exec node run.mjs; fi"]

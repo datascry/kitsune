@@ -1636,3 +1636,21 @@ coherence (the thesis), not per-session behavior. The browser KS_REAL_INPUT ran 
 AUTOMATION (naive Playwright: webdriver/CDP) and ENVIRONMENT (headless-container: webgl_software/voices/media)
 tells, which are orthogonal axes (the former addressed by the stealth patches, the latter real-GPU/display-bound,
 external). Pairing KS_REAL_INPUT with the fingerprint stealth modes leaves only the container-environment frontier.
+
+### Red fleet — KS_REAL_INPUT wired into the fleet manager (2026-06-28)
+
+Wired the behavioral humaniser into the fleet so it composes as a coordinated fleet: registered the `real-input`
+evasion (stealth image, KS_REAL_INPUT + HEADFUL), made the stealth image self-wrap xvfb on HEADFUL (so the fleet
+manager launches it with a plain docker run — NB exec'ing xvfb-run as PID 1 hangs under Chromium's process tree,
+so it stays a child of PID 1), and the plan builders now inject a per-replica `KS_NODE_SEED` so each node draws a
+DISTINCT trajectory.
+
+GROUNDED live (2 nodes, seeds 0/1, through the edge): each posted real input (93/95 pointermoves, coalesced ~11,
+isTrusted) and the coordination scorer graded the cluster with **trace_collision=None and template_radius=None** —
+the real-input fleet's BEHAVIORAL bindings do not fire (distinct seeds → distinct paths → no trace_collision /
+template_similarity). The residual conviction was **fp_collision** (the stealth image's shared Chromium
+fingerprint), NOT behavior — confirming the axis split: real-input gives behavioral fleet-safety; fingerprint
+diversity still needs camoufox (the sybil-farmer). The **maximal in-sandbox evader is therefore camoufox
+fp-diversity × real-input behavior** — a fleet that leaks NO pairwise binding (distinct fp, distinct trace,
+distinct-enough descriptors, clean behavior), which the pairwise-binding coordination scorer structurally cannot
+catch. That is exactly the fleet the population/aggregate detector (axis A, next) must close.
