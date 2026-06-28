@@ -5,6 +5,32 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.11.0](https://github.com/datascry/kitsune/compare/v1.10.0...v1.11.0) (2026-06-28)
+
+
+### Features
+
+* **arena:** RPS-gated arena (token-bucket rate gate) + RPS recon as a campaign wave ([42d2a5a](https://github.com/datascry/kitsune/commit/42d2a5a0c375da55301b42d3a135416e91307e29))
+* **coordination:** fold source IPs to /64 origins for ipv6 ([8c511fd](https://github.com/datascry/kitsune/commit/8c511fdad7531971ce549f6b8742cfe3f9505f3f))
+* **detector:** bh.action_cadence_deliberative — llm think-time tell ([0897572](https://github.com/datascry/kitsune/commit/0897572c569a8474f75fff2e2580559b149acb54))
+* **detector:** bh.input_via_paste — programmatic form-input AI-agent tell ([dd97933](https://github.com/datascry/kitsune/commit/dd9793337b7853884700ad7ce2dbfb28a8bb6e6b))
+* **detector:** bh.scroll_teleport — programmatic scroll AI-agent tell ([031963c](https://github.com/datascry/kitsune/commit/031963cc1dff62bb2239c0b9981bdc719be4fba5))
+* **detector:** convict no-js scrapers via ja4 tool-vs-ua coherence ([eca5b9d](https://github.com/datascry/kitsune/commit/eca5b9d00931a934169d8ba09b366b8aa88de242))
+* **edge:** expand ja4 hint table from ja4db (public BSD-3 JA4→client data) ([81f613d](https://github.com/datascry/kitsune/commit/81f613d4f662b7e0a2d215d2c622ec911608e82f))
+* **evaders:** camoufox executes the behavioral task DSL (a second, Playwright backend) ([e7821d6](https://github.com/datascry/kitsune/commit/e7821d697ceefe1c616b8c7a7b5e612fba57e5d6))
+* **harness:** add a managed real-evader fleet orchestrator (mixed images, retry, capture+grade) ([a3a8799](https://github.com/datascry/kitsune/commit/a3a8799afa2679c52811e11f16071d973ba50e88))
+* **harness:** adversary archetype catalog — named personas the fleet emulates ([209242e](https://github.com/datascry/kitsune/commit/209242e0d496266b20932b7c4deb064fbcf386e9))
+* **harness:** archetype validation harness — run each persona live, check it matches the catalog ([dacf42b](https://github.com/datascry/kitsune/commit/dacf42b1df0f88d6cf6779d2dae91f680b940bd6))
+* **harness:** bake the red-team evasion ladder into the fleet manager (named evasions) ([b8a6a11](https://github.com/datascry/kitsune/commit/b8a6a11f4498c24519e89e4caf620e8d60813575))
+* **harness:** behavioral task scripts for fleet workers (DSL + CDP executor) ([3670bef](https://github.com/datascry/kitsune/commit/3670bef6dad2b2c19fb63ba4cf1498a14fd1d2c3))
+* **harness:** declarative engagement plans for the fleet manager (YAML/JSON + examples) ([84fb79e](https://github.com/datascry/kitsune/commit/84fb79ec4fe11a8d498ed8d0be0e3b4760e9d791))
+* **harness:** distinct-builds lever + multi-cluster fragmentation reporting ([730ad43](https://github.com/datascry/kitsune/commit/730ad4375b628122d3508b2391e513af9765a315))
+* **harness:** multi-wave campaigns — an engagement as a sequence of fleet waves ([302f984](https://github.com/datascry/kitsune/commit/302f9845864e7914a244a760f1f2ea30daf9cae0))
+* **harness:** review-farmer archetype — the behavioral (trace_collision) binding ([b770ec3](https://github.com/datascry/kitsune/commit/b770ec3a7b3905ce53a46154b0f4486f5cf01da3))
+* **harness:** RPS scoping — the recon RATE dimension (ramp + throttle-knee budget) ([4c1176d](https://github.com/datascry/kitsune/commit/4c1176db6c1c9c4aa1a7a78a22befa7ac4f8343f))
+* **harness:** structured engagement report — the red⇄blue finding a fleet run produces ([1f0ff2a](https://github.com/datascry/kitsune/commit/1f0ff2a18cc9124300511a2443c8560046d42385))
+* **harness:** tool-ja4 corroborates a no-js coordination fleet ([63d6583](https://github.com/datascry/kitsune/commit/63d65830b2859ec2fdadaf0b84776b190aa7fc51))
+
 ## [1.10.0](https://github.com/datascry/kitsune/compare/v1.9.0...v1.10.0) (2026-06-27)
 
 
