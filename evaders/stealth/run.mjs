@@ -1,6 +1,8 @@
 // evaders/stealth/run — drive a real Chromium through the edge and read the detector's verdict.
 // Modes: naive (automation tells) · STEALTH=1 (patched) · SPOOF_UA=<ua> (Chrome TLS, lying UA).
 
+import { execFileSync } from "node:child_process";
+
 const EDGE = process.env.KITSUNE_EDGE || "https://edge:8443/";
 const DETECTOR = process.env.KITSUNE_DETECTOR || "http://detector:8080";
 const STEALTH = process.env.STEALTH === "1";
@@ -9,6 +11,16 @@ const SPOOF_UA = process.env.SPOOF_UA; // e.g. a Firefox UA, while the real TLS 
 const PATCHRIGHT = process.env.PATCHRIGHT === "1"; // CDP-patched anti-detect drop-in for Playwright
 const REBROWSER = process.env.REBROWSER === "1"; // rebrowser-patches: another Runtime.enable-leak fix
 const HUMAN_MOUSE = process.env.HUMAN_MOUSE === "1"; // synthesize human-like motion vs the naive path
+// KS_REAL_INPUT=1: drive the cursor via REAL OS-level input (XTEST, through xdotool) instead of CDP/JS, so the
+// browser receives GENUINE hardware-originated motion — real getCoalescedEvents() batches + isTrusted, with NO
+// JS tamper. The structural escape from bh.synthetic_no_coalesced / bh.click_without_trajectory that the bezier
+// JS humanizer (HUMAN_MOUSE) and the getCoalescedEvents() spoof (COALESCE_*) cannot reach honestly (radar G2's
+// "privilege-gated terminus"). Requires HEADFUL=1 under a real X server (xvfb-run); xdotool injects into $DISPLAY.
+const KS_REAL_INPUT = process.env.KS_REAL_INPUT === "1";
+// KS_NODE_SEED: per-node trajectory seed so a FLEET of real-input nodes produces DISTINCT paths (no
+// trace_collision) and descriptors that spread above the human floor (no template_similarity) — the
+// coordination-layer half of behavioral humanisation. Default 0 (a single deterministic node).
+const KS_NODE_SEED = Number(process.env.KS_NODE_SEED || "0");
 // HEADFUL=1: launch headless:false (run via xvfb-run). A headful Chromium's UA + Sec-CH-UA carry no
 // HeadlessChrome token, so headless-reveal tells (ch_he_headless/headless_ua) do not auto-fire — this is
 // how we test browser-layer evasion under patchright with a NATURAL coherent UA (no override that, under
@@ -258,6 +270,59 @@ async function humanMove(page, from, to) {
   }
 }
 
+// A small seeded PRNG so each fleet node (KS_NODE_SEED) draws a DISTINCT trajectory — distinct control points,
+// targets, and tremor — giving a real-input fleet behavioral DIVERSITY (no shared trace, descriptors spread).
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Drive the cursor with REAL X-server input (XTEST via xdotool): a per-node bezier across the page, sent as
+// fine sub-frame bursts so the browser COALESCES them for real (getCoalescedEvents() length > 1) — the genuine
+// hardware-input signature, not a JS fabrication. Page coords are mapped to screen coords via the window's
+// screenX/Y + chrome height, then each burst (SUB points ~2ms apart) lands within one ~16ms frame; the trailing
+// inter-burst sleep crosses a frame boundary so each burst is a distinct primary pointermove carrying a real
+// coalesced batch. A real click at the end fires a trusted, trajectory-preceded click.
+async function realInputMove(page) {
+  const geo = await page.evaluate(() => ({
+    sx: window.screenX,
+    sy: window.screenY,
+    chromeH: Math.max(0, window.outerHeight - window.innerHeight),
+    iw: window.innerWidth,
+    ih: window.innerHeight,
+  }));
+  const rnd = mulberry32(0x9e3779b9 ^ KS_NODE_SEED);
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const toScreen = (cx, cy) => [
+    Math.round(geo.sx + clamp(cx, 5, geo.iw - 5)),
+    Math.round(geo.sy + geo.chromeH + clamp(cy, 5, geo.ih - 5)),
+  ];
+  const from = { x: 60 + rnd() * 140, y: 110 + rnd() * 140 };
+  const to = { x: geo.iw * 0.45 + rnd() * geo.iw * 0.25, y: geo.ih * 0.4 + rnd() * geo.ih * 0.25 };
+  const c1 = { x: from.x + (rnd() - 0.5) * geo.iw * 0.4, y: from.y + (rnd() - 0.5) * geo.ih * 0.4 };
+  const c2 = { x: to.x + (rnd() - 0.5) * geo.iw * 0.4, y: to.y + (rnd() - 0.5) * geo.ih * 0.4 };
+  const FRAMES = 30; // >= 20 primary pointermoves so the coalesced rule's ptrMoves gate applies and is BEATEN
+  const SUB = 6; // sub-frame samples per burst → real coalescing (~1000Hz sampling vs ~60Hz frames)
+  const args = [];
+  for (let f = 0; f < FRAMES; f++) {
+    for (let s = 0; s < SUB; s++) {
+      const lin = (f + s / SUB) / FRAMES;
+      const t = lin < 0.5 ? 2 * lin * lin : 1 - Math.pow(-2 * lin + 2, 2) / 2; // ease-in-out velocity
+      const p = bezier(from, c1, c2, to, t);
+      const [sx, sy] = toScreen(p.x + (rnd() - 0.5) * 2, p.y + (rnd() - 0.5) * 2); // micro-tremor
+      args.push("mousemove", String(sx), String(sy), "sleep", "0.002");
+    }
+    args.push("sleep", "0.013"); // ~one frame between bursts so each is a distinct coalesced primary event
+  }
+  args.push("click", "1");
+  execFileSync("xdotool", args, { stdio: "ignore" });
+}
+
 // patchright / rebrowser-playwright are API-compatible playwright drop-ins; swap the engine at runtime.
 const engine =
   PATCHRIGHT || MAX_STEALTH || FLOOR_SPOOF ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
@@ -388,7 +453,9 @@ const mode = UACH_COHERENT
   ? "floor-spoof"
   : MAX_STEALTH
     ? "max-stealth"
-    : HUMAN_MOUSE
+    : KS_REAL_INPUT
+      ? "real-input"
+      : HUMAN_MOUSE
       ? "human-mouse"
       : PATCHRIGHT
         ? "patchright"
@@ -1033,6 +1100,32 @@ if (REPLAY_TRACE) {
     const pause = Math.random() < 0.15 ? 180 + Math.round(Math.random() * 240) : 0; // rare think-pause
     await page.waitForTimeout(base + pause);
   }
+} else if (KS_REAL_INPUT) {
+  // Real OS-level input (XTEST). No page.mouse / no JS — the browser receives genuine hardware motion, so
+  // getCoalescedEvents() batches for real and isTrusted holds by provenance. Two passes (with a human dwell)
+  // accumulate enough primary pointermoves for the coalesced rule's ptrMoves>=20 gate to apply and be beaten.
+  // A passive probe self-reports the structural result (max real coalesced batch) — proof the input is genuine.
+  await page.evaluate(() => {
+    window.__ksMoves = 0;
+    window.__ksMaxCo = 0;
+    window.__ksTrusted = true;
+    addEventListener(
+      "pointermove",
+      (e) => {
+        window.__ksMoves++;
+        if (!e.isTrusted) window.__ksTrusted = false;
+        const n = e.getCoalescedEvents ? e.getCoalescedEvents().length : 0;
+        if (n > window.__ksMaxCo) window.__ksMaxCo = n;
+      },
+      { passive: true },
+    );
+  });
+  await realInputMove(page);
+  await page.waitForTimeout(180 + Math.random() * 220);
+  await realInputMove(page);
+  const probe = await page.evaluate(() => ({ moves: window.__ksMoves, maxCo: window.__ksMaxCo, trusted: window.__ksTrusted }));
+  console.error(`real-input: ${probe.moves} pointermoves, max coalesced batch ${probe.maxCo}, isTrusted=${probe.trusted}`);
+  await page.waitForTimeout(2500); // let the collector capture + post
 } else if (human) {
   // Human-like curved moves between random targets — the behavioral evasion frontier (mouse only, to
   // keep this a clean behavioral-evasion demo within the collector's capture window).
