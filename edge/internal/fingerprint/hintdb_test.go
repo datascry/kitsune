@@ -67,6 +67,28 @@ func TestToolJA4ClientHints(t *testing.T) {
 	}
 }
 
+func TestJa4dbDerivedClientAndBrowserHints(t *testing.T) {
+	// Entries sourced from the FoxIO ja4db `ja4plus-mapping.csv` (base JA4 is BSD-3-Clause, patent-free) —
+	// real public fingerprints expanding the self-captured seed. Non-browser HTTP libraries (Python/Go/WinINET)
+	// feed net.ja4_tool_vs_ua; their C2 reuse (Sliver=Go, Cobalt Strike=WinINET share the library's JA4) is
+	// caught for free via the library hint. The 'i' (no-SNI) browser variants extend net.tls_vs_ua_browser.
+	table := DefaultHints()
+	for _, tc := range []struct {
+		ja4, client, browser string
+	}{
+		{"t13d181000_85036bcba153_aaaaaaaaaaaa", "python", ""},
+		{"t13d190900_9dc949149365_bbbbbbbbbbbb", "go-http", ""}, // = Sliver Agent (Go) — caught via the lib
+		{"t12d190800_d83cc789557e_cccccccccccc", "wininet", ""}, // = Cobalt Strike beacon — caught via WinINET
+		{"t13i1516h2_8daaf6152771_dddddddddddd", "", "chrome"},  // no-SNI Chromium
+		{"t13i2013h2_a09f3c656075_eeeeeeeeeeee", "", "safari"},  // no-SNI Safari
+	} {
+		h, ok := table.Lookup(tc.ja4)
+		if !ok || h.Client != tc.client || h.Browser != tc.browser {
+			t.Errorf("%s: got %+v ok=%v, want client=%q browser=%q", tc.ja4, h, ok, tc.client, tc.browser)
+		}
+	}
+}
+
 func TestLookupRejectsNonMatches(t *testing.T) {
 	table := DefaultHints()
 	if _, ok := table.Lookup("t13d9999h2_deadbeefcafe_0123456789ab"); ok {

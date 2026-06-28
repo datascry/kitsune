@@ -9,5 +9,19 @@
   "t13d1713h1_ab0a1bf427ad_ecd0401ec68b": { "browser": "other", "os": "linux" },
   "t13d3012h2_1d37bd780c83": { "client": "curl" },
   "t13d131100_f57a46bbacb6": { "client": "go-http" },
-  "t13d171100_ab0a1bf427ad": { "client": "python-urllib" }
+  "t13d171100_ab0a1bf427ad": { "client": "python-urllib" },
+  "t13i1515h2_8daaf6152771": { "browser": "chrome", "os": "" },
+  "t13i1516h2_8daaf6152771": { "browser": "chrome", "os": "" },
+  "t13i1714h2_5b57614c22b0": { "browser": "firefox", "os": "" },
+  "t13i2013h2_a09f3c656075": { "browser": "safari", "os": "" },
+  "t13d181000_85036bcba153": { "client": "python" },
+  "t13i181000_85036bcba153": { "client": "python" },
+  "t13d4312h1_c7886603b240": { "client": "python" },
+  "t13d190900_9dc949149365": { "client": "go-http" },
+  "t13i190800_9dc949149365": { "client": "go-http" },
+  "t13d191000_9dc949149365": { "client": "go-http" },
+  "t13d141000_cbb2034c60b8": { "client": "go-http" },
+  "t12d160700_8cdfa2d4673b": { "client": "go-http" },
+  "t13d1412h2_e33ad33b3d25": { "client": "go-http" },
+  "t12d190800_d83cc789557e": { "client": "wininet" }
 }
