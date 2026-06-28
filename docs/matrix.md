@@ -1,116 +1,116 @@
-# Kitsune detection matrix — 140 rules vs 103 evaders
+# Kitsune detection matrix — 141 rules vs 103 evaders
 
-_93/103 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.54`._
+_93/103 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.55`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
 | Evader | verdict | score | fired | convicting tells |
 |---|---|---|---:|---|
-| `accept-lang-spoof` | bot | 1.00 | 15/140 | `br.cdp_runtime_enabled`, `net.accept_lang_vs_navigator`, `br.headless_ua` +5 |
-| `apify-fp-inject` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.no_chrome_object` +3 |
-| `audio-noise` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `audio-readback-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `azuretls` | bot | 1.00 | 4/140 | `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua`, `net.no_js_execution` +1 |
-| `baseline-firefox` | bot | 1.00 | 6/140 | `br.webdriver_present` |
-| `brave-fake-proxy` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `brave-fake` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `brave` | bot | 1.00 | 8/140 | `br.webdriver_present`, `br.headless_ua` |
-| `camoufox-hardened-behave` | suspicious | 0.97 | 5/140 | — |
-| `camoufox-hardened` | suspicious | 0.99 | 6/140 | — |
-| `camoufox-headful` | suspicious | 0.95 | 4/140 | — |
-| `camoufox-linux-coherent` | suspicious | 0.99 | 6/140 | — |
-| `camoufox-linux` | suspicious | 0.99 | 6/140 | — |
-| `camoufox-macos` | bot | 1.00 | 7/140 | `net.tcp_os_vs_ua`, `br.font_mac_internal` |
-| `camoufox-socks-webrtc` | suspicious | 0.97 | 5/140 | — |
-| `camoufox-touch-incoherent` | bot | 0.99 | 6/140 | `br.pointer_touch_incoherent` |
-| `camoufox` | bot | 1.00 | 3/140 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.tls_grease_vs_ua` |
-| `canvas-geometry-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `canvas-lie` | bot | 1.00 | 15/140 | `br.cdp_runtime_enabled`, `br.canvas_lie`, `br.headless_ua` +5 |
-| `canvas-spoof` | bot | 1.00 | 16/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
-| `cdc-leak` | bot | 1.00 | 14/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
-| `ch-ua-hardcoded` | bot | 1.00 | 6/140 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
-| `chrome-clone-1` | bot | 1.00 | 13/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
-| `chrome-clone-2` | bot | 1.00 | 13/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
-| `coalesce-proxy` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `coalesce-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `csp-bypass` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.csp_bypassed`, `br.headless_ua` +4 |
-| `curl-http2` | bot | 1.00 | 7/140 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua` +4 |
-| `curl-impersonate` | bot | 0.90 | 1/140 | `net.no_js_execution` |
-| `datacenter-origin-proxied` | bot | 1.00 | 7/140 | `net.datacenter_origin_proxied` |
-| `domrect-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `electron-leak` | bot | 1.00 | 15/140 | `br.automation_globals`, `br.electron_process`, `br.cdp_runtime_enabled` +5 |
-| `firefox-coherent` | bot | 1.00 | 10/140 | `br.webdriver_present` |
-| `firefox-os-spoof` | bot | 1.00 | 12/140 | `br.webdriver_present`, `net.tcp_os_vs_ua`, `br.navplatform_vs_ua` +2 |
-| `floor-spoof` | bot | 1.00 | 8/140 | `br.tostring_tampered`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered` +1 |
-| `font-os-leak` | bot | 1.00 | 18/140 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +7 |
-| `fp-rotation` | bot | 1.00 | 7/140 | `br.fingerprint_unstable_within_session` |
-| `full-stealth` | bot | 1.00 | 16/140 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +7 |
-| `go-tls-h2-rotate` | bot | 0.99 | 3/140 | `net.h2_unknown_vs_ua`, `net.h2_unstable_within_session`, `net.no_js_execution` |
-| `go-tls-madeyoureset` | bot | 1.00 | 6/140 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_madeyoureset` +3 |
-| `go-tls-rotate` | bot | 1.00 | 5/140 | `net.h2_unknown_vs_ua`, `net.ja4_unstable_within_session`, `net.no_js_execution` +2 |
-| `go-tls-static-ext` | bot | 1.00 | 4/140 | `net.h2_unknown_vs_ua`, `net.tls_ext_order_static_within_session`, `net.no_js_execution` +1 |
-| `go-tls-web-bot-auth-replay` | bot | 0.98 | 2/140 | `net.web_bot_auth_nonce_replay`, `net.no_js_execution` |
-| `go-tls-web-bot-auth` | bot | 0.98 | 2/140 | `net.web_bot_auth_invalid`, `net.no_js_execution` |
-| `go-tls` | bot | 0.99 | 3/140 | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
-| `h2-continuation-flood` | bot | 0.99 | 2/140 | `net.h2_continuation_flood`, `net.no_js_execution` |
-| `h2-control-flood` | bot | 0.99 | 2/140 | `net.h2_control_flood`, `net.no_js_execution` |
-| `h2-rapid-reset` | bot | 0.99 | 2/140 | `net.h2_rapid_reset`, `net.no_js_execution` |
-| `h2-settings-split` | bot | 0.96 | 2/140 | `net.h2_settings_vs_order`, `net.no_js_execution` |
-| `honeypot` | bot | 1.00 | 15/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.honeypot_interaction` +4 |
-| `http2-naive` | bot | 1.00 | 7/140 | `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.tcp_os_vs_ua` +4 |
-| `human-mouse` | bot | 1.00 | 13/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
-| `iframe-spoof` | bot | 1.00 | 21/140 | `br.ua_platform_vs_ch_platform`, `br.cdp_runtime_enabled`, `net.ch_platform_header_vs_ua` +9 |
-| `ios-ua-spoof` | bot | 1.00 | 22/140 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `br.ua_platform_vs_ch_platform` +11 |
-| `ip-rotation` | bot | 1.00 | 5/140 | `net.ip_rotation_within_session`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
-| `keystroke-human` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +3 |
-| `lang-list-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `lang-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `linear-bot` | bot | 1.00 | 17/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
-| `max-stealth` | bot | 1.00 | 10/140 | `br.webdriver_spoofed`, `br.permissions_anomaly`, `br.no_chrome_object` |
-| `measuretext-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `mobile-emulation` | bot | 1.00 | 14/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.ch_he_headless` +3 |
-| `mobile-no-touch` | bot | 1.00 | 24/140 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `br.automation_globals` +11 |
-| `naive-tz-spoof` | bot | 1.00 | 16/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
-| `native-spoof` | bot | 1.00 | 16/140 | `br.native_invariant_violated`, `br.cdp_runtime_enabled`, `br.headless_ua` +6 |
-| `nodriver` | bot | 1.00 | 7/140 | `br.headless_ua` |
-| `os-spoof` | bot | 1.00 | 16/140 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +5 |
-| `patchright-headful` | suspicious | 0.93 | 4/140 | — |
-| `patchright` | bot | 1.00 | 10/140 | `br.headless_ua`, `br.ch_he_headless`, `br.permissions_anomaly` +1 |
-| `playwright-extra-coherent` | bot | 1.00 | 12/140 | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.worker_divergence` +2 |
-| `playwright-extra` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `net.tcp_os_vs_ua`, `br.ch_he_headless` +3 |
-| `primp` | bot | 0.97 | 2/140 | `net.tcp_os_vs_ua`, `net.no_js_execution` |
-| `pydoll` | bot | 1.00 | 7/140 | `br.headless_ua` |
-| `quic-no-grease` | bot | 1.00 | 4/140 | `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua` +1 |
-| `rebrowser` | bot | 1.00 | 10/140 | `br.webdriver_present`, `br.headless_ua`, `br.permissions_anomaly` +1 |
-| `renderer-spoof` | bot | 1.00 | 17/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
-| `screen-impossible` | bot | 1.00 | 15/140 | `br.screen_impossible`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
-| `selenium-driverless` | bot | 1.00 | 7/140 | `br.headless_ua` |
-| `spoof-ua` | bot | 1.00 | 17/140 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +8 |
-| `stale-engine` | bot | 1.00 | 15/140 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +5 |
-| `stealth-naive` | bot | 1.00 | 13/140 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
-| `stealth-patched` | bot | 1.00 | 19/140 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +7 |
-| `tls-stale-template` | bot | 1.00 | 6/140 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
-| `trace-replay` | bot | 1.00 | 13/140 | `bh.trace_replay_within_session`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
-| `tz-spoof` | bot | 1.00 | 16/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
-| `ua-rotation` | bot | 1.00 | 8/140 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.ua_rotation_within_session` +5 |
-| `uach-coherent` | bot | 1.00 | 11/140 | `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.no_chrome_object` +1 |
-| `undetected` | bot | 1.00 | 7/140 | `br.headless_ua` |
-| `vanilla` | bot | 1.00 | 5/140 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
-| `webgl-caps-worker-spoof` | bot | 1.00 | 12/140 | `br.automation_globals`, `net.tls_ext_order_static_within_session`, `br.webdriver_present` +3 |
-| `webgl-renderer-spoof` | bot | 1.00 | 21/140 | `br.automation_globals`, `net.tls_ext_order_static_within_session`, `br.webdriver_present` +9 |
-| `webkit-safari-coherent` | bot | 1.00 | 9/140 | `net.h2_unknown_vs_ua`, `br.webdriver_present`, `net.tcp_os_vs_ua` +3 |
-| `webkit-ua-spoof` | bot | 1.00 | 18/140 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
-| `webrtc-leak` | suspicious | 1.00 | 5/140 | — |
-| `webrtc-origin-datacenter` | bot | 1.00 | 7/140 | `net.datacenter_origin_proxied` |
-| `worker-proxy-fix` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `worker-proxy` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `worker-spoof` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `worker-wrap` | bot | 1.00 | 14/140 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `zendriver-uach-behave` | suspicious | 0.99 | 6/140 | — |
-| `zendriver-uach` | suspicious | 0.99 | 7/140 | — |
-| `zendriver` | bot | 1.00 | 8/140 | `net.h2_header_order_vs_ua` |
+| `accept-lang-spoof` | bot | 1.00 | 15/141 | `br.cdp_runtime_enabled`, `net.accept_lang_vs_navigator`, `br.headless_ua` +5 |
+| `apify-fp-inject` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.no_chrome_object` +3 |
+| `audio-noise` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `audio-readback-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `azuretls` | bot | 1.00 | 4/141 | `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua`, `net.no_js_execution` +1 |
+| `baseline-firefox` | bot | 1.00 | 6/141 | `br.webdriver_present` |
+| `brave-fake-proxy` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `brave-fake` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `brave` | bot | 1.00 | 8/141 | `br.webdriver_present`, `br.headless_ua` |
+| `camoufox-hardened-behave` | suspicious | 0.97 | 5/141 | — |
+| `camoufox-hardened` | suspicious | 0.99 | 6/141 | — |
+| `camoufox-headful` | suspicious | 0.95 | 4/141 | — |
+| `camoufox-linux-coherent` | suspicious | 0.99 | 6/141 | — |
+| `camoufox-linux` | suspicious | 0.99 | 6/141 | — |
+| `camoufox-macos` | bot | 1.00 | 7/141 | `net.tcp_os_vs_ua`, `br.font_mac_internal` |
+| `camoufox-socks-webrtc` | suspicious | 0.97 | 5/141 | — |
+| `camoufox-touch-incoherent` | bot | 0.99 | 6/141 | `br.pointer_touch_incoherent` |
+| `camoufox` | bot | 1.00 | 3/141 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.tls_grease_vs_ua` |
+| `canvas-geometry-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `canvas-lie` | bot | 1.00 | 15/141 | `br.cdp_runtime_enabled`, `br.canvas_lie`, `br.headless_ua` +5 |
+| `canvas-spoof` | bot | 1.00 | 16/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
+| `cdc-leak` | bot | 1.00 | 14/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
+| `ch-ua-hardcoded` | bot | 1.00 | 6/141 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
+| `chrome-clone-1` | bot | 1.00 | 13/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
+| `chrome-clone-2` | bot | 1.00 | 13/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
+| `coalesce-proxy` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `coalesce-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `csp-bypass` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.csp_bypassed`, `br.headless_ua` +4 |
+| `curl-http2` | bot | 1.00 | 7/141 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.tcp_os_vs_ua` +4 |
+| `curl-impersonate` | bot | 0.90 | 1/141 | `net.no_js_execution` |
+| `datacenter-origin-proxied` | bot | 1.00 | 7/141 | `net.datacenter_origin_proxied` |
+| `domrect-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `electron-leak` | bot | 1.00 | 15/141 | `br.automation_globals`, `br.electron_process`, `br.cdp_runtime_enabled` +5 |
+| `firefox-coherent` | bot | 1.00 | 10/141 | `br.webdriver_present` |
+| `firefox-os-spoof` | bot | 1.00 | 12/141 | `br.webdriver_present`, `net.tcp_os_vs_ua`, `br.navplatform_vs_ua` +2 |
+| `floor-spoof` | bot | 1.00 | 8/141 | `br.tostring_tampered`, `br.nav_property_spoofed`, `br.webdriver_getter_tampered` +1 |
+| `font-os-leak` | bot | 1.00 | 18/141 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +7 |
+| `fp-rotation` | bot | 1.00 | 7/141 | `br.fingerprint_unstable_within_session` |
+| `full-stealth` | bot | 1.00 | 16/141 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +7 |
+| `go-tls-h2-rotate` | bot | 0.99 | 3/141 | `net.h2_unknown_vs_ua`, `net.h2_unstable_within_session`, `net.no_js_execution` |
+| `go-tls-madeyoureset` | bot | 1.00 | 6/141 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_madeyoureset` +3 |
+| `go-tls-rotate` | bot | 1.00 | 5/141 | `net.h2_unknown_vs_ua`, `net.ja4_unstable_within_session`, `net.no_js_execution` +2 |
+| `go-tls-static-ext` | bot | 1.00 | 4/141 | `net.h2_unknown_vs_ua`, `net.tls_ext_order_static_within_session`, `net.no_js_execution` +1 |
+| `go-tls-web-bot-auth-replay` | bot | 0.98 | 2/141 | `net.web_bot_auth_nonce_replay`, `net.no_js_execution` |
+| `go-tls-web-bot-auth` | bot | 0.98 | 2/141 | `net.web_bot_auth_invalid`, `net.no_js_execution` |
+| `go-tls` | bot | 0.99 | 3/141 | `net.h2_unknown_vs_ua`, `net.no_js_execution`, `net.tls_pq_keyshare_vs_ua` |
+| `h2-continuation-flood` | bot | 0.99 | 2/141 | `net.h2_continuation_flood`, `net.no_js_execution` |
+| `h2-control-flood` | bot | 0.99 | 2/141 | `net.h2_control_flood`, `net.no_js_execution` |
+| `h2-rapid-reset` | bot | 0.99 | 2/141 | `net.h2_rapid_reset`, `net.no_js_execution` |
+| `h2-settings-split` | bot | 0.96 | 2/141 | `net.h2_settings_vs_order`, `net.no_js_execution` |
+| `honeypot` | bot | 1.00 | 15/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.honeypot_interaction` +4 |
+| `http2-naive` | bot | 1.00 | 7/141 | `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.tcp_os_vs_ua` +4 |
+| `human-mouse` | bot | 1.00 | 13/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
+| `iframe-spoof` | bot | 1.00 | 21/141 | `br.ua_platform_vs_ch_platform`, `br.cdp_runtime_enabled`, `net.ch_platform_header_vs_ua` +9 |
+| `ios-ua-spoof` | bot | 1.00 | 22/141 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `br.ua_platform_vs_ch_platform` +11 |
+| `ip-rotation` | bot | 1.00 | 5/141 | `net.ip_rotation_within_session`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
+| `keystroke-human` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +3 |
+| `lang-list-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `lang-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `linear-bot` | bot | 1.00 | 17/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
+| `max-stealth` | bot | 1.00 | 10/141 | `br.webdriver_spoofed`, `br.permissions_anomaly`, `br.no_chrome_object` |
+| `measuretext-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `mobile-emulation` | bot | 1.00 | 14/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.ch_he_headless` +3 |
+| `mobile-no-touch` | bot | 1.00 | 24/141 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `br.automation_globals` +11 |
+| `naive-tz-spoof` | bot | 1.00 | 16/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
+| `native-spoof` | bot | 1.00 | 16/141 | `br.native_invariant_violated`, `br.cdp_runtime_enabled`, `br.headless_ua` +6 |
+| `nodriver` | bot | 1.00 | 7/141 | `br.headless_ua` |
+| `os-spoof` | bot | 1.00 | 16/141 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +5 |
+| `patchright-headful` | suspicious | 0.93 | 4/141 | — |
+| `patchright` | bot | 1.00 | 10/141 | `br.headless_ua`, `br.ch_he_headless`, `br.permissions_anomaly` +1 |
+| `playwright-extra-coherent` | bot | 1.00 | 12/141 | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.worker_divergence` +2 |
+| `playwright-extra` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `net.tcp_os_vs_ua`, `br.ch_he_headless` +3 |
+| `primp` | bot | 0.97 | 2/141 | `net.tcp_os_vs_ua`, `net.no_js_execution` |
+| `pydoll` | bot | 1.00 | 7/141 | `br.headless_ua` |
+| `quic-no-grease` | bot | 1.00 | 4/141 | `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua` +1 |
+| `rebrowser` | bot | 1.00 | 10/141 | `br.webdriver_present`, `br.headless_ua`, `br.permissions_anomaly` +1 |
+| `renderer-spoof` | bot | 1.00 | 17/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
+| `screen-impossible` | bot | 1.00 | 15/141 | `br.screen_impossible`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
+| `selenium-driverless` | bot | 1.00 | 7/141 | `br.headless_ua` |
+| `spoof-ua` | bot | 1.00 | 17/141 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +8 |
+| `stale-engine` | bot | 1.00 | 15/141 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `br.ch_he_headless` +5 |
+| `stealth-naive` | bot | 1.00 | 13/141 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +3 |
+| `stealth-patched` | bot | 1.00 | 19/141 | `br.cdp_runtime_enabled`, `net.ch_ua_version_vs_ua`, `net.tcp_os_vs_ua` +7 |
+| `tls-stale-template` | bot | 1.00 | 6/141 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
+| `trace-replay` | bot | 1.00 | 13/141 | `bh.trace_replay_within_session`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
+| `tz-spoof` | bot | 1.00 | 16/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
+| `ua-rotation` | bot | 1.00 | 8/141 | `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua`, `net.ua_rotation_within_session` +5 |
+| `uach-coherent` | bot | 1.00 | 11/141 | `br.cdp_runtime_enabled`, `br.permissions_anomaly`, `br.no_chrome_object` +1 |
+| `undetected` | bot | 1.00 | 7/141 | `br.headless_ua` |
+| `vanilla` | bot | 1.00 | 5/141 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +2 |
+| `webgl-caps-worker-spoof` | bot | 1.00 | 12/141 | `br.automation_globals`, `net.tls_ext_order_static_within_session`, `br.webdriver_present` +3 |
+| `webgl-renderer-spoof` | bot | 1.00 | 21/141 | `br.automation_globals`, `net.tls_ext_order_static_within_session`, `br.webdriver_present` +9 |
+| `webkit-safari-coherent` | bot | 1.00 | 9/141 | `net.h2_unknown_vs_ua`, `br.webdriver_present`, `net.tcp_os_vs_ua` +3 |
+| `webkit-ua-spoof` | bot | 1.00 | 18/141 | `net.tls_vs_ua_browser`, `net.h2_unknown_vs_ua`, `net.h2_header_order_vs_ua` +8 |
+| `webrtc-leak` | suspicious | 1.00 | 5/141 | — |
+| `webrtc-origin-datacenter` | bot | 1.00 | 7/141 | `net.datacenter_origin_proxied` |
+| `worker-proxy-fix` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `worker-proxy` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `worker-spoof` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `worker-wrap` | bot | 1.00 | 14/141 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
+| `zendriver-uach-behave` | suspicious | 0.99 | 6/141 | — |
+| `zendriver-uach` | suspicious | 0.99 | 7/141 | — |
+| `zendriver` | bot | 1.00 | 8/141 | `net.h2_header_order_vs_ua` |
 
-## Per-rule coverage — 119/140 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 119/141 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
@@ -342,12 +342,12 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `zendriver-uach` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 | `zendriver` | bot | 1 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 21/140 rules catch nothing yet
+## Coverage gaps — 22/141 rules catch nothing yet
 
 **Evaded** (1) — reads present in the corpus, but every sample passed:
 - `br.low_hardware_concurrency`
 
-**Unexercised** (20) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (21) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `net.ja4_tool_vs_ua`
 - `rep.datacenter_asn`
@@ -355,6 +355,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 - `bh.touch_uniform_velocity`
 - `bh.click_without_trajectory`
 - `bh.action_cadence_deliberative`
+- `bh.scroll_teleport`
 - `bh.mobile_keystroke_interval_floor`
 - `bh.keystroke_interval_floor`
 - `rep.known_proxy_exit`

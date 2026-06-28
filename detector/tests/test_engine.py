@@ -229,6 +229,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "bh.action_cadence_deliberative",
         ),
         (
+            # Scroll-teleport: a programmatic scroll jump with no wheel/key input = scrollIntoView agent (G14).
+            [(Layer.behavioral, "scroll_teleport", True, Source.collector)],
+            "bh.scroll_teleport",
+        ),
+        (
             # Mobile touch-swipe at near-constant velocity: CV 0.05 is far below the human floor (radar X6).
             [(Layer.behavioral, "touch_velocity_cv", 0.05, Source.collector)],
             "bh.touch_uniform_velocity",

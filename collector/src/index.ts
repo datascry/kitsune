@@ -1,6 +1,7 @@
 // collector/index — browser entrypoint: snapshot real globals, collect signals, POST to the detector.
 // Wires the live DOM/navigator probes into the pure collector; thin glue (tier-2, excluded from coverage).
 
+import { isScrollTeleport } from "./behavioral.js";
 import { armCdpProbe, type CdpProbe } from "./cdp.js";
 import { collectSignals } from "./collect.js";
 import { readSessionId } from "./session.js";
@@ -76,6 +77,7 @@ function buildEnv(
   pointerEvents: PointerSample[],
   keyEvents: number[],
   clickEvents: number[],
+  scrollTeleport: boolean,
   cdp: CdpProbe,
 ): BrowserEnv {
   const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
@@ -90,6 +92,7 @@ function buildEnv(
     pointerEvents,
     keyEvents,
     clickEvents,
+    scrollTeleport,
   };
 }
 
@@ -102,17 +105,43 @@ export function run(detectorUrl: string, delayMs = 4000): void {
   // Expose the marker so a CDP Runtime.enable preview enumerates it and trips the trap.
   (globalThis as Record<string, unknown>).__ks = cdp.marker;
 
+  // Scroll-teleport state (radar G14): max single scroll-event delta + wheel count + scroll-key use.
+  let maxScrollDelta = 0;
+  let lastScrollY = 0;
+  let wheelCount = 0;
+  let scrollKeyUsed = false;
+  const scrollKeys = /^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/;
+
   window.addEventListener("pointermove", (e: PointerEvent) => {
     pointerEvents.push({ x: e.clientX, y: e.clientY, t: e.timeStamp });
   });
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     keyEvents.push(e.timeStamp);
+    if (scrollKeys.test(e.key)) scrollKeyUsed = true;
   });
+  window.addEventListener(
+    "scroll",
+    () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      const delta = Math.abs(y - lastScrollY);
+      if (delta > maxScrollDelta) maxScrollDelta = delta;
+      lastScrollY = y;
+    },
+    { passive: true },
+  );
+  window.addEventListener("wheel", () => void wheelCount++, { passive: true });
+
   const post = (): void => {
     const sessionId = readSessionId(document.cookie);
     if (sessionId === null) return;
-    const signals = collectSignals(sessionId, buildEnv(pointerEvents, keyEvents, clickEvents, cdp), new Date());
-    void httpTransport(detectorUrl, fetch as unknown as FetchLike).send(signals);
+    const scrollTeleport = isScrollTeleport(
+      maxScrollDelta,
+      wheelCount,
+      scrollKeyUsed,
+      navigator.maxTouchPoints || 0,
+    );
+    const env = buildEnv(pointerEvents, keyEvents, clickEvents, scrollTeleport, cdp);
+    void httpTransport(detectorUrl, fetch as unknown as FetchLike).send(collectSignals(sessionId, env, new Date()));
   };
   // Long-horizon re-post (radar G12): action-cadence needs >=5 high-level actions spread over tens of seconds,
   // far beyond the snapshot delay below. Re-post ONCE when the 5th trusted click lands so the accumulated
@@ -126,6 +155,18 @@ export function run(detectorUrl: string, delayMs = 4000): void {
       post();
     }
   });
+  // One-shot re-post when a big instant scroll lands (radar G14) — it may occur after the snapshot delay.
+  let scrollPosted = false;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!scrollPosted && maxScrollDelta >= 800) {
+        scrollPosted = true;
+        post();
+      }
+    },
+    { passive: true },
+  );
 
   window.setTimeout(post, delayMs);
 }

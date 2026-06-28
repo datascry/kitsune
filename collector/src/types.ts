@@ -41,4 +41,6 @@ export interface BrowserEnv {
   keyEvents: number[];
   /** Timestamps (ms) of trusted click events — the high-level action timeline for action-cadence (G12). */
   clickEvents: number[];
+  /** True if the session scrolled via a big instant programmatic jump (no wheel/key input) — scrollIntoView (G14). */
+  scrollTeleport: boolean;
 }

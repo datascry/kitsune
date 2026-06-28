@@ -4,6 +4,7 @@
 import { describe, expect, it } from "vitest";
 import {
   actionCadenceDeliberative,
+  isScrollTeleport,
   keystrokeEntropy,
   keystrokeIntervalMedian,
   mouseEntropy,
@@ -130,6 +131,24 @@ describe("actionCadenceDeliberative (radar G12)", () => {
     // clicks + two typing-burst starts at metronomic spacing → deliberative
     const keys = [3000, 3050, 3110, 13000, 13040]; // two bursts: starts at 3000 and 13000
     expect(actionCadenceDeliberative([0, 8000, 18000, 23000], keys)).toBe(true);
+  });
+});
+
+describe("isScrollTeleport (radar G14)", () => {
+  it("is true for a big instant jump with no wheel/key input on non-touch (scrollIntoView/scrollTo)", () => {
+    expect(isScrollTeleport(3000, 0, false, 0)).toBe(true);
+  });
+  it("is false when wheel events occurred (a human wheel/trackpad scroll)", () => {
+    expect(isScrollTeleport(3000, 12, false, 0)).toBe(false);
+  });
+  it("is false for a small delta (incremental human scroll)", () => {
+    expect(isScrollTeleport(120, 0, false, 0)).toBe(false);
+  });
+  it("is false when a scroll key was used (keyboard PageDown/Space)", () => {
+    expect(isScrollTeleport(3000, 0, true, 0)).toBe(false);
+  });
+  it("is false on a touch session (finger-scroll fires no wheel but is real input)", () => {
+    expect(isScrollTeleport(3000, 0, false, 5)).toBe(false);
   });
 });
 
