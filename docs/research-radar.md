@@ -1654,3 +1654,34 @@ diversity still needs camoufox (the sybil-farmer). The **maximal in-sandbox evad
 fp-diversity × real-input behavior** — a fleet that leaks NO pairwise binding (distinct fp, distinct trace,
 distinct-enough descriptors, clean behavior), which the pairwise-binding coordination scorer structurally cannot
 catch. That is exactly the fleet the population/aggregate detector (axis A, next) must close.
+
+### Blue uplevel — axis A: population/aggregate coordination (the campaign detector) (2026-06-28)
+
+The per-cluster scorer (score_corpus) convicts on a PAIRWISE binding a real cohort cannot produce (cloned fp,
+replayed trace, shared origin, reused ticket, template-tight traces). The maximal in-sandbox evader removes every
+one — distinct fp/trace per node, descriptors tuned just ABOVE the hard template floor, no shared origin/ticket,
+clean residential IPs — and lands as singletons (Part 1's real-input + camoufox fp-diversity fleet). Axis A lifts
+the coherence thesis from the session to the COHORT: even with no single hard binding, a coordinated campaign is
+correlated IN AGGREGATE across several INDEPENDENT weak dimensions; a real diverse population (even a flash crowd,
+tight on build+time only) is not.
+
+`coordination.score_campaigns` builds a multi-dimensional similarity graph over the whole corpus — an edge links
+two sessions similar on >= 2 independent soft dimensions (ja4_prefix, descriptor ≤0.15 soft eps, lockstep ≤120s,
+shared origin-reputation class, shared prevalence-tail) — finds connected communities, and grades one a `campaign`
+when it spans >= 2 origins and is dense (>= half its pairs) on >= 3 INDEPENDENT dimensions (a flash crowd, dense
+on ≤2, is only a `candidate`). Posture: CANDIDATE-grade intelligence — the RELATIVE multi-dimensional structure is
+groundable in-sandbox; the ABSOLUTE thresholds (an organic population's density) are external-data-bound, so it
+surfaces a campaign for operator review, not an auto-conviction.
+
+Red counterpart: Skulk `diffuse-campaign` (the maximal evader — shared build + lockstep + a humanizer tuned just
+above the floor, distinct fp/trace/IP, clean IPs). GROUNDED live end-to-end: the per-binding score_corpus graded
+it **candidate 0.52** (fp_collision/trace/template all None — no pairwise binding), while axis A
+(score_campaigns_live) graded it **campaign 0.84**, dense on ja4_prefix + descriptor + lockstep across 4 origins.
+Offline tests pin the FP boundary: a diverse cohort (distinct builds, spread traces, spread arrivals) forms no
+community; a flash crowd (shared build + lockstep, real spread traces) is only a `candidate`, not a `campaign`.
+
+This closes the red⇄blue arc of the coordination uplevel: Part 1 built the maximal evader (camoufox fp-diversity ×
+real-input behaviour, no pairwise binding); Part 2 built the detector that catches it (aggregate multi-dimensional
+density). The residual frontier stays external: to evade axis A too, a fleet must break the AGGREGATE correlation —
+genuinely distinct builds (distinct JA4), genuinely distinct hardware fps (out of the prevalence tail), and
+non-lockstep organic arrival — i.e. become N independent real users, the economic bind, now proven on both axes.
