@@ -202,7 +202,11 @@ def homogeneous_plan(
     """N identical nodes (one image) — the fleet_capture.sh shape, with per-node proxy round-robin if given."""
     proxies = proxies or []
     nodes = [
-        NodeSpec(image=image, env=dict(env or {}), proxy=(proxies[i % len(proxies)] if proxies else None))
+        NodeSpec(
+            image=image,
+            env={"KS_NODE_SEED": str(i), **(env or {})},  # per-node trajectory seed (real-input fleet diversity)
+            proxy=(proxies[i % len(proxies)] if proxies else None),
+        )
         for i in range(n)
     ]
     return FleetPlan(nodes=nodes, **kw)
@@ -242,10 +246,14 @@ def plan_from_obj(obj: Mapping[str, Any]) -> FleetPlan:
         base_label = evasion if evasion else _image_base(str(image))
         for rep in range(replicas):
             label = f"{base_label}-{rep}"
+            # Per-replica trajectory seed: a real-input fleet draws a DISTINCT pointer path per node (no
+            # trace_collision / template_similarity). Harmless to evasions that ignore it. An explicit
+            # KS_NODE_SEED in the entry's env wins (operator override).
+            rep_env = {"KS_NODE_SEED": str(rep), **extra_env}
             if evasion:
-                spec = evasion_node(str(evasion), proxy=proxy, label=label, extra_env=extra_env)
+                spec = evasion_node(str(evasion), proxy=proxy, label=label, extra_env=rep_env)
             else:
-                spec = NodeSpec(image=str(image), env=extra_env, proxy=proxy, label=label)
+                spec = NodeSpec(image=str(image), env=rep_env, proxy=proxy, label=label)
             nodes.append(spec)
     defaults = FleetPlan(nodes=[])
     return FleetPlan(

@@ -24,6 +24,9 @@ def test_known_evasions_resolve_to_image_and_env() -> None:
     assert capstone.env == {"KS_UACH": "1", "KS_BEHAVE": "1"}
     assert get("camoufox-linux").env == {"KS_LINUX": "1"}
     assert get("vanilla").env == {}  # the control carries no evasion env
+    # real-input: the XTEST behavioral humaniser — needs HEADFUL (the image self-wraps xvfb) + KS_REAL_INPUT.
+    ri = get("real-input")
+    assert ri.env == {"KS_REAL_INPUT": "1", "HEADFUL": "1"} and ri.image == "kitsune-stealth:latest"
 
 
 def test_unknown_evasion_lists_the_known_names() -> None:

@@ -68,6 +68,16 @@ _reg("selenium-driverless", "kitsune-selenium-driverless:latest", "chromium-cdp"
 _reg("playwright-extra", "kitsune-playwright-extra:latest", "chromium-stealth", "playwright-extra + stealth plugin")
 _reg("brave", "kitsune-brave:latest", "chromium-stealth", "real Brave — native farbling (privacy browser)")
 _reg("stealth", "kitsune-stealth:latest", "chromium-stealth", "puppeteer-extra-stealth base mode", {"STEALTH": "1"})
+# Real OS-level (XTEST) pointer input — genuine coalesced/isTrusted/biomech, no JS tamper. Per-node KS_NODE_SEED
+# (injected by the fleet manager) gives each fleet member a distinct trajectory, so a real-input fleet does not
+# collide on trace_collision / template_similarity. HEADFUL=1 makes the image self-wrap in xvfb (XTEST needs $DISPLAY).
+_reg(
+    "real-input",
+    "kitsune-stealth:latest",
+    "chromium-stealth",
+    "stealth + real OS-level (XTEST) pointer input — beats the behavioral layer honestly",
+    {"KS_REAL_INPUT": "1", "HEADFUL": "1"},
+)
 
 
 def get(name: str) -> Evasion:

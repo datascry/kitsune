@@ -186,10 +186,12 @@ def test_plan_from_obj_expands_replicas_and_overlays_env() -> None:
     assert plan.retries == 3 and len(plan.nodes) == 3
     cam = [n for n in plan.nodes if n.label.startswith("camoufox-linux")]
     assert len(cam) == 2 and all(n.proxy == "socks5://p" for n in cam)
-    assert cam[0].env == {"KS_LINUX": "1", "KS_REPEAT": "2"}  # evasion env + overlay, values coerced to str
+    # evasion env + overlay (values coerced to str) + the per-replica trajectory seed
+    assert cam[0].env == {"KS_NODE_SEED": "0", "KS_LINUX": "1", "KS_REPEAT": "2"}
+    assert cam[1].env["KS_NODE_SEED"] == "1"  # each replica gets a DISTINCT seed (real-input fleet diversity)
     assert cam[0].label == "camoufox-linux-0" and cam[1].label == "camoufox-linux-1"
     img = next(n for n in plan.nodes if n.image == "kitsune-pydoll:latest")
-    assert img.env == {"FOO": "bar"} and img.label == "pydoll-0"
+    assert img.env == {"KS_NODE_SEED": "0", "FOO": "bar"} and img.label == "pydoll-0"
 
 
 def test_plan_node_task_becomes_ks_task_env() -> None:
