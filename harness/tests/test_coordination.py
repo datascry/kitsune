@@ -557,6 +557,61 @@ def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
     assert set(camps[0].dense_dimensions) == {"ja4_prefix", "lockstep"}
 
 
+def test_axis_a_blocking_is_subquadratic_and_finds_the_campaign() -> None:
+    # Productionized axis A: a 5-node campaign (shared build + lockstep + tight traces) buried in 800 organic
+    # sessions, each on a DISTINCT build and spread > 2 windows apart in time. The blocking candidate generator
+    # must stay sub-quadratic (organics share no JA4 bucket and no/adjacent time bucket → ~0 candidates) while
+    # still surfacing the campaign — identical result to the exact scan, at fleet scale.
+    from kitsune_harness.coordination import _campaign_candidate_pairs
+
+    hu = humanizer_descriptors(5)
+    members = [
+        (
+            f"c{i}",
+            _sess(
+                f"c{i}", "Zc", observed_ip=f"66.0.{i}.1", offset_s=i * 5, fp_hash=f"cf{i}", trace_descriptor=list(hu[i])
+            ),
+        )
+        for i in range(5)
+    ]
+    for i in range(800):  # organic: distinct JA4 per session, arrivals 300s apart (> 2 * the 120s window)
+        members.append(
+            (
+                f"o{i}",
+                _sess(f"o{i}", f"t13d{i:04d}h2_{i:012x}", observed_ip=f"10.{i % 250}.0.1", offset_s=10_000 + i * 300),
+            )
+        )
+    n = len(members)
+    cand = _campaign_candidate_pairs(members)
+    assert len(cand) < n  # sub-quadratic: far below the n*(n-1)/2 all-pairs the old scan did
+    camps = [c for c in score_campaigns(members) if c.label == "campaign"]
+    assert len(camps) == 1 and len(camps[0].members) == 5  # the campaign is still found among 805 sessions
+
+
+def test_axis_a_streaming_emits_the_campaign_once() -> None:
+    # The online/windowed path: a 4-node lockstep campaign replayed in arrival order emits exactly one campaign
+    # alert (the first time the community forms); an organic stream emits none.
+    from kitsune_harness.coordination import replay_campaigns
+
+    hu = humanizer_descriptors(4)
+    camp = [
+        (
+            f"s{i}",
+            _sess(
+                f"s{i}", "Zs", observed_ip=f"66.1.{i}.1", offset_s=i * 5, fp_hash=f"sf{i}", trace_descriptor=list(hu[i])
+            ),
+        )
+        for i in range(4)
+    ]
+    alerts = replay_campaigns(camp, window_seconds=900.0)
+    assert len(alerts) == 1 and alerts[0][1].label == "campaign"
+    organic = [
+        (f"g{i}", _sess(f"g{i}", f"t13d{i:04d}h2_{i:012x}", observed_ip=f"10.{i}.0.1", offset_s=i * 400))
+        for i in range(6)
+    ]
+    assert replay_campaigns(organic) == []
+
+
 def _model_traces(n: int) -> list[list[float]]:
     """``n`` trace descriptors from ONE humanizer model (tight, sub-floor) — the evolved fuzzy-trace fleet."""
     return [list(d) for d in humanizer_descriptors(n)]

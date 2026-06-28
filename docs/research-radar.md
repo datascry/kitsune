@@ -1685,3 +1685,24 @@ real-input behaviour, no pairwise binding); Part 2 built the detector that catch
 density). The residual frontier stays external: to evade axis A too, a fleet must break the AGGREGATE correlation —
 genuinely distinct builds (distinct JA4), genuinely distinct hardware fps (out of the prevalence tail), and
 non-lockstep organic arrival — i.e. become N independent real users, the economic bind, now proven on both axes.
+
+### Blue — axis A productionized: blocking candidate-gen + windowed streaming (2026-06-28)
+
+Axis A (`score_campaigns`) was O(n^2) all-pairs — fine offline, not at fleet scale. Productionized it without
+changing the verdicts:
+- **Blocking candidate generation** (`_campaign_candidate_pairs`): two sessions can only form an edge if they
+  share >= 2 soft dimensions, and every such pair co-occurs in an EXACT blocking bucket — the JA4 cipher prefix
+  or a time window (lockstep, paired across adjacent buckets). So only within-bucket pairs are verified, a
+  candidate SUPERSET of the true edges → IDENTICAL campaigns for any cohort that shares a build or arrives
+  co-timed (the realistic case + every fixture). Documented blind spot: a pair correlated ONLY on
+  rep/prevalence/descriptor with distinct builds AND spread arrivals (caught by the offline exact path). A flood
+  bucket over a cap is down-sampled with a LOGGED drop (never silent). GROUNDED: a 5-node campaign buried in 800
+  organic sessions (distinct builds, arrivals > 2 windows apart) generates < n candidate pairs (vs n(n-1)/2) and
+  is still found — sub-quadratic at scale, identical result.
+- **Windowed streaming** (`replay_campaigns`): feeds the corpus in arrival order through a sliding window,
+  re-scoring incrementally and emitting a campaign alert the first time each community forms (a growing campaign
+  does not re-fire) — the online analog of `replay_stream`, bounding memory + per-step cost. GROUNDED: a lockstep
+  campaign emits exactly one alert; an organic stream none.
+
+This makes axis A deploy-grade (the #2 next-step). The remaining axis-A work is external-data-bound: the absolute
+organic-density thresholds that would turn `campaign` from candidate-grade into convicting need real traffic.
