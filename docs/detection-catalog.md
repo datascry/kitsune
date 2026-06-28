@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.54`); regenerate with `task catalog`, do not edit by hand. **146 rules**: 106 active · 34 experimental · 6 retired; 97 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.55`); regenerate with `task catalog`, do not edit by hand. **147 rules**: 106 active · 35 experimental · 6 retired; 97 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (36)
 
@@ -166,7 +166,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (13)
+### behavioral layer (14)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -180,6 +180,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.no_input_before_action` | behavioral | below_threshold | 0.5 | experimental | Action (submit/nav) with zero pointer events |
 | `bh.path_too_straight` | behavioral | above_threshold | 0.55 | active | Mouse path is unnaturally straight (start->end ~= total length) |
 | `bh.power_law_violation` | behavioral | below_threshold | 0.55 | experimental | Mouse motion violates the 2/3 power law (speed independent of curvature — synthetic path) |
+| `bh.scroll_teleport` | behavioral | present | 0.5 | experimental | Programmatic scroll jump with no wheel/scroll-key input |
 | `bh.synthetic_no_coalesced` | behavioral | present | 0.45 | active | Long pointer stream never coalesces (CDP-injected input, not hardware) |
 | `bh.touch_uniform_velocity` | behavioral | below_threshold | 0.5 | experimental | Touch-swipe velocity too uniform for a human finger (mobile) |
 | `bh.uniform_velocity` | behavioral | below_threshold | 0.55 | active | Mouse moves at near-constant speed (low velocity CV) |

@@ -1206,7 +1206,21 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // Keystroke timing: a real typist has variable inter-key intervals (digraph latencies differ); a script
   // that types at a fixed delay has near-zero interval entropy — the keystroke-dynamics tell.
   var keys = [];
-  addEventListener("keydown", function (e) { keys.push(e.timeStamp); });
+  // Scroll-teleport (radar G14): a DOM agent jumps the viewport with scrollIntoView()/scrollTo() — the page
+  // scroll position leaps hundreds-to-thousands of px in ONE scroll event with ZERO wheel events, where a human
+  // (wheel/trackpad) produces many small deltas. We track the max single-event scroll delta and the wheel count;
+  // a big instant jump with no wheel input is programmatic. scrollKeyUsed excludes keyboard scroll (PageDown/Space
+  // jump ~a viewport with no wheel), and the touch gate excludes finger-scroll (no wheel but real input).
+  var maxScrollDelta = 0, lastScrollY = 0, wheelCount = 0, scrollKeyUsed = false;
+  addEventListener("scroll", function () {
+    var y = window.scrollY || document.documentElement.scrollTop || 0;
+    var d = Math.abs(y - lastScrollY); if (d > maxScrollDelta) maxScrollDelta = d; lastScrollY = y;
+  }, { passive: true });
+  addEventListener("wheel", function () { wheelCount++; }, { passive: true });
+  addEventListener("keydown", function (e) {
+    keys.push(e.timeStamp);
+    if (/^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/.test(e.key)) scrollKeyUsed = true;
+  });
   // CSP-bypass probe: the page is served with `img-src 'self'`, so the `data:` bait below (data: is not
   // 'self') is blocked and fires securitypolicyviolation in a real browser. Playwright/Puppeteer scrapers that call
   // setBypassCSP(true) to inject their scripts silently disable enforcement, so the violation never
@@ -2451,6 +2465,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       if (teleportClick) sigs.push(S("behavioral", "click_without_trajectory", true));  // radar G11
       if (actionCadenceDeliberative(clickTimes, keys))  // radar G12: metronomic LLM-inference action cadence
         sigs.push(S("behavioral", "action_cadence_deliberative", true));
+      // radar G14: a big instant scroll jump with no wheel/scroll-key input on a non-touch session = scrollIntoView/scrollTo
+      if (maxScrollDelta >= 800 && wheelCount === 0 && !scrollKeyUsed && (navigator.maxTouchPoints || 0) === 0)
+        sigs.push(S("behavioral", "scroll_teleport", true));
       if (touchSwipeCVs.length) {  // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded)
         touchSwipeCVs.sort(function (a, b) { return a - b; });
         sigs.push(S("behavioral", "touch_velocity_cv", touchSwipeCVs[Math.floor(touchSwipeCVs.length / 2)]));
@@ -2565,12 +2582,20 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     ksCadencePosted = true;
     send();
   }
+  // One-shot re-post when a big instant scroll lands (radar G14) — the scroll may happen after the early rescore.
+  var ksScrollPosted = false;
+  function ksMaybeScroll() {
+    if (ksScrollPosted || maxScrollDelta < 800) return;
+    ksScrollPosted = true;
+    send();
+  }
   setTimeout(function () {
     send();
     if (!ksFast) {
       addEventListener("mousemove", ksMaybeRescore);
       addEventListener("keydown", ksMaybeRescore);
       addEventListener("click", ksMaybeCadence, true);
+      addEventListener("scroll", ksMaybeScroll, { passive: true });
     }
   }, ksFast ? 200 : 1200);
 })();

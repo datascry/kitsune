@@ -18,6 +18,7 @@ const cleanEnv: BrowserEnv = {
   pointerEvents: [],
   keyEvents: [],
   clickEvents: [],
+  scrollTeleport: false,
 };
 
 const botEnv: BrowserEnv = {
@@ -31,6 +32,7 @@ const botEnv: BrowserEnv = {
   pointerEvents: [],
   keyEvents: [],
   clickEvents: [],
+  scrollTeleport: false,
 };
 
 function kinds(env: BrowserEnv): string[] {
@@ -79,6 +81,11 @@ describe("collectSignals action cadence (radar G12)", () => {
     // human: irregular sub-second-to-few-second gaps → CV well above 0.35.
     const env: BrowserEnv = { ...cleanEnv, clickEvents: [0, 200, 450, 3500, 3700, 9000] };
     expect(collectSignals("s", env, NOW).map((s) => s.kind)).not.toContain("action_cadence_deliberative");
+  });
+  it("emits scroll_teleport when the env flags a programmatic scroll jump (radar G14)", () => {
+    const env: BrowserEnv = { ...cleanEnv, scrollTeleport: true };
+    expect(collectSignals("s", env, NOW).map((s) => s.kind)).toContain("scroll_teleport");
+    expect(collectSignals("s", cleanEnv, NOW).map((s) => s.kind)).not.toContain("scroll_teleport");
   });
 });
 

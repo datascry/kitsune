@@ -55,6 +55,8 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
   // Metronomic multi-second high-level action cadence = LLM perceive→reason→act think-time (radar G12).
   if (actionCadenceDeliberative(env.clickEvents, env.keyEvents))
     out.push(sig("behavioral", "action_cadence_deliberative", true));
+  // Big instant programmatic scroll jump with no wheel/key input = scrollIntoView/scrollTo agent (radar G14).
+  if (env.scrollTeleport) out.push(sig("behavioral", "scroll_teleport", true));
   // Shape features need a real path; emit only with enough samples (else genuinely absent).
   if (env.pointerEvents.length >= 3) {
     out.push(sig("behavioral", "mouse_straightness", pathStraightness(env.pointerEvents)));

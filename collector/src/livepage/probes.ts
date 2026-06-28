@@ -3,6 +3,7 @@
 
 import {
   actionCadenceDeliberative,
+  isScrollTeleport,
   keystrokeEntropy,
   keystrokeIntervalMedian,
   mouseEntropy,
@@ -567,6 +568,11 @@ export function armCollector(): LiveCollector {
   let cspEnforced = false;
   let teleportClick = false;
   const clickTimes: number[] = []; // high-level action timeline (clicks) for action-cadence (radar G12)
+  // Scroll-teleport state (radar G14): max single scroll-event delta, wheel count, scroll-key use.
+  let maxScrollDelta = 0;
+  let lastScrollY = 0;
+  let wheelCount = 0;
+  let scrollKeyUsed = false;
   let voices: SpeechSynthesisVoice[] = [];
 
   const coalescedSupported =
@@ -649,7 +655,19 @@ export function armCollector(): LiveCollector {
   }
   addEventListener("keydown", (e: KeyboardEvent) => {
     keys.push(e.timeStamp);
+    if (/^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/.test(e.key)) scrollKeyUsed = true;
   });
+  addEventListener(
+    "scroll",
+    () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      const delta = Math.abs(y - lastScrollY);
+      if (delta > maxScrollDelta) maxScrollDelta = delta;
+      lastScrollY = y;
+    },
+    { passive: true },
+  );
+  addEventListener("wheel", () => void wheelCount++, { passive: true });
   addEventListener("securitypolicyviolation", () => {
     cspEnforced = true;
   });
@@ -1470,6 +1488,8 @@ export function armCollector(): LiveCollector {
     if (teleportClick) put("behavioral", "click_without_trajectory", true); // radar G11
     if (actionCadenceDeliberative(clickTimes, keys)) // radar G12: metronomic LLM-inference action cadence
       put("behavioral", "action_cadence_deliberative", true);
+    if (isScrollTeleport(maxScrollDelta, wheelCount, scrollKeyUsed, navigator.maxTouchPoints || 0))
+      put("behavioral", "scroll_teleport", true); // radar G14: programmatic scroll jump (scrollIntoView/scrollTo)
     if (touchSwipeCVs.length) {
       // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded median-per-swipe CV)
       touchSwipeCVs.sort((a, b) => a - b);

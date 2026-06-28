@@ -142,6 +142,21 @@ export function keystrokeIntervalMedian(times: number[]): number {
 }
 
 /**
+ * Scroll-teleport (radar G14): a DOM browser agent jumps the viewport with scrollIntoView()/scrollTo() — an
+ * instant programmatic scroll, never the incremental wheel/trackpad scroll a human produces. True when a
+ * single scroll event moved ≥800px (far above a wheel notch ~100px or a trackpad swipe) with ZERO wheel
+ * events, no scroll-causing keydown, on a non-touch session (finger-scroll fires no wheel but is real input).
+ */
+export function isScrollTeleport(
+  maxScrollDelta: number,
+  wheelCount: number,
+  scrollKeyUsed: boolean,
+  maxTouchPoints: number,
+): boolean {
+  return maxScrollDelta >= 800 && wheelCount === 0 && !scrollKeyUsed && maxTouchPoints === 0;
+}
+
+/**
  * Deliberative action cadence (radar G12): an LLM browser agent runs a perceive→reason→act loop
  * bottlenecked on model inference (~3-8s/step), so its HIGH-LEVEL actions (clicks + typing bursts) arrive
  * at a metronomic multi-second cadence. A human is bursty (sub-second within a task, irregular gaps). The
