@@ -658,22 +658,46 @@ export function armCollector(): LiveCollector {
   const pasteEls = new Set<HTMLElement>();
   const changedEls = new Set<HTMLElement>();
   const isField = (t: EventTarget | null): t is HTMLElement =>
-    t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable);
+    t instanceof HTMLInputElement ||
+    t instanceof HTMLTextAreaElement ||
+    (t instanceof HTMLElement && t.isContentEditable);
   const inputViaPaste = (): boolean => {
     for (const el of changedEls) {
-      const v = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : el.textContent;
+      const v =
+        el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+          ? el.value
+          : el.textContent;
       if (v && !kdEls.has(el) && !pasteEls.has(el)) return true;
     }
     return false;
   };
   addEventListener("keydown", (e: KeyboardEvent) => {
     keys.push(e.timeStamp);
-    if (/^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/.test(e.key)) scrollKeyUsed = true;
+    if (/^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/.test(e.key))
+      scrollKeyUsed = true;
     if (isField(e.target)) kdEls.add(e.target);
   });
-  addEventListener("paste", (e: ClipboardEvent) => { if (e.isTrusted && isField(e.target)) pasteEls.add(e.target); }, true);
-  addEventListener("input", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
-  addEventListener("change", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
+  addEventListener(
+    "paste",
+    (e: ClipboardEvent) => {
+      if (e.isTrusted && isField(e.target)) pasteEls.add(e.target);
+    },
+    true,
+  );
+  addEventListener(
+    "input",
+    (e: Event) => {
+      if (isField(e.target)) changedEls.add(e.target);
+    },
+    true,
+  );
+  addEventListener(
+    "change",
+    (e: Event) => {
+      if (isField(e.target)) changedEls.add(e.target);
+    },
+    true,
+  );
   addEventListener(
     "scroll",
     () => {
@@ -1503,7 +1527,8 @@ export function armCollector(): LiveCollector {
       }
     }
     if (teleportClick) put("behavioral", "click_without_trajectory", true); // radar G11
-    if (actionCadenceDeliberative(clickTimes, keys)) // radar G12: metronomic LLM-inference action cadence
+    if (actionCadenceDeliberative(clickTimes, keys))
+      // radar G12: metronomic LLM-inference action cadence
       put("behavioral", "action_cadence_deliberative", true);
     if (isScrollTeleport(maxScrollDelta, wheelCount, scrollKeyUsed, navigator.maxTouchPoints || 0))
       put("behavioral", "scroll_teleport", true); // radar G14: programmatic scroll jump (scrollIntoView/scrollTo)
