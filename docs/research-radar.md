@@ -113,7 +113,7 @@ source itself, not the aggregator's metadata (GitHub's licence detector missed X
 | **Google/Bing crawler IP-range JSON** | G7 (FCrDNS — DNS-free CIDR path) | developers.google.com/static/crawling/ipranges/common-crawlers.json (+ special-crawlers); Bing equivalent | public (Google/MS authoritative) | ✅ public, daily, CIDR JSON | candidate → an authoritative CIDR feed for `net.fake_declared_crawler` (verify a declared crawler with NO DNS round-trip; resilient if DNS is slow/blocked). Edge-side consumer co-located with FCrDNS; not yet wired. |
 | **Azure / Oracle / DigitalOcean / Cloudflare / Fastly ranges** | X4 (IP-rep datacenter) | Oracle `public_ip_ranges.json`, DO `digitalocean.com/geo/google.csv`, Cloudflare `/ips-v4`+`/ips-v6`, Fastly `api.fastly.com/public-ip-list`; Azure Service-Tags (rotating URL) | public | ✅ Oracle/DO/Cloudflare/Fastly stable; Azure rotates | **WIRED** (Oracle/DO/Cloudflare/Fastly → `ip_reputation_refresh` datacenter, per-source floors). Azure needs a discovery step for its rotating Service-Tags URL → candidate. |
 | **Spamhaus DROP/EDROP + IPsum** | X4 (IP-rep proxy/abuse) | spamhaus.org/drop, github.com/stamparm/ipsum | DROP free-to-use; IPsum permissive (verify) | ✅ public, daily | candidate → thicken `proxy_exit` beyond Tor+X4BNet; licence-verify per source (cf. FireHOL caveat). |
-| **FoxIO ja4db / peet.ws** (JA4 + Akamai H2 → client) | net.tls_vs_ua_browser / net.h2_vs_ua_browser precision | github.com/FoxIO-LLC/ja4 (ja4db), tls.peet.ws | varies (verify) | ✅ static lookup tables | candidate → expand the edge's tiny `ja4_hints.json` seed with more positively-identified clients (static table, no live traffic). |
+| **FoxIO ja4db** `ja4plus-mapping.csv` (JA4 → client) | net.ja4_tool_vs_ua coverage + net.tls_vs_ua_browser precision | raw GitHub `FoxIO-LLC/ja4/main/ja4plus-mapping.csv` | **base JA4 = BSD-3-Clause, patent-free** (verified at source: "FoxIO does not have patent claims") — the `ja4` column is all Kitsune uses; JA4+ extension columns (License 1.1) are NOT used | ✅ HTTP 200 (35 ja4 rows, curated) | **WIRED** → expanded `ja4_hints.json` with 10 non-browser library prefixes (Python/Go/WinINET → `net.ja4_tool_vs_ua`) + 4 real browser no-SNI variants (Chromium/Firefox/Safari → `net.tls_vs_ua_browser`). KEY: C2 frameworks inherit their HTTP library's JA4 (Sliver=Go `t13d190900_9dc949149365`, Cobalt Strike=WinINET `t12d190800_d83cc789557e`), so the LIBRARY hint catches the beacon-wearing-a-browser-UA for free — threat intel the on-thesis way, no malware blocklist. No tool↔browser prefix collision; unit-grounded (the established ja4db-reference pattern). Malware-SPECIFIC JA4s (IcedID, SoftEther, bare Cobalt-Strike variants) NOT shipped — a blocklist needs real-traffic FP validation. |
 | Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
 | **BrainRun** (Zenodo 2598135) | **X6 (mobile touch-biomech human baseline)** | Zenodo direct (gestures 265MB + sensors 3.2GB) | **CC0 1.0** (verified — derive+share aggregates freely) | ✅ **WIRED** | analysed → `docs/mobile-biomech-grounding.md` (161,780 human swipes: velocity-CV floor transferable, straightness not). The richest CC0 swipe baseline. |
 | **MEU-Mobile KSD** (UCI 399) | X6 (mobile keystroke timing+pressure) | UCI direct (1.3MB) | **CC BY 4.0** | ✅ **ANALYZED** | 2,856 records → both keystroke floors VALIDATED FP-safe on mobile (inter-key p1 216ms ≫ 30ms floor; entropy p1 0.625 ≫ 0.15). See docs/mobile-biomech-grounding.md. |
@@ -1532,3 +1532,31 @@ Focused research scan after G11-G15 shipped and the groundable G-queue went dry.
 new-research signal (agent timing/cadence) is already shipped; everything else is ML-distributional, FP-soft, or
 external-data-bound (real-device baselines, real-traffic IP-trust/clock-skew). Further detection gains now require
 real traffic/devices, a trained behavioral classifier (an architecture change), or the next research cycle.
+
+### External data leveraged — ja4db expands the JA4 hint table (2026-06-28)
+
+"Check for external data we can leverage" → the standout immediately-usable source was **FoxIO ja4db**
+(`ja4plus-mapping.csv`), a public JA4→client table. Licence verified AT SOURCE: the base JA4 fingerprint (the
+only column Kitsune uses) is **BSD-3-Clause and explicitly patent-free** ("FoxIO does not have patent claims");
+the JA4+ extension columns (License 1.1, monetization-restricted) are NOT used. It is a static lookup table — no
+live traffic, no PII — so it slots straight into the `ja4_hints.json` machinery shipped for `net.ja4_tool_vs_ua`
+(#179) and `net.tls_vs_ua_browser`.
+
+Leveraged (curated, not bulk-dumped — the same discipline as the IP-CIDR seeds): +10 non-browser library prefixes
+(Python ×3, GoLang ×5, GoLang-webhooks, WinINET) as `client` hints, +4 real browser no-SNI variants
+(Chromium/Firefox/Safari) as `browser` hints. The hint table went 11→25 entries.
+
+The on-thesis threat-intel win: **C2 frameworks inherit their HTTP library's JA4** — Sliver (Go) shares
+`t13d190900_9dc949149365`, Cobalt Strike (WinINET) shares `t12d190800_d83cc789557e` — so classifying the LIBRARY
+makes `net.ja4_tool_vs_ua` catch a Sliver/Cobalt-Strike beacon wearing a browser UA FOR FREE, with no malware
+blocklist (which would be off-thesis + need real-traffic FP validation). The malware-SPECIFIC JA4s in ja4db
+(IcedID, SoftEther, bare Cobalt-Strike non-library variants) were deliberately NOT shipped for that reason.
+Verified no tool↔browser a+b-prefix collision; unit-grounded (hintdb_test, the established ja4db-reference
+pattern — the existing real Safari/Firefox seed entries came from this same source and were never re-captured
+live). Edge suite green.
+
+**Other external sources checked, status unchanged:** Google/Bing crawler IP-range JSON (public, daily CIDR —
+candidate for a DNS-free `net.fake_declared_crawler` path, G7); Spamhaus DROP / IPsum (proxy/abuse IP-rep,
+licence-verify per source); Azure Service-Tags (rotating-URL discovery step). All real-device / real-traffic /
+real-GPU baselines (G18 Tier-3, G19, G22, X5 device-screen DB, X4 prevalence Berke corpus) remain gated on an
+operator download or real egress — the genuine external frontier, with adapters already built (`grounding.md`).
