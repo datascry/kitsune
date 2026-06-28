@@ -244,6 +244,11 @@ def create_app(
     @app.get("/arena/gate/{name}", response_class=HTMLResponse, include_in_schema=False)
     def arena_gate(name: str) -> HTMLResponse:
         # One challenge per page: its widget + the dual (gate vs detector) verdict, on the shared doc shell.
+        # Guard the slug at the boundary: a gate slug is a fixed lowercase-kebab token, so reject anything
+        # else up front. This whitelists the path param to chars that cannot carry HTML/JS markup before it is
+        # ever reflected into the page's canonical URL — defence-in-depth on top of the registry lookup below.
+        if not re.fullmatch(r"[a-z0-9-]{1,40}", name):
+            raise HTTPException(status_code=404, detail="unknown challenge")
         page = arena_gate_html(name)
         if page is None:
             raise HTTPException(status_code=404, detail="unknown challenge")
