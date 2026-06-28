@@ -1,5 +1,5 @@
 # detector/ip_reputation_refresh — refresh the IP-reputation seed lists from authoritative public sources.
-# Fetches Tor exits + cloud ranges + X4BNet VPN/datacenter lists into data/*.txt; run at deploy (output not committed).
+# Fetches Tor/cloud/X4BNet (proxy+datacenter) + Spamhaus DROP/IPsum (abuse) into data/*.txt at deploy (uncommitted).
 
 """Refresh the IP-reputation feed (``data/datacenter_cidrs.txt`` / ``data/proxy_exit_cidrs.txt``).
 
@@ -12,7 +12,9 @@ one-CIDR-per-line seed format the producer (:mod:`kitsune_detector.ip_reputation
 Sources: Tor bulk exit list + the MIT-licensed X4BNet VPN list (proxy/VPN/Tor exits); AWS + GCP cloud
 ranges + the X4BNet datacenter list (hosting). X4BNet widens both feeds well beyond the original Tor-only
 proxy seed and cloud-only datacenter seed — its MIT licence (stated in the repo README, covering the list
-data) keeps the lab self-contained and redistributable.
+data) keeps the lab self-contained and redistributable. A third ``abuse`` feed (distinct from proxy/datacenter)
+pulls Spamhaus DROP (hijacked/criminal-leased netblocks, free-to-use) + IPsum level-4 (IPs on >=4 blocklists,
+Unlicense/public-domain) → ``reputation.is_abuse_listed`` (rep.abuse_listed + the coordination corroborator).
 
 Pure-stdlib (``urllib`` + ``json``), no paid API — in keeping with the self-contained lab. The fetch is
 injectable (:func:`refresh` takes a ``Fetcher``) so the parsing/normalisation is unit-tested hermetically;
@@ -46,6 +48,11 @@ DIGITALOCEAN_RANGES_URL = "https://www.digitalocean.com/geo/google.csv"
 CLOUDFLARE_V4_URL = "https://www.cloudflare.com/ips-v4"
 CLOUDFLARE_V6_URL = "https://www.cloudflare.com/ips-v6"
 FASTLY_RANGES_URL = "https://api.fastly.com/public-ip-list"
+# Abuse/threat reputation (distinct from datacenter/proxy): hijacked or criminal-leased netblocks (Spamhaus
+# DROP, free-to-use, JSON `{"cidr":...}` rows) + IPs on >=4 independent blocklists (IPsum, Unlicense/public
+# domain, one IP per line). An IP connecting FROM these is bot/abuse infrastructure, not a clean eyeball.
+SPAMHAUS_DROP_URL = "https://www.spamhaus.org/drop/drop_v4.json"
+IPSUM_LEVEL4_URL = "https://raw.githubusercontent.com/stamparm/ipsum/master/levels/4.txt"
 
 _DATA = Path(__file__).parent / "data"
 _Net = ipaddress.IPv4Network | ipaddress.IPv6Network
@@ -74,6 +81,10 @@ _PRODUCTION_FLOORS = {
     "gcp": 100,
     "x4b_vpn": 1000,
     "x4b_datacenter": 1000,
+    # Abuse sources (live 2026-06-28: Spamhaus DROP ~1.7k CIDRs, IPsum level-4 ~5-30k IPs); floors ~10x below
+    # so a format/URL drift collapsing the parse to ~0 trips the guard rather than silently emptying the list.
+    "spamhaus_drop": 200,
+    "ipsum": 500,
 }
 
 #: A function that fetches a URL and returns the body as text. Injected so tests stay offline.
@@ -203,6 +214,40 @@ def parse_fastly_ranges(text: str) -> list[str]:
     return out
 
 
+def parse_spamhaus_drop(text: str) -> list[str]:
+    """Spamhaus DROP ``drop_v4.json`` → one JSON object per line ``{"cidr": "1.10.16.0/20", ...}``.
+
+    It is JSON-LINES (not a single array) with a trailing metadata line (``{"type":"metadata",...}``) that
+    carries no ``cidr`` and is skipped. Blank/comment (``;`` legacy header) / unparseable lines are skipped, so
+    a source switching to an HTML error page parses to ~0 and trips the floor guard rather than poisoning seed.
+    """
+    out: list[str] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith(";") or line.startswith("#"):
+            continue
+        obj = _loads_obj(line)
+        if isinstance(obj, dict) and isinstance(obj.get("cidr"), str):
+            out.append(obj["cidr"])
+    return out
+
+
+def parse_ipsum(text: str) -> list[str]:
+    """IPsum ``levels/4.txt`` → one IP per line (IPs on >=4 blocklists) → host CIDR (/32). ``#`` comments and
+    junk skipped (so an HTML error page parses to ~0 and trips the floor guard)."""
+    out: list[str] = []
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        try:
+            addr = ipaddress.ip_address(line)
+        except ValueError:
+            continue
+        out.append(f"{line}/32" if addr.version == 4 else f"{line}/128")
+    return out
+
+
 def normalize_cidrs(cidrs: Iterable[str]) -> list[str]:
     """Validate, dedupe, and sort CIDRs (by version, then network address, then prefix). Junk dropped.
 
@@ -255,6 +300,8 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
     do_raw = parse_digitalocean_csv(_get(DIGITALOCEAN_RANGES_URL))
     cloudflare_raw = parse_cidr_list(_get(CLOUDFLARE_V4_URL)) + parse_cidr_list(_get(CLOUDFLARE_V6_URL))
     fastly_raw = parse_fastly_ranges(_get(FASTLY_RANGES_URL))
+    spamhaus_raw = parse_spamhaus_drop(_get(SPAMHAUS_DROP_URL))
+    ipsum_raw = parse_ipsum(_get(IPSUM_LEVEL4_URL))
     if min_counts:
         # Only the core sources are floor-guarded (a 0-parse = real drift → fail loud). The additive cloud
         # sources are best-effort and carry no floor, so their absence never aborts.
@@ -264,6 +311,8 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
             ("gcp", len(gcp_raw)),
             ("x4b_vpn", len(x4b_vpn_raw)),
             ("x4b_datacenter", len(x4b_dc_raw)),
+            ("spamhaus_drop", len(spamhaus_raw)),
+            ("ipsum", len(ipsum_raw)),
         ):
             floor = min_counts.get(src, 0)
             if got < floor:
@@ -274,6 +323,7 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
     # Cloudflare + Fastly cloud/CDN ranges + X4BNet datacenter list. normalize_cidrs dedupes + sorts the union.
     proxy_exit = normalize_cidrs(tor_raw + x4b_vpn_raw)
     datacenter = normalize_cidrs(aws_raw + gcp_raw + oracle_raw + do_raw + cloudflare_raw + fastly_raw + x4b_dc_raw)
+    abuse = normalize_cidrs(spamhaus_raw + ipsum_raw)
     regen = (
         "Regenerate: python -m kitsune_detector.ip_reputation_refresh "
         "(output not committed — see docs/ip-reputation-data.md)."
@@ -289,6 +339,11 @@ def refresh(fetch: Fetcher, *, min_counts: dict[str, int] | None = None) -> dict
             f"Sources: AWS + GCP + Oracle + DigitalOcean + Cloudflare + Fastly + X4BNet datacenter "
             f"({len(datacenter)} entries). {regen}",
             datacenter,
+        ),
+        "abuse_cidrs.txt": render_seed(
+            "detector/data/abuse_cidrs — GENERATED abuse/threat CIDRs (deploy-time; do not commit).",
+            f"Sources: Spamhaus DROP (free-to-use) + IPsum level-4 (Unlicense) ({len(abuse)} entries). {regen}",
+            abuse,
         ),
     }
 

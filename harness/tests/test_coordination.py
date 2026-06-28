@@ -190,6 +190,7 @@ def _sess(
     ja4_client: str | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
+    abuse_listed: bool = False,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -203,6 +204,8 @@ def _sess(
         sigs.append(mk(Layer.browser, "webdriver", True, Source.collector))
     if datacenter:  # IP-reputation flag — corroborates an ambiguous tell (fp-collision / template-similarity)
         sigs.append(mk(Layer.reputation, "asn_is_datacenter", True, Source.detector))
+    if abuse_listed:  # abuse/threat IP-rep flag (Spamhaus DROP / IPsum) — same corroboration as datacenter
+        sigs.append(mk(Layer.reputation, "is_abuse_listed", True, Source.detector))
     if trace_descriptor is not None:
         sigs.append(mk(Layer.behavioral, "trace_descriptor", trace_descriptor, Source.collector))
     if tls_ticket_id is not None:
@@ -371,6 +374,19 @@ def test_tool_ja4_without_ambiguous_binding_is_not_a_fleet() -> None:
     ]
     v = score_cluster("X", members)
     assert v.label != "fleet"
+
+
+def test_abuse_listed_ip_corroborates_fp_collision() -> None:
+    # An abuse/threat-listed source IP (Spamhaus DROP / IPsum) corroborates an ambiguous fp-collision as a bot
+    # fleet, exactly like a datacenter flag does — the third IP-reputation dimension wired into the gate.
+    members = [
+        ("a", _sess("a", "X", 8, "Windows", observed_ip="1.10.16.5", fp_hash="clone", abuse_listed=True)),
+        ("b", _sess("b", "X", 8, "Windows", observed_ip="1.10.32.6", fp_hash="clone", abuse_listed=True)),
+        ("c", _sess("c", "X", 8, "Windows", observed_ip="1.10.48.7", fp_hash="clone", abuse_listed=True)),
+    ]
+    v = score_cluster("X", members)
+    assert v.cloned_fingerprint == "clone"
+    assert v.label == "fleet"  # abuse-listed IP-rep corroborates the collision — no automation tell needed
 
 
 def test_corporate_fleet_fp_collision_is_not_convicted() -> None:

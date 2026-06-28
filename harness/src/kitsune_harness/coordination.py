@@ -324,9 +324,10 @@ def _has_automation_tell(sessions: list[Session]) -> bool:
 
 
 def _has_ip_reputation_flag(sessions: list[Session]) -> bool:
-    """True iff any cluster member's source IP is flagged datacenter/hosting or a known proxy/VPN/Tor exit
-    (the ``reputation.asn_is_datacenter`` / ``is_proxy_exit`` signals the detector emits via the curated CIDR
-    feed). This is the IP-reputation disambiguator the ambiguous signals need: a CLONED/randomizer bot fleet
+    """True iff any cluster member's source IP is flagged datacenter/hosting, a known proxy/VPN/Tor exit, or
+    abuse-listed (the ``reputation.asn_is_datacenter`` / ``is_proxy_exit`` / ``is_abuse_listed`` signals the
+    detector emits via the curated CIDR feed — abuse = Spamhaus DROP + IPsum, hijacked/criminal infra). This is
+    the IP-reputation disambiguator the ambiguous signals need: a CLONED/randomizer bot fleet
     runs on datacenter or residential-PROXY infrastructure, whereas a standardized corporate fleet or a
     multi-Chrome-version cohort is on genuine RESIDENTIAL IPs (no flag). So an IP-reputation flag corroborates
     an fp-collision / JA4_c divergence as a real bot fleet even when no per-session automation tell is present
@@ -335,6 +336,7 @@ def _has_ip_reputation_flag(sessions: list[Session]) -> bool:
     return any(
         session.value(Layer.reputation, "asn_is_datacenter") is True
         or session.value(Layer.reputation, "is_proxy_exit") is True
+        or session.value(Layer.reputation, "is_abuse_listed") is True
         for session in sessions
     )
 

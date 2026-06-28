@@ -83,28 +83,32 @@ class IPReputation:
 
     datacenter: tuple[_Net, ...] = ()
     proxy_exit: tuple[_Net, ...] = ()
+    abuse: tuple[_Net, ...] = ()  # hijacked/criminal netblocks + recently-abusive IPs (Spamhaus DROP + IPsum)
     # Derived prefix-length indexes (built once in __post_init__). Excluded from eq/hash/repr — the CIDR
     # tuples above are the canonical, public data; these are just accelerators over the same content.
     _dc_index: _Index = field(init=False, repr=False, compare=False)
     _px_index: _Index = field(init=False, repr=False, compare=False)
+    _ab_index: _Index = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "_dc_index", _build_index(self.datacenter))
         object.__setattr__(self, "_px_index", _build_index(self.proxy_exit))
+        object.__setattr__(self, "_ab_index", _build_index(self.abuse))
 
-    def classify(self, ip: str) -> tuple[bool, bool]:
-        """Return ``(is_datacenter, is_proxy_exit)`` for ``ip``; ``(False, False)`` if it is invalid,
-        private, or matches nothing (a private/LAN address is never datacenter or proxy)."""
+    def classify(self, ip: str) -> tuple[bool, bool, bool]:
+        """Return ``(is_datacenter, is_proxy_exit, is_abuse_listed)`` for ``ip``; all-False if it is invalid,
+        private, or matches nothing (a private/LAN address is never datacenter, proxy, or abuse-listed)."""
         try:
             addr = ipaddress.ip_address(ip)
         except ValueError:
-            return (False, False)
+            return (False, False, False)
         if addr.is_private or addr.is_loopback or addr.is_link_local:
-            return (False, False)
+            return (False, False, False)
         addr_int, version = int(addr), addr.version
         return (
             _index_contains(addr_int, version, self._dc_index),
             _index_contains(addr_int, version, self._px_index),
+            _index_contains(addr_int, version, self._ab_index),
         )
 
     @classmethod
@@ -113,4 +117,5 @@ class IPReputation:
         return cls(
             datacenter=_parse_cidrs(_seed_file("datacenter_cidrs.txt")),
             proxy_exit=_parse_cidrs(_seed_file("proxy_exit_cidrs.txt")),
+            abuse=_parse_cidrs(_seed_file("abuse_cidrs.txt")),
         )

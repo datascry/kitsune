@@ -244,6 +244,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "bh.touch_uniform_velocity",
         ),
         ([(Layer.reputation, "is_proxy_exit", True, Source.detector)], "rep.known_proxy_exit"),
+        ([(Layer.reputation, "is_abuse_listed", True, Source.detector)], "rep.abuse_listed"),
         ([(Layer.behavioral, "mouse_straightness", 0.99, Source.collector)], "bh.path_too_straight"),
         ([(Layer.behavioral, "mouse_velocity_cv", 0.02, Source.collector)], "bh.uniform_velocity"),
         ([(Layer.behavioral, "power_law_exponent", 0.0, Source.collector)], "bh.power_law_violation"),

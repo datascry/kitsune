@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.56`); regenerate with `task catalog`, do not edit by hand. **148 rules**: 106 active · 36 experimental · 6 retired; 97 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **149 rules**: 107 active · 36 experimental · 6 retired; 97 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (36)
 
@@ -186,11 +186,12 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.touch_uniform_velocity` | behavioral | below_threshold | 0.5 | experimental | Touch-swipe velocity too uniform for a human finger (mobile) |
 | `bh.uniform_velocity` | behavioral | below_threshold | 0.55 | active | Mouse moves at near-constant speed (low velocity CV) |
 
-### reputation layer (4)
+### reputation layer (5)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
+| `rep.abuse_listed` | reputation | present | 0.5 | active | Source IP is on an abuse/threat reputation list |
 | `rep.datacenter_asn` | reputation | present | 0.5 | active | Source IP belongs to a datacenter / hosting ASN |
 | `rep.known_proxy_exit` | reputation | present | 0.5 | active | Source IP is a known VPN / proxy / Tor exit |
 | `rep.webrtc_origin_datacenter` | reputation | present | 0.6 | active | WebRTC-leaked real origin IP belongs to a datacenter / hosting ASN |
