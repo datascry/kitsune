@@ -138,14 +138,43 @@ export function run(detectorUrl: string, delayMs = 4000): void {
   const pasteEls = new Set<HTMLElement>();
   const changedEls = new Set<HTMLElement>();
   const isField = (t: EventTarget | null): t is HTMLElement =>
-    t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable);
-  window.addEventListener("keydown", (e: KeyboardEvent) => { if (isField(e.target)) kdEls.add(e.target); }, true);
-  window.addEventListener("paste", (e: ClipboardEvent) => { if (e.isTrusted && isField(e.target)) pasteEls.add(e.target); }, true);
-  window.addEventListener("input", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
-  window.addEventListener("change", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
+    t instanceof HTMLInputElement ||
+    t instanceof HTMLTextAreaElement ||
+    (t instanceof HTMLElement && t.isContentEditable);
+  window.addEventListener(
+    "keydown",
+    (e: KeyboardEvent) => {
+      if (isField(e.target)) kdEls.add(e.target);
+    },
+    true,
+  );
+  window.addEventListener(
+    "paste",
+    (e: ClipboardEvent) => {
+      if (e.isTrusted && isField(e.target)) pasteEls.add(e.target);
+    },
+    true,
+  );
+  window.addEventListener(
+    "input",
+    (e: Event) => {
+      if (isField(e.target)) changedEls.add(e.target);
+    },
+    true,
+  );
+  window.addEventListener(
+    "change",
+    (e: Event) => {
+      if (isField(e.target)) changedEls.add(e.target);
+    },
+    true,
+  );
   const inputViaPaste = (): boolean => {
     for (const el of changedEls) {
-      const v = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : el.textContent;
+      const v =
+        el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+          ? el.value
+          : el.textContent;
       if (v && !kdEls.has(el) && !pasteEls.has(el)) return true;
     }
     return false;
@@ -160,8 +189,17 @@ export function run(detectorUrl: string, delayMs = 4000): void {
       scrollKeyUsed,
       navigator.maxTouchPoints || 0,
     );
-    const env = buildEnv(pointerEvents, keyEvents, clickEvents, scrollTeleport, inputViaPaste(), cdp);
-    void httpTransport(detectorUrl, fetch as unknown as FetchLike).send(collectSignals(sessionId, env, new Date()));
+    const env = buildEnv(
+      pointerEvents,
+      keyEvents,
+      clickEvents,
+      scrollTeleport,
+      inputViaPaste(),
+      cdp,
+    );
+    void httpTransport(detectorUrl, fetch as unknown as FetchLike).send(
+      collectSignals(sessionId, env, new Date()),
+    );
   };
   // Long-horizon re-post (radar G12): action-cadence needs >=5 high-level actions spread over tens of seconds,
   // far beyond the snapshot delay below. Re-post ONCE when the 5th trusted click lands so the accumulated

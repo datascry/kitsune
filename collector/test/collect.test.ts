@@ -77,12 +77,16 @@ describe("collectSignals action cadence (radar G12)", () => {
   it("emits action_cadence_deliberative for metronomic multi-second clicks (LLM think-time)", () => {
     // 6 clicks ~5s apart with small jitter → median ~5s, low CV → the deliberative agent cadence.
     const env: BrowserEnv = { ...cleanEnv, clickEvents: [0, 5000, 9800, 15100, 19900, 25200] };
-    expect(collectSignals("s", env, NOW).map((s) => s.kind)).toContain("action_cadence_deliberative");
+    expect(collectSignals("s", env, NOW).map((s) => s.kind)).toContain(
+      "action_cadence_deliberative",
+    );
   });
   it("does NOT emit it for bursty human clicks (high variance)", () => {
     // human: irregular sub-second-to-few-second gaps → CV well above 0.35.
     const env: BrowserEnv = { ...cleanEnv, clickEvents: [0, 200, 450, 3500, 3700, 9000] };
-    expect(collectSignals("s", env, NOW).map((s) => s.kind)).not.toContain("action_cadence_deliberative");
+    expect(collectSignals("s", env, NOW).map((s) => s.kind)).not.toContain(
+      "action_cadence_deliberative",
+    );
   });
   it("emits scroll_teleport when the env flags a programmatic scroll jump (radar G14)", () => {
     const env: BrowserEnv = { ...cleanEnv, scrollTeleport: true };
