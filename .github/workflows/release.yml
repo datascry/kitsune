@@ -15,7 +15,19 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      actions: write # to dispatch build-push for the freshly-cut tag (see below)
     steps:
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           release-type: simple
+      # Publish the GHCR images for the new release. We CANNOT rely on build-push's `release: published`
+      # trigger: release-please creates the Release with the default GITHUB_TOKEN, and GitHub suppresses
+      # workflow triggers from GITHUB_TOKEN-generated events (anti-recursion) — so that trigger never fires.
+      # `workflow_dispatch` is the documented EXCEPTION to that rule, so dispatching build-push here (against
+      # the tag release-please just created) reliably builds + pushes detector + edge + arena on every release.
+      - name: Publish release images
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run build-push.yml --ref "${{ steps.release.outputs.tag_name }}"

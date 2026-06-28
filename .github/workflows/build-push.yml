@@ -1,4 +1,4 @@
-# .github/workflows/build-push — publish the detector + edge images to GHCR on each release.
+# .github/workflows/build-push — publish the detector + edge + arena images to GHCR on each release.
 # Pull-based CD (Option B): a release triggers this build; the VPS's Watchtower auto-pulls the new images.
 
 name: build-push
