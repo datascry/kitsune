@@ -312,7 +312,9 @@ def render_doc_page(
         f"{_nav(canonical_path)}{_crumbs_html(canonical_path, title)}"
         f'<main id="main" class="doc">{body_html}</main>'
         '<footer><p>The blue-team side of a <a href="https://github.com/datascry/kitsune">bot detection ⇄ '
-        'evasion lab</a>. <a href="/">Run the live test →</a></p></footer></body></html>'
+        "evasion lab</a>. <strong>No visitor data is captured</strong> "
+        '(<a href="https://github.com/datascry/kitsune/blob/main/docs/privacy.md">privacy</a>). '
+        '<a href="/">Run the live test →</a></p></footer></body></html>'
     )
 
 

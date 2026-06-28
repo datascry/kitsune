@@ -1,9 +1,15 @@
 # Deploy — hosting the full stack with a real network edge
 
-Run Kitsune's **edge + detector** on a VPS with a real domain so the edge captures genuine **TLS JA3/JA4,
-HTTP/2 (JA4H), TCP/IP-OS, and QUIC/HTTP-3** fingerprints from real visitor connections. This is the Tier-3
-unlock the [research radar](research-radar.md) points at: real traffic feeds `task grounding` (real-traffic
-prevalence prior, IP-reputation, the live QUIC rule) and makes the vendor comparison non-IP-confounded.
+Run Kitsune's **edge + detector** on a VPS with a real domain so the edge reads genuine **TLS JA3/JA4,
+HTTP/2 (JA4H), TCP/IP-OS, and QUIC/HTTP-3** fingerprints from real connections and returns a live verdict.
+
+> **Privacy default — nothing is captured.** The public deploy runs the detector **in-memory**
+> (`KITSUNE_DB=:memory:`, set in the prod overlay): a visitor's signals exist only long enough to compute
+> and show *their own* verdict, are **never written to disk**, and are gone on restart. No visitor
+> fingerprints are retained, sold, shared, or used to track across visits, and there are no third-party
+> trackers. This is a hard product constraint — see [privacy.md](privacy.md). The Tier-3 grounding story
+> below is **opt-in, and only for a PRIVATE research instance scored against your OWN evader traffic** — it
+> is never how a public site treats its visitors.
 
 ## Resource requirements
 
@@ -172,30 +178,41 @@ $C up -d       # detector/edge now run the GHCR images; watchtower auto-updates 
 
 - **Image visibility:** make the two GHCR packages **public** (simplest — no pull auth), or keep them private
   and `docker login ghcr.io` on the VPS with a `read:packages` token.
-- **State survives updates:** the `detector-data` (SQLite) and `letsencrypt` volumes persist, so a Watchtower
-  restart loses nothing — and the edge restart also picks up a freshly renewed cert.
+- **State survives updates:** the detector is in-memory by default (no `detector-data` volume, nothing to
+  lose), and the `letsencrypt` volume persists so the cert survives — and the edge restart also picks up a
+  freshly renewed cert. (A private research instance that opted into `KITSUNE_DB=/data/kitsune.db` + a volume
+  keeps that volume across updates; a public site has none.)
 - **Scope:** Watchtower is label-scoped to `detector` + `edge` + `arena` only (it won't touch certbot or itself).
 - **Security note:** Watchtower mounts the Docker socket (root-equivalent) — acceptable on a single research
   box; on a hardened host use a socket-proxy or the SSH-deploy model instead.
 - **Auto-update cadence:** every 5 min (`WATCHTOWER_POLL_INTERVAL`); deployments are gated to releases because
   only a release builds+pushes a new image tag.
 
-## What it unlocks (Tier-3 grounding)
+## Tier-3 grounding (private research instance only — never on visitor data)
 
-Once real traffic flows, run the grounding sweep over the captured sessions (see [grounding.md](grounding.md)):
+The grounding sweep evaluates the edge-only rules on real data — the QUIC `net.quic_*` /
+`net.quic_unstable_within_session` rules over a trusted cert, IP-reputation from real egress, a
+real-traffic prevalence prior. **Kitsune does not get there by capturing the public site's visitors.**
+It gets there only on a **private** instance that you deliberately opt into persistence on
+(`KITSUNE_DB=/data/kitsune.db` + a volume) and feed with **your own evader fleet's traffic** — the red team
+hitting your own blue team. That is the operator's own data, on a host that serves no real users.
 
 ```sh
-docker compose ... exec detector sh -c 'ls /data'           # the persisted store
-task grounding -- <exported captures> --expect legit         # FP gate on real users
-task grounding -- <exported captures> --build-prior ...       # real-traffic prevalence prior
+# On a PRIVATE instance you control, scored against your OWN evader runs (not a public site):
+task grounding -- <your evader captures> --expect bot          # recall on your red team
+task grounding -- <your evader captures> --build-prior ...      # prevalence prior from your own traffic
 ```
 
-This is where the edge-only rules finally evaluate on real data: the QUIC `net.quic_*` /
-`net.quic_unstable_within_session` rules go live (real Chrome QUIC over the trusted cert), IP-reputation
-populates from real egress, and the prevalence prior becomes real-traffic-grounded.
+Only **de-identified aggregates** (a rebuilt prior, IP-rep counts, verdict reports) are ever committed or
+shared — never raw captures (the standing data rule). See [grounding.md](grounding.md) and
+[privacy.md](privacy.md).
 
 ## Security & data
 
+- **No visitor data is captured — the default, and the point.** The prod overlay sets
+  `KITSUNE_DB=:memory:`, so the detector holds a visitor's signals only in memory to compute *their* verdict
+  and forgets them immediately; nothing is written to disk, retained, sold, shared, or used to track. There
+  is no `detector-data` volume on a public site. See [privacy.md](privacy.md).
 - The edge runs as root for `CAP_NET_RAW` (a research-demo trade-off; tighten to non-root + `setcap` later).
 - The detector port is never published — only 443 (tcp+udp) and 80 face the internet.
 - **Set `KITSUNE_ADMIN_TOKEN`.** With it set, the inspection endpoints (`/session`, `/verdict`,
