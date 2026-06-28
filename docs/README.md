@@ -52,14 +52,17 @@ they live in [`detection-catalog.md`](detection-catalog.md) (generated from
 
 | Doc | Purpose |
 |---|---|
-| [`deploy.md`](deploy.md) | Hosting the full stack with a real network edge. |
+| [`deploy.md`](deploy.md) | Hosting the full stack with a real network edge — including the in-memory, no-capture privacy default for a public site. |
+| [`privacy.md`](privacy.md) | The data-handling posture: the public site captures **no** visitor data — signals are scored in memory and never written to disk, retained, sold, shared, or used to track. Why that's structurally true, not just stated. |
 | [`ip-reputation-data.md`](ip-reputation-data.md) | The producer for the reputation layer (datacenter ASN / proxy / VPN / Tor exit); pairs with the keyless DB-IP Lite geo path (`dbip-city-lite.mmdb` / `dbip-asn-lite.mmdb`, refreshed by the geo-refresh companion). |
 
 ## Coordination
 
 | Doc | Purpose |
 |---|---|
+| [`fleet.md`](fleet.md) | The full red⇄blue coordination loop end to end: Skulk + the fleet manager + objectives (red), the per-binding and axis-A scorers (blue), the diversification levers, and the escalation showcase. Start here for coordination. |
 | [`coordination-proxy.md`](coordination-proxy.md) | Fleet-level coordination verdicts — the two fleet shapes a spoofing fleet cannot both avoid; includes the scenario battery (precision/recall) and a worked snapshot. |
+| [`coordination-evasion.md`](coordination-evasion.md) | The red-side evasion view of the coordination frontier — how a fleet diversifies to defeat each binding. |
 
 ## Generated reference _(do not hand-edit)_
 
@@ -88,3 +91,4 @@ they live in [`detection-catalog.md`](detection-catalog.md) (generated from
 | [`../harness/README.md`](../harness/README.md) | Scenario runner + reproducible scoreboard; the ethics allow-list. |
 | [`../collector/README.md`](../collector/README.md) | In-browser signal collection — the focused production page script + the full self-test livepage. |
 | [`../evaders/README.md`](../evaders/README.md) | The red-team ladder of real anti-detect tools/browsers (allow-list only). |
+| [`../fleet/README.md`](../fleet/README.md) | Skulk — the fleet adversary-emulation kit (coordination-shaped sessions; authorization-scoped in code). |
