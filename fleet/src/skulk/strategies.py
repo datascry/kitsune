@@ -76,6 +76,18 @@ def _descriptor(seed: int, i: int) -> list[float]:
     return [min(1.0, max(0.0, c + rng.gauss(0, _DESCRIPTOR_JITTER))) for c in _HUMANIZER_DESCRIPTOR]
 
 
+# A WIDER jitter so the descriptors cluster JUST ABOVE the hard template floor: median pairwise ~0.13 (jitter
+# 0.04 → ~0.04*sqrt(2*6)), above the 0.10 floor (so template_similarity stays SILENT) yet within axis A's 0.15
+# soft eps (so the aggregate descriptor dimension still links them). The evolved humanizer tuned to the floor.
+_DIFFUSE_JITTER = 0.04
+
+
+def _diffuse_descriptor(seed: int, i: int) -> list[float]:
+    """A humanizer descriptor tuned just above the hard floor — escapes template_similarity, caught by axis A."""
+    rng = random.Random(_h("diffuse", seed, i))
+    return [min(1.0, max(0.0, c + rng.gauss(0, _DIFFUSE_JITTER))) for c in _HUMANIZER_DESCRIPTOR]
+
+
 def _ip(seed: int, i: int) -> str:
     """A distinct source IP per node (the in-sandbox analog of one proxy egress per fleet member)."""
     return f"10.77.{seed % 254 + 1}.{i + 1}"
@@ -274,6 +286,37 @@ class IPv6Rotate:
                 hardware_concurrency=8,
                 platform="Win32",
                 automation=True,  # corroborates the (ambiguous) fp-collision as a bot fleet, not a cohort
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class DiffuseCampaign:
+    name = "diffuse-campaign"
+    summary = (
+        "the MAXIMAL evader: shared build (one JA4) + lockstep arrival + a humanizer tuned JUST ABOVE the hard "
+        "template floor, with DISTINCT fp/trace/IP per node and clean IPs — no single pairwise binding, so the "
+        "per-cluster scorer caps at candidate; caught only by axis A (aggregate multi-dimensional density)."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # The diversified fleet that defeats every pairwise binding: distinct fp (no fp_collision), distinct
+        # trace_hash (no exact trace_collision), descriptors tuned ABOVE the 0.10 floor (template_similarity
+        # silent), no shared WebRTC origin / ticket, clean residential IPs (no datacenter flag). What remains is
+        # AGGREGATE correlation: one JA4 build + co-timed arrival + a descriptor family within axis A's soft eps.
+        ja4 = _ja4(seed)
+        return [
+            FleetMember(
+                f"camp-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("campfp", seed, i),  # distinct → no fp_collision
+                trace_hash=_h("camptrace", seed, i),  # distinct → no exact trace_collision
+                trace_descriptor=_diffuse_descriptor(seed, i),  # just above the floor → template_similarity silent
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,  # clean: no JS automation tell, no datacenter — only aggregate structure remains
             )
             for i in range(n)
         ]

@@ -34,6 +34,7 @@ from __future__ import annotations
 import ipaddress
 import itertools
 import statistics
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from kitsune_detector.models import MISSING, Layer, Session
@@ -691,6 +692,174 @@ def score_corpus(corpus: list[tuple[str, Session]]) -> list[FleetVerdict]:
     :func:`_clusters`)."""
     verdicts = [score_cluster(key, members, basis=basis) for basis, key, members in _clusters(corpus)]
     return sorted(verdicts, key=lambda v: -v.score)
+
+
+# ── Axis A: population/aggregate coordination (the campaign detector) ──────────────────────────────────────
+# The per-cluster scorer above convicts on a PAIRWISE binding a real cohort cannot produce (cloned fp, replayed
+# trace, shared origin, reused ticket, template-tight traces). A fully-diversified fleet removes every such
+# binding — distinct fp per node, distinct trace, descriptors tuned just ABOVE the hard template floor, no shared
+# origin/ticket — and slips through as singletons (the maximal in-sandbox evader). But even with no single hard
+# binding, a coordinated campaign is correlated IN AGGREGATE across several INDEPENDENT weak dimensions at once;
+# a real diverse population (even a flash crowd, tight on time+build only) is not. This is the lab's coherence
+# thesis lifted from the session to the COHORT: flag a community that is dense across >= _CAMPAIGN_MIN_DENSE_DIMS
+# independent soft dimensions. Conviction posture: CANDIDATE-grade intelligence — the RELATIVE multi-dimensional
+# structure is groundable in-sandbox, but the ABSOLUTE thresholds (what an organic population's density is) are
+# external-data-bound (real traffic), so this surfaces a `campaign` for operator review, not an auto-conviction.
+_CAMPAIGN_SOFT_EPS = 0.15  # descriptor distance below which two traces are "similar" (looser than the 0.10 floor)
+_CAMPAIGN_WINDOW_S = 120.0  # arrivals within this many seconds are co-timed
+_CAMPAIGN_EDGE_DIMS = 2  # a pair links when similar on >= this many independent dimensions
+_CAMPAIGN_DENSITY = 0.5  # a dimension is "dense" in a community when >= this fraction of its pairs share it
+_CAMPAIGN_MIN_DENSE_DIMS = 3  # a community is a `campaign` when dense on >= this many independent dimensions
+_CAMPAIGN_MIN_MEMBERS = 3
+
+
+def _session_rep_flag(s: Session) -> bool:
+    """True iff the session carries any IP-reputation flag (datacenter / proxy / abuse) — shared-infra class."""
+    return (
+        s.value(Layer.reputation, "asn_is_datacenter") is True
+        or s.value(Layer.reputation, "is_proxy_exit") is True
+        or s.value(Layer.reputation, "is_abuse_listed") is True
+    )
+
+
+#: The independent SOFT dimensions a coordinated cohort correlates on (none is a conviction alone). Each is a
+#: pairwise predicate over two sessions; a real diverse population is correlated on at most one or two of these.
+_CAMPAIGN_DIMS: list[tuple[str, Callable[[Session, Session], bool]]] = []
+
+
+def _campaign_dim(name: str) -> Callable[[Callable[[Session, Session], bool]], Callable[[Session, Session], bool]]:
+    def reg(fn: Callable[[Session, Session], bool]) -> Callable[[Session, Session], bool]:
+        _CAMPAIGN_DIMS.append((name, fn))
+        return fn
+
+    return reg
+
+
+@_campaign_dim("ja4_prefix")
+def _dim_ja4(a: Session, b: Session) -> bool:
+    ja, jb = _ja4(a), _ja4(b)
+    return ja is not None and jb is not None and _ja4_prefix(ja) == _ja4_prefix(jb)
+
+
+@_campaign_dim("descriptor")
+def _dim_descriptor(a: Session, b: Session) -> bool:
+    da = _as_descriptor(a.value(Layer.behavioral, "trace_descriptor"))
+    db = _as_descriptor(b.value(Layer.behavioral, "trace_descriptor"))
+    if da is None or db is None:
+        return False
+    from .biomech import descriptor_distance
+
+    return descriptor_distance(da, db) <= _CAMPAIGN_SOFT_EPS
+
+
+@_campaign_dim("lockstep")
+def _dim_lockstep(a: Session, b: Session) -> bool:
+    return abs((a.first_seen - b.first_seen).total_seconds()) <= _CAMPAIGN_WINDOW_S
+
+
+@_campaign_dim("origin_reputation")
+def _dim_origin_rep(a: Session, b: Session) -> bool:
+    return _session_rep_flag(a) and _session_rep_flag(b)
+
+
+@_campaign_dim("prevalence_tail")
+def _dim_prevalence(a: Session, b: Session) -> bool:
+    return a.value(Layer.browser, "prevalence_low") is True and b.value(Layer.browser, "prevalence_low") is True
+
+
+@dataclass(frozen=True)
+class CampaignVerdict:
+    """A graded population/aggregate coordination verdict for one community (axis A)."""
+
+    members: list[str]
+    dense_dimensions: list[str]  # the independent soft dimensions the community is dense on (>= _CAMPAIGN_DENSITY)
+    distinct_origins: int
+    score: float
+    label: str  # "campaign" | "candidate"
+    evidence: list[str] = field(default_factory=list)
+
+
+def _campaign_components(corpus: list[tuple[str, Session]]) -> list[list[int]]:
+    """Union-find connected components over the multi-dimensional similarity graph: an edge links two sessions
+    that are similar on >= _CAMPAIGN_EDGE_DIMS independent dimensions."""
+    n = len(corpus)
+    parent = list(range(n))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            si, sj = corpus[i][1], corpus[j][1]
+            shared = sum(1 for _name, fn in _CAMPAIGN_DIMS if fn(si, sj))
+            if shared >= _CAMPAIGN_EDGE_DIMS:
+                parent[find(i)] = find(j)
+    groups: dict[int, list[int]] = {}
+    for i in range(n):
+        groups.setdefault(find(i), []).append(i)
+    return [g for g in groups.values() if len(g) >= _CAMPAIGN_MIN_MEMBERS]
+
+
+def score_campaigns(corpus: list[tuple[str, Session]]) -> list[CampaignVerdict]:
+    """Grade population-level coordination: communities dense across multiple INDEPENDENT soft dimensions — the
+    diversified fleet that leaks no single pairwise binding (so :func:`score_corpus` misses it) yet is correlated
+    in aggregate. Strongest first. A community spanning >= 2 distinct origins and dense on >= 3 independent
+    dimensions is a `campaign`; dense on exactly 2 is a `candidate` (a flash crowd shape — review, not convict)."""
+    verdicts: list[CampaignVerdict] = []
+    for comp in _campaign_components(corpus):
+        members = sorted(corpus[i][0] for i in comp)
+        sessions = [corpus[i][1] for i in comp]
+        origins = len(_distinct_origins(sessions))
+        if origins < 2:
+            continue  # a single origin's own sessions are not a multi-node campaign
+        pairs = list(itertools.combinations(comp, 2))
+        dense: list[str] = []
+        for name, fn in _CAMPAIGN_DIMS:
+            hits = sum(1 for i, j in pairs if fn(corpus[i][1], corpus[j][1]))
+            if pairs and hits / len(pairs) >= _CAMPAIGN_DENSITY:
+                dense.append(name)
+        if len(dense) < 2:
+            continue
+        label = "campaign" if len(dense) >= _CAMPAIGN_MIN_DENSE_DIMS else "candidate"
+        score = min(1.0, 0.3 + 0.18 * len(dense))
+        evidence = [
+            f"{len(members)} sessions across {origins} distinct origins form a community dense on "
+            f"{len(dense)} independent dimension(s): {', '.join(dense)}",
+            "no single pairwise binding required — aggregate multi-dimensional correlation a diverse cohort "
+            "(even a flash crowd, tight on build+time only) does not produce; candidate-grade pending an "
+            "organic-traffic baseline (absolute thresholds external-data-bound)",
+        ]
+        verdicts.append(
+            CampaignVerdict(
+                members=members,
+                dense_dimensions=dense,
+                distinct_origins=origins,
+                score=round(score, 3),
+                label=label,
+                evidence=evidence,
+            )
+        )
+    return sorted(verdicts, key=lambda v: -v.score)
+
+
+def render_campaigns(corpus: list[tuple[str, Session]]) -> str:
+    """Render the population/aggregate campaign verdicts (axis A) as markdown."""
+    verdicts = score_campaigns(corpus)
+    lines = [f"## Campaigns (aggregate) — {len(verdicts)} community(ies) across {len(corpus)} sessions", ""]
+    if not verdicts:
+        return "\n".join([*lines, "- (no multi-dimensional community)"]) + "\n"
+    for v in verdicts:
+        lines.append(
+            f"### `{v.label}` — score **{v.score:.2f}** · {len(v.members)} sessions · dims {v.dense_dimensions}"
+        )
+        lines.append(f"- members: {', '.join(v.members)}")
+        for e in v.evidence:
+            lines.append(f"- {e}")
+        lines.append("")
+    return "\n".join(lines) + "\n"
 
 
 def render_coordination(corpus: list[tuple[str, Session]]) -> str:

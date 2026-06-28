@@ -126,6 +126,22 @@ def test_tool_fleet_is_no_js_ticket_bound_with_client_hint() -> None:
     assert assess(members).detectable  # Skulk's own check: the reused ticket is detectable
 
 
+def test_diffuse_campaign_leaks_no_pairwise_binding() -> None:
+    members = get("diffuse-campaign").members(4, seed=3)
+    assert len({m.ja4 for m in members}) == 1  # one build (the aggregate JA4 dimension)
+    assert len({m.fp_hash for m in members}) == 4  # distinct fp → no fp_collision
+    assert len({m.trace_hash for m in members}) == 4  # distinct trace → no exact trace_collision
+    assert all(not m.automation and not m.datacenter for m in members)  # clean: no tell, no IP-rep flag
+    # descriptors cluster JUST ABOVE the 0.10 hard floor (template_similarity silent) — median > 0.10
+    import math
+    import statistics
+    from itertools import combinations
+
+    descs = [m.trace_descriptor for m in members]
+    dists = [math.dist(a, b) for a, b in combinations(descs, 2)]
+    assert statistics.median(dists) > 0.10  # above the hard floor → escapes per-binding template_similarity
+
+
 def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("cloned").members(3, 1)).detectable  # fp-collision
     assert assess(get("trace-replay").members(3, 1)).detectable  # trace-collision

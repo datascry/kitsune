@@ -26,7 +26,7 @@ from typing import Any
 
 from kitsune_detector.models import Session
 
-from .coordination import FleetVerdict, render_coordination, score_corpus
+from .coordination import CampaignVerdict, FleetVerdict, render_coordination, score_campaigns, score_corpus
 
 JsonGetter = Callable[[str], Any]
 
@@ -67,6 +67,12 @@ def score_live(base_url: str, *, get_json: JsonGetter = _http_get_json) -> list[
 def render_live(base_url: str, *, get_json: JsonGetter = _http_get_json) -> str:
     """Fetch the live corpus and render the coordination board as markdown."""
     return render_coordination(fetch_live_corpus(base_url, get_json=get_json))
+
+
+def score_campaigns_live(base_url: str, *, get_json: JsonGetter = _http_get_json) -> list[CampaignVerdict]:
+    """Fetch the live corpus and grade population-level coordination (axis A) — the diversified-fleet campaigns
+    that leak no single pairwise binding but correlate in aggregate across independent soft dimensions."""
+    return score_campaigns(fetch_live_corpus(base_url, get_json=get_json))
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover - thin CLI

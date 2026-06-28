@@ -14,6 +14,7 @@ from kitsune_harness.coordination import (
     render_coordination,
     render_stream,
     replay_stream,
+    score_campaigns,
     score_cluster,
     score_corpus,
 )
@@ -454,6 +455,106 @@ def test_distinct_fingerprints_are_not_a_collision() -> None:
     v = score_cluster("X", members)
     assert v.cloned_fingerprint is None
     assert v.label == "candidate"
+
+
+# Three descriptors forming an equilateral triangle of side ~0.12 — ABOVE the hard template floor (0.10, so
+# template_similarity stays silent) yet within axis A's soft eps (0.15, so the descriptor dimension links them).
+_B = [0.20, 0.60, 0.10, 0.20, 0.30, 0.70]
+_DIFFUSE_DESCRIPTORS = [
+    _B,
+    [_B[0] + 0.12, *_B[1:]],
+    [_B[0] + 0.06, _B[1] + 0.104, *_B[2:]],
+]
+
+
+def test_axis_a_campaign_caught_where_pairwise_scorer_misses() -> None:
+    # The maximal evader's shape: shared JA4 build + lockstep arrival + a humanizer tuned JUST ABOVE the hard
+    # template floor, with DISTINCT fp per node and clean residential IPs (no datacenter). The pairwise scorer
+    # sees no convicting binding (fp distinct → no fp_collision; descriptor median 0.12 > 0.10 → template silent)
+    # and caps at candidate. Axis A flags it: the community is dense on ja4_prefix + descriptor + lockstep (3
+    # independent dimensions) — aggregate correlation a diverse cohort does not produce.
+    members = [
+        (
+            "m0",
+            _sess(
+                "m0", "X", observed_ip="71.1.1.1", offset_s=0, fp_hash="aaaa", trace_descriptor=_DIFFUSE_DESCRIPTORS[0]
+            ),
+        ),
+        (
+            "m1",
+            _sess(
+                "m1", "X", observed_ip="71.2.2.2", offset_s=10, fp_hash="bbbb", trace_descriptor=_DIFFUSE_DESCRIPTORS[1]
+            ),
+        ),
+        (
+            "m2",
+            _sess(
+                "m2", "X", observed_ip="71.3.3.3", offset_s=20, fp_hash="cccc", trace_descriptor=_DIFFUSE_DESCRIPTORS[2]
+            ),
+        ),
+    ]
+    # pairwise scorer: not a fleet (no convicting binding)
+    assert score_corpus(members)[0].label != "fleet"
+    # axis A: a campaign, dense on 3 independent dimensions
+    camps = score_campaigns(members)
+    assert len(camps) == 1 and camps[0].label == "campaign"
+    assert set(camps[0].dense_dimensions) >= {"ja4_prefix", "descriptor", "lockstep"}
+    assert camps[0].distinct_origins == 3
+
+
+def test_axis_a_ignores_a_diverse_cohort() -> None:
+    # Distinct builds (distinct JA4), spread arrivals, spread human traces → no pair is similar on >=2 dims, so
+    # no community forms. The FP-safety floor: an organic diverse population is not a campaign.
+    members = [
+        (
+            "u0",
+            _sess(
+                "u0",
+                "t13d1111h2_aaaaaaaaaaaa",
+                observed_ip="71.1.1.1",
+                offset_s=0,
+                fp_hash="a",
+                trace_descriptor=_human_traces(3)[0],
+            ),
+        ),
+        (
+            "u1",
+            _sess(
+                "u1",
+                "t13d2222h2_bbbbbbbbbbbb",
+                observed_ip="98.2.2.2",
+                offset_s=600,
+                fp_hash="b",
+                trace_descriptor=_human_traces(3)[1],
+            ),
+        ),
+        (
+            "u2",
+            _sess(
+                "u2",
+                "t13d3333h2_cccccccccccc",
+                observed_ip="24.3.3.3",
+                offset_s=1200,
+                fp_hash="c",
+                trace_descriptor=_human_traces(3)[2],
+            ),
+        ),
+    ]
+    assert score_campaigns(members) == []
+
+
+def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
+    # A flash crowd: one popular build (shared JA4) + co-timed arrival, but REAL humans (descriptors spread) on
+    # distinct IPs. Dense on only 2 dimensions (ja4_prefix + lockstep) → `candidate` for review, NOT a campaign.
+    hu = _human_traces(3)
+    members = [
+        ("f0", _sess("f0", "X", observed_ip="71.1.1.1", offset_s=0, fp_hash="a", trace_descriptor=hu[0])),
+        ("f1", _sess("f1", "X", observed_ip="98.2.2.2", offset_s=15, fp_hash="b", trace_descriptor=hu[1])),
+        ("f2", _sess("f2", "X", observed_ip="24.3.3.3", offset_s=30, fp_hash="c", trace_descriptor=hu[2])),
+    ]
+    camps = score_campaigns(members)
+    assert len(camps) == 1 and camps[0].label == "candidate"
+    assert set(camps[0].dense_dimensions) == {"ja4_prefix", "lockstep"}
 
 
 def _model_traces(n: int) -> list[list[float]]:
