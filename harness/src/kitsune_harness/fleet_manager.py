@@ -37,9 +37,15 @@ from .archetypes import get as get_archetype
 from .coordination import FleetVerdict, score_corpus
 from .evasions import families
 from .evasions import get as get_evasion
+from .objectives import get as get_objective
 from .rps_scout import Requester, RpsReport, Sleeper
 from .rps_scout import scout_rps as _scout_rps
-from .tasks import get_preset, task_from_obj
+from .tasks import BehavioralTask, get_preset, task_from_obj
+
+
+def objective_from_name(name: object, replicas: int) -> list[BehavioralTask]:
+    """Resolve a named objective and shard it across ``replicas`` workers — one distinct compiled task each."""
+    return get_objective(str(name)).compile(replicas)
 
 
 @dataclass(frozen=True)
@@ -241,8 +247,16 @@ def plan_from_obj(obj: Mapping[str, Any]) -> FleetPlan:
         replicas = int(entry.get("replicas", 1))
         proxy = entry.get("proxy")
         extra_env = {str(k): str(v) for k, v in (entry.get("env") or {}).items()}
+        if entry.get("task") is not None and entry.get("objective") is not None:
+            raise ValueError(f"node {entry!r} sets both 'task' and 'objective' — choose one")
         if entry.get("task") is not None:  # a behavioral script the worker replays via CDP (KS_TASK)
             extra_env["KS_TASK"] = task_from_obj(entry["task"]).to_env()
+        # An OBJECTIVE shards a work set across the replicas: each worker gets a DISTINCT compiled KS_TASK over
+        # its own batch, so the fleet pursues the goal collectively (cred-stuffing / account-creation / …),
+        # never N identical scripts. Resolved once and indexed per replica below.
+        objective_tasks = None
+        if entry.get("objective") is not None:
+            objective_tasks = objective_from_name(entry["objective"], replicas)
         base_label = evasion if evasion else _image_base(str(image))
         for rep in range(replicas):
             label = f"{base_label}-{rep}"
@@ -250,6 +264,8 @@ def plan_from_obj(obj: Mapping[str, Any]) -> FleetPlan:
             # trace_collision / template_similarity). Harmless to evasions that ignore it. An explicit
             # KS_NODE_SEED in the entry's env wins (operator override).
             rep_env = {"KS_NODE_SEED": str(rep), **extra_env}
+            if objective_tasks is not None:
+                rep_env["KS_TASK"] = objective_tasks[rep].to_env()
             if evasion:
                 spec = evasion_node(str(evasion), proxy=proxy, label=label, extra_env=rep_env)
             else:
