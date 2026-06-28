@@ -1,0 +1,4 @@
+# detector/data/abuse — seed list of abuse/threat-listed CIDRs (hijacked/criminal netblocks + abusive IPs).
+# These are DYNAMIC public addresses that go stale within hours; this seed ships EMPTY (illustrative). Refresh
+# at deploy time: `python -m kitsune_detector.ip_reputation_refresh` pulls the live Spamhaus DROP (criminal
+# netblocks) + IPsum level-4 (IPs on >=4 blocklists) lists into this file. See docs/ip-reputation-data.md.

@@ -19,11 +19,13 @@ def test_classify_ip_projects_reputation_for_the_wire_panel() -> None:
         ip_reputation=IPReputation(
             datacenter=(ipaddress.ip_network("11.0.0.0/24"),),
             proxy_exit=(ipaddress.ip_network("12.0.0.0/24"),),
+            abuse=(ipaddress.ip_network("13.0.0.0/24"),),
         )
     )
-    assert det.classify_ip("11.0.0.7") == {"datacenter": True, "proxy_exit": False}
-    assert det.classify_ip("12.0.0.7") == {"datacenter": False, "proxy_exit": True}
-    assert det.classify_ip("203.0.113.7") == {"datacenter": False, "proxy_exit": False}
+    assert det.classify_ip("11.0.0.7") == {"datacenter": True, "proxy_exit": False, "abuse_listed": False}
+    assert det.classify_ip("12.0.0.7") == {"datacenter": False, "proxy_exit": True, "abuse_listed": False}
+    assert det.classify_ip("13.0.0.7") == {"datacenter": False, "proxy_exit": False, "abuse_listed": True}
+    assert det.classify_ip("203.0.113.7") == {"datacenter": False, "proxy_exit": False, "abuse_listed": False}
 
 
 def test_scores_human_as_clean(detector: Detector, human_session: Session) -> None:

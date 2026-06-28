@@ -15,7 +15,9 @@ from kitsune_detector.ip_reputation_refresh import (
     DIGITALOCEAN_RANGES_URL,
     FASTLY_RANGES_URL,
     GCP_RANGES_URL,
+    IPSUM_LEVEL4_URL,
     ORACLE_RANGES_URL,
+    SPAMHAUS_DROP_URL,
     TOR_BULK_EXIT_URL,
     X4BNET_DATACENTER_URL,
     X4BNET_VPN_URL,
@@ -26,7 +28,9 @@ from kitsune_detector.ip_reputation_refresh import (
     parse_digitalocean_csv,
     parse_fastly_ranges,
     parse_gcp_ranges,
+    parse_ipsum,
     parse_oracle_ranges,
+    parse_spamhaus_drop,
     parse_tor_bulk_exit,
     refresh,
     render_seed,
@@ -70,6 +74,16 @@ _DO = "143.198.0.0/16,US,NJ,Clifton,07014\n159.65.0.0/16,SG,,Singapore,\n# stray
 _CLOUDFLARE_V4 = "173.245.48.0/20\n103.21.244.0/22\n"
 _CLOUDFLARE_V6 = "2400:cb00::/32\n"
 _FASTLY = json.dumps({"addresses": ["151.101.0.0/16", "23.235.32.0/20"], "ipv6_addresses": ["2a04:4e40::/32"]})
+# Spamhaus DROP drop_v4.json — JSON-LINES (one object per line) + a trailing metadata line + legacy ; comment.
+_SPAMHAUS = (
+    '{"cidr":"1.10.16.0/20","sblid":"SBL256894","rir":"apnic"}\n'
+    '{"cidr":"1.19.0.0/16","sblid":"SBL434604","rir":"apnic"}\n'
+    '{"type":"metadata","timestamp":123}\n'
+    "; a legacy header comment\n"
+    "not-json\n"
+)
+# IPsum levels/4.txt — one IP per line (>=4 blocklists), with a comment, an IPv6, junk, and a duplicate.
+_IPSUM = "118.26.111.107\n80.82.77.139\n# comment\n2001:db8::99\nnot-an-ip\n118.26.111.107\n"
 
 
 def test_parse_tor_bulk_exit_makes_host_cidrs_and_skips_junk() -> None:
@@ -109,6 +123,17 @@ def test_parse_fastly_ranges_collects_v4_and_v6() -> None:
     assert set(parse_fastly_ranges(_FASTLY)) == {"151.101.0.0/16", "23.235.32.0/20", "2a04:4e40::/32"}
 
 
+def test_parse_spamhaus_drop_walks_json_lines_skips_metadata() -> None:
+    assert parse_spamhaus_drop(_SPAMHAUS) == ["1.10.16.0/20", "1.19.0.0/16"]
+    assert parse_spamhaus_drop("<html>error</html>") == []  # HTML error page → 0 → floor guard handles it
+
+
+def test_parse_ipsum_makes_host_cidrs_and_skips_junk() -> None:
+    out = parse_ipsum(_IPSUM)
+    assert "118.26.111.107/32" in out and "80.82.77.139/32" in out and "2001:db8::99/128" in out
+    assert all("not-an-ip" not in c for c in out)
+
+
 def test_parsers_tolerate_malformed_top_level() -> None:
     assert parse_aws_ranges("[]") == []
     assert parse_aws_ranges(json.dumps({"prefixes": "nope"})) == []
@@ -142,31 +167,37 @@ _PAYLOADS = {
     CLOUDFLARE_V4_URL: _CLOUDFLARE_V4,
     CLOUDFLARE_V6_URL: _CLOUDFLARE_V6,
     FASTLY_RANGES_URL: _FASTLY,
+    SPAMHAUS_DROP_URL: _SPAMHAUS,
+    IPSUM_LEVEL4_URL: _IPSUM,
 }
 
 
 def test_refresh_wires_sources_into_loadable_seeds() -> None:
     files = refresh(_PAYLOADS.__getitem__)
-    assert set(files) == {"proxy_exit_cidrs.txt", "datacenter_cidrs.txt"}
+    assert set(files) == {"proxy_exit_cidrs.txt", "datacenter_cidrs.txt", "abuse_cidrs.txt"}
 
     rep = IPReputation(
         datacenter=_parse_cidrs(files["datacenter_cidrs.txt"]),
         proxy_exit=_parse_cidrs(files["proxy_exit_cidrs.txt"]),
+        abuse=_parse_cidrs(files["abuse_cidrs.txt"]),
     )
     # A fetched datacenter range classifies as datacenter, a Tor exit as a proxy exit.
-    assert rep.classify("3.5.140.9") == (True, False)  # inside the AWS 3.5.140.0/22 block
-    assert rep.classify("34.1.208.9") == (True, False)  # inside the GCP 34.1.208.0/20 block
-    assert rep.classify("171.25.193.25") == (False, True)  # Tor exit
+    assert rep.classify("3.5.140.9") == (True, False, False)  # inside the AWS 3.5.140.0/22 block
+    assert rep.classify("34.1.208.9") == (True, False, False)  # inside the GCP 34.1.208.0/20 block
+    assert rep.classify("171.25.193.25") == (False, True, False)  # Tor exit
     # X4BNet widens both feeds: a VPN CIDR → proxy exit, an X4BNet datacenter CIDR → datacenter.
-    assert rep.classify("2.56.16.9") == (False, True)  # inside X4BNet VPN 2.56.16.0/22
-    assert rep.classify("104.16.0.9") == (True, False)  # inside X4BNet datacenter 104.16.0.0/13
+    assert rep.classify("2.56.16.9") == (False, True, False)  # inside X4BNet VPN 2.56.16.0/22
+    assert rep.classify("104.16.0.9") == (True, False, False)  # inside X4BNet datacenter 104.16.0.0/13
     # The added clouds/CDNs all fold into datacenter: Oracle, DigitalOcean, Cloudflare, Fastly.
-    assert rep.classify("129.146.0.9") == (True, False)  # Oracle 129.146.0.0/21
-    assert rep.classify("143.198.0.9") == (True, False)  # DigitalOcean 143.198.0.0/16
-    assert rep.classify("173.245.48.9") == (True, False)  # Cloudflare 173.245.48.0/20
-    assert rep.classify("151.101.0.9") == (True, False)  # Fastly 151.101.0.0/16
+    assert rep.classify("129.146.0.9") == (True, False, False)  # Oracle 129.146.0.0/21
+    assert rep.classify("143.198.0.9") == (True, False, False)  # DigitalOcean 143.198.0.0/16
+    assert rep.classify("173.245.48.9") == (True, False, False)  # Cloudflare 173.245.48.0/20
+    assert rep.classify("151.101.0.9") == (True, False, False)  # Fastly 151.101.0.0/16
+    # The abuse feed: a Spamhaus DROP netblock and an IPsum-listed IP classify as abuse-listed (3rd flag).
+    assert rep.classify("1.10.16.9") == (False, False, True)  # inside Spamhaus DROP 1.10.16.0/20
+    assert rep.classify("118.26.111.107") == (False, False, True)  # IPsum level-4 host
     # A residential-style address in neither set stays clean — the FP-safety invariant.
-    assert rep.classify("203.0.113.7") == (False, False)
+    assert rep.classify("203.0.113.7") == (False, False, False)
 
 
 def test_refresh_floor_guard_passes_when_sources_meet_floor() -> None:
@@ -174,9 +205,9 @@ def test_refresh_floor_guard_passes_when_sources_meet_floor() -> None:
     # a healthy refresh through.
     files = refresh(
         _PAYLOADS.__getitem__,
-        min_counts={"tor": 2, "aws": 3, "gcp": 2, "x4b_vpn": 2, "x4b_datacenter": 2},
+        min_counts={"tor": 2, "aws": 3, "gcp": 2, "x4b_vpn": 2, "x4b_datacenter": 2, "spamhaus_drop": 2, "ipsum": 3},
     )
-    assert set(files) == {"proxy_exit_cidrs.txt", "datacenter_cidrs.txt"}
+    assert set(files) == {"proxy_exit_cidrs.txt", "datacenter_cidrs.txt", "abuse_cidrs.txt"}
 
 
 def test_refresh_floor_guard_fails_loud_on_drifted_source() -> None:
@@ -186,6 +217,14 @@ def test_refresh_floor_guard_fails_loud_on_drifted_source() -> None:
     payloads = {**_PAYLOADS, AWS_RANGES_URL: drifted_aws}
     with pytest.raises(SourceDriftError, match="aws"):
         refresh(payloads.__getitem__, min_counts={"tor": 1, "aws": 1, "gcp": 1})
+
+
+def test_refresh_floor_guard_fails_loud_on_drifted_abuse_source() -> None:
+    # Spamhaus serving an HTML error page → parse_spamhaus_drop returns 0; the floor guard raises rather than
+    # silently writing a near-empty abuse seed (the same drift protection the core sources get).
+    payloads = {**_PAYLOADS, SPAMHAUS_DROP_URL: "<html>503</html>"}
+    with pytest.raises(SourceDriftError, match="spamhaus_drop"):
+        refresh(payloads.__getitem__, min_counts={"spamhaus_drop": 1})
 
 
 def test_refresh_floor_guard_fails_loud_on_drifted_x4bnet_source() -> None:
@@ -206,8 +245,8 @@ def test_optional_source_failure_does_not_abort_refresh() -> None:
 
     files = refresh(fetch, min_counts={"tor": 1, "aws": 1, "gcp": 1, "x4b_vpn": 1, "x4b_datacenter": 1})
     rep = IPReputation(datacenter=_parse_cidrs(files["datacenter_cidrs.txt"]))
-    assert rep.classify("3.5.140.9") == (True, False)  # AWS still present
-    assert rep.classify("143.198.0.9") == (False, False)  # DigitalOcean skipped (was 403), not in the seed
+    assert rep.classify("3.5.140.9") == (True, False, False)  # AWS still present
+    assert rep.classify("143.198.0.9") == (False, False, False)  # DigitalOcean skipped (was 403), not in the seed
 
 
 def test_core_source_fetch_failure_still_floor_aborts() -> None:

@@ -47,8 +47,8 @@ class Detector:
         """Classify an observed IP for the wire panel's reputation row: ``datacenter`` (hosting/cloud) and
         ``proxy_exit`` (proxy/VPN/Tor exit) membership against the curated CIDR lists — the same producer
         the ``rep.*`` rules consume in ``_with_derived``. A clean residential IP returns both ``False``."""
-        is_dc, is_px = self._iprep.classify(ip)
-        return {"datacenter": is_dc, "proxy_exit": is_px}
+        is_dc, is_px, is_ab = self._iprep.classify(ip)
+        return {"datacenter": is_dc, "proxy_exit": is_px, "abuse_listed": is_ab}
 
     def _with_derived(self, session: Session) -> Session:
         """Add score-time derived signals (not persisted). Two enrichments: (1) a network fingerprint with
@@ -80,12 +80,14 @@ class Detector:
         ip = session.value(Layer.network, "observed_ip")
         observed_is_dc: bool | None = None
         if ip is not MISSING:
-            is_dc, is_px = self._iprep.classify(str(ip))
+            is_dc, is_px, is_ab = self._iprep.classify(str(ip))
             observed_is_dc = is_dc
             if is_dc:
                 rep_add.append(mk(Layer.reputation, kind="asn_is_datacenter", value=True))
             if is_px:
                 rep_add.append(mk(Layer.reputation, kind="is_proxy_exit", value=True))
+            if is_ab:
+                rep_add.append(mk(Layer.reputation, kind="is_abuse_listed", value=True))
         # The WebRTC-leaked origin is the REAL machine running the browser (vs observed_ip = the proxy a bot
         # hides behind). A cloud bot behind a residential proxy has a clean observed_ip but leaks its DATACENTER
         # origin via WebRTC; a real user's machine is residential (a VPN user leaks their residential home IP).
@@ -93,7 +95,7 @@ class Detector:
         # tell the observed_ip rules miss. (Corroborating — cloud-desktop/remote-browser users are a rare FP.)
         webrtc_ip = session.value(Layer.browser, "webrtc_public_ip")
         if webrtc_ip is not MISSING:
-            wr_dc, _ = self._iprep.classify(str(webrtc_ip))
+            wr_dc, _, _ = self._iprep.classify(str(webrtc_ip))
             if wr_dc:
                 rep_add.append(mk(Layer.reputation, kind="webrtc_origin_datacenter", value=True))
                 # Cross-layer contradiction: the real machine is in a datacenter (WebRTC origin) but it connects

@@ -112,7 +112,7 @@ source itself, not the aggregator's metadata (GitHub's licence detector missed X
 | **GreyNoise GNQL** (per-IP actor/classification) | X8 (IP-rep actor) / G7 (benign-crawler actors) | api.greynoise.io | API key; community tier rate-limited, GNQL enterprise | ⚠ gated (needs key) | per-IP `classification`/`actor`/`tag`/`spoofable` → `ip_reputation_refresh` actor enrichment at deploy; aggregate/cache only, never commit raw |
 | **Google/Bing crawler IP-range JSON** | G7 (FCrDNS — DNS-free CIDR path) | developers.google.com/static/crawling/ipranges/common-crawlers.json (+ special-crawlers); Bing equivalent | public (Google/MS authoritative) | ✅ public, daily, CIDR JSON | candidate → an authoritative CIDR feed for `net.fake_declared_crawler` (verify a declared crawler with NO DNS round-trip; resilient if DNS is slow/blocked). Edge-side consumer co-located with FCrDNS; not yet wired. |
 | **Azure / Oracle / DigitalOcean / Cloudflare / Fastly ranges** | X4 (IP-rep datacenter) | Oracle `public_ip_ranges.json`, DO `digitalocean.com/geo/google.csv`, Cloudflare `/ips-v4`+`/ips-v6`, Fastly `api.fastly.com/public-ip-list`; Azure Service-Tags (rotating URL) | public | ✅ Oracle/DO/Cloudflare/Fastly stable; Azure rotates | **WIRED** (Oracle/DO/Cloudflare/Fastly → `ip_reputation_refresh` datacenter, per-source floors). Azure needs a discovery step for its rotating Service-Tags URL → candidate. |
-| **Spamhaus DROP/EDROP + IPsum** | X4 (IP-rep proxy/abuse) | spamhaus.org/drop, github.com/stamparm/ipsum | DROP free-to-use; IPsum permissive (verify) | ✅ public, daily | candidate → thicken `proxy_exit` beyond Tor+X4BNet; licence-verify per source (cf. FireHOL caveat). |
+| **Spamhaus DROP + IPsum** | NEW `is_abuse_listed` rep dimension | `spamhaus.org/drop/drop_v4.json`, `raw.githubusercontent.com/stamparm/ipsum/master/levels/4.txt` | **DROP free-to-use** (verified at source); **IPsum = Unlicense / public-domain** (verified at source) | ✅ public, daily (live-parsed 2026-06-28: DROP 1698 CIDRs, IPsum-L4 7140 IPs → 8837 abuse entries) | **WIRED** → a THIRD reputation list `abuse_cidrs.txt` (distinct from datacenter/proxy: hijacked/criminal netblocks + multiply-blocklisted IPs) → `reputation.is_abuse_listed` → rule `rep.abuse_listed` (corroborating) + the coordination corroborator `_has_ip_reputation_flag`. `ip_reputation_refresh` fetches both at deploy (output uncommitted, seed ships empty); floor-guarded (DROP≥200, IPsum≥500). Real-data parsers grounded; calibrate-clean (no IP in browserforge). |
 | **FoxIO ja4db** `ja4plus-mapping.csv` (JA4 → client) | net.ja4_tool_vs_ua coverage + net.tls_vs_ua_browser precision | raw GitHub `FoxIO-LLC/ja4/main/ja4plus-mapping.csv` | **base JA4 = BSD-3-Clause, patent-free** (verified at source: "FoxIO does not have patent claims") — the `ja4` column is all Kitsune uses; JA4+ extension columns (License 1.1) are NOT used | ✅ HTTP 200 (35 ja4 rows, curated) | **WIRED** → expanded `ja4_hints.json` with 10 non-browser library prefixes (Python/Go/WinINET → `net.ja4_tool_vs_ua`) + 4 real browser no-SNI variants (Chromium/Firefox/Safari → `net.tls_vs_ua_browser`). KEY: C2 frameworks inherit their HTTP library's JA4 (Sliver=Go `t13d190900_9dc949149365`, Cobalt Strike=WinINET `t12d190800_d83cc789557e`), so the LIBRARY hint catches the beacon-wearing-a-browser-UA for free — threat intel the on-thesis way, no malware blocklist. No tool↔browser prefix collision; unit-grounded (the established ja4db-reference pattern). Malware-SPECIFIC JA4s (IcedID, SoftEther, bare Cobalt-Strike variants) NOT shipped — a blocklist needs real-traffic FP validation. |
 | Hiding-in-the-Crowd (2M); Andriamilanto (4.15M) | prevalence (stats) | papers | — | ❌ stats-only (not downloadable) | reference distributions only — cannot rebuild a prior from them |
 | **BrainRun** (Zenodo 2598135) | **X6 (mobile touch-biomech human baseline)** | Zenodo direct (gestures 265MB + sensors 3.2GB) | **CC0 1.0** (verified — derive+share aggregates freely) | ✅ **WIRED** | analysed → `docs/mobile-biomech-grounding.md` (161,780 human swipes: velocity-CV floor transferable, straightness not). The richest CC0 swipe baseline. |
@@ -1560,3 +1560,31 @@ candidate for a DNS-free `net.fake_declared_crawler` path, G7); Spamhaus DROP / 
 licence-verify per source); Azure Service-Tags (rotating-URL discovery step). All real-device / real-traffic /
 real-GPU baselines (G18 Tier-3, G19, G22, X5 device-screen DB, X4 prevalence Berke corpus) remain gated on an
 operator download or real egress — the genuine external frontier, with adapters already built (`grounding.md`).
+
+### External data leveraged — Spamhaus DROP + IPsum → abuse IP reputation (2026-06-28)
+
+Second external-data wire from the "check for external data" pass. Two public abuse/threat IP feeds, both
+licence-verified AT SOURCE: **Spamhaus DROP** (`drop_v4.json`, hijacked / criminal-leased netblocks, free-to-use)
+and **IPsum level-4** (`levels/4.txt`, IPs on ≥4 independent blocklists, **Unlicense / public-domain**). These are
+an ABUSE reputation dimension distinct from the existing datacenter (rep.datacenter_asn) and proxy/VPN
+(rep.known_proxy_exit) ones — an IP connecting FROM a hijacked netblock or a multiply-blocklisted address is
+bot/abuse infrastructure, not a clean residential eyeball.
+
+Wired end-to-end, following the X4BNet pattern: `IPReputation.classify` now returns a 3-tuple (added the `abuse`
+list + index); the detector emits `reputation.is_abuse_listed`; new rule `rep.abuse_listed` (reputation/
+corroborating, w0.5); the coordination corroborator `_has_ip_reputation_flag` now also fires on abuse-listed
+(an abuse IP corroborates an ambiguous coordination binding as a bot fleet, exactly like datacenter/proxy);
+`ip_reputation_refresh` fetches both at deploy into `abuse_cidrs.txt` (uncommitted; committed seed ships empty,
+as the proxy-exit seed does — abuse IPs are dynamic), floor-guarded (DROP≥200, IPsum≥500) so a source URL/format
+drift fails loud instead of silently emptying the list.
+
+GROUNDED: real-data parsers run against LIVE production data (2026-06-28: Spamhaus DROP 1698 CIDRs, IPsum-L4 7140
+IPs → 8837 normalized abuse entries, both well above floors); unit-grounded (classify 3rd flag, refresh parsers +
+floor-drift guard, detector emission, engine rule fires, coordination corroboration); FP-safe like every rep.*
+rule — corroborating-only (never convicts alone) and browserforge/Intoli calibration carry no IP, so it cannot
+raise the legit flag rate. detector 444 / harness 354 green.
+
+**Remaining fetchable-but-unwired public CIDR feeds** (next-tier candidates, all in the data table): Google/Bing
+crawler IP-range JSON (a DNS-free `net.fake_declared_crawler` path — deferred: an embedded snapshot goes stale and
+FPs new real crawler IPs, so it needs an edge-side deploy refresh, which the edge lacks today); Azure Service-Tags
+(rotating-URL discovery step). The real-device/GPU/traffic baselines stay operator-gated (adapters built).

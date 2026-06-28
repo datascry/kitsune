@@ -27,7 +27,7 @@ def test_from_seed_prefers_mounted_iprep_dir(tmp_path, monkeypatch) -> None:
     (tmp_path / "proxy_exit_cidrs.txt").write_text("12.0.0.0/24\n", encoding="utf-8")  # routable (not RFC-5737)
     monkeypatch.setenv("KITSUNE_IPREP_DIR", str(tmp_path))
     rep = IPReputation.from_seed()
-    assert rep.classify("12.0.0.7") == (False, True)  # from the mounted proxy_exit list
+    assert rep.classify("12.0.0.7") == (False, True, False)  # from the mounted proxy_exit list
     assert rep.datacenter  # datacenter file absent in the mount -> fell back to the committed seed
 
 
@@ -38,9 +38,9 @@ def test_parse_cidrs_ignores_comments_and_blanks() -> None:
 
 def test_classify_datacenter_proxy_residential() -> None:
     rep = _rep()
-    assert rep.classify("11.0.0.7") == (True, False)  # datacenter
-    assert rep.classify("12.0.0.9") == (False, True)  # proxy/exit
-    assert rep.classify("8.8.4.4") == (False, False)  # neither (public, unlisted)
+    assert rep.classify("11.0.0.7") == (True, False, False)  # datacenter
+    assert rep.classify("12.0.0.9") == (False, True, False)  # proxy/exit
+    assert rep.classify("8.8.4.4") == (False, False, False)  # neither (public, unlisted)
 
 
 def test_index_matches_across_prefix_lengths_and_nesting() -> None:
@@ -54,13 +54,26 @@ def test_index_matches_across_prefix_lengths_and_nesting() -> None:
             ipaddress.ip_network("2606:4700::/32"),  # IPv6
         ),
     )
-    assert rep.classify("13.1.2.3") == (True, False)  # matches the /24 (and the /8)
-    assert rep.classify("13.9.9.9") == (True, False)  # matches the /8 only
-    assert rep.classify("17.5.6.7") == (True, False)  # exact /32 host
-    assert rep.classify("17.5.6.8") == (False, False)  # adjacent host, not listed
-    assert rep.classify("2606:4700::1") == (True, False)  # inside the IPv6 /32
-    assert rep.classify("2606:4800::1") == (False, False)  # outside it
-    assert rep.classify("8.8.4.4") == (False, False)  # public, unlisted
+    assert rep.classify("13.1.2.3") == (True, False, False)  # matches the /24 (and the /8)
+    assert rep.classify("13.9.9.9") == (True, False, False)  # matches the /8 only
+    assert rep.classify("17.5.6.7") == (True, False, False)  # exact /32 host
+    assert rep.classify("17.5.6.8") == (False, False, False)  # adjacent host, not listed
+    assert rep.classify("2606:4700::1") == (True, False, False)  # inside the IPv6 /32
+    assert rep.classify("2606:4800::1") == (False, False, False)  # outside it
+    assert rep.classify("8.8.4.4") == (False, False, False)  # public, unlisted
+
+
+def test_abuse_list_classifies_third_flag() -> None:
+    # The abuse list (Spamhaus DROP + IPsum) is a distinct, third reputation dimension from datacenter/proxy.
+    rep = IPReputation(
+        datacenter=(ipaddress.ip_network("11.0.0.0/8"),),
+        proxy_exit=(ipaddress.ip_network("12.0.0.0/8"),),
+        abuse=(ipaddress.ip_network("1.10.16.0/20"), ipaddress.ip_network("118.26.111.107/32")),
+    )
+    assert rep.classify("1.10.16.9") == (False, False, True)  # Spamhaus DROP netblock
+    assert rep.classify("118.26.111.107") == (False, False, True)  # IPsum host
+    assert rep.classify("11.0.0.7") == (True, False, False)  # still datacenter, not abuse
+    assert rep.classify("8.8.4.4") == (False, False, False)  # clean
 
 
 def test_index_agrees_with_naive_containment_on_a_sample() -> None:
@@ -89,15 +102,15 @@ def test_ipreputation_stays_hashable_and_equal_with_derived_index() -> None:
 
 def test_classify_private_and_invalid_are_clean() -> None:
     rep = _rep()
-    assert rep.classify("172.22.0.4") == (False, False)  # private (the lab's own container range)
-    assert rep.classify("127.0.0.1") == (False, False)  # loopback
-    assert rep.classify("not-an-ip") == (False, False)  # invalid
+    assert rep.classify("172.22.0.4") == (False, False, False)  # private (the lab's own container range)
+    assert rep.classify("127.0.0.1") == (False, False, False)  # loopback
+    assert rep.classify("not-an-ip") == (False, False, False)  # invalid
 
 
 def test_from_seed_loads_committed_lists() -> None:
     rep = IPReputation.from_seed()
     assert rep.datacenter, "datacenter seed should be non-empty"
-    assert rep.classify("52.0.0.1") == (True, False)  # in the AWS seed block
+    assert rep.classify("52.0.0.1") == (True, False, False)  # in the AWS seed block
     assert rep.proxy_exit == ()  # proxy seed ships empty (live exit lists fetched at refresh time)
 
 
