@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.53"
+ruleset_version: "0.74.54"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -649,6 +649,18 @@ rules:
     added: "2026-06-24"
     last_validated: "2026-06-24"
     source: "FP-Agent (arXiv 2605.01247, radar G11): the #1 discriminative AI-agent signal — every tested LLM browser agent (Operator/Atlas, Claude-for-Chrome, Comet, Manus, Browser-Use, Skyvern) clicks at target coordinates with ZERO continuous mouse movement (CDP/vision-driven teleport). EVADES-first GROUNDED 2026-06-24: a CDP Input.dispatchMouseEvent click produced a trusted, mouse-origin (detail=1) click with 0 mousemove/pointermove events, while a real move+click fired 6. FP-safe gate: detail>=1 (excludes keyboard Enter/Space activation, detail=0) + maxTouchPoints==0 (a touch tap fires click with no mousemove) + zero total pointer movement (a real mouse cursor entering/jittering the page emits mousemove first). Behavioral/corroborating + experimental: the residual FP is a desktop user whose cursor was pre-positioned over the target and clicked without moving (rare); corroborating-only, so it cannot convict alone."
+
+  - id: bh.action_cadence_deliberative
+    title: Metronomic inter-action cadence at LLM-inference latency
+    layers: [behavioral]
+    reads: [behavioral.action_cadence_deliberative]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: behavioral
+    added: "2026-06-28"
+    last_validated: "2026-06-28"
+    source: "FP-Agent gap (arXiv 2605.01247, radar G12): a NOVEL temporal AI-agent tell FP-Agent did not measure (they measured within-action timing). An LLM browser agent runs a perceive->reason->act loop bottlenecked on model inference (~3-8s/step, cf. arXiv 2511.19477 '6.8s/step'), so its HIGH-LEVEL actions (clicks + typing bursts) arrive at a metronomic multi-second cadence; a human is bursty (sub-second within a task, irregular gaps between). Durable: an agent cannot shed its deliberation rhythm without giving up the reasoning that is its whole advantage. The collector (demo.py authoritative) builds an action timeline (click timestamps + the start of each >1s typing burst) and emits behavioral.action_cadence_deliberative=true when >=5 actions have a median interval in [2.5s,15s] AND a coefficient of variation <0.35 (metronomic). GROUNDED confirm-evades-first 2026-06-28: a Playwright AGENT_THINKTIME run (6 clicks at ~5s +-jitter through the live edge) fires the boolean and the rule; a human-variance control (irregular 0.15-3.5s gaps) does NOT (CV well above 0.35). The real LLM `agent` evader (claude -p brain) exhibits this cadence intrinsically. Behavioral/corroborating + experimental: the residual FP is a methodical human clicking at a steady multi-second pace, so it never convicts alone (the behavioral category is corroborating in the conviction gate); calibrate-clean (browserforge has no interaction timeline, so the signal is absent)."
 
   - id: bh.mobile_keystroke_interval_floor
     title: Mobile session typing faster than any human thumb cadence

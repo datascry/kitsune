@@ -63,7 +63,7 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**139 live rules** (106 active · 33 experimental; 6 retired, ruleset `0.74.53`) — each a small predicate over the correlated session. **97 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**140 live rules** (106 active · 34 experimental; 6 retired, ruleset `0.74.54`) — each a small predicate over the correlated session. **97 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
@@ -71,7 +71,7 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 | **automation** | 25 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 15 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
 | **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |
-| **behavioral** | 11 | — | mouse/keystroke biomechanics — path straightness, velocity CV, entropy floors |
+| **behavioral** | 12 | — | mouse/keystroke biomechanics — path straightness, velocity CV, entropy floors |
 | **reputation** | 4 | — | datacenter ASN / known proxy exit / WebRTC-leaked origin |
 | **prevalence** | 1 | — | statistically-improbable-but-coherent fingerprints |
 
@@ -110,7 +110,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**93 of 103 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.53`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
+**93 of 103 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.54`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
 Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
 

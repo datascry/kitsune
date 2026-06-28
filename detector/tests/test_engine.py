@@ -224,6 +224,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "bh.click_without_trajectory",
         ),
         (
+            # Deliberative action cadence: metronomic multi-second high-level actions = LLM think-time (G12).
+            [(Layer.behavioral, "action_cadence_deliberative", True, Source.collector)],
+            "bh.action_cadence_deliberative",
+        ),
+        (
             # Mobile touch-swipe at near-constant velocity: CV 0.05 is far below the human floor (radar X6).
             [(Layer.behavioral, "touch_velocity_cv", 0.05, Source.collector)],
             "bh.touch_uniform_velocity",

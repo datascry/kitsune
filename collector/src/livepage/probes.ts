@@ -2,6 +2,7 @@
 // Faithful TS port of the detector demo page's probes; returns a SignalMap instead of POSTing (tier-2 IO).
 
 import {
+  actionCadenceDeliberative,
   keystrokeEntropy,
   keystrokeIntervalMedian,
   mouseEntropy,
@@ -565,6 +566,7 @@ export function armCollector(): LiveCollector {
   let coalescedUntrusted = false;
   let cspEnforced = false;
   let teleportClick = false;
+  const clickTimes: number[] = []; // high-level action timeline (clicks) for action-cadence (radar G12)
   let voices: SpeechSynthesisVoice[] = [];
 
   const coalescedSupported =
@@ -579,6 +581,7 @@ export function armCollector(): LiveCollector {
   addEventListener(
     "click",
     (e: MouseEvent) => {
+      if (e.isTrusted) clickTimes.push(e.timeStamp);
       if (
         e.isTrusted &&
         e.detail >= 1 &&
@@ -1465,6 +1468,8 @@ export function armCollector(): LiveCollector {
       }
     }
     if (teleportClick) put("behavioral", "click_without_trajectory", true); // radar G11
+    if (actionCadenceDeliberative(clickTimes, keys)) // radar G12: metronomic LLM-inference action cadence
+      put("behavioral", "action_cadence_deliberative", true);
     if (touchSwipeCVs.length) {
       // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded median-per-swipe CV)
       touchSwipeCVs.sort((a, b) => a - b);

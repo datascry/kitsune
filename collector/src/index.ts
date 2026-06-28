@@ -72,7 +72,12 @@ function detectWebdriverSpoofed(): boolean {
   }
 }
 
-function buildEnv(pointerEvents: PointerSample[], keyEvents: number[], cdp: CdpProbe): BrowserEnv {
+function buildEnv(
+  pointerEvents: PointerSample[],
+  keyEvents: number[],
+  clickEvents: number[],
+  cdp: CdpProbe,
+): BrowserEnv {
   const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
   return {
     webdriver: navigator.webdriver === true,
@@ -84,6 +89,7 @@ function buildEnv(pointerEvents: PointerSample[], keyEvents: number[], cdp: CdpP
     fpHash: computeFpHash(),
     pointerEvents,
     keyEvents,
+    clickEvents,
   };
 }
 
@@ -91,6 +97,7 @@ function buildEnv(pointerEvents: PointerSample[], keyEvents: number[], cdp: CdpP
 export function run(detectorUrl: string, delayMs = 4000): void {
   const pointerEvents: PointerSample[] = [];
   const keyEvents: number[] = [];
+  const clickEvents: number[] = [];
   const cdp = armCdpProbe();
   // Expose the marker so a CDP Runtime.enable preview enumerates it and trips the trap.
   (globalThis as Record<string, unknown>).__ks = cdp.marker;
@@ -101,11 +108,24 @@ export function run(detectorUrl: string, delayMs = 4000): void {
   window.addEventListener("keydown", (e: KeyboardEvent) => {
     keyEvents.push(e.timeStamp);
   });
-
-  window.setTimeout(() => {
+  const post = (): void => {
     const sessionId = readSessionId(document.cookie);
     if (sessionId === null) return;
-    const signals = collectSignals(sessionId, buildEnv(pointerEvents, keyEvents, cdp), new Date());
+    const signals = collectSignals(sessionId, buildEnv(pointerEvents, keyEvents, clickEvents, cdp), new Date());
     void httpTransport(detectorUrl, fetch as unknown as FetchLike).send(signals);
-  }, delayMs);
+  };
+  // Long-horizon re-post (radar G12): action-cadence needs >=5 high-level actions spread over tens of seconds,
+  // far beyond the snapshot delay below. Re-post ONCE when the 5th trusted click lands so the accumulated
+  // cadence is captured (the snapshot carries too few actions). Bounded to a single extra post.
+  let cadencePosted = false;
+  window.addEventListener("click", (e: MouseEvent) => {
+    if (!e.isTrusted) return;
+    clickEvents.push(e.timeStamp);
+    if (!cadencePosted && clickEvents.length >= 5) {
+      cadencePosted = true;
+      post();
+    }
+  });
+
+  window.setTimeout(post, delayMs);
 }

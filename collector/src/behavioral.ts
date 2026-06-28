@@ -140,3 +140,33 @@ export function keystrokeIntervalMedian(times: number[]): number {
   intervals.sort((a, b) => a - b);
   return intervals[Math.floor(intervals.length / 2)]!;
 }
+
+/**
+ * Deliberative action cadence (radar G12): an LLM browser agent runs a perceive→reason→act loop
+ * bottlenecked on model inference (~3-8s/step), so its HIGH-LEVEL actions (clicks + typing bursts) arrive
+ * at a metronomic multi-second cadence. A human is bursty (sub-second within a task, irregular gaps). The
+ * tell is LOW variance around a multi-second median, not the magnitude. True only with ≥5 actions (≥4
+ * intervals for a stable CV), median interval in [2.5s, 15s], and coefficient of variation < 0.35. The
+ * action timeline is clicks plus the start of each typing burst (a keydown >1s after the previous key).
+ */
+export function actionCadenceDeliberative(clickTimes: number[], keyTimes: number[]): boolean {
+  const actions = clickTimes.slice();
+  for (let i = 0; i < keyTimes.length; i++) {
+    if (i === 0 || keyTimes[i]! - keyTimes[i - 1]! > 1000) actions.push(keyTimes[i]!);
+  }
+  actions.sort((a, b) => a - b);
+  if (actions.length < 5) return false;
+  const intervals: number[] = [];
+  for (let i = 1; i < actions.length; i++) {
+    const dt = actions[i]! - actions[i - 1]!;
+    if (dt > 0) intervals.push(dt);
+  }
+  if (intervals.length < 4) return false;
+  const mean = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  if (mean <= 0) return false;
+  const sorted = intervals.slice().sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)]!;
+  const variance = intervals.reduce((a, x) => a + (x - mean) * (x - mean), 0) / intervals.length;
+  const cv = Math.sqrt(variance) / mean;
+  return median >= 2500 && median <= 15000 && cv < 0.35;
+}

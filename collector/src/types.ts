@@ -39,4 +39,6 @@ export interface BrowserEnv {
   pointerEvents: PointerSample[];
   /** Timestamps (ms) of keydown events, for keystroke-dynamics. */
   keyEvents: number[];
+  /** Timestamps (ms) of trusted click events — the high-level action timeline for action-cadence (G12). */
+  clickEvents: number[];
 }

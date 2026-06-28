@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  actionCadenceDeliberative,
   keystrokeEntropy,
   keystrokeIntervalMedian,
   mouseEntropy,
@@ -104,6 +105,31 @@ describe("keystrokeIntervalMedian", () => {
   it("is far below the 30ms floor for agent-speed typing", () => {
     // sub-ms gaps but VARIED (so entropy stays human-like) — the orthogonal G13 tell
     expect(keystrokeIntervalMedian([0, 0.6, 1.3, 2.1, 2.8, 3.4])).toBeLessThan(30);
+  });
+});
+
+describe("actionCadenceDeliberative (radar G12)", () => {
+  it("is true for metronomic multi-second clicks (LLM perceive→reason→act cadence)", () => {
+    // 6 clicks ~5s apart with small jitter → median ~5s, CV well under 0.35
+    expect(actionCadenceDeliberative([0, 5000, 9800, 15100, 19900, 25200], [])).toBe(true);
+  });
+
+  it("is false for bursty human clicks (high variance)", () => {
+    expect(actionCadenceDeliberative([0, 200, 450, 3500, 3700, 9000], [])).toBe(false);
+  });
+
+  it("is false below 5 actions (too few intervals for a stable CV)", () => {
+    expect(actionCadenceDeliberative([0, 5000, 10000, 15000], [])).toBe(false);
+  });
+
+  it("is false for sub-second metronomic clicks (fast, not deliberative — median below the band)", () => {
+    expect(actionCadenceDeliberative([0, 500, 1000, 1500, 2000, 2500], [])).toBe(false);
+  });
+
+  it("folds typing bursts into the action timeline (a keydown >1s after the prior key starts an action)", () => {
+    // clicks + two typing-burst starts at metronomic spacing → deliberative
+    const keys = [3000, 3050, 3110, 13000, 13040]; // two bursts: starts at 3000 and 13000
+    expect(actionCadenceDeliberative([0, 8000, 18000, 23000], keys)).toBe(true);
   });
 });
 
