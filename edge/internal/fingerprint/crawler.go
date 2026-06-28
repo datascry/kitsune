@@ -20,20 +20,34 @@ type Resolver interface {
 // must resolve to. Google and Bing publish forward-confirmed reverse DNS as their OFFICIAL verification
 // method, so a real crawler always confirms — the carve-outs make a fake one (a datacenter IP wearing the
 // UA) the only thing that fails. Suffixes are matched case-insensitively against the trailing label group.
+// feed names the published official IP-range list (loaded by CrawlerCIDR) that verifies this crawler
+// DNS-free; "" means the operator publishes no CIDR feed for it, so verification falls back to FCrDNS.
 var declaredCrawlers = []struct {
 	token    string
 	suffixes []string
+	feed     string
 }{
-	{"Googlebot", []string{".googlebot.com", ".google.com"}},
-	{"AdsBot-Google", []string{".googlebot.com", ".google.com"}},
-	{"APIs-Google", []string{".google.com"}},
-	{"Storebot-Google", []string{".googlebot.com", ".google.com"}},
-	{"bingbot", []string{".search.msn.com"}},
-	{"BingPreview", []string{".search.msn.com"}},
-	{"Applebot", []string{".applebot.apple.com"}},
-	{"DuckDuckBot", []string{".duckduckgo.com"}},
-	{"YandexBot", []string{".yandex.com", ".yandex.net", ".yandex.ru"}},
-	{"Baiduspider", []string{".baidu.com", ".baidu.jp"}},
+	{"Googlebot", []string{".googlebot.com", ".google.com"}, "google"},
+	{"AdsBot-Google", []string{".googlebot.com", ".google.com"}, "google"},
+	{"APIs-Google", []string{".google.com"}, "google"},
+	{"Storebot-Google", []string{".googlebot.com", ".google.com"}, "google"},
+	{"bingbot", []string{".search.msn.com"}, "bing"},
+	{"BingPreview", []string{".search.msn.com"}, "bing"},
+	{"Applebot", []string{".applebot.apple.com"}, ""},
+	{"DuckDuckBot", []string{".duckduckgo.com"}, ""},
+	{"YandexBot", []string{".yandex.com", ".yandex.net", ".yandex.ru"}, ""},
+	{"Baiduspider", []string{".baidu.com", ".baidu.jp"}, ""},
+}
+
+// DeclaredCrawlerFeed returns the CIDR-feed name for the crawler a UA claims (e.g. "google"/"bing"), or ""
+// when none names a CIDR-publishing crawler. Pairs with DeclaredCrawler (suffixes) for the FCrDNS fallback.
+func DeclaredCrawlerFeed(ua string) string {
+	for _, c := range declaredCrawlers {
+		if strings.Contains(ua, c.token) {
+			return c.feed
+		}
+	}
+	return ""
 }
 
 // DeclaredCrawler returns the official rDNS suffixes the UA claims to belong to, or nil if it names no
