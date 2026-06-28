@@ -33,11 +33,14 @@ from __future__ import annotations
 
 import ipaddress
 import itertools
+import logging
 import statistics
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from kitsune_detector.models import MISSING, Layer, Session
+
+_log = logging.getLogger(__name__)
 
 
 def _ip_origin(ip: str) -> str:
@@ -779,9 +782,62 @@ class CampaignVerdict:
     evidence: list[str] = field(default_factory=list)
 
 
+# Per-bucket candidate-pair cap: a single blocking bucket larger than this (a same-build flood or a busy
+# arrival window — the flash-crowd/DDoS shape, which the severity-graded FleetTracker already triages) is
+# down-sampled for campaign analysis rather than spending O(b^2). NEVER silent: the drop is logged.
+_CAMPAIGN_MAX_BUCKET = 4000
+
+
+def _campaign_candidate_pairs(corpus: list[tuple[str, Session]]) -> set[tuple[int, int]]:
+    """Blocking-based candidate pairs — the sub-quadratic replacement for the O(n^2) all-pairs scan. Two sessions
+    can only form an edge if they share >= 2 soft dimensions; every such pair co-occurs in at least one EXACT
+    blocking bucket — the JA4 cipher prefix, or a time window (lockstep). So we enumerate within-bucket pairs of
+    those two indices (time windows also paired with the adjacent bucket, since a within-window pair can straddle
+    a boundary), yielding a candidate superset of the true edges. The verify step (`_CAMPAIGN_DIMS`) is unchanged,
+    so the campaigns returned are IDENTICAL to the exact scan for any campaign whose members share a build or
+    arrive co-timed (the realistic case + every grounded fixture). A pair correlated ONLY on rep/prevalence/
+    descriptor with distinct builds AND spread arrivals is the documented blind spot — caught by the offline exact
+    path, not the streaming one. Buckets over _CAMPAIGN_MAX_BUCKET (a flood) are down-sampled with a logged drop."""
+    by_ja4: dict[str, list[int]] = {}
+    by_time: dict[int, list[int]] = {}
+    for i, (_n, s) in enumerate(corpus):
+        ja4 = _ja4(s)
+        if ja4 is not None:
+            by_ja4.setdefault(_ja4_prefix(ja4), []).append(i)
+        by_time.setdefault(int(s.first_seen.timestamp() // _CAMPAIGN_WINDOW_S), []).append(i)
+
+    pairs: set[tuple[int, int]] = set()
+
+    def _add_within(idxs: list[int], kind: str, key: object) -> None:
+        if len(idxs) > _CAMPAIGN_MAX_BUCKET:
+            _log.warning(
+                "campaign blocking: %s bucket %r has %d sessions (> %d cap) — down-sampling for candidate "
+                "generation; the offline exact score_campaigns covers the full bucket",
+                kind,
+                key,
+                len(idxs),
+                _CAMPAIGN_MAX_BUCKET,
+            )
+            idxs = idxs[:_CAMPAIGN_MAX_BUCKET]
+        for a, b in itertools.combinations(idxs, 2):
+            pairs.add((a, b) if a < b else (b, a))
+
+    for prefix, idxs in by_ja4.items():
+        _add_within(idxs, "ja4", prefix)
+    for bucket, idxs in by_time.items():
+        _add_within(idxs, "time", bucket)
+        nxt = by_time.get(bucket + 1)  # a within-window pair can straddle the bucket boundary → pair across it
+        if nxt:
+            for a in idxs:
+                for b in nxt:
+                    pairs.add((a, b) if a < b else (b, a))
+    return pairs
+
+
 def _campaign_components(corpus: list[tuple[str, Session]]) -> list[list[int]]:
     """Union-find connected components over the multi-dimensional similarity graph: an edge links two sessions
-    that are similar on >= _CAMPAIGN_EDGE_DIMS independent dimensions."""
+    that are similar on >= _CAMPAIGN_EDGE_DIMS independent dimensions. Edges are verified only over blocking-
+    derived CANDIDATE pairs (:func:`_campaign_candidate_pairs`), not all-pairs — sub-quadratic at fleet scale."""
     n = len(corpus)
     parent = list(range(n))
 
@@ -791,12 +847,10 @@ def _campaign_components(corpus: list[tuple[str, Session]]) -> list[list[int]]:
             x = parent[x]
         return x
 
-    for i in range(n):
-        for j in range(i + 1, n):
-            si, sj = corpus[i][1], corpus[j][1]
-            shared = sum(1 for _name, fn in _CAMPAIGN_DIMS if fn(si, sj))
-            if shared >= _CAMPAIGN_EDGE_DIMS:
-                parent[find(i)] = find(j)
+    for i, j in _campaign_candidate_pairs(corpus):
+        si, sj = corpus[i][1], corpus[j][1]
+        if sum(1 for _name, fn in _CAMPAIGN_DIMS if fn(si, sj)) >= _CAMPAIGN_EDGE_DIMS:
+            parent[find(i)] = find(j)
     groups: dict[int, list[int]] = {}
     for i in range(n):
         groups.setdefault(find(i), []).append(i)
@@ -860,6 +914,32 @@ def render_campaigns(corpus: list[tuple[str, Session]]) -> str:
             lines.append(f"- {e}")
         lines.append("")
     return "\n".join(lines) + "\n"
+
+
+def replay_campaigns(
+    corpus: list[tuple[str, Session]], window_seconds: float = 900.0
+) -> list[tuple[str, CampaignVerdict]]:
+    """Streaming axis A: feed the corpus in arrival (first_seen) order through a sliding window, re-scoring the
+    window incrementally and emitting ``(trigger_session, campaign)`` the first time each campaign community
+    appears — the online analog of :func:`replay_stream`. The window bounds both memory and the per-step blocked
+    re-score cost (only recent sessions are held), so it runs in real time at fleet scale. ``window_seconds``
+    ages out members older than that relative to the latest arrival (default 15 min)."""
+    ordered = sorted(corpus, key=lambda nv: nv[1].first_seen)
+    buf: list[tuple[str, Session]] = []
+    alerted: set[str] = set()  # members of campaigns already alerted — a growing campaign must not re-fire
+    alerts: list[tuple[str, CampaignVerdict]] = []
+    for name, session in ordered:
+        buf.append((name, session))
+        cutoff = session.first_seen.timestamp() - window_seconds
+        buf[:] = [(n, s) for (n, s) in buf if s.first_seen.timestamp() >= cutoff]
+        for v in score_campaigns(buf):
+            if v.label != "campaign":
+                continue
+            # A campaign that overlaps an already-alerted one is the SAME campaign accreting members — not new.
+            if alerted.isdisjoint(v.members):
+                alerts.append((name, v))
+            alerted.update(v.members)
+    return alerts
 
 
 def render_coordination(corpus: list[tuple[str, Session]]) -> str:
