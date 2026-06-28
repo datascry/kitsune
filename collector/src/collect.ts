@@ -57,6 +57,8 @@ export function collectSignals(sessionId: string, env: BrowserEnv, now: Date): S
     out.push(sig("behavioral", "action_cadence_deliberative", true));
   // Big instant programmatic scroll jump with no wheel/key input = scrollIntoView/scrollTo agent (radar G14).
   if (env.scrollTeleport) out.push(sig("behavioral", "scroll_teleport", true));
+  // Form value injected with no keydown/trusted-paste = paste / CDP insertText / fill() agent (radar G15).
+  if (env.inputViaPaste) out.push(sig("behavioral", "input_via_paste", true));
   // Shape features need a real path; emit only with enough samples (else genuinely absent).
   if (env.pointerEvents.length >= 3) {
     out.push(sig("behavioral", "mouse_straightness", pathStraightness(env.pointerEvents)));

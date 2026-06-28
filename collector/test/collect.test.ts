@@ -19,6 +19,7 @@ const cleanEnv: BrowserEnv = {
   keyEvents: [],
   clickEvents: [],
   scrollTeleport: false,
+  inputViaPaste: false,
 };
 
 const botEnv: BrowserEnv = {
@@ -33,6 +34,7 @@ const botEnv: BrowserEnv = {
   keyEvents: [],
   clickEvents: [],
   scrollTeleport: false,
+  inputViaPaste: false,
 };
 
 function kinds(env: BrowserEnv): string[] {
@@ -86,6 +88,11 @@ describe("collectSignals action cadence (radar G12)", () => {
     const env: BrowserEnv = { ...cleanEnv, scrollTeleport: true };
     expect(collectSignals("s", env, NOW).map((s) => s.kind)).toContain("scroll_teleport");
     expect(collectSignals("s", cleanEnv, NOW).map((s) => s.kind)).not.toContain("scroll_teleport");
+  });
+  it("emits input_via_paste when the env flags programmatic form input (radar G15)", () => {
+    const env: BrowserEnv = { ...cleanEnv, inputViaPaste: true };
+    expect(collectSignals("s", env, NOW).map((s) => s.kind)).toContain("input_via_paste");
+    expect(collectSignals("s", cleanEnv, NOW).map((s) => s.kind)).not.toContain("input_via_paste");
   });
 });
 

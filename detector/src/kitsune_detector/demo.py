@@ -1217,10 +1217,30 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var d = Math.abs(y - lastScrollY); if (d > maxScrollDelta) maxScrollDelta = d; lastScrollY = y;
   }, { passive: true });
   addEventListener("wheel", function () { wheelCount++; }, { passive: true });
+  // Paste / programmatic input (radar G15): an LLM agent fills a field via paste, CDP Input.insertText, or a
+  // direct .value set + dispatched input/change — the value appears with NO keydown on that field and no TRUSTED
+  // paste event. A human types (keydowns on the field) or pastes (a trusted paste event). Per field, track a
+  // keydown, a trusted paste, and a value change (input/change); a changed field with neither keydown nor trusted
+  // paste is programmatic injection. Autofill is the residual FP (corroborating + experimental).
+  var kdEls = [], pasteEls = [], changedEls = [];
+  function ksField(t) { return !!(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)); }
+  function ksMark(arr, el) { if (arr.indexOf(el) < 0) arr.push(el); }
   addEventListener("keydown", function (e) {
     keys.push(e.timeStamp);
     if (/^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/.test(e.key)) scrollKeyUsed = true;
+    if (ksField(e.target)) ksMark(kdEls, e.target);
   });
+  addEventListener("paste", function (e) { if (e.isTrusted && ksField(e.target)) ksMark(pasteEls, e.target); }, true);
+  addEventListener("input", function (e) { if (ksField(e.target)) ksMark(changedEls, e.target); }, true);
+  addEventListener("change", function (e) { if (ksField(e.target)) ksMark(changedEls, e.target); }, true);
+  function ksInputViaPaste() {
+    for (var i = 0; i < changedEls.length; i++) {
+      var el = changedEls[i];
+      var v = el.value !== undefined ? el.value : el.textContent;
+      if (v && kdEls.indexOf(el) < 0 && pasteEls.indexOf(el) < 0) return true;
+    }
+    return false;
+  }
   // CSP-bypass probe: the page is served with `img-src 'self'`, so the `data:` bait below (data: is not
   // 'self') is blocked and fires securitypolicyviolation in a real browser. Playwright/Puppeteer scrapers that call
   // setBypassCSP(true) to inject their scripts silently disable enforcement, so the violation never
@@ -2468,6 +2488,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       // radar G14: a big instant scroll jump with no wheel/scroll-key input on a non-touch session = scrollIntoView/scrollTo
       if (maxScrollDelta >= 800 && wheelCount === 0 && !scrollKeyUsed && (navigator.maxTouchPoints || 0) === 0)
         sigs.push(S("behavioral", "scroll_teleport", true));
+      if (ksInputViaPaste()) sigs.push(S("behavioral", "input_via_paste", true));  // radar G15
       if (touchSwipeCVs.length) {  // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded)
         touchSwipeCVs.sort(function (a, b) { return a - b; });
         sigs.push(S("behavioral", "touch_velocity_cv", touchSwipeCVs[Math.floor(touchSwipeCVs.length / 2)]));
@@ -2589,6 +2610,13 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     ksScrollPosted = true;
     send();
   }
+  // One-shot re-post when a programmatic input lands (radar G15) — the fill may happen after the early rescore.
+  var ksInputPosted = false;
+  function ksMaybeInput() {
+    if (ksInputPosted || !ksInputViaPaste()) return;
+    ksInputPosted = true;
+    send();
+  }
   setTimeout(function () {
     send();
     if (!ksFast) {
@@ -2596,6 +2624,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       addEventListener("keydown", ksMaybeRescore);
       addEventListener("click", ksMaybeCadence, true);
       addEventListener("scroll", ksMaybeScroll, { passive: true });
+      addEventListener("input", ksMaybeInput, true);
+      addEventListener("change", ksMaybeInput, true);
     }
   }, ksFast ? 200 : 1200);
 })();
