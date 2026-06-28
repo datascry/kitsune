@@ -302,6 +302,15 @@ def test_arena_unknown_gate_404s(client: TestClient) -> None:
     assert client.get("/arena/gate/evil").status_code == 404
 
 
+def test_arena_gate_slug_rejects_markup(client: TestClient) -> None:
+    # The slug guard whitelists lowercase-kebab tokens, so an XSS-shaped path param is rejected (404) and
+    # never reflected into the page's canonical URL — defence-in-depth over the registry lookup.
+    for evil in ("<script>", "a'b", 'a"b', "a/b", "A", "x" * 41):
+        resp = client.get("/arena/gate/" + evil)
+        assert resp.status_code == 404, evil
+        assert "<script>" not in resp.text
+
+
 def test_arena_doodle_gate(client: TestClient) -> None:
     # The Quick, Draw! doodle image-select variant: its own page + the image-doodle captcha kind + attribution.
     idx = client.get("/arena").text
