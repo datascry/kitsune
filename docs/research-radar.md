@@ -1731,3 +1731,29 @@ objective→shard→per-worker-task→execute loop, the existing KS_TASK executo
 This completes the coordinated-fleet picture: a fleet that is fingerprint-diverse (camoufox), behaviorally real
 (KS_REAL_INPUT), behaviorally diverse (per-node seed), AND productively pursuing a goal with distributed work
 (Objective) — the full adversary, against which the coordination scorer + axis A campaign detector are measured.
+
+### Showcase — the coordination red⇄blue escalation ladder, end-to-end (2026-06-28)
+
+`harness/tools/adversary_showcase.py` (task `adversary-showcase`) demonstrates the whole coordination picture in
+one reproducible run: it emits four canonical fleet shapes to a live detector and grades each through BOTH
+scorers (per-binding `score_corpus` + aggregate `score_campaigns`/axis A). Grounded output:
+
+```
+  fleet shape        per-binding (score_corpus)   axis A (score_campaigns)
+  cloned             FLEET (fp_collision+auto)    candidate
+  trace-replay       FLEET (trace_collision)      candidate
+  diffuse-campaign   CANDIDATE (evades)           CAMPAIGN (caught)
+  diversified        — (evades)                   — (evades) → the frontier
+```
+
+The ladder: pairwise bindings fall first (cloned/replay → FLEET); a build-rotating-but-tuned humanizer evades
+them yet axis A catches the aggregate correlation (diffuse-campaign → CAMPAIGN — the axis-A payoff); only a fully
+diversified fleet (distinct build/fp/trace, spread descriptors, spread arrivals) evades BOTH.
+
+Confirmed with a REAL evader, not just the synthetic shapes: the assembled fleet — camoufox (per-launch fp
+diversity) + a sharded `credential-stuffing` Objective + per-node humanised behaviour, run live (3 nodes) — graded
+**per-binding CANDIDATE, axis A no-campaign**: it evades both axes in-sandbox. That is the `diversified` row with a
+real adversary, and it is the thesis made concrete: the fully-diversified real fleet is indistinguishable from a
+diverse cohort here, so the conviction that closes it is external-data-bound (a real-traffic organic baseline for
+axis A's absolute thresholds, real IP reputation, real-hardware fps). To evade both is to be N independent real
+users — the economic bind, now demonstrated on both detection axes against a real, goal-driven, diversified fleet.
