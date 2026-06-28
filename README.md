@@ -3,6 +3,9 @@
 > **TL;DR** — Both sides of the bot-vs-human arms race in one repo: a cross-layer fingerprint +
 > behavioral **detector** (blue) and a fleet of real anti-detect **evaders** (red), scored against each
 > other. The thesis: **catch the contradiction across layers, not the signal.** [Try it live →](https://kitsune.id)
+>
+> **Your privacy:** the live site captures **nothing** — it scores your signals in memory to show *you* a
+> verdict, then forgets them. Never written to disk, retained, sold, shared, or used to track. [Details →](docs/privacy.md)
 
 [![ci](https://github.com/datascry/kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/ci.yml)
 [![security](https://github.com/datascry/kitsune/actions/workflows/security.yml/badge.svg)](https://github.com/datascry/kitsune/actions/workflows/security.yml)
@@ -139,6 +142,39 @@ Each evader is a real anti-detect tool/technique; **Caught by** is the top convi
 
 <!-- GENERATED:readme-redteam:end -->
 
+## Coordinated fleets — the red⇄blue coordination loop
+
+Per-session detection saturates, so the durable arms race moves up a level: **many sessions acting as one
+adversary**. Kitsune runs both sides of it.
+
+**Red — [Skulk](fleet/README.md), the fleet adversary-emulation kit** (`fleet/`, authorization-scoped in
+`scope.py`). Skulk emits *coordination-shaped* sessions to a detector's `/ingest` — it is a modeling tool,
+**not** a flood/DoS/credential generator. Strategies range from naive to evasive: `cloned` (one fingerprint
+fleet-wide), `trace-replay` (one canned pointer trace), `randomizer`/`fuzzy` (per-node jitter),
+`fuzzy-rotate` / `ticket-reuse` / `ipv6-rotate` (within-session rotation), `staggered` (spread arrivals),
+and `diffuse-campaign` (distinct everything, tuned just above the template floor). The
+[**fleet manager**](harness/src/kitsune_harness/fleet_manager.py) drives *real* evader containers as named
+evasions, plans, archetypes and campaigns — per-node `KS_NODE_SEED`, per-node proxy, `stagger_seconds` — and
+shards an [**objective**](harness/src/kitsune_harness/objectives.py) into distinct per-worker behavioral
+tasks (synthetic lab targets only — `example.test`, the harness allow-list; never a real site).
+
+**Blue — two coordination scorers** over the session corpus:
+- **Per-binding** (`coordination.py` `score_corpus`) clusters by JA4 prefix and convicts on cross-instance
+  *collisions* — fingerprint/trace collision, shared WebRTC origin, TLS ticket reuse — behind a gate that
+  requires **≥2 distinct /64 origins** before anything reads as a fleet (a real cohort on one office build
+  must not look like a botnet).
+- **Axis A** (`score_campaigns`) is the *aggregate* view: community detection over a multi-dimensional
+  similarity graph (JA4 prefix, behavioral descriptor, lockstep arrival, origin reputation, prevalence tail).
+  It catches the *residual correlation* a diffuse fleet leaves after it defeats every pairwise binding.
+
+The two compose into an **escalation ladder** (`task adversary-showcase`): a cloned fleet falls to the
+per-binding scorer; a build-rotating, behavior-jittered fleet evades that yet axis A catches the aggregate;
+and only a **fully diversified** fleet — distinct build/fingerprint/trace, spread descriptors, spread
+arrivals — evades both, at which point it is, by construction, *N independent real users* (the economic bind;
+conviction there is external-data-bound). The **diversification levers** that get a red fleet there map one
+to one onto the axis-A dimensions they each defeat. The full loop — strategies, manager, objectives, both
+scorers, levers and the showcase — is documented in [**docs/fleet.md**](docs/fleet.md).
+
 ## What's novel — detections unique to Kitsune
 
 The field's pages (CreepJS, Sannysoft, pixelscan, …) are single-layer, client-side point-checks. Kitsune's
@@ -176,10 +212,11 @@ both the red team flagged:
   field combination is under a real-traffic prior. It is the one class that scores a generator-assembled
   fingerprint with no contradiction. Corroborating-only (its prior is single-source) until a second source
   validates it.
-- **[Coordination / fleet detection](docs/coordination-proxy.md)** — clusters sessions by JA4 and grades
-  fleets via the TLS-identical-but-JS-divergent paradox + fingerprint-collision + per-launch TLS
-  randomization, behind its own conviction gate (a real cohort sharing one browser build must not read as
-  a botnet).
+- **[Coordination / fleet detection](docs/fleet.md)** — clusters sessions by JA4 and grades fleets via the
+  TLS-identical-but-JS-divergent paradox + fingerprint-collision + per-launch TLS randomization, plus the
+  aggregate **axis-A campaign detector** for the residual correlation a diffuse fleet leaves — behind its own
+  conviction gate (a real cohort sharing one browser build must not read as a botnet). The matching red side
+  (Skulk + the fleet manager) and the full red⇄blue ladder are in [docs/fleet.md](docs/fleet.md).
 
 ## Components
 
@@ -191,6 +228,8 @@ both the red team flagged:
 | [`edge/`](edge) | Go | TLS→JA3/JA4 (+ GREASE, post-quantum), HTTP/2 (Akamai + JA4H + unknown-engine), TCP/IP-OS, QUIC/HTTP-3 (RFC 9001 decrypt), HTTP/2 DoS attribution | ~97% (fp) |
 | [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection + a CreepJS-style live self-test page running the full probe suite | 100% (logic) |
 | [`evaders/`](evaders) | Py/TS/Go | The red-team ladder of real anti-detect tools (above) | all `bot` |
+| [`fleet/`](fleet) | Python | **Skulk** — the fleet adversary-emulation kit (coordination-shaped sessions; authorization-scoped in code) | ~97% |
+| [`arena/`](arena) | Go | Public self-hosted challenge gates (PoW · CAPTCHA · slider · image-select · PACT), each easy/medium/hard | ~95% |
 
 ## Quickstart
 
@@ -213,7 +252,9 @@ Go and Node aren't required locally — use Docker (`golang:1.26-alpine`, `node:
   conviction-gated scorer, the structural frontiers, and the calibration discipline.
 - [**Findings**](docs/findings.md) — the arms-race narrative: each evasion, the layer that caught it, and
   why (the Camoufox frontier, the precision turn, the realm-coherence family, the HTTP/2 DoS family, …).
-- [Calibration](docs/calibration.md) · [Prevalence model](docs/prevalence-model.md) · [Coordination](docs/coordination-proxy.md) — the precision gate and the two structural frontiers.
+- [Calibration](docs/calibration.md) · [Prevalence model](docs/prevalence-model.md) · [Coordination & the fleet](docs/fleet.md) — the precision gate and the two structural frontiers.
+- [**Fleet & coordination**](docs/fleet.md) — Skulk, the fleet manager, objectives, both coordination scorers, the diversification levers and the escalation showcase.
+- [**Privacy**](docs/privacy.md) — the public site captures **no** visitor data: signals are scored in memory and never written to disk, retained, sold, shared, or used to track.
 - [Detection catalog](docs/detection-catalog.md) · [Evasion catalog](docs/evasion-catalog.md) — the blue/red work queues.
 - [Coverage matrix](docs/matrix.md) — every detector rule × every evader.
 - [Decision records](docs/adr) — MADR ADRs for the load-bearing decisions.
