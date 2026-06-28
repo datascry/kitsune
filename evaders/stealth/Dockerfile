@@ -9,7 +9,7 @@ WORKDIR /app
 # Linux desktop scraper spoofing a Windows UA leaks its real Linux fonts → br.font_os_vs_ua). Harmless to
 # every other mode: under their coherent Linux UA a Linux font hint is correct, so nothing false-fires.
 RUN apt-get update -qq \
-    && apt-get install -y -qq --no-install-recommends fonts-dejavu-core fonts-noto-core \
+    && apt-get install -y -qq --no-install-recommends fonts-dejavu-core fonts-noto-core xdotool \
     && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 # playwright (baseline) + patchright + rebrowser-playwright (two CDP-patched anti-detect drop-ins).
