@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.53`); regenerate with `task catalog`, do not edit by hand. **145 rules**: 106 active · 33 experimental · 6 retired; 97 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.54`); regenerate with `task catalog`, do not edit by hand. **146 rules**: 106 active · 34 experimental · 6 retired; 97 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (36)
 
@@ -166,11 +166,12 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (12)
+### behavioral layer (13)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `bh.trace_replay_within_session` | coherence✦ | present | 0.65 | active | One session replayed an identical pointer trajectory across page loads (record-and-replay bot) |
+| `bh.action_cadence_deliberative` | behavioral | present | 0.5 | experimental | Metronomic inter-action cadence at LLM-inference latency |
 | `bh.click_without_trajectory` | behavioral | present | 0.5 | experimental | Trusted mouse click with no pointer trajectory in the session (teleport-click) |
 | `bh.input_entropy_floor` | behavioral | below_threshold | 0.6 | experimental | Mouse-movement entropy below the human floor |
 | `bh.keystroke_entropy_floor` | behavioral | below_threshold | 0.55 | experimental | Keystroke timing entropy below the human floor |

@@ -1198,7 +1198,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // (detail 0); maxTouchPoints==0 excludes a touch tap (fires click with no mousemove); zero total movement
   // is the bot-specific part — a real mouse cursor entering/jittering the page emits mousemove first.
   var teleportClick = false;
+  var clickTimes = [];  // high-level user actions (clicks) — the action-cadence timeline (radar G12)
   addEventListener("click", function (e) {
+    if (e.isTrusted) clickTimes.push(e.timeStamp);
     if (e.isTrusted && e.detail >= 1 && (navigator.maxTouchPoints || 0) === 0 && pts.length === 0 && ptrMoves === 0) teleportClick = true;
   }, true);
   // Keystroke timing: a real typist has variable inter-key intervals (digraph latencies differ); a script
@@ -1397,6 +1399,28 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (iv.length < 3) return -1;
     iv.sort(function (a, b) { return a - b; });
     return iv[Math.floor(iv.length / 2)];
+  }
+  // Action-cadence (radar G12): an LLM browser agent runs a perceive->reason->act loop bottlenecked on
+  // model inference (~3-8s/step), so its HIGH-LEVEL actions (clicks + typing bursts) arrive at a metronomic
+  // multi-second cadence. A human is bursty: sub-second within a task, with variable, irregular gaps. The
+  // tell is LOW variance around a multi-second median, not the magnitude. Returns true only with >=5 actions
+  // (>=4 intervals for a stable CV), median in [2.5s, 15s], and CV < 0.35. Corroborating + experimental: a
+  // methodical human at a steady pace is the residual FP, so this never convicts alone.
+  function actionCadenceDeliberative(clicks, ks) {
+    var acts = clicks.slice();
+    for (var i = 0; i < ks.length; i++) { if (i === 0 || ks[i] - ks[i - 1] > 1000) acts.push(ks[i]); }
+    acts.sort(function (a, b) { return a - b; });
+    if (acts.length < 5) return false;
+    var iv = [];
+    for (var j = 1; j < acts.length; j++) { var dt = acts[j] - acts[j - 1]; if (dt > 0) iv.push(dt); }
+    if (iv.length < 4) return false;
+    var mean = iv.reduce(function (a, b) { return a + b; }, 0) / iv.length;
+    if (mean <= 0) return false;
+    var srt = iv.slice().sort(function (a, b) { return a - b; });
+    var med = srt[Math.floor(srt.length / 2)];
+    var varc = iv.reduce(function (a, x) { return a + (x - mean) * (x - mean); }, 0) / iv.length;
+    var cv = Math.sqrt(varc) / mean;
+    return med >= 2500 && med <= 15000 && cv < 0.35;
   }
   function d(a, c) { return Math.hypot(c.x - a.x, c.y - a.y); }
   function straightness(p) {
@@ -2425,6 +2449,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         }
       }
       if (teleportClick) sigs.push(S("behavioral", "click_without_trajectory", true));  // radar G11
+      if (actionCadenceDeliberative(clickTimes, keys))  // radar G12: metronomic LLM-inference action cadence
+        sigs.push(S("behavioral", "action_cadence_deliberative", true));
       if (touchSwipeCVs.length) {  // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded)
         touchSwipeCVs.sort(function (a, b) { return a - b; });
         sigs.push(S("behavioral", "touch_velocity_cv", touchSwipeCVs[Math.floor(touchSwipeCVs.length / 2)]));
@@ -2530,9 +2556,22 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     ksRescored = true;
     send();
   }
+  // Long-horizon re-post (radar G12): action-cadence needs >=5 high-level actions spread over tens of seconds —
+  // far beyond the early rescore window above. Re-post ONCE when the 5th action lands so the accumulated cadence
+  // is captured (the early posts carry too few actions). Bounded to a single extra post (ksCadencePosted).
+  var ksCadencePosted = false;
+  function ksMaybeCadence() {
+    if (ksCadencePosted || clickTimes.length < 5) return;
+    ksCadencePosted = true;
+    send();
+  }
   setTimeout(function () {
     send();
-    if (!ksFast) { addEventListener("mousemove", ksMaybeRescore); addEventListener("keydown", ksMaybeRescore); }
+    if (!ksFast) {
+      addEventListener("mousemove", ksMaybeRescore);
+      addEventListener("keydown", ksMaybeRescore);
+      addEventListener("click", ksMaybeCadence, true);
+    }
   }, ksFast ? 200 : 1200);
 })();
 </script></body></html>

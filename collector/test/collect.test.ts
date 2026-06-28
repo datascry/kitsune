@@ -17,6 +17,7 @@ const cleanEnv: BrowserEnv = {
   fpHash: null,
   pointerEvents: [],
   keyEvents: [],
+  clickEvents: [],
 };
 
 const botEnv: BrowserEnv = {
@@ -29,6 +30,7 @@ const botEnv: BrowserEnv = {
   fpHash: "deadbeef",
   pointerEvents: [],
   keyEvents: [],
+  clickEvents: [],
 };
 
 function kinds(env: BrowserEnv): string[] {
@@ -64,6 +66,19 @@ describe("collectSignals", () => {
   it("stamps session id and collector source", () => {
     const sigs = collectSignals("sess-1", cleanEnv, NOW);
     expect(sigs.every((s) => s.session_id === "sess-1" && s.source === "collector")).toBe(true);
+  });
+});
+
+describe("collectSignals action cadence (radar G12)", () => {
+  it("emits action_cadence_deliberative for metronomic multi-second clicks (LLM think-time)", () => {
+    // 6 clicks ~5s apart with small jitter → median ~5s, low CV → the deliberative agent cadence.
+    const env: BrowserEnv = { ...cleanEnv, clickEvents: [0, 5000, 9800, 15100, 19900, 25200] };
+    expect(collectSignals("s", env, NOW).map((s) => s.kind)).toContain("action_cadence_deliberative");
+  });
+  it("does NOT emit it for bursty human clicks (high variance)", () => {
+    // human: irregular sub-second-to-few-second gaps → CV well above 0.35.
+    const env: BrowserEnv = { ...cleanEnv, clickEvents: [0, 200, 450, 3500, 3700, 9000] };
+    expect(collectSignals("s", env, NOW).map((s) => s.kind)).not.toContain("action_cadence_deliberative");
   });
 });
 
