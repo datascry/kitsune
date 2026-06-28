@@ -107,6 +107,24 @@ def test_basic_fleet_captures_and_grades() -> None:
     assert report.verdict is not None and len(report.verdict.members) == 3  # graded as one cluster
 
 
+def test_plan_parses_stagger_seconds() -> None:
+    plan = plan_from_obj({"nodes": [{"evasion": "vanilla", "replicas": 2}], "stagger_seconds": 180})
+    assert plan.stagger_seconds == 180.0  # the timing diversification lever (drips arrivals past the window)
+
+
+def test_run_fleet_staggers_launches() -> None:
+    # The stagger lever delays each launch so arrivals spread (the lockstep-breaking diversification). With a
+    # tiny stagger we just assert the delay is applied — elapsed >= (n-1) * stagger — and the fleet still runs.
+    import time as _time
+
+    plan = homogeneous_plan("kitsune-zendriver:latest", 3, max_concurrency=3)
+    plan = FleetPlan(nodes=plan.nodes, stagger_seconds=0.05)
+    t0 = _time.monotonic()
+    report = run_fleet(plan, launcher=_FakeLauncher(), get_json=_get_json)
+    assert _time.monotonic() - t0 >= 0.05 * 2  # 3 nodes -> 2 inter-launch waits
+    assert len(report.ok) == 3  # staggering does not drop nodes
+
+
 def test_retry_heals_a_transient_sandbox_flake() -> None:
     # The node flakes once (the Chrome-sandbox error seen live) then succeeds — the manager re-runs it.
     plan = FleetPlan(nodes=[NodeSpec("kitsune-camoufox:latest")], retries=1, max_concurrency=1)
