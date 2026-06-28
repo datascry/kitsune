@@ -653,10 +653,27 @@ export function armCollector(): LiveCollector {
       }
     });
   }
+  // Programmatic-input state (radar G15): per field, a keydown / trusted paste / value change.
+  const kdEls = new Set<HTMLElement>();
+  const pasteEls = new Set<HTMLElement>();
+  const changedEls = new Set<HTMLElement>();
+  const isField = (t: EventTarget | null): t is HTMLElement =>
+    t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable);
+  const inputViaPaste = (): boolean => {
+    for (const el of changedEls) {
+      const v = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : el.textContent;
+      if (v && !kdEls.has(el) && !pasteEls.has(el)) return true;
+    }
+    return false;
+  };
   addEventListener("keydown", (e: KeyboardEvent) => {
     keys.push(e.timeStamp);
     if (/^(PageDown|PageUp|Home|End|ArrowDown|ArrowUp|Spacebar| )$/.test(e.key)) scrollKeyUsed = true;
+    if (isField(e.target)) kdEls.add(e.target);
   });
+  addEventListener("paste", (e: ClipboardEvent) => { if (e.isTrusted && isField(e.target)) pasteEls.add(e.target); }, true);
+  addEventListener("input", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
+  addEventListener("change", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
   addEventListener(
     "scroll",
     () => {
@@ -1490,6 +1507,7 @@ export function armCollector(): LiveCollector {
       put("behavioral", "action_cadence_deliberative", true);
     if (isScrollTeleport(maxScrollDelta, wheelCount, scrollKeyUsed, navigator.maxTouchPoints || 0))
       put("behavioral", "scroll_teleport", true); // radar G14: programmatic scroll jump (scrollIntoView/scrollTo)
+    if (inputViaPaste()) put("behavioral", "input_via_paste", true); // radar G15: programmatic form-value injection
     if (touchSwipeCVs.length) {
       // mobile touch-swipe velocity uniformity (radar X6, BrainRun-grounded median-per-swipe CV)
       touchSwipeCVs.sort((a, b) => a - b);

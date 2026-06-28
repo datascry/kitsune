@@ -78,6 +78,7 @@ function buildEnv(
   keyEvents: number[],
   clickEvents: number[],
   scrollTeleport: boolean,
+  inputViaPaste: boolean,
   cdp: CdpProbe,
 ): BrowserEnv {
   const uaData = (navigator as Navigator & { userAgentData?: NavigatorUAData }).userAgentData;
@@ -93,6 +94,7 @@ function buildEnv(
     keyEvents,
     clickEvents,
     scrollTeleport,
+    inputViaPaste,
   };
 }
 
@@ -131,6 +133,24 @@ export function run(detectorUrl: string, delayMs = 4000): void {
   );
   window.addEventListener("wheel", () => void wheelCount++, { passive: true });
 
+  // Programmatic-input state (radar G15): per field, did it get a keydown, a trusted paste, a value change?
+  const kdEls = new Set<HTMLElement>();
+  const pasteEls = new Set<HTMLElement>();
+  const changedEls = new Set<HTMLElement>();
+  const isField = (t: EventTarget | null): t is HTMLElement =>
+    t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || (t instanceof HTMLElement && t.isContentEditable);
+  window.addEventListener("keydown", (e: KeyboardEvent) => { if (isField(e.target)) kdEls.add(e.target); }, true);
+  window.addEventListener("paste", (e: ClipboardEvent) => { if (e.isTrusted && isField(e.target)) pasteEls.add(e.target); }, true);
+  window.addEventListener("input", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
+  window.addEventListener("change", (e: Event) => { if (isField(e.target)) changedEls.add(e.target); }, true);
+  const inputViaPaste = (): boolean => {
+    for (const el of changedEls) {
+      const v = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : el.textContent;
+      if (v && !kdEls.has(el) && !pasteEls.has(el)) return true;
+    }
+    return false;
+  };
+
   const post = (): void => {
     const sessionId = readSessionId(document.cookie);
     if (sessionId === null) return;
@@ -140,7 +160,7 @@ export function run(detectorUrl: string, delayMs = 4000): void {
       scrollKeyUsed,
       navigator.maxTouchPoints || 0,
     );
-    const env = buildEnv(pointerEvents, keyEvents, clickEvents, scrollTeleport, cdp);
+    const env = buildEnv(pointerEvents, keyEvents, clickEvents, scrollTeleport, inputViaPaste(), cdp);
     void httpTransport(detectorUrl, fetch as unknown as FetchLike).send(collectSignals(sessionId, env, new Date()));
   };
   // Long-horizon re-post (radar G12): action-cadence needs >=5 high-level actions spread over tens of seconds,
@@ -167,6 +187,16 @@ export function run(detectorUrl: string, delayMs = 4000): void {
     },
     { passive: true },
   );
+  // One-shot re-post when a programmatic input lands (radar G15) — the fill may occur after the snapshot delay.
+  let inputPosted = false;
+  const maybeInputPost = (): void => {
+    if (!inputPosted && inputViaPaste()) {
+      inputPosted = true;
+      post();
+    }
+  };
+  window.addEventListener("input", maybeInputPost, true);
+  window.addEventListener("change", maybeInputPost, true);
 
   window.setTimeout(post, delayMs);
 }

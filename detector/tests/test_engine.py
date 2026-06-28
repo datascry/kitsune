@@ -234,6 +234,11 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "bh.scroll_teleport",
         ),
         (
+            # Programmatic input: a form value with no keydown/trusted-paste = paste/fill/insertText agent (G15).
+            [(Layer.behavioral, "input_via_paste", True, Source.collector)],
+            "bh.input_via_paste",
+        ),
+        (
             # Mobile touch-swipe at near-constant velocity: CV 0.05 is far below the human floor (radar X6).
             [(Layer.behavioral, "touch_velocity_cv", 0.05, Source.collector)],
             "bh.touch_uniform_velocity",

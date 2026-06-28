@@ -43,4 +43,6 @@ export interface BrowserEnv {
   clickEvents: number[];
   /** True if the session scrolled via a big instant programmatic jump (no wheel/key input) — scrollIntoView (G14). */
   scrollTeleport: boolean;
+  /** True if a form field's value changed with no keydown on it and no trusted paste — programmatic input (G15). */
+  inputViaPaste: boolean;
 }
