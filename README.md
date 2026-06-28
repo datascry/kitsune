@@ -56,8 +56,11 @@ simultaneously — and that is much harder than fooling any one of them.
                         STORE ─▶ HARNESS ─▶ per-layer SCOREBOARD
 ```
 
-The **edge** fingerprints the network layers a UA-spoofer can't reach (it terminates TLS and reads the
-raw ClientHello), mints a `session_id`, and forwards `network.*` signals. The **collector** runs in the
+The **edge** (Go) fingerprints the network layers a UA-spoofer can't reach — it terminates TLS and reads
+the raw ClientHello for **JA3/JA4** (GREASE-filtered, post-quantum-aware), the **JA4+ suite** (JA4H for
+HTTP/2, JA4T for TCP), the **HTTP/2** SETTINGS + frame-order (Akamai) fingerprint, **QUIC/HTTP-3** (RFC 9001
+ClientHello decrypt), the **TCP/IP-OS** stack (p0f-style SYN sniff) and HTTP/2 **DoS** attribution — then
+mints a `session_id` and forwards `network.*` signals. The **collector** runs in the
 browser and emits `browser.*` + `behavioral.*` signals under the same session. The **detector** groups
 them into a session, runs a generic engine over the rules-as-data registry, and emits an explainable
 verdict where every point of bot-likelihood traces back to its evidence. Components are polyglot and
@@ -102,6 +105,28 @@ legitimate browser. It is deliberately multi-source — a generated distribution
 Chromium/Firefox/WebKit captures — because you must never down-weight a rule on a single source's number.
 Every new rule is grounded against a real browser *before* it ships, and a regression test fails the build
 if any rule starts firing on a real engine.
+
+## How a detection gets built — the grounding loop
+
+No rule ships on a hunch. Every detection runs the same red⇄blue loop, and the *order* is the discipline:
+
+1. **Red confirms the evasion first.** A purpose-built evader mode has to actually *defeat* the current
+   detector — if nothing evades, there's nothing to detect.
+2. **Blue builds the detection** as data in the registry, and it must **CONVICT that evader**.
+3. **The FP gate has the last word.** The rule is scored against thousands of real fingerprints and ships
+   only if it stays clean — and a regression test fails the build if it ever fires on a real engine.
+
+The gate is deliberately **multi-source**, because you must never trust a single dataset's number: a
+generated distribution (**browserforge**) *plus* real Chromium/Firefox/WebKit captures, cross-checked against
+**Intoli** user-agents and **fpgen**, with the behavioral floors grounded on real human motion —
+**SapiMouse** (mouse), **BrainRun** (161k mobile swipes) and **Aalto** (keystroke). Mobile and touch get
+their *own* grounded floors, not desktop heuristics reused.
+
+What feeds the loop is [`docs/research-radar.md`](docs/research-radar.md): an intake queue of external
+papers, tools and releases, each mapped to a Kitsune seam and tagged **groundable-in-sandbox** vs
+**external-data-bound**. Groundable leads become rules; external-data-bound ones (real residential-proxy
+egress, real-device GPUs, large-scale prevalence) are queued with the exact data they'd need — never shipped
+on a guess. See [grounding.md](docs/grounding.md) and [calibration.md](docs/calibration.md).
 
 ## The red team
 
@@ -174,6 +199,22 @@ arrivals — evades both, at which point it is, by construction, *N independent 
 conviction there is external-data-bound). The **diversification levers** that get a red fleet there map one
 to one onto the axis-A dimensions they each defeat. The full loop — strategies, manager, objectives, both
 scorers, levers and the showcase — is documented in [**docs/fleet.md**](docs/fleet.md).
+
+## The arena — a solved challenge ≠ a human
+
+The [**arena**](docs/arena.md) (`arena/`, Go) is a public, self-hosted reproduction of the documented **open**
+web-challenge families — **proof-of-work**, **CAPTCHA** (text / math / honeypot), **slider**, **rotate**,
+**emoji & Quick-Draw image-select**, a **reCAPTCHA-style checkbox**, a **Turnstile-style managed ladder**,
+and **PACT / Privacy-Pass** attestation — each (where it has a difficulty axis) at **easy / medium / hard**.
+A visitor brings any client to a gate and sees **two verdicts at once**: did you *solve* the challenge, and
+does your client *cohere* across layers, read independently over the edge?
+
+That juxtaposition is the whole point: **a solved challenge is a cost or Turing test, not a bot/human
+discriminator.** Every gate here falls to the right scripted solver (`evaders/arena-solver`,
+`arena-solver-ocr`) — and the detector still convicts the no-JS client on the network layer regardless.
+**Coherence + attestation is the durable signal; the puzzle is not.** Like everything else in the lab, the
+gates and solvers are vendor-neutral and talk only to Kitsune's own infrastructure — never a third-party
+widget.
 
 ## What's novel — detections unique to Kitsune
 
@@ -254,6 +295,8 @@ Go and Node aren't required locally — use Docker (`golang:1.26-alpine`, `node:
   why (the Camoufox frontier, the precision turn, the realm-coherence family, the HTTP/2 DoS family, …).
 - [Calibration](docs/calibration.md) · [Prevalence model](docs/prevalence-model.md) · [Coordination & the fleet](docs/fleet.md) — the precision gate and the two structural frontiers.
 - [**Fleet & coordination**](docs/fleet.md) — Skulk, the fleet manager, objectives, both coordination scorers, the diversification levers and the escalation showcase.
+- [**Arena**](docs/arena.md) — the public challenge gates (PoW · CAPTCHA · slider · image-select · PACT) and the *solved-challenge ≠ human* thesis.
+- [**Grounding loop**](docs/grounding.md) · [Research radar](docs/research-radar.md) — how every rule is grounded, and the external-research intake queue that feeds it.
 - [**Privacy**](docs/privacy.md) — the public site captures **no** visitor data: signals are scored in memory and never written to disk, retained, sold, shared, or used to track.
 - [Detection catalog](docs/detection-catalog.md) · [Evasion catalog](docs/evasion-catalog.md) — the blue/red work queues.
 - [Coverage matrix](docs/matrix.md) — every detector rule × every evader.
@@ -262,8 +305,8 @@ Go and Node aren't required locally — use Docker (`golang:1.26-alpine`, `node:
 
 **Explore it live** (the same data, rendered + cross-linked at [kitsune.id](https://kitsune.id)):
 [Detections](https://kitsune.id/detections) · [Evasions](https://kitsune.id/evasions) ·
-[Matrix](https://kitsune.id/matrix) · [How it works](https://kitsune.id/how-it-works) ·
-[Research](https://kitsune.id/research)
+[Matrix](https://kitsune.id/matrix) · [Arena](https://kitsune.id/arena) ·
+[How it works](https://kitsune.id/how-it-works) · [Research](https://kitsune.id/research)
 
 ## Ethics
 
