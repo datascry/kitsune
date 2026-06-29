@@ -30,4 +30,6 @@ jobs:
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run build-push.yml --ref "${{ steps.release.outputs.tag_name }}"
+        # --repo is required: this job does not check out the repo, so gh cannot infer it from a local git
+        # remote ("fatal: not a git repository"). Pass it explicitly instead of adding a checkout.
+        run: gh workflow run build-push.yml --repo "${{ github.repository }}" --ref "${{ steps.release.outputs.tag_name }}"
