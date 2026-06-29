@@ -40,6 +40,87 @@ def test_is_brave_does_not_shield_other_tells() -> None:
     assert "br.webdriver_present" in {c.rule_id for c in verdict.contradictions}
 
 
+def _multi(rows: list[tuple[str, str, object]]) -> list:
+    """Score a multi-layer session (rows of (layer, kind, value)) through ingest+derivation."""
+    sigs = [
+        Signal.model_validate(
+            {
+                "schema_version": "0.1",
+                "session_id": "s",
+                "layer": layer,
+                "kind": kind,
+                "value": value,
+                "source": "edge" if layer == "network" else "collector",
+                "observed_at": f"2026-06-29T00:00:0{i % 9}Z",
+            }
+        )
+        for i, (layer, kind, value) in enumerate(rows)
+    ]
+    return Detector().ingest_and_score(sigs)
+
+
+def test_genuine_privacy_browser_measuretext_not_convicted() -> None:
+    # br.measuretext_offscreen_vs is a CONVICTING artifact, but RFP per-context text-metric randomization makes
+    # main != OffscreenCanvas on a real Mullvad/Tor. Exempted for a genuine RFP browser -> human; a Chrome-
+    # claiming tool with the same divergence (no RFP/Gecko) is NOT exempted and still trips it.
+    mullvad = _multi(
+        [
+            ("browser", "rfp_browser", True),
+            ("browser", "ua_engine", "firefox"),
+            ("browser", "measuretext_offscreen_divergence", True),
+        ]
+    )[0]
+    assert mullvad.label.value == "human"
+    assert "br.measuretext_offscreen_vs" not in {c.rule_id for c in mullvad.contradictions}
+    faker = _multi([("browser", "ua_engine", "chromium"), ("browser", "measuretext_offscreen_divergence", True)])[0]
+    assert "br.measuretext_offscreen_vs" in {c.rule_id for c in faker.contradictions}
+
+
+def test_rfp_capability_gaps_and_brave_no_connection_exempted() -> None:
+    # The privacy-browser capability gaps (WebGL2/TTS/WebRTC for RFP; Network Information API for Brave) are
+    # by-design privacy features, dropped for the genuinely-identified browser -> human.
+    mullvad = _multi(
+        [
+            ("browser", "rfp_browser", True),
+            ("browser", "ua_engine", "firefox"),
+            ("browser", "webgl2_missing", True),
+            ("browser", "voices_empty", True),
+            ("browser", "webrtc_unavailable", True),
+        ]
+    )[0]
+    assert mullvad.label.value == "human", sorted(c.rule_id for c in mullvad.contradictions)
+    brave = _multi(
+        [("browser", "is_brave", True), ("browser", "ua_engine", "chromium"), ("browser", "chrome_no_connection", True)]
+    )[0]
+    assert "br.no_connection" not in {c.rule_id for c in brave.contradictions}
+    # A non-Brave Chromium that lacks navigator.connection is still flagged (not a by-design Brave feature).
+    chrome = _multi([("browser", "ua_engine", "chromium"), ("browser", "chrome_no_connection", True)])[0]
+    assert "br.no_connection" in {c.rule_id for c in chrome.contradictions}
+
+
+def test_tls_ext_order_static_gated_behind_proxy_egress() -> None:
+    # net.tls_ext_order_static_within_session convicts a Chromium-JA4 session repeating one TLS extension order.
+    # Behind a proxy/VPN/datacenter exit the observed handshake may be the proxy's, so it false-convicts a real
+    # Brave on a VPN -> gated off. On DIRECT egress the rule still fires (a pinned template is a real tell).
+    behind_vpn = _multi(
+        [
+            ("network", "ja4_browser_hint", "chrome"),
+            ("network", "tls_ext_order", "aabbccdd"),
+            ("network", "tls_ext_order", "aabbccdd"),
+            ("reputation", "asn_is_datacenter", True),
+        ]
+    )[0]
+    assert "net.tls_ext_order_static_within_session" not in {c.rule_id for c in behind_vpn.contradictions}
+    direct = _multi(
+        [
+            ("network", "ja4_browser_hint", "chrome"),
+            ("network", "tls_ext_order", "aabbccdd"),
+            ("network", "tls_ext_order", "aabbccdd"),
+        ]
+    )[0]
+    assert "net.tls_ext_order_static_within_session" in {c.rule_id for c in direct.contradictions}
+
+
 def _ml_session(*, behavioral: dict[str, object], browser: dict[str, object] | None = None) -> Session:
     sigs = [
         Signal(session_id="s", layer=Layer.behavioral, kind=k, value=v, source=Source.collector, observed_at=NOW)
@@ -85,11 +166,12 @@ def test_brave_readback_noise_is_excused() -> None:
 
 
 def test_real_rfp_browser_is_not_convicted() -> None:
-    # A real Tor/Mullvad/RFP-Firefox user (Gecko): rfp_browser (now environment, corroborating) + the
-    # RFP-blocked canvas (canvas_noise) would previously noisy-or to bot. Now rfp_browser corroborates and the
-    # farbling is dropped, so the privacy browser caps at suspicious, never bot.
+    # A real Tor/Mullvad/RFP-Firefox user (Gecko): the RFP-blocked canvas (canvas_noise) + geometry/worker
+    # divergence would previously noisy-or to bot. All are dropped as by-design farbling. Under the first-class
+    # privacy stance, rfp_browser ITSELF (the identifier — "this is a privacy browser", not a bot tell) is also
+    # dropped, so a genuine privacy browser with no other tell scores HUMAN, not merely "not bot".
     # v0.74.26: grounded on a real Mullvad, RFP also trips canvas_geometry_noise (perturbed isPointInPath)
-    # and canvas_worker_vs_main (per-call canvas noise → main/Worker divergence) — all three are dropped.
+    # and canvas_worker_vs_main (per-call canvas noise → main/Worker divergence) — all dropped.
     tor = _session(
         rfp_browser=True,
         canvas_noise=True,
@@ -98,11 +180,9 @@ def test_real_rfp_browser_is_not_convicted() -> None:
         ua_engine="firefox",
     )
     verdict = Detector().score(tor)
-    assert verdict.label.value != "bot"
-    dropped = {"br.canvas_noise", "br.canvas_geometry_noise", "br.canvas_worker_vs_main"}
+    assert verdict.label.value == "human"
+    dropped = {"br.canvas_noise", "br.canvas_geometry_noise", "br.canvas_worker_vs_main", "br.rfp_browser"}
     assert dropped.isdisjoint({c.rule_id for c in verdict.contradictions})
-    # rfp_browser itself remains visible as a corroborating tell, but as environment it cannot convict alone.
-    assert "br.rfp_browser" in {c.rule_id for c in verdict.contradictions}
     # An RFP-faking automation is still caught by its automation tells.
     tor_bot = _session(rfp_browser=True, canvas_noise=True, ua_engine="firefox", webdriver=True)
     assert Detector().score(tor_bot).label.value == "bot"
