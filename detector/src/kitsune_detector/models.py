@@ -141,6 +141,11 @@ class Verdict(_Strict):
     layer_scores: LayerScores
     contradictions: list[Contradiction] = Field(default_factory=list)
     incoherence_score: float = Field(ge=0.0, le=1.0)
+    #: The bot decision: noisy-or of the CONVICTING (coherence/automation/artifact) tells only.
+    conviction_score: float = Field(ge=0.0, le=1.0, default=0.0)
+    #: Context, not conviction: noisy-or of the CORROBORATING (environment/behavioral/reputation/prevalence)
+    #: tells. Discounted in `score` and never able to convict alone — legitimate diversity produces it too.
+    corroboration_score: float = Field(ge=0.0, le=1.0, default=0.0)
     score: float = Field(ge=0.0, le=1.0)
     label: Label
     ruleset_version: str

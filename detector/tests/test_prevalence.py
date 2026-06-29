@@ -143,8 +143,9 @@ def test_prevalence_is_corroborating_never_convicts_alone() -> None:
     verdict = Detector().score(sess)
     fired = {c.rule_id for c in verdict.contradictions}
     assert "br.fingerprint_improbable" in fired and "br.media_devices_empty" in fired
-    assert verdict.score >= 0.65  # noisy-or crosses the bot threshold...
-    assert verdict.label is not Label.bot  # ...but prevalence cannot convict alone → capped at suspicious
+    # Both are corroborating, so they land in corroboration_score (discounted) — never conviction.
+    assert verdict.conviction_score == 0.0
+    assert verdict.label is not Label.bot  # prevalence + a capability gap cannot convict alone
     prevalence_cat = next(c.category for c in verdict.contradictions if c.rule_id == "br.fingerprint_improbable")
     assert prevalence_cat.value == "prevalence"
 

@@ -145,7 +145,7 @@ Each evader is a real anti-detect tool/technique; **Caught by** is the top convi
 | Evader | Caught by (top convicting tell) | Incoh. | Score | Label |
 |---|---|---|---|---|
 | `curl-impersonate` | `net.no_js_execution` | 0.60 | 0.90 | bot |
-| `nodriver` | `br.headless_ua` | 0.00 | 1.00 | bot |
+| `nodriver` | `br.headless_ua` | 0.00 | 0.92 | bot |
 | `full-stealth` | `br.cdp_runtime_enabled` | 0.60 | 1.00 | bot |
 | `camoufox` | `net.tcp_os_vs_ua` | 0.84 | 1.00 | bot |
 | `ios-ua-spoof` | `br.ch_he_headless` | 0.98 | 1.00 | bot |
@@ -154,16 +154,16 @@ Each evader is a real anti-detect tool/technique; **Caught by** is the top convi
 
 | Evader | Trips (corroborating only) | Score | Label |
 |---|---|---|---|
-| `webrtc-leak` | `net.webrtc_ip_vs_observed`, `br.media_devices_empty` | 1.00 | suspicious |
-| `zendriver-uach` | `bh.input_entropy_floor`, `br.hover_none_desktop` | 0.99 | suspicious |
-| `camoufox-hardened` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.99 | suspicious |
-| `camoufox-linux-coherent` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.99 | suspicious |
-| `camoufox-linux` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.99 | suspicious |
-| `zendriver-uach-behave` | `br.hover_none_desktop`, `br.webrtc_unavailable` | 0.99 | suspicious |
-| `camoufox-hardened-behave` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.97 | suspicious |
-| `camoufox-socks-webrtc` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.97 | suspicious |
-| `camoufox-headful` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.95 | suspicious |
-| `patchright-headful` | `br.media_devices_empty`, `br.voices_empty` | 0.93 | suspicious |
+| `zendriver-uach` | `bh.input_entropy_floor`, `br.hover_none_desktop` | 0.50 | suspicious |
+| `webrtc-leak` | `net.webrtc_ip_vs_observed`, `br.media_devices_empty` | 0.49 | suspicious |
+| `camoufox-hardened` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.49 | suspicious |
+| `camoufox-linux-coherent` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.49 | suspicious |
+| `camoufox-linux` | `br.webrtc_unavailable`, `bh.power_law_violation` | 0.49 | suspicious |
+| `zendriver-uach-behave` | `br.hover_none_desktop`, `br.webrtc_unavailable` | 0.49 | suspicious |
+| `camoufox-hardened-behave` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.49 | suspicious |
+| `camoufox-socks-webrtc` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.49 | suspicious |
+| `camoufox-headful` | `br.webrtc_unavailable`, `br.media_devices_empty` | 0.47 | suspicious |
+| `patchright-headful` | `br.media_devices_empty`, `br.voices_empty` | 0.46 | suspicious |
 
 <!-- GENERATED:readme-redteam:end -->
 

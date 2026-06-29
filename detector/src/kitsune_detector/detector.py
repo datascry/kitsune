@@ -138,6 +138,8 @@ class Detector:
             layer_scores=scoring.layer_scores(contradictions),
             contradictions=contradictions,
             incoherence_score=scoring.incoherence_score(contradictions),
+            conviction_score=scoring.conviction_score(contradictions),
+            corroboration_score=scoring.corroboration_score(contradictions),
             score=score,
             label=label,
             ruleset_version=self._ruleset.ruleset_version,

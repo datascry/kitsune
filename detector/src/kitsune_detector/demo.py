@@ -1065,24 +1065,46 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     document.body.classList.add("ks-done");  // stop the scanning stepper
     if (!v) { if (status) status.textContent = "Couldn\\u2019t score this visit \\u2014 no edge session was established. Re-run, or reload the page."; return; }
     if (status) status.textContent = "Scan complete \\u00b7 your signals were scored in memory and discarded \\u2014 nothing was stored.";
-    var label = String(v.label || "?"), pct = Math.round((v.score || 0) * 100);
+    var label = String(v.label || "?");
     var inc = Math.round((v.incoherence_score || 0) * 100);
-    // Plain-English read of the verdict, instead of a bare second percentage.
-    var explain, scoreLine = pct + "% overall bot-likelihood";
-    if (label === "human") explain = "Every layer agrees — consistent with a real browser.";
-    else if (label === "verified") {
-      explain = "Cross-layer signals say automation, but this agent cryptographically PROVED its identity (a valid Web Bot Auth / RFC 9421 signature) — a declared good bot, allow-listed rather than convicted. Note: this lab seeds the PUBLIC RFC test key, so anyone can mint a \\u201cverified\\u201d agent here — an allow-list is only as strong as the signing key\\u2019s secrecy.";
+    // The verdict is decided by whether a CONVICTING tell (coherence/automation/artifact) fired — NOT by a
+    // percentage. Corroborating signals (environment/behavioral/reputation/prevalence) are shown as context
+    // and can never convict alone. Split the fired contradictions into the two groups.
+    var cs0 = v.contradictions || [], convN = 0, corrFlags = [];
+    for (var ci = 0; ci < cs0.length; ci++) { if (KS_CONVICTING[cs0[ci].category]) convN++; else corrFlags.push(cs0[ci]); }
+    var convTotal = 0;
+    if (KS_RULES && KS_RULES.length) { for (var ti = 0; ti < KS_RULES.length; ti++) { if (KS_CONVICTING[KS_RULES[ti].category]) convTotal++; } }
+    var explain, scoreLine;
+    if (label === "human") {
+      scoreLine = "nothing convicting fired";
+      explain = "Every layer agrees — consistent with a real browser. No coherence, automation, or artifact tell fired.";
+    } else if (label === "verified") {
       scoreLine = "verified agent \\u00b7 allow-listed";
-    } else if (label === "bot") explain = inc > 0
-      ? "Cross-layer contradiction: the layers describe different devices — a real browser can\\u2019t do that."
-      : "A clear automation or spoofing artifact was found.";
-    else explain = "Some signals don\\u2019t fit a coherent real browser, but there\\u2019s no hard bot signature.";
+      explain = "Cross-layer signals say automation, but this agent cryptographically PROVED its identity (a valid Web Bot Auth / RFC 9421 signature) — a declared good bot, allow-listed rather than convicted. Note: this lab seeds the PUBLIC RFC test key, so anyone can mint a \\u201cverified\\u201d agent here — an allow-list is only as strong as the signing key\\u2019s secrecy.";
+    } else if (label === "bot") {
+      scoreLine = convN + " convicting tell" + (convN === 1 ? "" : "s");
+      explain = inc > 0
+        ? "Cross-layer contradiction: the layers describe different devices — a real browser can\\u2019t do that."
+        : "A clear automation or spoofing artifact was found.";
+    } else {
+      scoreLine = "no conviction \\u00b7 " + corrFlags.length + " corroborating flag" + (corrFlags.length === 1 ? "" : "s");
+      explain = "Nothing convicting fired, but several corroborating signals don\\u2019t fit a coherent real browser.";
+    }
     var html = '<div class="verdict verdict-' + esc(label) + '">'
       + '<span class="label">' + esc(label.toUpperCase()) + '</span>'
       + '<span class="score">' + esc(scoreLine) + '</span></div>'
       + '<p class="note">' + esc(explain) + '</p>';
-    // Per-layer bars — how bot-like EACH layer looks (0 = human). The verdict is their combined
-    // likelihood (not a sum), and a cross-layer contradiction counts toward it twice.
+    // What actually decides the verdict: the convicting-checks tally, then corroboration shown as context.
+    html += '<p class="note"><b>Convicting checks:</b> ' + convN + ' fired'
+      + (convTotal ? ' / ' + convTotal : '') + ' — only coherence / automation / artifact can convict.';
+    if (corrFlags.length) {
+      var names = [];
+      for (var fi = 0; fi < corrFlags.length && fi < 6; fi++) names.push(esc(corrFlags[fi].rule_id));
+      html += ' <b>Corroboration:</b> ' + corrFlags.length + ' flag' + (corrFlags.length === 1 ? "" : "s")
+        + ' (context only, never convicts): ' + names.join(", ") + (corrFlags.length > 6 ? ", \\u2026" : "");
+    }
+    html += '</p>';
+    // Per-layer detail bars (context, not a bot-likelihood %).
     var ls = v.layer_scores || {};
     var layers = ["network", "browser", "behavioral", "reputation"], bars = "";
     for (var li = 0; li < layers.length; li++) {
@@ -1091,9 +1113,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         + '<span class="bar-track"><span class="bar-fill" style="width:' + lp + '%"></span></span>'
         + '<span class="bar-val">' + lp + '</span></div>';
     }
-    html += '<p class="note">How bot-like each layer looks — <b>0 is human</b>. The verdict combines them; '
-      + 'a cross-layer contradiction (one device telling two stories) counts double'
-      + (inc > 0 ? ' — yours is <b>' + inc + '%</b>' : '') + '.</p>';
+    html += '<p class="note">Per-layer detail (context) — <b>0 is clean</b>'
+      + (inc > 0 ? '; cross-layer incoherence <b>' + inc + '</b>' : '') + '.</p>';
     html += '<div class="layer-bars">' + bars + '</div>';
     if (out) out.innerHTML = html;  // #ks-result = the headline summary (verdict stamp + layer bars)
     // Post-verdict next step — the visitor's CTA, conditioned on the result.
