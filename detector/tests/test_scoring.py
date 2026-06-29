@@ -85,12 +85,18 @@ def test_has_convicting() -> None:
 
 
 def test_label_gate_requires_convicting_signal() -> None:
-    # bot-level score from environment tells alone is capped at suspicious — a stripped-but-real browser.
-    env_only = [_cat(0.55, RuleCategory.environment), _cat(0.3, RuleCategory.environment)]
-    assert scoring.final_score(env_only) >= scoring.BOT_THRESHOLD  # would be bot under bare threshold
-    assert scoring.label_for(scoring.final_score(env_only), env_only) is Label.suspicious
-    # add one convicting tell and the same score now convicts
-    convicted = [*env_only, _cat(0.4, RuleCategory.automation)]
+    # Corroboration (environment tells) is DISCOUNTED below the bot threshold, so even a strong pile of
+    # capability gaps can never reach bot on its own — a stripped-but-real browser caps at suspicious.
+    env_only = [
+        _cat(0.8, RuleCategory.environment),
+        _cat(0.8, RuleCategory.environment),
+        _cat(0.6, RuleCategory.environment),
+    ]
+    assert scoring.final_score(env_only) < scoring.BOT_THRESHOLD  # corroboration can't reach bot-level
+    assert scoring.label_for(scoring.final_score(env_only), env_only) is not Label.bot
+    # add convicting tells and it convicts
+    convicted = [_cat(0.9, RuleCategory.automation), _cat(0.6, RuleCategory.coherence)]
     assert scoring.label_for(scoring.final_score(convicted), convicted) is Label.bot
-    # corroborating-only below the suspicious floor stays human
-    assert scoring.label_for(0.2, [_cat(0.2, RuleCategory.environment)]) is Label.human
+    # a single light corroborating flag (e.g. a VPN at 0.5 -> 0.25) stays human
+    vpn = [_cat(0.5, RuleCategory.reputation)]
+    assert scoring.label_for(scoring.final_score(vpn), vpn) is Label.human

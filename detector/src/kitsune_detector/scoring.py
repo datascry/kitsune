@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from math import prod
 
-from .config import BOT_THRESHOLD, INCOHERENCE_WEIGHT, SUSPICIOUS_THRESHOLD
+from .config import BOT_THRESHOLD, CORROBORATION_WEIGHT, INCOHERENCE_WEIGHT, SUSPICIOUS_THRESHOLD
 from .models import Contradiction, Label, LayerScores, RuleCategory
 
 # A `bot` conviction requires a *convicting* tell — a clear bot signature. Coherence (cross-vector
@@ -63,9 +63,34 @@ def incoherence_score(contradictions: list[Contradiction]) -> float:
     return noisy_or(c.weight for c in contradictions if c.is_cross_layer)
 
 
+def conviction_score(contradictions: Iterable[Contradiction]) -> float:
+    """Noisy-or over only the CONVICTING tells' effective (incoherence-amplified) weights — the bot decision.
+
+    Coherence/automation/artifact are positive bot signatures, so they aggregate at full weight. This is the
+    number a `bot` verdict is built on; corroboration is reported separately and discounted (see final_score).
+    """
+    return noisy_or(_effective_weight(c) for c in contradictions if c.category in CONVICTING_CATEGORIES)
+
+
+def corroboration_score(contradictions: Iterable[Contradiction]) -> float:
+    """Noisy-or over only the CORROBORATING tells' weights (environment/behavioral/reputation/prevalence).
+
+    These also fire on legitimate diversity (a VPN, a stripped browser, a quiet user, a rare-but-real
+    fingerprint), so they are reported as context and discounted in the final score — never amplified.
+    """
+    return noisy_or(c.weight for c in contradictions if c.category not in CONVICTING_CATEGORIES)
+
+
 def final_score(contradictions: list[Contradiction]) -> float:
-    """Noisy-or over every contradiction's *effective* (incoherence-amplified) weight."""
-    return noisy_or(_effective_weight(c) for c in contradictions)
+    """Conviction-dominant total in [0, 1]: the conviction score, with corroboration folded in at a discount.
+
+    ``noisy_or(conviction, CORROBORATION_WEIGHT * corroboration)`` — so corroboration nudges the number but,
+    capped below BOT_THRESHOLD, can never reach `bot` on its own (the mechanical companion to the conviction
+    gate). A real privacy browser on a VPN (corroboration only) lands human/suspicious, never bot.
+    """
+    conv = conviction_score(contradictions)
+    corr = corroboration_score(contradictions)
+    return noisy_or([conv, CORROBORATION_WEIGHT * corr])
 
 
 def verified_agent(verified_present: bool, contradictions: Iterable[Contradiction]) -> bool:

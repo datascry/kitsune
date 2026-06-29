@@ -7,7 +7,8 @@
   "additionalProperties": false,
   "required": [
     "schema_version", "session_id", "layer_scores", "contradictions",
-    "incoherence_score", "score", "label", "ruleset_version", "scored_at"
+    "incoherence_score", "conviction_score", "corroboration_score",
+    "score", "label", "ruleset_version", "scored_at"
   ],
   "$defs": {
     "unit_interval": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
@@ -53,8 +54,19 @@
     },
     "contradictions": { "type": "array", "items": { "$ref": "#/$defs/contradiction" } },
     "incoherence_score": { "$ref": "#/$defs/unit_interval" },
-    "score": { "$ref": "#/$defs/unit_interval", "description": "Final bot-likelihood, 1 = bot." },
-    "label": { "type": "string", "enum": ["human", "suspicious", "bot"] },
+    "conviction_score": {
+      "$ref": "#/$defs/unit_interval",
+      "description": "Noisy-or of the CONVICTING (coherence/automation/artifact) tells — the bot decision."
+    },
+    "corroboration_score": {
+      "$ref": "#/$defs/unit_interval",
+      "description": "Noisy-or of the CORROBORATING (environment/behavioral/reputation/prevalence) tells — context, never convicts alone."
+    },
+    "score": {
+      "$ref": "#/$defs/unit_interval",
+      "description": "Conviction-dominant total in [0,1]: conviction with corroboration folded in at a discount."
+    },
+    "label": { "type": "string", "enum": ["human", "suspicious", "bot", "verified"] },
     "ruleset_version": { "type": "string" },
     "scored_at": { "type": "string", "format": "date-time" }
   }

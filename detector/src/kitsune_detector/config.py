@@ -16,6 +16,15 @@ SCHEMA_VERSION = "0.1"
 SUSPICIOUS_THRESHOLD = 0.35
 BOT_THRESHOLD = 0.65
 
+#: How much a CORROBORATING tell (environment/behavioral/reputation/prevalence) contributes to the final
+#: score relative to a convicting one. Corroboration is real-but-ambiguous evidence — a VPN, a stripped
+#: browser, a quiet user — that legitimate diversity also produces, so it must never dominate the verdict.
+#: Discounting it below 1.0 means corroboration ALONE can never reach BOT_THRESHOLD (full corroboration ->
+#: 0.5 < 0.65), so a real privacy-browser-on-a-VPN session reads human/suspicious, never bot — while a single
+#: corroborating flag (e.g. a VPN at weight 0.5 -> 0.25) stays below SUSPICIOUS_THRESHOLD and reads human.
+#: The conviction gate (label_for + has_convicting) still independently bars bot without a convicting tell.
+CORROBORATION_WEIGHT = 0.5
+
 #: How much a *cross-layer* contradiction is amplified over a single-layer one. This is the
 #: mechanical expression of Kitsune's thesis: incoherence across layers counts for more than a
 #: bad signal within one layer. A 0.6 cross-layer contradiction becomes 0.6 * (1 + 0.5) = 0.9.
