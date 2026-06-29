@@ -693,7 +693,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <div id="ks-cta"></div>
   <div class="ks-actions">
     <button type="button" id="ks-rerun" class="ks-btn primary">↻ Re-run scan</button>
-    <button type="button" id="ks-share" class="ks-btn">Share this verdict</button>
   </div>
   <!-- MACHINE-READABLE RESULT: automated tools can parse the verdict here without scraping the DOM.
        It starts as {"status":"collecting"} and is replaced with the full verdict (label, score,
@@ -1096,14 +1095,13 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + '<p class="note">' + esc(explain) + '</p>';
     // What actually decides the verdict: the convicting-checks tally, then corroboration shown as context.
     html += '<p class="note"><b>Convicting checks:</b> ' + convN + ' fired'
-      + (convTotal ? ' / ' + convTotal : '') + ' — only coherence / automation / artifact can convict.';
+      + (convTotal ? ' / ' + convTotal : '') + ' — only coherence / automation / artifact can convict.</p>';
     if (corrFlags.length) {
       var names = [];
       for (var fi = 0; fi < corrFlags.length && fi < 6; fi++) names.push(esc(corrFlags[fi].rule_id));
-      html += ' <b>Corroboration:</b> ' + corrFlags.length + ' flag' + (corrFlags.length === 1 ? "" : "s")
-        + ' (context only, never convicts): ' + names.join(", ") + (corrFlags.length > 6 ? ", \\u2026" : "");
+      html += '<p class="note"><b>Corroboration:</b> ' + corrFlags.length + ' flag' + (corrFlags.length === 1 ? "" : "s")
+        + ' (context only, never convicts): ' + names.join(", ") + (corrFlags.length > 6 ? ", \\u2026" : "") + '</p>';
     }
-    html += '</p>';
     // Per-layer detail bars (context, not a bot-likelihood %).
     var ls = v.layer_scores || {};
     var layers = ["network", "browser", "behavioral", "reputation"], bars = "";
@@ -2590,7 +2588,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (btxt) btxt.addEventListener("input", renderBio);
     setInterval(renderBio, 600); // keep the live readout fresh as the visitor moves/types
   } catch (e) {}
-  // Re-run + share controls — the explicit "try your setup" affordance the lab is built for.
+  // Re-run control — the explicit "try your setup" affordance the lab is built for.
   try {
     var rerun = document.getElementById("ks-rerun");
     if (rerun) rerun.addEventListener("click", function () {
@@ -2598,12 +2596,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       var st = document.getElementById("ks-status"); if (st) st.textContent = "Re-scanning\\u2026";
       var sc = document.getElementById("ks-scan"); if (sc) { var steps = sc.querySelectorAll(".ks-step"); for (var i = 0; i < steps.length; i++) steps[i].className = "ks-step" + (i === 0 ? " run" : ""); }
       send();
-    });
-    var share = document.getElementById("ks-share");
-    if (share) share.addEventListener("click", function () {
-      var url = location.href, btn = this;
-      if (navigator.share) { navigator.share({ title: "Kitsune \\u2014 bot-detection verdict", url: url }).catch(function () {}); }
-      else if (navigator.clipboard) { navigator.clipboard.writeText(url).then(function () { btn.textContent = "Link copied"; }).catch(function () {}); }
     });
   } catch (e) {}
   // Score after a short delay (a fast first verdict). In full mode, if the visitor hasn't produced enough
