@@ -5,6 +5,30 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.12.0](https://github.com/datascry/kitsune/compare/v1.11.0...v1.12.0) (2026-06-29)
+
+
+### Features
+
+* **detector:** conviction/corroboration scoring — no more misleading % ([371af2b](https://github.com/datascry/kitsune/commit/371af2bfda8e452bbf0b1eefd9260959d6329c35))
+* **detector:** no-capture privacy posture for the public site ([005b664](https://github.com/datascry/kitsune/commit/005b664c82e36643c96c8a8873379b294a6178b3))
+* **harness:** adversary-showcase — the coordination red⇄blue escalation ladder ([56f4207](https://github.com/datascry/kitsune/commit/56f4207329b8d25964a8bb4e8187d9a267057383))
+* **harness:** fleet Objectives — shard a goal's work across coordinated workers ([e642053](https://github.com/datascry/kitsune/commit/e6420538cd1f409075feaaa51427ddb2b6049237))
+* **harness:** stagger lever (reduce coordination) + robust diversification showcase ([35903e9](https://github.com/datascry/kitsune/commit/35903e95049f32be15d915ef099d7b6f283ccd3b))
+
+
+### Bug Fixes
+
+* **detector:** guard arena gate slug to close the reflected-XSS path ([d6753be](https://github.com/datascry/kitsune/commit/d6753be74e1efa38c1145dd937d0f04da6f2616c))
+* **detector:** remove dead share button; corroboration on its own line ([5077f79](https://github.com/datascry/kitsune/commit/5077f79507b8fc1a0316fa3c0572ba4313df4c2e))
+* **detector:** stop convicting genuine privacy browsers + VPN users ([ee50cfd](https://github.com/datascry/kitsune/commit/ee50cfd568b823eb6b8e59cbf5e38bb131dc5dbd))
+* **evaders:** bump golang.org/x/net to v0.56.0 in azuretls (GO-2026-5026) ([8993f55](https://github.com/datascry/kitsune/commit/8993f55aac9d7f55df279d16a9d41106288e31c6))
+
+
+### Performance Improvements
+
+* **harness:** productionize axis A — blocking candidate-gen + windowed streaming ([4f3d889](https://github.com/datascry/kitsune/commit/4f3d889bf4581d936c63455076c77d4dcdc4faad))
+
 ## [1.11.0](https://github.com/datascry/kitsune/compare/v1.10.0...v1.11.0) (2026-06-28)
 
 
