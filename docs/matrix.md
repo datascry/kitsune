@@ -14,7 +14,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `baseline-firefox` | bot | 1.00 | 6/143 | `br.webdriver_present` |
 | `brave-fake-proxy` | bot | 1.00 | 14/143 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `brave-fake` | bot | 1.00 | 14/143 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
-| `brave` | bot | 1.00 | 8/143 | `br.webdriver_present`, `br.headless_ua` |
+| `brave` | bot | 1.00 | 6/143 | `br.webdriver_present`, `br.headless_ua` |
 | `camoufox-hardened-behave` | suspicious | 0.97 | 5/143 | — |
 | `camoufox-hardened` | suspicious | 0.99 | 6/143 | — |
 | `camoufox-headful` | suspicious | 0.95 | 4/143 | — |
@@ -115,7 +115,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | Detector | layer | category | catches |
 |---|---|---|---:|
 | `br.media_devices_empty` | browser | environment | 79 |
-| `br.voices_empty` | browser | environment | 77 |
+| `br.voices_empty` | browser | environment | 76 |
 | `br.webgl_software` | browser | environment | 56 |
 | `br.mimetypes_empty` | browser | environment | 50 |
 | `br.no_plugins` | browser | environment | 50 |
@@ -172,7 +172,6 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `net.webrtc_ip_vs_observed` | network,browser | reputation | 3 |
 | `br.apple_ua_nonwebkit` | browser | coherence | 2 |
 | `br.brave_spoofed` | browser | artifact | 2 |
-| `br.no_connection` | browser | environment | 2 |
 | `br.safari_ua_no_webkit_api` | browser | coherence | 2 |
 | `br.timezone_inconsistent` | browser | coherence | 2 |
 | `br.timezone_offset_vs_intl` | browser | coherence | 2 |
@@ -205,6 +204,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `br.mobile_no_touch` | browser | coherence | 1 |
 | `br.native_invariant_violated` | browser | artifact | 1 |
 | `br.nav_property_spoofed` | browser | automation | 1 |
+| `br.no_connection` | browser | environment | 1 |
 | `br.no_devicememory` | browser | environment | 1 |
 | `br.notification_getter_tampered` | browser | automation | 1 |
 | `br.oscpu_vs_ua` | browser | coherence | 1 |
@@ -246,7 +246,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `baseline-firefox` | bot | 0 | 0 | 1 | 5 | 0 | 0 |
 | `brave-fake-proxy` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `brave-fake` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
-| `brave` | bot | 0 | 0 | 2 | 4 | 2 | 0 |
+| `brave` | bot | 0 | 0 | 2 | 2 | 2 | 0 |
 | `camoufox-hardened-behave` | suspicious | 0 | 0 | 0 | 4 | 1 | 0 |
 | `camoufox-hardened` | suspicious | 0 | 0 | 0 | 4 | 2 | 0 |
 | `camoufox-headful` | suspicious | 0 | 0 | 0 | 4 | 0 | 0 |
