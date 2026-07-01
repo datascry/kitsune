@@ -94,6 +94,19 @@ services:
     depends_on: [edge]
     profiles: ["evaders"]
 
+  # uTLS MITM front for the chained-tool experiment: forges a browser TLS+H2 handshake to the edge while a
+  # real browser proxies through it (point a browser evader at KITSUNE_EDGE=https://chain-front:8444/). Tests
+  # whether chaining a network-forging tool behind a real runtime moves the single-session frontier — it does
+  # not (see evaders/chain-mitm/README.md). `--profile evaders up -d chain-front`, then run any browser evader.
+  chain-front:
+    build:
+      context: ./evaders/chain-mitm
+    environment:
+      KITSUNE_EDGE: "https://edge:8443"
+      KS_HELLO: "chrome" # chrome | firefox | safari — the forged network engine
+    depends_on: [edge]
+    profiles: ["evaders"]
+
   # High-fidelity network impersonator (Chrome TLS+H2 via primp/BoringSSL, no JS).
   primp:
     build:
