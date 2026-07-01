@@ -162,6 +162,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (fakes voices/devices) stays `bot 0.996` (the spoof is caught by coherence). **No new rule** — the coherence
   matrix HELD against a real MITM chain. Single-session evasion is bounded by real hardware + a single coherent
   runtime (camoufox), NOT by tool-chaining; the frontier is environmental/behavioral (external), not integrative.
+- **The single-session WALL, pinned (2026-07-02, GROUNDED live).** Drove the maximal COHERENT stack — camoufox
+  (`KS_HARDENED` engine-spoof + `KS_LINUX` coherent OS + `KS_NOTOUCH`) with a clean behavioral layer — to
+  **`suspicious` score 0.473, conviction_score 0.0, network 0.0**. Everything spoofable is solved: the network
+  is a perfect real-Firefox wire (Gecko, no tells), camoufox speaks no CDP so there are ZERO automation
+  convictions, and real XTEST input zeroes the behavioral layer (grounded separately on stealth: 95
+  pointermoves, coalesced batch 8, `isTrusted` → `bh.synthetic_no_coalesced` silent, behavioral 0). The ENTIRE
+  residual is four CORROBORATING environment-floor tells, each requiring real hardware: `br.webgl2_missing`
+  (real GPU), `br.voices_empty` (real OS TTS), `br.media_devices_empty` (real audio/video), `br.webrtc_unavailable`
+  (real network path). Faking them doesn't work — `FLOOR_SPOOF` (fakes voices+devices) stays `bot 0.996` because
+  the spoof is caught by coherence. So the best single-session evader reaches `suspicious`-with-zero-convictions
+  and is held there ONLY by the environment floor: the last mile is "run on real hardware," the economic bind —
+  not any spoofable value, and not a cleverer tool chain. (The one unbuilt step: fusing camoufox headful + real
+  XTEST input in one runtime; grounded by composition — camoufox conviction 0 + real-input behavioral 0.)
 
 ## Refuted leads — do NOT build (verification-killed)
 
