@@ -103,17 +103,26 @@ updates:
     groups:
       collector: { update-types: ["minor", "patch"] }
 
+  # apify-fp-inject and playwright-extra pin playwright to 1.52.0 exactly — the same deliberate fleet-wide
+  # Chromium-revision pin as the stealth evader (a newer playwright ships a different Chromium, shifting the
+  # fingerprint the evader presents). Hold playwright at 1.52.x; other deps still update.
   - package-ecosystem: "npm"
     directory: "/evaders/apify-fp-inject"
     schedule: { interval: "weekly" }
     groups:
       apify-fp-inject: { update-types: ["minor", "patch"] }
+    ignore:
+      - dependency-name: "playwright"
+        versions: [">=1.53.0"]
 
   - package-ecosystem: "npm"
     directory: "/evaders/playwright-extra"
     schedule: { interval: "weekly" }
     groups:
       playwright-extra: { update-types: ["minor", "patch"] }
+    ignore:
+      - dependency-name: "playwright"
+        versions: [">=1.53.0"]
 
   # The stealth evader pins playwright/patchright/rebrowser-playwright to one Chromium revision;
   # rebrowser-playwright caps at 1.52.0, so anything newer breaks that coherence — hold at 1.52.x.
