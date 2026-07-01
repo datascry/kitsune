@@ -1,5 +1,8 @@
 # .github/dependabot — automated dependency + action update PRs.
-# Watches every ecosystem in the monorepo weekly; groups minor/patch to reduce PR noise.
+# Watches every code-dependency manifest in the monorepo weekly; groups minor/patch to reduce PR noise so a
+# major bump (which may need review) still comes as its own PR. Docker base images are intentionally NOT
+# watched: they are floated by minor tag repo-wide so rebuilds pull upstream security patches (see the
+# Scorecard PinnedDependencies decision) — /edge is the one exception, kept for the published edge image.
 
 version: 2
 updates:
@@ -7,6 +10,7 @@ updates:
     directory: "/"
     schedule: { interval: "weekly" }
 
+  # --- Python (pip / uv) ---
   - package-ecosystem: "pip"
     directory: "/detector"
     schedule: { interval: "weekly" }
@@ -19,19 +23,97 @@ updates:
     groups:
       harness: { update-types: ["minor", "patch"] }
 
+  - package-ecosystem: "pip"
+    directory: "/fleet"
+    schedule: { interval: "weekly" }
+    groups:
+      fleet: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "pip"
+    directory: "/evaders/agent"
+    schedule: { interval: "weekly" }
+    groups:
+      agent: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "pip"
+    directory: "/evaders/arena-solver-ocr"
+    schedule: { interval: "weekly" }
+    groups:
+      arena-solver-ocr: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "pip"
+    directory: "/evaders/primp"
+    schedule: { interval: "weekly" }
+    groups:
+      primp: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "pip"
+    directory: "/evaders/vanilla"
+    schedule: { interval: "weekly" }
+    groups:
+      vanilla: { update-types: ["minor", "patch"] }
+
+  # --- Go (gomod) — every module, not just /edge (the gap that let azuretls' x/net vuln drift, GO-2026-5026) ---
   - package-ecosystem: "gomod"
     directory: "/edge"
     schedule: { interval: "weekly" }
+    groups:
+      edge-go: { update-types: ["minor", "patch"] }
 
+  - package-ecosystem: "gomod"
+    directory: "/arena"
+    schedule: { interval: "weekly" }
+    groups:
+      arena-go: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "gomod"
+    directory: "/evaders/arena-solver"
+    schedule: { interval: "weekly" }
+    groups:
+      arena-solver-go: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "gomod"
+    directory: "/evaders/azuretls"
+    schedule: { interval: "weekly" }
+    groups:
+      azuretls-go: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "gomod"
+    directory: "/evaders/go-tls"
+    schedule: { interval: "weekly" }
+    groups:
+      go-tls-go: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "gomod"
+    directory: "/evaders/h2-rapid-reset"
+    schedule: { interval: "weekly" }
+    groups:
+      h2-rapid-reset-go: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "gomod"
+    directory: "/evaders/pow"
+    schedule: { interval: "weekly" }
+    groups:
+      pow-go: { update-types: ["minor", "patch"] }
+
+  # --- Node (npm / pnpm) ---
   - package-ecosystem: "npm"
     directory: "/collector"
     schedule: { interval: "weekly" }
     groups:
       collector: { update-types: ["minor", "patch"] }
 
-  - package-ecosystem: "docker"
-    directory: "/edge"
+  - package-ecosystem: "npm"
+    directory: "/evaders/apify-fp-inject"
     schedule: { interval: "weekly" }
+    groups:
+      apify-fp-inject: { update-types: ["minor", "patch"] }
+
+  - package-ecosystem: "npm"
+    directory: "/evaders/playwright-extra"
+    schedule: { interval: "weekly" }
+    groups:
+      playwright-extra: { update-types: ["minor", "patch"] }
 
   # The stealth evader pins playwright/patchright/rebrowser-playwright to one Chromium revision;
   # rebrowser-playwright caps at 1.52.0, so anything newer breaks that coherence — hold at 1.52.x.
@@ -43,3 +125,8 @@ updates:
         versions: [">=1.53.0"]
       - dependency-name: "rebrowser-playwright"
         versions: [">=1.53.0"]
+
+  # --- Docker: only /edge (base tags are otherwise floated by design; see the header note). ---
+  - package-ecosystem: "docker"
+    directory: "/edge"
+    schedule: { interval: "weekly" }
