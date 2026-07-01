@@ -83,6 +83,17 @@ services:
     depends_on: [edge]
     profiles: ["evaders"]
 
+  # HTTP/1.1 slow-header (slowloris) hold — a fleet of ALPN-http/1.1 connections dribbling an incomplete
+  # request header, so the edge's SlowLorisScanner emits net.slow_http_attack (and the fleet aggregates as an
+  # L7 flood). A slow-header hold, not a volumetric flood. `--profile evaders run --rm slow-http`.
+  slow-http:
+    build:
+      context: ./evaders/slow-http
+    environment:
+      KITSUNE_EDGE: "https://edge:8443/"
+    depends_on: [edge]
+    profiles: ["evaders"]
+
   # High-fidelity network impersonator (Chrome TLS+H2 via primp/BoringSSL, no JS).
   primp:
     build:
