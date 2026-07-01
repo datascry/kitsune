@@ -125,6 +125,17 @@ _PROXY_FLEET_BONUS = 0.10
 # Diverse observed (proxy) IPs but ONE shared WebRTC-leaked real IP: proxies fronting a single origin.
 # Very hard to explain innocently — a strong same-origin signal.
 _SHARED_ORIGIN_BONUS = 0.30
+# L7 application-layer flood attribution (the bot⇄DDoS convergence). An HTTP flood from a botnet presents
+# per-connection as N independent clients, but its DDoS signature is the AGGREGATE: many sources hammering
+# ONE target in synchrony over a shared engine — which is exactly a coordination cluster, so the coordination
+# scorer attributes the flood the same way it attributes a scraping fleet. The flood SHAPE (a large, lockstep
+# cluster spread across many distinct origins) is AMBIGUOUS — a legit flash-crowd (a sale drop, a viral link)
+# is also many users arriving together from many IPs — so it convicts only when corroborated (a non-browser
+# tool JA4, an h2/slow-HTTP DoS tell, a per-session automation tell, or datacenter/abuse IP reputation). A
+# flash-crowd is real browsers on residential IPs (none of those) → capped at candidate; a botnet flood carries
+# at least one → fleet. A coordinated flood cannot hide its aggregate any more than a scraping fleet can.
+_FLOOD_MIN_ORIGINS = 6  # a flood is distributed across MANY sources — well above the 2-origin fleet floor
+_FLOOD_BONUS = 0.30  # the ambiguous flood-shape bonus (corroboration-gated, like fp_collision)
 
 
 @dataclass(frozen=True)
@@ -146,6 +157,7 @@ class FleetVerdict:
     shared_real_ip: str | None = None  # one WebRTC-leaked real IP behind diverse proxy IPs (same origin)
     request_volume: int = 0  # aggregate request_count across the cluster (DDoS severity, not confidence)
     arrival_rate_per_min: float | None = None  # sessions per minute over the arrival window (burst rate)
+    l7_flood: bool = False  # attributed as an L7 application-layer flood (a corroborated flood-shape cluster)
     evidence: list[str] = field(default_factory=list)
 
     @property
@@ -358,6 +370,30 @@ def _has_known_automation_ja4(sessions: list[Session]) -> bool:
     return any(session.value(Layer.network, "ja4_client_hint") is not MISSING for session in sessions)
 
 
+# Network-layer DoS tells the edge emits for an application-layer flood: HTTP/2 frame-abuse floods (the
+# H2FrameScanner — rapid-reset / continuation / control-frame / MadeYouReset) and the slow-HTTP header-hold
+# (the SlowLorisScanner). Their presence is itself proof of an automated volumetric attack — the network-layer
+# twin of an automation tell for a flood cluster — so they corroborate the ambiguous flood SHAPE exactly as a
+# tool JA4 or a datacenter IP does. (``slow_http_attack`` is listed ahead of its edge wiring so the flood
+# attributor already recognises it once the slow-HTTP h1 path emits it.)
+_DOS_TELLS: frozenset[str] = frozenset(
+    {
+        "h2_rapid_reset",
+        "h2_continuation_flood",
+        "h2_control_flood",
+        "h2_madeyoureset",
+        "slow_http_attack",
+    }
+)
+
+
+def _has_dos_tell(sessions: list[Session]) -> bool:
+    """True iff any cluster member carries an edge DoS tell — an HTTP/2 frame-abuse flood or a slow-HTTP
+    header-hold. A flood that presents via frame abuse rather than a recognised tool JA4 is still corroborated
+    as an automated attack by these (the G16 edge scanners feeding the G17 coordination attributor)."""
+    return any(session.value(Layer.network, kind) is True for session in sessions for kind in _DOS_TELLS)
+
+
 def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = "JA4 cipher prefix") -> FleetVerdict:
     """Grade one cluster of >= 2 sessions sharing a binding invariant. ``basis`` names that invariant: the
     default ``JA4 cipher prefix`` (the cipher-suite engine identity) or, for a JA4-ROTATING fleet caught by
@@ -463,6 +499,19 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
             f"{distinct_observed} proxy IPs front one real IP `{shared_real_ip}` (WebRTC) — same-origin fleet"
         )
 
+    # L7 flood shape: a large cluster in timing lockstep across many distinct origins is the aggregate signature
+    # of an application-layer HTTP flood (a coordinated botnet hammering one target, not N independent clients).
+    # Ambiguous with a legit flash-crowd (also many users arriving together from many IPs), so corroboration-
+    # gated below alongside fp_collision — a residential real-browser flash-crowd carries no corroborator.
+    flood_shape = span is not None and span <= _LOCKSTEP_WINDOW_S and distinct_observed >= _FLOOD_MIN_ORIGINS
+    if flood_shape:
+        score += _FLOOD_BONUS
+        evidence.append(
+            f"L7 flood shape: {len(names)} sources in timing lockstep across {distinct_observed} distinct "
+            f"origins — the aggregate signature of an application-layer flood (a coordinated botnet, not N "
+            f"independent clients)"
+        )
+
     # Threat severity (scale + rate) — operational triage, separate from the fleet-confidence score.
     request_volume = sum(s.request_count for s in sessions)
     arrival_rate: float | None = None
@@ -487,6 +536,9 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
     #     the fleet captures show 2 real JA4_c under one prefix from a Chromium version bump), so a normal mix
     #     of auto-update states diverges JA4_c. "Real Chrome's JA4_c is stable" holds per-LAUNCH, not per-VERSION;
     #     a 4-user clean 2-version cohort on distinct IPs scored `fleet 0.92`.
+    #   - flood_shape: a large lockstep cluster across many distinct origins is ALSO a legit FLASH-CROWD (a sale
+    #     drop / viral link — many real users arriving together from many IPs). The corroborator (tool JA4, DoS
+    #     tell, automation, datacenter/abuse IP) is what tells a botnet L7 flood from an organic crowd.
     # Corroboration = an unambiguous signal OR a per-session AUTOMATION/headless tell on a cluster member (a bot
     # fleet is automated; a real corporate/multi-version cohort is clean real browsers). An uncorroborated
     # ambiguous cluster caps at `candidate` for operator review — the disambiguator is IP reputation
@@ -506,6 +558,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
         or _has_automation_tell(sessions)
         or _has_ip_reputation_flag(sessions)
         or _has_known_automation_ja4(sessions)
+        or _has_dos_tell(sessions)
     )
     fp_collision_convicts = collision is not None and corroborated
     ja4c_convicts = ja4c_divergent and corroborated
@@ -517,8 +570,16 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
     # A reused TLS ticket is ambiguous like fp_collision (a roaming user can resume from a second IP), so it
     # convicts only when corroborated.
     ticket_convicts = ticket is not None and corroborated
-    convicting = unambiguous or fp_collision_convicts or ja4c_convicts or template_convicts or ticket_convicts
-    _any_ambiguous = collision is not None or ja4c_divergent or template is not None or ticket is not None
+    # The L7 flood shape is ambiguous like fp_collision (a legit flash-crowd produces it too), so it convicts
+    # only when corroborated — a non-browser tool JA4, a DoS tell, an automation tell, or datacenter/abuse IP
+    # reputation. A residential real-browser flash-crowd carries none, so it caps at candidate.
+    flood_convicts = flood_shape and corroborated
+    convicting = (
+        unambiguous or fp_collision_convicts or ja4c_convicts or template_convicts or ticket_convicts or flood_convicts
+    )
+    _any_ambiguous = (
+        collision is not None or ja4c_divergent or template is not None or ticket is not None or flood_shape
+    )
     if _any_ambiguous and _has_known_automation_ja4(sessions):
         evidence.append(
             "cluster shares a known automation-tool JA4 (non-browser HTTP client) — corroborates the ambiguous "
@@ -532,13 +593,15 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
                 ("JA4_c divergence", ja4c_divergent),
                 ("template-similar traces", template is not None),
                 ("reused TLS ticket", ticket is not None),
+                ("L7 flood shape", flood_shape),
             )
             if on
         )
         evidence.append(
-            f"{which} is UNCORROBORATED (no automation tell, tool-JA4, cloned trace or shared origin) — "
-            f"ambiguous between a bot fleet and a real cohort (standardized hardware hashes alike; a multi-"
-            f"version cohort diverges JA4_c); capped at candidate pending IP reputation"
+            f"{which} is UNCORROBORATED (no automation tell, tool-JA4, DoS tell, cloned trace or shared "
+            f"origin) — ambiguous between a bot fleet / flood and a real cohort or flash-crowd (standardized "
+            f"hardware hashes alike; a multi-version cohort diverges JA4_c); capped at candidate pending IP "
+            f"reputation"
         )
     score = max(0.0, min(1.0, score))
     if score >= 0.60 and convicting:
@@ -569,6 +632,7 @@ def score_cluster(prefix: str, members: list[tuple[str, Session]], basis: str = 
         shared_real_ip=shared_real_ip,
         request_volume=request_volume,
         arrival_rate_per_min=arrival_rate,
+        l7_flood=flood_convicts,
         evidence=evidence,
     )
 

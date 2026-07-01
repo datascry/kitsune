@@ -49,6 +49,7 @@ def _session(
     trace_hash: str | None = None,
     trace_descriptor: list[float] | None = None,
     tls_ticket_id: str | None = None,
+    ja4_client: str | None = None,
     webdriver: bool = False,
     datacenter: bool = False,
 ) -> Session:
@@ -62,6 +63,8 @@ def _session(
         sigs.append(mk(Layer.browser, "webdriver", True))
     if datacenter:  # IP-reputation flag — corroborates a CLEAN clone on datacenter/proxy infrastructure
         sigs.append(mk(Layer.reputation, "asn_is_datacenter", True))
+    if ja4_client is not None:  # edge JA4→non-browser HTTP client hint — the flood/tool-fleet corroborator
+        sigs.append(mk(Layer.network, "ja4_client_hint", ja4_client))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw))
     if plat is not None:
@@ -465,6 +468,60 @@ def scenarios() -> list[Scenario]:
             [
                 (f"p{i}", _session(f"p{i}", _CHROME, hw=4 + i * 4, observed_ip=_ip(i), webrtc_ip="198.51.100.9"))
                 for i in range(3)
+            ],
+        )
+    )
+    # The bot⇄DDoS convergence: an L7 application-layer HTTP flood (MHDDoS-class) — 8 no-JS tool sources sharing
+    # one flood-tool JA4, hammering in lockstep across 8 distinct origins. It carries NO per-node collision (no
+    # cloned fp, no replayed trace, no shared ticket — a pure HTTP flood runs no browser), so the ONLY thing that
+    # catches it is the aggregate flood shape + the non-browser tool JA4 corroborating it. Grounds that the
+    # coordination scorer IS the L7-flood attributor: a flood cannot hide its aggregate even on clean residential
+    # IPs (no datacenter flag here — the tool JA4 alone convicts).
+    out.append(
+        Scenario(
+            "fleet-httpflood",
+            True,
+            "L7 HTTP flood: 8 no-JS tool sources share one flood-tool JA4 and hammer in lockstep across 8 distinct "
+            "origins — no per-node binding (no fp/trace/ticket), caught by the aggregate flood shape corroborated "
+            "by the non-browser tool JA4 (the coordination scorer as L7-flood attributor)",
+            [
+                (
+                    f"fl{i}",
+                    _session(
+                        f"fl{i}",
+                        _CHROME,
+                        observed_ip=_ip(i),
+                        ja4_client="go-http",  # the non-browser flood tool — corroborates the ambiguous flood shape
+                    ),
+                )
+                for i in range(8)
+            ],
+        )
+    )
+    # The FP control for the flood rung: a legit FLASH-CROWD — 6 real browsers hitting simultaneously (a sale
+    # drop / viral link) on one Chrome build, distinct RESIDENTIAL IPs, lockstep arrival, distinct fps. It has the
+    # SAME aggregate shape as the flood (large + lockstep + many origins) but is real browsers with NO tool JA4,
+    # automation, DoS tell or datacenter flag — so it must cap at candidate, never `fleet` (the flood-vs-crowd FP).
+    out.append(
+        Scenario(
+            "legit-flash-crowd",
+            False,
+            "6 real users arriving together (flash-crowd: a sale drop / viral link) on one Chrome build, distinct "
+            "residential IPs, distinct fps — same aggregate shape as an L7 flood but real browsers with no tool "
+            "JA4 / automation / datacenter flag; must cap at candidate, not `fleet`",
+            [
+                (
+                    f"fc{i}",
+                    _session(
+                        f"fc{i}",
+                        _CHROME,
+                        hw=8,
+                        plat="Windows",
+                        observed_ip=_ip(i),
+                        fp_hash=f"crowd{i:02d}",  # each real browser hashes distinctly — no fp-collision
+                    ),
+                )
+                for i in range(6)
             ],
         )
     )

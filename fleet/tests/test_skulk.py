@@ -126,6 +126,23 @@ def test_tool_fleet_is_no_js_ticket_bound_with_client_hint() -> None:
     assert assess(members).detectable  # Skulk's own check: the reused ticket is detectable
 
 
+def test_httpflood_is_no_js_tool_lockstep_across_many_origins() -> None:
+    members = get("httpflood").members(8, seed=13)
+    assert len({m.ja4 for m in members}) == 1  # one shared flood-tool TLS engine
+    assert all(m.ja4_client == "go-http" for m in members)  # the non-browser tool JA4 (the sole corroborator)
+    assert len({m.observed_ip for m in members}) == 8  # distributed across many distinct origins (botnet spread)
+    assert all(m.offset_seconds == 0.0 for m in members)  # lockstep arrival (no stagger)
+    # a pure HTTP flood runs no browser → NO per-node collision binding (no fp/trace/ticket)
+    assert all(m.fp_hash is None and m.trace_hash is None and m.tls_ticket_id is None for m in members)
+    assert all(not m.automation and not m.datacenter for m in members)  # clean residential, no JS tell
+    # Skulk's exact-match self-check CANNOT catch it (no fp/trace/ticket/origin collision) — the harness
+    # AGGREGATE flood-attributor does (task coordination-eval), corroborated by the non-browser tool JA4.
+    assert not assess(members).detectable
+    # the member emits the tool JA4 hint on the wire (the signal the detector corroborates the flood on)
+    kinds = {(s["layer"], s["kind"]) for s in members[0].signals("sid", "2026-06-28T00:00:00Z")}
+    assert ("network", "ja4_client_hint") in kinds
+
+
 def test_diffuse_campaign_leaks_no_pairwise_binding() -> None:
     members = get("diffuse-campaign").members(4, seed=3)
     assert len({m.ja4 for m in members}) == 1  # one build (the aggregate JA4 dimension)
@@ -154,6 +171,8 @@ def test_assess_distinguishes_detectable_from_evasive() -> None:
     assert assess(get("staggered").members(3, 1)).detectable  # spread in time, but the fp-collision still convicts
     assert not assess(get("fuzzy").members(3, 1)).detectable  # the frontier (no descriptor, no co-binding)
     assert not assess(get("randomizer").members(3, 1)).detectable
+    # httpflood carries no per-node collision — exact-match evades; the harness aggregate flood-attributor catches it
+    assert not assess(get("httpflood").members(8, 1)).detectable
 
 
 def test_staggered_shares_one_fp_but_spreads_arrivals_in_time() -> None:
