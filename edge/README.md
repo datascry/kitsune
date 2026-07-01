@@ -102,9 +102,9 @@ Go (1.26) may not be installed locally; build/test in `docker run --rm golang:1.
 
 | Package | Role |
 |---|---|
-| `internal/fingerprint` | All the parsers + fingerprint math: ClientHello → JA3/JA4, GREASE, PQ key share, HTTP/2 preface + JA4H, TCP SYN, QUIC Initial decrypt, h2 DoS frame scanner. Also holds `slowhttp.go`'s `SlowLorisScanner` (HTTP/1.1 partial-header / slowloris timing) — **built and tested but not yet wired into the h1 read path**. |
+| `internal/fingerprint` | All the parsers + fingerprint math: ClientHello → JA3/JA4, GREASE, PQ key share, HTTP/2 preface + JA4H, TCP SYN, QUIC Initial decrypt, h2 DoS frame scanner. Also holds `slowhttp.go`'s `SlowLorisScanner` (HTTP/1.1 partial-header / slowloris timing), **wired into the h1 read path** by `internal/proxy/h1serve.go`. |
 | `internal/peek` | Capture-and-replay listener that reads the ClientHello off the socket before the TLS server handshakes. |
-| `internal/proxy` | TLS-terminating reverse proxy + ALPN h2 serving, QUIC capture, signal derivation/forwarding; the fingerprint-API handler. |
+| `internal/proxy` | TLS-terminating reverse proxy + ALPN dispatch (own accept loop: `serveH2` for h2, `serveH1` for http/1.1 — the stdlib reserves `http/1.1` from `TLSNextProto`, so `serveH1` tees request-header bytes through the `SlowLorisScanner` → `network.slow_http_attack`), QUIC capture, signal derivation/forwarding; the fingerprint-API handler. |
 | `internal/signal` | Build contract-shaped `network` signal envelopes; POST them to `/ingest`. |
 | `internal/webbotauth` | Verify Web Bot Auth request signatures (RFC 9421 HTTP Message Signatures, Ed25519) against a keyid→public-key directory; RFC 7638 JWK thumbprints. Emits `web_bot_auth_verified` / `web_bot_auth_invalid`. |
 | `internal/session` | Mint the 128-bit correlation id; name the `ks_sid` cookie. |

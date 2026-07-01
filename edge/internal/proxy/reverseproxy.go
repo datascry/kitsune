@@ -610,24 +610,8 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 	}
 	ln := tls.NewListener(peek.NewListener(inner), cfg)
 
-	srv := &http.Server{
-		Handler:     p,
-		ReadTimeout: 15 * time.Second,
-		// HTTP/2 is served by our own ALPN handler (serveH2) rather than the bundled h2 server: it
-		// fingerprints the connection preface and threads both the ClientHello and the h2 fingerprint
-		// through the base context, so per-request signals survive (the stdlib h2 server drops the
-		// ConnContext value on its streams). HTTP/1.1 keeps the ConnContext path below.
-		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){"h2": p.serveH2},
-		ConnContext: func(ctx context.Context, c net.Conn) context.Context {
-			if tc, ok := c.(*tls.Conn); ok {
-				if pc, ok := tc.NetConn().(*peek.Conn); ok {
-					return context.WithValue(ctx, helloKey, pc.ClientHello())
-				}
-			}
-			return ctx
-		},
-	}
-	return srv.Serve(ln)
+	srv := &http.Server{Handler: p, ReadTimeout: 15 * time.Second}
+	return p.serveConns(srv, ln)
 }
 
 // loadCert returns the edge's TLS certificate. In production set KITSUNE_TLS_CERT + KITSUNE_TLS_KEY to a

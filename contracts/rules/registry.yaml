@@ -588,6 +588,18 @@ rules:
     last_validated: "2026-06-26"
     source: "CVE-2025-8671 (MadeYouReset); malformed WINDOW_UPDATE/PRIORITY coerce server RST_STREAM with no client RST — evades the rapid-reset rung; spec violations no browser emits"
 
+  - id: net.slow_http_attack
+    title: HTTP/1.1 slow-header (slowloris) connection hold
+    layers: [network]
+    reads: [network.slow_http_attack]
+    predicate: present
+    weight: 0.9
+    status: active
+    category: automation
+    added: "2026-07-01"
+    last_validated: "2026-07-01"
+    source: "Slowloris/slow-POST (CVE-2007-6750 class); an incomplete request header held past a time/byte budget on a trickle of bytes — the h1 analog of the h2 CONTINUATION flood, the SlowLorisScanner tell no browser produces"
+
   - id: br.headless_ua
     title: User-Agent advertises a headless browser
     layers: [browser]

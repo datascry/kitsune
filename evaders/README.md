@@ -23,6 +23,7 @@ layers, not just bad signals.**
 | **Farbling** | `brave` | canvas/audio readback | per-session noise caught reference-free |
 | **Behavioral injection** | `xtest-coalesce` | coalesced-events terminus | X11 XTEST motion injection vs `bh.synthetic_no_coalesced` / `br.coalesced_untrusted` |
 | **HTTP/2 DoS** | `h2-rapid-reset` | protocol abuse (CVE-2023-44487 / -2024-27316) | attributed to a minted session |
+| **HTTP/1.1 DoS** | `slow-http` | slow-header (slowloris) connection hold | `net.slow_http_attack` per held connection; a fleet aggregates as an L7 flood (the DoS tell corroborates the coordination flood shape) |
 | **PoW arms-race** | `pow` | proof-of-work challenge gate | a self-contained blue-team gate vs a native no-browser solver |
 | **LLM agent** | `agent` (`claude -p`) | behavioral / intent | beats network + browser, caught **behaviorally** (the headline result) |
 
