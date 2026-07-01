@@ -42,6 +42,13 @@ two escape routes a coordinated fleet has and their evolution:
   * ``staggered``    — a cloned-profile fleet whose arrivals are SPREAD OVER TIME (beyond the lockstep window)
                        to look organic. The timing axis: it sheds only the lockstep CORROBORATION, never the
                        conviction — the fp-collision + automation binding convicts whatever the arrival spread.
+  * ``httpflood``    — an L7 application-layer HTTP flood (MHDDoS class): MANY no-JS tool sources sharing one
+                       flood-tool JA4, hammering in LOCKSTEP across many distinct origins. It carries NO per-node
+                       binding (no cloned fp, no replayed trace, no shared ticket — a pure HTTP flood runs no
+                       browser), so exact-match collision finds nothing; it is caught by the AGGREGATE flood
+                       shape (large + lockstep + many origins) corroborated by the non-browser tool JA4 — the
+                       bot⇄DDoS convergence, where the coordination scorer doubles as the L7-flood attributor.
+                       (Skulk emits a coordination-shaped fleet, NOT request volume — it is not a DoS tool.)
 
 To add a strategy: subclass / duck-type :class:`~skulk.strategy.Strategy` and ``register`` it.
 """
@@ -376,6 +383,37 @@ class Staggered:
                 platform="Win32",
                 automation=True,  # the corroboration; fp_collision + automation convicts regardless of timing
                 offset_seconds=i * self._STEP_S,  # spread arrivals beyond the lockstep window
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class HttpFlood:
+    name = "httpflood"
+    summary = (
+        "An L7 HTTP flood (MHDDoS class): many no-JS tool sources share one flood-tool JA4 and hammer in "
+        "lockstep across many distinct origins — no per-node binding; caught by the aggregate flood shape "
+        "corroborated by the non-browser tool JA4 (the coordination scorer as L7-flood attributor). Skulk emits "
+        "a coordination-shaped fleet, NOT request volume — it is not a DoS tool."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # A pure HTTP flood runs NO JavaScript (no fp_hash/trace, no webdriver tell) and opens its own TLS
+        # session per bot (no shared ticket), so it has NO per-node collision binding at all — only the AGGREGATE
+        # is coordinated: N sources sharing one flood-tool JA4, in lockstep (offset 0), across N distinct origins.
+        # Clean RESIDENTIAL egress (no datacenter flag) proves the point — the non-browser tool JA4 (ja4_client)
+        # alone corroborates the ambiguous flood shape, so the flood convicts even without an IP-reputation flag.
+        # A real captured go-http JA4 prefix (the same MHDDoS-class HTTP libraries drive these floods).
+        ja4 = "t13d131100_f57a46bbacb6_" + _h("floodext", seed)[:12]
+        return [
+            FleetMember(
+                f"flood-{i}",
+                ja4,
+                _ip(seed, i),  # one distinct origin per source (the botnet spread)
+                ja4_client="go-http",  # the non-browser flood tool — the sole corroborator of the flood shape
+                automation=False,  # no JS → no webdriver/CDP tell
+                datacenter=False,  # clean residential egress → no IP-reputation flag; the tool JA4 carries it
             )
             for i in range(n)
         ]
