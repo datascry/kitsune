@@ -12,7 +12,7 @@ skulk = "skulk.cli:main"
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
-  "mypy>=1.10",
+  "mypy>=2.1.0",
   "ruff>=0.5",
 ]
 
