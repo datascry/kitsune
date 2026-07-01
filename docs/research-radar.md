@@ -151,6 +151,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   pattern (a perfect `chrome-143` TLS+H2 fingerprint with NO JS ever executed) is exactly `network.browser_absent`
   (`detector._with_derived`: a network fingerprint with an empty browser layer). The topics fan-out surfaced
   it as "novel"; it is not — no new rule.
+- **Chained tool stacks are counterproductive, not a new frontier (2026-07-02, GROUNDED live).** Built the
+  `evaders/chain-mitm` harness (a uTLS MITM front + a real browser proxying through it — the hazetunnel+camoufox
+  / Ulixee-Hero shape) and drove the `stealth` evader through it vs. direct. Every chain config INCREASED
+  detection: a matched-engine Chrome front adds `net.h2_unknown_vs_ua` (the Go-H2 seam; network 0.60→0.84), a
+  mismatched Firefox front detonates FOUR tells at once (`net.tls_vs_ua_browser` + `net.tls_grease_vs_ua` +
+  `net.tls_pq_keyshare_vs_ua` + `net.h2_unknown_vs_ua`; network →0.98). A real browser is already its own best
+  network layer, so a forging front can only add the seam BETWEEN two tools — the thesis in miniature. The
+  dominant conviction is always the browser layer (environment floor + automation), and even `FLOOR_SPOOF`
+  (fakes voices/devices) stays `bot 0.996` (the spoof is caught by coherence). **No new rule** — the coherence
+  matrix HELD against a real MITM chain. Single-session evasion is bounded by real hardware + a single coherent
+  runtime (camoufox), NOT by tool-chaining; the frontier is environmental/behavioral (external), not integrative.
 
 ## Refuted leads — do NOT build (verification-killed)
 
