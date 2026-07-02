@@ -667,6 +667,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (defineProperty, caught by the worker); only a REAL Android device fills all three natively. The mobile CH-UA-Model
   joint is now a 3-surface ratchet — the same realm-backed durability the desktop realm rungs (deviceMemory/userAgentData
   worker-divergence) established, applied to the mobile model. Mobile red⇄blue: 4 rungs, tightly interlocked.
+- **[LOOP MOBILE R-jsmodel] KS_FORGE_JS_MODEL — forge the JS model too, both model checks evaded (2026-07-02,
+  grounded).** The red counter to B-jsmodel: an addInitScript override of NavigatorUAData.prototype.getHighEntropyValues
+  (PROTOTYPE, not instance — an instance assignment did NOT take, the collector reads via the prototype) injects
+  the device model into the resolved values. GROUNDED LIVE: KS_DEVICE='Pixel 5' + KS_FORGE_MODEL + KS_FORGE_JS_MODEL
+  → BOTH mobile_no_js_model (JS) AND ch_ua_mobile_no_model (header) CLEAR. Critically uadata_worker_divergence does
+  NOT catch it — that rule keys on userAgentData.platform|mobile, NOT the model. So the 3-surface ratchet has a
+  HOLE: the model is currently forgeable on header (route) + main-JS (prototype override), with no live check on
+  the model in the worker. The DURABLE blue counter (next rung) is a WORKER-realm model check: the worker's
+  getHighEntropyValues returns the real EMPTY model, diverging from the forged main — a main-only prototype patch
+  cannot reach the worker (→ br.worker_source_rewritten if it tries). Alternatively a getHighEntropyValues
+  NATIVENESS check (the override's toString lacks [native code]) — but a Proxy can spoof that, so the worker-realm
+  check is the robust one, consistent with the whole session's realm-backed-durability finding. 5 mobile rungs.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
