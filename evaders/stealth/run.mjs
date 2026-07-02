@@ -508,12 +508,17 @@ const ksScreen = (() => {
 // The device descriptor spreads into newContext directly (Playwright's documented usage); drop the `name`
 // tag we attached. It sets UA + screen + viewport + deviceScaleFactor + isMobile + hasTouch coherently.
 const { name: _deviceName, ...deviceOpts } = ksDevice || {};
+// KS_DPR sets the reported window.devicePixelRatio (Playwright's deviceScaleFactor) so a spoofed device's
+// backing scale can be made coherent (a real iPhone e.g. KS_DPR=3) or left INCOHERENT (default 1 under an iOS
+// UA → br.ios_dpr_incoherent) — the device<->DPR joint-coherence axis (sibling of KS_SCREEN).
+const ksDpr = Number(process.env.KS_DPR) || null;
 const context = await browser.newContext({
   ...(ksDevice ? deviceOpts : {}),
   ignoreHTTPSErrors: true,
   // A device (KS_DEVICE) brings its own coherent UA/screen; only apply the manual overrides when NOT emulating one.
   ...(!ksDevice && userAgent ? { userAgent } : {}),
   ...(!ksDevice && ksScreen ? { screen: ksScreen, viewport: ksScreen } : {}),
+  ...(!ksDevice && ksDpr ? { deviceScaleFactor: ksDpr } : {}),
   // Disable CSP enforcement the way an automation driver injecting scripts does → br.csp_bypassed.
   ...(CSP_BYPASS ? { bypassCSP: true } : {}),
   // Pin the HTTP Accept-Language so ACCEPT_LANG_SPOOF's JS-vs-header locale mismatch is deterministic.

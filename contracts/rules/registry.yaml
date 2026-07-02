@@ -1421,6 +1421,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Spatial DEVICE<->screen coherence — the joint-manifold half of FP-Inconsistent (ACM IMC 2025) / radar G1/X5 that br.mobile_no_touch's DB-free form does not cover. An iOS UA (iPhone/iPad/iPod) names a specific hardware family whose LOGICAL screen is a device-fixed property; the Apple device-screen corpus (iosref.com/res, ios-resolution.com: 137 iPhones + 52 iPads) bounds it — the LARGEST real iOS logical screen is the iPad Pro 12.9\" at 1024x1366, so no real iPhone/iPad exceeds ~1376 CSS px in EITHER dimension. An iOS UA whose max(screen.width, screen.height) > 1400 is therefore a DESKTOP screen wearing an iPhone/iPad UA — the touch-faking mobile spoof that beats br.mobile_no_touch (sets maxTouchPoints>0 via CDP Emulation.setTouchEmulation) but forgets to shrink screen.width/height to a real iOS geometry. The joint-coherence RATCHET: it forces the spoofer to get the SCREEN right too, not just touch. FP-SAFE by the hard hardware bound (data-grounded on the real Apple screen set; screen.width/height is device-fixed, unaffected by Safari UI chrome / split-view which only change innerWidth); convicts a desktop-faking-iOS whatever its touch spoof. The exact per-model SET check (an off-manifold screen BELOW 1400, e.g. 1280x800 under an iOS UA) needs the maintained device DB and is FP-riskier on new models — this ships the bulletproof oversized slice; the full-set version is the data-driven extension (X5). GROUNDED LIVE: a real headful Chromium given an iPhone UA on a desktop-screen container emits ios_screen_oversized (max screen dim >> 1400); a coherent iOS profile with a real iPhone screen (<=1376) does NOT — the coherent-randomizer evasion the vision requires."
 
+  - id: br.ios_dpr_incoherent
+    title: iOS UA reports a devicePixelRatio no real iPhone/iPad uses (not 2 or 3)
+    layers: [browser]
+    reads: [browser.ios_dpr_incoherent]
+    predicate: present
+    category: coherence
+    weight: 0.7
+    status: active
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Spatial DEVICE<->DPR coherence — the B1 joint constraint, sibling of br.ios_screen_oversized on the same iOS device manifold. iOS renders at a device-FIXED backing scale: every real iPhone/iPad reports window.devicePixelRatio of EXACTLY 2 or 3 (2 for iPad + SE/older iPhones; 3 for modern/Plus/mini iPhones — the iPhone 6-Plus family and 12/13 mini physically downsample but REPORT an integer 3; Apple ships no fractional-DPR or 1x iOS display). Grounded in the Apple device corpus (iosref.com/res, ios-resolution.com). An iOS UA whose devicePixelRatio is not in {2,3} is off the manifold: a DESKTOP faking iOS reports DPR 1 (the common desktop-scraper default), a sloppy emulator a fractional value (1.5/2.5). FP-SAFE by the hard Apple hardware bound (the DPR set is device-fixed and integer-valued on iOS); distinct from br.devicepixelratio_anomaly (which only flags a non-finite/<=0 DPR, not an OS-incoherent one) and complements br.ios_screen_oversized (screen) — TOGETHER they force a coherent iOS spoof to get BOTH the screen geometry AND the backing scale right, not just the UA + touch. The joint-coherence ratchet, one more rung. GROUNDED LIVE: a Chromium given an iPhone UA at the container-default DPR 1 (KS_DPR unset) fires ios_dpr_incoherent; the same UA at a real iOS DPR (KS_DPR=3) is SILENT — the coherent-randomizer evasion."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty
