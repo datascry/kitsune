@@ -1851,6 +1851,17 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
           var _mscr = Math.min(screen.width || 0, screen.height || 0) + "x" + Math.max(screen.width || 0, screen.height || 0);
           if (_mscr !== _andrScreens[he.model]) sigs.push(S("browser", "android_model_screen_incoherent", true));
         }
+        // MODEL <-> DPR coherence — a Pixel model has a device-FIXED backing scale (window.devicePixelRatio),
+        // an axis INDEPENDENT of the CSS screen (physical px = CSS px * DPR): a randomizer/fork can get the CSS
+        // screen right yet the DPR wrong. Per-model values are Playwright's deviceScaleFactor (calibrated to the
+        // real window.devicePixelRatio — the same corpus android_model_screen_incoherent trusts). FP-safe: fires
+        // only for a model in the set whose DPR is off by > 0.02. EXPERIMENTAL (the DPR map needs periodic
+        // calibration against the real-device corpus).
+        var _pixelDpr = { "Pixel 2": 2.625, "Pixel 2 XL": 3.5, "Pixel 3": 2.75, "Pixel 4": 3, "Pixel 5": 2.75, "Pixel 7": 2.625 };
+        if (uad.mobile && he.model && _pixelDpr[he.model] && window.devicePixelRatio > 0
+            && Math.abs(window.devicePixelRatio - _pixelDpr[he.model]) > 0.02) {
+          sigs.push(S("browser", "android_model_dpr_incoherent", true));
+        }
       } catch (e) {}
     }
     // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for

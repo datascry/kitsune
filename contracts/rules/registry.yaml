@@ -516,6 +516,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Realm coherence for the UA-CH high-entropy MODEL — the durable blue counter to a main-only getHighEntropyValues().model forge (the red move that beats br.mobile_no_js_model by overriding NavigatorUAData.prototype.getHighEntropyValues on the main thread). navigator.userAgentData.getHighEntropyValues is exposed in WorkerNavigator too (Blink), so the Worker resolves the REAL hardware model — EMPTY on a desktop Chromium faking Android. A main-thread prototype override that injects a fake model never reaches Worker scope (addInitScript / CDP addScriptToEvaluateOnNewDocument do not run in Workers), so the main model (forged 'Pixel 5') and the worker model (real '') disagree. Extends the realm-coherence family (br.uadata_worker_divergence keys on platform|mobile, NOT the model — the hole this closes) to the model surface. Convicting (w0.8 — a realm divergence is a hard tamper signal). The model is now a 3-surface ratchet: the Sec-CH-UA-Model header (net.ch_ua_mobile_no_model), main-thread getHighEntropyValues (br.mobile_no_js_model), and this WORKER model — a header route-forge + a main-JS prototype-forge fill the first two, but forging the worker too requires rewriting worker source (→ br.worker_source_rewritten); only a REAL Android device fills all three natively. FP-SAFE: a real device reports the same model in both realms; compared only for a mobile device and when the worker actually reported a model. GROUNDED LIVE: KS_DEVICE='Pixel 5' + KS_FORGE_MODEL + KS_FORGE_JS_MODEL (which clear the header + main-JS model checks) trips uadata_model_worker_divergence — the worker model stays real-empty while the main is forged; an un-forged Android device (both empty, or both filled) does not."
 
+  - id: br.android_model_dpr_incoherent
+    title: Android Pixel model paired with the wrong device-fixed devicePixelRatio
+    layers: [browser]
+    reads: [browser.android_model_dpr_incoherent]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "MODEL <-> DPR coherence — a device-manifold rung INDEPENDENT of br.android_model_screen_incoherent. A Pixel model has a device-fixed backing scale window.devicePixelRatio (Pixel 5 = 2.75, Pixel 7 = 2.625, Pixel 4 = 3, ...); since physical px = CSS px * DPR, the DPR is a SEPARATE axis from the CSS screen — a randomizer or source-fork can get the CSS screen right yet the DPR wrong (or vice-versa). The model is already pinned across the 3-surface CH-UA-Model ratchet, so a coherent model with a DPR the real device never used is a contradiction. Per-model DPR values are Playwright's deviceScaleFactor (calibrated to the real window.devicePixelRatio — the SAME device corpus android_model_screen_incoherent trusts for the screen). FP-SAFE: fires only for a Pixel model IN the map whose devicePixelRatio is off by > 0.02; an unknown model skips. EXPERIMENTAL (w0.5, corroborating; the DPR map needs periodic calibration against the real-device corpus as new Pixels ship). GROUNDED LIVE: KS_DEVICE='Pixel 7' (DPR 2.625) + KS_FORGE_JS_MODEL='Pixel 5' (expects 2.75) FIRES android_model_dpr_incoherent; KS_DEVICE='Pixel 5' + KS_FORGE_JS_MODEL='Pixel 5' (DPR 2.75, correct) does NOT fire it. Complements model↔screen: a coherent Android device must match its model on BOTH the CSS screen AND the backing scale."
+
   - id: br.android_model_screen_incoherent
     title: Android device model does not match its device-fixed screen geometry
     layers: [browser]
