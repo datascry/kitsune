@@ -817,6 +817,30 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   does NOT derive (hardwareConcurrency, the GPU renderer, the high-entropy MODEL) rather than the ones it does. This
   is the FIRST of the two-in-a-row dry firings the loop's stop-condition requires; the next firing must ALSO fail to
   find a groundable rung to end the mobile axis. 13 rungs stand.
+- **[LOOP MOBILE — honest negative #2 → AXIS CLOSED] audio can't discriminate mobile from desktop; the mobile
+  axis is at its groundable terminus (2026-07-02).** Genuine second attempt: the audio surface. DEAD END for a
+  grounded engine-level reason — the collector's audio FP is OfflineAudioContext, PURE computation determined by
+  the Blink engine, so it is IDENTICAL on Android and desktop Chromium (Android IS Blink); no audio_* signal fires
+  on the Pixel node, and the real-time AudioContext.sampleRate is FP-risky (desktops vary 44100/48000) and
+  provision-dependent. That is TWO consecutive dry firings (arch, audio), each with a genuine attempt and a
+  grounded reason, so per the loop's own stop-condition the MOBILE AXIS IS CLOSED. Full remaining-surface map
+  (why each is closed): platform/arch/bitness/platformVersion → Chromium AUTO-DERIVES them coherently from the UA
+  string (coherent-for-free on any spoof); audio → engine-pure, identical Android/desktop Blink; deviceMemory →
+  spec-capped at 8, not discriminating; orientation/codec → redundant with the screen/oversized rungs or
+  build-dependent-corroborating; model↔GPU-family → subsumed by the worker GPU realm check + real-hardware
+  coherence. The PRODUCTIVE leaks were exactly what Chromium does NOT derive and the engine does NOT fix: the
+  host CPU cores, the GPU renderer, and the high-entropy model — all now caught. FINAL MOBILE LADDER (13 rungs):
+  KS_ANDROID_FONTS/KS_MOBILE_FONTS (R, font coherence Android+iOS) · ch_ua_mobile_no_model (B, header model) ·
+  KS_FORGE_MODEL (R, header forge) · mobile_no_js_model (B, main-JS model) · KS_FORGE_JS_MODEL (R, JS forge) ·
+  uadata_model_worker_divergence (B, worker model — closes the 3-surface model ratchet) · android_model_screen_
+  incoherent (B, model↔screen) · mobile_pointer_hover_desktop (B, pointer/hover) · android_mobile_dpr1 (B, backing
+  scale) · mobile_cores_high (B, core count — catches the FULL emulation) · mobile_gpu_not_mobile (B, GPU family —
+  broader than webgl_software) · R-headful (automation solved) · R-iosfonts (iOS convergence). THE ANSWER to 'can
+  we achieve coherent mobile fingerprints': ANDROID reaches the desktop floor but with TWO extra in-sandbox walls
+  (the CH-UA-Model 3-surface ratchet + the mobile core-count/GPU-family checks) — a coherent Android fingerprint
+  needs REAL Android hardware (real model + <=8 cores + a mobile GPU), not a Chromium emulation; iOS is HARDER
+  still (three walls: platform-realm + kernel + TLS, needs a real WebKit/iOS runtime). Mobile is STRICTLY harder
+  to fake than desktop, iOS hardest — a clean hierarchy. Loop 8ac28e2e retired.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
