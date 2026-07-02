@@ -788,6 +788,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   node, confirming it is a genuine residual, not an artifact of a lazy config. So the Android node reaches the SAME
   provision/real-hardware floor as desktop — automation is fully solved — with mobile's extra model-ratchet + core
   walls on top. 12 mobile rungs; the Android node is now driven to its floor and every residual is characterised.
+- **[LOOP MOBILE B-gpufamily] br.mobile_gpu_not_mobile — mobile GPU-family coherence, broader than webgl_software
+  (2026-07-02, grounded).** The ladder's mobile GPU<->device rung. A phone/tablet renders WebGL on a MOBILE GPU:
+  Adreno (Qualcomm), Mali/Immortalis (ARM), PowerVR, Apple GPU, Xclipse (Samsung), Tegra, VideoCore. A Mobile/
+  Android/iPhone UA whose UNMASKED_RENDERER names none of these is a desktop faking mobile. The KEY over
+  webgl_software: that rule fires ONLY on a software rasteriser (SwiftShader/llvmpipe); this ALSO convicts a
+  scraper on a real DESKTOP GPU (NVIDIA/Radeon/discrete Intel) under a phone UA — which webgl_software misses
+  because a hardware desktop GPU is not 'software'. GROUNDED LIVE, both cases: (1) KS_DEVICE='Pixel 5' (SwiftShader)
+  fires it; (2) THE DISTINCTIVE CASE — SPOOF_UA=<Pixel UA> + FULL (renderer spoofed to 'NVIDIA GeForce RTX 3060')
+  FIRES mobile_gpu_not_mobile while webgl_software stays SILENT — catching a desktop-GPU scraper the software check
+  cannot. FP-safe (the family list covers shipping mobile GPUs; scoped to a present renderer). The RED counter
+  (spoof the renderer to a mobile GPU) is main-only-caught by webgl_worker_divergence (the OffscreenCanvas Worker
+  renderer), so a coherent mobile GPU needs REAL mobile silicon — realm-backed like the model/cores rungs.
+  EXPERIMENTAL (w0.6). 13 mobile rungs; the sweep keeps finding distinct value — this one is not a UA-only-spoof
+  catcher but a GPU-substrate check that convicts a real-hardware desktop scraper faking mobile.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

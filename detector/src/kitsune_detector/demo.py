@@ -1881,6 +1881,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       sigs.push(S("browser", "webgl_renderer_caps_mismatch", true));
     }
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
+    // A mobile UA must render on a MOBILE GPU family: real phones/tablets use Adreno (Qualcomm), Mali/Immortalis
+    // (ARM), PowerVR (Imagination), Apple GPU (iOS), Xclipse (Samsung), Tegra (NVIDIA Shield) or VideoCore. A
+    // Mobile/Android/iPhone/iPad UA whose UNMASKED_RENDERER names NONE of these — a desktop GPU (NVIDIA/Radeon/
+    // discrete Intel) or a software rasteriser — is a desktop faking mobile. BROADER than webgl_software (which
+    // catches software only): this also convicts a scraper running on a real DESKTOP GPU under a phone UA. FP-safe:
+    // the family list covers every shipping mobile GPU, and it is scoped to a defined renderer string. The RED
+    // counter — spoofing the renderer to a mobile GPU — is main-only-caught by webgl_worker_divergence (the
+    // OffscreenCanvas Worker renderer a page patch cannot reach). EXPERIMENTAL (list needs refresh on new silicon).
+    if (/Mobile|Android|iPhone|iPad|iPod/i.test(ua) && wg.renderer
+        && !/adreno|mali|immortalis|powervr|apple gpu|apple m[1-9]|xclipse|tegra|videocore/i.test(wg.renderer)) {
+      sigs.push(S("browser", "mobile_gpu_not_mobile", true));
+    }
     // Anti-detect renderer-spoofing artifacts: real GPU driver strings are exact. Camoufox labels its
     // randomized GPU pick with ", or similar"; placeholder/vague renderers never come from real drivers.
     if (/,\\s*or similar|generic renderer|placeholder/i.test(wg.renderer)) sigs.push(S("browser", "webgl_renderer_artifact", true));

@@ -540,6 +540,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Core-count realism for a mobile UA. A real phone (a 'Mobile' token) exposes at most ~8 CPU cores to navigator.hardwareConcurrency — mobile SoCs are octa-core at most (big.LITTLE 4+4 / 1+3+4), and iOS caps lower (A-series 6). A 'Mobile' UA reporting hardwareConcurrency > 8 is a desktop wearing a phone UA that never shrank the core count. CRUCIAL: Playwright/CDP device emulation sets the UA + screen + touch + DPR but does NOT spoof hardwareConcurrency (it reads the REAL host), so even a FULL device emulation (KS_DEVICE=Pixel) on a many-core host LEAKS the host core count — this catches the emulated Android node, not just the UA-only spoof. FP-SAFE: no current phone exposes > 8 web cores, and the check is gated on the 'Mobile' token (phones/iPhones, NOT M-series iPads which run desktop-mode Safari without the token and can have 8-10 cores). EXPERIMENTAL (w0.5). The RED counter is spoofing navigator.hardwareConcurrency <= 8, which main-only is caught by the worker realm (the collector's Blob-worker hw probe → worker_divergence) and whose worker-scope escalation trips worker_constructor_tampered / worker_source_rewritten — so a coherent low core count needs a real <=8-core device, realm-backed like the model ratchet. GROUNDED LIVE: KS_DEVICE='Pixel 5' on a 12-core host FIRES mobile_cores_high (hardware_concurrency 12 under a phone UA); a real phone (<=8) does not fire by construction."
 
+  - id: br.mobile_gpu_not_mobile
+    title: Mobile UA renders WebGL on a non-mobile GPU (desktop/software renderer)
+    layers: [browser]
+    reads: [browser.mobile_gpu_not_mobile]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Mobile GPU-family coherence (the ladder's mobile GPU<->device rung). A phone/tablet renders WebGL on a MOBILE GPU: Adreno (Qualcomm), Mali/Immortalis (ARM), PowerVR (Imagination), Apple GPU (iOS), Xclipse (Samsung), Tegra (NVIDIA Shield) or VideoCore. A Mobile/Android/iPhone/iPad UA whose UNMASKED_RENDERER names NONE of these is a desktop faking mobile. CRUCIALLY BROADER than br.webgl_software (which fires only on a SOFTWARE rasteriser, SwiftShader/llvmpipe): this ALSO convicts a scraper on a real DESKTOP GPU (NVIDIA GeForce/Radeon RX/discrete Intel Arc) under a phone UA — a case webgl_software misses entirely, because a hardware desktop GPU is not 'software'. FP-SAFE: the family list covers every shipping mobile GPU, and it is scoped to a present renderer string (a privacy-masked empty renderer skips). The RED counter — spoofing the renderer string to a mobile GPU (e.g. Adreno) to clear it — is a main-thread patch caught by the WebGL Worker-realm check (br.webgl_worker_divergence: the OffscreenCanvas Worker reports the real desktop/software renderer), so a coherent mobile GPU needs REAL mobile silicon, realm-backed like the model/cores rungs. EXPERIMENTAL (w0.6; the family list needs refresh as new mobile GPUs ship). GROUNDED LIVE: (1) KS_DEVICE='Pixel 5' (SwiftShader renderer) FIRES it; (2) THE DISTINCTIVE CASE — SPOOF_UA=<a Pixel 5 mobile UA> + FULL (which spoofs the renderer to 'NVIDIA GeForce RTX 3060', a hardware desktop GPU) FIRES mobile_gpu_not_mobile while br.webgl_software stays SILENT (RTX 3060 is not software) — proving it catches a desktop-GPU scraper the software check cannot."
+
   - id: br.android_mobile_dpr1
     title: Android Mobile UA with devicePixelRatio 1 — a phone is never 1x
     layers: [browser]
