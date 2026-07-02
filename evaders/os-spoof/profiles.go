@@ -15,8 +15,10 @@ import (
 // (option order + TTL + window), the TLS engine (uTLS ClientHello), and the UA. All three tell one OS story,
 // so net.tcp_os_vs_ua / tls-vs-ua stay coherent — the network+kernel half of a full OS spoof.
 type Profile struct {
-	Name    string
-	Kernel  string // the OS family the SYN forges: windows | darwin | linux
+	Name   string
+	Kernel string // the OS family the SYN forges: windows | darwin | linux
+	Engine string // the browser engine that pairs COHERENTLY when routed through this profile (proxy mode):
+	//                chromium (nodriver/zendriver/stealth/patchright) | firefox (camoufox) | webkit (Safari/iOS)
 	TTL     uint8
 	Window  uint16
 	synOpts func() []layers.TCPOption
@@ -61,17 +63,21 @@ const (
 	uaMacSafari  = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15"
 	uaMacChrome  = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
 	uaLinFirefox = "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0"
+	uaMacFirefox = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:125.0) Gecko/20100101 Firefox/125.0"
+	uaWinFirefox = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0"
 	uaIOSSafari  = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
 )
 
 // profiles is the morph menu: each entry is coherent across kernel/TLS/UA.
 var profiles = []Profile{
-	{"windows-chrome", "windows", 128, 64240, synWindows, utls.HelloChrome_Auto, uaWinChrome},
-	{"windows-edge", "windows", 128, 64240, synWindows, utls.HelloChrome_Auto, uaWinEdge},
-	{"macos-safari", "darwin", 64, 65535, synDarwin, utls.HelloSafari_Auto, uaMacSafari},
-	{"macos-chrome", "darwin", 64, 65535, synDarwin, utls.HelloChrome_Auto, uaMacChrome},
-	{"linux-firefox", "linux", 64, 64240, synLinux, utls.HelloFirefox_Auto, uaLinFirefox},
-	{"ios-safari", "darwin", 64, 65535, synDarwin, utls.HelloIOS_Auto, uaIOSSafari},
+	{"windows-chrome", "windows", "chromium", 128, 64240, synWindows, utls.HelloChrome_Auto, uaWinChrome},
+	{"windows-edge", "windows", "chromium", 128, 64240, synWindows, utls.HelloChrome_Auto, uaWinEdge},
+	{"macos-safari", "darwin", "webkit", 64, 65535, synDarwin, utls.HelloSafari_Auto, uaMacSafari},
+	{"macos-chrome", "darwin", "chromium", 64, 65535, synDarwin, utls.HelloChrome_Auto, uaMacChrome},
+	{"linux-firefox", "linux", "firefox", 64, 64240, synLinux, utls.HelloFirefox_Auto, uaLinFirefox},
+	{"macos-firefox", "darwin", "firefox", 64, 65535, synDarwin, utls.HelloFirefox_Auto, uaMacFirefox},
+	{"windows-firefox", "windows", "firefox", 128, 64240, synWindows, utls.HelloFirefox_Auto, uaWinFirefox},
+	{"ios-safari", "darwin", "webkit", 64, 65535, synDarwin, utls.HelloIOS_Auto, uaIOSSafari},
 }
 
 // pickProfile resolves KS_PROFILE: a name, or "random"/"" for a uniform random pick (per-node morphing).

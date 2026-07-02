@@ -37,23 +37,36 @@ func main() {
 	edgeHost := env("KS_EDGE_HOST", "edge")
 	edgePortStr := env("KS_EDGE_PORT", "8443")
 	ua := env("KS_UA", prof.UA) // the profile's UA (overridable) — the OS story the forged SYN corroborates
+	var edgePort uint16
+	fmt.Sscanf(edgePortStr, "%d", &edgePort)
 
-	// Drop the kernel's RSTs to the edge: since WE (userspace) own this TCP flow, the kernel sees the edge's
-	// replies for a socket it never opened and would RST them, killing our connection. NET_ADMIN required.
+	// Drop the kernel's RSTs to the edge: since WE (userspace) own these TCP flows, the kernel sees the edge's
+	// replies for sockets it never opened and would RST them, killing our connections. NET_ADMIN required.
 	_ = exec.Command("sh", "-c", "iptables -A OUTPUT -p tcp --tcp-flags RST RST -d "+resolveIP(edgeHost)+" -j DROP").Run()
 
-	st, err := newStack(edgeHost, edgePortStr, prof)
+	mgr, err := newManager(edgeHost)
 	if err != nil {
 		fail("stack: %v", err)
 	}
-	defer st.close()
+	defer mgr.close()
 
-	fmt.Fprintf(os.Stderr, "os-spoof: profile=%s kernel=%s (src %s:%d -> %s:%s)\n",
-		prof.Name, prof.Kernel, st.srcIP, st.srcPort, st.dstIP, edgePortStr)
-	if err := st.handshake(); err != nil {
-		fail("handshake: %v", err)
+	// PROXY mode: a SOCKS5 front end so a REAL browser (camoufox / nodriver / zendriver / stealth) rides the
+	// forged kernel — every browser flow gets the spoofed OS at the TCP layer, its own real TLS + JS end to end.
+	if env("KS_MODE", "direct") == "proxy" {
+		if err := socksServe(mgr, prof, env("KS_SOCKS_ADDR", "0.0.0.0:1080"), edgePort); err != nil {
+			fail("socks: %v", err)
+		}
+		return
 	}
-	fmt.Fprintf(os.Stderr, "os-spoof: TCP handshake complete (%s-shaped SYN sent)\n", prof.Kernel)
+
+	// DIRECT mode: forge one flow ourselves with uTLS + a single HTTP request (a no-JS OS-coherence probe).
+	st, err := mgr.dial(prof, edgePort)
+	if err != nil {
+		fail("dial: %v", err)
+	}
+	defer st.Close()
+	fmt.Fprintf(os.Stderr, "os-spoof: profile=%s kernel=%s (src %s:%d -> %s:%d) — handshake complete\n",
+		prof.Name, prof.Kernel, mgr.srcIP, st.srcPort, mgr.dstIP, edgePort)
 
 	// uTLS ClientHello (the profile's engine), ALPN pinned to http/1.1 so the edge routes to serveH1 (its h2
 	// path speaks the frame protocol our simple userspace HTTP client does not). Presets bake in their own ALPN
