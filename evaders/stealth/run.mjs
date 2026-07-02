@@ -569,6 +569,32 @@ if (process.env.KS_SPOOF_UADATA) {
     });
   }, process.env.KS_SPOOF_UADATA);
 }
+// KS_FORGE_JS_MODEL=1: forge the getHighEntropyValues().model JS surface — the red counter to br.mobile_no_js_model
+// (which KS_FORGE_MODEL's header route cannot reach). Wraps the real getHighEntropyValues to inject the device's
+// model (parsed from the device UA). MAIN-thread only — so the durable blue counter is a WORKER-realm model check
+// (the worker's getHighEntropyValues returns the real empty model); note uadata_worker_divergence keys on
+// platform|mobile, NOT the model, so it does not yet catch this.
+if (process.env.KS_FORGE_JS_MODEL === "1" && ksDevice && deviceOpts.userAgent) {
+  const m = /Android [\d.]+; ([^)]+?)(?:\s+Build\/[^)]*)?\)/.exec(deviceOpts.userAgent);
+  const model = m ? m[1].trim() : "";
+  if (model) {
+    await context.addInitScript((mdl) => {
+      try {
+        const uad = navigator.userAgentData;
+        const proto = uad && Object.getPrototypeOf(uad);
+        const orig = proto && proto.getHighEntropyValues;
+        if (orig) {
+          proto.getHighEntropyValues = function (hints) {
+            return orig.call(this, hints).then((v) => {
+              if (hints && hints.indexOf("model") !== -1) v.model = mdl;
+              return v;
+            });
+          };
+        }
+      } catch (e) {}
+    }, model);
+  }
+}
 if (FLOOR_SPOOF) {
   // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are
   // given Linux-desktop (espeak-style) names so they are coherent with the Linux UA — no Microsoft/Apple
