@@ -397,6 +397,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         # test_engine_skips_retired_rules. The TLS PQ analog (line above) stays — reliable TLS capture.
         ([(Layer.browser, "automation_globals", True, Source.collector)], "br.automation_globals"),
         ([(Layer.browser, "screen_impossible", True, Source.collector)], "br.screen_impossible"),
+        ([(Layer.browser, "ios_screen_oversized", True, Source.collector)], "br.ios_screen_oversized"),
         ([(Layer.network, "ch_ua_mobile_mismatch", True, Source.edge)], "net.ch_ua_mobile_vs_ua"),
         (
             [(Layer.network, "ch_ua_no_grease_brand", True, Source.edge)],

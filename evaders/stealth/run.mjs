@@ -472,9 +472,17 @@ const mode = UACH_COHERENT
 // --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.
 const browser = await chromium.launch({ headless: !HEADFUL, args: ["--no-sandbox", "--ignore-certificate-errors"] });
+// KS_SCREEN=WxH sets the reported screen.width/height (Playwright's `screen` option), so a spoofed device's
+// screen geometry can be made coherent (a real iPhone e.g. 393x852) or INCOHERENT (a desktop 1920x1080 under a
+// mobile UA → br.ios_screen_oversized) — the device<->screen joint-coherence axis.
+const ksScreen = (() => {
+  const m = /^(\d+)x(\d+)$/.exec(process.env.KS_SCREEN || "");
+  return m ? { width: Number(m[1]), height: Number(m[2]) } : null;
+})();
 const context = await browser.newContext({
   ignoreHTTPSErrors: true,
   ...(userAgent ? { userAgent } : {}),
+  ...(ksScreen ? { screen: ksScreen, viewport: ksScreen } : {}),
   // Disable CSP enforcement the way an automation driver injecting scripts does → br.csp_bypassed.
   ...(CSP_BYPASS ? { bypassCSP: true } : {}),
   // Pin the HTTP Accept-Language so ACCEPT_LANG_SPOOF's JS-vs-header locale mismatch is deterministic.
