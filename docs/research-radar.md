@@ -458,6 +458,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   browser-coherence checks are the REALM-BACKED ones (br.*_worker_divergence) a JS patch cannot reach without
   also rewriting worker scope (→ br.worker_source_rewritten). B-ns correctly shipped experimental for exactly
   this reason. 11 rungs. The blue counter to R3++ must be realm-backed or unforgeable, not another window surface.
+- **[LOOP attempt] delayed-ACK tell — NOT groundable in-sandbox, reverted honestly (2026-07-02).** Tried the
+  deepest unforgeable layer (a JS spoof cannot touch TCP behaviour): a real kernel implements TCP delayed-ACK
+  (RFC 1122, ~1 ACK per 2 segments) while a happy-path userspace stack ACKs every one. Built the tracker +
+  edge wiring + unit tests, then hit TWO grounding walls and REVERTED rather than ship an ungrounded rule:
+  (1) counting the edge's outgoing data segments is impossible here — AF_PACKET in this sandbox delivers ZERO
+  PACKET_OUTGOING frames (grounded: a pkttype histogram was 100% PACKET_HOST); (2) the inbound-only pivot
+  (measure bytes-acknowledged per ACK from the client's pure ACKs) didn't separate either: the real kernel on
+  this docker bridge COALESCES ACKs heavily (grounded ~5893 bytes/ACK ≈ 4 MSS, not the textbook 2), and the
+  os-spoof proxy PIGGYBACKS its ACKs on the data it relays (so it emits few pure ACKs to measure). The tell is
+  real but needs a real NIC (PACKET_OUTGOING) + a faithful pure-1:1-acking client, neither available in-sandbox
+  — like the QUIC member (ADR-0005), it is infra-bound. Recorded as the FIRST of the loop's "twice-in-a-row dry"
+  stop condition; the ladder continues (this is a documented negative, not a shipped-broken rule). Lesson: the
+  edge's packet view here is INBOUND-ONLY, so TCP-behaviour tells must be derivable from client→edge packets
+  alone (net.tcp_static_window works because window auto-tuning IS inbound-visible; ACK cadence largely is not).
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
