@@ -516,6 +516,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Realm coherence for the UA-CH high-entropy MODEL — the durable blue counter to a main-only getHighEntropyValues().model forge (the red move that beats br.mobile_no_js_model by overriding NavigatorUAData.prototype.getHighEntropyValues on the main thread). navigator.userAgentData.getHighEntropyValues is exposed in WorkerNavigator too (Blink), so the Worker resolves the REAL hardware model — EMPTY on a desktop Chromium faking Android. A main-thread prototype override that injects a fake model never reaches Worker scope (addInitScript / CDP addScriptToEvaluateOnNewDocument do not run in Workers), so the main model (forged 'Pixel 5') and the worker model (real '') disagree. Extends the realm-coherence family (br.uadata_worker_divergence keys on platform|mobile, NOT the model — the hole this closes) to the model surface. Convicting (w0.8 — a realm divergence is a hard tamper signal). The model is now a 3-surface ratchet: the Sec-CH-UA-Model header (net.ch_ua_mobile_no_model), main-thread getHighEntropyValues (br.mobile_no_js_model), and this WORKER model — a header route-forge + a main-JS prototype-forge fill the first two, but forging the worker too requires rewriting worker source (→ br.worker_source_rewritten); only a REAL Android device fills all three natively. FP-SAFE: a real device reports the same model in both realms; compared only for a mobile device and when the worker actually reported a model. GROUNDED LIVE: KS_DEVICE='Pixel 5' + KS_FORGE_MODEL + KS_FORGE_JS_MODEL (which clear the header + main-JS model checks) trips uadata_model_worker_divergence — the worker model stays real-empty while the main is forged; an un-forged Android device (both empty, or both filled) does not."
 
+  - id: br.android_model_os_exceeds
+    title: EOL Android Pixel model paired with an OS version newer than its last update
+    layers: [browser]
+    reads: [browser.android_model_os_exceeds]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "The UPPER bound of the model<->OS-version axis (br.android_model_os_predates is the lower/launch bound). A device cannot run an Android NEWER than its LAST update. Pixels 2-5 are END-OF-LIFE with a FIXED last version — Google shipped 3 years of OS updates pre-Pixel-8, so Pixel 2 topped out at Android 11, Pixel 3 at 12, Pixel 4 at 13, Pixel 5 at 14, and these will NEVER advance (support ended). A pinned EOL Pixel whose platformVersion major EXCEEDS its last release is a fork/randomizer pairing an old model with an impossible-for-it new OS — the case the launch lower-bound misses (old model + NEW OS, vs new model + old OS). CONVICTING (w0.6). FP-SAFE: an EOL device's maximum OS is fixed by the manufacturer's ended support; scoped ONLY to Pixels 2-5 (Pixel 6+ still receive updates, so their max is open and they are excluded). EXPERIMENTAL. GROUNDED LIVE: KS_DEVICE='Pixel 7' (a newer-Android device) + KS_FORGE_JS_MODEL='Pixel 2' (last OS 11) FIRES android_model_os_exceeds (the platformVersion exceeds 11); an in-window pairing (e.g. Pixel 5 on Android 11-14) does NOT fire. Together with android_model_os_predates this closes the model<->OS window on BOTH sides — a coherent Android device's OS must lie within its model's real support window."
+
   - id: br.android_model_os_predates
     title: Android Pixel model paired with an OS version older than the device shipped with
     layers: [browser]

@@ -420,6 +420,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ),
         ([(Layer.browser, "android_model_dpr_incoherent", True, Source.collector)], "br.android_model_dpr_incoherent"),
         ([(Layer.browser, "android_model_os_predates", True, Source.collector)], "br.android_model_os_predates"),
+        ([(Layer.browser, "android_model_os_exceeds", True, Source.collector)], "br.android_model_os_exceeds"),
         (
             [(Layer.browser, "uadata_model_worker_divergence", True, Source.collector)],
             "br.uadata_model_worker_divergence",
