@@ -2134,6 +2134,16 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/iPhone|iPad|iPod/i.test(ua) && window.devicePixelRatio > 0 && window.devicePixelRatio !== 2 && window.devicePixelRatio !== 3) {
       sigs.push(S("browser", "ios_dpr_incoherent", true));
     }
+    // DEVICE<->screen coherence, the sub-1400 slice ios_screen_oversized (max>1400) misses: a set of common
+    // DESKTOP screen geometries, NONE of which any iPhone/iPad ships (checked against the Apple device corpus —
+    // iOS is tall ~19.5:9 phones + 4:3 iPads, never 16:9/5:4 desktop panels). An iOS UA reporting one is a
+    // desktop faking iOS with a small screen (e.g. 1366x768, 1280x720) that slips under the oversized bound.
+    // FP-safe: these are desktop-only resolutions; both orientations are listed so a rotated report still matches.
+    var _sw = screen.width || 0, _sh = screen.height || 0;
+    var _desktopRes = { "1366x768":1,"768x1366":1,"1280x1024":1,"1024x1280":1,"1280x720":1,"720x1280":1,"1280x800":1,"800x1280":1,"1360x768":1,"768x1360":1,"1024x600":1,"600x1024":1,"1600x900":1,"900x1600":1 };
+    if (/iPhone|iPad|iPod/i.test(ua) && _desktopRes[_sw + "x" + _sh]) {
+      sigs.push(S("browser", "ios_screen_desktop_res", true));
+    }
     // Genuine mobile device = a mobile UA token AND real touch. The detector gates the mouse-biomech
     // behavioral FLOORS off for these (power-law / straightness / velocity-CV / mouse-entropy / coalesced-
     // absent are mouse-calibrated and false-positive on a real finger swipe — G10). NOT set for a mobile UA

@@ -1433,6 +1433,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Spatial DEVICE<->DPR coherence — the B1 joint constraint, sibling of br.ios_screen_oversized on the same iOS device manifold. iOS renders at a device-FIXED backing scale: every real iPhone/iPad reports window.devicePixelRatio of EXACTLY 2 or 3 (2 for iPad + SE/older iPhones; 3 for modern/Plus/mini iPhones — the iPhone 6-Plus family and 12/13 mini physically downsample but REPORT an integer 3; Apple ships no fractional-DPR or 1x iOS display). Grounded in the Apple device corpus (iosref.com/res, ios-resolution.com). An iOS UA whose devicePixelRatio is not in {2,3} is off the manifold: a DESKTOP faking iOS reports DPR 1 (the common desktop-scraper default), a sloppy emulator a fractional value (1.5/2.5). FP-SAFE by the hard Apple hardware bound (the DPR set is device-fixed and integer-valued on iOS); distinct from br.devicepixelratio_anomaly (which only flags a non-finite/<=0 DPR, not an OS-incoherent one) and complements br.ios_screen_oversized (screen) — TOGETHER they force a coherent iOS spoof to get BOTH the screen geometry AND the backing scale right, not just the UA + touch. The joint-coherence ratchet, one more rung. GROUNDED LIVE: a Chromium given an iPhone UA at the container-default DPR 1 (KS_DPR unset) fires ios_dpr_incoherent; the same UA at a real iOS DPR (KS_DPR=3) is SILENT — the coherent-randomizer evasion."
 
+  - id: br.ios_screen_desktop_res
+    title: iOS UA reports a common desktop screen resolution (no iPhone/iPad ships one)
+    layers: [browser]
+    reads: [browser.ios_screen_desktop_res]
+    predicate: present
+    category: coherence
+    weight: 0.7
+    status: active
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "DEVICE<->screen coherence, the sub-1400 slice br.ios_screen_oversized (max>1400) misses. ios_screen_oversized convicts a desktop screen wearing an iOS UA only when a dimension exceeds ~1376 (the largest real iPad); a desktop faking iOS with a SMALLER panel (1366x768, 1280x720, 1280x1024) slips under that bound. This rule closes it with a curated set of common DESKTOP resolutions — 1366x768, 1280x1024, 1280x720, 1280x800, 1360x768, 1024x600, 1600x900 (both orientations) — NONE of which any iPhone/iPad ships (verified against the Apple device corpus iosref.com/res + ios-resolution.com: iOS is tall ~19.5:9 phones + 4:3 iPads, never a 16:9 or 5:4 desktop panel; iPad geometries like 1024x768 / 768x1024 are deliberately EXCLUDED from the set). An iOS UA reporting one is a desktop-faking-iOS. FP-SAFE by construction: the set contains only desktop-exclusive geometries, so no real iOS device can match. Convicting, w0.7. Together with ios_screen_oversized (max>1400) and ios_dpr_incoherent (DPR ∉ {2,3}) this makes the iOS screen manifold a three-rung ratchet — a coherent iOS spoof must land its screen ON a real iPhone/iPad geometry, not merely avoid the oversized bound. GROUNDED LIVE: a Chromium given an iPhone UA + KS_SCREEN=1366x768 (a desktop res the oversized bound misses) fires ios_screen_desktop_res; the same UA + a real iPhone screen (393x852) is SILENT."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty
