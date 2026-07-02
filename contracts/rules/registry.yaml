@@ -528,6 +528,18 @@ rules:
     last_validated: "2026-07-02"
     source: "DEVICE-model <-> screen coherence on the Android manifold — the joint a coherent model spoof must still satisfy once the model itself is pinned across header+main-JS+worker (net.ch_ua_mobile_no_model / br.mobile_no_js_model / br.uadata_model_worker_divergence). A claimed Android model names a specific handset whose LOGICAL screen is device-fixed; the collector keys the getHighEntropyValues().model against the real per-model portrait CSS geometry (from the device corpus; the set is seeded from Playwright's maintained Android device registry — Pixel 2..7, Nexus, Galaxy SM-*). An Android Chrome reports model + screen from the SAME hardware, so a model PRESENT with a screen that is not that model's is a randomizer that drew model and screen from DIFFERENT devices — a naive spoof; a coherent one keeps model+screen+UA from ONE real device. This is the Android analog of br.ios_screen_offmanifold, but keyed by the exact MODEL (not a set membership), so it is tighter. EXPERIMENTAL (w0.5, corroborating): only fires for a model IN the maintained set with a mismatched portrait screen — an unknown/new model skips (FP-safe on new hardware), and the set needs periodic refresh from the device corpus; a coherent randomizer (model+screen from one device, e.g. KS_DEVICE) EVADES by construction, which is the manifold point. GROUNDED LIVE: KS_DEVICE='Pixel 5' + a forged model 'Pixel 5' (screen 393x851 matches) is SILENT; KS_DEVICE='Pixel 7' (screen 412x915) + a forged model 'Pixel 5' (expects 393x851) FIRES — model and screen from different devices."
 
+  - id: br.mobile_pointer_hover_desktop
+    title: Mobile UA but the primary pointer is fine / a hovering pointer exists (desktop pointer surface)
+    layers: [browser]
+    reads: [browser.mobile_pointer_hover_desktop]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Pointer/hover realism for a mobile UA — the mobile-side inverse of br.hover_none_desktop. A real phone/tablet has NO hovering pointer: its PRIMARY pointer is COARSE (touch) and (hover: none). A UA claiming Mobile/Android/iPhone/iPad whose CSS (pointer: fine) matches OR (hover: hover) matches is a DESKTOP wearing a mobile UA without emulating the touch device — the lazy UA-only mobile spoof (CDP/JS Network.setUserAgentOverride sets the UA string but not isMobile/hasTouch, so the CSS pointer surface still describes a mouse). This catches a no-device mobile spoof that the model/font/screen rungs (which need a real Chromium device or fire on emptiness) do not; it complements br.pointer_touch_incoherent (any-pointer coarse vs maxTouchPoints) by testing the PRIMARY pointer + hover. FP-SAFE: every real phone reports (pointer: coarse)+(hover: none); a full Playwright/CDP device emulation (KS_DEVICE=Pixel) sets both media, so it stays SILENT — the check fires only on the UA-only spoof. GROUNDED LIVE: SPOOF_UA=<a Pixel 5 mobile UA> with NO device emulation trips mobile_pointer_hover_desktop (desktop pointer under a mobile UA); KS_DEVICE='Pixel 5' (full emulation, pointer coarse + hover none) is SILENT."
+
   - id: br.mobile_no_js_model
     title: Mobile userAgentData but getHighEntropyValues().model is empty — desktop faking Android (JS surface)
     layers: [browser]
