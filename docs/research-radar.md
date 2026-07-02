@@ -629,6 +629,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   wall. iOS remains harder (WebKit-on-Linux leaks navplatform=macOS + Linux fonts, needs os-spoof darwin + real
   Safari TLS). So: coherent ANDROID mobile is achievable to the desktop floor; coherent iOS needs a real WebKit/iOS
   runtime. Mobile axis reopened with a grounded rung.
+- **[LOOP MOBILE B-model] net.ch_ua_mobile_no_model — the CH-layer catch for a desktop-faking-Android
+  (2026-07-02, grounded).** A red attempt first: a window.chrome addInitScript shim to clear the Android
+  no_chrome_object tell BROKE the collector (grounded: no-shim lands 2/2, shim fails 4/4 → a naive shim is fragile;
+  no_chrome_object needs a native-window.chrome tool like nodriver, not a page shim) — reverted, then PIVOTED to a
+  blue rung. The edge now advertises Accept-CH: Sec-CH-UA-Model; a REAL Android Chrome answers with its hardware
+  model (e.g. Pixel 8) on the next request, but a DESKTOP Chromium — even KS_DEVICE emulating a Pixel UA — answers
+  EMPTY, because the hint reads the REAL hardware not the spoofed UA (Playwright device emulation sets UA+viewport,
+  not the model). So Sec-CH-UA-Mobile ?1 + present-but-empty Sec-CH-UA-Model = desktop faking Android at the CH
+  layer → net.ch_ua_mobile_no_model (convicting, w0.6). A NETWORK tell that catches a NO-JS Android scraper too.
+  GROUNDED LIVE: KS_DEVICE='Pixel 5' fires it (empty model); a desktop Chrome UA (?0) is out of scope. This
+  catches EXACTLY last firing's font-coherent Android node — the mobile red⇄blue is live: KS_ANDROID_FONTS closed
+  the font tell, and this opens a CH-layer one that the device emulation structurally can't fill. The RED counter
+  is forging the Sec-CH-UA-Model header (route interception), which then must match the UA model string + the
+  device screen — the mobile joint-coherence ratchet continues.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

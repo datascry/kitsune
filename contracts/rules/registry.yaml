@@ -504,6 +504,18 @@ rules:
     last_validated: "2026-06-18"
     source: "Cross-layer browser coherence; Chromium sends Sec-CH-UA from its real brand under any UA"
 
+  - id: net.ch_ua_mobile_no_model
+    title: Mobile Sec-CH-UA-Mobile ?1 but Sec-CH-UA-Model is empty — desktop faking Android
+    layers: [network]
+    reads: [network.ch_ua_mobile_no_model]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Mobile device-coherence at the Client-Hints layer. The edge advertises Accept-CH: Sec-CH-UA-Model, so once a browser honours it (a subsequent request) it sends the high-entropy device-model hint. A REAL Android Chrome fills it with the hardware model (e.g. \"Pixel 8\"); a DESKTOP Chromium answers with an EMPTY model even under a mobile UA, because the hint is populated from the REAL hardware, not the spoofed UA — and Playwright/CDP device emulation (KS_DEVICE=Pixel) sets the UA + viewport but NOT the underlying model, so it too sends empty. So Sec-CH-UA-Mobile ?1 with a PRESENT-but-EMPTY Sec-CH-UA-Model is a desktop faking an Android phone at the CH layer. A NETWORK-layer tell (like net.ch_ua_on_non_chromium_ua): it fires on a NO-JS Android scraper the JS browser-coherence checks never see. FP-SAFE: a real Android always fills the model when asked; the header must be PRESENT (Accept-CH honoured, distinguishing empty from not-yet-requested) and Sec-CH-UA-Mobile must be ?1. The RED counter is forging the Sec-CH-UA-Model header (route interception), which then must also match the UA's model string + the device screen — the joint-coherence ratchet. GROUNDED LIVE: a Chromium KS_DEVICE='Pixel 5' (Android UA, ?1 mobile) sends an empty Sec-CH-UA-Model → fires; a desktop Chrome UA (?0 mobile) is out of scope."
+
   - id: net.ch_ua_on_non_chromium_ua
     title: Non-Chromium UA (Safari/Firefox) sends Sec-CH-UA (a Blink-only header) — Chromium faking it
     layers: [network]

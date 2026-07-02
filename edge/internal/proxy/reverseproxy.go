@@ -224,6 +224,18 @@ func prepare(
 	if b := uaHeaderBrowser(r.Header.Get("User-Agent")); (b == "safari" || b == "firefox") && r.Header.Get("Sec-CH-UA") != "" {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_on_non_chromium_ua", true, now))
 	}
+	// Mobile UA whose Sec-CH-UA-Model is present-but-EMPTY. Once the browser honours the edge's Accept-CH request
+	// (a subsequent request), a real Android Chrome sends its device model here (e.g. "Pixel 8"); a desktop
+	// Chromium — even KS_DEVICE emulating a Pixel UA — sends an empty model, because the hint reflects the REAL
+	// hardware, not the spoofed UA. So Sec-CH-UA-Mobile "?1" + an empty (but present) Sec-CH-UA-Model is a desktop
+	// faking Android at the CH layer — a NETWORK tell that catches a NO-JS Android scraper too. FP-safe: a real
+	// Android always fills the model; the header must be PRESENT (Accept-CH honoured) to distinguish empty from
+	// not-yet-requested.
+	if r.Header.Get("Sec-CH-UA-Mobile") == "?1" && r.Header.Values("Sec-CH-UA-Model") != nil {
+		if strings.Trim(r.Header.Get("Sec-CH-UA-Model"), "\" ") == "" {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_mobile_no_model", true, now))
+		}
+	}
 	return out, nil
 }
 
@@ -580,6 +592,11 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if p.altSvc != "" {
 		w.Header().Set("Alt-Svc", p.altSvc)
 	}
+	// Request the high-entropy Sec-CH-UA-Model client hint. A real Android Chrome answers with its device model
+	// (e.g. "Pixel 8"); a desktop Chromium — even one emulating a mobile UA — answers with an EMPTY model. On the
+	// browser's SUBSEQUENT requests (after it honours this Accept-CH), prepare() reads the model and flags a
+	// mobile UA whose model is present-but-empty (net.ch_ua_mobile_no_model).
+	w.Header().Add("Accept-CH", "Sec-CH-UA-Model")
 	if sc, ok := r.Context().Value(scannerKey).(*fingerprint.H2FrameScanner); ok {
 		if sc.RapidReset() {
 			prep.signals = append(prep.signals, signal.Network(prep.sessionID, "h2_rapid_reset", true, p.now()))
