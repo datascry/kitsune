@@ -8,6 +8,6 @@ package tcpfp
 import "errors"
 
 // Sniff is unsupported off Linux; the edge runs without TCP/IP fingerprints. // pragma: integration
-func Sniff(_ *Store, _ <-chan struct{}) error {
+func Sniff(_ *Store, _ *WindowTracker, _ <-chan struct{}) error {
 	return errors.New("tcpfp: raw SYN capture is only supported on linux")
 }

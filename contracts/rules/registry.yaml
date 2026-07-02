@@ -540,6 +540,18 @@ rules:
     last_validated: "2026-07-02"
     source: "The value-vs-order tell a hand-crafted TCP stack leaves when it copies a real OS's SYN option LAYOUT (which net.tcp_os_vs_ua's classifier keys on) but not the VALUES that go with it. Grounded in the p0f OS fingerprint corpus (real data): every macOS/iOS (darwin) signature advertises a SMALL TCP window scale (wscale<=4 across the whole p0f database — macOS 1/3/4, iOS 2), so a darwin-ORDERED SYN with wscale>5 is a forged stack, not a real Apple device. Conservative by construction: darwin-only + a margin above the p0f max (4) to 5, so it fires only on a value no real macOS/iOS emits; FP-safe against the option order a real device produces. Motivated by the os-spoof userspace-TCP forger (KS_PROFILE=macos-*), whose crafted darwin SYN carried wscale=6 — the prefix classifier (option order only) missed it, this catches it. EXPERIMENTAL: the analogous Windows/Linux window-scale value-check needs modern real-traffic SYN captures for FP-safe calibration (p0f's window/scale values are dated — modern Windows 10 uses window 64240 not p0f's 8192, and recent Linux uses 64240 not p0f's mss*20), routed to the external queue; only the darwin-wscale case is FP-safe from p0f alone. Arms-race step, not a durable wall: a forger that copies the FULL real signature (correct wscale) escapes — reinforcing that per-node/kernel fingerprint is forgeable and the durable signal is coordination + IP reputation."
 
+  - id: net.tcp_static_window
+    title: TCP receive window never auto-tuned across the flow (non-kernel stack)
+    layers: [network]
+    reads: [network.tcp_static_window]
+    predicate: present
+    weight: 0.4
+    status: experimental
+    category: automation
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "A behavioral TCP tell BELOW the SYN — the layer any SYN/TLS/UA/kernel-order spoof (incl. the os-spoof userspace-TCP forger) reaches. Every real OS kernel AUTO-TUNES its advertised receive window (it grows as the receiver buffers): GROUNDED live, a real curl kernel stack advertised 10+ distinct window values across a short two-request flow (645→2296 and climbing). A hand-rolled / userspace TCP that does not implement auto-tuning holds the window CONSTANT — the os-spoof forger hardcodes one value on every packet. The edge's WindowTracker records the distinct windows a source IP advertises on its established (non-SYN) segments; this fires when a flow sent >=12 such segments all with ONE window value (never grew). CORROBORATING (weight 0.4), not convicting: a minimal/embedded real stack, or a client that disabled window scaling, could also be static, and a very short flow may not have grown yet (hence the >=12-segment floor). Catches the userspace-stack-forger class the SYN-level tells (net.tcp_os_vs_ua / tcp_syn_anomaly) cannot — the forger can forge the SYN option layout + values but not a real kernel's window-growth DYNAMICS without reimplementing auto-tuning. GROUNDED LIVE: the edge's WindowTracker recorded the os-spoof userspace stack advertising ONE window value (64240) across its flow, while a real curl kernel advertised MULTIPLE (502,533,… and growing) — the static-vs-dynamic contrast is exactly as designed. EXPERIMENTAL: the >=12-segment floor is FP-conservative (a single small real flow can be near-static before its window grows, and a minimal/embedded stack could be static), so it fires on a SIZABLE static flow (a browser routed through the forger accumulates far more than 12 segments, all one value); the FP-safe floor + which real minimal stacks are static need real-traffic calibration."
+
   - id: net.h2_settings_vs_order
     title: HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine
     layers: [network]

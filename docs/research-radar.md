@@ -288,6 +288,22 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   FULL real signature escapes. The Windows/Linux value-check needs modern real-traffic captures for FP-safe bands
   (p0f's window/scale are dated) → external queue. Net: per-node/kernel fingerprint is forgeable with real-data
   care; the durable break-through stays coordination + IP reputation + flow-level TCP behavior (all external).
+- **Flow-level TCP behavior (Rung B) — `net.tcp_static_window` SHIPPED, the first blue tell BELOW the SYN
+  (2026-07-02, GROUNDED live).** The os-spoof forger can forge the SYN (order + values) but not a real kernel's
+  window-growth DYNAMICS: every OS auto-tunes its advertised receive window (it grows as the receiver buffers),
+  while a happy-path userspace stack holds it constant. Extended the edge SYN sniffer to a FLOW-level
+  `WindowTracker` (per source IP, the distinct receive-window values across its established segments) + emit
+  `network.tcp_static_window` when a flow sent >=12 segments all advertising ONE window → rule
+  `net.tcp_static_window` (automation, experimental, w0.4). GROUNDED LIVE: the tracker recorded the os-spoof
+  userspace stack advertising ONE window value (64240) across its flow, while a real curl kernel advertised
+  MULTIPLE (502, 533, … and growing) — the exact static-vs-dynamic split, live. This is the FIRST detection tell
+  below the SYN — the layer no SYN/TLS/UA/kernel-order spoof (incl. os-spoof) reaches, because reproducing it
+  needs reimplementing TCP auto-tuning, not just crafting a packet. EXPERIMENTAL: the >=12-segment floor is
+  FP-conservative (a single small real flow can look near-static before its window grows; a minimal/embedded
+  stack could be static), so FP-safe deployment (the floor, which real minimal stacks are static) needs
+  real-traffic calibration — but the STRUCTURAL tell is grounded and it catches the userspace-stack-forger class
+  (a browser routed through the os-spoof proxy accumulates far more than 12 static-window segments). Net: a real,
+  grounded blue advance on the deepest layer — the forger's one structural residual, now detected.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

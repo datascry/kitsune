@@ -18,7 +18,7 @@ func htons(h uint16) uint16 { return h<<8 | h>>8 }
 // stop is closed. SOCK_DGRAM strips the link-layer header, so each read is an IP packet straight into
 // fingerprint.ParseSYN. Best-effort: it needs CAP_NET_RAW; if the socket cannot be opened the caller
 // runs without TCP/IP fingerprints rather than failing. // pragma: integration
-func Sniff(store *Store, stop <-chan struct{}) error {
+func Sniff(store *Store, win *WindowTracker, stop <-chan struct{}) error {
 	fd, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_DGRAM, int(htons(syscall.ETH_P_IP)))
 	if err != nil {
 		return err
@@ -33,12 +33,21 @@ func Sniff(store *Store, stop <-chan struct{}) error {
 		if err != nil {
 			return err // socket closed (stop) or a fatal read error
 		}
-		syn, ok := fingerprint.ParseSYN(buf[:n])
-		if !ok {
+		if n < 20 {
 			continue
 		}
-		// Store the JA4T fingerprint for every parsed SYN (it is always meaningful), plus the OS family
-		// when confidently classified. Source IP is bytes 12-16 of the IPv4 header (bounds already validated).
-		store.Put(net.IP(buf[12:16]).String(), fingerprint.ClassifyTCPOS(syn), syn.JA4T())
+		srcIP := net.IP(buf[12:16]).String() // IPv4 source (bytes 12-16); validated by the parsers below
+		if syn, ok := fingerprint.ParseSYN(buf[:n]); ok {
+			// Store the JA4T fingerprint for every parsed SYN (always meaningful) + the OS family when classified.
+			store.Put(srcIP, fingerprint.ClassifyTCPOS(syn), syn.JA4T())
+			continue
+		}
+		// Non-SYN (established) segment: track the client's advertised receive window. A real kernel auto-tunes
+		// it across the flow; a happy-path userspace stack holds it constant (WindowTracker.Static catches that).
+		if win != nil {
+			if _, window, ok := fingerprint.ParseTCPWindow(buf[:n]); ok {
+				win.Observe(srcIP, window)
+			}
+		}
 	}
 }

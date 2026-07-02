@@ -181,3 +181,26 @@ func TestSYNValueAnomaly(t *testing.T) {
 		}
 	}
 }
+
+func TestParseTCPWindow(t *testing.T) {
+	// A minimal IPv4+TCP established (ACK, no SYN) packet: IHL=5, proto=6, window=0xFAF0 (64240).
+	pkt := make([]byte, 40)
+	pkt[0] = 0x45 // v4, IHL 5
+	pkt[9] = 6    // TCP
+	// src IP 10.0.0.1
+	pkt[12], pkt[13], pkt[14], pkt[15] = 10, 0, 0, 1
+	tcp := pkt[20:]
+	tcp[0], tcp[1] = 0xC0, 0x00   // src port 49152
+	tcp[12] = 5 << 4              // data offset 20
+	tcp[13] = 0x10                // ACK (no SYN)
+	tcp[14], tcp[15] = 0xFA, 0xF0 // window 64240
+	port, win, ok := ParseTCPWindow(pkt)
+	if !ok || port != 49152 || win != 64240 {
+		t.Errorf("ParseTCPWindow = (%d,%d,%v) want (49152,64240,true)", port, win, ok)
+	}
+	// A SYN must be skipped (fixed initial window, tracked elsewhere).
+	tcp[13] = 0x02
+	if _, _, ok := ParseTCPWindow(pkt); ok {
+		t.Error("ParseTCPWindow must skip a SYN")
+	}
+}
