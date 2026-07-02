@@ -215,6 +215,23 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   making the rung redundant. Correct conclusion: a well-built provisioned + diversified fleet on distinct real IPs
   is genuinely indistinguishable from N real users — the coordination wall is EXTERNAL IP reputation, and there is
   no clean in-sandbox rung. Do NOT build a cloned-environment collision key; it is off-thesis.
+- **Coherent OS spoofing is bounded by the TCP option ORDER — the one OS tell a browser can't forge
+  (2026-07-02, GROUNDED live).** Ran camoufox `KS_MACOS` (a coherent macOS profile) on the Linux container:
+  the browser story is spoofable (UA/platform/CH-UA/oscpu), but three things leak. (1) target-OS PHYSICAL
+  markers: `br.macos_dpr1` (no Retina DPR) + `br.font_mac_internal` (real fonts aren't macOS system fonts) —
+  macOS is a HARD target; Windows is more forgiving (generic DPR, Direct3D renderer, spoofable fonts). (2) the
+  environment floor + behavioral — both provisionable (`KS_PROVISION` + `KS_REAL_INPUT`, proven above). (3) the
+  WALL: **`net.tcp_os_vs_ua`** — `tcp_kernel=linux` (`ja4t=64240_2-4-8-1-3_1460_7`) vs the darwin UA. Verified
+  the obvious evasion is DEAD: `ClassifyTCPOS` (edge `fingerprint/tcpip.go`) keys ONLY on the TCP option order
+  (`mss,sack…`→linux, `mss,nop,ws,nop,nop,ts…`→darwin, `…,sack…`→windows), NOT the TTL — a `sysctl
+  ip_default_ttl=128` mangle is explicitly defeated (grounded: TTL-128 curl still classified `linux`). The
+  option order is set by the kernel TCP stack; a UA/navigator spoof can't touch it, and even the high-end
+  network impersonators (uTLS/curl-impersonate) forge the TLS ClientHello but NOT the TCP SYN. So coherent OS
+  spoofing needs one of: run on the real target OS; tunnel through a VM/proxy whose EGRESS stack is the target
+  OS; a custom raw-socket TCP client emitting the target's option order; or an edge behind a CDN/LB (which sees
+  the balancer's SYN, not the client's — the deployment caveat that makes this tell direct-connection-only).
+  Same pattern as the whole session: everything above the kernel is spoofable/provisionable; the kernel TCP
+  stack is the durable OS fingerprint, and forging it means becoming (or tunnelling through) the real OS.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
