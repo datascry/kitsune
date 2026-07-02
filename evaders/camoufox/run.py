@@ -25,6 +25,13 @@ REPEAT = max(1, int(os.environ.get("KS_REPEAT", "1")))
 # whether the per-session "capability" tells (no WebGL2, no TTS voices) are real spoofing flaws or
 # just artifacts of a minimal headless container — a determined adversary runs headful with a stack.
 HEADFUL = os.environ.get("KS_HEADFUL") == "1"
+# KS_REAL_INPUT=1: the behavioral TERMINUS fused into the coherent Gecko stack. Launch Camoufox headful on a
+# real Xvfb display (the image entrypoint wraps in xvfb-run) and drive the cursor with GENUINE X-server input
+# (XTEST via xdotool) — the browser receives hardware-originated motion, so getCoalescedEvents() batches for
+# real and isTrusted holds by provenance (bh.synthetic_no_coalesced silent), with NO JS tamper. Composes with
+# KS_HARDENED/KS_LINUX/KS_NOTOUCH to build the MAXIMAL coherent single-session stack: engine-level FP (network
+# 0, no CDP) + coherent OS + real input (behavioral 0). The residual is then purely the environment floor.
+REAL_INPUT = os.environ.get("KS_REAL_INPUT") == "1"
 # KS_BASELINE=1: run *stock* Playwright Firefox (Camoufox's engine, but with NO spoofing) through the
 # same pipeline — the control group. Rules that fire on the baseline too are environment/headless tells;
 # rules that fire only on Camoufox are genuine anti-detect-spoofing tells. Keeps the detector honest.
@@ -94,7 +101,7 @@ _BASE_MODE = (
     else "camoufox-linux" if LINUX
     else "camoufox"
 )
-MODE = _BASE_MODE + ("-task" if TASK else "-behave" if BEHAVE else "")
+MODE = _BASE_MODE + ("-task" if TASK else "-realinput" if REAL_INPUT else "-behave" if BEHAVE else "")
 HARDENED_KW: dict[str, object] = {
     "os": "linux",  # coherent with the Linux host: dodges the macOS dpr/font tells AND net.tcp_os_vs_ua
     "block_webrtc": False,  # keep WebRTC → avoid webrtc_unavailable
@@ -129,6 +136,62 @@ def _synth_behavior(page: object) -> None:
         key = "Space" if ch == " " else f"Key{ch.upper()}"
         page.keyboard.press(key)  # type: ignore[attr-defined]
         page.wait_for_timeout(random.choice([55, 80, 95, 120, 150, 240]))  # type: ignore[attr-defined]
+
+
+def _real_input_move(page: object) -> None:
+    """Behavioral TERMINUS (KS_REAL_INPUT): drive the cursor with REAL X-server input (XTEST via xdotool)
+    instead of Playwright's synthetic page.mouse, so Camoufox receives genuine hardware motion — real
+    getCoalescedEvents() batches + isTrusted, no JS tamper (the Gecko twin of stealth's KS_REAL_INPUT). Page
+    coords map to screen coords via the window's screenX/Y + chrome height; each burst of SUB sub-frame samples
+    (~2ms apart) lands within one ~16ms frame so the browser coalesces it, and the inter-burst sleep crosses a
+    frame boundary so each burst is a distinct primary pointermove carrying a real coalesced batch."""
+    import subprocess
+    import sys
+
+    geo = page.evaluate(  # type: ignore[attr-defined]
+        "() => ({ sx: window.screenX, sy: window.screenY,"
+        " chromeH: Math.max(0, window.outerHeight - window.innerHeight),"
+        " iw: window.innerWidth, ih: window.innerHeight })"
+    )
+    page.evaluate(  # type: ignore[attr-defined]  — passive probe: self-report the real coalescing
+        "() => { window.__ksMoves=0; window.__ksMaxCo=0; window.__ksTrusted=true;"
+        " addEventListener('pointermove', e => { window.__ksMoves++;"
+        " if(!e.isTrusted) window.__ksTrusted=false;"
+        " const n = e.getCoalescedEvents ? e.getCoalescedEvents().length : 0;"
+        " if(n>window.__ksMaxCo) window.__ksMaxCo=n; }, {passive:true}); }"
+    )
+
+    def clamp(v: float, lo: float, hi: float) -> float:
+        return min(hi, max(lo, v))
+
+    def bezier(p0, p1, p2, p3, t):  # type: ignore[no-untyped-def]
+        u = 1 - t
+        return (
+            u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0],
+            u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1],
+        )
+
+    frames, sub = 30, 6  # >= 20 primary pointermoves (the coalesced rule's gate) with real sub-frame coalescing
+    for _pass in range(2):  # two passes with a dwell → enough primary moves for the ptrMoves>=20 gate
+        frm = (60 + random.random() * 140, 110 + random.random() * 140)
+        to = (geo["iw"] * 0.45 + random.random() * geo["iw"] * 0.25, geo["ih"] * 0.4 + random.random() * geo["ih"] * 0.25)
+        c1 = (frm[0] + (random.random() - 0.5) * geo["iw"] * 0.4, frm[1] + (random.random() - 0.5) * geo["ih"] * 0.4)
+        c2 = (to[0] + (random.random() - 0.5) * geo["iw"] * 0.4, to[1] + (random.random() - 0.5) * geo["ih"] * 0.4)
+        args: list[str] = []
+        for f in range(frames):
+            for s in range(sub):
+                lin = (f + s / sub) / frames
+                t = 2 * lin * lin if lin < 0.5 else 1 - ((-2 * lin + 2) ** 2) / 2  # ease-in-out velocity
+                p = bezier(frm, c1, c2, to, t)
+                sx = round(geo["sx"] + clamp(p[0] + (random.random() - 0.5) * 2, 5, geo["iw"] - 5))
+                sy = round(geo["sy"] + geo["chromeH"] + clamp(p[1] + (random.random() - 0.5) * 2, 5, geo["ih"] - 5))
+                args += ["mousemove", str(sx), str(sy), "sleep", "0.002"]
+            args += ["sleep", "0.013"]  # ~one frame between bursts → each is a distinct coalesced primary event
+        args += ["click", "1"]
+        subprocess.run(["xdotool", *args], check=False)  # noqa: S603,S607
+        page.wait_for_timeout(180 + random.randint(0, 220))  # type: ignore[attr-defined]
+    probe = page.evaluate("() => ({moves: window.__ksMoves, maxCo: window.__ksMaxCo, trusted: window.__ksTrusted})")  # type: ignore[attr-defined]
+    print(f"real-input: {probe['moves']} pointermoves, max coalesced batch {probe['maxCo']}, isTrusted={probe['trusted']}", file=sys.stderr)
 
 
 def _run_task(page: object, steps: list[dict]) -> None:
@@ -174,6 +237,13 @@ def _capture(browser: object) -> dict[str, object]:
         elif TASK:
             page.goto(EDGE, wait_until="load")
             _run_task(page, json.loads(TASK))  # the scripted behavioral flow (supersedes KS_BEHAVE)
+            try:
+                page.wait_for_selector("body[data-ks='sent']", timeout=8000)
+            except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
+                page.wait_for_timeout(2000)
+        elif REAL_INPUT:
+            page.goto(EDGE, wait_until="load")
+            _real_input_move(page)  # GENUINE XTEST input (headful on Xvfb) — real coalesced batches, isTrusted
             try:
                 page.wait_for_selector("body[data-ks='sent']", timeout=8000)
             except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
@@ -273,7 +343,9 @@ def main() -> None:
     if FPROTATE:
         _run_fprotate()
         return
-    kwargs: dict[str, object] = {"headless": "virtual" if HEADFUL else True}
+    # REAL_INPUT runs headful (headless=False) on the real Xvfb display the entrypoint's xvfb-run provides, so
+    # xdotool's XTEST motion lands in the on-screen Firefox window; HEADFUL uses Camoufox's own virtual display.
+    kwargs: dict[str, object] = {"headless": False if REAL_INPUT else "virtual" if HEADFUL else True}
     if HARDENED:
         kwargs.update(HARDENED_KW)
     if MACOS:

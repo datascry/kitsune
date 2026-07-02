@@ -173,8 +173,11 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (real network path). Faking them doesn't work — `FLOOR_SPOOF` (fakes voices+devices) stays `bot 0.996` because
   the spoof is caught by coherence. So the best single-session evader reaches `suspicious`-with-zero-convictions
   and is held there ONLY by the environment floor: the last mile is "run on real hardware," the economic bind —
-  not any spoofable value, and not a cleverer tool chain. (The one unbuilt step: fusing camoufox headful + real
-  XTEST input in one runtime; grounded by composition — camoufox conviction 0 + real-input behavioral 0.)
+  not any spoofable value, and not a cleverer tool chain. **The fusion is now BUILT + grounded in ONE runtime**
+  (camoufox `KS_REAL_INPUT`: headful on Xvfb + XTEST input via xdotool): 92 pointermoves, coalesced batch 6,
+  `isTrusted` → network 0.0 + behavioral 0.0 + conviction 0.0, `suspicious` 0.455, residual = exactly three
+  environment-floor tells (`br.voices_empty` + `br.media_devices_empty` + `br.webrtc_unavailable`). The maximal
+  coherent single-session stack is one engine on real hardware — not a chain.
 
 ## Refuted leads — do NOT build (verification-killed)
 
