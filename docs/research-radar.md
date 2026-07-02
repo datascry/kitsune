@@ -204,12 +204,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   signal (`voice_os_hint`=None; there is no `voices_hash`). Distinct container IPs + no corroboration (clean
   camoufox, private IPs) → capped at candidate, indistinguishable from a real Firefox cohort. So provisioning
   lets a well-built fleet evade BOTH layers in-sandbox; the residual is the known EXTERNAL lever (IP reputation
-  on real datacenter/proxy egress). **Groundable blue counter (offered, not built):** emit a `browser.voices_hash`
-  (full TTS voice-list fingerprint) in the collector + add it as an ambiguous, corroboration-gated coordination
-  collision key (like `fp_collision`): a cloned-provisioning fleet shares one espeak voice-set across distinct IPs
-  (a real diverse cohort has diverse OS voices; a standardised corporate fleet shares OS voices → caps at candidate
-  without corroboration, FP-safe). Convicts a provisioned-clone fleet only WITH corroboration (datacenter IPs) —
-  closes the cloned-environment fleet gap without new FPs, groundable via synthetic scenarios like fp_collision.
+  on real datacenter/proxy egress). **A `voices_hash` collision rung was considered and REJECTED as off-thesis.**
+  The intuition (cluster on a shared TTS voice-set) fails the premise that makes every EXISTING collision key
+  valid: `_fp_collision`/`_trace_collision` work because the value is HIGH-ENTROPY, so a collision across distinct
+  IPs "cannot be organic (real machines each hash differently)." A voice set is LOW-ENTROPY — every user of the
+  same OS+browser shares it — so a `voices_hash` collision IS organic (any two Windows users collide). That is a
+  shared-VALUE signal, not an INCOHERENCE signal — exactly the "bad signal" the whole project exists to avoid.
+  Corroboration-gating would hide the residential FP but not fix the category error (a datacenter VDI farm of
+  identical real machines would still collide), and the corroborator (datacenter IP) IS already the real signal,
+  making the rung redundant. Correct conclusion: a well-built provisioned + diversified fleet on distinct real IPs
+  is genuinely indistinguishable from N real users — the coordination wall is EXTERNAL IP reputation, and there is
+  no clean in-sandbox rung. Do NOT build a cloned-environment collision key; it is off-thesis.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
