@@ -557,18 +557,19 @@ if (KS_ENGINE === "webkit" && ksDevice && deviceOpts.isMobile) {
 // SwiftShader backend: the string reads as a real mobile GPU (evading mobile_gpu_not_mobile) but MAX_TEXTURE_SIZE
 // stays SwiftShader's 8192, which br.mobile_gpu_caps_mismatch catches — the source-fork's unspoofable-silicon tell.
 if (process.env.KS_RENDERER) {
-  await context.addInitScript((rndr) => {
+  await context.addInitScript((cfg) => {
     const patch = (proto) => {
       if (!proto || !proto.getParameter) return;
       const gp = proto.getParameter;
       proto.getParameter = function (p) {
-        if (p === 37446) return rndr;
-        return gp.call(this, p);
+        if (p === 37446) return cfg.rndr;
+        if (cfg.ftex && p === 3379) return 16384; // MAX_TEXTURE_SIZE — fake it to the mobile floor, leaving
+        return gp.call(this, p); //                 MAX_RENDERBUFFER_SIZE / MAX_VIEWPORT_DIMS at the real backend
       };
     };
     patch(window.WebGLRenderingContext && WebGLRenderingContext.prototype);
     patch(window.WebGL2RenderingContext && WebGL2RenderingContext.prototype);
-  }, process.env.KS_RENDERER);
+  }, { rndr: process.env.KS_RENDERER, ftex: process.env.KS_FAKE_MAXTEX === "1" });
 }
 // KS_SPOOF_DM=<n>: a deliberately NAIVE main-thread-only navigator.deviceMemory override (addInitScript does
 // not run in Worker scope) — the red probe for br.devicememory_worker_divergence. A coherent tool leaves it unset.
