@@ -1953,6 +1953,32 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
             || (wg.caps.maxFragmentUniform && wg.caps.maxFragmentUniform > 2048))) {
       sigs.push(S("browser", "mobile_gpu_uniforms_software", true));
     }
+    // ACTUAL-COMPILE probe — the uniform analog of webgl_maxtexture_unallocatable, and the counter to a fork that
+    // spoofs MAX_VERTEX_UNIFORM_VECTORS DOWN (to a mobile 256) to beat mobile_gpu_uniforms_software. getParameter
+    // only changes what JS READS; the GL compiler ENFORCES the REAL backend limit. Compile+link a vertex shader
+    // that declares and USES (claimed + 40) uniform vec4s: a real device enforcing its reported limit REJECTS it
+    // (link fails); a claim spoofed BELOW a bigger real backend (256 over SwiftShader's 4096) LINKS. Scoped to a
+    // mobile GPU string with a claimed vu <= 2048 (a mobile-looking claim; >2048 is already caught by the value
+    // check). FP-safe: a real mobile GPU (reported == enforced) fails the over-claim shader; only reported < real
+    // (a downward spoof) links it. Unspoofable by getParameter — the compiler reaches the real silicon.
+    if (wg.caps && wg.renderer && /adreno|mali|immortalis|powervr|xclipse/i.test(wg.renderer)
+        && wg.caps.maxVertexUniform && wg.caps.maxVertexUniform > 0 && wg.caps.maxVertexUniform <= 2048) {
+      try {
+        var _ug = document.createElement("canvas").getContext("webgl");
+        if (_ug) {
+          var _un = wg.caps.maxVertexUniform + 40;
+          var _uvs = _ug.createShader(_ug.VERTEX_SHADER);
+          _ug.shaderSource(_uvs, "uniform vec4 u[" + _un + "];void main(){vec4 s=vec4(0.0);for(int i=0;i<" + _un + ";i++){s+=u[i];}gl_Position=s;}");
+          _ug.compileShader(_uvs);
+          var _ufs = _ug.createShader(_ug.FRAGMENT_SHADER);
+          _ug.shaderSource(_ufs, "void main(){gl_FragColor=vec4(1.0);}");
+          _ug.compileShader(_ufs);
+          var _upg = _ug.createProgram();
+          _ug.attachShader(_upg, _uvs); _ug.attachShader(_upg, _ufs); _ug.linkProgram(_upg);
+          if (_ug.getProgramParameter(_upg, _ug.LINK_STATUS)) sigs.push(S("browser", "gpu_uniform_underreport", true));
+        }
+      } catch (e) {}
+    }
     // A mobile UA must render on a MOBILE GPU family: real phones/tablets use Adreno (Qualcomm), Mali/Immortalis
     // (ARM), PowerVR (Imagination), Apple GPU (iOS), Xclipse (Samsung), Tegra (NVIDIA Shield) or VideoCore. A
     // Mobile/Android/iPhone/iPad UA whose UNMASKED_RENDERER names NONE of these — a desktop GPU (NVIDIA/Radeon/

@@ -564,12 +564,13 @@ if (process.env.KS_RENDERER) {
       proto.getParameter = function (p) {
         if (p === 37446) return cfg.rndr;
         if (cfg.ftex && p === 3379) return 16384; // MAX_TEXTURE_SIZE — fake it to the mobile floor, leaving
-        return gp.call(this, p); //                 MAX_RENDERBUFFER_SIZE / MAX_VIEWPORT_DIMS at the real backend
-      };
+        if (cfg.fvu && (p === 36347 || p === 36349)) return cfg.fvu; // MAX_VERTEX/FRAGMENT_UNIFORM_VECTORS — spoof
+        return gp.call(this, p); //         DOWN to a mobile 256 (red counter to mobile_gpu_uniforms_software); the
+      }; //                                 real GL compiler still ENFORCES 4096, which the compile probe catches
     };
     patch(window.WebGLRenderingContext && WebGLRenderingContext.prototype);
     patch(window.WebGL2RenderingContext && WebGL2RenderingContext.prototype);
-  }, { rndr: process.env.KS_RENDERER, ftex: process.env.KS_FAKE_MAXTEX === "1" });
+  }, { rndr: process.env.KS_RENDERER, ftex: process.env.KS_FAKE_MAXTEX === "1", fvu: Number(process.env.KS_FAKE_VU) || 0 });
 }
 // KS_RENDERER_WORKER=1: the TRUE both-realm source-fork — also inject the renderer patch into WORKER scope by
 // wrapping Worker() to prepend it to the worker source (fetched from its blob URL). This DEFEATS

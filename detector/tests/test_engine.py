@@ -408,6 +408,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.browser, "android_model_gpu_incoherent", True, Source.collector)], "br.android_model_gpu_incoherent"),
         ([(Layer.browser, "mobile_gpu_caps_mismatch", True, Source.collector)], "br.mobile_gpu_caps_mismatch"),
         ([(Layer.browser, "mobile_gpu_uniforms_software", True, Source.collector)], "br.mobile_gpu_uniforms_software"),
+        ([(Layer.browser, "gpu_uniform_underreport", True, Source.collector)], "br.gpu_uniform_underreport"),
         (
             [(Layer.browser, "webgl_maxtexture_unallocatable", True, Source.collector)],
             "br.webgl_maxtexture_unallocatable",
