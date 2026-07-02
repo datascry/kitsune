@@ -392,6 +392,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (font_os_vs_ua + navplatform_vs_ua → the WebKit host is Linux, needs engine-level font/platform spoofing or a
   real iOS host), network (tcp_os_vs_ua + tls_grease_vs_ua → route through the os-spoof ios-safari proxy). R3
   crosses the iOS device-identity wall and MAPS the coherent-full-stack-iOS frontier: font/platform + network.
+- **[LOOP B5] br.android_phone_screen_oversized — first device-coherence check on the ANDROID manifold, grounded
+  (2026-07-02).** The detector had ZERO Android device checks; this opens the axis. Scoped to the UA 'Mobile'
+  token (Android Chrome OMITS it on tablets + Android TV/Auto, so this keys on PHONES + foldables only), whose
+  logical screen is bounded — the largest current Android phone/foldable tops out ~1100 CSS px. An Android+Mobile
+  UA with max(screen) > 1400 is a desktop faking an Android phone (Mobile UA over a 1920x1080 screen), the Android
+  sibling of ios_screen_oversized. FP-safe by the hardware bound (no Android phone screen nears 1400; tablets/TV
+  excluded by the Mobile-token gate). GROUNDED LIVE: Android Pixel Mobile UA + KS_SCREEN=1920x1080 fires; a
+  coherent KS_DEVICE Pixel 5 is SILENT. (Impl note: the JS regex word-boundary \\b was mangled by the demo.py
+  Python-string escaping on first cut — caught it LIVE when the naive case did not fire, switched to /Mobile/i;
+  a reminder that the collector is JS-in-a-Python-string and backslash escapes double.) Mobile screen coherence
+  now spans BOTH mobile OSes (iOS 3-rung + Android). Ladder: R1,B1,B4-slice,B2,R3,B5 — 6 rungs, 3 axes.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
