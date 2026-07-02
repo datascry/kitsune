@@ -1900,8 +1900,16 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // BOTH-realm fork evades br.webgl_worker_divergence — but the silicon's texture limit cannot be string-patched.
     // FP-safe: real high-end mobile GPUs are >=16384; an honest lesser mobile GPU carries a lesser string (Adreno
     // 3xx/4xx, Mali-T) out of this high-end pattern, and an honest software renderer names itself (webgl_software).
-    if (wg.caps && wg.renderer && wg.caps.maxTexture && wg.caps.maxTexture < 16384
-        && /Adreno \\(TM\\) [6-8][0-9]{2}|Mali-G(?:7[0-9]|8[0-9])|Immortalis/i.test(wg.renderer)) {
+    // Hardened across the FULL cap triad: a high-end mobile GPU exposes MAX_TEXTURE_SIZE, MAX_RENDERBUFFER_SIZE AND
+    // MAX_VIEWPORT_DIMS all >= 16384. Checking ALL THREE closes the both-realm fork that fakes ONLY maxTexture (to
+    // 16384) in both realms — evading the maxTexture arm AND webgl_caps_worker_divergence (consistent digests) —
+    // but leaves the renderbuffer/viewport at the real 8192 backend, which no string patch of maxTexture repairs.
+    var _mvp = parseInt(String((wg.caps && wg.caps.maxViewport) || ""), 10);
+    if (wg.caps && wg.renderer
+        && /Adreno \\(TM\\) [6-8][0-9]{2}|Mali-G(?:7[0-9]|8[0-9])|Immortalis/i.test(wg.renderer)
+        && ((wg.caps.maxTexture && wg.caps.maxTexture < 16384)
+            || (wg.caps.maxRenderbuffer && wg.caps.maxRenderbuffer < 16384)
+            || (_mvp && _mvp < 16384))) {
       sigs.push(S("browser", "mobile_gpu_caps_mismatch", true));
     }
     // A mobile UA must render on a MOBILE GPU family: real phones/tablets use Adreno (Qualcomm), Mali/Immortalis

@@ -885,6 +885,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   in-sandbox terminus (realm divergence covered; actual-rendering is external-data). 16 mobile rungs. Still-open
   frontier: Samsung model↔GPU (region allowed-set), WebGPU adapter caps↔renderer WHEN an adapter is present, and
   the actual-GPU-rendering terminus if a real-GPU reference corpus becomes available.
+- **[LOOP MOBILE hardening] mobile_gpu_caps_mismatch extended to the full cap TRIAD; WebGPU tested-dead
+  (2026-07-02, grounded).** First TESTED (not reasoned) the WebGPU-adapter lead: DEAD — the container exposes NO
+  WebGPU adapter headless OR headful (both report webgpu_no_adapter), so there is nothing to cross-check; grounded
+  dead-end. Then closed a real both-realm-fork gap in the GPU-caps check: it keyed ONLY on MAX_TEXTURE_SIZE, so a
+  fork that fakes JUST maxTexture (to 16384) in both realms evaded it AND webgl_caps_worker_divergence (the digests
+  stay consistent across realms) while leaving MAX_RENDERBUFFER_SIZE / MAX_VIEWPORT_DIMS at the real 8192. Extended
+  mobile_gpu_caps_mismatch to check the FULL triad (any of the three < 16384 for a high-end mobile GPU string).
+  GROUNDED LIVE the distinctive case: KS_RENDERER='Adreno 730' + KS_FAKE_MAXTEX (added to the evader — patches
+  MAX_TEXTURE_SIZE to 16384) reports webgl_max_texture=16384 (faked) yet STILL FIRES via the renderbuffer/viewport
+  arm (rb 8192). A fork must now fake the ENTIRE limit vector consistently across BOTH realms to evade — which
+  converges on the actual-rendering terminus (can't allocate a real 16384 surface on an 8192 backend). 16 rungs +
+  this hardening. Distinguished grounded-dead-end (WebGPU: no adapter) from the closable gap (caps triad) and
+  tested both — the discipline the premature close lacked.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
