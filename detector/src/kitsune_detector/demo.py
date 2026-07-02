@@ -2114,6 +2114,17 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // a phone UA but no Emulation.setTouchEmulation). Scoped to the Mobile/iPhone/iPad tokens, NOT bare
     // "Android" (which also matches touch-less Android TV / Auto). Complements maxtouch_desktop (the inverse).
     if ((navigator.maxTouchPoints || 0) === 0 && /iPhone|iPad|iPod|Mobile/i.test(ua)) sigs.push(S("browser", "mobile_no_touch", true));
+    // Spatial DEVICE<->screen coherence (FP-Inconsistent IMC 2025, the joint-manifold half of G1/X5): an iOS UA
+    // is a specific hardware family whose logical screen is device-fixed. NO real iPhone/iPad exceeds ~1376 CSS
+    // px in either dimension (largest is iPad Pro 12.9" at 1024x1366) — so an iOS UA whose max(screen dim) > 1400
+    // is a desktop screen wearing an iPhone/iPad UA (the touch-faking mobile spoof that beats mobile_no_touch by
+    // setting maxTouchPoints but forgets to shrink the screen to a real iOS geometry). FP-safe by the hard
+    // hardware bound (no iOS device is that large; grounded in the Apple device screen corpus); convicts the
+    // desktop-faking-iOS whatever its touch spoof. The exact per-model set (a value between 1400 and a real iPad)
+    // needs the maintained device DB — this is the bulletproof oversized slice.
+    if (/iPhone|iPad|iPod/i.test(ua) && Math.max(screen.width || 0, screen.height || 0) > 1400) {
+      sigs.push(S("browser", "ios_screen_oversized", true));
+    }
     // Genuine mobile device = a mobile UA token AND real touch. The detector gates the mouse-biomech
     // behavioral FLOORS off for these (power-law / straightness / velocity-CV / mouse-entropy / coalesced-
     // absent are mouse-calibrated and false-positive on a real finger swipe — G10). NOT set for a mobile UA

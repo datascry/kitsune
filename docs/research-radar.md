@@ -304,6 +304,24 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   real-traffic calibration — but the STRUCTURAL tell is grounded and it catches the userspace-stack-forger class
   (a browser routed through the os-spoof proxy accumulates far more than 12 static-window segments). Net: a real,
   grounded blue advance on the deepest layer — the forger's one structural residual, now detected.
+- **The environment JOINT-manifold axis is NOT saturated — device↔screen coherence, X5 iOS half SHIPPED
+  (2026-07-02, GROUNDED live).** The environment is a joint distribution, not a bag of attributes: real devices
+  occupy a thin manifold (an iPhone-15 is ONE exact tuple of screen/DPR/GPU/cores/…). The detector today checks
+  mostly per-attribute MARGINALS (`macos_dpr`, `screen_impossible`, `mobile_no_touch`, `pointer_touch`) + a few
+  pairwise cross-checks; the full JOINT (device↔screen↔DPR↔GPU↔cores) is under-built — the non-saturated frontier
+  a "coherent per-OS environment randomizer" (the red vision) targets. FOUND real data (Apple device-screen
+  corpus: iosref.com/res, ios-resolution.com — 137 iPhones + 52 iPads; largest real iOS logical screen is iPad
+  Pro 12.9\" at 1024x1366). Shipped the FP-safe slice of X5: `br.ios_screen_oversized` (collector: iOS UA +
+  max(screen dim) > 1400 → forged; convicting, w0.7) — the joint-coherence RATCHET that forces a mobile spoof to
+  get the SCREEN right too, not just touch (it catches the touch-faking iOS spoof that beats `mobile_no_touch`).
+  GROUNDED LIVE, the exact marginal-vs-joint split: a real Chromium given an iPhone UA + a DESKTOP screen
+  (1920x1080, a MARGINAL randomizer) FIRES it; the same UA + a REAL iPhone screen (393x852, a JOINT randomizer)
+  is SILENT. So a coherent joint randomizer evades and a marginal one is caught — proving the vision's core claim
+  AND the detection response: the frontier is the FULL per-OS joint manifold (desktop + mobile), gated on real
+  device distributions (screen/DPR/GPU-family/cores per OS). Each new joint constraint (device↔screen shipped;
+  next: screen↔DPR-for-OS, cores↔device-class, GPU-family↔model) ratchets the coherence bar up; the red vision
+  and the blue frontier are the same manifold seen from two sides, both data-driven. NOT saturated — routed the
+  full device-DB joint checks (the sub-1400 per-model set, desktop resolutions, DPR/cores/GPU joints) to the queue.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
