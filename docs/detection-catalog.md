@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **158 rules**: 114 active · 38 experimental · 6 retired; 106 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **159 rules**: 115 active · 38 experimental · 6 retired; 107 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (39)
 
@@ -54,7 +54,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (116)
+### browser layer (117)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -86,6 +86,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.timezone_offset_vs_intl` | coherence✦ | present | 0.65 | active | getTimezoneOffset disagrees with the Intl IANA timezone's actual offset |
 | `br.timezone_worker_vs_main` | coherence✦ | present | 0.7 | active | Timezone differs between the main thread and a Web Worker |
 | `br.ua_platform_vs_ch_platform` | coherence✦ | not_equal | 0.7 | active | navigator/UA platform contradicts Sec-CH-UA-Platform |
+| `br.uadata_worker_divergence` | coherence✦ | present | 0.8 | active | navigator.userAgentData differs between the main thread and a Worker |
 | `br.vendor_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.vendor implies an engine that contradicts the UA |
 | `br.voice_os_vs_ua` | coherence✦ | not_equal | 0.75 | active | Installed TTS voices imply an OS that contradicts the UA platform |
 | `br.webgl_caps_worker_vs_main` | coherence✦ | present | 0.6 | experimental | WebGL capability vector (limits + extensions) differs between the main thread and a Worker OffscreenCanvas |

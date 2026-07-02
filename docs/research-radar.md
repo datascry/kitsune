@@ -413,6 +413,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   LIVE with a red-verify hook (stealth KS_SPOOF_DM=0.25, main-only): devicememory_worker_divergence FIRES while
   the general worker_divergence stays FALSE — proving the gap was real; the un-patched browser is SILENT. The
   realm-coherence axis (languages/webgl/canvas/timezone worker-divergence) now covers deviceMemory too. 7 rungs.
+- **[LOOP B-uad] br.uadata_worker_divergence — realm coherence for the CH-UA object, the #1 spoof surface,
+  grounded (2026-07-02).** navigator.userAgentData (platform/mobile/brands) is THE target of OS-spoof tooling and
+  is exposed in WorkerNavigator too (Blink) — but the general worker_divergence never probed it. A main-only
+  Object.defineProperty(navigator,'userAgentData',…) (the standard OS-fake) never reaches Worker scope → diverges.
+  Added platform|mobile to the worker probe + a divergence rule (convicting, w0.8), DOUBLE FP-guarded (the 'u'
+  sentinel for Firefox/Safari both-absent + a wn.uad!=='u' gate so a browser whose worker lacks userAgentData
+  never false-fires). GROUNDED LIVE (stealth KS_SPOOF_UADATA=Windows, main-only): uadata_worker_divergence FIRES
+  — which also CONFIRMS the Chromium worker exposes userAgentData — while the general worker_divergence stays
+  FALSE (the gap); the un-patched browser is SILENT. Realm coherence now covers the three Blink WorkerNavigator
+  surfaces a main-only OS-spoof leaves un-synced: deviceMemory, userAgentData, plus the original ua/hw/platform.
+  8 rungs, 4 axes. The realm axis catches the naive JS-patch OS-spoof at its root — the reason per-node OS faking
+  needs engine-level (camoufox), not addInitScript.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

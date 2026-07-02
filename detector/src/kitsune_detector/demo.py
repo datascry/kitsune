@@ -1649,6 +1649,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         var code = 'onmessage=function(){postMessage({ua:navigator.userAgent,' +
           'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
           'dm:(navigator.deviceMemory===undefined?"u":navigator.deviceMemory),' +
+          'uad:(navigator.userAgentData?(navigator.userAgentData.platform+"|"+navigator.userAgentData.mobile):"u"),' +
           'lang:(navigator.languages||[]).join(","),href:self.location.href})}';
         var u = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
         var w = new Worker(u);
@@ -2471,6 +2472,16 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var mdm = (navigator.deviceMemory === undefined ? "u" : navigator.deviceMemory);
     if (wn && wn.dm !== undefined && wn.dm !== mdm) {
       sigs.push(S("browser", "devicememory_worker_divergence", true));
+    }
+    // userAgentData realm coherence: navigator.userAgentData (the CH-UA object — the #1 target of OS-spoof tools)
+    // is exposed in WorkerNavigator too (Blink). A main-thread-only patch of navigator.userAgentData (to fake the
+    // platform/mobile the JS-visible Client Hints report) never reaches Worker scope → the two disagree. Compares
+    // platform+mobile. FP-safe via the "u" sentinel: BOTH realms lacking userAgentData (Firefox/Safari) compare
+    // equal; a real Chromium reports the same platform|mobile in both realms → silent. Only fires if the worker
+    // ALSO has userAgentData but with a different value than a patched main — a pure main-only-spoof signature.
+    var muad = (navigator.userAgentData ? (navigator.userAgentData.platform + "|" + navigator.userAgentData.mobile) : "u");
+    if (wn && wn.uad !== undefined && wn.uad !== "u" && wn.uad !== muad) {
+      sigs.push(S("browser", "uadata_worker_divergence", true));
     }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker OffscreenCanvas
     // (one physical GPU). A getParameter spoof patches the main realm but never the Worker → divergence.
