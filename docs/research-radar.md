@@ -679,6 +679,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   cannot reach the worker (→ br.worker_source_rewritten if it tries). Alternatively a getHighEntropyValues
   NATIVENESS check (the override's toString lacks [native code]) — but a Proxy can spoof that, so the worker-realm
   check is the robust one, consistent with the whole session's realm-backed-durability finding. 5 mobile rungs.
+- **[LOOP MOBILE B-workermodel] br.uadata_model_worker_divergence — closes the model ratchet at the worker realm
+  (2026-07-02, grounded).** The durable blue counter to R-jsmodel, exactly as predicted. Made the worker probe
+  ASYNC and had it resolve navigator.userAgentData.getHighEntropyValues(['model']) — the Worker gets the REAL
+  hardware model (empty on a desktop faking Android). A main-thread prototype override that forges the model never
+  reaches Worker scope, so main (forged 'Pixel 5') and worker (real '') disagree → fires. GROUNDED LIVE, the
+  decisive close: KS_DEVICE='Pixel 5' + KS_FORGE_MODEL + KS_FORGE_JS_MODEL (which clear BOTH the header and main-JS
+  model checks) now trips uadata_model_worker_divergence; an un-forged Pixel (both realms empty) does NOT. The
+  mobile CH-UA-Model is now a COMPLETE 3-surface ratchet — header (route-forgeable) + main-JS (prototype-forgeable)
+  + WORKER (realm-backed, only a real device or a self-incriminating worker-source rewrite fills it). This mirrors
+  the desktop deviceMemory/userAgentData worker-divergence rungs exactly: the durable edge is the WORKER REALM a
+  main-thread patch cannot reach. Mobile red⇄blue: 6 tightly-interlocked rungs, the model joint now closed to its
+  realm floor — a coherent Android spoof must present a REAL device's model across all three surfaces (which the
+  KS_DEVICE emulation cannot), or fall to the worker check. The mobile axis is reproducing the desktop convergence.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
