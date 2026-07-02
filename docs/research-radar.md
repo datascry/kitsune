@@ -485,6 +485,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   can't fix), plus the floor (media/voices/webrtc → KS_PROVISION) and net.tcp_os_vs_ua (→ os-spoof macos proxy).
   So engine-level beats JS-patch on platform+DPR, but font_mac_internal is the macOS residual that even engine-
   level leaves. 12 grounded rungs. The arms race: JS-patch < engine-level < (engine-level + curated real fonts).
+- **[LOOP R-font] curate camoufox's macOS fonts — evades font_mac_internal, macOS device-identity COMPLETE
+  (2026-07-02, grounded).** The predicted next step from R-mac: strip the 49 dot-prefixed internal fonts
+  (.Aqua Kana, .Apple Color Emoji UI, …) from camoufox's bundled fonts.json `mac` list (573→524 fonts) via a
+  Dockerfile build step — a real Mac HIDES these from web content, so exposing them was the leak br.font_mac_internal
+  keyed on. GROUNDED LIVE: camoufox KS_MACOS now shows font_mac_internal FALSE **and** font_os_vs_ua FALSE (the
+  ~524 non-dot fonts keep the font-derived OS macOS-coherent) — the dot-leak closed without breaking OS coherence.
+  The macOS DEVICE-IDENTITY axis is now FULLY coherent: platform (all realms, R-mac) + DPR (Retina, R-mac) +
+  fonts (R-font). Remaining camoufox-macOS tells are ALL other axes: behavioral (bh.power_law/synthetic → KS_BEHAVE/
+  KS_REAL_INPUT), floor (media/voices/webrtc → KS_PROVISION), webgl2_missing (camoufox headless GL), net.tcp_os_vs_ua
+  (→ os-spoof macos proxy). BLUE consequence: br.font_mac_internal (present-dot-font check) is now EVADABLE by
+  curation — the durable font tell must become a MISSING-expected-font or font-METRIC check, not a present-internal-
+  font one. 13 grounded rungs. Next blue: a font tell a curated list can't satisfy (metric-based or expected-present).
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

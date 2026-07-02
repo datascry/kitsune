@@ -6,6 +6,11 @@ FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
 # Playwright-bundled binary matching the pip-pulled Playwright version, so install it explicitly.
 RUN pip install --no-cache-dir "camoufox[geoip]" && python -m camoufox fetch \
     && python -m playwright install firefox
+# Camoufox's bundled macOS font list exposes 49 dot-prefixed INTERNAL system fonts (.Aqua Kana, .Apple Color
+# Emoji UI, …) that a real Mac HIDES from web content — a font-enumeration leak that trips br.font_mac_internal
+# under KS_MACOS. Strip them so the macOS profile's web-measurable font set matches a real Mac (the ~524 non-dot
+# fonts remain, so font_os_vs_ua stays macOS-coherent). The faithful engine-bundled-font fix.
+RUN python -c "import camoufox, os, json; p=os.path.join(os.path.dirname(camoufox.__file__),'fonts.json'); d=json.load(open(p)); d['mac']=[f for f in d['mac'] if not f.startswith('.')]; json.dump(d, open(p,'w'))"
 # xdotool = real XTEST input (KS_REAL_INPUT); pulseaudio/espeak-ng/speech-dispatcher/dbus = a provisioned
 # ENVIRONMENT (KS_PROVISION: real audio devices + TTS voices) so the environment-floor tells go silent
 # coherently — the "become a real desktop" evasion vs the JS spoof coherence catches. Base ships Xvfb.
