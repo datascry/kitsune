@@ -405,6 +405,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.browser, "mobile_pointer_hover_desktop", True, Source.collector)], "br.mobile_pointer_hover_desktop"),
         ([(Layer.browser, "android_mobile_dpr1", True, Source.collector)], "br.android_mobile_dpr1"),
         ([(Layer.browser, "mobile_gpu_not_mobile", True, Source.collector)], "br.mobile_gpu_not_mobile"),
+        ([(Layer.browser, "mobile_gpu_caps_mismatch", True, Source.collector)], "br.mobile_gpu_caps_mismatch"),
         ([(Layer.browser, "mobile_cores_high", True, Source.collector)], "br.mobile_cores_high"),
         (
             [(Layer.browser, "android_model_screen_incoherent", True, Source.collector)],
