@@ -552,6 +552,16 @@ if (process.env.KS_SPOOF_DM) {
     Object.defineProperty(Navigator.prototype, "deviceMemory", { get: () => v, configurable: true });
   }, Number(process.env.KS_SPOOF_DM));
 }
+// KS_SPOOF_UADATA=<platform>: a NAIVE main-thread-only navigator.userAgentData override (the standard OS-spoof
+// move, which never reaches Worker scope) — the red probe for br.uadata_worker_divergence.
+if (process.env.KS_SPOOF_UADATA) {
+  await context.addInitScript((plat) => {
+    Object.defineProperty(Navigator.prototype, "userAgentData", {
+      get: () => ({ platform: plat, mobile: false, brands: [] }),
+      configurable: true,
+    });
+  }, process.env.KS_SPOOF_UADATA);
+}
 if (FLOOR_SPOOF) {
   // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are
   // given Linux-desktop (espeak-style) names so they are coherent with the Linux UA — no Microsoft/Apple

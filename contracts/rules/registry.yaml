@@ -1481,6 +1481,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Realm coherence for the Device Memory API — the gap the general br.worker_divergence missed. navigator.deviceMemory is exposed in WorkerNavigator too (Blink), yet the worker probe only reported ua/hardwareConcurrency/platform, so a main-thread-ONLY patch of navigator.deviceMemory (a spoofer inflating RAM to look like a higher-end device, or hiding a low-memory VM/container) survived every realm check. This adds deviceMemory to the worker postMessage and fires when the worker's value disagrees with the main thread's. A page-added init script (Playwright/Puppeteer addInitScript, CDP addScriptToEvaluateOnNewDocument) does NOT run in Worker scope, so a main-only Object.defineProperty patch diverges here — the same context-isolation gap br.languages_worker_divergence / br.webgl_worker_divergence exploit, extended to deviceMemory. FP-SAFE via the 'u' sentinel: both realms undefined (real Firefox/Safari — no Device Memory API) compare EQUAL and never fire; a real Chromium reports ONE value in both realms and is silent; only a main-only spoof diverges. Convicting (w0.8 — a realm divergence is a hard tamper signal). GROUNDED LIVE: stealth with a main-only navigator.deviceMemory override (KS_SPOOF_DM) fires devicememory_worker_divergence; the same browser without the patch is SILENT."
 
+  - id: br.uadata_worker_divergence
+    title: navigator.userAgentData differs between the main thread and a Worker
+    layers: [browser]
+    reads: [browser.uadata_worker_divergence]
+    predicate: present
+    category: coherence
+    weight: 0.8
+    status: active
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Realm coherence for the User-Agent Client Hints object — the #1 target of OS-spoof tooling. navigator.userAgentData (platform, mobile, brands) is exposed in WorkerNavigator too (Blink), so a main-thread-ONLY patch of it (the standard way a tool fakes the JS-visible platform: Object.defineProperty(navigator,'userAgentData',...)) never reaches Worker scope and diverges. Compares platform|mobile across realms. A page init script (addInitScript / CDP addScriptToEvaluateOnNewDocument) does NOT run in Workers, so a main-only userAgentData override is caught here — the same context-isolation gap as br.languages_worker_divergence / br.devicememory_worker_divergence, extended to the highest-value spoof surface. FP-SAFE by TWO guards: the 'u' sentinel (both realms lacking userAgentData — Firefox/Safari — compare equal → silent) AND the wn.uad !== 'u' gate (fires only when the WORKER actually exposes userAgentData, so a browser whose worker lacks it never false-fires); a real Chromium reports the same platform|mobile in both realms → silent. Convicting (w0.8). GROUNDED LIVE: stealth with a main-only navigator.userAgentData override (KS_SPOOF_UADATA faking platform='Windows') fires uadata_worker_divergence — confirming the Chromium worker DOES expose userAgentData; the un-patched browser is SILENT."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty
