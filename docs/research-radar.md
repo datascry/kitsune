@@ -1086,6 +1086,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   corroborating layer. So the one genuinely-unsafe constant (16384) was the caps bug (fixed); the rest are margined
   heuristics backstopped by the constant-free probes. 23 rungs + this audit: the ruleset's FP-safety architecture
   is sound and now explicitly documented — value-heuristics corroborate, actual-behaviour probes convict."
+- **[LOOP MOBILE — grounded frontier-dry #1] WebGL2 caps yield no new in-sandbox discriminator (2026-07-02).**
+  A genuine frontier attempt on the 'other WebGL caps' lead, TESTED not reasoned: grounded the container's (SwiftShader)
+  WebGL2 caps — MAX_SAMPLES=4 (matches mobile's standard 4x MSAA), MAX_3D_TEXTURE_SIZE=2048 + MAX_ARRAY_TEXTURE_
+  LAYERS=2048 (match mobile), MAX_VERTEX_UNIFORM_BLOCKS=14 (matches), MAX_FRAGMENT_UNIFORM_COMPONENTS=16384 (= 4096
+  vectors, the SAME software-uniform signal br.mobile_gpu_uniforms_software already catches). SwiftShader mimics
+  mobile on EVERY discriminating WebGL2 cap. The one direction that COULD catch the residual desktop-GPU fork
+  (mobile GPU string + MAX_SAMPLES > 4, since desktop GPUs are 8/16x) is BOTH ungroundable in-sandbox (SwiftShader
+  is 4, no real desktop GPU to test) AND FP-uncertain (mobile MSAA ceiling unverified — the same unverified-constant
+  trap the caps fix just corrected). Nothing shipped. This is a GENUINE frontier-dry: the distinct in-sandbox
+  surfaces are built, and the remaining residual (a real-desktop-GPU fork claiming a matching-caps mobile GPU) is
+  EXTERNAL-DATA-BOUND (needs an actual-rendering reference corpus or a real desktop GPU), not a reasoned dismissal.
+  23 rungs stand. HONEST STATUS: this is frontier-dry #1. If the next genuine attempt is also dry, that is the
+  EARNED close — reached after exhaustively testing the GPU-substrate/manifold/web-API/realm surfaces, with the
+  residuals grounded as external-data-bound, NOT the premature reasoned-close of before."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
