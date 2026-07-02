@@ -41,12 +41,21 @@ coherently:
 
 - **chromium** — nodriver / zendriver / stealth / patchright → `windows-chrome`, `macos-chrome`, …
 - **firefox** — camoufox → `linux-firefox`, `macos-firefox`, `windows-firefox`
-- **webkit** — Safari/iOS → `ios-safari`, `macos-safari` (no in-sandbox WebKit driver)
+- **webkit** — Safari/iOS → `ios-safari`, `macos-safari` — now driven by `stealth`'s `KS_ENGINE=webkit` path
+  (Playwright's real WebKit build); `KS_ENGINE=webkit KS_DEVICE="iPhone 15" KS_PROXY=socks5://<proxy>:1080`
 
 Grounded: a Chromium browser (stealth) through a `windows-chrome` proxy routed with the collector running and
 `tcp_kernel=windows`; camoufox through a `macos-firefox` proxy came through with `tcp_kernel=darwin` matching
 its macOS-Firefox UA and `net.tcp_os_vs_ua` **silent**. Both browser families route — os-spoof is not tied to
 camoufox.
+
+**WebKit iOS composition (2026-07-02).** A real WebKit `iPhone 15` (stealth `KS_ENGINE=webkit`) routed through an
+`ios-safari` proxy: `tcp_kernel=darwin`, `req_count=122` (the proxy carried WebKit's FULL session — TLS + h2 +
+the collector's worker/fetch), and **`net.tcp_os_vs_ua` cleared** (kernel now matches the iOS UA). Residual:
+`net.tls_grease_vs_ua` — proxy mode passes the browser's OWN TLS end-to-end, and Playwright's Linux WebKit
+ClientHello ≠ real iOS Safari's GREASE/JA4. Clearing it needs a uTLS `HelloIOS` re-origination in front (the
+`chain-mitm` front), not just the kernel forge. So the composed iOS node is coherent at kernel + browser +
+screen/DPR/touch; the last network residual is the TLS fingerprint, which the kernel-only proxy can't reach.
 
 **Residual:** the hand-rolled TCP is happy-path (no retransmit, static flow control) — robust enough for a
 Chromium page load, but camoufox's collector POST didn't always land through it. A production morphing node
