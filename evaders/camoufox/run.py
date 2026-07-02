@@ -350,6 +350,12 @@ def main() -> None:
         kwargs.update(HARDENED_KW)
     if MACOS:
         kwargs["os"] = "macos"
+        # Real macOS is Retina (devicePixelRatio >= 2); Camoufox headless reports DPR 1 → br.macos_dpr1. Pin DPR 2
+        # at the ENGINE level (all realms, unlike a JS patch) so the macOS profile is coherent on the backing scale
+        # too — evades macos_dpr1, the DPR half of the device manifold. Merges with any existing config.
+        _cfg: dict[str, object] = dict(kwargs.get("config") or {})  # type: ignore[arg-type]
+        _cfg["window.devicePixelRatio"] = 2.0
+        kwargs["config"] = _cfg
     if os.environ.get("KS_NOWEBRTC") == "1":
         # The red-team COUNTER to coordination.shared_real_ip: block WebRTC so the proxied fleet leaks NO origin
         # IP → no webrtc_public_ip → no same-origin signal → the fleet drops from `fleet` to `candidate`. The cost

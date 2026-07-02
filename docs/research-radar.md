@@ -472,6 +472,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   stop condition; the ladder continues (this is a documented negative, not a shipped-broken rule). Lesson: the
   edge's packet view here is INBOUND-ONLY, so TCP-behaviour tells must be derivable from client→edge packets
   alone (net.tcp_static_window works because window auto-tuning IS inbound-visible; ACK cadence largely is not).
+- **[LOOP R-mac] camoufox engine-level macOS spoof beats the realm-backed platform check + macos_dpr1 fix
+  (2026-07-02, grounded).** The red side of the R3++ insight: JS-patch (addInitScript) can't fake navigator.platform
+  without tripping worker_divergence, but an ENGINE-LEVEL browser can — camoufox's os='macos' spoofs platform in
+  every realm. GROUNDED LIVE: camoufox KS_MACOS shows platform-realm tells [] (navplatform_vs_ua,
+  ua_platform_vs_ch_platform, worker_divergence ALL silent) — the exact check R3++ (Chromium/WebKit JS-patch)
+  cannot evade. It was still caught by br.macos_dpr1 (headless DPR 1, real macOS is Retina ≥2), so added an
+  engine-level Retina DPR (config window.devicePixelRatio=2.0 on the macOS path) → GROUNDED: macos_dpr1 now
+  CLEARS with no new tell. The camoufox macOS node is now coherent on platform (all realms) + DPR — the device-
+  identity axis for macOS. Residual, the DURABLE macOS catch: br.font_mac_internal (camoufox's fonts.json ships
+  49 dot-prefixed internal system fonts a real Mac HIDES — an engine-bundled-font leak the DPR/platform spoof
+  can't fix), plus the floor (media/voices/webrtc → KS_PROVISION) and net.tcp_os_vs_ua (→ os-spoof macos proxy).
+  So engine-level beats JS-patch on platform+DPR, but font_mac_internal is the macOS residual that even engine-
+  level leaves. 12 grounded rungs. The arms race: JS-patch < engine-level < (engine-level + curated real fonts).
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
