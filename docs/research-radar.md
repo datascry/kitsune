@@ -237,6 +237,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   not the client's — the deployment caveat that makes this tell direct-connection-only).
   Same pattern as the whole session: everything above the kernel is spoofable/provisionable; the kernel TCP
   stack is the durable OS fingerprint, and forging it means becoming (or tunnelling through) the real OS.
+- **The SYN wall IS crossable — userspace TCP + uTLS forges the kernel, GROUNDED live (2026-07-02).** Built
+  `evaders/os-spoof`: a hand-rolled happy-path userspace TCP stack over `AF_PACKET` (gopacket) that emits a
+  caller-chosen SYN option order, with uTLS's Chrome ClientHello layered on top (uTLS accepts any net.Conn) and
+  an HTTP/1.1 request, in a `NET_RAW`+`NET_ADMIN` container that drops the kernel's RSTs. Result: the forged
+  Windows SYN (`64240_2-1-3-1-1-4_1460_8` = `mss,nop,ws,nop,nop,sack`) made the edge classify **`tcp_kernel=
+  windows`**, matching the Windows UA, so **`net.tcp_os_vs_ua` went SILENT** — while the control (normal kernel
+  TCP + same Windows UA) classified `tcp_kernel=linux` and the rule FIRED. So the precise answer to "can uTLS
+  do it": uTLS ALONE can't (it runs over the kernel's TCP), but **uTLS + a userspace TCP stack** can — the SYN
+  forge is the stack, not uTLS. The tool is a raw HTTP client so it still trips the no-browser tells
+  (`net.no_js_execution`/`sec_fetch_vs_ua`/`accept_encoding_vs_ua`); a COHERENT full OS spoof routes a real
+  browser (camoufox Windows profile + `KS_PROVISION`) THROUGH this stack so every layer tells one OS story. The
+  blue residual moves DOWN a layer: from the SYN option order (now forgeable) to deeper TCP *behavior* (window
+  dynamics, retransmit timers) that a happy-path userspace stack doesn't reproduce — a much harder fingerprint,
+  and the natural next blue rung if the edge ever needs to catch a userspace-stack forger. Net: the OS-coherence
+  wall is not absolute; it costs a userspace TCP stack + raw-socket privileges — real, but buildable, and now built.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
