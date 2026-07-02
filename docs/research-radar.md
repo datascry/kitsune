@@ -348,6 +348,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   — so the composition CONFIRMS the human morphing vehicle is camoufox+provision, while the stealth+KS_DEVICE node
   contributes coherent-device diversity. The morphing-HUMAN fleet = camoufox+provision (human floor, engine-level)
   × per-OS device coherence; the Chromium path is diversity, not human, until a real GPU/headful-TTS is present.
+- **[LOOP B1] device↔DPR coherence — br.ios_dpr_incoherent SHIPPED, grounded (2026-07-02).** The DPR sibling of
+  ios_screen_oversized on the same iOS manifold: iOS renders at a device-FIXED backing scale — every real
+  iPhone/iPad reports window.devicePixelRatio of EXACTLY 2 or 3 (2 for iPad + SE/older; 3 for modern/Plus/mini —
+  the 6-Plus and 12/13-mini downsample but REPORT integer 3; no fractional/1x iOS display). Collector emits
+  ios_dpr_incoherent when an iOS UA's DPR ∉ {2,3} → rule br.ios_dpr_incoherent (coherence, convicting, w0.7),
+  FP-safe by the Apple hardware bound and distinct from br.devicepixelratio_anomaly (finite-only). Added KS_DPR
+  (deviceScaleFactor) to the stealth runner to red-verify. GROUNDED LIVE: iPhone UA at the container-default
+  DPR 1 (KS_DPR unset) FIRES; the same UA at a real iOS DPR (KS_DPR=3) is SILENT. Together ios_screen_oversized
+  (screen) + ios_dpr_incoherent (backing scale) force a coherent iOS spoof to get BOTH right — two rungs of the
+  ratchet now on the iOS device manifold. Next blue rungs on this axis: device-class↔cores/memory (B2),
+  GPU-family↔model (B3), the sub-1400 per-model iOS screen SET (B4).
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

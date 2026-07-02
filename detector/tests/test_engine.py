@@ -398,6 +398,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.browser, "automation_globals", True, Source.collector)], "br.automation_globals"),
         ([(Layer.browser, "screen_impossible", True, Source.collector)], "br.screen_impossible"),
         ([(Layer.browser, "ios_screen_oversized", True, Source.collector)], "br.ios_screen_oversized"),
+        ([(Layer.browser, "ios_dpr_incoherent", True, Source.collector)], "br.ios_dpr_incoherent"),
         ([(Layer.network, "ch_ua_mobile_mismatch", True, Source.edge)], "net.ch_ua_mobile_vs_ua"),
         (
             [(Layer.network, "ch_ua_no_grease_brand", True, Source.edge)],

@@ -2125,6 +2125,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/iPhone|iPad|iPod/i.test(ua) && Math.max(screen.width || 0, screen.height || 0) > 1400) {
       sigs.push(S("browser", "ios_screen_oversized", true));
     }
+    // DEVICE<->DPR coherence (the B1 joint constraint, sibling of ios_screen_oversized): iOS renders at a
+    // device-FIXED backing scale — every real iPhone/iPad reports window.devicePixelRatio of EXACTLY 2 or 3
+    // (2 for iPad + SE/older iPhones, 3 for modern/Plus/mini iPhones; Apple ships no fractional or 1x iOS
+    // display). An iOS UA with DPR not in {2,3} — a desktop faking iOS reports DPR 1; a sloppy emulator a
+    // fractional value — is off the manifold. FP-safe by the hard Apple hardware bound (grounded in the device
+    // corpus); forces a coherent iOS spoof to get the DPR right too, not just the screen and touch.
+    if (/iPhone|iPad|iPod/i.test(ua) && window.devicePixelRatio > 0 && window.devicePixelRatio !== 2 && window.devicePixelRatio !== 3) {
+      sigs.push(S("browser", "ios_dpr_incoherent", true));
+    }
     // Genuine mobile device = a mobile UA token AND real touch. The detector gates the mouse-biomech
     // behavioral FLOORS off for these (power-law / straightness / velocity-CV / mouse-entropy / coalesced-
     // absent are mouse-calibrated and false-positive on a real finger swipe — G10). NOT set for a mobile UA
