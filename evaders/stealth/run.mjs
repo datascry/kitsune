@@ -552,6 +552,24 @@ if (KS_ENGINE === "webkit" && ksDevice && deviceOpts.isMobile) {
     }
   });
 }
+// KS_RENDERER=<string>: patch the WebGL UNMASKED_RENDERER to an arbitrary string (main realm) — the red probe
+// for the mobile GPU caps check. Set it to a high-end mobile GPU (e.g. an Adreno 730 string) over the container's
+// SwiftShader backend: the string reads as a real mobile GPU (evading mobile_gpu_not_mobile) but MAX_TEXTURE_SIZE
+// stays SwiftShader's 8192, which br.mobile_gpu_caps_mismatch catches — the source-fork's unspoofable-silicon tell.
+if (process.env.KS_RENDERER) {
+  await context.addInitScript((rndr) => {
+    const patch = (proto) => {
+      if (!proto || !proto.getParameter) return;
+      const gp = proto.getParameter;
+      proto.getParameter = function (p) {
+        if (p === 37446) return rndr;
+        return gp.call(this, p);
+      };
+    };
+    patch(window.WebGLRenderingContext && WebGLRenderingContext.prototype);
+    patch(window.WebGL2RenderingContext && WebGL2RenderingContext.prototype);
+  }, process.env.KS_RENDERER);
+}
 // KS_SPOOF_DM=<n>: a deliberately NAIVE main-thread-only navigator.deviceMemory override (addInitScript does
 // not run in Worker scope) — the red probe for br.devicememory_worker_divergence. A coherent tool leaves it unset.
 if (process.env.KS_SPOOF_DM) {

@@ -540,6 +540,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Core-count realism for a mobile UA. A real phone (a 'Mobile' token) exposes at most ~8 CPU cores to navigator.hardwareConcurrency — mobile SoCs are octa-core at most (big.LITTLE 4+4 / 1+3+4), and iOS caps lower (A-series 6). A 'Mobile' UA reporting hardwareConcurrency > 8 is a desktop wearing a phone UA that never shrank the core count. CRUCIAL: Playwright/CDP device emulation sets the UA + screen + touch + DPR but does NOT spoof hardwareConcurrency (it reads the REAL host), so even a FULL device emulation (KS_DEVICE=Pixel) on a many-core host LEAKS the host core count — this catches the emulated Android node, not just the UA-only spoof. FP-SAFE: no current phone exposes > 8 web cores, and the check is gated on the 'Mobile' token (phones/iPhones, NOT M-series iPads which run desktop-mode Safari without the token and can have 8-10 cores). EXPERIMENTAL (w0.5). The RED counter is spoofing navigator.hardwareConcurrency <= 8, which main-only is caught by the worker realm (the collector's Blob-worker hw probe → worker_divergence) and whose worker-scope escalation trips worker_constructor_tampered / worker_source_rewritten — so a coherent low core count needs a real <=8-core device, realm-backed like the model ratchet. GROUNDED LIVE: KS_DEVICE='Pixel 5' on a 12-core host FIRES mobile_cores_high (hardware_concurrency 12 under a phone UA); a real phone (<=8) does not fire by construction."
 
+  - id: br.mobile_gpu_caps_mismatch
+    title: High-end mobile GPU string but MAX_TEXTURE_SIZE below the 16384 mobile floor
+    layers: [browser]
+    reads: [browser.mobile_gpu_caps_mismatch]
+    predicate: present
+    weight: 0.7
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "The MOBILE analog of br.webgl_renderer_caps_mismatch (which patterns ONLY desktop high-end GPUs: RTX/Radeon RX 6000+/Apple M/Intel Arc) — the gap that check leaves on the mobile axis. A high-end mobile GPU (Adreno 6xx-8xx / Mali-G7x-G8x / Immortalis) exposes MAX_TEXTURE_SIZE 16384; a renderer STRING naming one with maxTexture < 16384 is spoofed over a lesser/SwiftShader (8192) backend. This is the SOURCE-LEVEL-FORK case that slips past EVERY other mobile GPU rung: br.mobile_gpu_not_mobile passes (the string IS a mobile GPU family), br.webgl_software passes (the string is not software), and a BOTH-realm fork (patching the renderer in main AND worker) evades br.webgl_worker_divergence — yet the silicon's texture limit cannot be string-patched in any realm. CONVICTING (w0.7): the claimed mobile GPU contradicts the hardware it runs on. FP-SAFE: real high-end mobile GPUs are >=16384 (universal on Adreno 6xx+/modern Mali); an honest lesser mobile GPU carries a lesser renderer string (Adreno 3xx/4xx, Mali-T) OUT of the high-end pattern, and an honest software renderer names itself (caught by webgl_software). GROUNDED LIVE: SPOOF_UA=<a Pixel mobile UA> + KS_RENDERER='ANGLE (Qualcomm, Adreno (TM) 730, OpenGL ES 3.2)' (a high-end mobile GPU string over the SwiftShader 8192 backend) FIRES mobile_gpu_caps_mismatch while mobile_gpu_not_mobile AND webgl_software both stay SILENT — catching the mobile-GPU source-fork none of the other rungs see; KS_DEVICE='Pixel 5' (honest SwiftShader string) does NOT fire it (out of the high-end mobile pattern, correctly caught by mobile_gpu_not_mobile instead). Reopened the axis after a premature two-dry close: the mobile GPU-caps surface was still open."
+
   - id: br.mobile_gpu_not_mobile
     title: Mobile UA renders WebGL on a non-mobile GPU (desktop/software renderer)
     layers: [browser]

@@ -841,6 +841,22 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   needs REAL Android hardware (real model + <=8 cores + a mobile GPU), not a Chromium emulation; iOS is HARDER
   still (three walls: platform-realm + kernel + TLS, needs a real WebKit/iOS runtime). Mobile is STRICTLY harder
   to fake than desktop, iOS hardest — a clean hierarchy. Loop 8ac28e2e retired.
+- **[LOOP MOBILE REOPENED — the two-dry close was PREMATURE] br.mobile_gpu_caps_mismatch — the mobile source-fork
+  GPU tell (2026-07-02, grounded).** Challenged on "is this actually the floor?", re-audited the dismissals and
+  found one that was REASONING, not grounding: the mobile GPU-caps surface. The existing webgl_renderer_caps_mismatch
+  patterns ONLY desktop high-end GPUs (RTX/Radeon/Apple-M/Arc); there was NO mobile equivalent. A SOURCE-LEVEL FORK
+  that patches the renderer string in BOTH realms to a high-end mobile GPU (e.g. 'Adreno 730') over a SwiftShader
+  (8192) backend slips past EVERY existing GPU rung: mobile_gpu_not_mobile passes (Adreno IS a mobile family),
+  webgl_software passes (not software), and the both-realm patch evades webgl_worker_divergence — yet MAX_TEXTURE_SIZE
+  (real Adreno 6xx+/Mali-G7x+ = 16384) cannot be string-patched. GROUNDED LIVE: SPOOF_UA=<Pixel UA> + KS_RENDERER=
+  'Adreno 730' over the 8192 backend FIRES mobile_gpu_caps_mismatch while mobile_gpu_not_mobile AND webgl_software
+  BOTH stay silent — catching the fork none of the others see; KS_DEVICE='Pixel 5' (honest SwiftShader) does NOT fire
+  it (correctly caught by mobile_gpu_not_mobile instead). FP-safe (real high-end mobile GPUs >=16384; lesser mobile
+  GPUs carry lesser strings out of pattern). CONVICTING (w0.7). LESSON: this is the 4th premature-convergence call
+  this session (after model↔screen, and the two-dry close) — the source-level-fork frontier (both-realm string spoofs
+  vs unspoofable silicon/realm facts) is a live seam the per-surface sweep under-explored. 14 mobile rungs; axis
+  REOPENED — the honest next targets are the OTHER both-realm-fork gaps (model↔GPU-family for a coherent-but-wrong
+  mobile GPU; other WebGL caps beyond maxTexture; WebGPU adapter caps↔renderer). Loop re-armed.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

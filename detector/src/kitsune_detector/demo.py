@@ -1881,6 +1881,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       sigs.push(S("browser", "webgl_renderer_caps_mismatch", true));
     }
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
+    // The MOBILE analog of webgl_renderer_caps_mismatch (which only patterns DESKTOP high-end GPUs: RTX/Radeon/
+    // Apple-M/Arc). A high-end mobile GPU — Adreno 6xx-8xx (Qualcomm), Mali-G7x/G8x (ARM), Immortalis — exposes
+    // MAX_TEXTURE_SIZE 16384. A renderer string naming one with maxTexture < 16384 is a string spoofed over a
+    // lesser/SwiftShader (8192) backend. This is the SOURCE-LEVEL-FORK case that slips past every other GPU rung:
+    // br.mobile_gpu_not_mobile passes (the string IS a mobile GPU), br.webgl_software passes (not software), and a
+    // BOTH-realm fork evades br.webgl_worker_divergence — but the silicon's texture limit cannot be string-patched.
+    // FP-safe: real high-end mobile GPUs are >=16384; an honest lesser mobile GPU carries a lesser string (Adreno
+    // 3xx/4xx, Mali-T) out of this high-end pattern, and an honest software renderer names itself (webgl_software).
+    if (wg.caps && wg.renderer && wg.caps.maxTexture && wg.caps.maxTexture < 16384
+        && /Adreno \\(TM\\) [6-8][0-9]{2}|Mali-G(?:7[0-9]|8[0-9])|Immortalis/i.test(wg.renderer)) {
+      sigs.push(S("browser", "mobile_gpu_caps_mismatch", true));
+    }
     // A mobile UA must render on a MOBILE GPU family: real phones/tablets use Adreno (Qualcomm), Mali/Immortalis
     // (ARM), PowerVR (Imagination), Apple GPU (iOS), Xclipse (Samsung), Tegra (NVIDIA Shield) or VideoCore. A
     // Mobile/Android/iPhone/iPad UA whose UNMASKED_RENDERER names NONE of these — a desktop GPU (NVIDIA/Radeon/
