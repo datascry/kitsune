@@ -931,6 +931,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   and carry the entire mobile-GPU defense in this environment. So the source-fork's realm-evasion (the whole point
   of a both-realm fork) buys it NOTHING against the substrate walls, which are the true floor. 17 rungs + this
   RED capability & correction; the discipline caught my own prior over-claim.
+- **[LOOP MOBILE B-uniforms] br.mobile_gpu_uniforms_software — closes the LOW-END-GPU evasion (2026-07-02,
+  grounded).** Rather than accept the GPU surface as walled, TESTED a specific evasion: a fork claiming a LOW-END
+  mobile GPU whose real caps match SwiftShader's. GROUNDED the gap — KS_RENDERER='Adreno 505' (real MAX_TEXTURE_SIZE
+  8192, which coincides with a genuine low-end phone GPU) fires NONE of mobile_gpu_not_mobile / mobile_gpu_caps_
+  mismatch / webgl_maxtexture_unallocatable / webgl_software — the texture-floor rungs all key on the 16384 HIGH-end
+  floor, so a low-end claim slips through. But SwiftShader ALSO reports MAX_VERTEX/FRAGMENT_UNIFORM_VECTORS = 4096,
+  a SOFTWARE value; real mobile GPUs report 256-1024 (Adreno on a Nexus 5 = 256, per Qualcomm's dev docs — WebSearch-
+  verified for FP-safety). So a renderer naming ANY mobile GPU family with vertex/fragment uniform capacity > 2048
+  is a software backend wearing a mobile-GPU name. GROUNDED LIVE: Adreno 505 over SwiftShader (vu/fu 4096) FIRES
+  mobile_gpu_uniforms_software while ALL texture-floor rungs stay silent; honest KS_DEVICE='Pixel 5' (SwiftShader
+  string, not a mobile family) does NOT fire it (caught by mobile_gpu_not_mobile instead). FP-safe (256-1024 band,
+  wide margin to 2048; desktop 4096 carries a desktop string out of scope). EXPERIMENTAL (w0.6). The RED counter
+  (spoof uniform caps DOWN) is the next unspoofable tell: an actual-shader-compile probe (a shader using > the
+  claimed uniform count still links on the real 4096 backend) — the uniform analog of the maxTexture allocation
+  probe. 18 mobile rungs. Testing the 'caps match = terminus' assumption found a real gap AND its closer.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
