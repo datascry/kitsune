@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **154 rules**: 110 active · 38 experimental · 6 retired; 102 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **155 rules**: 111 active · 38 experimental · 6 retired; 103 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (39)
 
@@ -54,7 +54,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (112)
+### browser layer (113)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -68,6 +68,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.firefox_ua_nongecko` | coherence✦ | present | 0.7 | active | A UA claiming Firefox lacks navigator.buildID — a Gecko-only surface, so it is not Gecko |
 | `br.font_os_vs_ua` | coherence✦ | not_equal | 0.75 | active | Installed fonts imply an OS that contradicts the UA platform |
 | `br.ios_dpr_incoherent` | coherence✦ | present | 0.7 | active | iOS UA reports a devicePixelRatio no real iPhone/iPad uses (not 2 or 3) |
+| `br.ios_screen_desktop_res` | coherence✦ | present | 0.7 | active | iOS UA reports a common desktop screen resolution (no iPhone/iPad ships one) |
 | `br.ios_screen_oversized` | coherence✦ | present | 0.7 | active | iOS UA reports a screen larger than any real iPhone/iPad |
 | `br.language_vs_languages` | coherence✦ | present | 0.6 | active | navigator.language disagrees with navigator.languages[0] (spec-invariant violation) |
 | `br.languages_worker_vs_main` | coherence✦ | present | 0.6 | experimental | navigator.languages differs between the main thread and a Web Worker |

@@ -359,6 +359,15 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (screen) + ios_dpr_incoherent (backing scale) force a coherent iOS spoof to get BOTH right — two rungs of the
   ratchet now on the iOS device manifold. Next blue rungs on this axis: device-class↔cores/memory (B2),
   GPU-family↔model (B3), the sub-1400 per-model iOS screen SET (B4).
+- **[LOOP B4-slice] br.ios_screen_desktop_res — the sub-1400 desktop-res catch, grounded (2026-07-02).** Closes
+  the gap under ios_screen_oversized's max>1400 bound: a desktop faking iOS with a SMALLER panel (1366x768,
+  1280x720, 1280x1024) slips under the oversized threshold. Collector emits ios_screen_desktop_res when an iOS UA
+  reports a screen in a curated set of common DESKTOP resolutions (both orientations), NONE of which any iPhone/
+  iPad ships (verified against the Apple corpus; iPad geometries like 1024x768 EXCLUDED). FP-safe by construction
+  (desktop-exclusive geometries). GROUNDED LIVE: iPhone UA + KS_SCREEN=1366x768 → ios_screen_desktop_res fires
+  while ios_screen_oversized stays silent (1366<1400) — the new rung catches exactly what the old one missed; a
+  real iPhone screen (393x852) → both silent. The iOS screen manifold is now a THREE-rung ratchet (oversized +
+  desktop-res + DPR); a coherent iOS spoof must land ON a real geometry, not merely dodge the oversized bound.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
