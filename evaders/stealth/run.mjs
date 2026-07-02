@@ -571,6 +571,33 @@ if (process.env.KS_RENDERER) {
     patch(window.WebGL2RenderingContext && WebGL2RenderingContext.prototype);
   }, { rndr: process.env.KS_RENDERER, ftex: process.env.KS_FAKE_MAXTEX === "1" });
 }
+// KS_RENDERER_WORKER=1: the TRUE both-realm source-fork — also inject the renderer patch into WORKER scope by
+// wrapping Worker() to prepend it to the worker source (fetched from its blob URL). This DEFEATS
+// br.webgl_worker_divergence (main + worker now report the same spoofed renderer), isolating whether the SUBSTRATE
+// walls (br.mobile_gpu_caps_mismatch / br.webgl_maxtexture_unallocatable — real silicon, not a string) still hold.
+if (process.env.KS_RENDERER && process.env.KS_RENDERER_WORKER === "1") {
+  await context.addInitScript((rndr) => {
+    const OrigWorker = window.Worker;
+    const inject =
+      "(function(r){var patch=function(P){if(!P||!P.prototype||!P.prototype.getParameter)return;" +
+      "var gp=P.prototype.getParameter;P.prototype.getParameter=function(p){if(p===37446)return r;return gp.call(this,p);};};" +
+      "patch(self.WebGLRenderingContext);patch(self.WebGL2RenderingContext);})(" +
+      JSON.stringify(rndr) +
+      ");\n";
+    const W = function (url, opts) {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", url, false);
+        xhr.send();
+        return new OrigWorker(URL.createObjectURL(new Blob([inject + xhr.responseText], { type: "application/javascript" })), opts);
+      } catch (e) {
+        return new OrigWorker(url, opts);
+      }
+    };
+    W.prototype = OrigWorker.prototype;
+    window.Worker = W;
+  }, process.env.KS_RENDERER);
+}
 // KS_SPOOF_DM=<n>: a deliberately NAIVE main-thread-only navigator.deviceMemory override (addInitScript does
 // not run in Worker scope) — the red probe for br.devicememory_worker_divergence. A coherent tool leaves it unset.
 if (process.env.KS_SPOOF_DM) {

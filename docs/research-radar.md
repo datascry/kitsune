@@ -914,6 +914,23 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   off cheap string/value spoofing and onto patching the ACTUAL rendering pipeline (invasive, breaks real WebGL,
   getError-guard catches the naive version). 17 mobile rungs. The lesson recurs — a 'terminus/floor' is only real
   once the reasoned dismissal behind it is itself tested; this is the THIRD time testing a dismissal broke it open.
+- **[LOOP MOBILE R-bothrealm + CORRECTION] KS_RENDERER_WORKER (true both-realm fork) reveals the WebGL worker
+  checks are INACTIVE in-sandbox; the substrate walls carry the defense (2026-07-02, grounded).** Built the TRUE
+  source-level fork: KS_RENDERER_WORKER wraps Worker() to inject the renderer patch into WORKER scope too (fetches
+  the collector's blob source via sync XHR, prepends the getParameter patch, re-blobs), so main AND worker report
+  the same spoofed 'Adreno 730' — the both-realm string spoof that DEFEATS realm-divergence. Grounding it surfaced
+  a CORRECTION of the prior firing: br.webgl_worker_divergence and br.webgl_caps_worker_divergence do NOT fire even
+  on a MAIN-ONLY WebGL spoof — because OffscreenCanvas WebGL returns null in a Worker in this container (SwiftShader
+  headless), so those two checks are INACTIVE in-sandbox. PROVEN the worker REALM itself works (KS_SPOOF_DM main-
+  only → br.devicememory_worker_divergence FIRES), so it is specifically the WebGL-in-worker probe that is null, not
+  the realm mechanism. So last firing's 'webgl_caps_worker_divergence closes the main-only maxTexture gap' was a
+  REASONED claim that does NOT hold here — the main-only WebGL spoof is NOT caught by the (inactive) worker check;
+  it is caught by the MAIN-realm substrate walls br.mobile_gpu_caps_mismatch (caps triad) + br.webgl_maxtexture_
+  unallocatable (actual allocation), which need no worker. GROUNDED: with KS_RENDERER_WORKER (full both-realm
+  renderer spoof) mobile_gpu_caps_mismatch STILL FIRES — the caps/allocation substrate walls are realm-independent
+  and carry the entire mobile-GPU defense in this environment. So the source-fork's realm-evasion (the whole point
+  of a both-realm fork) buys it NOTHING against the substrate walls, which are the true floor. 17 rungs + this
+  RED capability & correction; the discipline caught my own prior over-claim.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
