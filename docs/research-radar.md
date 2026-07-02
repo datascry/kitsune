@@ -870,6 +870,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   two rungs in (GPU-caps, model↔GPU) since the premature close was corrected; still-open: other WebGL caps (max
   viewport / uniform vectors / MSAA) vs the claimed GPU, WebGPU adapter caps↔renderer, and the model↔SoC extended
   to Samsung (region-ambiguous, needs an allowed-set). NOT closing cheaply.
+- **[LOOP MOBILE B-modeldpr] br.android_model_dpr_incoherent — model↔DPR, an axis independent of model↔screen
+  (2026-07-02, grounded).** First checked the deeper GPU-caps evasion (a fork spoofing MAX_TEXTURE_SIZE too): that
+  gap is CLOSED — the worker probe sends the full caps digest and br.webgl_caps_worker_divergence (demo.py ~2622)
+  catches a main-only caps spoof; the both-realm-consistent-caps case terminates at ACTUAL-GPU-RENDERING, which is
+  external-data-bound (needs real-GPU render reference), a grounded boundary not a lazy dismissal. So took a clean
+  device-manifold joint instead: model↔DPR. A Pixel model has a device-FIXED backing scale (Pixel 5 = 2.75, Pixel 7
+  = 2.625, Pixel 4 = 3) — a SEPARATE axis from the CSS screen (physical = CSS*DPR), so a randomizer/fork can get the
+  screen right yet the DPR wrong. GROUNDED LIVE: KS_DEVICE='Pixel 7' (DPR 2.625) + KS_FORGE_JS_MODEL='Pixel 5'
+  (expects 2.75) FIRES; KS_DEVICE='Pixel 5' + 'Pixel 5' (2.75) SILENT. FP-safe (Pixel model→DPR from Playwright's
+  deviceScaleFactor, the same corpus model↔screen trusts; > 0.02 tolerance). EXPERIMENTAL (w0.5; DPR map needs
+  calibration as Pixels ship). HONEST NOTE: this is a device-manifold rung (incremental over model↔screen), NOT a
+  source-fork-substrate rung like GPU-caps/model↔GPU — the pure-substrate GPU-caps surface is now defended to its
+  in-sandbox terminus (realm divergence covered; actual-rendering is external-data). 16 mobile rungs. Still-open
+  frontier: Samsung model↔GPU (region allowed-set), WebGPU adapter caps↔renderer WHEN an adapter is present, and
+  the actual-GPU-rendering terminus if a real-GPU reference corpus becomes available.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
