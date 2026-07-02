@@ -528,6 +528,18 @@ rules:
     last_validated: "2026-07-02"
     source: "DEVICE-model <-> screen coherence on the Android manifold — the joint a coherent model spoof must still satisfy once the model itself is pinned across header+main-JS+worker (net.ch_ua_mobile_no_model / br.mobile_no_js_model / br.uadata_model_worker_divergence). A claimed Android model names a specific handset whose LOGICAL screen is device-fixed; the collector keys the getHighEntropyValues().model against the real per-model portrait CSS geometry (from the device corpus; the set is seeded from Playwright's maintained Android device registry — Pixel 2..7, Nexus, Galaxy SM-*). An Android Chrome reports model + screen from the SAME hardware, so a model PRESENT with a screen that is not that model's is a randomizer that drew model and screen from DIFFERENT devices — a naive spoof; a coherent one keeps model+screen+UA from ONE real device. This is the Android analog of br.ios_screen_offmanifold, but keyed by the exact MODEL (not a set membership), so it is tighter. EXPERIMENTAL (w0.5, corroborating): only fires for a model IN the maintained set with a mismatched portrait screen — an unknown/new model skips (FP-safe on new hardware), and the set needs periodic refresh from the device corpus; a coherent randomizer (model+screen from one device, e.g. KS_DEVICE) EVADES by construction, which is the manifold point. GROUNDED LIVE: KS_DEVICE='Pixel 5' + a forged model 'Pixel 5' (screen 393x851 matches) is SILENT; KS_DEVICE='Pixel 7' (screen 412x915) + a forged model 'Pixel 5' (expects 393x851) FIRES — model and screen from different devices."
 
+  - id: br.android_mobile_dpr1
+    title: Android Mobile UA with devicePixelRatio 1 — a phone is never 1x
+    layers: [browser]
+    reads: [browser.android_mobile_dpr1]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "The Android-phone analog of br.ios_dpr_incoherent (and the Android gap it fills — there was an iOS DPR bound + a macOS one, but none for Android). A modern Android PHONE (a 'Mobile' token on a current Chrome UA) is high-density: window.devicePixelRatio is 1.5 / 2 / 2.625 / 2.75 / 3 / 3.5 / 4 — NEVER exactly 1, which is the desktop default. An Android 'Mobile' UA reporting devicePixelRatio === 1 is a desktop wearing a phone UA that set the screen/touch surfaces but not the backing scale (or set nothing) — the partial/UA-only mobile spoof. FP-SAFE: every modern phone is >= 1.5x and the check is gated on the 'Mobile' token (a phone, NOT a low-density tablet / Android-TV / Android-Auto, which omit 'Mobile'); a full device emulation (KS_DEVICE=Pixel, DPR 2.75) sets the real backing scale and stays SILENT. EXPERIMENTAL (w0.5, corroborating): a pre-2014 mdpi phone would be a rare FP, but such a device does not send a current Chrome UA. Complements the pointer (br.mobile_pointer_hover_desktop) and screen (br.android_phone_screen_oversized) mobile surfaces — a distinct backing-scale entry point. GROUNDED LIVE: SPOOF_UA=<a Pixel 5 mobile UA> with NO device emulation (DPR 1) FIRES android_mobile_dpr1; KS_DEVICE='Pixel 5' (DPR 2.75) is SILENT."
+
   - id: br.mobile_pointer_hover_desktop
     title: Mobile UA but the primary pointer is fine / a hovering pointer exists (desktop pointer surface)
     layers: [browser]
