@@ -898,6 +898,22 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   converges on the actual-rendering terminus (can't allocate a real 16384 surface on an 8192 backend). 16 rungs +
   this hardening. Distinguished grounded-dead-end (WebGPU: no adapter) from the closable gap (caps triad) and
   tested both — the discipline the premature close lacked.
+- **[LOOP MOBILE B-alloc] br.webgl_maxtexture_unallocatable — the UNSPOOFABLE floor; my 'external-data terminus'
+  claim was wrong (2026-07-02, grounded).** Last firing I called the actual-rendering terminus 'external-data-
+  bound (needs a real-GPU corpus)'. TESTED that instead of accepting it — WRONG. getParameter(MAX_TEXTURE_SIZE) is
+  a value a both-realm fork fakes to 16384, but gl.texImage2D validates against the REAL GL backend: a
+  (claimedMax x 1) texture — 1 row, ~64KB, NO memory confound — succeeds on silicon that supports the dimension
+  and FAILS (INVALID_VALUE) on SwiftShader (real 8192) claiming 16384. NO getParameter/caps patch in any realm
+  repairs it — the allocation reaches the real driver. Needs NO external corpus (the earlier 'terminus needs
+  real-GPU reference' was itself a reasoned dismissal that did not hold). Guarded against a getError patch: the
+  probe first verifies getError is HONEST (a deliberately-invalid getParameter must raise INVALID_ENUM) before
+  trusting the allocation error. GROUNDED LIVE: KS_RENDERER='Adreno 730' + KS_FAKE_MAXTEX (getParameter reports
+  16384 over the real 8192 backend) FIRES webgl_maxtexture_unallocatable — the alloc fails though the cap READS
+  16384; honest KS_DEVICE='Pixel 5' (claims + allocates 8192) does NOT fire. CONVICTING (w0.8). FP-safe: an honest
+  device allocates its OWN claimed max; only claim > real fails. This is the hard floor: it forces the source-fork
+  off cheap string/value spoofing and onto patching the ACTUAL rendering pipeline (invasive, breaks real WebGL,
+  getError-guard catches the naive version). 17 mobile rungs. The lesson recurs — a 'terminus/floor' is only real
+  once the reasoned dismissal behind it is itself tested; this is the THIRD time testing a dismissal broke it open.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
