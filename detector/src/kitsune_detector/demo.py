@@ -1648,6 +1648,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         // without ALSO patching WorkerLocation in worker scope — a further, self-incriminating tamper).
         var code = 'onmessage=function(){postMessage({ua:navigator.userAgent,' +
           'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
+          'dm:(navigator.deviceMemory===undefined?"u":navigator.deviceMemory),' +
           'lang:(navigator.languages||[]).join(","),href:self.location.href})}';
         var u = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
         var w = new Worker(u);
@@ -2461,6 +2462,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // main-realm geo-spoof of navigator.languages never reaches Worker scope.
     if (wn && wn.lang && navigator.languages.length > 0 && wn.lang !== navigator.languages.join(",")) {
       sigs.push(S("browser", "languages_worker_divergence", true));
+    }
+    // deviceMemory realm coherence: navigator.deviceMemory is exposed in WorkerNavigator too (Blink), so a
+    // main-thread-only patch of it (a spoofer faking RAM to look like a higher-end device, or hiding a low-mem
+    // VM) never reaches Worker scope → the two disagree. The gap the general worker_divergence missed (its probe
+    // reported ua/hw/plat but not deviceMemory). Both undefined (non-Blink) compare equal via the "u" sentinel,
+    // so a real Firefox/Safari never fires; a real Chromium reports one value in both realms → also silent.
+    var mdm = (navigator.deviceMemory === undefined ? "u" : navigator.deviceMemory);
+    if (wn && wn.dm !== undefined && wn.dm !== mdm) {
+      sigs.push(S("browser", "devicememory_worker_divergence", true));
     }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker OffscreenCanvas
     // (one physical GPU). A getParameter spoof patches the main realm but never the Worker → divergence.

@@ -1469,6 +1469,18 @@ rules:
     last_validated: "2026-07-02"
     source: "DEVICE<->screen coherence on the ANDROID manifold — the Android sibling of br.ios_screen_oversized and the FIRST device-coherence check on Android (the detector had none). Scoped to the UA 'Mobile' token, which Android Chrome OMITS on tablets and Android TV / Auto (those UAs carry 'Android' WITHOUT 'Mobile') — so this keys on PHONES + foldables only, whose logical screen is bounded: the largest current Android phone/foldable tops out near ~1100 CSS px in either dimension (unfolded foldables ~884 wide). An Android+Mobile UA reporting max(screen.width, screen.height) > 1400 is therefore a DESKTOP faking an Android phone — a Mobile UA over a 1920x1080 (or similar) desktop screen, the direct Android analog of the desktop-faking-iOS ios_screen_oversized catches. FP-SAFE by the hardware bound (no Android phone CSS screen approaches 1400; tablets/TV are out of scope by the Mobile-token gate). Complements br.mobile_no_touch (which catches the SAME desktop-faking-mobile only when it also forgets touch); this fires on the screen regardless of the touch spoof. GROUNDED LIVE: a Chromium given a Pixel-phone Android+Mobile UA + KS_SCREEN=1920x1080 fires android_phone_screen_oversized; the same UA + a real Android phone screen (412x915) is SILENT, as is a coherent KS_DEVICE Android phone."
 
+  - id: br.devicememory_worker_divergence
+    title: navigator.deviceMemory differs between the main thread and a Worker
+    layers: [browser]
+    reads: [browser.devicememory_worker_divergence]
+    predicate: present
+    category: coherence
+    weight: 0.8
+    status: active
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Realm coherence for the Device Memory API — the gap the general br.worker_divergence missed. navigator.deviceMemory is exposed in WorkerNavigator too (Blink), yet the worker probe only reported ua/hardwareConcurrency/platform, so a main-thread-ONLY patch of navigator.deviceMemory (a spoofer inflating RAM to look like a higher-end device, or hiding a low-memory VM/container) survived every realm check. This adds deviceMemory to the worker postMessage and fires when the worker's value disagrees with the main thread's. A page-added init script (Playwright/Puppeteer addInitScript, CDP addScriptToEvaluateOnNewDocument) does NOT run in Worker scope, so a main-only Object.defineProperty patch diverges here — the same context-isolation gap br.languages_worker_divergence / br.webgl_worker_divergence exploit, extended to deviceMemory. FP-SAFE via the 'u' sentinel: both realms undefined (real Firefox/Safari — no Device Memory API) compare EQUAL and never fire; a real Chromium reports ONE value in both realms and is silent; only a main-only spoof diverges. Convicting (w0.8 — a realm divergence is a hard tamper signal). GROUNDED LIVE: stealth with a main-only navigator.deviceMemory override (KS_SPOOF_DM) fires devicememory_worker_divergence; the same browser without the patch is SILENT."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty
