@@ -45,6 +45,26 @@ func ParseSYN(ip []byte) (TCPSyn, bool) {
 	return syn, true
 }
 
+// ParseTCPWindow reads an IPv4 packet and returns the source port + advertised TCP receive window for a
+// NON-SYN (established) client segment. A real kernel AUTO-TUNES this window across a flow (it grows as the
+// receiver buffers), so a flow whose window never changes is a stack that doesn't implement auto-tuning — the
+// signature of a hand-rolled/userspace TCP. Best-effort + bounds-checked; ok=false for non-IPv4/non-TCP or a
+// SYN (whose window is the fixed initial value the SYN fingerprint already captures).
+func ParseTCPWindow(ip []byte) (srcPort, window uint16, ok bool) {
+	if len(ip) < 20 || ip[0]>>4 != 4 {
+		return 0, 0, false
+	}
+	ihl := int(ip[0]&0x0f) * 4
+	if ihl < 20 || len(ip) < ihl+20 || ip[9] != 6 {
+		return 0, 0, false
+	}
+	tcp := ip[ihl:]
+	if tcp[13]&0x02 != 0 {
+		return 0, 0, false // a SYN — skip (fixed initial window)
+	}
+	return binary.BigEndian.Uint16(tcp[0:2]), binary.BigEndian.Uint16(tcp[14:16]), true
+}
+
 // parseOptions walks the TCP option bytes, filling the OS-token order (legacy classifier) plus the raw
 // option kinds and the value-carrying options (MSS, window scale, SACK-permitted, timestamps) that JA4T and
 // MTU/tunnel detection need. Best-effort: a malformed length stops the walk rather than looping.

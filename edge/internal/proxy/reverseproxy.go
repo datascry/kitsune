@@ -488,6 +488,7 @@ type ReverseProxy struct {
 	now         func() time.Time
 	client      *http.Client
 	synStore    *tcpfp.Store                 // source-IP -> TCP/IP kernel family; nil when capture is unavailable
+	winTracker  *tcpfp.WindowTracker         // source-IP -> receive-window auto-tuning tracker (static = userspace stack)
 	quic        *QUICCapturer                // source-IP -> QUIC ClientHello; nil when QUIC is not enabled
 	altSvc      string                       // Alt-Svc header advertising h3, so browsers attempt QUIC; "" when disabled
 	crawler     *fingerprint.CrawlerVerifier // declared-crawler verify: DNS-free CIDR feeds + FCrDNS fallback
@@ -553,6 +554,13 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	// TCP receive-window auto-tuning: a real kernel grows its advertised window across a flow; a hand-rolled /
+	// userspace stack holds it constant. A source IP that sent >= 12 established segments all advertising ONE
+	// window value never auto-tuned — a synthetic stack (the os-spoof userspace-TCP forger's structural tell,
+	// below the layer any SYN/TLS/UA spoof reaches). Corroborating: a minimal real client could be static too.
+	if p.winTracker != nil && p.winTracker.Static(clientIP(r), 12) {
+		prep.signals = append(prep.signals, signal.Network(prep.sessionID, "tcp_static_window", true, p.now()))
+	}
 	// QUIC/HTTP-3 coherence: if the client also attempted QUIC here (drawn by the Alt-Svc advert), the
 	// captured QUIC ClientHello is fingerprinted by source IP. A browser GREASEs its QUIC hello; a
 	// non-browser QUIC stack under a browser UA does not — quic_no_grease, the QUIC analog of tls_no_grease.
@@ -608,8 +616,9 @@ func (p *ReverseProxy) ListenAndServe(addr string) error { // pragma: integratio
 	// Start the TCP/IP SYN sniffer (best-effort: needs CAP_NET_RAW). If it can't run, the edge serves
 	// without tcp_kernel signals rather than failing — the source-IP store simply stays empty.
 	p.synStore = tcpfp.NewStore(2 * time.Minute)
+	p.winTracker = tcpfp.NewWindowTracker(2 * time.Minute)
 	go func() {
-		if err := tcpfp.Sniff(p.synStore, make(chan struct{})); err != nil {
+		if err := tcpfp.Sniff(p.synStore, p.winTracker, make(chan struct{})); err != nil {
 			log.Printf("tcp/ip fingerprinting disabled: %v", err)
 		}
 	}()
