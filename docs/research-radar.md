@@ -178,6 +178,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   `isTrusted` → network 0.0 + behavioral 0.0 + conviction 0.0, `suspicious` 0.455, residual = exactly three
   environment-floor tells (`br.voices_empty` + `br.media_devices_empty` + `br.webrtc_unavailable`). The maximal
   coherent single-session stack is one engine on real hardware — not a chain.
+- **CORRECTION (2026-07-02): the environment floor is PROVISIONABLE in a Docker container → `human`.** An
+  earlier claim that the floor is a hard "real hardware" wall was WRONG. Adding a real environment to the
+  camoufox container (`KS_PROVISION`: PulseAudio null-sink/source over an ANONYMOUS-auth unix socket so the
+  root browser connects — the fix for the earlier `pulse-access` barrier — + speech-dispatcher/espeak voices;
+  headful Xvfb already supplies WebGL) silenced `br.media_devices_empty` and `br.voices_empty` COHERENTLY (real
+  native enumeration, not the JS fake coherence catches). The fully coherent + provisioned stack (camoufox
+  HARDENED+LINUX+NOTOUCH + real XTEST input + provisioned audio/voices) scored **`human` 0.300, conviction 0.0,
+  network 0, behavioral 0** — only `br.webrtc_unavailable` remained, and THAT is a STUN-egress limit of this
+  sandbox (no outbound internet for a reflexive ICE candidate; Chromium gathered WebRTC in the SAME container,
+  and a local STUN/coturn flips it), not a container impossibility. The deeper truth is better than the wall
+  claim: a fully coherent + provisioned runtime IS a real desktop browser and CORRECTLY scores human — the
+  detector isn't tricked, it declines to convict something with no incoherence left. The thesis holds (no
+  conviction without incoherence); "become a real browser" is a provisioning task, achievable in a container,
+  not a hardware wall. The JS-SPOOF vs PROVISION split still stands: spoofing the floor is caught (`FLOOR_SPOOF`
+  → bot 0.996); provisioning it is coherent → human.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
