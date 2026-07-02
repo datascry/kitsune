@@ -436,6 +436,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   at KERNEL + browser-engine + screen/DPR/touch; the single remaining network tell is the TLS fingerprint, the
   deepest full-stack-iOS residual. Updated the os-spoof README (WebKit driver now exists via KS_ENGINE=webkit).
   9 rungs. The full-stack coherent iOS node = WebKit engine (R3) + darwin kernel (os-spoof) + uTLS-iOS TLS (next).
+- **[LOOP B-ns] br.ios_no_standalone — the check that BEATS R3, grounded (2026-07-02).** navigator.standalone is
+  an iOS-Safari-SPECIFIC boolean (present on real iOS/iPadOS Safari through 2026 per MDN + Apple; undefined on
+  desktop Safari, DESKTOP WebKit, Chrome, Firefox) — FINER than br.safari_ua_no_webkit_api (window.GestureEvent,
+  which every desktop Safari + WebKit also has). An iPhone/iPad UA with navigator.standalone === undefined is not
+  genuine iOS Safari. GROUNDED LIVE, the decisive contrast: the R3 KS_ENGINE=webkit iPhone 15 fires
+  ios_no_standalone TRUE while safari_ua_no_webkit_api is FALSE — so it catches R3's DESKTOP-WebKit iOS node that
+  GestureEvent + apple_ua_nonwebkit MISS (R3 is WebKit, just not iOS WebKit). The blue rung that beats the red
+  rung two firings prior — the arms race closing on itself. EXPERIMENTAL (w0.4): iOS in-app WKWebViews also lack
+  navigator.standalone and carry Safari-like UAs, so FP-safe promotion needs a UA app-token / clean-Version gate;
+  the surface is sound (real full iOS Safari always defines it). 10 rungs. R3's iOS device is now coherent at
+  engine+screen+DPR+touch+kernel but STILL falls to the iOS-Safari-specific JS surface — desktop WebKit ≠ iOS.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
