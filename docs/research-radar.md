@@ -425,6 +425,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   surfaces a main-only OS-spoof leaves un-synced: deviceMemory, userAgentData, plus the original ua/hw/platform.
   8 rungs, 4 axes. The realm axis catches the naive JS-patch OS-spoof at its root — the reason per-node OS faking
   needs engine-level (camoufox), not addInitScript.
+- **[LOOP R3+] WebKit iOS through the os-spoof ios-safari proxy — kernel residual CLEARED, grounded
+  (2026-07-02).** Composed the R3 WebKit iOS device with the os-spoof darwin-kernel proxy to attack the network
+  residuals R3 surfaced. GROUNDED LIVE: WebKit iPhone 15 + KS_PROXY=socks5 to an ios-safari proxy →
+  tcp_kernel=darwin, req_count=122 (the happy-path stack carried WebKit's FULL session — TLS + h2 + the
+  collector's worker/fetch, more robustly than camoufox's earlier flaky POST), and net.tcp_os_vs_ua CLEARED
+  (kernel now matches the iOS UA). Residual: net.tls_grease_vs_ua — proxy mode passes the browser's OWN TLS
+  end-to-end, and Playwright's Linux WebKit ClientHello ≠ real iOS Safari's GREASE/JA4; clearing it needs a uTLS
+  HelloIOS re-origination (the chain-mitm front), not the kernel forge. So the composed iOS node is now coherent
+  at KERNEL + browser-engine + screen/DPR/touch; the single remaining network tell is the TLS fingerprint, the
+  deepest full-stack-iOS residual. Updated the os-spoof README (WebKit driver now exists via KS_ENGINE=webkit).
+  9 rungs. The full-stack coherent iOS node = WebKit engine (R3) + darwin kernel (os-spoof) + uTLS-iOS TLS (next).
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
