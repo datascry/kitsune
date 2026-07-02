@@ -946,6 +946,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (spoof uniform caps DOWN) is the next unspoofable tell: an actual-shader-compile probe (a shader using > the
   claimed uniform count still links on the real 4096 backend) — the uniform analog of the maxTexture allocation
   probe. 18 mobile rungs. Testing the 'caps match = terminus' assumption found a real gap AND its closer.
+- **[LOOP MOBILE B-uniformcompile] br.gpu_uniform_underreport — the uniform actual-compile probe closes the surface
+  both ways (2026-07-02, grounded).** Built the RED counter to B-uniforms AND its blue closer in one rung. RED:
+  extended KS_FAKE_VU to spoof MAX_VERTEX/FRAGMENT_UNIFORM_VECTORS DOWN to a mobile 256 — which evades the value
+  check mobile_gpu_uniforms_software (256 <= 2048). BLUE: the actual-compile probe (the uniform analog of
+  webgl_maxtexture_unallocatable) — getParameter only changes what JS READS, but the GL compiler ENFORCES the real
+  backend, so the collector compiles+links a vertex shader USING (reported + 40) uniform vec4s: a real device
+  (reported == enforced) rejects it; a spoofed-down claim over SwiftShader's real 4096 LINKS. GROUNDED LIVE, the
+  clean both-ways closure: (leave vu/fu HIGH 4096) mobile_gpu_uniforms_software FIRES / compile probe silent
+  (out of scope); (spoof vu/fu DOWN 256 via KS_FAKE_VU) mobile_gpu_uniforms_software SILENT / gpu_uniform_underreport
+  FIRES (the 296-uniform shader links on the real 4096). Unspoofable by getParameter (the compiler reaches the real
+  silicon); FP-safe (a real mobile GPU's reported == enforced, so the over-claim shader fails). CONVICTING (w0.8).
+  19 mobile rungs. The uniform surface now mirrors the texture surface — a value floor + an actual-behaviour probe —
+  and the two GPU actual-behaviour probes (texture allocation, uniform compile) are the hard unspoofable walls that
+  force the source-fork off getParameter spoofing entirely and onto a real GPU.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
