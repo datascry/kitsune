@@ -10,6 +10,7 @@ WORKDIR /app
 # every other mode: under their coherent Linux UA a Linux font hint is correct, so nothing false-fires.
 RUN apt-get update -qq \
     && apt-get install -y -qq --no-install-recommends fonts-dejavu-core fonts-noto-core xdotool \
+       pulseaudio speech-dispatcher espeak-ng \
     && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
 # playwright (baseline) + patchright + rebrowser-playwright (two CDP-patched anti-detect drop-ins).
@@ -30,10 +31,9 @@ RUN npm install --silent --no-audit --no-fund \
       playwright@1.52.0 patchright rebrowser-playwright@1.52.0 \
     && (npx playwright install chromium || true) \
     && (npx patchright install chromium || true)
-COPY run.mjs ./
-# HEADFUL needs a real X server (and KS_REAL_INPUT's XTEST input goes through $DISPLAY); auto-wrap in xvfb-run
-# when HEADFUL=1 so the fleet manager can launch a real-input node with a plain `docker run -e HEADFUL=1`
-# (no entrypoint override). Headless modes (the default) run node directly.
-# xvfb-run stays a CHILD of this sh (PID 1) — not exec'd — so PID 1 reaps Chromium's grandchild zombies
-# (exec'ing xvfb-run as PID 1 hangs the run under Chromium's process tree). Headless exec's node directly.
-ENTRYPOINT ["sh", "-c", "if [ \"$HEADFUL\" = \"1\" ]; then xvfb-run -a node run.mjs; else exec node run.mjs; fi"]
+COPY run.mjs entrypoint.sh ./
+# entrypoint.sh provisions the environment (KS_PROVISION: real PulseAudio devices + speech-dispatcher voices)
+# then launches the driver, auto-wrapping in xvfb-run when HEADFUL=1 (so a real-input node needs only
+# `docker run -e HEADFUL=1`). xvfb-run stays a CHILD of the entrypoint sh (PID 1) so PID 1 reaps Chromium
+# zombies; headless exec's node directly.
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]

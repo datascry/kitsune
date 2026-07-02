@@ -335,6 +335,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   voices / media — the container GPU/hardware) still fires; a fully-coherent morphing device = KS_DEVICE (spoofable
   joint) + KS_PROVISION (floor) + a WebKit runtime for the iOS slice. The manifold is the shared battlefield —
   red samples it, blue checks it, both gated on the same real per-OS device distributions. NOT saturated.
+- **[LOOP R1] KS_DEVICE + KS_PROVISION composed in one Chromium tool — grounded, Chromium floor mapped
+  (2026-07-02).** Ported the camoufox provisioner (PulseAudio null-sink/source over an anon socket +
+  speech-dispatcher/espeak-ng) into the stealth image via a new `entrypoint.sh`, so `KS_DEVICE` (coherent device)
+  and `KS_PROVISION` (real floor) compose in ONE run. GROUNDED LIVE, device+provision: DEVICE-coherence tells
+  NONE (the sampled device stays on-manifold) and `br.media_devices_empty` CLEARED (Chromium enumerates the
+  PulseAudio devices natively — provisioning works for Blink too). Residual, and honest: `br.voices_empty` still
+  fires (headless Chrome does not enumerate speech-dispatcher voices even with `--enable-speech-dispatcher` — a
+  headless-Chromium TTS limitation, not a provisioning gap) and `br.webgl_software` still fires (the Chromium
+  software-GPU wall — no GPU in-sandbox, and a JS renderer spoof is caught by caps-coherence). BOTH residuals are
+  exactly what camoufox (Firefox, engine-level renderer + native Gecko voice enumeration) clears to reach `human`
+  — so the composition CONFIRMS the human morphing vehicle is camoufox+provision, while the stealth+KS_DEVICE node
+  contributes coherent-device diversity. The morphing-HUMAN fleet = camoufox+provision (human floor, engine-level)
+  × per-OS device coherence; the Chromium path is diversity, not human, until a real GPU/headful-TTS is present.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
