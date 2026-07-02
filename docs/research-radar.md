@@ -986,6 +986,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   DPR, GPU-family AND OS-version — each drawn from ONE real device; a coherent Android spoof must satisfy all four
   plus the unspoofable GPU substrate probes. After a precision dead-end, a clean new-axis rung — the frontier still
   yields when tested.
+- **[LOOP MOBILE — grounded negative] cores actual-parallelism is not viable in a CPU-quota environment
+  (2026-07-02).** Tested the one distinct-substrate lead I had dismissed as 'noisy' (the CPU analog of the GPU
+  actual-behaviour probes): measure real parallelism via 16-worker throughput and catch a both-realm
+  hardwareConcurrency spoof. GROUNDED it — the measurement is CONSISTENT (est 4.8/4.8/4.7 across runs, NOT noisy)
+  but reads ~4.8 while hardwareConcurrency reports 12: the Docker container is CPU-QUOTA-limited to ~5 effective
+  cores. So measured parallelism reflects the CPU QUOTA / scheduling, NOT the core count, and ~4.8 is squarely
+  mobile-plausible. A real phone under load/throttling ALSO measures below its core count, so 'measured < claimed'
+  cannot separate a spoof from a throttled real device (FP-unsafe), and 'measured > claimed' never fires in a
+  quota-limited env. GROUNDED DEAD-END — not from noise (it was stable) but from the measurement proxying quota not
+  cores. Reverted, nothing shipped. This was the last distinct-substrate lead; the remaining are incremental
+  (MSAA/WebGL2 caps, model↔OS upper bound) or FP-risky (non-Pixel model↔GPU: the Samsung suffix→SoC convention
+  BROKE with the S23 all-Snapdragon line, so it is not deterministic). 20 rungs stand. NOT a full frontier-dry yet
+  (the incremental leads remain groundable), but the DISTINCT-substrate frontier is now tested to its floor: GPU
+  (actual-behaviour probes) is the one unspoofable-substrate axis that grounds cleanly in-sandbox; cores does not.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
