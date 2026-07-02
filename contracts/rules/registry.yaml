@@ -528,6 +528,18 @@ rules:
     last_validated: "2026-07-02"
     source: "DEVICE-model <-> screen coherence on the Android manifold — the joint a coherent model spoof must still satisfy once the model itself is pinned across header+main-JS+worker (net.ch_ua_mobile_no_model / br.mobile_no_js_model / br.uadata_model_worker_divergence). A claimed Android model names a specific handset whose LOGICAL screen is device-fixed; the collector keys the getHighEntropyValues().model against the real per-model portrait CSS geometry (from the device corpus; the set is seeded from Playwright's maintained Android device registry — Pixel 2..7, Nexus, Galaxy SM-*). An Android Chrome reports model + screen from the SAME hardware, so a model PRESENT with a screen that is not that model's is a randomizer that drew model and screen from DIFFERENT devices — a naive spoof; a coherent one keeps model+screen+UA from ONE real device. This is the Android analog of br.ios_screen_offmanifold, but keyed by the exact MODEL (not a set membership), so it is tighter. EXPERIMENTAL (w0.5, corroborating): only fires for a model IN the maintained set with a mismatched portrait screen — an unknown/new model skips (FP-safe on new hardware), and the set needs periodic refresh from the device corpus; a coherent randomizer (model+screen from one device, e.g. KS_DEVICE) EVADES by construction, which is the manifold point. GROUNDED LIVE: KS_DEVICE='Pixel 5' + a forged model 'Pixel 5' (screen 393x851 matches) is SILENT; KS_DEVICE='Pixel 7' (screen 412x915) + a forged model 'Pixel 5' (expects 393x851) FIRES — model and screen from different devices."
 
+  - id: br.mobile_cores_high
+    title: Mobile UA exposes more than 8 CPU cores — a phone SoC does not
+    layers: [browser]
+    reads: [browser.mobile_cores_high]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Core-count realism for a mobile UA. A real phone (a 'Mobile' token) exposes at most ~8 CPU cores to navigator.hardwareConcurrency — mobile SoCs are octa-core at most (big.LITTLE 4+4 / 1+3+4), and iOS caps lower (A-series 6). A 'Mobile' UA reporting hardwareConcurrency > 8 is a desktop wearing a phone UA that never shrank the core count. CRUCIAL: Playwright/CDP device emulation sets the UA + screen + touch + DPR but does NOT spoof hardwareConcurrency (it reads the REAL host), so even a FULL device emulation (KS_DEVICE=Pixel) on a many-core host LEAKS the host core count — this catches the emulated Android node, not just the UA-only spoof. FP-SAFE: no current phone exposes > 8 web cores, and the check is gated on the 'Mobile' token (phones/iPhones, NOT M-series iPads which run desktop-mode Safari without the token and can have 8-10 cores). EXPERIMENTAL (w0.5). The RED counter is spoofing navigator.hardwareConcurrency <= 8, which main-only is caught by the worker realm (the collector's Blob-worker hw probe → worker_divergence) and whose worker-scope escalation trips worker_constructor_tampered / worker_source_rewritten — so a coherent low core count needs a real <=8-core device, realm-backed like the model ratchet. GROUNDED LIVE: KS_DEVICE='Pixel 5' on a 12-core host FIRES mobile_cores_high (hardware_concurrency 12 under a phone UA); a real phone (<=8) does not fire by construction."
+
   - id: br.android_mobile_dpr1
     title: Android Mobile UA with devicePixelRatio 1 — a phone is never 1x
     layers: [browser]
