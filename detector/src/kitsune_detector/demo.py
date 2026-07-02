@@ -1938,6 +1938,21 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         }
       }
     } catch (e) {}
+    // MOBILE-GPU string with SOFTWARE/desktop-level uniform capacity — closes the LOW-END-GPU evasion of the
+    // caps checks. mobile_gpu_caps_mismatch/webgl_maxtexture_unallocatable key on the 16384 HIGH-end floor, so a
+    // fork claiming a LOW-END mobile GPU (e.g. 'Adreno 505', real caps 8192) over SwiftShader evades them — the
+    // 8192 maxTexture matches a genuine low-end phone. But SwiftShader also reports MAX_VERTEX/FRAGMENT_UNIFORM_
+    // VECTORS = 4096, a SOFTWARE value: real mobile GPUs report 256-1024 (Adreno on a Nexus 5 = 256; grounded via
+    // the vendor docs). So a renderer STRING naming ANY mobile GPU family whose vertex/fragment uniform capacity
+    // exceeds 2048 is a software backend wearing a mobile-GPU name. FP-safe: no real mobile GPU reaches 2048 (the
+    // 256-1024 band leaves wide margin); a real DESKTOP with 4096 uniforms carries a desktop renderer string, out
+    // of the mobile-family scope. EXPERIMENTAL. RED counter (spoof the uniform caps DOWN) is caught by an
+    // actual-shader-compile probe (a shader using > claimed uniforms still links) — the next-level unspoofable tell.
+    if (wg.caps && wg.renderer && /adreno|mali|immortalis|powervr|xclipse/i.test(wg.renderer)
+        && ((wg.caps.maxVertexUniform && wg.caps.maxVertexUniform > 2048)
+            || (wg.caps.maxFragmentUniform && wg.caps.maxFragmentUniform > 2048))) {
+      sigs.push(S("browser", "mobile_gpu_uniforms_software", true));
+    }
     // A mobile UA must render on a MOBILE GPU family: real phones/tablets use Adreno (Qualcomm), Mali/Immortalis
     // (ARM), PowerVR (Imagination), Apple GPU (iOS), Xclipse (Samsung), Tegra (NVIDIA Shield) or VideoCore. A
     // Mobile/Android/iPhone/iPad UA whose UNMASKED_RENDERER names NONE of these — a desktop GPU (NVIDIA/Radeon/
