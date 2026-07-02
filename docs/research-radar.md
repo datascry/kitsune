@@ -571,6 +571,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   emits Sec-CH-UA). 18 grounded rungs. Audit takeaway: the network + browser signal layers are saturated — every
   emitted signal is read, corroborating-by-design, or infra-blocked; the remaining frontier is composition/fleet
   (R1) and the external-data floors (IP reputation, real-traffic calibration), as established.
+- **[LOOP R1-capstone] the maximally-coherent per-node node grounded END-TO-END — 3-tell ceiling, one substrate
+  wall (2026-07-02).** First full composition of the session's per-node work on ONE node: camoufox macOS (engine
+  platform all-realms + Retina DPR + curated fonts, R-mac/R-font) + WebGL2 (real Xvfb llvmpipe GL) + provisioned
+  floor + REAL coalesced input (KS_REAL_INPUT XTEST). GROUNDED LIVE, the ceiling is exactly THREE tells, and they
+  categorise: (1) br.webgl_renderer_caps_mismatch = the ONLY hardware-SUBSTRATE wall (the 'Apple M1' renderer
+  string is spoofed but the llvmpipe capability vector can't be — no real Apple GPU in-sandbox; the R-gl law);
+  (2) br.webrtc_unavailable = provision/ICE infra; (3) net.tcp_os_vs_ua = kernel (os-spoof forges darwin, GROUNDED
+  tcp_kernel=darwin through the macos-safari proxy, but the happy-path stack drops the larger collector POST →
+  net.no_js_execution, so the browser coherence and the darwin kernel can't be shown on ONE session in-sandbox —
+  an infra limit, not a detector gap). KS_REAL_INPUT cleared bh.synthetic_no_coalesced (real XTEST input yields
+  coalesced pointer events; synthetic page.mouse.move does not). So the whole per-node ladder converges on ONE
+  irreducible in-sandbox wall — the GL CAPS substrate (a real GPU) — with the rest provisionable/infra-bound. The
+  per-node arms race is CONVERGED: the durable detector edge is the substrate the container can't fake (GPU caps),
+  and beyond that it is the external floors (IP reputation, real egress). 18 grounded rungs + this capstone.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
