@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **165 rules**: 119 active · 40 experimental · 6 retired; 113 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **166 rules**: 119 active · 41 experimental · 6 retired; 114 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,10 +56,11 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (121)
+### browser layer (122)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
+| `br.android_model_screen_incoherent` | coherence✦ | present | 0.5 | experimental | Android device model does not match its device-fixed screen geometry |
 | `br.android_phone_screen_oversized` | coherence✦ | present | 0.7 | active | Android phone UA reports a screen larger than any real Android phone |
 | `br.apple_ua_nonwebkit` | coherence✦ | present | 0.75 | active | A UA claiming Apple WebKit (Safari / any iOS browser) exposes a Blink-only structural API |
 | `br.canvas_worker_vs_main` | coherence✦ | present | 0.6 | experimental | Canvas pixel hash differs between the main thread and a Worker OffscreenCanvas |

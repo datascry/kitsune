@@ -1839,6 +1839,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         // always fills the model. The JS twin of the CH-UA-Model header check.
         if (uad.mobile && !he.model) sigs.push(S("browser", "mobile_no_js_model", true));
         if (uad.mobile) var _mainUadModel = he.model || "";
+        // MODEL <-> SCREEN coherence: a claimed Android device model has a device-FIXED logical screen. The real
+        // per-model geometry (portrait CSS px, from the device corpus) — an Android Chrome reports both from the
+        // SAME hardware, so a MODEL present with a screen that is not that model's is a randomizer that drew model
+        // and screen from DIFFERENT devices (a naive spoof; a coherent one keeps them from ONE device). FP-safe:
+        // only fires for a model IN the set (unknown/new models skip) whose portrait screen mismatches. EXPERIMENTAL.
+        var _andrScreens = { "Pixel 2": "411x731", "Pixel 2 XL": "411x823", "Pixel 3": "393x786", "Pixel 4": "353x745",
+          "Pixel 5": "393x851", "Pixel 7": "412x915", "Nexus 5X": "412x732", "Nexus 6": "412x732", "Nexus 6P": "412x732",
+          "Nexus 7": "600x960", "Nexus 10": "800x1280", "SM-G950U": "360x740", "SM-G965U": "320x658", "SM-G900P": "360x640" };
+        if (uad.mobile && he.model && _andrScreens[he.model]) {
+          var _mscr = Math.min(screen.width || 0, screen.height || 0) + "x" + Math.max(screen.width || 0, screen.height || 0);
+          if (_mscr !== _andrScreens[he.model]) sigs.push(S("browser", "android_model_screen_incoherent", true));
+        }
       } catch (e) {}
     }
     // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for

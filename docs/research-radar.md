@@ -692,6 +692,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   main-thread patch cannot reach. Mobile red⇄blue: 6 tightly-interlocked rungs, the model joint now closed to its
   realm floor — a coherent Android spoof must present a REAL device's model across all three surfaces (which the
   KS_DEVICE emulation cannot), or fall to the worker check. The mobile axis is reproducing the desktop convergence.
+- **[LOOP MOBILE B-modelscreen] br.android_model_screen_incoherent — the model↔screen joint (2026-07-02,
+  grounded).** With the model pinned across 3 surfaces (B-workermodel), the fresh joint is model ↔ SCREEN: a
+  claimed Android model names a handset whose logical screen is device-fixed. Seeded a per-model portrait-screen
+  set from Playwright's maintained Android device registry (Pixel 2..7, Nexus, Galaxy SM-*; real device data) and
+  the collector keys getHighEntropyValues().model against the actual screen. GROUNDED LIVE, the manifold contrast:
+  KS_DEVICE='Pixel 5' + forged model 'Pixel 5' (screen 393x851 MATCHES) is SILENT; KS_DEVICE='Pixel 7' (412x915) +
+  forged model 'Pixel 5' (expects 393x851) FIRES — model and screen drawn from DIFFERENT devices. The Android
+  analog of br.ios_screen_offmanifold but keyed by the EXACT model (tighter than set-membership). EXPERIMENTAL
+  (w0.5): fires only for a model in the maintained set with a mismatched screen (unknown/new models skip → FP-safe;
+  set needs refresh). A COHERENT randomizer (model+screen+UA from ONE real device, as KS_DEVICE does) evades by
+  construction — the manifold point: mobile coherence now REQUIRES drawing the whole tuple from one real device,
+  exactly as the desktop device-manifold rungs established. 7 mobile rungs; the model joint is closed AND its
+  screen-consistency is enforced. The remaining Android residual to the desktop floor is automation (native tool)
+  + provision + webgl_software (real GPU) — no NEW mobile-specific coherence gap beyond the (real-device) manifold.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

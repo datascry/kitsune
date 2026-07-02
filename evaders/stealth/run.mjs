@@ -574,9 +574,11 @@ if (process.env.KS_SPOOF_UADATA) {
 // model (parsed from the device UA). MAIN-thread only — so the durable blue counter is a WORKER-realm model check
 // (the worker's getHighEntropyValues returns the real empty model); note uadata_worker_divergence keys on
 // platform|mobile, NOT the model, so it does not yet catch this.
-if (process.env.KS_FORGE_JS_MODEL === "1" && ksDevice && deviceOpts.userAgent) {
+// KS_FORGE_JS_MODEL=1 forges the device's own model (parsed from the UA); KS_FORGE_JS_MODEL=<name> forges an
+// ARBITRARY model — used to ground br.android_model_screen_incoherent (a model that does not match the screen).
+if (process.env.KS_FORGE_JS_MODEL && ksDevice && deviceOpts.userAgent) {
   const m = /Android [\d.]+; ([^)]+?)(?:\s+Build\/[^)]*)?\)/.exec(deviceOpts.userAgent);
-  const model = m ? m[1].trim() : "";
+  const model = process.env.KS_FORGE_JS_MODEL !== "1" ? process.env.KS_FORGE_JS_MODEL : m ? m[1].trim() : "";
   if (model) {
     await context.addInitScript((mdl) => {
       try {
