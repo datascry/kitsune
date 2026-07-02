@@ -383,6 +383,19 @@ def main() -> None:
         # Force the incoherent touch-desktop (maxTouchPoints > 0 but Camoufox leaves the CSS pointer fine) → the
         # deterministic lit-record for br.pointer_touch_incoherent.
         kwargs["config"] = {"navigator.maxTouchPoints": 5}
+    if os.environ.get("KS_PROVISION") == "1":
+        # Real WebRTC: enable peer connections and expose host ICE candidates (no mDNS obfuscation) so the
+        # collector's RTCPeerConnection gathers a genuine candidate → br.webrtc_unavailable goes silent. The
+        # host candidate equals observed_ip (no proxy here), so no webrtc_ip_vs_observed leak. Merges with prefs.
+        prefs: dict[str, object] = dict(kwargs.get("firefox_user_prefs") or {})  # type: ignore[arg-type]
+        prefs.update(
+            {
+                "media.peerconnection.enabled": True,
+                "media.peerconnection.ice.obfuscate_host_addresses": False,
+                "media.navigator.enabled": True,
+            }
+        )
+        kwargs["firefox_user_prefs"] = prefs
     with Camoufox(**kwargs) as browser:  # type: ignore[arg-type]
         for _ in range(REPEAT):
             verdict = _capture(browser)
