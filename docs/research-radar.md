@@ -548,6 +548,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (w0.7). GROUNDED LIVE: a Chromium given an iPhone-Safari UA fires ch_ua_on_safari_ua; under its native Chrome UA
   it does not. A NETWORK-layer engine tell — moved off the saturated browser-JS layer onto the header layer, and
   it catches the no-JS class the JS engine-checks structurally cannot. 16 grounded rungs.
+- **[LOOP R-chua] KS_STRIP_CHUA evades ch_ua_on_safari_ua — but the TLS/h2 SUBSTRATE holds (2026-07-02,
+  grounded).** The red counter to B-chua: a Chromium faking Safari strips the Blink-only Sec-CH-UA* request
+  headers (stealth context.route) so it emits none, like real Safari. GROUNDED LIVE: Safari UA + KS_STRIP_CHUA →
+  ch_ua_browser=None, ch_ua_on_safari_ua CLEARED (vs FIRES without the strip). BUT the run is STILL `bot` —
+  caught by the SUBSTRATE the header strip can't touch: net.tls_vs_ua_browser + net.h2_vs_ua_browser (the TLS
+  ClientHello + HTTP/2 fingerprint reveal a Chromium engine under the Safari UA), plus the JS surfaces
+  (apple_ua_nonwebkit, devicememory_vs_engine). So the arms race resolves EXACTLY on the R-gl law: ch_ua_on_safari_ua
+  is a HEADER STRING (strippable → evaded), but the engine is ALSO written into the TLS/h2 WIRE FINGERPRINT
+  (substrate → durable), which a header edit cannot reach. Crucially this holds for the NO-JS case too: even a
+  curl/Go Chromium-stack scraper that strips Sec-CH-UA is still convicted by net.tls_vs_ua_browser / h2_vs_ua_browser.
+  17 grounded rungs. The header check was worth shipping (it fires FIRST + cheaply, no TLS parse), and the
+  substrate is the backstop — defence in depth, string-tell in front, substrate-tell behind.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
