@@ -1646,11 +1646,14 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         // robust no matter how the Worker constructor is disguised (the constructor-identity check can be
         // defeated by repairing prototype.constructor; the URL the worker actually loaded cannot be faked
         // without ALSO patching WorkerLocation in worker scope — a further, self-incriminating tamper).
-        var code = 'onmessage=function(){postMessage({ua:navigator.userAgent,' +
+        var code = 'onmessage=function(){var b={ua:navigator.userAgent,' +
           'hw:navigator.hardwareConcurrency,plat:navigator.platform||"",' +
           'dm:(navigator.deviceMemory===undefined?"u":navigator.deviceMemory),' +
           'uad:(navigator.userAgentData?(navigator.userAgentData.platform+"|"+navigator.userAgentData.mobile):"u"),' +
-          'lang:(navigator.languages||[]).join(","),href:self.location.href})}';
+          'lang:(navigator.languages||[]).join(","),href:self.location.href};' +
+          'var d=navigator.userAgentData;' +
+          'if(d&&d.getHighEntropyValues){d.getHighEntropyValues(["model"]).then(function(v){b.mdl=(v.model||"");postMessage(b)}).catch(function(){b.mdl="e";postMessage(b)})}' +
+          'else{b.mdl="u";postMessage(b)}}';
         var u = URL.createObjectURL(new Blob([code], { type: "application/javascript" }));
         var w = new Worker(u);
         var t = setTimeout(function () { resolve(null); }, 1500);
@@ -1835,6 +1838,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         // too is caught by br.uadata_worker_divergence (userAgentData is in the worker). FP-safe: a real Android
         // always fills the model. The JS twin of the CH-UA-Model header check.
         if (uad.mobile && !he.model) sigs.push(S("browser", "mobile_no_js_model", true));
+        if (uad.mobile) var _mainUadModel = he.model || "";
       } catch (e) {}
     }
     // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for
@@ -2512,6 +2516,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var muad = (navigator.userAgentData ? (navigator.userAgentData.platform + "|" + navigator.userAgentData.mobile) : "u");
     if (wn && wn.uad !== undefined && wn.uad !== "u" && wn.uad !== muad) {
       sigs.push(S("browser", "uadata_worker_divergence", true));
+    }
+    // Model realm coherence — the blue counter to a main-only getHighEntropyValues().model forge. The Worker's
+    // userAgentData.getHighEntropyValues(["model"]) returns the REAL hardware model (empty on a desktop faking
+    // Android); a main-thread prototype-override that injects a fake model (to beat br.mobile_no_js_model) never
+    // reaches Worker scope, so the two disagree. Compared only for a mobile device (_mainUadModel set) and when
+    // the worker actually reported a model (wn.mdl not the u/e sentinels). FP-safe: a real Android reports the
+    // same model in both realms; forging the worker too needs rewriting worker source (→ br.worker_source_rewritten).
+    if (wn && _mainUadModel !== undefined && wn.mdl !== undefined && wn.mdl !== "u" && wn.mdl !== "e" && wn.mdl !== _mainUadModel) {
+      sigs.push(S("browser", "uadata_model_worker_divergence", true));
     }
     // GPU realm coherence: the WebGL renderer must agree across the main thread and a Worker OffscreenCanvas
     // (one physical GPU). A getParameter spoof patches the main realm but never the Worker → divergence.
