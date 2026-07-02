@@ -435,6 +435,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.network, "slow_http_attack", True, Source.edge)], "net.slow_http_attack"),
         ([(Layer.network, "tcp_syn_anomaly", True, Source.edge)], "net.tcp_syn_anomaly"),
         ([(Layer.network, "tcp_static_window", True, Source.edge)], "net.tcp_static_window"),
+        ([(Layer.network, "ch_ua_on_safari_ua", True, Source.edge)], "net.ch_ua_on_safari_ua"),
         (
             [(Layer.network, "web_bot_auth_nonce_replay", True, Source.edge)],
             "net.web_bot_auth_nonce_replay",
