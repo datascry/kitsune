@@ -802,6 +802,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   renderer), so a coherent mobile GPU needs REAL mobile silicon — realm-backed like the model/cores rungs.
   EXPERIMENTAL (w0.6). 13 mobile rungs; the sweep keeps finding distinct value — this one is not a UA-only-spoof
   catcher but a GPU-substrate check that convicts a real-hardware desktop scraper faking mobile.
+- **[LOOP MOBILE — honest negative #1] CPU architecture is NOT groundably catchable (2026-07-02).** Investigated
+  the Sec-CH-UA-Arch / getHighEntropyValues(['architecture']) surface as a host-substrate leak (like cores). It is
+  NOT catchable, for a grounded reason: Chromium AUTO-DERIVES a coherent userAgentData (platform + architecture +
+  mobile) from the context.userAgent STRING. Grounded: SPOOF_UA=<a Pixel Android UA> alone (no UACH override)
+  reports ch_arch='arm' + ch_platform='Android' — the arch is 'arm', NOT the host 'x64', purely from the UA string.
+  KS_DEVICE='Pixel 5' likewise reports arch='arm'. So (a) NO evader can produce a mobile-UA + desktop-arch session
+  to ground the FP-safe check (mobile + arch=x86 → desktop); and (b) a real Android almost certainly reports 'arm'
+  too (same derivation), so the alternative 'mobile + arch non-empty → bot' check would FALSE-FIRE on real Android
+  (WebSearch: the UA-CH spec only says mobile MAY return empty arch — not a guarantee to build an FP-safe rule on).
+  Shipping either would violate the ground-LIVE + FP-safe discipline, so nothing shipped. KEY INSIGHT (explains the
+  platform dead-end too): Chromium's UA-string→UA-CH auto-derivation means the platform/arch/mobile CH surfaces are
+  COHERENT for free even on a naive UA-only spoof — which is why the productive mobile leaks are the ones Chromium
+  does NOT derive (hardwareConcurrency, the GPU renderer, the high-entropy MODEL) rather than the ones it does. This
+  is the FIRST of the two-in-a-row dry firings the loop's stop-condition requires; the next firing must ALSO fail to
+  find a groundable rung to end the mobile axis. 13 rungs stand.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
