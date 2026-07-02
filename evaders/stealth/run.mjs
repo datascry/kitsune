@@ -326,7 +326,29 @@ async function realInputMove(page) {
 // patchright / rebrowser-playwright are API-compatible playwright drop-ins; swap the engine at runtime.
 const engine =
   PATCHRIGHT || MAX_STEALTH || FLOOR_SPOOF ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
-const { chromium } = await import(engine);
+const { chromium, devices } = await import(engine);
+
+// KS_DEVICE=<name>|random — the coherent per-OS device randomizer (the vision): sample a REAL device from
+// Playwright's maintained registry and apply it NATIVELY (UA + Sec-CH-UA + screen + DPR + touch + isMobile all
+// from one device, no JS patches → no realm-divergence tell). Scoped to chromium-engine devices (Android Chrome
+// + desktop Chrome): an iOS/WebKit device on a Blink engine self-defeats into apple_ua_nonwebkit, so those need
+// a real WebKit runtime, not this Chromium driver. Each launch draws a distinct coherent device → a fleet morphs
+// into a diverse, on-manifold device population that evades the MARGINAL device-coherence checks (mobile_no_touch,
+// ios_screen_oversized, macos_dpr, pointer_touch) a naive independent-attribute spoof trips.
+const chromiumDevices = Object.keys(devices).filter((n) => devices[n].defaultBrowserType === "chromium");
+function pickDevice(sel) {
+  if (!sel) return null;
+  if (sel === "list") {
+    console.log(chromiumDevices.join("\n"));
+    process.exit(0);
+  }
+  if (sel === "random") {
+    const n = chromiumDevices[Math.floor(Math.random() * chromiumDevices.length)];
+    return { name: n, ...devices[n] };
+  }
+  return devices[sel] ? { name: sel, ...devices[sel] } : null;
+}
+const ksDevice = pickDevice(process.env.KS_DEVICE);
 
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
@@ -479,10 +501,15 @@ const ksScreen = (() => {
   const m = /^(\d+)x(\d+)$/.exec(process.env.KS_SCREEN || "");
   return m ? { width: Number(m[1]), height: Number(m[2]) } : null;
 })();
+// The device descriptor spreads into newContext directly (Playwright's documented usage); drop the `name`
+// tag we attached. It sets UA + screen + viewport + deviceScaleFactor + isMobile + hasTouch coherently.
+const { name: _deviceName, ...deviceOpts } = ksDevice || {};
 const context = await browser.newContext({
+  ...(ksDevice ? deviceOpts : {}),
   ignoreHTTPSErrors: true,
-  ...(userAgent ? { userAgent } : {}),
-  ...(ksScreen ? { screen: ksScreen, viewport: ksScreen } : {}),
+  // A device (KS_DEVICE) brings its own coherent UA/screen; only apply the manual overrides when NOT emulating one.
+  ...(!ksDevice && userAgent ? { userAgent } : {}),
+  ...(!ksDevice && ksScreen ? { screen: ksScreen, viewport: ksScreen } : {}),
   // Disable CSP enforcement the way an automation driver injecting scripts does → br.csp_bypassed.
   ...(CSP_BYPASS ? { bypassCSP: true } : {}),
   // Pin the HTTP Accept-Language so ACCEPT_LANG_SPOOF's JS-vs-header locale mismatch is deterministic.
@@ -1166,5 +1193,5 @@ if (!ks) {
 const verdict = await (await fetch(`${DETECTOR}/verdict/${ks.value}`)).json();
 // Sentinel-prefixed compact line so the orchestrator can extract it even if the engine (e.g.
 // patchright) writes other noise to stdout.
-console.log("__KS__" + JSON.stringify({ mode, ...verdict }));
+console.log("__KS__" + JSON.stringify({ mode: ksDevice ? "device:" + _deviceName : mode, device: _deviceName, ...verdict }));
 await browser.close();

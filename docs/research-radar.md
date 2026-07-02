@@ -322,6 +322,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   next: screen↔DPR-for-OS, cores↔device-class, GPU-family↔model) ratchets the coherence bar up; the red vision
   and the blue frontier are the same manifold seen from two sides, both data-driven. NOT saturated — routed the
   full device-DB joint checks (the sub-1400 per-model set, desktop resolutions, DPR/cores/GPU joints) to the queue.
+- **The RED half — a coherent per-OS device randomizer, BUILT + grounded (2026-07-02).** The vision's capability:
+  `stealth` gained `KS_DEVICE=<name>|random|list` — sample a REAL device from Playwright's maintained registry
+  and apply it NATIVELY (UA + Sec-CH-UA + screen + DPR + isMobile + hasTouch from ONE device, no JS patches → no
+  realm-divergence tell). Scoped to chromium-engine devices (Android Chrome + desktop Chrome; iOS/WebKit devices
+  self-defeat into `apple_ua_nonwebkit` on Blink, so those need a real WebKit runtime). GROUNDED LIVE: a
+  `KS_DEVICE=random` fleet drew Pixel 5 / Nexus 10 / Nexus 7 (each launch distinct — a morphing device
+  population), and EVERY sampled device showed device-coherence tells NONE (`mobile_no_touch` / `maxtouch_desktop`
+  / `ios_screen_oversized` / `pointer_touch` / `screen_impossible` all silent) — on-manifold by construction. So
+  the coherent joint randomizer evades the device-marginal checks a naive independent-attribute spoof trips: the
+  red⇄blue axis is live and symmetric. Residual (unchanged, external): the environment FLOOR (webgl_software /
+  voices / media — the container GPU/hardware) still fires; a fully-coherent morphing device = KS_DEVICE (spoofable
+  joint) + KS_PROVISION (floor) + a WebKit runtime for the iOS slice. The manifold is the shared battlefield —
+  red samples it, blue checks it, both gated on the same real per-OS device distributions. NOT saturated.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
