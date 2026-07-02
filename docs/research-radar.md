@@ -259,6 +259,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   `64240_2-4-8-1-3`), and a 5-node `random` fleet morphed into a diverse multi-OS mix. So the fleet can present
   any OS shape at the kernel layer for free — reinforcing that the per-node fingerprint is fully forgeable and
   the durable blue signal is coordination behavior + IP reputation, not per-node OS coherence.
+- **Proxy mode — a REAL browser rides the forged kernel; engine-agnostic (2026-07-02, GROUNDED).** `os-spoof`
+  gained `KS_MODE=proxy`: a SOCKS5 front end over a CONCURRENT userspace stack (one manager demuxes many flows).
+  Point any browser at it and every flow rides the forged kernel while the browser's own real TLS + JS run end
+  to end. Grounded that it is NOT camoufox-only: a Chromium browser (stealth = the nodriver/zendriver/patchright
+  family) through a `windows-chrome` proxy routed with the collector running and `tcp_kernel=windows`; camoufox
+  (Firefox) through a `macos-firefox` proxy came through with `tcp_kernel=darwin` matching its macOS-Firefox UA
+  and `net.tcp_os_vs_ua` SILENT. Each profile now carries an `Engine` (chromium/firefox/webkit) naming the
+  coherent browser family. Residual: the happy-path TCP is robust enough for a Chromium page load but camoufox's
+  collector POST didn't always land — a production node swaps the stack for gVisor `netstack` (the SYN-forge
+  design is unchanged). **Blue rung (Rung B) assessed, not built:** the only durable counter to a userspace-stack
+  forger is deeper TCP *behavior* (no-retransmit, static window, no delayed-ACK, non-incrementing timestamps),
+  which needs extending the edge sniffer from SYN-only to FLOW-level tracking + real-traffic calibration to set
+  FP-safe bands — external-data-bound, and a single-SYN heuristic (e.g. implausible timestamp) would be FP-prone
+  / off-thesis (a fresh-booted machine has a small timestamp too). So the durable in-sandbox blue signal stays
+  coordination + IP reputation; per-node TCP behavior is a hard, external-calibration-bound frontier, routed to the queue.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

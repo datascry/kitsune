@@ -1,5 +1,5 @@
-// evaders/os-spoof/stack — a minimal happy-path userspace TCP over AF_PACKET, exposed as a net.Conn.
-// It emits a caller-chosen SYN option order so the edge's SYN sniffer classifies a forged kernel family.
+// evaders/os-spoof/stack — a concurrent happy-path userspace TCP over AF_PACKET. One manager owns the raw
+// socket and demuxes frames to per-flow net.Conns, each emitting a chosen SYN option order (a forged kernel).
 
 package main
 
@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/gopacket"
@@ -19,27 +20,22 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type stack struct {
-	fd       int
-	ifIndex  int
-	srcMAC   net.HardwareAddr
-	dstMAC   net.HardwareAddr
-	srcIP    net.IP
-	dstIP    net.IP
-	srcPort  uint16
-	dstPort  uint16
-	seq      uint32 // our next send sequence number
-	ack      uint32 // next expected sequence number from the peer
-	inbuf    []byte
-	deadline time.Time
-	ttl      uint8                     // the profile's initial TTL (128 windows / 64 linux+darwin)
-	window   uint16                    // the profile's advertised SYN window
-	syn      func() []layers.TCPOption // the profile's SYN option order (the forged kernel signature)
+// manager owns the AF_PACKET socket and a single read loop that demultiplexes inbound frames to the flow
+// (by destination port) that owns them, so many userspace connections share one raw socket concurrently.
+type manager struct {
+	fd      int
+	ifIndex int
+	srcMAC  net.HardwareAddr
+	dstMAC  net.HardwareAddr
+	srcIP   net.IP
+	dstIP   net.IP
+	mu      sync.Mutex
+	conns   map[uint16]*flowConn
 }
 
-// newStack resolves the egress interface (MAC/IP), the destination IP + MAC (via the kernel ARP cache after a
-// ping), opens an AF_PACKET raw socket, and adopts the profile's kernel signature (TTL/window/SYN options).
-func newStack(host, dstPortStr string, prof Profile) (*stack, error) {
+// newManager resolves the egress interface + the edge IP/MAC (via the kernel ARP cache), opens the raw socket,
+// and starts the demux loop. All flows target the same edge (the single allow-listed upstream).
+func newManager(host string) (*manager, error) {
 	dstIP := net.ParseIP(resolveIP(host)).To4()
 	if dstIP == nil {
 		return nil, fmt.Errorf("cannot resolve %s to IPv4", host)
@@ -48,11 +44,9 @@ func newStack(host, dstPortStr string, prof Profile) (*stack, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Populate the kernel ARP cache, then read the peer MAC from it (docker bridge = one L2 segment).
 	_ = exec.Command("ping", "-c", "1", "-W", "1", dstIP.String()).Run()
 	dstMAC, err := arpLookup(dstIP)
 	if err != nil {
-		// Fall back to the default gateway MAC (routed egress) if the peer is not directly ARP-resolvable.
 		if gw, gerr := defaultGateway(); gerr == nil {
 			_ = exec.Command("ping", "-c", "1", "-W", "1", gw.String()).Run()
 			dstMAC, err = arpLookup(gw)
@@ -65,121 +59,163 @@ func newStack(host, dstPortStr string, prof Profile) (*stack, error) {
 	if err != nil {
 		return nil, fmt.Errorf("AF_PACKET socket (need NET_RAW): %w", err)
 	}
-	var dp uint16
-	fmt.Sscanf(dstPortStr, "%d", &dp)
-	return &stack{
+	m := &manager{
 		fd: fd, ifIndex: iface.Index, srcMAC: iface.HardwareAddr, dstMAC: dstMAC,
-		srcIP: srcIP.To4(), dstIP: dstIP, srcPort: uint16(20000 + rand.Intn(40000)), dstPort: dp,
-		seq: rand.Uint32(), ttl: prof.TTL, window: prof.Window, syn: prof.SYN,
-	}, nil
+		srcIP: srcIP.To4(), dstIP: dstIP, conns: map[uint16]*flowConn{},
+	}
+	go m.readLoop()
+	return m, nil
 }
 
-func (s *stack) close() error { return unix.Close(s.fd) }
+func (m *manager) close() error { return unix.Close(m.fd) }
 
-// send serializes Eth/IP/TCP(+payload) with the given flags and options and writes one frame.
-func (s *stack) send(flags tcpFlags, opts []layers.TCPOption, payload []byte) error {
-	eth := &layers.Ethernet{SrcMAC: s.srcMAC, DstMAC: s.dstMAC, EthernetType: layers.EthernetTypeIPv4}
+// readLoop reads frames and dispatches each to the flow that owns its destination port (best-effort; a full
+// inbox drops — the happy-path stack assumes a lossless docker bridge).
+func (m *manager) readLoop() {
+	buf := make([]byte, 65536)
+	for {
+		n, _, err := unix.Recvfrom(m.fd, buf, 0)
+		if err != nil {
+			return
+		}
+		pkt := gopacket.NewPacket(buf[:n], layers.LayerTypeEthernet, gopacket.DecodeOptions{Lazy: true})
+		ipl, _ := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
+		tcpl, _ := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
+		if ipl == nil || tcpl == nil || !ipl.SrcIP.Equal(m.dstIP) {
+			continue
+		}
+		m.mu.Lock()
+		c := m.conns[uint16(tcpl.DstPort)]
+		m.mu.Unlock()
+		if c != nil {
+			select {
+			case c.inbox <- tcpl:
+			default:
+			}
+		}
+	}
+}
+
+// dial opens a userspace TCP flow to the edge on dstPort, forging prof's SYN option order + TTL + window.
+func (m *manager) dial(prof Profile, dstPort uint16) (*flowConn, error) {
+	c := &flowConn{
+		m: m, srcPort: uint16(20000 + rand.Intn(40000)), dstPort: dstPort,
+		seq: rand.Uint32(), ttl: prof.TTL, window: prof.Window, syn: prof.SYN,
+		inbox: make(chan *layers.TCP, 256),
+	}
+	m.mu.Lock()
+	m.conns[c.srcPort] = c
+	m.mu.Unlock()
+	if err := c.handshake(); err != nil {
+		m.mu.Lock()
+		delete(m.conns, c.srcPort)
+		m.mu.Unlock()
+		return nil, err
+	}
+	return c, nil
+}
+
+// flowConn is one userspace TCP connection, exposed as a net.Conn (so uTLS or a raw relay can ride it).
+type flowConn struct {
+	m        *manager
+	srcPort  uint16
+	dstPort  uint16
+	seq      uint32
+	ack      uint32
+	ttl      uint8
+	window   uint16
+	syn      func() []layers.TCPOption
+	inbox    chan *layers.TCP
+	inbuf    []byte
+	deadline time.Time
+}
+
+type tcpFlags struct{ syn, ack, psh, fin, rst bool }
+
+func (c *flowConn) send(flags tcpFlags, opts []layers.TCPOption, payload []byte) error {
+	eth := &layers.Ethernet{SrcMAC: c.m.srcMAC, DstMAC: c.m.dstMAC, EthernetType: layers.EthernetTypeIPv4}
 	ip := &layers.IPv4{
-		Version: 4, IHL: 5, TTL: s.ttl, Id: uint16(rand.Intn(65535)), Protocol: layers.IPProtocolTCP,
-		SrcIP: s.srcIP, DstIP: s.dstIP, Flags: layers.IPv4DontFragment,
+		Version: 4, IHL: 5, TTL: c.ttl, Id: uint16(rand.Intn(65535)), Protocol: layers.IPProtocolTCP,
+		SrcIP: c.m.srcIP, DstIP: c.m.dstIP, Flags: layers.IPv4DontFragment,
 	}
 	tcp := &layers.TCP{
-		SrcPort: layers.TCPPort(s.srcPort), DstPort: layers.TCPPort(s.dstPort),
-		Seq: s.seq, Ack: s.ack, Window: s.window, Options: opts,
+		SrcPort: layers.TCPPort(c.srcPort), DstPort: layers.TCPPort(c.dstPort),
+		Seq: c.seq, Ack: c.ack, Window: c.window, Options: opts,
 		SYN: flags.syn, ACK: flags.ack, PSH: flags.psh, FIN: flags.fin, RST: flags.rst,
 	}
 	if err := tcp.SetNetworkLayerForChecksum(ip); err != nil {
 		return err
 	}
 	buf := gopacket.NewSerializeBuffer()
-	sopts := gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true}
-	if err := gopacket.SerializeLayers(buf, sopts, eth, ip, tcp, gopacket.Payload(payload)); err != nil {
+	if err := gopacket.SerializeLayers(buf, gopacket.SerializeOptions{FixLengths: true, ComputeChecksums: true},
+		eth, ip, tcp, gopacket.Payload(payload)); err != nil {
 		return err
 	}
-	addr := &unix.SockaddrLinklayer{Ifindex: s.ifIndex, Halen: 6}
-	copy(addr.Addr[:], s.dstMAC)
-	return unix.Sendto(s.fd, buf.Bytes(), 0, addr)
+	addr := &unix.SockaddrLinklayer{Ifindex: c.m.ifIndex, Halen: 6}
+	copy(addr.Addr[:], c.m.dstMAC)
+	return unix.Sendto(c.m.fd, buf.Bytes(), 0, addr)
 }
 
-type tcpFlags struct{ syn, ack, psh, fin, rst bool }
-
-// recv reads frames until one belongs to our flow, returning its TCP layer. Honors the read deadline.
-func (s *stack) recv() (*layers.TCP, error) {
-	buf := make([]byte, 65536)
-	for {
-		if !s.deadline.IsZero() {
-			tv := unix.NsecToTimeval(time.Until(s.deadline).Nanoseconds())
-			_ = unix.SetsockoptTimeval(s.fd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &tv)
-		}
-		n, _, err := unix.Recvfrom(s.fd, buf, 0)
-		if err != nil {
-			if errors.Is(err, unix.EAGAIN) || errors.Is(err, unix.EWOULDBLOCK) {
-				return nil, os.ErrDeadlineExceeded
-			}
-			return nil, err
-		}
-		pkt := gopacket.NewPacket(buf[:n], layers.LayerTypeEthernet, gopacket.DecodeOptions{Lazy: true, NoCopy: true})
-		ipl, _ := pkt.Layer(layers.LayerTypeIPv4).(*layers.IPv4)
-		tcpl, _ := pkt.Layer(layers.LayerTypeTCP).(*layers.TCP)
-		if ipl == nil || tcpl == nil {
-			continue
-		}
-		if !ipl.SrcIP.Equal(s.dstIP) || uint16(tcpl.SrcPort) != s.dstPort || uint16(tcpl.DstPort) != s.srcPort {
-			continue
-		}
-		return tcpl, nil
+// recv pulls the next frame for this flow from its inbox, honoring the read deadline.
+func (c *flowConn) recv() (*layers.TCP, error) {
+	var timer <-chan time.Time
+	if !c.deadline.IsZero() {
+		timer = time.After(time.Until(c.deadline))
+	}
+	select {
+	case tcp := <-c.inbox:
+		return tcp, nil
+	case <-timer:
+		return nil, os.ErrDeadlineExceeded
 	}
 }
 
-// handshake performs SYN (with the profile's forged option order) -> SYN-ACK -> ACK.
-func (s *stack) handshake() error {
-	s.deadline = time.Now().Add(5 * time.Second)
-	if err := s.send(tcpFlags{syn: true}, s.syn(), nil); err != nil {
+func (c *flowConn) handshake() error {
+	c.deadline = time.Now().Add(5 * time.Second)
+	if err := c.send(tcpFlags{syn: true}, c.syn(), nil); err != nil {
 		return err
 	}
 	for {
-		tcp, err := s.recv()
+		tcp, err := c.recv()
 		if err != nil {
 			return err
 		}
 		if tcp.SYN && tcp.ACK {
-			s.seq++             // our SYN consumed one sequence number
-			s.ack = tcp.Seq + 1 // ack their SYN
-			return s.send(tcpFlags{ack: true}, nil, nil)
+			c.seq++
+			c.ack = tcp.Seq + 1
+			return c.send(tcpFlags{ack: true}, nil, nil)
 		}
 	}
 }
 
-// Read delivers reassembled in-order payload to the caller (TLS/HTTP), ACKing each received data segment.
-func (s *stack) Read(p []byte) (int, error) {
-	for len(s.inbuf) == 0 {
-		tcp, err := s.recv()
+func (c *flowConn) Read(p []byte) (int, error) {
+	for len(c.inbuf) == 0 {
+		tcp, err := c.recv()
 		if err != nil {
 			return 0, err
 		}
 		if tcp.RST {
-			return 0, errors.New("peer reset the connection")
+			return 0, errors.New("peer reset")
 		}
-		if len(tcp.Payload) > 0 && tcp.Seq == s.ack {
-			s.inbuf = append(s.inbuf, tcp.Payload...)
-			s.ack += uint32(len(tcp.Payload))
-			_ = s.send(tcpFlags{ack: true}, nil, nil) // acknowledge the data so the peer sends more
+		if len(tcp.Payload) > 0 && tcp.Seq == c.ack {
+			c.inbuf = append(c.inbuf, tcp.Payload...)
+			c.ack += uint32(len(tcp.Payload))
+			_ = c.send(tcpFlags{ack: true}, nil, nil)
 		}
 		if tcp.FIN {
-			s.ack++
-			_ = s.send(tcpFlags{ack: true}, nil, nil)
-			if len(s.inbuf) == 0 {
+			c.ack++
+			_ = c.send(tcpFlags{ack: true}, nil, nil)
+			if len(c.inbuf) == 0 {
 				return 0, io.EOF
 			}
 		}
 	}
-	n := copy(p, s.inbuf)
-	s.inbuf = s.inbuf[n:]
+	n := copy(p, c.inbuf)
+	c.inbuf = c.inbuf[n:]
 	return n, nil
 }
 
-// Write segments the payload into <=MSS PSH-ACK packets (happy path: no retransmit; docker bridge is lossless).
-func (s *stack) Write(p []byte) (int, error) {
+func (c *flowConn) Write(p []byte) (int, error) {
 	const mss = 1400
 	total := len(p)
 	for len(p) > 0 {
@@ -187,30 +223,32 @@ func (s *stack) Write(p []byte) (int, error) {
 		if len(chunk) > mss {
 			chunk = chunk[:mss]
 		}
-		if err := s.send(tcpFlags{psh: true, ack: true}, nil, chunk); err != nil {
+		if err := c.send(tcpFlags{psh: true, ack: true}, nil, chunk); err != nil {
 			return 0, err
 		}
-		s.seq += uint32(len(chunk))
+		c.seq += uint32(len(chunk))
 		p = p[len(chunk):]
 	}
 	return total, nil
 }
 
-func (s *stack) Close() error {
-	_ = s.send(tcpFlags{fin: true, ack: true}, nil, nil)
+func (c *flowConn) Close() error {
+	_ = c.send(tcpFlags{fin: true, ack: true}, nil, nil)
+	c.m.mu.Lock()
+	delete(c.m.conns, c.srcPort)
+	c.m.mu.Unlock()
 	return nil
 }
-func (s *stack) LocalAddr() net.Addr                { return &net.TCPAddr{IP: s.srcIP, Port: int(s.srcPort)} }
-func (s *stack) RemoteAddr() net.Addr               { return &net.TCPAddr{IP: s.dstIP, Port: int(s.dstPort)} }
-func (s *stack) SetDeadline(t time.Time) error      { s.deadline = t; return nil }
-func (s *stack) SetReadDeadline(t time.Time) error  { s.deadline = t; return nil }
-func (s *stack) SetWriteDeadline(t time.Time) error { return nil }
+func (c *flowConn) LocalAddr() net.Addr                { return &net.TCPAddr{IP: c.m.srcIP, Port: int(c.srcPort)} }
+func (c *flowConn) RemoteAddr() net.Addr               { return &net.TCPAddr{IP: c.m.dstIP, Port: int(c.dstPort)} }
+func (c *flowConn) SetDeadline(t time.Time) error      { c.deadline = t; return nil }
+func (c *flowConn) SetReadDeadline(t time.Time) error  { c.deadline = t; return nil }
+func (c *flowConn) SetWriteDeadline(t time.Time) error { return nil }
 
 // --- host networking helpers ---
 
 func htons(v uint16) int { return int((v<<8)&0xff00 | v>>8) }
 
-// routeIface returns the interface + source IP the kernel would use to reach dst (best-effort via a UDP dial).
 func routeIface(dst net.IP) (*net.Interface, net.IP, error) {
 	c, err := net.Dial("udp", dst.String()+":9")
 	if err != nil {
@@ -230,7 +268,6 @@ func routeIface(dst net.IP) (*net.Interface, net.IP, error) {
 	return nil, nil, fmt.Errorf("no interface for src %s", src)
 }
 
-// arpLookup reads the kernel ARP cache (/proc/net/arp) for ip's MAC.
 func arpLookup(ip net.IP) (net.HardwareAddr, error) {
 	data, err := os.ReadFile("/proc/net/arp")
 	if err != nil {
@@ -245,7 +282,6 @@ func arpLookup(ip net.IP) (net.HardwareAddr, error) {
 	return nil, fmt.Errorf("no ARP entry for %s", ip)
 }
 
-// defaultGateway returns the default route's gateway IP (from /proc/net/route).
 func defaultGateway() (net.IP, error) {
 	data, err := os.ReadFile("/proc/net/route")
 	if err != nil {

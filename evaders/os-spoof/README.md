@@ -31,6 +31,27 @@ docker run --rm --network kitsune_default --cap-add NET_RAW --cap-add NET_ADMIN 
 # a morphing fleet: N containers, each -e KS_PROFILE=random -> a diverse multi-OS cohort
 ```
 
+## Proxy mode — route a REAL browser through the forged kernel (not camoufox-only)
+
+`KS_MODE=proxy` runs a SOCKS5 front end (a **concurrent** userspace stack — one manager demuxes many flows).
+Point any browser at it (`--proxy-server=socks5://<host>:1080`) and every flow rides the forged kernel while
+the browser's OWN real TLS + JS run end to end — a fully coherent morphing node. The kernel forge is at the TCP
+layer, BELOW the browser, so it is **engine-agnostic**; each profile's `Engine` names the family that pairs
+coherently:
+
+- **chromium** — nodriver / zendriver / stealth / patchright → `windows-chrome`, `macos-chrome`, …
+- **firefox** — camoufox → `linux-firefox`, `macos-firefox`, `windows-firefox`
+- **webkit** — Safari/iOS → `ios-safari`, `macos-safari` (no in-sandbox WebKit driver)
+
+Grounded: a Chromium browser (stealth) through a `windows-chrome` proxy routed with the collector running and
+`tcp_kernel=windows`; camoufox through a `macos-firefox` proxy came through with `tcp_kernel=darwin` matching
+its macOS-Firefox UA and `net.tcp_os_vs_ua` **silent**. Both browser families route — os-spoof is not tied to
+camoufox.
+
+**Residual:** the hand-rolled TCP is happy-path (no retransmit, static flow control) — robust enough for a
+Chromium page load, but camoufox's collector POST didn't always land through it. A production morphing node
+swaps this stack for a robust userspace TCP (gVisor `netstack`); the SYN-forge design is unchanged.
+
 ## Grounded result (2026-07-02)
 
 | client | `tcp_kernel` (JA4T) | `net.tcp_os_vs_ua` |
