@@ -1040,6 +1040,23 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   negative (contacts was the last rung, so not a two-in-a-row dry). Remaining untested: a mobile API with
   UNSPOOFABLE behaviour (not just presence — presence is a shallow spoof), and the coherent-generator RED capstone
   (compose all spoofs, ground that the GPU substrate wall still holds). 22 rungs stand."
+- **[LOOP MOBILE — SOURCE-FORK TERMINUS grounded] the maximally-coherent JS fork is caught on many independent
+  axes, and its own both-realm MECHANISM is self-incriminating (2026-07-02).** Composed the most coherent JS
+  source-fork the toolkit can build: KS_DEVICE=Pixel 5 + KS_FORGE_MODEL (header) + KS_FORGE_JS_MODEL (main-JS) +
+  KS_RENDERER='Adreno 620' (the Pixel 5's REAL GPU) + KS_RENDERER_WORKER (both-realm renderer) + KS_MOBILE_FONTS +
+  patchright. GROUNDED the residual — three findings: (1) THE FUNDAMENTAL WALLS hold: mobile_gpu_caps_mismatch +
+  mobile_gpu_uniforms_software (the real SwiftShader silicon can't be a real Adreno — the binary-fork-proof floor),
+  android_no_contacts_api + mobile_cores_high (the Playwright emulation can't provide the mobile API / hide the
+  host cores). (2) THE JS BOTH-REALM MECHANISM IS SELF-INCRIMINATING — a finding I had UNDER-appreciated: the
+  getParameter string override trips br.webgl_getparameter_tampered (nativeness), and the Worker-WRAPPING used to
+  reach the worker realm trips br.worker_constructor_tampered + br.worker_source_rewritten. So a JS-injection fork
+  cannot even REACH the both-realm state cleanly — the mechanism to patch the worker is itself detected. (3) So the
+  'both-realm string spoof defeats realm-divergence' premise holds only for a BINARY source-fork (CloakBrowser-class,
+  patching the engine in C++, no JS Worker-wrapping) — and THAT is exactly what the GPU substrate actual-behaviour
+  probes (allocation, uniform-compile) are built to catch, because a binary fork still runs on the real silicon it
+  has. TERMINUS: a JS fork is caught by the tamper checks; a binary fork evades those but is caught by the GPU
+  substrate (needs real mobile silicon); the emulation is caught by contacts/cores. There is no in-sandbox path to
+  a coherent Android fingerprint — grounded, not asserted. 22 rungs + this terminus grounding."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
