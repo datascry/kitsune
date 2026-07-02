@@ -1071,6 +1071,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   CLOSED dead-ends also CATCHES a latent false-positive in my own work — an unverified 16384 assumption that would
   have convicted real hardware. 23 rungs (this one a correctness fix, which beats the last by making the ruleset
   trustworthy, not just broader)."
+- **[LOOP MOBILE FP-AUDIT] audited the other value-based GPU/manifold rungs for the same unverified-constant class
+  (2026-07-02).** Followed the caps-fix by turning the same lens on the sibling checks. Findings, grounded: (1)
+  mobile_gpu_uniforms_software (vu/fu > 2048) rests on the SAME kind of assumption (mobile vu <= 1024) — the
+  Nexus-5 data point (256) + GLES-3.0 spec-min 256 + mobile GPUs' register constraint give ~2x margin to 2048, but
+  a MODERN-FLAGSHIP's exact vu is unverified in-sandbox (WebSearch could not pin it). Rather than assume, ADDED an
+  explicit calibration caveat + named its FP-SAFE BACKSTOP: br.gpu_uniform_underreport (the compile probe assumes
+  NO constant), and its w0.6 keeps the value-arm corroborating not solely-convicting. (2) android_mobile_dpr1
+  (DPR===1) ALREADY carried its caveat (mdpi extinct on modern-Chrome hardware) — honest as shipped. (3)
+  mobile_cores_high (>8) is FP-safe for modern (mobile SoCs are octa-core max; old deca-core don't run current
+  Chrome). KEY ARCHITECTURAL FINDING: the FP-safety is already correctly LAYERED — the ACTUAL-BEHAVIOUR probes
+  (webgl_maxtexture_unallocatable, gpu_uniform_underreport) that assume NO constant carry the CONVICTING weight
+  (w0.8), while the VALUE-heuristic checks (caps/uniforms, w0.6-0.7) that rely on real-mobile-GPU constants are the
+  corroborating layer. So the one genuinely-unsafe constant (16384) was the caps bug (fixed); the rest are margined
+  heuristics backstopped by the constant-free probes. 23 rungs + this audit: the ruleset's FP-safety architecture
+  is sound and now explicitly documented — value-heuristics corroborate, actual-behaviour probes convict."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
