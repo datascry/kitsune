@@ -252,6 +252,13 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   dynamics, retransmit timers) that a happy-path userspace stack doesn't reproduce — a much harder fingerprint,
   and the natural next blue rung if the edge ever needs to catch a userspace-stack forger. Net: the OS-coherence
   wall is not absolute; it costs a userspace TCP stack + raw-socket privileges — real, but buildable, and now built.
+  **Productized into coherent PROFILES (2026-07-02):** `os-spoof` now carries a profile registry (windows-chrome/
+  windows-edge/macos-safari/macos-chrome/linux-firefox/ios-safari), each a coherent kernel SYN (option order +
+  TTL + window) + matching uTLS hello + UA. `KS_PROFILE=<name>|random|list`; grounded that each forges its own
+  `tcp_kernel` with `tcp_os_vs_ua` silent (windows `64240_2-1-3-1-1-4`, darwin `65535_2-1-3-1-1-8-4-0`, linux
+  `64240_2-4-8-1-3`), and a 5-node `random` fleet morphed into a diverse multi-OS mix. So the fleet can present
+  any OS shape at the kernel layer for free — reinforcing that the per-node fingerprint is fully forgeable and
+  the durable blue signal is coordination behavior + IP reputation, not per-node OS coherence.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
