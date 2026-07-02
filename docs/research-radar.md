@@ -706,6 +706,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   exactly as the desktop device-manifold rungs established. 7 mobile rungs; the model joint is closed AND its
   screen-consistency is enforced. The remaining Android residual to the desktop floor is automation (native tool)
   + provision + webgl_software (real GPU) — no NEW mobile-specific coherence gap beyond the (real-device) manifold.
+- **[LOOP MOBILE capstone] the Android node grounded end-to-end — the model ratchet + GPU are TWO hard walls
+  (2026-07-02).** Composed the full Android node (KS_DEVICE=Pixel 5 + PATCHRIGHT + KS_ANDROID_FONTS + KS_PROVISION
+  + the model forges) and read the residual: 9 tells, and the decisive finding is that MY OWN blue model ratchet
+  CATCHES the red forge. The model forges clear the header + main-JS model checks but trip
+  br.uadata_model_worker_divergence (KS_FORGE_JS_MODEL patches main-JS, not the worker) — the realm-backed check
+  from the prior firing convicts the composed node. So mobile has TWO in-sandbox hard walls, not one: (1) the
+  CH-UA-Model ratchet — a desktop CANNOT present a real device's model (empty → header/JS checks; forged → worker
+  check; a real Android fills all three natively); (2) webgl_software (real GPU). The rest is tool/provision-fixable
+  (automation → nodriver, voices → the Chromium-headless-TTS limit noted on desktop, ch_he_headless → headful,
+  fingerprint_improbable → resolves as the others clear). So ANDROID is actually HARDER to fake coherently than
+  desktop was: desktop converged on ONE wall (GPU); mobile has the GPU wall PLUS the model-ratchet wall (a
+  session-built blue axis that a desktop-faking-Android cannot cross). A coherent Android fingerprint therefore
+  requires a REAL Android device (real model + real GPU), not a Chromium emulation — the honest answer to
+  "can we achieve coherent mobile fingerprints": Android in principle yes, but only on real hardware, and the
+  detector now holds two independent walls. 7 mobile rungs + this capstone; the Android axis has converged.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
