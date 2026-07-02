@@ -1056,6 +1056,22 @@ if (process.env.KS_STRIP_CHUA === "1") {
     route.continue({ headers: h });
   });
 }
+// KS_FORGE_MODEL=1: forge the Sec-CH-UA-Model client hint to the emulated device's model — the red counter to
+// net.ch_ua_mobile_no_model. Playwright device emulation sets the mobile UA + screen but NOT the CH-UA-Model
+// (which reads the real desktop hardware = empty), so an Android device is caught by the empty model. Parse the
+// model out of the device UA (…Android 14; Pixel 5) …) and inject it — COHERENT, since the UA + screen already
+// match a real Pixel. The next-level blue counter is model↔UA-string↔screen joint coherence.
+if (process.env.KS_FORGE_MODEL === "1" && ksDevice && deviceOpts.userAgent) {
+  const m = /Android [\d.]+; ([^)]+?)(?:\s+Build\/[^)]*)?\)/.exec(deviceOpts.userAgent);
+  const model = m ? m[1].trim() : "";
+  if (model) {
+    await context.route("**/*", (route) => {
+      const h = { ...route.request().headers() };
+      h["sec-ch-ua-model"] = '"' + model + '"';
+      route.continue({ headers: h });
+    });
+  }
+}
 const page = await context.newPage();
 if (WORKER_CDP) {
   // Inject the worker-scope hardwareConcurrency spoof via the CDP worker channel: Playwright surfaces each

@@ -643,6 +643,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   the font tell, and this opens a CH-layer one that the device emulation structurally can't fill. The RED counter
   is forging the Sec-CH-UA-Model header (route interception), which then must match the UA model string + the
   device screen — the mobile joint-coherence ratchet continues.
+- **[LOOP MOBILE R-model] KS_FORGE_MODEL — forge Sec-CH-UA-Model to evade ch_ua_mobile_no_model, coherently
+  (2026-07-02, grounded).** The red counter to B-model: route-interception injects Sec-CH-UA-Model set to the
+  emulated device's model, parsed from the device UA (…Android 14; Pixel 5) …). GROUNDED LIVE: KS_DEVICE='Pixel 5'
+  fires ch_ua_mobile_no_model; + KS_FORGE_MODEL it CLEARS. Crucially this is a COHERENT forge, not a bare bypass —
+  the injected model 'Pixel 5' matches the device UA AND the KS_DEVICE screen/DPR, so it is on the real-Pixel
+  manifold. So the mobile CH-layer is now spoofable (like every header string — the R-gl/R-chua law), and the
+  DURABLE blue counter must be the JOINT: model ↔ UA-model-string ↔ screen/DPR — a device-model→screen DB (the
+  Android analog of the iOS offmanifold, keyed by model). A mismatched forge (model 'Pixel 5' but a Galaxy screen)
+  is what that DB check would catch; a coherent randomizer drawing model+screen+UA from ONE real Android device
+  evades. Mobile red⇄blue now 2-for-2 (KS_ANDROID_FONTS / ch_ua_mobile_no_model / KS_FORGE_MODEL), each rung
+  surfacing the next — exactly the joint-manifold dynamic the desktop ladder converged on, now on mobile.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
