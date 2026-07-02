@@ -2151,6 +2151,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (navigator.maxTouchPoints > 0 && /Mobile|Android|iPhone|iPad/i.test(ua)) sigs.push(S("browser", "is_mobile", true));
     if (!isMobileEnv && navigator.mimeTypes && navigator.mimeTypes.length === 0) sigs.push(S("browser", "mimetypes_empty", true));
     if (isChromium && typeof navigator.deviceMemory === "undefined") sigs.push(S("browser", "chrome_no_devicememory", true));
+    // Inverse of chrome_no_devicememory + a distinct Blink surface beyond apple_ua_nonwebkit's window.chrome /
+    // userAgentData: navigator.deviceMemory is a Blink-ONLY API — Firefox declined it (privacy) and Safari/WebKit
+    // never shipped it. A UA claiming Firefox or Safari while the engine EXPOSES deviceMemory is a Blink engine
+    // wearing a non-Blink UA — the same lie apple_ua_nonwebkit / buildID_missing catch, but through a surface a
+    // spoofer who patches out window.chrome + userAgentData (and fakes buildID) can still forget. FP-safe: no
+    // real Firefox/Safari has deviceMemory. Scoped to the firefox/safari UA engines (not "other").
+    if ((uaEngine === "firefox" || uaEngine === "safari") && typeof navigator.deviceMemory !== "undefined") {
+      sigs.push(S("browser", "devicememory_vs_engine", true));
+    }
     try { if (window.Notification && Notification.permission === "denied") sigs.push(S("browser", "notification_denied", true)); } catch (e) {}
     // --- v0.26.0: canvas farbling (Brave) — reference-free. A farbling browser adds per-session noise to
     // canvas readback; a solid fill is the probe: a real browser reads back the EXACT colour, a farbling

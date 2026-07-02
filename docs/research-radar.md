@@ -368,6 +368,16 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   while ios_screen_oversized stays silent (1366<1400) — the new rung catches exactly what the old one missed; a
   real iPhone screen (393x852) → both silent. The iOS screen manifold is now a THREE-rung ratchet (oversized +
   desktop-res + DPR); a coherent iOS spoof must land ON a real geometry, not merely dodge the oversized bound.
+- **[LOOP B2] br.devicememory_vs_engine — engine↔API-surface coherence via a THIRD Blink surface, grounded
+  (2026-07-02).** navigator.deviceMemory is Blink-EXCLUSIVE (Firefox declined it for privacy; Safari/WebKit never
+  shipped it). A UA whose engine token is firefox or safari while deviceMemory is DEFINED is a Blink engine
+  wearing a non-Blink UA — the inverse of br.no_devicememory (Chromium UA MISSING it) and a THIRD independent
+  Blink surface beyond apple_ua_nonwebkit (window.chrome/userAgentData) + the Gecko buildID check, so it still
+  fires when a spoofer scrubs window.chrome + userAgentData and fakes buildID but forgets deviceMemory. FP-safe
+  (no real Firefox/Safari has it); scoped to the firefox/safari UA engines. GROUNDED LIVE: a Chromium (stealth)
+  given a Firefox UA fires devicememory_vs_engine (ua_engine=firefox + Blink deviceMemory present); under its
+  native Chromium UA it does NOT. A new axis off the iOS-screen vein — one more surface a Chromium-faking-a-non-
+  Blink-browser must scrub. Next: R2 (desktop-OS device tuples), B3 (GPU-family↔model), deeper TCP-behavior.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
