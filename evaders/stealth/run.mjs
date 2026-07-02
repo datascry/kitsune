@@ -545,6 +545,13 @@ if (KS_ENGINE === "webkit" && ksDevice && deviceOpts.isMobile) {
     Object.defineProperty(Navigator.prototype, "maxTouchPoints", { get: () => 5, configurable: true });
   });
 }
+// KS_SPOOF_DM=<n>: a deliberately NAIVE main-thread-only navigator.deviceMemory override (addInitScript does
+// not run in Worker scope) — the red probe for br.devicememory_worker_divergence. A coherent tool leaves it unset.
+if (process.env.KS_SPOOF_DM) {
+  await context.addInitScript((v) => {
+    Object.defineProperty(Navigator.prototype, "deviceMemory", { get: () => v, configurable: true });
+  }, Number(process.env.KS_SPOOF_DM));
+}
 if (FLOOR_SPOOF) {
   // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are
   // given Linux-desktop (espeak-style) names so they are coherent with the Linux UA — no Microsoft/Apple

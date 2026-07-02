@@ -403,6 +403,16 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   Python-string escaping on first cut — caught it LIVE when the naive case did not fire, switched to /Mobile/i;
   a reminder that the collector is JS-in-a-Python-string and backslash escapes double.) Mobile screen coherence
   now spans BOTH mobile OSes (iOS 3-rung + Android). Ladder: R1,B1,B4-slice,B2,R3,B5 — 6 rungs, 3 axes.
+- **[LOOP B2b] br.devicememory_worker_divergence — realm coherence gap CLOSED, grounded (2026-07-02).** The
+  general br.worker_divergence probed the Worker's ua/hardwareConcurrency/platform but NOT navigator.deviceMemory
+  — yet WorkerNavigator.deviceMemory exists (Blink). So a main-thread-only deviceMemory patch (a spoofer inflating
+  RAM or hiding a low-mem VM) survived every realm check. Added deviceMemory to the worker postMessage + a
+  divergence rule (convicting, w0.8). A page init script (addInitScript / CDP addScriptToEvaluateOnNewDocument)
+  does NOT run in Worker scope, so a main-only Object.defineProperty diverges. FP-safe via a 'u' sentinel (both
+  realms undefined on Firefox/Safari compare EQUAL; a real Chromium reports one value in both → silent). GROUNDED
+  LIVE with a red-verify hook (stealth KS_SPOOF_DM=0.25, main-only): devicememory_worker_divergence FIRES while
+  the general worker_divergence stays FALSE — proving the gap was real; the un-patched browser is SILENT. The
+  realm-coherence axis (languages/webgl/canvas/timezone worker-divergence) now covers deviceMemory too. 7 rungs.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
