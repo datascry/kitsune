@@ -30,6 +30,7 @@ COPY package.json ./
 RUN npm install --silent --no-audit --no-fund \
       playwright@1.52.0 patchright rebrowser-playwright@1.52.0 \
     && (npx playwright install chromium || true) \
+    && (npx playwright install webkit || true) \
     && (npx patchright install chromium || true)
 COPY run.mjs entrypoint.sh ./
 # entrypoint.sh provisions the environment (KS_PROVISION: real PulseAudio devices + speech-dispatcher voices)

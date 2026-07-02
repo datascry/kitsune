@@ -378,6 +378,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   given a Firefox UA fires devicememory_vs_engine (ua_engine=firefox + Blink deviceMemory present); under its
   native Chromium UA it does NOT. A new axis off the iOS-screen vein — one more surface a Chromium-faking-a-non-
   Blink-browser must scrub. Next: R2 (desktop-OS device tuples), B3 (GPU-family↔model), deeper TCP-behavior.
+- **[LOOP R3] WebKit runtime path — the coherent iOS device, engine wall CROSSED (2026-07-02, grounded).** The
+  missing rung: an iOS device is only coherent on a REAL WebKit engine (Blink-faking-iOS self-defeats). Added
+  KS_ENGINE=webkit|firefox|chromium to the stealth runner (Playwright ships a real WebKit build) + scoped
+  KS_DEVICE to the launched engine (webkit→iPhone/iPad) + a maxTouchPoints=5 init-fix for the headless-WebKit
+  touch quirk (main-thread-only is safe: WorkerNavigator has no maxTouchPoints to diverge). GROUNDED LIVE:
+  KS_ENGINE=webkit + KS_DEVICE='iPhone 15' → ALL iOS/engine tells SILENT (apple_ua_nonwebkit, devicememory_vs_
+  engine, ios_screen_oversized/desktop_res/dpr_incoherent, mobile_no_touch) = a FULLY coherent iOS device;
+  the Blink+iPhone-UA contrast trips apple_ua_nonwebkit + devicememory_vs_engine, proving WebKit crosses the
+  engine wall those checks guard. The device-identity axis (engine+screen+DPR+touch) is now coherent for iOS —
+  the R3 win. Residual, honest (7 tells, OTHER axes, each with its own tool): automation (webdriver_present /
+  automation_globals → patchright), floor (media_devices_empty → KS_PROVISION), the Linux-container leak
+  (font_os_vs_ua + navplatform_vs_ua → the WebKit host is Linux, needs engine-level font/platform spoofing or a
+  real iOS host), network (tcp_os_vs_ua + tls_grease_vs_ua → route through the os-spoof ios-safari proxy). R3
+  crosses the iOS device-identity wall and MAPS the coherent-full-stack-iOS frontier: font/platform + network.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

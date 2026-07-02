@@ -326,24 +326,29 @@ async function realInputMove(page) {
 // patchright / rebrowser-playwright are API-compatible playwright drop-ins; swap the engine at runtime.
 const engine =
   PATCHRIGHT || MAX_STEALTH || FLOOR_SPOOF ? "patchright" : REBROWSER ? "rebrowser-playwright" : "playwright";
-const { chromium, devices } = await import(engine);
+const pw = await import(engine);
+const { devices } = pw;
+// KS_ENGINE=webkit|firefox|chromium — the runtime engine (default chromium). WebKit is the missing rung: an
+// iOS device is only coherent on a REAL WebKit engine (a Blink browser wearing an iPhone UA self-defeats into
+// apple_ua_nonwebkit / devicememory_vs_engine). Playwright ships a real WebKit build, so KS_ENGINE=webkit +
+// KS_DEVICE="iPhone 15" is a genuinely coherent iOS device — the red counter to the whole iOS-screen manifold.
+const KS_ENGINE = process.env.KS_ENGINE || "chromium";
+const browserType =
+  KS_ENGINE === "webkit" ? pw.webkit : KS_ENGINE === "firefox" ? pw.firefox : pw.chromium;
 
-// KS_DEVICE=<name>|random — the coherent per-OS device randomizer (the vision): sample a REAL device from
+// KS_DEVICE=<name>|random|list — the coherent per-OS device randomizer (the vision): sample a REAL device from
 // Playwright's maintained registry and apply it NATIVELY (UA + Sec-CH-UA + screen + DPR + touch + isMobile all
-// from one device, no JS patches → no realm-divergence tell). Scoped to chromium-engine devices (Android Chrome
-// + desktop Chrome): an iOS/WebKit device on a Blink engine self-defeats into apple_ua_nonwebkit, so those need
-// a real WebKit runtime, not this Chromium driver. Each launch draws a distinct coherent device → a fleet morphs
-// into a diverse, on-manifold device population that evades the MARGINAL device-coherence checks (mobile_no_touch,
-// ios_screen_oversized, macos_dpr, pointer_touch) a naive independent-attribute spoof trips.
-const chromiumDevices = Object.keys(devices).filter((n) => devices[n].defaultBrowserType === "chromium");
+// from one device, no JS patches → no realm-divergence tell). Devices are scoped to the LAUNCHED engine so the
+// engine and the device UA agree: chromium→Android/desktop-Chrome, webkit→iPhone/iPad (real iOS coherence).
+const engineDevices = Object.keys(devices).filter((n) => devices[n].defaultBrowserType === KS_ENGINE);
 function pickDevice(sel) {
   if (!sel) return null;
   if (sel === "list") {
-    console.log(chromiumDevices.join("\n"));
+    console.log(engineDevices.join("\n"));
     process.exit(0);
   }
   if (sel === "random") {
-    const n = chromiumDevices[Math.floor(Math.random() * chromiumDevices.length)];
+    const n = engineDevices[Math.floor(Math.random() * engineDevices.length)];
     return { name: n, ...devices[n] };
   }
   return devices[sel] ? { name: sel, ...devices[sel] } : null;
@@ -495,9 +500,14 @@ const mode = UACH_COHERENT
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.
 // KS_PROVISION opts Chromium into the speech-dispatcher TTS backend so speechSynthesis.getVoices() returns the
 // real provisioned voice set (br.voices_empty silent WITHOUT a JS patch). Only added when actually provisioned.
-const launchArgs = ["--no-sandbox", "--ignore-certificate-errors"];
-if (process.env.KS_PROVISION === "1") launchArgs.push("--enable-speech-dispatcher");
-const browser = await chromium.launch({ headless: !HEADFUL, args: launchArgs });
+// Chromium-only launch flags (--no-sandbox etc. are Blink args; WebKit/Firefox reject them). The context's
+// ignoreHTTPSErrors handles the edge's self-signed cert on every engine.
+const launchArgs = [];
+if (KS_ENGINE === "chromium") {
+  launchArgs.push("--no-sandbox", "--ignore-certificate-errors");
+  if (process.env.KS_PROVISION === "1") launchArgs.push("--enable-speech-dispatcher");
+}
+const browser = await browserType.launch({ headless: !HEADFUL, args: launchArgs });
 // KS_SCREEN=WxH sets the reported screen.width/height (Playwright's `screen` option), so a spoofed device's
 // screen geometry can be made coherent (a real iPhone e.g. 393x852) or INCOHERENT (a desktop 1920x1080 under a
 // mobile UA → br.ios_screen_oversized) — the device<->screen joint-coherence axis.
@@ -526,6 +536,15 @@ const context = await browser.newContext({
   // Route through a real proxy so the edge sees a real egress IP (turnkey live-proxy harness hook).
   ...(KS_PROXY ? { proxy: { server: KS_PROXY } } : {}),
 });
+// WebKit headless reports navigator.maxTouchPoints=0 even for a hasTouch iPhone device (a Playwright/headless
+// quirk) → trips br.mobile_no_touch. iOS Safari hardcodes maxTouchPoints=5; restore it so the coherent iOS
+// device is complete. Main-thread-only is SAFE here: WorkerNavigator does not expose maxTouchPoints, so there is
+// no worker realm to diverge from (unlike hardwareConcurrency/deviceMemory, where a main-only patch WOULD be caught).
+if (KS_ENGINE === "webkit" && ksDevice && deviceOpts.isMobile) {
+  await context.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "maxTouchPoints", { get: () => 5, configurable: true });
+  });
+}
 if (FLOOR_SPOOF) {
   // Attack the environment floor: fake the presence of the two tells nothing else spoofs. Voices are
   // given Linux-desktop (espeak-style) names so they are coherent with the Linux UA — no Microsoft/Apple
