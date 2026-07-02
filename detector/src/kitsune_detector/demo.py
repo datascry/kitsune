@@ -2125,6 +2125,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/iPhone|iPad|iPod/i.test(ua) && Math.max(screen.width || 0, screen.height || 0) > 1400) {
       sigs.push(S("browser", "ios_screen_oversized", true));
     }
+    // The Android analog: an Android PHONE (the UA "Mobile" token — which Android Chrome OMITS on tablets and
+    // Android TV, so this scopes to phones + foldables only) has a logical screen well under 1400 CSS px in
+    // either dimension (the largest current Android phone/foldable tops out near ~1100). An Android+Mobile UA
+    // reporting max(screen) > 1400 is a desktop faking an Android phone (a Mobile UA over a 1920x1080 desktop).
+    // FP-safe by the hardware bound (no Android phone CSS screen approaches 1400); the Android sibling of
+    // ios_screen_oversized, and the first device-coherence check on the Android manifold.
+    if (/Android/i.test(ua) && /Mobile/i.test(ua) && Math.max(screen.width || 0, screen.height || 0) > 1400) {
+      sigs.push(S("browser", "android_phone_screen_oversized", true));
+    }
     // DEVICE<->DPR coherence (the B1 joint constraint, sibling of ios_screen_oversized): iOS renders at a
     // device-FIXED backing scale — every real iPhone/iPad reports window.devicePixelRatio of EXACTLY 2 or 3
     // (2 for iPad + SE/older iPhones, 3 for modern/Plus/mini iPhones; Apple ships no fractional or 1x iOS

@@ -1457,6 +1457,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Engine<->API-surface coherence via the Device Memory API. navigator.deviceMemory is Blink-EXCLUSIVE: Chromium ships it, but Firefox deliberately declined it (privacy — https://github.com/w3c/device-memory has no Gecko implementation) and Safari/WebKit never shipped it. So a UA whose engine token is firefox or safari while navigator.deviceMemory is DEFINED is a Blink engine wearing a non-Blink UA. This is the inverse of br.no_devicememory (Chromium UA MISSING deviceMemory) and complements br.apple_ua_nonwebkit (window.chrome/userAgentData present under a Safari UA) + the Gecko buildID check through a THIRD, independent Blink surface — so it still fires when a spoofer patches out window.chrome + navigator.userAgentData and fakes buildID but forgets deviceMemory. The ratchet: one more Blink surface a Chromium-faking-Firefox/Safari must scrub. FP-SAFE: no real Firefox or Safari exposes deviceMemory. Scoped to the firefox/safari UA engines (not 'other', which may be a legitimately Chromium-based browser with an unusual UA). GROUNDED LIVE: a Chromium (stealth) given a Firefox UA fires devicememory_vs_engine (Blink deviceMemory present under a Firefox UA); under its native Chromium UA it does NOT (that path is the coherent chrome_no_devicememory forward-check instead)."
 
+  - id: br.android_phone_screen_oversized
+    title: Android phone UA reports a screen larger than any real Android phone
+    layers: [browser]
+    reads: [browser.android_phone_screen_oversized]
+    predicate: present
+    category: coherence
+    weight: 0.7
+    status: active
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "DEVICE<->screen coherence on the ANDROID manifold — the Android sibling of br.ios_screen_oversized and the FIRST device-coherence check on Android (the detector had none). Scoped to the UA 'Mobile' token, which Android Chrome OMITS on tablets and Android TV / Auto (those UAs carry 'Android' WITHOUT 'Mobile') — so this keys on PHONES + foldables only, whose logical screen is bounded: the largest current Android phone/foldable tops out near ~1100 CSS px in either dimension (unfolded foldables ~884 wide). An Android+Mobile UA reporting max(screen.width, screen.height) > 1400 is therefore a DESKTOP faking an Android phone — a Mobile UA over a 1920x1080 (or similar) desktop screen, the direct Android analog of the desktop-faking-iOS ios_screen_oversized catches. FP-SAFE by the hardware bound (no Android phone CSS screen approaches 1400; tablets/TV are out of scope by the Mobile-token gate). Complements br.mobile_no_touch (which catches the SAME desktop-faking-mobile only when it also forgets touch); this fires on the screen regardless of the touch spoof. GROUNDED LIVE: a Chromium given a Pixel-phone Android+Mobile UA + KS_SCREEN=1920x1080 fires android_phone_screen_oversized; the same UA + a real Android phone screen (412x915) is SILENT, as is a coherent KS_DEVICE Android phone."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty
