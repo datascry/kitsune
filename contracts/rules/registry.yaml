@@ -1493,6 +1493,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Realm coherence for the User-Agent Client Hints object — the #1 target of OS-spoof tooling. navigator.userAgentData (platform, mobile, brands) is exposed in WorkerNavigator too (Blink), so a main-thread-ONLY patch of it (the standard way a tool fakes the JS-visible platform: Object.defineProperty(navigator,'userAgentData',...)) never reaches Worker scope and diverges. Compares platform|mobile across realms. A page init script (addInitScript / CDP addScriptToEvaluateOnNewDocument) does NOT run in Workers, so a main-only userAgentData override is caught here — the same context-isolation gap as br.languages_worker_divergence / br.devicememory_worker_divergence, extended to the highest-value spoof surface. FP-SAFE by TWO guards: the 'u' sentinel (both realms lacking userAgentData — Firefox/Safari — compare equal → silent) AND the wn.uad !== 'u' gate (fires only when the WORKER actually exposes userAgentData, so a browser whose worker lacks it never false-fires); a real Chromium reports the same platform|mobile in both realms → silent. Convicting (w0.8). GROUNDED LIVE: stealth with a main-only navigator.userAgentData override (KS_SPOOF_UADATA faking platform='Windows') fires uadata_worker_divergence — confirming the Chromium worker DOES expose userAgentData; the un-patched browser is SILENT."
 
+  - id: br.ios_no_standalone
+    title: iOS UA lacks navigator.standalone (iOS-Safari-only surface) — not genuine iOS Safari
+    layers: [browser]
+    reads: [browser.ios_no_standalone]
+    predicate: present
+    category: coherence
+    weight: 0.4
+    status: experimental
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "iOS-Safari-SPECIFIC engine surface, FINER than br.safari_ua_no_webkit_api (window.GestureEvent, which EVERY desktop Safari + WebKit also exposes). navigator.standalone is a read-only boolean defined ONLY on real iOS/iPadOS Safari — undefined on desktop Safari, desktop WebKit (Playwright's build), Chrome, and Firefox (confirmed present on iOS Safari through 2026: MDN Navigator + Apple SafariWebContent docs; it is the PWA home-screen-mode flag Apple keeps). So an iPhone/iPad UA with navigator.standalone === undefined is not a genuine iOS Safari: it convicts a DESKTOP-WebKit runtime wearing an iPhone device — the exact residual the KS_ENGINE=webkit iOS node (loop R3) leaves, which passes GestureEvent + apple_ua_nonwebkit because it IS WebKit, just DESKTOP WebKit not iOS. This is the check that beats R3's coherent-looking iOS device. EXPERIMENTAL (w0.4, corroborating): iOS in-app WKWebViews (Facebook/Instagram/Google-app in-app browsers) ALSO lack navigator.standalone, and they carry iOS-Safari-like UAs — so real in-app traffic would trip it. FP-safe promotion needs a UA gate (an app-token / clean-Version-Safari-token filter) or corroboration; the underlying surface is sound (real full iOS Safari always defines it). GROUNDED LIVE: the R3 WebKit iPhone 15 (desktop WebKit) and a Chromium+iPhone-UA both fire ios_no_standalone; a real iOS Safari (not testable in-sandbox) defines the property and would not."
+
   # --- v0.13.0: speech-synthesis voice coherence (OS-specific TTS, hard for a spoof to fake) ---
 
   - id: br.voices_empty

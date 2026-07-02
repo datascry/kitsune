@@ -2047,6 +2047,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // spoof that DELETES window.chrome/userAgentData to beat that rule still cannot synthesise GestureEvent.
     if (uaEngine === "safari" && typeof window.GestureEvent !== "function")
       sigs.push(S("browser", "safari_ua_no_webkit_api", true));
+    // iOS-Safari-SPECIFIC surface, FINER than GestureEvent (which desktop Safari + all WebKit also expose):
+    // navigator.standalone is defined (a boolean) ONLY on real iOS/iPadOS Safari — undefined on desktop Safari,
+    // desktop WebKit (Playwright), Chrome, Firefox (confirmed present on iOS Safari through 2026, MDN + Apple).
+    // So an iPhone/iPad UA with navigator.standalone === undefined is not a genuine iOS Safari: it catches a
+    // DESKTOP-WebKit runtime wearing an iPhone device — which passes GestureEvent / apple_ua_nonwebkit because it
+    // IS WebKit, just not iOS WebKit. EXPERIMENTAL: iOS in-app WKWebViews (Facebook/Instagram/Google-app) ALSO
+    // lack navigator.standalone, so real in-app traffic would trip it — needs a UA app-token / Version gate to convict.
+    if (/iPhone|iPad|iPod/i.test(ua) && typeof navigator.standalone === "undefined")
+      sigs.push(S("browser", "ios_no_standalone", true));
     // Engine error-message format — deeper than navigator.vendor or Error.captureStackTrace, because it
     // is the engine's own message generator (which JS-stealth tools do not rewrite). The same error reads
     // differently per engine: V8 "Cannot read properties of…", SpiderMonkey "can't access property…",
