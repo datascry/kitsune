@@ -497,6 +497,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (→ os-spoof macos proxy). BLUE consequence: br.font_mac_internal (present-dot-font check) is now EVADABLE by
   curation — the durable font tell must become a MISSING-expected-font or font-METRIC check, not a present-internal-
   font one. 13 grounded rungs. Next blue: a font tell a curated list can't satisfy (metric-based or expected-present).
+- **[LOOP R-gl] KS_HEADFUL gives camoufox real WebGL2 — evades webgl2_missing, caps-mismatch is the durable catch
+  (2026-07-02, grounded).** webgl2_missing is a camoufox-WIDE tell (grounded: the default linux profile trips it
+  too, not just macOS) — headless camoufox has no GL context. RED: KS_HEADFUL runs camoufox on a virtual Xvfb
+  display (real llvmpipe GL). GROUNDED LIVE (KS_MACOS + KS_HEADFUL): webgl2_missing CLEARED **and** webgl_software
+  CLEARED (a real GL context, renderer spoofed to "Apple M1, or similar"). But a NEW tell fires:
+  br.webgl_renderer_caps_mismatch — the "Apple M1" renderer STRING vs the llvmpipe CAPABILITY vector (MAX_TEXTURE_
+  SIZE / limits / extensions). That is the durable GL catch: camoufox can spoof the renderer STRING and provide a
+  real GL context, but cannot reproduce a real Apple GPU's capability numbers without an actual Apple GPU — the
+  SAME "string-spoof < real-hardware" law as R-font (declared fonts) and net.tcp_static_window (SYN vs behaviour).
+  The camoufox macOS node is now coherent on platform + DPR + fonts + WebGL2-presence + renderer-string; the GL
+  CAPS are the residual the software renderer can't fake. Blue holds via a caps-vector check the string spoof
+  can't satisfy. 14 grounded rungs. Pattern crystallised: every layer's durable tell is the one that measures the
+  REAL substrate (caps, metrics, kernel behaviour), not the DECLARED string — string spoofs are always evadable.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
