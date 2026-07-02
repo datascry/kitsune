@@ -1000,6 +1000,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   BROKE with the S23 all-Snapdragon line, so it is not deterministic). 20 rungs stand. NOT a full frontier-dry yet
   (the incremental leads remain groundable), but the DISTINCT-substrate frontier is now tested to its floor: GPU
   (actual-behaviour probes) is the one unspoofable-substrate axis that grounds cleanly in-sandbox; cores does not.
+- **[LOOP MOBILE B-modelos-upper] br.android_model_os_exceeds — the OTHER bound of the model↔OS window
+  (2026-07-02, grounded).** The UPPER bound to match B-modelos's lower: a device cannot run an Android NEWER than
+  its LAST update. Pixels 2-5 are EOL with a FIXED last version (3 years of updates pre-Pixel-8: Pixel 2->11, 3->12,
+  4->13, 5->14 — these never advance). A pinned EOL Pixel with platformVersion ABOVE its last release is a fork
+  pairing an OLD model with an impossible-for-it NEW OS — the case the launch lower-bound misses. GROUNDED LIVE:
+  KS_DEVICE='Pixel 7' (newer Android) + KS_FORGE_JS_MODEL='Pixel 2' (last OS 11) FIRES; Pixel 5 on Android 11
+  (window 11-14) SILENT. FP-safe (an EOL device's max OS is manufacturer-fixed; scoped to Pixels 2-5, 6+ excluded
+  as still-supported). EXPERIMENTAL (w0.6). The model↔OS window is now closed BOTH sides — a coherent Android
+  device's OS must lie within its model's real support window. HONEST framing: this is the same AXIS as B-modelos
+  (incremental), but closes a distinct case (old-model+new-OS) the lower bound missed — a real gap, not a
+  reasoned-away one. 21 rungs. The frontier is now: distinct-substrate tested-to-floor (GPU clean, cores/precision/
+  WebGPU dead), device-manifold closed on 5 axes (screen/DPR/GPU/OS-low/OS-high), remaining leads incremental or
+  FP-risky (non-Pixel model↔GPU). Approaching a genuine boundary, but each closure is still grounded, not assumed.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

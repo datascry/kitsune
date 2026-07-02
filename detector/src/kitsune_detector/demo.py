@@ -1875,6 +1875,18 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
           var _pvMaj = parseInt(String(he.platformVersion).split(".")[0], 10);
           if (_pvMaj && _pvMaj < _pixLaunch[he.model]) sigs.push(S("browser", "android_model_os_predates", true));
         }
+        // UPPER bound of the same axis: a device cannot run an OS NEWER than its LAST update either. Pixels 2-5
+        // are EOL with a FIXED last version (launch + 3 years of updates: Pixel 2->11, 3->12, 4->13, 5->14 — these
+        // will never advance). A pinned EOL Pixel with platformVersion ABOVE its last release is a fork/randomizer
+        // pairing an old model with an impossible-for-it new OS (the case the launch lower-bound misses). Scoped to
+        // EOL'd Pixels only (6+ are still supported, so their max is open — excluded). FP-safe: an EOL device's max
+        // OS is fixed by the manufacturer's ended support.
+        var _pixMax = { "Pixel 2": 11, "Pixel 2 XL": 11, "Pixel 3": 12, "Pixel 3 XL": 12, "Pixel 3a": 12,
+          "Pixel 4": 13, "Pixel 4 XL": 13, "Pixel 4a": 13, "Pixel 5": 14, "Pixel 5a": 14 };
+        if (uad.mobile && he.model && _pixMax[he.model] && he.platformVersion) {
+          var _pvMaj2 = parseInt(String(he.platformVersion).split(".")[0], 10);
+          if (_pvMaj2 && _pvMaj2 > _pixMax[he.model]) sigs.push(S("browser", "android_model_os_exceeds", true));
+        }
       } catch (e) {}
     }
     // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for
