@@ -1818,7 +1818,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // a headless tell deeper than ua_is_headless; (b) its Chrome version must match the UA-string version.
     if (uad && uad.getHighEntropyValues) {
       try {
-        var he = await uad.getHighEntropyValues(["uaFullVersion", "fullVersionList"]);
+        var he = await uad.getHighEntropyValues(["uaFullVersion", "fullVersionList", "model"]);
         var fvl = he.fullVersionList || [];
         var brandList = fvl.concat(uad.brands || []);
         if (brandList.some(function (b) { return /headless/i.test((b && b.brand) || ""); }))
@@ -1827,6 +1827,14 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         var chMajor = (chBrand ? String(chBrand.version || "") : String(he.uaFullVersion || "")).split(".")[0];
         var uaM = (ua.match(/Chrome\\/(\\d+)/) || [])[1];
         if (chMajor && uaM && chMajor !== uaM) sigs.push(S("browser", "ch_he_version_vs_ua", true));
+        // A mobile Client-Hints device (userAgentData.mobile) whose high-entropy MODEL is empty. A real Android
+        // Chrome fills getHighEntropyValues().model with the hardware (e.g. "Pixel 8"); a desktop Chromium — even
+        // under a mobile UA / Playwright device emulation — returns an empty model (it reads REAL hardware). Unlike
+        // the HEADER-based net.ch_ua_mobile_no_model, this is the JS surface, so it catches a header-only
+        // Sec-CH-UA-Model FORGE (route interception patches the header, not getHighEntropyValues); forging the JS
+        // too is caught by br.uadata_worker_divergence (userAgentData is in the worker). FP-safe: a real Android
+        // always fills the model. The JS twin of the CH-UA-Model header check.
+        if (uad.mobile && !he.model) sigs.push(S("browser", "mobile_no_js_model", true));
       } catch (e) {}
     }
     // navigator.platform implies an OS that must match the UA platform (engine-agnostic — works for
