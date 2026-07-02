@@ -585,6 +585,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   irreducible in-sandbox wall — the GL CAPS substrate (a real GPU) — with the rest provisionable/infra-bound. The
   per-node arms race is CONVERGED: the durable detector edge is the substrate the container can't fake (GPU caps),
   and beyond that it is the external floors (IP reputation, real egress). 18 grounded rungs + this capstone.
+- **[LOOP dry-2a] webrtc_unavailable is INFRA-bound, not a provision gap (2026-07-02, honest negative).** Tried to
+  reduce the R1 ceiling by fixing the webrtc tell (the provision comment claims KS_PROVISION clears it). GROUNDED
+  it does NOT: plain camoufox KS_PROVISION (headless) fires br.webrtc_unavailable with webrtc_public_ip=None — and
+  the collector's probe sets any=true on ANY ICE candidate (host/loopback/mDNS/srflx), so NONE arrived. Firefox in
+  the sandbox container gathers ZERO ICE candidates: the STUN is unreachable (no srflx, expected) AND no host/
+  loopback candidate forms either (a media.peerconnection.ice.loopback=True attempt did not help → REVERTED, not
+  shipped ungrounded). So it is a container UDP/interface-enumeration block — an infra floor like the QUIC member
+  (ADR-0005) and the delayed-ACK AF_PACKET wall, NOT a fixable provision pref in-sandbox. This SHARPENS the R1
+  capstone: of the 3 ceiling tells, ONE is a hardware-substrate wall (GL caps / real GPU) and TWO are infra-bound
+  (webrtc ICE gathering, kernel-forge-drops-the-POST) — NONE is a detector gap. The per-node detector holds
+  completely; every residual is an environment/hardware floor the sandbox can't provision. Honest negative; a
+  reduce-the-ceiling attempt that grounded the wall instead of moving it.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
