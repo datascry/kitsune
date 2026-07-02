@@ -226,10 +226,15 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (`mss,sack…`→linux, `mss,nop,ws,nop,nop,ts…`→darwin, `…,sack…`→windows), NOT the TTL — a `sysctl
   ip_default_ttl=128` mangle is explicitly defeated (grounded: TTL-128 curl still classified `linux`). The
   option order is set by the kernel TCP stack; a UA/navigator spoof can't touch it, and even the high-end
-  network impersonators (uTLS/curl-impersonate) forge the TLS ClientHello but NOT the TCP SYN. So coherent OS
-  spoofing needs one of: run on the real target OS; tunnel through a VM/proxy whose EGRESS stack is the target
-  OS; a custom raw-socket TCP client emitting the target's option order; or an edge behind a CDN/LB (which sees
-  the balancer's SYN, not the client's — the deployment caveat that makes this tell direct-connection-only).
+  network impersonators (uTLS/curl-impersonate) forge the TLS ClientHello but NOT the TCP SYN. GROUNDED that
+  uTLS ALONE can't: the go-tls (uTLS) evader produced a forged Chrome JA4 (`t13d1516h2_…`) but `tcp_kernel`
+  stayed `linux` with the IDENTICAL JA4T to plain curl (`64240_2-4-8-1-3_1460_7`) — uTLS is a TLS library that
+  wraps a net.Conn AFTER the kernel has already opened the TCP connection and emitted the SYN, so it has no
+  access to the SYN options. So coherent OS spoofing needs one of: run on the real target OS; tunnel through a
+  VM/proxy whose EGRESS stack is the target OS; a **userspace TCP/IP stack** (gVisor netstack / raw sockets with
+  NET_RAW) emitting the target's option order, with uTLS layered ON TOP for the TLS (uTLS accepts any net.Conn —
+  the SYN forge is the userspace stack, not uTLS); or an edge behind a CDN/LB (which sees the balancer's SYN,
+  not the client's — the deployment caveat that makes this tell direct-connection-only).
   Same pattern as the whole session: everything above the kernel is spoofable/provisionable; the kernel TCP
   stack is the durable OS fingerprint, and forging it means becoming (or tunnelling through) the real OS.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
