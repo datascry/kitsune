@@ -524,6 +524,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   delayed-ACK AF_PACKET block, it is an infra floor, not a detector gap). Rejected soft-surface padding
   (navigator.getBattery/connection-vs-engine: window-only, so a main-only delete evades with no realm to diverge —
   the R3++ soft-surface class, not worth a rung). Dry attempt #1 of a new streak; the loop continues.
+- **[LOOP B4-full] br.ios_screen_offmanifold — the full iOS device-screen SET, dry streak RESET (2026-07-02,
+  grounded).** Closed the last iOS-screen gap after dry-1: the three slices (oversized max>1400, desktop-res,
+  DPR∉{2,3}) all pass a spoofer who picks a sub-1400, non-desktop, DPR-2/3 geometry that is simply NOT a real
+  iPhone — e.g. 400x800. This keys on the SET of real iOS logical resolutions (portrait CSS px) from the Apple
+  device corpus (iosref.com/res + ios-resolution.com); screen.width/height is device-fixed on iOS, so a portrait
+  (min×max) normalisation covers both orientations. GROUNDED LIVE, the decisive contrast: iPhone UA + 400x800 @
+  DPR3 fires ios_screen_offmanifold while oversized + desktop_res + dpr_incoherent ALL stay silent (it catches
+  exactly what the slices miss); a real iPhone 15 393x852 is silent everywhere. EXPERIMENTAL (w0.4): a brand-new
+  Apple model ships a resolution not yet in the maintained set → FP until refreshed, so it convicts only
+  corroborated (the oversized/desktop-res slices stay the FP-safe hardware-bound frontline; this is the tight
+  corroborating backstop). The iOS screen manifold is now a FOUR-rung ratchet — oversized, desktop-res, DPR, and
+  the full set. 15 grounded rungs. Dry streak reset to 0. Data-grounded rungs still exist where real device
+  corpora fill a manifold the hardware-bound slices can't.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

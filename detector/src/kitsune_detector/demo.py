@@ -2164,6 +2164,19 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/iPhone|iPad|iPod/i.test(ua) && _desktopRes[_sw + "x" + _sh]) {
       sigs.push(S("browser", "ios_screen_desktop_res", true));
     }
+    // The FULL B4: the real iOS logical-screen SET (portrait CSS px, from the Apple device corpus iosref.com/res
+    // + ios-resolution.com — every iPhone/iPad/iPod). An iOS UA whose screen matches NO real iOS geometry is off
+    // the device manifold — the TIGHTEST iOS screen check, catching a spoofer who dodges oversized (max>1400) +
+    // desktop-res AND gets DPR right but picks a NON-REAL mobile geometry (e.g. 400x800). screen.width/height on
+    // iOS is device-fixed (orientation-independent), so normalising to portrait (min x max) covers both. EXPERIMENTAL:
+    // a brand-new iPhone model ships a resolution not yet in this set → maintain from the corpus; corroborating (w0.4).
+    var _iosSet = { "320x568":1,"375x667":1,"414x736":1,"375x812":1,"414x896":1,"390x844":1,"428x926":1,
+      "393x852":1,"430x932":1,"402x874":1,"440x956":1,"320x480":1,"768x1024":1,"744x1133":1,"810x1080":1,
+      "820x1180":1,"834x1194":1,"834x1210":1,"834x1112":1,"1024x1366":1,"1032x1376":1,"768x1004":1 };
+    if (/iPhone|iPad|iPod/i.test(ua) && _sw && _sh) {
+      var _iosKey = Math.min(_sw, _sh) + "x" + Math.max(_sw, _sh);
+      if (!_iosSet[_iosKey]) sigs.push(S("browser", "ios_screen_offmanifold", true));
+    }
     // Genuine mobile device = a mobile UA token AND real touch. The detector gates the mouse-biomech
     // behavioral FLOORS off for these (power-law / straightness / velocity-CV / mouse-entropy / coalesced-
     // absent are mouse-calibrated and false-positive on a real finger swipe — G10). NOT set for a mobile UA
