@@ -414,6 +414,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "br.webgl_maxtexture_unallocatable",
         ),
         ([(Layer.browser, "mobile_cores_high", True, Source.collector)], "br.mobile_cores_high"),
+        ([(Layer.browser, "android_no_contacts_api", True, Source.collector)], "br.android_no_contacts_api"),
         (
             [(Layer.browser, "android_model_screen_incoherent", True, Source.collector)],
             "br.android_model_screen_incoherent",

@@ -564,6 +564,18 @@ rules:
     last_validated: "2026-07-02"
     source: "DEVICE-model <-> screen coherence on the Android manifold — the joint a coherent model spoof must still satisfy once the model itself is pinned across header+main-JS+worker (net.ch_ua_mobile_no_model / br.mobile_no_js_model / br.uadata_model_worker_divergence). A claimed Android model names a specific handset whose LOGICAL screen is device-fixed; the collector keys the getHighEntropyValues().model against the real per-model portrait CSS geometry (from the device corpus; the set is seeded from Playwright's maintained Android device registry — Pixel 2..7, Nexus, Galaxy SM-*). An Android Chrome reports model + screen from the SAME hardware, so a model PRESENT with a screen that is not that model's is a randomizer that drew model and screen from DIFFERENT devices — a naive spoof; a coherent one keeps model+screen+UA from ONE real device. This is the Android analog of br.ios_screen_offmanifold, but keyed by the exact MODEL (not a set membership), so it is tighter. EXPERIMENTAL (w0.5, corroborating): only fires for a model IN the maintained set with a mismatched portrait screen — an unknown/new model skips (FP-safe on new hardware), and the set needs periodic refresh from the device corpus; a coherent randomizer (model+screen from one device, e.g. KS_DEVICE) EVADES by construction, which is the manifold point. GROUNDED LIVE: KS_DEVICE='Pixel 5' + a forged model 'Pixel 5' (screen 393x851 matches) is SILENT; KS_DEVICE='Pixel 7' (screen 412x915) + a forged model 'Pixel 5' (expects 393x851) FIRES — model and screen from different devices."
 
+  - id: br.android_no_contacts_api
+    title: Android Chrome Mobile UA lacking navigator.contacts (a mobile-only web API)
+    layers: [browser]
+    reads: [browser.android_no_contacts_api]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "MOBILE-ONLY web-platform-API presence — a distinct axis from the GPU-substrate and device-manifold rungs. navigator.contacts (the ContactsManager / Contact Picker API) is present on Android Chrome 80+ (and ChromeOS) but is UNDEFINED on desktop Chrome: the documented support test is ('contacts' in navigator && 'ContactsManager' in window), false on every desktop platform (developer.chrome.com Contact Picker docs; MDN). Crucially, Playwright/CDP device emulation does NOT add it — it is a platform capability, not toggled by isMobile — so the FULL emulated Android node lacks it too (GROUNDED: KS_DEVICE=Pixel 5 reports 'contacts' in navigator = false, identical to a desktop). So a non-WebView Android Chrome Mobile UA WITHOUT navigator.contacts is a desktop wearing a phone UA — like br.mobile_cores_high, this catches the FULL Playwright emulation, not just a UA-only spoof. CONVICTING (w0.6). FP-SAFE: real Android Chrome (the UA claims a modern Chrome >= 80) exposes navigator.contacts; scoped to /Android/ + /Chrome/ + /Mobile/ and EXCLUDING Android WebView (UA token 'wv', which legitimately lacks the API). EXPERIMENTAL (calibration: assumes the UA-claimed modern Chrome; a pre-80 Android Chrome would be a rare confound). The RED counter is defining a fake navigator.contacts object (a shallow presence-spoof); the actual contacts.select() requires a real native picker + user gesture, the unspoofable follow-up. GROUNDED LIVE: KS_DEVICE='Pixel 5' (a full emulated Android Chrome node) FIRES android_no_contacts_api; a desktop Chrome UA is out of scope (not Android) and does not fire."
+
   - id: br.mobile_cores_high
     title: Mobile UA exposes more than 8 CPU cores — a phone SoC does not
     layers: [browser]
