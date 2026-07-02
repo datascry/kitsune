@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **171 rules**: 120 active · 45 experimental · 6 retired; 119 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **172 rules**: 120 active · 46 experimental · 6 retired; 120 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,11 +56,12 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (127)
+### browser layer (128)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `br.android_mobile_dpr1` | coherence✦ | present | 0.5 | experimental | Android Mobile UA with devicePixelRatio 1 — a phone is never 1x |
+| `br.android_model_gpu_incoherent` | coherence✦ | present | 0.6 | experimental | Android model paired with a mobile GPU family that model never shipped |
 | `br.android_model_screen_incoherent` | coherence✦ | present | 0.5 | experimental | Android device model does not match its device-fixed screen geometry |
 | `br.android_phone_screen_oversized` | coherence✦ | present | 0.7 | active | Android phone UA reports a screen larger than any real Android phone |
 | `br.apple_ua_nonwebkit` | coherence✦ | present | 0.75 | active | A UA claiming Apple WebKit (Safari / any iOS browser) exposes a Blink-only structural API |

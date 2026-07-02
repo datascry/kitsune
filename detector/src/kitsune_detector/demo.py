@@ -1905,6 +1905,26 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         && !/adreno|mali|immortalis|powervr|apple gpu|apple m[1-9]|xclipse|tegra|videocore/i.test(wg.renderer)) {
       sigs.push(S("browser", "mobile_gpu_not_mobile", true));
     }
+    // MODEL <-> GPU-FAMILY coherence — Pixels have a DETERMINISTIC SoC per generation: Pixel 1-5 = Snapdragon
+    // (Adreno), Pixel 6+ = Google Tensor (ARM Mali/Immortalis). A pinned model whose renderer names a mobile GPU
+    // of the WRONG family for that model is a source-fork that spoofed a COHERENT mobile GPU string (evading
+    // mobile_gpu_not_mobile — it IS a mobile GPU) but the wrong one for the device it claims. FP-safe: scoped to
+    // Pixels (Google fixes the SoC per generation), fires only when the renderer is a mobile GPU of a family the
+    // claimed Pixel never shipped. EXPERIMENTAL. Uses the model already pinned across the 3-surface ratchet.
+    var _modelGpu = { "Pixel 2": ["adreno"], "Pixel 2 XL": ["adreno"], "Pixel 3": ["adreno"], "Pixel 3 XL": ["adreno"],
+      "Pixel 3a": ["adreno"], "Pixel 4": ["adreno"], "Pixel 4 XL": ["adreno"], "Pixel 4a": ["adreno"],
+      "Pixel 5": ["adreno"], "Pixel 5a": ["adreno"], "Pixel 6": ["mali", "immortalis"], "Pixel 6 Pro": ["mali", "immortalis"],
+      "Pixel 6a": ["mali", "immortalis"], "Pixel 7": ["mali", "immortalis"], "Pixel 7 Pro": ["mali", "immortalis"],
+      "Pixel 8": ["mali", "immortalis"], "Pixel 8 Pro": ["mali", "immortalis"], "Pixel 9": ["mali", "immortalis"],
+      "Pixel 9 Pro": ["mali", "immortalis"] };
+    var _allowedFam = _mainUadModel && _modelGpu[_mainUadModel];
+    if (_allowedFam && wg.renderer) {
+      var _rl2 = wg.renderer.toLowerCase();
+      if (/adreno|mali|immortalis|xclipse|powervr/.test(_rl2)
+          && !_allowedFam.some(function (f) { return _rl2.indexOf(f) !== -1; })) {
+        sigs.push(S("browser", "android_model_gpu_incoherent", true));
+      }
+    }
     // Anti-detect renderer-spoofing artifacts: real GPU driver strings are exact. Camoufox labels its
     // randomized GPU pick with ", or similar"; placeholder/vague renderers never come from real drivers.
     if (/,\\s*or similar|generic renderer|placeholder/i.test(wg.renderer)) sigs.push(S("browser", "webgl_renderer_artifact", true));
