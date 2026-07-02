@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **155 rules**: 111 active · 38 experimental · 6 retired; 103 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **156 rules**: 112 active · 38 experimental · 6 retired; 104 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (39)
 
@@ -54,13 +54,14 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (113)
+### browser layer (114)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `br.apple_ua_nonwebkit` | coherence✦ | present | 0.75 | active | A UA claiming Apple WebKit (Safari / any iOS browser) exposes a Blink-only structural API |
 | `br.canvas_worker_vs_main` | coherence✦ | present | 0.6 | experimental | Canvas pixel hash differs between the main thread and a Worker OffscreenCanvas |
 | `br.ch_he_version_vs_ua` | coherence✦ | present | 0.6 | experimental | UA-CH high-entropy Chrome version contradicts the UA-string version |
+| `br.devicememory_vs_engine` | coherence✦ | present | 0.6 | active | Firefox/Safari UA but navigator.deviceMemory (a Blink-only API) is present |
 | `br.engine_feature_vs_ua` | coherence✦ | present | 0.65 | active | JS engine lacks an API its claimed Chrome version shipped — stale template |
 | `br.engine_stack_vs_ua` | coherence✦ | present | 0.7 | active | JS-engine stack API (Error.stackTraceLimit = V8) contradicts the UA engine |
 | `br.error_engine_vs_ua` | coherence✦ | present | 0.75 | active | JS-engine error-message format contradicts the UA engine |
