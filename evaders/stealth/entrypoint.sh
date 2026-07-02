@@ -19,10 +19,11 @@ if [ "$KS_PROVISION" = "1" ]; then
   speech-dispatcher -d >/dev/null 2>&1 || true
 fi
 
-# KS_ANDROID_FONTS masks the desktop-Linux signature fonts so a Chromium Android device (KS_DEVICE=Pixel …) has
-# an Android-coherent web-measurable font set (only the Android-shared Noto remains) → br.font_os_vs_ua +
-# br.font_linux_leak go silent. Android IS Linux+Blink, so with this the only device-font tell is closed.
-if [ "$KS_ANDROID_FONTS" = "1" ]; then
+# KS_MOBILE_FONTS (alias KS_ANDROID_FONTS) masks the desktop-Linux signature fonts so a mobile device (KS_DEVICE=
+# Pixel … on chromium, OR KS_ENGINE=webkit iPhone …) has a mobile-coherent web-measurable font set (only the
+# Noto set both Android + iOS render remains) → br.font_os_vs_ua + br.font_linux_leak go silent. GROUNDED for BOTH
+# Android (Blink) and iOS (WebKit): the font-OS probe drops below its 2-signature Linux threshold on either engine.
+if [ "$KS_MOBILE_FONTS" = "1" ] || [ "$KS_ANDROID_FONTS" = "1" ]; then
   export FONTCONFIG_FILE=/app/android-fonts.conf
 fi
 
