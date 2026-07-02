@@ -614,6 +614,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   frontier beyond it EXTERNAL-DATA-BOUND (IP reputation, real GPU/egress, real-scale coordination). Every string a
   client controls is spoofable; every substrate the edge measures holds. This loop shipped 19 grounded rungs +
   4 honest negatives across ~9 axes — the ladder is complete to its in-sandbox floor.
+- **[LOOP REOPENED · MOBILE] Android coherent fingerprint is achievable — kernel/engine/TLS are NATIVE; font
+  coherence SHIPPED (2026-07-02, grounded).** Reopened on the mobile axis. The grounded split: ANDROID is far
+  closer to coherent than the converged desktop node because Android = Linux kernel + Blink engine + Chrome TLS,
+  ALL native to the Linux/Chromium container — so net.tcp_os_vs_ua, apple_ua_nonwebkit, and tls_grease_vs_ua do
+  NOT fire (no os-spoof, no WebKit needed). Grounded a KS_DEVICE='Pixel 5' + patchright device: residual 10 tells,
+  of which only TWO were device-coherence (font_linux_leak + font_os_vs_ua — the container's desktop-Linux fonts
+  under an Android UA). SHIPPED the fix: KS_ANDROID_FONTS masks the desktop-Linux SIGNATURE fonts (DejaVu/
+  Liberation/croscore/Free/Ubuntu/Cantarell) via a fontconfig reject list, leaving only Noto (which Android also
+  ships) — dropping the collector's font-OS probe below its 2-signature Linux threshold. GROUNDED LIVE: font_os_hint
+  goes None and BOTH font tells clear; the residual is now automation (no_chrome_object/permissions → nodriver),
+  floor (media/voices → KS_PROVISION; webgl_software → real GPU), headless (→ headful), behavioral (→ real input),
+  and prevalence. The ONLY hard wall left is webgl_software — the SAME real-GPU wall as desktop, no mobile-specific
+  wall. iOS remains harder (WebKit-on-Linux leaks navplatform=macOS + Linux fonts, needs os-spoof darwin + real
+  Safari TLS). So: coherent ANDROID mobile is achievable to the desktop floor; coherent iOS needs a real WebKit/iOS
+  runtime. Mobile axis reopened with a grounded rung.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
