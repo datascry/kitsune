@@ -1912,6 +1912,32 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
             || (_mvp && _mvp < 16384))) {
       sigs.push(S("browser", "mobile_gpu_caps_mismatch", true));
     }
+    // ACTUAL-ALLOCATION probe — the unspoofable floor beneath the caps STRING. getParameter(MAX_TEXTURE_SIZE) is a
+    // value a both-realm fork can fake to 16384, but texImage2D validates against the REAL backend: a
+    // (claimedMax x 1) texture — 1 row, ~64KB, no memory confound — SUCCEEDS on silicon that truly supports that
+    // dimension and FAILS (INVALID_VALUE) on SwiftShader (real 8192) claiming 16384. No getParameter/caps patch
+    // can repair it — the allocation hits the real GL implementation's limit. GUARD: first confirm getError is
+    // HONEST (a deliberately-invalid getParameter must raise INVALID_ENUM); a fork that patched getError to hide
+    // the allocation failure would fail this guard, and a silent getError is itself the tamper. FP-safe: an honest
+    // device allocates its OWN claimed max (claim == real) fine; only claim > real (a faked cap) fails.
+    try {
+      var _al = document.createElement("canvas").getContext("webgl");
+      var _claimMax = wg.caps && wg.caps.maxTexture;
+      if (_al && _claimMax && _claimMax > 0) {
+        while (_al.getError() !== _al.NO_ERROR) { /* drain */ }
+        _al.getParameter(0x1234);                                   // invalid pname → must raise INVALID_ENUM
+        var _honest = _al.getError() !== _al.NO_ERROR;
+        while (_al.getError() !== _al.NO_ERROR) { /* drain */ }
+        if (_honest) {
+          var _tx = _al.createTexture();
+          _al.bindTexture(_al.TEXTURE_2D, _tx);
+          _al.texImage2D(_al.TEXTURE_2D, 0, _al.RGBA, _claimMax, 1, 0, _al.RGBA, _al.UNSIGNED_BYTE, null);
+          var _ae = _al.getError();
+          _al.deleteTexture(_tx);
+          if (_ae !== _al.NO_ERROR) sigs.push(S("browser", "webgl_maxtexture_unallocatable", true));
+        }
+      }
+    } catch (e) {}
     // A mobile UA must render on a MOBILE GPU family: real phones/tablets use Adreno (Qualcomm), Mali/Immortalis
     // (ARM), PowerVR (Imagination), Apple GPU (iOS), Xclipse (Samsung), Tegra (NVIDIA Shield) or VideoCore. A
     // Mobile/Android/iPhone/iPad UA whose UNMASKED_RENDERER names NONE of these — a desktop GPU (NVIDIA/Radeon/
