@@ -1044,6 +1044,18 @@ if (FLOOR_SPOOF) {
   });
 }
 
+// KS_STRIP_CHUA=1: strip the Blink-only Sec-CH-UA* request headers — the red counter to net.ch_ua_on_safari_ua.
+// Real Safari/Firefox send NO Client Hints, so a Chromium faking one must suppress them to look coherent at the
+// HEADER layer (the JS-based apple_ua_nonwebkit still catches it IF JS runs; this beats the no-JS header check).
+if (process.env.KS_STRIP_CHUA === "1") {
+  await context.route("**/*", (route) => {
+    const h = { ...route.request().headers() };
+    for (const k of Object.keys(h)) {
+      if (k.toLowerCase().startsWith("sec-ch-ua")) delete h[k];
+    }
+    route.continue({ headers: h });
+  });
+}
 const page = await context.newPage();
 if (WORKER_CDP) {
   // Inject the worker-scope hardwareConcurrency spoof via the CDP worker channel: Playwright surfaces each
