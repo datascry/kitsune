@@ -54,7 +54,9 @@ func synWindows() []layers.TCPOption {
 	return []layers.TCPOption{mss(1460), nop(), wscale(8), nop(), nop(), sackPerm()} // mss,nop,ws,nop,nop,sack
 }
 func synDarwin() []layers.TCPOption {
-	return []layers.TCPOption{mss(1460), nop(), wscale(6), nop(), nop(), timestamps(), sackPerm(), eol()} // mss,nop,ws,nop,nop,ts,sack,eol
+	// wscale 4 (not 6): p0f shows every real macOS/iOS SYN uses a small window scale (<=4) — using a realistic
+	// value evades net.tcp_syn_anomaly, the value-vs-order coherence check. The faithful forge.
+	return []layers.TCPOption{mss(1460), nop(), wscale(4), nop(), nop(), timestamps(), sackPerm(), eol()} // mss,nop,ws,nop,nop,ts,sack,eol
 }
 
 const (

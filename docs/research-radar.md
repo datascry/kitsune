@@ -274,6 +274,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   FP-safe bands — external-data-bound, and a single-SYN heuristic (e.g. implausible timestamp) would be FP-prone
   / off-thesis (a fresh-booted machine has a small timestamp too). So the durable in-sandbox blue signal stays
   coordination + IP reputation; per-node TCP behavior is a hard, external-calibration-bound frontier, routed to the queue.
+- **Real data (p0f) moved the SYN needle a notch — `net.tcp_syn_anomaly` SHIPPED, arms-race grounded (2026-07-02).**
+  Sourced the p0f OS SYN fingerprint corpus (real data) and compared it to the os-spoof forger: the edge's
+  `ClassifyTCPOS` keys ONLY on the option ORDER — the weakest part — while p0f shows the full tuple (window,
+  wscale, quirks) is far richer. The forger's Windows (`64240`/ws8) and Linux (`64240`/ws7) tuples ARE realistic
+  modern signatures, but its macOS SYN carried `wscale=6`, which NO real macOS/iOS emits (p0f: all ≤4). Built the
+  value-vs-order coherence check `net.tcp_syn_anomaly` (edge `SYNValueAnomaly`: darwin-ordered SYN with wscale>5,
+  a p0f-grounded FP-safe boundary), experimental, w0.5. GROUNDED LIVE: os-spoof `macos-safari` (wscale 6) → the
+  rule FIRES (the option-order classifier + `net.tcp_os_vs_ua` had missed it); `windows-chrome`/`linux-firefox`
+  → silent. RED counter-move: fixed the forger's macOS wscale 6→4 (p0f-faithful) → it now ESCAPES — the arms
+  race, honestly demonstrated. So the p0f data DID move the detection needle (catches an order-copying forger the
+  prefix classifier can't) but confirms it is an arms-race step, not a durable wall: a forger that copies the
+  FULL real signature escapes. The Windows/Linux value-check needs modern real-traffic captures for FP-safe bands
+  (p0f's window/scale are dated) → external queue. Net: per-node/kernel fingerprint is forgeable with real-data
+  care; the durable break-through stays coordination + IP reputation + flow-level TCP behavior (all external).
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

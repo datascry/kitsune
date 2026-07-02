@@ -140,3 +140,16 @@ func ClassifyTCPOS(syn TCPSyn) string {
 	}
 	return ""
 }
+
+// SYNValueAnomaly reports whether a SYN's option VALUES contradict the OS its option ORDER classifies as —
+// the tell a hand-crafted stack leaves when it copies a real OS's option layout (which ClassifyTCPOS keys on)
+// but not the values that go with it. Grounded in the p0f OS fingerprint corpus: every macOS/iOS (darwin)
+// signature advertises a SMALL TCP window scale (wscale <= 4 across the whole p0f database), so a darwin-ORDERED
+// SYN with wscale > 5 is a forged stack, not a real Apple device. Conservative by construction: darwin-only
+// (modern Windows/Linux window-scale varies more widely, so a value check there needs modern real-traffic
+// calibration — routed to the external queue) and a margin above the p0f max (4) to 5, so it fires only on a
+// value no real macOS/iOS emits. FP-safe against the option ORDER a real device produces; catches the
+// order-copying forger the prefix classifier alone cannot.
+func SYNValueAnomaly(family string, wscale int, wscalePresent bool) bool {
+	return family == "darwin" && wscalePresent && wscale > 5
+}
