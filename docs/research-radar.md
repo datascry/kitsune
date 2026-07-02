@@ -510,6 +510,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   CAPS are the residual the software renderer can't fake. Blue holds via a caps-vector check the string spoof
   can't satisfy. 14 grounded rungs. Pattern crystallised: every layer's durable tell is the one that measures the
   REAL substrate (caps, metrics, kernel behaviour), not the DECLARED string — string spoofs are always evadable.
+- **[LOOP dry-1] two sound-negative findings — JA4T-collision rejected, GL-caps evasion infra-bound (2026-07-02).**
+  A lean firing that produced two disciplined negatives rather than a padded rung (the quality bar: a rung must
+  BEAT the last, not repeat a soft pattern). (1) COORDINATION: considered a JA4T-collision key to catch the
+  morphing-device fleet (diverse browser fps, one shared os-spoof kernel) that _fp_collision misses — REJECTED as
+  low-entropy: JA4T is OS-DETERMINED (window+options+scale) plus a near-universal MSS 1460 (any 1500-MTU network),
+  so most same-OS users share it → it would fire on benign cohorts, the voices_hash trap. Consequence: the
+  morphing fleet's shared kernel is NOT a coordination tell; the durable coordination signal stays IP-reputation +
+  shared-origin (external), as established. (2) GL CAPS: probed evading webgl_renderer_caps_mismatch — camoufox
+  ships a webgl_data.db with real per-GPU caps, but the evasion is infra-bound: headless has no GL context
+  (webgl2_missing), headful leaks the real llvmpipe caps that override the DB spoof (caps_mismatch), and there is
+  no real Apple GPU in-sandbox to satisfy either — so webgl_renderer_caps_mismatch holds durably here (like the
+  delayed-ACK AF_PACKET block, it is an infra floor, not a detector gap). Rejected soft-surface padding
+  (navigator.getBattery/connection-vs-engine: window-only, so a main-only delete evades with no realm to diverge —
+  the R3++ soft-surface class, not worth a rung). Dry attempt #1 of a new streak; the loop continues.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
