@@ -1100,6 +1100,27 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   23 rungs stand. HONEST STATUS: this is frontier-dry #1. If the next genuine attempt is also dry, that is the
   EARNED close — reached after exhaustively testing the GPU-substrate/manifold/web-API/realm surfaces, with the
   residuals grounded as external-data-bound, NOT the premature reasoned-close of before."
+- **[LOOP MOBILE — frontier-dry #2 → AXIS CLOSED (EARNED)] emoji-color renders on the container; the in-sandbox
+  frontier is exhausted (2026-07-02).** Second consecutive GENUINE grounded attempt: color-emoji rendering (every
+  modern mobile OS renders emoji in color — an OS-invariant, reference-free angle). GROUNDED: the container renders
+  color emoji (colored 580/600, with AND without the font mask — it ships Noto Color Emoji), exactly like a real
+  mobile device AND like every modern desktop (Segoe/Apple/Noto Color Emoji are universal now), so 'monochrome
+  emoji' is not a clean mobile discriminator and the positive is ungroundable in-sandbox; the emoji GLYPH-SHAPE
+  angle (Android vs iOS vs Noto) needs a reference corpus — EXTERNAL-DATA, like the desktop-GPU-fork residual.
+  TWO-IN-A-ROW grounded frontier-dry (WebGL2 caps, then emoji), so per the loop's OWN stop-condition the mobile
+  axis is CLOSED — and this time it is EARNED, the categorical opposite of the premature close: that one was a
+  REASONED dismissal (GPU-caps 'done' without testing, which the challenge overturned); this is ~20 firings of
+  EXHAUSTIVE GROUNDED testing across every in-sandbox surface (GPU substrate value+actual-behaviour, device
+  manifold on 5 axes, the 3-surface model ratchet, fonts, pointer/DPR/cores, web-API presence, realm-divergence,
+  the source-fork terminus) with the residuals GROUNDED as external-data-bound (a real-desktop-GPU fork with
+  matching caps; per-device rendering/emoji glyph references; real iOS/WebKit hardware), NOT reasoned away.
+  FINAL: 25 mobile rungs (23 detections + 2 grounded-terminus/audit findings — actually 23 shipped rungs: fonts,
+  ch_ua_mobile_no_model, mobile_no_js_model, uadata_model_worker_divergence, model↔screen/DPR/GPU/OS-low/OS-high,
+  pointer_hover, mobile_cores_high, gpu_not_mobile, gpu_caps_mismatch [FP-fixed], maxtexture_unallocatable,
+  uniforms_software, uniform_underreport, contacts, + the KS_MOBILE_FONTS/FORGE/RENDERER red capabilities). The
+  answer stands, hardened: NO in-sandbox path to a coherent Android fingerprint; a JS fork is self-incriminating
+  (tamper checks), a binary fork is caught by the GPU actual-behaviour substrate (real silicon), the emulation by
+  cores/contacts. Loop 49807012 retired at the EARNED terminus."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
