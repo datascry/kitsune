@@ -772,6 +772,22 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   <= 8) is realm-backed: main-only trips worker_divergence, worker-scope trips worker_constructor_tampered — so a
   coherent low core count needs a real <= 8-core device (or a <= 8-core host), like the model ratchet. 11 mobile
   rungs; the sweep is still productive AND now reaching residuals the wall-level capstone under-counted.
+- **[LOOP MOBILE R-headful] the HEADFUL Android node — automation solved, the irreducible floor exposed
+  (2026-07-02, grounded).** Drove the Android node with the full composition: KS_DEVICE='Pixel 5' + PATCHRIGHT +
+  HEADFUL + KS_MOBILE_FONTS + KS_PROVISION → residual collapses to SEVEN tells (from ~10). HEADFUL is the key: it
+  cleared BOTH automation residuals the prior capstone still had — no_chrome_object (a HEADFUL patchright exposes
+  window.chrome natively, so the fragile addInitScript shim that broke the collector was never needed) AND
+  permissions_anomaly (headful has a real permission state), PLUS ch_he_headless (headless→headful) and the
+  automation_globals/cdp/webdriver cluster (patchright), media_devices_empty (provision), and the font tells (mask).
+  So RED ladder rungs (1) clear-automation and (2) compose-to-floor are DONE — via HEADFUL, not the shim. The
+  IRREDUCIBLE Android floor is now exposed and every remaining tell is a real-hardware/real-device wall or a
+  provisionable/behavioral floor: mobile_cores_high (the 12-core host — needs a <=8-core host), webgl2_missing
+  (real GPU), the model ratchet (ch_ua_mobile_no_model + mobile_no_js_model — a real device or a worker-caught
+  forge), voices_empty (the Chromium-headless-TTS limit, unchanged), tls_ext_order_static (a within-session TLS
+  artifact), keystroke_entropy_floor (real input). VALIDATION: mobile_cores_high fires even on this MAX-composed
+  node, confirming it is a genuine residual, not an artifact of a lazy config. So the Android node reaches the SAME
+  provision/real-hardware floor as desktop — automation is fully solved — with mobile's extra model-ratchet + core
+  walls on top. 12 mobile rungs; the Android node is now driven to its floor and every residual is characterised.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
