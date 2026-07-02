@@ -493,7 +493,11 @@ const mode = UACH_COHERENT
 
 // --ignore-certificate-errors: accept the edge's self-signed cert at the TLS layer (not just the
 // navigation layer) so the fingerprinting handshake completes and network signals are captured.
-const browser = await chromium.launch({ headless: !HEADFUL, args: ["--no-sandbox", "--ignore-certificate-errors"] });
+// KS_PROVISION opts Chromium into the speech-dispatcher TTS backend so speechSynthesis.getVoices() returns the
+// real provisioned voice set (br.voices_empty silent WITHOUT a JS patch). Only added when actually provisioned.
+const launchArgs = ["--no-sandbox", "--ignore-certificate-errors"];
+if (process.env.KS_PROVISION === "1") launchArgs.push("--enable-speech-dispatcher");
+const browser = await chromium.launch({ headless: !HEADFUL, args: launchArgs });
 // KS_SCREEN=WxH sets the reported screen.width/height (Playwright's `screen` option), so a spoofed device's
 // screen geometry can be made coherent (a real iPhone e.g. 393x852) or INCOHERENT (a desktop 1920x1080 under a
 // mobile UA → br.ios_screen_oversized) — the device<->screen joint-coherence axis.
