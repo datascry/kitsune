@@ -504,6 +504,18 @@ rules:
     last_validated: "2026-06-18"
     source: "Cross-layer browser coherence; Chromium sends Sec-CH-UA from its real brand under any UA"
 
+  - id: br.mobile_no_js_model
+    title: Mobile userAgentData but getHighEntropyValues().model is empty — desktop faking Android (JS surface)
+    layers: [browser]
+    reads: [browser.mobile_no_js_model]
+    predicate: present
+    weight: 0.6
+    status: active
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "The JS twin of net.ch_ua_mobile_no_model, and the blue counter to a header-only Sec-CH-UA-Model forge. navigator.userAgentData.getHighEntropyValues(['model']) is a Chromium JS surface: a REAL Android Chrome fills .model with the device hardware (e.g. 'Pixel 8'); a desktop Chromium — even under a mobile UA or Playwright/CDP device emulation (KS_DEVICE=Pixel, which sets UA + viewport + userAgentData.mobile but NOT the high-entropy model, since it reads REAL hardware) — returns an EMPTY model. So userAgentData.mobile === true with an empty getHighEntropyValues().model is a desktop faking an Android phone. CRUCIAL: this reads the JS surface, whereas net.ch_ua_mobile_no_model reads the Sec-CH-UA-Model HEADER — so a red tool that forges the header via route-interception (KS_FORGE_MODEL) evades the header check but STILL trips this one (route-interception cannot patch getHighEntropyValues). Forging the JS model too (Object.defineProperty on userAgentData) is in turn caught by br.uadata_worker_divergence (userAgentData is exposed in the Worker realm, where a main-only patch cannot reach). So the model must be coherent across HEADER + main-JS + worker-JS — three surfaces a desktop emulation cannot fill, only a real Android device. FP-SAFE: a real Android always fills the high-entropy model. GROUNDED LIVE: KS_DEVICE='Pixel 5' fires mobile_no_js_model (empty JS model); WITH KS_FORGE_MODEL (which clears the header check) it STILL fires — the header forge does not reach the JS surface."
+
   - id: net.ch_ua_mobile_no_model
     title: Mobile Sec-CH-UA-Mobile ?1 but Sec-CH-UA-Model is empty — desktop faking Android
     layers: [network]

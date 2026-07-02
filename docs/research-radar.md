@@ -654,6 +654,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   is what that DB check would catch; a coherent randomizer drawing model+screen+UA from ONE real Android device
   evades. Mobile red⇄blue now 2-for-2 (KS_ANDROID_FONTS / ch_ua_mobile_no_model / KS_FORGE_MODEL), each rung
   surfacing the next — exactly the joint-manifold dynamic the desktop ladder converged on, now on mobile.
+- **[LOOP MOBILE B-jsmodel] br.mobile_no_js_model — the JS twin that catches the header forge (2026-07-02,
+  grounded).** The blue counter to R-model: navigator.userAgentData.getHighEntropyValues(['model']) is a JS
+  surface that a real Android Chrome fills with the device (Pixel 8) but a desktop Chromium returns EMPTY (reads
+  real hardware) — even under KS_DEVICE emulation (sets UA+viewport+mobile, not the high-entropy model). So
+  userAgentData.mobile + empty getHighEntropyValues().model = desktop faking Android. GROUNDED LIVE, the decisive
+  contrast: KS_DEVICE='Pixel 5' fires BOTH mobile_no_js_model (JS) and ch_ua_mobile_no_model (header); + KS_FORGE_MODEL
+  the HEADER check CLEARS but the JS check STILL FIRES — the route-interception forge patches the header, not the
+  JS surface. So the model must be coherent across THREE surfaces: the Sec-CH-UA-Model HEADER, main-thread
+  getHighEntropyValues, AND the WORKER (forging the JS via Object.defineProperty is caught by uadata_worker_divergence,
+  userAgentData being in the worker realm). A desktop emulation can fill at most the header (route) or main-JS
+  (defineProperty, caught by the worker); only a REAL Android device fills all three natively. The mobile CH-UA-Model
+  joint is now a 3-surface ratchet — the same realm-backed durability the desktop realm rungs (deviceMemory/userAgentData
+  worker-divergence) established, applied to the mobile model. Mobile red⇄blue: 4 rungs, tightly interlocked.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

@@ -401,6 +401,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.browser, "ios_dpr_incoherent", True, Source.collector)], "br.ios_dpr_incoherent"),
         ([(Layer.browser, "ios_screen_desktop_res", True, Source.collector)], "br.ios_screen_desktop_res"),
         ([(Layer.browser, "ios_screen_offmanifold", True, Source.collector)], "br.ios_screen_offmanifold"),
+        ([(Layer.browser, "mobile_no_js_model", True, Source.collector)], "br.mobile_no_js_model"),
         ([(Layer.browser, "devicememory_vs_engine", True, Source.collector)], "br.devicememory_vs_engine"),
         (
             [(Layer.browser, "android_phone_screen_oversized", True, Source.collector)],
