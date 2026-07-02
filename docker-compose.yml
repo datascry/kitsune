@@ -107,6 +107,19 @@ services:
     depends_on: [edge]
     profiles: ["evaders"]
 
+  # Kernel OS spoof: a userspace TCP stack (AF_PACKET) forges a chosen kernel's SYN option order + a matching
+  # uTLS hello + UA, beating net.tcp_os_vs_ua. KS_PROFILE=<name>|random|list; a fleet of random nodes morphs
+  # into any mix of OSes. Needs NET_RAW + NET_ADMIN. `--profile evaders run --rm os-spoof`.
+  os-spoof:
+    build:
+      context: ./evaders/os-spoof
+    environment:
+      KS_EDGE_HOST: "edge"
+      KS_PROFILE: "random" # windows-chrome | macos-safari | linux-firefox | ios-safari | … | random | list
+    cap_add: [NET_RAW, NET_ADMIN]
+    depends_on: [edge]
+    profiles: ["evaders"]
+
   # High-fidelity network impersonator (Chrome TLS+H2 via primp/BoringSSL, no JS).
   primp:
     build:

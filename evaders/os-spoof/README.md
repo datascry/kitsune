@@ -7,12 +7,28 @@ TCP, so it can't change the SYN — grounded: the go-tls (uTLS) evader gets a fo
 `tcp_kernel=linux`, the same JA4T as curl.
 
 This tool crosses that wall. It hand-rolls a **userspace TCP stack** over `AF_PACKET` (gopacket) that emits a
-caller-chosen SYN option order, layers **uTLS** on top (uTLS accepts any `net.Conn`), and makes an HTTP/1.1
-request — so the edge sees a **Windows** SYN under a Windows UA. Needs `NET_RAW` (raw frames) + `NET_ADMIN`
-(drop the kernel's RSTs, since userspace owns the flow).
+chosen SYN option order, layers **uTLS** on top (uTLS accepts any `net.Conn`), and makes an HTTP/1.1 request —
+so the edge sees the OS *you* pick. Needs `NET_RAW` (raw frames) + `NET_ADMIN` (drop the kernel's RSTs, since
+userspace owns the flow).
+
+## Profiles — pick or randomize; a fleet morphs into any shape
+
+`KS_PROFILE` selects a **coherent OS profile** — a kernel SYN fingerprint (option order + TTL + window) with a
+matching uTLS ClientHello and UA, so `tcp_kernel`, TLS engine, and UA all tell one OS story:
+
+| profile | kernel (JA4T) | TLS | UA |
+|---|---|---|---|
+| `windows-chrome` / `windows-edge` | windows (`64240_2-1-3-1-1-4_…`) | Chrome | Windows Chrome / Edge |
+| `macos-safari` / `macos-chrome` | darwin (`65535_2-1-3-1-1-8-4-0_…`) | Safari / Chrome | macOS |
+| `linux-firefox` | linux (`64240_2-4-8-1-3_…`) | Firefox | Linux Firefox |
+| `ios-safari` | darwin | iOS | iPhone Safari |
+
+`KS_PROFILE=random` (the default) picks one per node, so a fleet of identical containers **morphs into any
+mix of OSes** — each node coherent, the population diverse. `KS_PROFILE=list` prints the menu.
 
 ```
-docker run --rm --network kitsune_default --cap-add NET_RAW --cap-add NET_ADMIN kitsune-os-spoof
+docker run --rm --network kitsune_default --cap-add NET_RAW --cap-add NET_ADMIN -e KS_PROFILE=windows-chrome kitsune-os-spoof
+# a morphing fleet: N containers, each -e KS_PROFILE=random -> a diverse multi-OS cohort
 ```
 
 ## Grounded result (2026-07-02)

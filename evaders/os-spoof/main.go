@@ -1,5 +1,5 @@
-// evaders/os-spoof/main — forge the TCP SYN option order (a Windows kernel) via a userspace TCP stack + uTLS.
-// Hand-rolls a happy-path TCP over AF_PACKET so the edge's SYN sniffer sees a Windows option order, not Linux.
+// evaders/os-spoof/main — morph the client's OS: a userspace TCP stack forges a chosen kernel's SYN options,
+// with a matching uTLS hello + UA. KS_PROFILE=<name>|random|list; a fleet of random nodes morphs into any mix.
 
 package main
 
@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 
-	"github.com/google/gopacket/layers"
 	utls "github.com/refraction-networking/utls"
 )
 
@@ -24,48 +24,43 @@ func env(k, def string) string {
 	return def
 }
 
-// winSYNOptions returns TCP options in WINDOWS order (mss, nop, ws, nop, nop, sack-permitted) — the prefix
-// the edge's ClassifyTCPOS maps to "windows". Linux leads with sack-permitted right after mss; this does not.
-func winSYNOptions() []layers.TCPOption {
-	return []layers.TCPOption{
-		{OptionType: layers.TCPOptionKindMSS, OptionLength: 4, OptionData: []byte{0x05, 0xb4}}, // MSS 1460
-		{OptionType: layers.TCPOptionKindNop},
-		{OptionType: layers.TCPOptionKindWindowScale, OptionLength: 3, OptionData: []byte{8}},
-		{OptionType: layers.TCPOptionKindNop},
-		{OptionType: layers.TCPOptionKindNop},
-		{OptionType: layers.TCPOptionKindSACKPermitted, OptionLength: 2},
-	}
-}
-
 func main() {
+	sel := env("KS_PROFILE", "random")
+	if sel == "list" {
+		fmt.Println(strings.Join(profileNames(), "\n"))
+		return
+	}
+	prof, ok := pickProfile(sel)
+	if !ok {
+		fail("unknown KS_PROFILE %q (try one of: %s, or random)", sel, strings.Join(profileNames(), ", "))
+	}
 	edgeHost := env("KS_EDGE_HOST", "edge")
 	edgePortStr := env("KS_EDGE_PORT", "8443")
-	// A Windows-Chrome UA: the OS story the forged SYN must corroborate at the kernel layer.
-	ua := env("KS_UA", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
+	ua := env("KS_UA", prof.UA) // the profile's UA (overridable) — the OS story the forged SYN corroborates
 
 	// Drop the kernel's RSTs to the edge: since WE (userspace) own this TCP flow, the kernel sees the edge's
 	// replies for a socket it never opened and would RST them, killing our connection. NET_ADMIN required.
 	_ = exec.Command("sh", "-c", "iptables -A OUTPUT -p tcp --tcp-flags RST RST -d "+resolveIP(edgeHost)+" -j DROP").Run()
 
-	st, err := newStack(edgeHost, edgePortStr)
+	st, err := newStack(edgeHost, edgePortStr, prof)
 	if err != nil {
 		fail("stack: %v", err)
 	}
 	defer st.close()
 
-	fmt.Fprintf(os.Stderr, "os-spoof: userspace TCP %s:%s (src %s:%d) forging a WINDOWS SYN option order\n",
-		st.dstIP, edgePortStr, st.srcIP, st.srcPort)
+	fmt.Fprintf(os.Stderr, "os-spoof: profile=%s kernel=%s (src %s:%d -> %s:%s)\n",
+		prof.Name, prof.Kernel, st.srcIP, st.srcPort, st.dstIP, edgePortStr)
 	if err := st.handshake(); err != nil {
 		fail("handshake: %v", err)
 	}
-	fmt.Fprintln(os.Stderr, "os-spoof: TCP handshake complete (Windows-shaped SYN sent)")
+	fmt.Fprintf(os.Stderr, "os-spoof: TCP handshake complete (%s-shaped SYN sent)\n", prof.Kernel)
 
-	// uTLS ClientHello (forged Chrome), but with ALPN pinned to http/1.1 so the edge routes to serveH1 (its h2
-	// path speaks the frame protocol, which our simple userspace HTTP client does not). HelloChrome_Auto bakes
-	// Chrome's ALPN (h2 first), so we rebuild the spec and rewrite the ALPN extension before the handshake.
+	// uTLS ClientHello (the profile's engine), ALPN pinned to http/1.1 so the edge routes to serveH1 (its h2
+	// path speaks the frame protocol our simple userspace HTTP client does not). Presets bake in their own ALPN
+	// (h2 first), so rebuild the spec and rewrite the ALPN extension before the handshake.
 	cfg := &utls.Config{ServerName: edgeHost, InsecureSkipVerify: true} //nolint:gosec
 	tconn := utls.UClient(st, cfg, utls.HelloCustom)
-	spec, err := utls.UTLSIdToSpec(utls.HelloChrome_Auto)
+	spec, err := utls.UTLSIdToSpec(prof.Hello)
 	if err != nil {
 		fail("spec: %v", err)
 	}
@@ -80,7 +75,7 @@ func main() {
 	if err := tconn.Handshake(); err != nil {
 		fail("tls: %v", err)
 	}
-	fmt.Fprintln(os.Stderr, "os-spoof: TLS handshake complete (forged Chrome ClientHello over the userspace stack)")
+	fmt.Fprintln(os.Stderr, "os-spoof: TLS handshake complete (forged "+prof.Name+" ClientHello over the userspace stack)")
 
 	req, _ := http.NewRequest("GET", "https://"+edgeHost+":"+edgePortStr+"/", nil)
 	req.Header.Set("User-Agent", ua)
@@ -101,7 +96,9 @@ func main() {
 	}
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
 	_ = resp.Body.Close()
-	out, _ := json.Marshal(map[string]any{"mode": "os-spoof", "status": resp.StatusCode, "ks_sid": sid, "forged_syn": "windows"})
+	out, _ := json.Marshal(map[string]any{
+		"mode": "os-spoof", "profile": prof.Name, "kernel": prof.Kernel, "status": resp.StatusCode, "ks_sid": sid,
+	})
 	fmt.Println("__KS__" + string(out))
 }
 

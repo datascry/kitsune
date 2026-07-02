@@ -32,11 +32,14 @@ type stack struct {
 	ack      uint32 // next expected sequence number from the peer
 	inbuf    []byte
 	deadline time.Time
+	ttl      uint8                     // the profile's initial TTL (128 windows / 64 linux+darwin)
+	window   uint16                    // the profile's advertised SYN window
+	syn      func() []layers.TCPOption // the profile's SYN option order (the forged kernel signature)
 }
 
 // newStack resolves the egress interface (MAC/IP), the destination IP + MAC (via the kernel ARP cache after a
-// ping), and opens an AF_PACKET raw socket. dstPortStr is the edge TCP port.
-func newStack(host, dstPortStr string) (*stack, error) {
+// ping), opens an AF_PACKET raw socket, and adopts the profile's kernel signature (TTL/window/SYN options).
+func newStack(host, dstPortStr string, prof Profile) (*stack, error) {
 	dstIP := net.ParseIP(resolveIP(host)).To4()
 	if dstIP == nil {
 		return nil, fmt.Errorf("cannot resolve %s to IPv4", host)
@@ -67,7 +70,7 @@ func newStack(host, dstPortStr string) (*stack, error) {
 	return &stack{
 		fd: fd, ifIndex: iface.Index, srcMAC: iface.HardwareAddr, dstMAC: dstMAC,
 		srcIP: srcIP.To4(), dstIP: dstIP, srcPort: uint16(20000 + rand.Intn(40000)), dstPort: dp,
-		seq: rand.Uint32(),
+		seq: rand.Uint32(), ttl: prof.TTL, window: prof.Window, syn: prof.SYN,
 	}, nil
 }
 
@@ -77,12 +80,12 @@ func (s *stack) close() error { return unix.Close(s.fd) }
 func (s *stack) send(flags tcpFlags, opts []layers.TCPOption, payload []byte) error {
 	eth := &layers.Ethernet{SrcMAC: s.srcMAC, DstMAC: s.dstMAC, EthernetType: layers.EthernetTypeIPv4}
 	ip := &layers.IPv4{
-		Version: 4, IHL: 5, TTL: 128, Id: uint16(rand.Intn(65535)), Protocol: layers.IPProtocolTCP,
+		Version: 4, IHL: 5, TTL: s.ttl, Id: uint16(rand.Intn(65535)), Protocol: layers.IPProtocolTCP,
 		SrcIP: s.srcIP, DstIP: s.dstIP, Flags: layers.IPv4DontFragment,
 	}
 	tcp := &layers.TCP{
 		SrcPort: layers.TCPPort(s.srcPort), DstPort: layers.TCPPort(s.dstPort),
-		Seq: s.seq, Ack: s.ack, Window: 64240, Options: opts,
+		Seq: s.seq, Ack: s.ack, Window: s.window, Options: opts,
 		SYN: flags.syn, ACK: flags.ack, PSH: flags.psh, FIN: flags.fin, RST: flags.rst,
 	}
 	if err := tcp.SetNetworkLayerForChecksum(ip); err != nil {
@@ -128,10 +131,10 @@ func (s *stack) recv() (*layers.TCP, error) {
 	}
 }
 
-// handshake performs SYN (with a WINDOWS option order) -> SYN-ACK -> ACK.
+// handshake performs SYN (with the profile's forged option order) -> SYN-ACK -> ACK.
 func (s *stack) handshake() error {
 	s.deadline = time.Now().Add(5 * time.Second)
-	if err := s.send(tcpFlags{syn: true}, winSYNOptions(), nil); err != nil {
+	if err := s.send(tcpFlags{syn: true}, s.syn(), nil); err != nil {
 		return err
 	}
 	for {

@@ -25,7 +25,7 @@ layers, not just bad signals.**
 | **HTTP/2 DoS** | `h2-rapid-reset` | protocol abuse (CVE-2023-44487 / -2024-27316) | attributed to a minted session |
 | **HTTP/1.1 DoS** | `slow-http` | slow-header (slowloris) connection hold | `net.slow_http_attack` per held connection; a fleet aggregates as an L7 flood (the DoS tell corroborates the coordination flood shape) |
 | **Tool-chain** | `chain-mitm` | uTLS front + real browser (forged wire + real JS) | chaining is counterproductive: a matched-engine front adds `net.h2_unknown_vs_ua`, a mismatched one detonates 4 coherence tells — the seam between two tools convicts |
-| **Kernel OS spoof** | `os-spoof` | userspace TCP (forged SYN option order) + uTLS | forges `tcp_kernel=windows` → **beats `net.tcp_os_vs_ua`** (control on kernel TCP still fires); uTLS alone can't touch the SYN — the forge is the userspace stack |
+| **Kernel OS spoof** | `os-spoof` | userspace TCP (forged SYN option order) + uTLS, coherent OS profiles | forges `tcp_kernel` per profile (windows/darwin/linux) → **beats `net.tcp_os_vs_ua`**; `KS_PROFILE=random` so a fleet **morphs into any mix of OSes** (control on kernel TCP still fires) |
 | **PoW arms-race** | `pow` | proof-of-work challenge gate | a self-contained blue-team gate vs a native no-browser solver |
 | **LLM agent** | `agent` (`claude -p`) | behavioral / intent | beats network + browser, caught **behaviorally** (the headline result) |
 
