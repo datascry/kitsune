@@ -857,6 +857,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   vs unspoofable silicon/realm facts) is a live seam the per-surface sweep under-explored. 14 mobile rungs; axis
   REOPENED — the honest next targets are the OTHER both-realm-fork gaps (model↔GPU-family for a coherent-but-wrong
   mobile GPU; other WebGL caps beyond maxTexture; WebGPU adapter caps↔renderer). Loop re-armed.
+- **[LOOP MOBILE B-modelgpu] br.android_model_gpu_incoherent — model↔GPU-family on the source-fork frontier
+  (2026-07-02, grounded).** First of the reopened-axis frontier leads. Pixels have a DETERMINISTIC SoC per
+  generation: Pixel 1-5 = Snapdragon (Adreno), Pixel 6+ = Google Tensor (ARM Mali/Immortalis). Since the model is
+  already realm-ratcheted across 3 surfaces, a pinned Pixel model + a mobile GPU of the WRONG family for that
+  generation is a source-fork that spoofed a COHERENT mobile GPU string (evading mobile_gpu_not_mobile — Mali IS a
+  mobile GPU) but the wrong one for the claimed device. GROUNDED LIVE: KS_DEVICE='Pixel 5' + KS_FORGE_JS_MODEL=
+  'Pixel 5' + KS_RENDERER='Mali-G78' (Pixel 5 is Adreno) FIRES android_model_gpu_incoherent while
+  mobile_gpu_not_mobile stays SILENT; the same with KS_RENDERER='Adreno (TM) 620' (correct) does NOT fire it.
+  FP-safe (scoped to Pixels — Google fixes the SoC per generation; fires only on a mobile GPU family the claimed
+  Pixel never shipped). EXPERIMENTAL (w0.6). 15 mobile rungs. The source-fork frontier is real and productive —
+  two rungs in (GPU-caps, model↔GPU) since the premature close was corrected; still-open: other WebGL caps (max
+  viewport / uniform vectors / MSAA) vs the claimed GPU, WebGPU adapter caps↔renderer, and the model↔SoC extended
+  to Samsung (region-ambiguous, needs an allowed-set). NOT closing cheaply.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
