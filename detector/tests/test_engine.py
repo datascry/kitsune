@@ -403,6 +403,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.browser, "ios_screen_offmanifold", True, Source.collector)], "br.ios_screen_offmanifold"),
         ([(Layer.browser, "mobile_no_js_model", True, Source.collector)], "br.mobile_no_js_model"),
         ([(Layer.browser, "mobile_pointer_hover_desktop", True, Source.collector)], "br.mobile_pointer_hover_desktop"),
+        ([(Layer.browser, "android_mobile_dpr1", True, Source.collector)], "br.android_mobile_dpr1"),
         (
             [(Layer.browser, "android_model_screen_incoherent", True, Source.collector)],
             "br.android_model_screen_incoherent",

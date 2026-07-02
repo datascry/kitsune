@@ -747,6 +747,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   pointer + no hover; a full device emulation sets both media). This catches a no-device mobile spoof the model/
   font/screen rungs miss (they need a real Chromium device or fire on emptiness) — a distinct entry point. 9 mobile
   rungs: the "converged" call was premature at the per-surface level — the pointer/hover surface was still open.
+- **[LOOP MOBILE B-androiddpr] br.android_mobile_dpr1 — Android backing-scale realism (2026-07-02, grounded).**
+  Continuing the per-surface sweep, found the DPR gap: the collector bounded iOS DPR (ios_dpr_incoherent, must be
+  2/3) and macOS DPR (macos_dpr1), but had NO Android bound. A modern Android PHONE (a 'Mobile' token on a current
+  Chrome) is high-density — DPR ∈ {1.5, 2, 2.625, 2.75, 3, 3.5, 4}, NEVER exactly 1 (the desktop default). So an
+  Android 'Mobile' UA with devicePixelRatio === 1 is a desktop that set the screen/touch surfaces but not the
+  backing scale. GROUNDED LIVE: SPOOF_UA=<Pixel 5 mobile UA> (no device, DPR 1) FIRES android_mobile_dpr1;
+  KS_DEVICE='Pixel 5' (DPR 2.75) is SILENT. FP-safe: gated on the 'Mobile' token (phones, not low-density tablets/
+  TV), every modern phone >= 1.5x. EXPERIMENTAL (w0.5). A distinct backing-scale entry point beside the pointer
+  (B-pointerhover) and screen (android_phone_screen_oversized) surfaces. 10 mobile rungs — the per-surface sweep is
+  paying out (pointer, then DPR), so the mobile axis is NOT yet dry; the UA-only/partial mobile spoof is now caught
+  on pointer + DPR + screen + touch independently. Next sweep: orientation, and the codec/GPU mobile surfaces.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

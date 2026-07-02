@@ -2178,6 +2178,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/iPhone|iPad|iPod/i.test(ua) && window.devicePixelRatio > 0 && window.devicePixelRatio !== 2 && window.devicePixelRatio !== 3) {
       sigs.push(S("browser", "ios_dpr_incoherent", true));
     }
+    // The Android-phone analog of the backing-scale bound. A modern Android PHONE (a "Mobile" UA on a current
+    // Chrome) is high-density: devicePixelRatio is 1.5 / 2 / 2.625 / 2.75 / 3 / 3.5 / 4 — NEVER exactly 1, which
+    // is the desktop default. An Android "Mobile" UA with devicePixelRatio === 1 is a desktop wearing a phone UA
+    // that set the screen/touch but not the backing scale (or set nothing). FP-safe: every modern phone is >= 1.5,
+    // and the check is gated on the "Mobile" token (a phone, NOT a low-density tablet / Android-TV / Auto). Fills
+    // the Android gap next to ios_dpr_incoherent; a distinct surface from the pointer/screen mobile rungs.
+    if (/Android/i.test(ua) && /Mobile/i.test(ua) && window.devicePixelRatio === 1) {
+      sigs.push(S("browser", "android_mobile_dpr1", true));
+    }
     // DEVICE<->screen coherence, the sub-1400 slice ios_screen_oversized (max>1400) misses: a set of common
     // DESKTOP screen geometries, NONE of which any iPhone/iPad ships (checked against the Apple device corpus —
     // iOS is tall ~19.5:9 phones + 4:3 iPads, never 16:9/5:4 desktop panels). An iOS UA reporting one is a
