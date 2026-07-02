@@ -634,3 +634,22 @@ func TestUAHeaderBrowser(t *testing.T) {
 		}
 	}
 }
+
+func TestJA4TWindowScale(t *testing.T) {
+	cases := []struct {
+		ja4t    string
+		scale   int
+		present bool
+	}{
+		{"64240_2-1-3-1-1-8-4-0_1460_6", 6, true}, // forged darwin (os-spoof macos)
+		{"64240_2-4-8-1-3_1460_7", 7, true},       // real linux
+		{"65535_2-1-3_1460_00", 0, false},         // no window-scale option
+		{"garbage", 0, false},
+	}
+	for _, c := range cases {
+		s, p := ja4tWindowScale(c.ja4t)
+		if s != c.scale || p != c.present {
+			t.Errorf("ja4tWindowScale(%q)=(%d,%v) want (%d,%v)", c.ja4t, s, p, c.scale, c.present)
+		}
+	}
+}

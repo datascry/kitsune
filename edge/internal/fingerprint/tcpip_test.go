@@ -155,3 +155,29 @@ func TestClassifyTCPOSDistinguishesTTL64Stacks(t *testing.T) {
 		t.Errorf("TTL-64 stacks conflated: linux=%q darwin=%q", linux, darwin)
 	}
 }
+
+// SYNValueAnomaly flags a darwin-ORDERED SYN whose window scale is one no real macOS/iOS emits (p0f: <=4),
+// the tell an order-copying forger leaves. FP-safe: real Apple values (<=4) and non-darwin families never fire.
+func TestSYNValueAnomaly(t *testing.T) {
+	cases := []struct {
+		name    string
+		family  string
+		wscale  int
+		present bool
+		want    bool
+	}{
+		{"real macOS wscale 4", "darwin", 4, true, false},
+		{"real iOS wscale 2", "darwin", 2, true, false},
+		{"forged darwin wscale 6", "darwin", 6, true, true},
+		{"forged darwin wscale 7", "darwin", 7, true, true},
+		{"windows high wscale (not checked)", "windows", 8, true, false},
+		{"linux wscale 7 (not checked)", "linux", 7, true, false},
+		{"darwin no wscale option", "darwin", 0, false, false},
+		{"unclassified", "", 9, true, false},
+	}
+	for _, c := range cases {
+		if got := SYNValueAnomaly(c.family, c.wscale, c.present); got != c.want {
+			t.Errorf("%s: SYNValueAnomaly=%v want %v", c.name, got, c.want)
+		}
+	}
+}

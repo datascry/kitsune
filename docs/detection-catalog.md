@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **150 rules**: 108 active · 36 experimental · 6 retired; 98 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **151 rules**: 108 active · 37 experimental · 6 retired; 99 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (37)
+### network layer (38)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -36,6 +36,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.quic_pq_keyshare_vs_ua` | coherence | present | 0.5 | retired | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
 | `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
 | `net.tcp_os_vs_ua` | coherence✦ | not_equal | 0.7 | active | TCP/IP-stack OS kernel contradicts the OS the User-Agent claims |
+| `net.tcp_syn_anomaly` | coherence✦ | present | 0.5 | experimental | TCP SYN option VALUES contradict the OS its option order classifies as |
 | `net.tls_ext_order_static_within_session` | coherence✦ | present | 0.6 | active | Chromium-JA4 session repeated one TLS extension order (no per-connection permutation) |
 | `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_os_vs_tcp_os` | coherence✦ | not_equal | 0.6 | experimental | JA4-implied OS contradicts TCP/IP-implied OS |

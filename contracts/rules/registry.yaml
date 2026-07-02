@@ -528,6 +528,18 @@ rules:
     last_validated: "2026-06-18"
     source: "p0f-style SYN fingerprint; the kernel a stack reveals can't be changed by a UA spoof (Android→linux, iOS→darwin)"
 
+  - id: net.tcp_syn_anomaly
+    title: TCP SYN option VALUES contradict the OS its option order classifies as
+    layers: [network]
+    reads: [network.tcp_syn_anomaly]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "The value-vs-order tell a hand-crafted TCP stack leaves when it copies a real OS's SYN option LAYOUT (which net.tcp_os_vs_ua's classifier keys on) but not the VALUES that go with it. Grounded in the p0f OS fingerprint corpus (real data): every macOS/iOS (darwin) signature advertises a SMALL TCP window scale (wscale<=4 across the whole p0f database — macOS 1/3/4, iOS 2), so a darwin-ORDERED SYN with wscale>5 is a forged stack, not a real Apple device. Conservative by construction: darwin-only + a margin above the p0f max (4) to 5, so it fires only on a value no real macOS/iOS emits; FP-safe against the option order a real device produces. Motivated by the os-spoof userspace-TCP forger (KS_PROFILE=macos-*), whose crafted darwin SYN carried wscale=6 — the prefix classifier (option order only) missed it, this catches it. EXPERIMENTAL: the analogous Windows/Linux window-scale value-check needs modern real-traffic SYN captures for FP-safe calibration (p0f's window/scale values are dated — modern Windows 10 uses window 64240 not p0f's 8192, and recent Linux uses 64240 not p0f's mss*20), routed to the external queue; only the darwin-wscale case is FP-safe from p0f alone. Arms-race step, not a durable wall: a forger that copies the FULL real signature (correct wscale) escapes — reinforcing that per-node/kernel fingerprint is forgeable and the durable signal is coordination + IP reputation."
+
   - id: net.h2_settings_vs_order
     title: HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine
     layers: [network]

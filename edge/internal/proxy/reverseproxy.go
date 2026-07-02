@@ -344,6 +344,24 @@ func acceptLanguagePrimary(r *http.Request) string {
 	return strings.ToLower(subtag)
 }
 
+// ja4tWindowScale parses the trailing window-scale field of a JA4T string ("window_options_mss_scale"), which
+// is "00" when the SYN carried no window-scale option. Returns (scale, present).
+func ja4tWindowScale(ja4t string) (int, bool) {
+	i := strings.LastIndexByte(ja4t, '_')
+	if i < 0 || i+1 >= len(ja4t) {
+		return 0, false
+	}
+	s := ja4t[i+1:]
+	if s == "00" {
+		return 0, false
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
+}
+
 // clientIP extracts the source IP (without port) from the request's remote address.
 func clientIP(r *http.Request) string {
 	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
@@ -526,6 +544,12 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			if ja4t != "" {
 				prep.signals = append(prep.signals, signal.Network(prep.sessionID, "ja4t", ja4t, p.now()))
+				// SYN value-vs-order coherence (p0f-grounded): the option ORDER classifies the kernel, but the
+				// VALUES must match that OS too. JA4T's trailing field is the window scale ("00" when absent);
+				// a darwin-ordered SYN with wscale > 5 (no real macOS/iOS emits that) is an order-copying forge.
+				if ws, present := ja4tWindowScale(ja4t); fingerprint.SYNValueAnomaly(k, ws, present) {
+					prep.signals = append(prep.signals, signal.Network(prep.sessionID, "tcp_syn_anomaly", true, p.now()))
+				}
 			}
 		}
 	}
