@@ -193,6 +193,23 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   conviction without incoherence); "become a real browser" is a provisioning task, achievable in a container,
   not a hardware wall. The JS-SPOOF vs PROVISION split still stands: spoofing the floor is caught (`FLOOR_SPOOF`
   → bot 0.996); provisioning it is coherent → human.
+- **Provisioning extends to FLEETS — a diversified provisioned fleet evades coordination too (2026-07-02,
+  GROUNDED live).** Ran a 3-node cloned-`KS_PROVISION` camoufox fleet through the detector + live coordination
+  scorer. Each node scored `human 0.30`; the coordination verdict was **`candidate` (NOT `fleet`)** — "shared
+  JA4 + JS divergence / IP spread but NO convicting coordination signal." A hypothesised "cloned-environment
+  collision" was DISPROVEN as-is: camoufox already DIVERSIFIES the capturable per-node attributes — `fp_hash`
+  3/3 distinct, `webgl_renderer` randomised per node (Intel HD / Intel HD / NVIDIA GTX 980), `hardware_concurrency`
+  2/3, traces distinct/None — so no fp/trace collision; and the one genuinely-cloned resource (the identical
+  espeak voice LIST + null-sink device labels across identical containers) is NOT captured as a coordination
+  signal (`voice_os_hint`=None; there is no `voices_hash`). Distinct container IPs + no corroboration (clean
+  camoufox, private IPs) → capped at candidate, indistinguishable from a real Firefox cohort. So provisioning
+  lets a well-built fleet evade BOTH layers in-sandbox; the residual is the known EXTERNAL lever (IP reputation
+  on real datacenter/proxy egress). **Groundable blue counter (offered, not built):** emit a `browser.voices_hash`
+  (full TTS voice-list fingerprint) in the collector + add it as an ambiguous, corroboration-gated coordination
+  collision key (like `fp_collision`): a cloned-provisioning fleet shares one espeak voice-set across distinct IPs
+  (a real diverse cohort has diverse OS voices; a standardised corporate fleet shares OS voices → caps at candidate
+  without corroboration, FP-safe). Convicts a provisioned-clone fleet only WITH corroboration (datacenter IPs) —
+  closes the cloned-environment fleet gap without new FPs, groundable via synthetic scenarios like fp_collision.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
