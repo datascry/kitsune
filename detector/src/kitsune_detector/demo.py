@@ -2351,6 +2351,19 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/Mobile/i.test(ua) && navigator.hardwareConcurrency > 8) {
       sigs.push(S("browser", "mobile_cores_high", true));
     }
+    // navigator.contacts (ContactsManager / Contact Picker API) is a MOBILE-ONLY web platform API: present on
+    // Android Chrome 80+ (and ChromeOS) but UNDEFINED on desktop Chrome — the documented support test is
+    // ('contacts' in navigator && 'ContactsManager' in window), false on desktop (developer.chrome.com Contact
+    // Picker docs). Device emulation does NOT add it (a platform capability, not toggled by isMobile — GROUNDED:
+    // KS_DEVICE=Pixel 5 reports contacts=false, identical to a desktop). So a non-WebView Android Chrome Mobile UA
+    // WITHOUT navigator.contacts is a desktop wearing a phone UA — catching even the full Playwright Android
+    // emulation. FP-safe: real Android Chrome (the UA claims a modern Chrome >= 80) exposes it; Android WebView
+    // (UA token 'wv', which legitimately lacks it) is excluded. EXPERIMENTAL. RED counter (define a fake
+    // navigator.contacts) is the shallow presence-spoof; the actual contacts.select() needs a real picker.
+    if (/Android/.test(ua) && /Chrome/.test(ua) && /Mobile/.test(ua) && !/;\\s*wv\\)/.test(ua)
+        && !("contacts" in navigator)) {
+      sigs.push(S("browser", "android_no_contacts_api", true));
+    }
     // DEVICE<->screen coherence, the sub-1400 slice ios_screen_oversized (max>1400) misses: a set of common
     // DESKTOP screen geometries, NONE of which any iPhone/iPad ships (checked against the Apple device corpus —
     // iOS is tall ~19.5:9 phones + 4:3 iPads, never 16:9/5:4 desktop panels). An iOS UA reporting one is a

@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **178 rules**: 120 active · 52 experimental · 6 retired; 126 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **179 rules**: 120 active · 53 experimental · 6 retired; 127 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,7 +56,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (134)
+### browser layer (135)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -66,6 +66,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.android_model_os_exceeds` | coherence✦ | present | 0.6 | experimental | EOL Android Pixel model paired with an OS version newer than its last update |
 | `br.android_model_os_predates` | coherence✦ | present | 0.6 | experimental | Android Pixel model paired with an OS version older than the device shipped with |
 | `br.android_model_screen_incoherent` | coherence✦ | present | 0.5 | experimental | Android device model does not match its device-fixed screen geometry |
+| `br.android_no_contacts_api` | coherence✦ | present | 0.6 | experimental | Android Chrome Mobile UA lacking navigator.contacts (a mobile-only web API) |
 | `br.android_phone_screen_oversized` | coherence✦ | present | 0.7 | active | Android phone UA reports a screen larger than any real Android phone |
 | `br.apple_ua_nonwebkit` | coherence✦ | present | 0.75 | active | A UA claiming Apple WebKit (Safari / any iOS browser) exposes a Blink-only structural API |
 | `br.canvas_worker_vs_main` | coherence✦ | present | 0.6 | experimental | Canvas pixel hash differs between the main thread and a Worker OffscreenCanvas |

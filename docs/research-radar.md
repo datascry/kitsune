@@ -1013,6 +1013,21 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   reasoned-away one. 21 rungs. The frontier is now: distinct-substrate tested-to-floor (GPU clean, cores/precision/
   WebGPU dead), device-manifold closed on 5 axes (screen/DPR/GPU/OS-low/OS-high), remaining leads incremental or
   FP-risky (non-Pixel model↔GPU). Approaching a genuine boundary, but each closure is still grounded, not assumed.
+- **[LOOP MOBILE B-contacts] br.android_no_contacts_api — a FRESH axis: mobile-only web-platform APIs
+  (2026-07-02, grounded).** Right when the frontier looked like it was down to incremental manifold bounds, TESTING
+  a new angle opened a whole fresh surface: mobile-ONLY web platform APIs. navigator.contacts (ContactsManager /
+  Contact Picker API) is present on Android Chrome 80+ but UNDEFINED on desktop Chrome (WebSearch-confirmed:
+  developer.chrome.com's support test is 'contacts' in navigator && 'ContactsManager' in window, false on desktop).
+  GROUNDED both ends: the container reports contacts=false for BOTH a desktop UA AND the emulated KS_DEVICE=Pixel 5
+  — device emulation does NOT add it (a platform capability, not toggled by isMobile). So a non-WebView Android
+  Chrome Mobile UA lacking navigator.contacts is a desktop faking Android — and, like mobile_cores_high, it catches
+  the FULL Playwright emulation, not just a UA-only spoof. GROUNDED LIVE: KS_DEVICE='Pixel 5' FIRES; a desktop UA is
+  out of scope. FP-safe (real Android Chrome >= 80 has it; WebView 'wv' excluded). Also grounded which candidates
+  are NOT usable: getInstalledRelatedApps + ondeviceorientationabsolute are present on desktop too (not Android-
+  only); DeviceMotionEvent.requestPermission is iOS-only. 22 rungs. IMPORTANT: the 'thinning frontier' read was
+  itself premature — the web-API-presence axis is fresh and likely has MORE members (each mobile-only API a real
+  device exposes that the emulation cannot). The lesson holds one more time: testing a new angle beat the
+  boundary-instinct."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
