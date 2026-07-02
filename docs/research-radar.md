@@ -960,6 +960,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   19 mobile rungs. The uniform surface now mirrors the texture surface — a value floor + an actual-behaviour probe —
   and the two GPU actual-behaviour probes (texture allocation, uniform compile) are the hard unspoofable walls that
   force the source-fork off getParameter spoofing entirely and onto a real GPU.
+- **[LOOP MOBILE — grounded negative] shader mediump PRECISION does not distinguish SwiftShader from mobile
+  (2026-07-02).** Tested a DISTINCT GPU substrate (not caps): shader numerical precision. Premise — mobile GPUs
+  use fp16 mediump (precision ~10) while software/desktop use fp32 (23). GROUNDED IT and the premise was WRONG:
+  SwiftShader reports FRAGMENT mediump/highp = 10/23 — it advertises the REDUCED fp16-characteristic mediump (10),
+  exactly like a real mobile GPU. So getShaderPrecisionFormat does NOT betray SwiftShader; the value check is a
+  dead-end (reverted, nothing shipped). The actual-COMPUTATION variant (does mediump physically band? SwiftShader
+  might compute fp32 despite reporting 10) is FP-RISKY and external-data-bound: modern high-end mobile GPUs (Adreno
+  6xx+) also PROMOTE mediump to fp32, so 'mediump doesn't band -> not mobile' would false-fire on them, and I cannot
+  ground that real-device FP-safety in-sandbox. So precision is a grounded dead-end for a shippable rung. NOTE: not
+  a full frontier-dry — other leads remain untested (MSAA if WebGL2 is present, deterministic-SoC model↔GPU for
+  OnePlus/Samsung-by-suffix, the cores actual-parallelism). One surface tested and closed; the discipline (test the
+  premise) again overturned it — this time to a dead-end rather than a rung, which is the honest other half of the
+  same rule.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
