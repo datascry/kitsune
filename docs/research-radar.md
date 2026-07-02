@@ -597,6 +597,23 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (webrtc ICE gathering, kernel-forge-drops-the-POST) — NONE is a detector gap. The per-node detector holds
   completely; every residual is an environment/hardware floor the sandbox can't provision. Honest negative; a
   reduce-the-ceiling attempt that grounded the wall instead of moving it.
+- **[LOOP CONCLUSION] in-sandbox arms-race ladder EXHAUSTED at convergence — 19 rungs, loop ended (2026-07-02,
+  dry #2).** After the R1 capstone (per-node convergence) + the webrtc infra-negative (dry #1), this firing dug
+  through FIVE more distinct axes for any new groundable rung and found each saturated, downstream, or
+  external-bound: (1) COORDINATION — live-wired + tested (live_coordination), only real-proxy-egress stays
+  external; the high-entropy collision keys (fp/trace/ticket) are taken and JA4T was rejected as low-entropy. (2)
+  ARENA — a challenge-gate solver is downstream of the per-node coherence verdict (a browser-solver still hits the
+  converged GL-caps wall; a no-JS solver still trips no_js_execution). (3) SIGNAL-OMISSION — a client can strip
+  its own collector telemetry, but the NETWORK substrate (edge-observed TLS/h2/TCP) is un-fakeable + no_js_execution
+  backstops a full strip. (4) WEB BOT AUTH — fully covered (invalid Ed25519 + nonce-replay + verified). (5) AUDIO
+  worker-divergence — infeasible (OfflineAudioContext is not a worker realm). Two consecutive firings of thorough
+  investigation yielded only infra floors + saturated axes → the loop's own twice-in-a-row-dry stop condition is
+  MET; the cron loop is ended. THE GROUNDED VERDICT of the whole run: the per-node arms race CONVERGES on the
+  network/hardware SUBSTRATE the sandbox cannot fake (TLS/h2 wire fingerprint, GL capability vector, TCP window
+  auto-tuning, worker-realm coherence), with a single irreducible in-sandbox wall (GPU caps) and the durable
+  frontier beyond it EXTERNAL-DATA-BOUND (IP reputation, real GPU/egress, real-scale coordination). Every string a
+  client controls is spoofable; every substrate the edge measures holds. This loop shipped 19 grounded rungs +
+  4 honest negatives across ~9 axes — the ladder is complete to its in-sandbox floor.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
