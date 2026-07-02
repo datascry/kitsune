@@ -1028,6 +1028,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   itself premature — the web-API-presence axis is fresh and likely has MORE members (each mobile-only API a real
   device exposes that the emulation cannot). The lesson holds one more time: testing a new angle beat the
   boundary-instinct."
+- **[LOOP MOBILE — grounded negative] the web-API axis is essentially a SINGLE clean member (2026-07-02).** Swept
+  the mobile-only-API axis I opened with B-contacts for the more members I predicted. TESTED three candidates
+  (grounded in the container + WebSearch): NDEFReader (Web NFC) — present only on Android with NFC HARDWARE, so it
+  false-fires on budget/non-NFC real phones (FP-risky, skip); navigator.virtualKeyboard — GROUNDED present on the
+  DESKTOP container too (vkbd=true), so NOT Android-only (unusable); BarcodeDetector — Play-Services-gated on
+  Android AND present on macOS desktop (FP-risky + not mobile-exclusive, skip). So navigator.contacts appears to be
+  the ONE clean member (a software picker present on ALL Android Chrome, no hardware gate, absent on every desktop)
+  — my 'likely MORE members' read last firing was over-optimistic. Honest correction: the fresh axis is real but
+  NARROW. Nothing shipped; grounded which candidates are not FP-safe so they are not re-tried. This is a grounded
+  negative (contacts was the last rung, so not a two-in-a-row dry). Remaining untested: a mobile API with
+  UNSPOOFABLE behaviour (not just presence — presence is a shallow spoof), and the coherent-generator RED capstone
+  (compose all spoofs, ground that the GPU substrate wall still holds). 22 rungs stand."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
