@@ -18,7 +18,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.accept_lang_vs_navigator` | coherence✦ | not_equal | 0.55 | active | HTTP Accept-Language contradicts the JS navigator.languages locale |
 | `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
-| `net.ch_ua_on_safari_ua` | coherence✦ | present | 0.7 | active | Safari User-Agent sends Sec-CH-UA (a Blink-only header) — Chromium faking Safari |
+| `net.ch_ua_on_non_chromium_ua` | coherence✦ | present | 0.7 | active | Non-Chromium UA (Safari/Firefox) sends Sec-CH-UA (a Blink-only header) — Chromium faking it |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
 | `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
 | `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |

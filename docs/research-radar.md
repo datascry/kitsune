@@ -560,6 +560,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   curl/Go Chromium-stack scraper that strips Sec-CH-UA is still convicted by net.tls_vs_ua_browser / h2_vs_ua_browser.
   17 grounded rungs. The header check was worth shipping (it fires FIRST + cheaply, no TLS parse), and the
   substrate is the backstop — defence in depth, string-tell in front, substrate-tell behind.
+- **[LOOP B-nc] generalised ch_ua_on_non_chromium_ua — closed the Firefox gap (2026-07-02, grounded).** A
+  systematic emitted-but-unread signal audit (network + browser layers) confirmed the layers are near-saturated
+  (http_version/http_user_agent are intentional corroborating values; QUIC infra-blocked; webgpu_* covered by
+  webgpu_webgl_mismatch or FP-risky). The one real HOLE was self-inflicted: B-chua's ch_ua_on_safari_ua was
+  Safari-ONLY, but Firefox ALSO never sends Sec-CH-UA (Mozilla declined Client Hints for privacy). So a
+  Blink-faking-Firefox no-JS scraper slipped through. Broadened the edge check to non-Chromium (safari OR firefox)
+  UAs and renamed the signal/rule to net.ch_ua_on_non_chromium_ua. GROUNDED LIVE: a Chromium given a FIREFOX UA now
+  fires it (the closed gap); a Safari UA still fires; a native Chrome UA is silent. FP-safe (no real Safari/Firefox
+  emits Sec-CH-UA). 18 grounded rungs. Audit takeaway: the network + browser signal layers are saturated — every
+  emitted signal is read, corroborating-by-design, or infra-blocked; the remaining frontier is composition/fleet
+  (R1) and the external-data floors (IP reputation, real-traffic calibration), as established.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
