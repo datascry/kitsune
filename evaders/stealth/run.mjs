@@ -543,6 +543,13 @@ const context = await browser.newContext({
 if (KS_ENGINE === "webkit" && ksDevice && deviceOpts.isMobile) {
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, "maxTouchPoints", { get: () => 5, configurable: true });
+    // navigator.standalone is an iOS-Safari-ONLY surface desktop WebKit lacks (br.ios_no_standalone catches a
+    // desktop-WebKit iPhone by its absence). Real iOS Safari in-browser reports `false`; define it so the iOS
+    // node has the surface. Coherent + safe main-thread-only: navigator.standalone is not in WorkerNavigator, so
+    // there is no realm to diverge (unlike deviceMemory/userAgentData).
+    if (typeof navigator.standalone === "undefined") {
+      Object.defineProperty(Navigator.prototype, "standalone", { get: () => false, configurable: true });
+    }
   });
 }
 // KS_SPOOF_DM=<n>: a deliberately NAIVE main-thread-only navigator.deviceMemory override (addInitScript does

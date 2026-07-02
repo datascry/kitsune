@@ -447,6 +447,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   navigator.standalone and carry Safari-like UAs, so FP-safe promotion needs a UA app-token / clean-Version gate;
   the surface is sound (real full iOS Safari always defines it). 10 rungs. R3's iOS device is now coherent at
   engine+screen+DPR+touch+kernel but STILL falls to the iOS-Safari-specific JS surface — desktop WebKit ≠ iOS.
+- **[LOOP R3++] synthesize navigator.standalone — evades B-ns, and reveals WHY (2026-07-02, grounded).** The red
+  counter to B-ns: the WebKit iOS node (KS_ENGINE=webkit) now defines navigator.standalone=false (the faithful
+  in-browser value) via addInitScript. GROUNDED LIVE: R3++ WebKit iPhone 15 → ALL iOS/tamper tells SILENT —
+  ios_no_standalone CLEARED and NO new realm divergence (deviceMemory/userAgentData/worker divergence all quiet).
+  THE INSIGHT: navigator.standalone is a main-window-ONLY surface (not in WorkerNavigator), so a main-only
+  Object.defineProperty synthesises it with NOTHING to diverge against — unlike deviceMemory/userAgentData, which
+  ARE in the worker and so catch a main-only patch. So the ARMS-RACE LESSON is now grounded on both sides:
+  main-window-only surface checks (ios_no_standalone, GestureEvent) are SYNTHESISABLE and thus soft; the durable
+  browser-coherence checks are the REALM-BACKED ones (br.*_worker_divergence) a JS patch cannot reach without
+  also rewriting worker scope (→ br.worker_source_rewritten). B-ns correctly shipped experimental for exactly
+  this reason. 11 rungs. The blue counter to R3++ must be realm-backed or unforgeable, not another window surface.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
