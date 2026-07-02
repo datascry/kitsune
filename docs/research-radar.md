@@ -178,6 +178,22 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   `isTrusted` → network 0.0 + behavioral 0.0 + conviction 0.0, `suspicious` 0.455, residual = exactly three
   environment-floor tells (`br.voices_empty` + `br.media_devices_empty` + `br.webrtc_unavailable`). The maximal
   coherent single-session stack is one engine on real hardware — not a chain.
+- **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
+  environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
+  `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
+  and still scores `bot 0.996`: a JS-faked value is incoherent with own-property/`voice_os_vs_ua`/caps-mismatch/
+  native-invariant checks). (2) PROVISION the real thing (install a TTS engine, a virtual audio/video device, a
+  GPU, a STUN-reachable path) so the browser enumerates real values NATIVELY — coherent, silent, but genuine
+  systems work: a `KS_PROVISION` attempt (pulseaudio null-sink + speech-dispatcher/espeak in the camoufox
+  container) hit real barriers — system-mode PulseAudio denies a root-only container (`pulse-access` group),
+  speech-dispatcher's socket needs a real user session. That difficulty IS the point: provisioning = "become a
+  real desktop," the economic bind made concrete (reverted the non-working scaffold; the finding is the
+  barrier). Crucially the environment-floor tells are CORROBORATING (0.5-0.6, **conviction 0**) BY DESIGN — real
+  privacy browsers (WebRTC off), VMs (no GPU/audio), RFP all trip them, so the detector can't convict without
+  massive FPs. So a coherent stack is already `suspicious`-with-zero-convictions regardless; the floor only gates
+  `suspicious → clean`, and clearing it means running on (or fully provisioning) a real environment — not a
+  spoof, not a cleverer tool. The lab thesis holds: no conviction without incoherence, and a real-enough
+  environment has none. The durable single-session signal was never the environment floor — it is coherence.
 
 ## Refuted leads — do NOT build (verification-killed)
 
