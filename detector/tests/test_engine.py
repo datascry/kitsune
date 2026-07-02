@@ -436,6 +436,7 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
         ([(Layer.network, "tcp_syn_anomaly", True, Source.edge)], "net.tcp_syn_anomaly"),
         ([(Layer.network, "tcp_static_window", True, Source.edge)], "net.tcp_static_window"),
         ([(Layer.network, "ch_ua_on_non_chromium_ua", True, Source.edge)], "net.ch_ua_on_non_chromium_ua"),
+        ([(Layer.network, "ch_ua_mobile_no_model", True, Source.edge)], "net.ch_ua_mobile_no_model"),
         (
             [(Layer.network, "web_bot_auth_nonce_replay", True, Source.edge)],
             "net.web_bot_auth_nonce_replay",

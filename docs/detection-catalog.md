@@ -8,15 +8,16 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **162 rules**: 116 active · 40 experimental · 6 retired; 110 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **163 rules**: 117 active · 40 experimental · 6 retired; 111 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (40)
+### network layer (41)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `net.accept_encoding_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but Accept-Encoding omits Brotli (scripted client) |
 | `net.accept_lang_vs_navigator` | coherence✦ | not_equal | 0.55 | active | HTTP Accept-Language contradicts the JS navigator.languages locale |
 | `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
+| `net.ch_ua_mobile_no_model` | coherence✦ | present | 0.6 | active | Mobile Sec-CH-UA-Mobile ?1 but Sec-CH-UA-Model is empty — desktop faking Android |
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_on_non_chromium_ua` | coherence✦ | present | 0.7 | active | Non-Chromium UA (Safari/Firefox) sends Sec-CH-UA (a Blink-only header) — Chromium faking it |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
