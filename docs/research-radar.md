@@ -721,6 +721,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   requires a REAL Android device (real model + real GPU), not a Chromium emulation — the honest answer to
   "can we achieve coherent mobile fingerprints": Android in principle yes, but only on real hardware, and the
   detector now holds two independent walls. 7 mobile rungs + this capstone; the Android axis has converged.
+- **[LOOP MOBILE R-iosfonts] KS_MOBILE_FONTS — generalise the font mask to iOS; iOS converges on 3 hard walls
+  (2026-07-02, grounded).** The desktop-Linux font mask (KS_ANDROID_FONTS) is engine-agnostic — it works on the
+  WebKit iOS node too. Generalised the flag to KS_MOBILE_FONTS (KS_ANDROID_FONTS kept as alias). GROUNDED LIVE:
+  KS_ENGINE=webkit + KS_DEVICE='iPhone 15' + KS_MOBILE_FONTS → font_os_hint None, br.font_os_vs_ua CLEARED (the
+  probe drops below its 2-signature Linux threshold on WebKit exactly as on Blink). But the iOS node's OTHER three
+  residuals are HARD walls that do NOT clear in-sandbox: (1) br.navplatform_vs_ua — Playwright's WebKit reports
+  navigator.platform='MacIntel' (desktop WebKit), not 'iPhone'; a JS patch is caught by worker_divergence (platform
+  is in the worker probe) and Playwright can't engine-level spoof it; (2) net.tcp_os_vs_ua — iOS is darwin, the
+  container is linux, needs the os-spoof darwin proxy (which drops the collector POST); (3) net.tls_grease_vs_ua —
+  Playwright's Linux WebKit ClientHello ≠ real iOS Safari's, needs a uTLS-HelloIOS chain-mitm. So iOS has THREE
+  hard in-sandbox walls (platform-realm, kernel, TLS) vs Android's TWO (model-ratchet, GPU) vs desktop's ONE (GPU)
+  — a strict hierarchy: iOS is the hardest to fake coherently, and needs a REAL WebKit/iOS runtime, not a
+  Linux-container stand-in. 8 mobile rungs; both mobile OSes converged, each on a distinct set of real-hardware
+  walls the container cannot provision.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
