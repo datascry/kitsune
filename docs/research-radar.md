@@ -758,6 +758,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   (B-pointerhover) and screen (android_phone_screen_oversized) surfaces. 10 mobile rungs — the per-surface sweep is
   paying out (pointer, then DPR), so the mobile axis is NOT yet dry; the UA-only/partial mobile spoof is now caught
   on pointer + DPR + screen + touch independently. Next sweep: orientation, and the codec/GPU mobile surfaces.
+- **[LOOP MOBILE B-cores] br.mobile_cores_high — mobile core-count realism, and it catches the FULL emulation
+  (2026-07-02, grounded).** First tried the platform surface — DEAD END: ch_platform is set coherently by the
+  stealth UACH path, and ua_platform_vs_ch_platform already catches a raw Linux platform, so no gap. Pivoted to
+  hardwareConcurrency and found a real one: the 12-core test host reports hardware_concurrency=12 for BOTH
+  SPOOF_UA AND KS_DEVICE=Pixel — Playwright/CDP device emulation sets UA+screen+touch+DPR but does NOT spoof
+  hardwareConcurrency (it reads the real host). A real phone (a 'Mobile' UA) exposes <= 8 web cores (mobile SoCs
+  are octa-core at most, iOS A-series 6), so a 'Mobile' UA with hardwareConcurrency > 8 is a desktop. GROUNDED
+  LIVE: KS_DEVICE='Pixel 5' on the 12-core host FIRES mobile_cores_high; a hw=2 spoof (WORKER_SPOOF) is SILENT
+  (FP-safe at <= 8). UNLIKE the pointer/DPR rungs (which only catch the UA-only spoof), this catches the FULL
+  Playwright Android emulation — a genuine residual the capstone missed, because the emulation leaks the host core
+  count. FP-safe: gated on 'Mobile' (phones, not M-series iPads). EXPERIMENTAL (w0.5). The RED counter (spoof hw
+  <= 8) is realm-backed: main-only trips worker_divergence, worker-scope trips worker_constructor_tampered — so a
+  coherent low core count needs a real <= 8-core device (or a <= 8-core host), like the model ratchet. 11 mobile
+  rungs; the sweep is still productive AND now reaching residuals the wall-level capstone under-counted.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

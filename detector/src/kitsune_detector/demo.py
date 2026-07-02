@@ -2187,6 +2187,15 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/Android/i.test(ua) && /Mobile/i.test(ua) && window.devicePixelRatio === 1) {
       sigs.push(S("browser", "android_mobile_dpr1", true));
     }
+    // A real phone (a "Mobile" UA) exposes at most ~8 CPU cores to navigator.hardwareConcurrency: mobile SoCs are
+    // octa-core at most and iOS caps lower (A-series 6). A "Mobile" UA reporting hardwareConcurrency > 8 is a
+    // desktop wearing a phone UA that never shrank the core count — and Playwright/CDP device emulation sets the
+    // UA + screen + touch but NOT hardwareConcurrency (it reads the REAL host), so even a full device emulation on
+    // a many-core host leaks it. FP-safe: no current phone exposes > 8 web cores; gated on the "Mobile" token
+    // (phones/iPhones, NOT M-series iPads which run desktop-mode Safari without the token). EXPERIMENTAL.
+    if (/Mobile/i.test(ua) && navigator.hardwareConcurrency > 8) {
+      sigs.push(S("browser", "mobile_cores_high", true));
+    }
     // DEVICE<->screen coherence, the sub-1400 slice ios_screen_oversized (max>1400) misses: a set of common
     // DESKTOP screen geometries, NONE of which any iPhone/iPad ships (checked against the Apple device corpus —
     // iOS is tall ~19.5:9 phones + 4:3 iPads, never 16:9/5:4 desktop panels). An iOS UA reporting one is a
