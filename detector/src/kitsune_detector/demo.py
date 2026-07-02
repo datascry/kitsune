@@ -1918,20 +1918,20 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     }
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
     // The MOBILE analog of webgl_renderer_caps_mismatch (which only patterns DESKTOP high-end GPUs: RTX/Radeon/
-    // Apple-M/Arc). A high-end mobile GPU — Adreno 6xx-8xx (Qualcomm), Mali-G7x/G8x (ARM), Immortalis — exposes
-    // MAX_TEXTURE_SIZE 16384. A renderer string naming one with maxTexture < 16384 is a string spoofed over a
-    // lesser/SwiftShader (8192) backend. This is the SOURCE-LEVEL-FORK case that slips past every other GPU rung:
-    // br.mobile_gpu_not_mobile passes (the string IS a mobile GPU), br.webgl_software passes (not software), and a
-    // BOTH-realm fork evades br.webgl_worker_divergence — but the silicon's texture limit cannot be string-patched.
-    // FP-safe: real high-end mobile GPUs are >=16384; an honest lesser mobile GPU carries a lesser string (Adreno
-    // 3xx/4xx, Mali-T) out of this high-end pattern, and an honest software renderer names itself (webgl_software).
-    // Hardened across the FULL cap triad: a high-end mobile GPU exposes MAX_TEXTURE_SIZE, MAX_RENDERBUFFER_SIZE AND
-    // MAX_VIEWPORT_DIMS all >= 16384. Checking ALL THREE closes the both-realm fork that fakes ONLY maxTexture (to
-    // 16384) in both realms — evading the maxTexture arm AND webgl_caps_worker_divergence (consistent digests) —
-    // but leaves the renderbuffer/viewport at the real 8192 backend, which no string patch of maxTexture repairs.
+    // Apple-M/Arc). A recent-FLAGSHIP mobile GPU exposes MAX_TEXTURE/RENDERBUFFER/VIEWPORT all 16384; a renderer
+    // string naming one with any of those < 16384 is a string spoofed over a lesser/SwiftShader (8192) backend —
+    // the source-fork case that passes mobile_gpu_not_mobile (the string IS a mobile GPU) + webgl_software (not
+    // software) and, both-realm, evades webgl_worker_divergence, but cannot repair the real silicon's limit vector.
+    // CONSERVATIVELY SCOPED for FP-safety: ONLY the mobile GPUs CONFIDENTLY 16384 (Adreno 7xx/8xx = SD 8-Gen-1+
+    // flagship; Mali-G76-79 + G710-719; Immortalis). MID-RANGE Adreno 6xx (610/618/619/620 — e.g. the Pixel 5's
+    // Adreno 620) are EXCLUDED because their MAX_TEXTURE_SIZE is not confidently 16384 (may be 8192; unverified in
+    // WebSearch, and driver-variant per the sources) — flagging them risked FALSE-FIRING on real mid-range phones.
+    // The excluded cases are fully backstopped by br.mobile_gpu_uniforms_software (SwiftShader's vu 4096 fires under
+    // ANY mobile GPU string) + br.webgl_maxtexture_unallocatable, so narrowing loses no net coverage while removing
+    // the FP risk. An honest lesser mobile GPU (Adreno 3xx/4xx, Mali-T) is out of pattern; software names itself.
     var _mvp = parseInt(String((wg.caps && wg.caps.maxViewport) || ""), 10);
     if (wg.caps && wg.renderer
-        && /Adreno \\(TM\\) [6-8][0-9]{2}|Mali-G(?:7[0-9]|8[0-9])|Immortalis/i.test(wg.renderer)
+        && /Adreno \\(TM\\) [78][0-9]{2}|Mali-G(?:7[6-9]|71[0-9])|Immortalis/i.test(wg.renderer)
         && ((wg.caps.maxTexture && wg.caps.maxTexture < 16384)
             || (wg.caps.maxRenderbuffer && wg.caps.maxRenderbuffer < 16384)
             || (_mvp && _mvp < 16384))) {

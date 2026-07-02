@@ -1057,6 +1057,20 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   has. TERMINUS: a JS fork is caught by the tamper checks; a binary fork evades those but is caught by the GPU
   substrate (needs real mobile silicon); the emulation is caught by contacts/cores. There is no in-sandbox path to
   a coherent Android fingerprint — grounded, not asserted. 22 rungs + this terminus grounding."
+- **[LOOP MOBILE FP-FIX] mobile_gpu_caps_mismatch narrowed to CONFIDENTLY-16384 GPUs — testing my OWN premise
+  found an FP risk (2026-07-02, grounded).** Turned the discipline on a SHIPPED rung. mobile_gpu_caps_mismatch
+  fired on any /Adreno [6-8]xx/ with maxTexture < 16384, on the ASSUMPTION that all Adreno 6xx are 16384. TESTED
+  that: WebSearch could NOT confirm mid-range Adreno 6xx (610/618/619/620) are 16384 — they may be 8192, and
+  MAX_TEXTURE_SIZE is driver-variant per the sources. So a REAL Pixel 5 (Adreno 620, if 8192) would have
+  FALSE-FIRED this convicting rule — a real FP on real mid-range Android phones. FIX: narrowed the pattern to GPUs
+  CONFIDENTLY 16384 (Adreno 7xx/8xx flagship; Mali-G76-79 + G710-719; Immortalis), excluding the ambiguous
+  mid-range. GROUNDED LIVE: Adreno 730 (flagship) still FIRES; Adreno 620 (Pixel 5's real GPU) is now SILENT — and
+  the excluded case is fully backstopped by mobile_gpu_uniforms_software (SwiftShader's vu 4096 fires under ANY
+  mobile GPU string), which STILL FIRES, so ZERO net coverage lost while the FP risk is removed. This is the
+  discipline's most important application: the same 'test the premise, don't assume' rule that OPENED surfaces and
+  CLOSED dead-ends also CATCHES a latent false-positive in my own work — an unverified 16384 assumption that would
+  have convicted real hardware. 23 rungs (this one a correctness fix, which beats the last by making the ruleset
+  trustworthy, not just broader)."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
