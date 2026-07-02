@@ -32,7 +32,7 @@ RUN npm install --silent --no-audit --no-fund \
     && (npx playwright install chromium || true) \
     && (npx playwright install webkit || true) \
     && (npx patchright install chromium || true)
-COPY run.mjs entrypoint.sh ./
+COPY run.mjs entrypoint.sh android-fonts.conf ./
 # entrypoint.sh provisions the environment (KS_PROVISION: real PulseAudio devices + speech-dispatcher voices)
 # then launches the driver, auto-wrapping in xvfb-run when HEADFUL=1 (so a real-input node needs only
 # `docker run -e HEADFUL=1`). xvfb-run stays a CHILD of the entrypoint sh (PID 1) so PID 1 reaps Chromium
