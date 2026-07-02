@@ -1821,7 +1821,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // a headless tell deeper than ua_is_headless; (b) its Chrome version must match the UA-string version.
     if (uad && uad.getHighEntropyValues) {
       try {
-        var he = await uad.getHighEntropyValues(["uaFullVersion", "fullVersionList", "model"]);
+        var he = await uad.getHighEntropyValues(["uaFullVersion", "fullVersionList", "model", "platformVersion"]);
         var fvl = he.fullVersionList || [];
         var brandList = fvl.concat(uad.brands || []);
         if (brandList.some(function (b) { return /headless/i.test((b && b.brand) || ""); }))
@@ -1861,6 +1861,19 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         if (uad.mobile && he.model && _pixelDpr[he.model] && window.devicePixelRatio > 0
             && Math.abs(window.devicePixelRatio - _pixelDpr[he.model]) > 0.02) {
           sigs.push(S("browser", "android_model_dpr_incoherent", true));
+        }
+        // MODEL <-> OS-VERSION coherence: a device cannot run an Android OLDER than the version it SHIPPED with —
+        // a physical release-date bound (Pixel 2=8, 3=9, 4=10, 5=11, 6=12, 7=13, 8/9=14). The model is pinned by the
+        // 3-surface ratchet; platformVersion is the real OS version. A pinned Pixel with platformVersion BELOW its
+        // launch is a randomizer/fork that paired a model with an impossible OS. FP-safe: fires only for a Pixel in
+        // the map whose major OS version is below its launch (a device runs launch-or-newer); EXPERIMENTAL (custom
+        // ROMs running an older Android on newer hardware are the vanishing theoretical confound).
+        var _pixLaunch = { "Pixel 2": 8, "Pixel 2 XL": 8, "Pixel 3": 9, "Pixel 3 XL": 9, "Pixel 3a": 9, "Pixel 4": 10,
+          "Pixel 4 XL": 10, "Pixel 4a": 10, "Pixel 5": 11, "Pixel 5a": 11, "Pixel 6": 12, "Pixel 6 Pro": 12,
+          "Pixel 6a": 12, "Pixel 7": 13, "Pixel 7 Pro": 13, "Pixel 8": 14, "Pixel 8 Pro": 14, "Pixel 9": 14, "Pixel 9 Pro": 14 };
+        if (uad.mobile && he.model && _pixLaunch[he.model] && he.platformVersion) {
+          var _pvMaj = parseInt(String(he.platformVersion).split(".")[0], 10);
+          if (_pvMaj && _pvMaj < _pixLaunch[he.model]) sigs.push(S("browser", "android_model_os_predates", true));
         }
       } catch (e) {}
     }

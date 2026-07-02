@@ -973,6 +973,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   OnePlus/Samsung-by-suffix, the cores actual-parallelism). One surface tested and closed; the discipline (test the
   premise) again overturned it — this time to a dead-end rather than a rung, which is the honest other half of the
   same rule.
+- **[LOOP MOBILE B-modelos] br.android_model_os_predates — model↔OS-version release-date coherence (2026-07-02,
+  grounded).** A NEW axis, not GPU/screen/DPR: a device physically CANNOT run an Android OLDER than the one it
+  SHIPPED with (Pixel 2=8, 3=9, 4=10, 5=11, 6=12, 7=13, 8/9=14). First GROUNDED that platformVersion is usable
+  (unlike the empty model): getHighEntropyValues(['platformVersion']) is the real OS major, Chromium-derived from
+  the Android UA (KS_DEVICE='Pixel 5' -> 11, 'Nexus 5' -> 6.0). The model is already pinned by the 3-surface
+  ratchet, so a pinned Pixel with platformVersion BELOW its launch is a randomizer/fork that paired a real model
+  with an impossible OS. GROUNDED LIVE: KS_DEVICE='Nexus 5' (platformVersion 6.0) + KS_FORGE_JS_MODEL='Pixel 5'
+  (launch 11) FIRES (6 < 11); KS_DEVICE='Pixel 5' + 'Pixel 5' (11) SILENT (11 >= 11). FP-safe (a device runs
+  launch-or-newer; scoped to Pixels' deterministic launch dates); EXPERIMENTAL (w0.6; custom-ROM-older-Android the
+  vanishing confound). 20 mobile rungs. The device-manifold now constrains a fork on FOUR independent axes — screen,
+  DPR, GPU-family AND OS-version — each drawn from ONE real device; a coherent Android spoof must satisfy all four
+  plus the unspoofable GPU substrate probes. After a precision dead-end, a clean new-axis rung — the frontier still
+  yields when tested.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

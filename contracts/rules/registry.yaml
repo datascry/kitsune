@@ -516,6 +516,18 @@ rules:
     last_validated: "2026-07-02"
     source: "Realm coherence for the UA-CH high-entropy MODEL — the durable blue counter to a main-only getHighEntropyValues().model forge (the red move that beats br.mobile_no_js_model by overriding NavigatorUAData.prototype.getHighEntropyValues on the main thread). navigator.userAgentData.getHighEntropyValues is exposed in WorkerNavigator too (Blink), so the Worker resolves the REAL hardware model — EMPTY on a desktop Chromium faking Android. A main-thread prototype override that injects a fake model never reaches Worker scope (addInitScript / CDP addScriptToEvaluateOnNewDocument do not run in Workers), so the main model (forged 'Pixel 5') and the worker model (real '') disagree. Extends the realm-coherence family (br.uadata_worker_divergence keys on platform|mobile, NOT the model — the hole this closes) to the model surface. Convicting (w0.8 — a realm divergence is a hard tamper signal). The model is now a 3-surface ratchet: the Sec-CH-UA-Model header (net.ch_ua_mobile_no_model), main-thread getHighEntropyValues (br.mobile_no_js_model), and this WORKER model — a header route-forge + a main-JS prototype-forge fill the first two, but forging the worker too requires rewriting worker source (→ br.worker_source_rewritten); only a REAL Android device fills all three natively. FP-SAFE: a real device reports the same model in both realms; compared only for a mobile device and when the worker actually reported a model. GROUNDED LIVE: KS_DEVICE='Pixel 5' + KS_FORGE_MODEL + KS_FORGE_JS_MODEL (which clear the header + main-JS model checks) trips uadata_model_worker_divergence — the worker model stays real-empty while the main is forged; an un-forged Android device (both empty, or both filled) does not."
 
+  - id: br.android_model_os_predates
+    title: Android Pixel model paired with an OS version older than the device shipped with
+    layers: [browser]
+    reads: [browser.android_model_os_predates]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "MODEL <-> OS-VERSION coherence — a release-date bound, a NEW axis independent of the screen/DPR/GPU model rungs. A device physically CANNOT run an Android version OLDER than the one it SHIPPED with (Pixel 2 = Android 8, 3 = 9, 4 = 10, 5 = 11, 6 = 12, 7 = 13, 8/9 = 14). The model is already pinned across the 3-surface CH-UA-Model ratchet; getHighEntropyValues(['platformVersion']) is the real OS major version (Chromium derives it from the Android UA — GROUNDED: KS_DEVICE='Pixel 5' -> platformVersion 11, KS_DEVICE='Nexus 5' -> 6.0). So a pinned Pixel whose platformVersion major is BELOW its launch version is a randomizer or source-fork that paired a real model with an impossible OS. CONVICTING (w0.6). FP-SAFE: a device runs its launch OS or NEWER, so version < launch is physically impossible for that model; scoped to Pixels (deterministic launch dates). EXPERIMENTAL — the vanishing confound is a custom ROM running an OLDER Android on newer hardware (enthusiast, rare). GROUNDED LIVE: KS_DEVICE='Nexus 5' (platformVersion 6.0) + KS_FORGE_JS_MODEL='Pixel 5' (launch 11) FIRES android_model_os_predates (6 < 11); KS_DEVICE='Pixel 5' + KS_FORGE_JS_MODEL='Pixel 5' (platformVersion 11) does NOT fire (11 >= 11). Complements model<->screen/DPR: a coherent Android device must match its model on screen, DPR AND a possible OS version."
+
   - id: br.android_model_dpr_incoherent
     title: Android Pixel model paired with the wrong device-fixed devicePixelRatio
     layers: [browser]
