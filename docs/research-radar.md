@@ -537,6 +537,17 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   corroborating backstop). The iOS screen manifold is now a FOUR-rung ratchet — oversized, desktop-res, DPR, and
   the full set. 15 grounded rungs. Dry streak reset to 0. Data-grounded rungs still exist where real device
   corpora fill a manifold the hardware-bound slices can't.
+- **[LOOP B-chua] net.ch_ua_on_safari_ua — Blink-faking-Safari at the HEADER layer, catches no-JS (2026-07-02,
+  grounded).** Sec-CH-UA is Blink-EXCLUSIVE: Chromium sends it, Safari (macOS + iOS) has NEVER shipped Client
+  Hints (WebKit declined the spec). So a request whose UA claims Safari while ANY Sec-CH-UA header is present is a
+  Chromium engine wearing a Safari UA. The HEADER-layer twin of br.apple_ua_nonwebkit (JS window.chrome): because
+  it lives on the HTTP request, it fires even for a NO-JS scraper (curl/Go copying a Safari UA behind a
+  Client-Hints-emitting stack, or headless Chromium with JS off) that the JS check never sees. Distinct from
+  net.ch_ua_vs_ua_browser (which needs the JS ua_browser to COMPARE) — this needs only the header's PRESENCE
+  under a Safari UA. FP-safe (no real Safari/WKWebView emits Sec-CH-UA; scoped to a Safari-family UA). Convicting
+  (w0.7). GROUNDED LIVE: a Chromium given an iPhone-Safari UA fires ch_ua_on_safari_ua; under its native Chrome UA
+  it does not. A NETWORK-layer engine tell — moved off the saturated browser-JS layer onto the header layer, and
+  it catches the no-JS class the JS engine-checks structurally cannot. 16 grounded rungs.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices

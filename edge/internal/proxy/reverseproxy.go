@@ -216,6 +216,14 @@ func prepare(
 	if chUANoGREASEBrand(r) {
 		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_no_grease_brand", true, now))
 	}
+	// A Safari User-Agent that ALSO sends Sec-CH-UA — a network-layer contradiction. User-Agent Client Hints
+	// are Blink-ONLY: Safari (macOS + iOS) has never shipped Sec-CH-UA, so a UA claiming Safari while any
+	// Sec-CH-UA header is present is a Chromium engine wearing a Safari UA. Caught at the HEADER layer, so it
+	// fires even for a NO-JS scraper the JS-based br.apple_ua_nonwebkit cannot see. FP-safe: no real Safari
+	// emits Sec-CH-UA. Scoped to a Safari-family UA (uaHeaderBrowser), so a real Chrome UA is out of scope.
+	if uaHeaderBrowser(r.Header.Get("User-Agent")) == "safari" && r.Header.Get("Sec-CH-UA") != "" {
+		out.signals = append(out.signals, signal.Network(out.sessionID, "ch_ua_on_safari_ua", true, now))
+	}
 	return out, nil
 }
 

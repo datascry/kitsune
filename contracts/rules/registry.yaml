@@ -504,6 +504,18 @@ rules:
     last_validated: "2026-06-18"
     source: "Cross-layer browser coherence; Chromium sends Sec-CH-UA from its real brand under any UA"
 
+  - id: net.ch_ua_on_safari_ua
+    title: Safari User-Agent sends Sec-CH-UA (a Blink-only header) — Chromium faking Safari
+    layers: [network]
+    reads: [network.ch_ua_on_safari_ua]
+    predicate: present
+    weight: 0.7
+    status: active
+    category: coherence
+    added: "2026-07-02"
+    last_validated: "2026-07-02"
+    source: "Network-layer engine coherence via the User-Agent Client Hints header set. Sec-CH-UA is Blink-EXCLUSIVE: Chromium sends it; Safari (macOS + iOS) has NEVER shipped Client Hints (WebKit declined the spec). So a request whose UA claims Safari while ANY Sec-CH-UA header is present is a Chromium engine wearing a Safari UA. This is the HEADER-layer twin of br.apple_ua_nonwebkit (which reads JS window.chrome/userAgentData): because it lives on the HTTP request, it fires even for a NO-JS scraper — a curl/Go/Python client that copied a Safari UA but sits behind a Chromium-Client-Hints-emitting stack, or a headless Chromium with JS disabled — that the JS-based apple_ua_nonwebkit never sees (no JS runs). Complements net.ch_ua_vs_ua_browser, which needs the JS ua_browser to COMPARE against; this needs only the header's PRESENCE under a Safari UA. FP-SAFE: no real Safari (or iOS in-app WKWebView) emits any Sec-CH-UA header; scoped to a Safari-family UA (uaHeaderBrowser==safari) so a real Chrome UA is out of scope. Convicting (w0.7). GROUNDED LIVE: a Chromium (stealth) given an iPhone-Safari UA sends Sec-CH-UA under that UA and fires ch_ua_on_safari_ua; under its native Chrome UA it does not (Chrome UA is in scope for the sender but not the Safari-UA gate)."
+
   - id: net.ch_ua_version_vs_ua
     title: Sec-CH-UA brand version disagrees with the UA-string Chrome version
     layers: [network, browser]
