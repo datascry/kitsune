@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **169 rules**: 120 active · 43 experimental · 6 retired; 117 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **170 rules**: 120 active · 44 experimental · 6 retired; 118 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,7 +56,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (125)
+### browser layer (126)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -83,6 +83,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.languages_worker_vs_main` | coherence✦ | present | 0.6 | experimental | navigator.languages differs between the main thread and a Web Worker |
 | `br.math_engine_vs_ua` | coherence | present | 0.7 | retired | JS Math float precision implies an engine that contradicts the UA |
 | `br.mobile_cores_high` | coherence✦ | present | 0.5 | experimental | Mobile UA exposes more than 8 CPU cores — a phone SoC does not |
+| `br.mobile_gpu_not_mobile` | coherence✦ | present | 0.6 | experimental | Mobile UA renders WebGL on a non-mobile GPU (desktop/software renderer) |
 | `br.mobile_no_js_model` | coherence✦ | present | 0.6 | active | Mobile userAgentData but getHighEntropyValues().model is empty — desktop faking Android (JS surface) |
 | `br.mobile_no_touch` | coherence✦ | present | 0.7 | active | Phone/tablet UA reports no touch capability (maxTouchPoints 0) |
 | `br.mobile_pointer_hover_desktop` | coherence✦ | present | 0.6 | active | Mobile UA but the primary pointer is fine / a hovering pointer exists (desktop pointer surface) |
