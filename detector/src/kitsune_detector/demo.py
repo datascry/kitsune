@@ -2345,6 +2345,14 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       var isMobile = /Mobile|Android|iPhone|iPad/i.test(ua);
       if (!isMobile && window.matchMedia && matchMedia("(hover: none)").matches)
         sigs.push(S("browser", "hover_none_desktop", true));
+      // The INVERSE, mobile-side: a real phone/tablet has NO hovering pointer — its PRIMARY pointer is coarse
+      // (touch) and (hover: none). A mobile UA whose primary pointer is fine or that reports (hover: hover) is a
+      // desktop wearing a mobile UA WITHOUT emulating the pointer/hover media (the lazy UA-only mobile spoof:
+      // CDP/JS sets the UA but not the touch device, so the CSS pointer surface still describes a mouse). FP-safe:
+      // every real phone reports (pointer: coarse)+(hover: none); a full device emulation (KS_DEVICE) sets both,
+      // so it stays silent — this catches only the UA-only spoof.
+      if (isMobile && window.matchMedia && (matchMedia("(pointer: fine)").matches || matchMedia("(hover: hover)").matches))
+        sigs.push(S("browser", "mobile_pointer_hover_desktop", true));
       // CSS coarse-pointer (touch) and navigator.maxTouchPoints describe the same capability; if the
       // CSS surface says touch but the JS surface says none (or vice-versa) the device is incoherent.
       if (window.matchMedia) {

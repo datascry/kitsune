@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **166 rules**: 119 active · 41 experimental · 6 retired; 114 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **167 rules**: 120 active · 41 experimental · 6 retired; 115 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,7 +56,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (122)
+### browser layer (123)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -83,6 +83,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.math_engine_vs_ua` | coherence | present | 0.7 | retired | JS Math float precision implies an engine that contradicts the UA |
 | `br.mobile_no_js_model` | coherence✦ | present | 0.6 | active | Mobile userAgentData but getHighEntropyValues().model is empty — desktop faking Android (JS surface) |
 | `br.mobile_no_touch` | coherence✦ | present | 0.7 | active | Phone/tablet UA reports no touch capability (maxTouchPoints 0) |
+| `br.mobile_pointer_hover_desktop` | coherence✦ | present | 0.6 | active | Mobile UA but the primary pointer is fine / a hovering pointer exists (desktop pointer surface) |
 | `br.navplatform_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.platform implies an OS that contradicts the UA platform |
 | `br.oscpu_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.oscpu implies an OS that contradicts the UA platform |
 | `br.pointer_touch_incoherent` | coherence✦ | present | 0.7 | active | CSS coarse-pointer and navigator.maxTouchPoints disagree on touch |

@@ -735,6 +735,18 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   — a strict hierarchy: iOS is the hardest to fake coherently, and needs a REAL WebKit/iOS runtime, not a
   Linux-container stand-in. 8 mobile rungs; both mobile OSes converged, each on a distinct set of real-hardware
   walls the container cannot provision.
+- **[LOOP MOBILE B-pointerhover] br.mobile_pointer_hover_desktop — pointer/hover realism, mobile-side (2026-07-02,
+  grounded).** Dug past the "converged" call and found an untouched joint: the collector had hover_none_desktop
+  (a DESKTOP claiming no-hover) and pointer_touch_incoherent (any-pointer coarse vs maxTouchPoints), but NOTHING
+  for the mobile-side inverse — a mobile UA with a DESKTOP pointer surface. A real phone has PRIMARY (pointer:
+  coarse) + (hover: none); a UA claiming Mobile/Android/iPhone whose (pointer: fine) or (hover: hover) matches is a
+  desktop wearing a mobile UA without emulating the touch device (the lazy UA-only spoof — CDP setUserAgentOverride
+  sets the string but not isMobile/hasTouch, so the CSS pointer surface still describes a mouse). GROUNDED LIVE:
+  SPOOF_UA=<Pixel 5 mobile UA> with NO device emulation FIRES mobile_pointer_hover_desktop; KS_DEVICE='Pixel 5'
+  (full emulation, pointer coarse + hover none) is SILENT. FP-safe by construction (every real phone has coarse
+  pointer + no hover; a full device emulation sets both media). This catches a no-device mobile spoof the model/
+  font/screen rungs miss (they need a real Chromium device or fire on emptiness) — a distinct entry point. 9 mobile
+  rungs: the "converged" call was premature at the per-surface level — the pointer/hover surface was still open.
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
