@@ -123,6 +123,8 @@ func captchaKindOf(s string) CaptchaKind {
 		return CaptchaImageSelect
 	case "image-doodle":
 		return CaptchaImageDoodle
+	case "image-shapes":
+		return CaptchaImageShapes
 	default:
 		return CaptchaText
 	}

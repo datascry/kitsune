@@ -43,6 +43,10 @@ func arenaCatalog() Catalog {
 				Kind: "image-doodle", Prompt: "Select every <category> — Quick, Draw! sketch grid (CC BY 4.0).",
 				Categories: doodleGroupOrder,
 			},
+			{
+				Kind: "image-shapes", Prompt: "Select every <shape> — owned procedural geometric-shape grid (zero-license).",
+				Categories: shapeOrder,
+			},
 			{Kind: "honeypot", Prompt: "Submit without filling the hidden field (no difficulty axis)."},
 		},
 	}

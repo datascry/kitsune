@@ -33,6 +33,7 @@ const (
 	CaptchaHoneypot    CaptchaKind = "honeypot"     // hidden trap field that must stay empty
 	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (emoji-glyph grid)
 	CaptchaImageDoodle CaptchaKind = "image-doodle" // pick the tiles matching a prompt (Quick, Draw! doodles)
+	CaptchaImageShapes CaptchaKind = "image-shapes" // pick the tiles matching a prompt (owned procedural shapes)
 )
 
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
@@ -181,6 +182,23 @@ func MintCaptcha(kind CaptchaKind, lv Level, fontName string) (Captcha, string) 
 			want = []int{0}
 		}
 		return Captcha{Kind: CaptchaImageDoodle, ID: id, Prompt: "Select every " + doodleNoun[target] + ".", Tiles: tiles}, joinInts(want)
+	case CaptchaImageShapes:
+		k := imageParams(lv)
+		target := randShapeCategory()
+		tiles := make([]string, k.Tiles)
+		var want []int
+		for i := range tiles {
+			s := randShapeCategory()
+			tiles[i] = rasterShape(s, k.Noise) // owned procedural shape — recognise the form, not the markup
+			if s == target {
+				want = append(want, i)
+			}
+		}
+		if len(want) == 0 { // guarantee at least one target tile
+			tiles[0] = rasterShape(target, k.Noise)
+			want = []int{0}
+		}
+		return Captcha{Kind: CaptchaImageShapes, ID: id, Prompt: "Select every " + shapeNoun[target] + ".", Tiles: tiles}, joinInts(want)
 	default:
 		k := textParams(lv)
 		alphabet := captchaAlphabet
@@ -231,7 +249,7 @@ func CheckCaptcha(kind CaptchaKind, expected, submitted string) bool {
 	switch kind {
 	case CaptchaHoneypot:
 		return strings.TrimSpace(submitted) == ""
-	case CaptchaImageSelect, CaptchaImageDoodle:
+	case CaptchaImageSelect, CaptchaImageDoodle, CaptchaImageShapes:
 		return normIndexSet(expected) == normIndexSet(submitted) && normIndexSet(submitted) != ""
 	default:
 		return strings.EqualFold(strings.TrimSpace(submitted), strings.TrimSpace(expected))

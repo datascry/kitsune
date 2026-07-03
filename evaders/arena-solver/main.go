@@ -85,6 +85,7 @@ func main() {
 		{"math", solveMath2},
 		{"honeypot", solveHoneypot},
 		{"image-select", solveImageSelect},
+		{"image-shapes", solveImageShapes},
 		{"rotate", solveRotate},
 		{"slider", solveSlider},
 		{"queue", abuseQueue},
@@ -231,6 +232,27 @@ func solveImageSelect(c *http.Client, base string) (bool, int64, error) {
 			}
 		}
 		return verifyCaptcha(c, base, map[string]any{"kind": "image-select", "id": cap.ID, "answer": strings.Join(idx, ",")})
+	})
+}
+
+// solveImageShapes benchmarks the radial-shape CV heuristic against the OWNED procedural-shape source. The same
+// classifier that can no longer read emoji glyphs WAS built for geometric shapes, so it should classify the
+// circle/square/triangle tiles — a distinct-domain contrast: a simple heuristic solves procedural geometry where
+// emoji needs a real VLM. (The diamond category has no classifier label, so those rounds expose the heuristic's gap.)
+func solveImageShapes(c *http.Client, base string) (bool, int64, error) {
+	return timed(func() (bool, error) {
+		cap, err := getCaptcha(c, base, "image-shapes")
+		if err != nil {
+			return false, err
+		}
+		target := targetShape(cap.Prompt)
+		var idx []string
+		for i, tile := range cap.Tiles {
+			if classifyTilePNG(tile) == target {
+				idx = append(idx, strconv.Itoa(i))
+			}
+		}
+		return verifyCaptcha(c, base, map[string]any{"kind": "image-shapes", "id": cap.ID, "answer": strings.Join(idx, ",")})
 	})
 }
 

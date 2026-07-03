@@ -3665,3 +3665,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   attribution committed; license-clean + human-solvable both held. NEXT: a slab/condensed OFL face (should drop it
   further than the serif's 7/8), charset variants (digits-only/mixed-case via a ?charset= selector), then the
   untouched image-model surface (broaden the emoji taxonomy beyond animal/food/vehicle; an owned synthetic source).
+- **[CAPTCHA-BENCH LOOP — rung 6: image-shapes — a 3rd OWNED image source (procedural geometry)]** (2026-07-04).
+  Opened the untouched IMAGE half of the bench with a genuinely new source: image-shapes, a grid of procedural
+  geometric-shape tiles (circle/square/triangle/diamond) rendered in-code (arena/shapes.go — rasterShape draws the
+  filled form on a 64x64 tile with centre/size/tone jitter + per-level noise). ZERO-LICENSE (owned, generated in
+  code) — a distinct visual DOMAIN from emoji glyphs and QuickDraw sketches, so a classifier tuned on one domain
+  meets a fresh one. Wired the full path: CaptchaImageShapes kind + MintCaptcha case (mirrors image-select) +
+  the verify case + captchaKindOf + the detector _ARENA_CAPTCHAS whitelist + the /arena/catalog manifest (now 3
+  image sources) + a TestImageShapes gate test (correct set passes, wrong/empty fail). Added solveImageShapes to
+  arena-solver (the CV red half). GROUNDED LIVE: renders human-solvable (viewed a crisp diamond + circle), the gate
+  verifies correct answers (TestImageShapes PASS), and the radial-shape CV heuristic scores 0/8 on it across 8 runs
+  — the classifier that was built for shapes does NOT generalize to the filled procedural rendering AND has no
+  diamond label, so like emoji/doodle the source resists the in-repo heuristic (a real VLM would ace shapes — the
+  geometrically-simplest domain — so image-shapes is the EASY, distinct-domain tier for a red-teamer's real model).
+  arena build/vet/test green; detector ruff+mypy green. NEXT: broaden emoji categories (Unicode taxonomy beyond
+  animal/food/vehicle), a slab/condensed OFL text face (drop TrOCR below the serif's 7/8), a ?charset= selector.
