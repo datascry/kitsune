@@ -51,6 +51,7 @@ type Captcha struct {
 	Field  string      `json:"field,omitempty"` // honeypot: the trap field name that must stay empty to pass
 	Tiles  []string    `json:"tiles,omitempty"` // image-select: 6/9/12 owned raster PNG tiles by level (classify via CV)
 	Angle  int         `json:"angle,omitempty"` // rotate: the initial rotation the user must undo to reach upright
+	Font   string      `json:"font,omitempty"`  // text: the typeface the image was rendered in (the OCR bench axis)
 }
 
 // captchaStore holds id -> expected answer for single-use verification (the text/math families need the
@@ -138,7 +139,7 @@ func mintMath(lv Level) (string, string) {
 // MintCaptcha builds a fresh challenge of the kind at the given difficulty level and returns it with the
 // expected answer (the caller stores the answer for verify; for honeypot the stored answer is "" — it verifies
 // structurally). honeypot has no difficulty axis and ignores the level.
-func MintCaptcha(kind CaptchaKind, lv Level) (Captcha, string) {
+func MintCaptcha(kind CaptchaKind, lv Level, fontName string) (Captcha, string) {
 	id := randHex(16)
 	switch kind {
 	case CaptchaMath:
@@ -189,7 +190,10 @@ func MintCaptcha(kind CaptchaKind, lv Level) (Captcha, string) {
 		code := randCodeFrom(k.Length, alphabet)
 		// Rendered as a DISTORTED RASTER PNG (not SVG): the answer is in the pixels, not the markup, so a
 		// browserless parser can no longer read it — solving the text gate now needs real OCR. See raster.go.
-		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: rasterText(code, k)}, strings.ToUpper(code)
+		// fontName selects the typeface (?font=<name>, the OCR bench); empty picks a random pool face. The chosen
+		// face is reported back so a red-teamer knows which typeface their OCR model just faced.
+		img, chosen := rasterText(code, k, fontName)
+		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: img, Font: chosen}, strings.ToUpper(code)
 	}
 }
 

@@ -371,16 +371,21 @@ def create_app(
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/captcha", include_in_schema=False)
-    async def arena_captcha(kind: str = "text", level: str | None = None) -> Response:
+    async def arena_captcha(kind: str = "text", level: str | None = None, font: str | None = None) -> Response:
         # Relay a self-hosted CAPTCHA challenge (text/math/honeypot) from the owned gate — same pattern as the
-        # PoW relay. Kind whitelisted; the answer is never in the response (the gate keeps it server-side).
+        # PoW relay. Kind whitelisted; the answer is never in the response (the gate keeps it server-side). The
+        # optional ?font= selects the text-gate typeface (the OCR bench); the gate falls back to a random pool
+        # face for an empty/unknown name, so it is passed through with only a length guard.
         if not ARENA_URL:
             raise HTTPException(status_code=503, detail="arena gate not configured")
         if kind not in _ARENA_CAPTCHAS:
             raise HTTPException(status_code=400, detail="unknown captcha")
+        params = {"kind": kind, "level": _arena_level(level)}
+        if font and len(font) <= 32:
+            params["font"] = font
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.get(f"{ARENA_URL}/arena/captcha", params={"kind": kind, "level": _arena_level(level)})
+                r = await client.get(f"{ARENA_URL}/arena/captcha", params=params)
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
