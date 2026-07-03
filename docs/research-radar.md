@@ -3129,3 +3129,27 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   real. DRY #1 for a groundable in-sandbox probe. Remaining untested leads: TCP-FLAG/ECN-negotiation probes (in the
   header, NOT offload-confounded — the edge's SYN-ACK sets ECE, read the client's ECN echo); or grant the edge
   NET_ADMIN to unlock raw injection. Next firing tests those; if both dry, the axis is external-data-bound in-box.
+- **[ACTIVE-PROBE LOOP — rung 4: window/ECN/injection all infra-bound -> AXIS EARNED-CLOSED (infra/real-network)]**
+  (2026-07-03). Grounded the last leads against the real constraints: (1) WINDOW probe — kernel min rcvbuf is 4096
+  (net.ipv4.tcp_rmem floor), so the advertised window never drops below ~4KB and a ~500B ClientHello fits entirely
+  -> no window-following is forced (both a real kernel and os-spoof flood a 4KB window); confounded, same class as
+  the MSS/veth confound. (2) ECN probe — net.ipv4.tcp_ecn is a SYSTEM sysctl (=2), not per-socket, so negotiating
+  ECN per-connection needs NET_ADMIN (sysctl) or raw SYN-ACK crafting (NET_ADMIN suppression); the edge has only
+  NET_RAW. (3) The RAW-INJECTION probes (out-of-order stall, challenge-ACK) — out-of-order needs NET_ADMIN to
+  suppress the kernel's own reply (edge lacks it); the challenge-ACK might inject with NET_RAW alone, BUT its
+  FP-SAFETY is real-network-dependent — middleboxes/NAT commonly strip/reorder injected packets, so "no response"
+  would FP on legit middleboxed users, and precision 1.0 (LOAD-BEARING) is UN-GROUNDABLE in-sandbox (no middleboxes
+  to test the FP case). So EVERY active probe hits a grounded blocker: grounding-confounded (MSS=veth, window=
+  kernel-min), privilege-blocked (ECN sysctl, injection suppression = NET_ADMIN the edge lacks), or FP-safety-
+  external (challenge-ACK = middleboxes). DRY #2, each verified. TWICE-IN-A-ROW grounded dry (rung 3 MSS-veth +
+  rung 4 window/ECN/injection). **The ACTIVE-PROBE axis is EARNED-CLOSED: INFRA / REAL-NETWORK-BOUND in-sandbox.**
+  The DIRECTION is validated + valuable — the capability is real (rung 1: CAP_NET_RAW + AF_PACKET-send + own accept
+  loop), os-spoof's exact gaps are real (rung 2, white-boxed: happy-path stack drops out-of-order, hardcodes MSS
+  1400, no window-following), and the probe WOULD convict on a PHYSICAL deployment (a real kernel honours MSS,
+  reassembles, follows the window; a userspace forge does not). But the in-sandbox VIRTUAL NETWORK cannot ground
+  it: the veth never segments to the MSS, the kernel min-window is bigger than the probe payload, there are no
+  middleboxes to FP-validate an injection probe, and the edge holds NET_RAW not NET_ADMIN. Unlike the proxy-egress
+  axis (structural TCP tells WERE groundable in-sandbox), active probing is fundamentally a DEPLOYMENT-network
+  feature — both its grounding AND its FP-safety live on the real wire. Honest close, not a cheap floor: the MSS
+  probe was BUILT + live-tested (edge advertised MSS 256, veth confound observed), and every other probe's blocker
+  was verified against the kernel/caps. Loop 8033f6fc retired at the earned terminus.
