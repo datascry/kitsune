@@ -662,6 +662,48 @@ def test_axis_a_poisson_stagger_evades_at_scale() -> None:
     assert all(c.label != "campaign" for c in score_campaigns(members))
 
 
+def _two_dim_diffuse_fleet(*, tell: bool) -> list[tuple[str, object]]:
+    import random
+
+    rng = random.Random(3)
+    hu = humanizer_descriptors(6)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(6):
+        offs.append(t)
+        t += rng.expovariate(1.0 / 300.0)  # Poisson stagger -> no lockstep, no scheduled -> exactly 2 dims
+    return [
+        (
+            f"a{i}",
+            _sess(
+                f"a{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=offs[i],
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+                webdriver=tell,
+            ),
+        )
+        for i in range(6)
+    ]
+
+
+def test_axis_a_two_dim_candidate_with_automation_tell_convicts() -> None:
+    # Corroboration (rung 5): a diffuse fleet at 2 dims (ja4 + descriptor, Poisson timing) is a `candidate` on soft
+    # correlation alone — but a per-session automation tell (webdriver) on a member marks it a coordinated BOT
+    # campaign. The tell is an independent (browser-automation) layer, so 2 dims + tell -> campaign.
+    camps = score_campaigns(_two_dim_diffuse_fleet(tell=True))
+    assert len(camps) == 1 and camps[0].label == "campaign"
+    assert "automation" in camps[0].dense_dimensions
+
+
+def test_axis_a_clean_two_dim_fleet_stays_candidate() -> None:
+    # The frontier holds: the SAME diffuse fleet with NO per-session tell (clean automation, real-browser build)
+    # stays a 2-dim candidate — corroboration needs a genuine bot signal, and a fully-clean diffuse fleet has none.
+    assert all(c.label != "campaign" for c in score_campaigns(_two_dim_diffuse_fleet(tell=False)))
+
+
 def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
     # A flash crowd: one popular build (shared JA4) + co-timed arrival, but REAL humans (descriptors spread) on
     # distinct IPs. Dense on only 2 dimensions (ja4_prefix + lockstep) → `candidate` for review, NOT a campaign.

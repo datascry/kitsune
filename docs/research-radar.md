@@ -2903,3 +2903,21 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   coordination axis's first DRY firing after two shipped rungs: the timing axis's groundable win is the
   regular-schedule catch, and the residual (any stagger whose arrival process approaches Poisson) is the genuine
   external wall.
+- **[COORDINATION LOOP — rung 5: axis-A corroboration on per-session bot tells (SHIPPED)]** (2026-07-03). A
+  DIFFERENT angle after the timing axis: score_campaigns had NO corroboration — it only counted soft dims, so a
+  diffuse fleet at exactly 2 dims (ja4 + descriptor, Poisson timing) stayed a `candidate` even when a member
+  carried a per-session automation tell, AND axis B also capped it at candidate (no convicting fp/trace/ticket
+  binding to reach 0.60 — the tell there is only a corroborator). So a Poisson-staggered diffuse fleet WITH a
+  browser-automation slip evaded BOTH axes. GROUNDED the gap live (2-dim + webdriver -> axis A `candidate`, axis B
+  no fleet-binding), then wired the axis-A analog of score_cluster's conviction gate: a 2-dim community lifts to
+  `campaign` when `_has_automation_tell` (webdriver/CDP/headless/injection) OR `_has_known_automation_ja4` (curl/Go/
+  Python non-browser stack) fires — an INDEPENDENT browser-automation layer, baseline-free (in-sandbox bot signals,
+  explicitly NOT IP reputation). FP-SAFE by construction: a legit cohort never BOTH forms a 2-dim community (human
+  descriptors spread past the eps; distinct real builds shed ja4) AND carries an automation tell / tool JA4.
+  GROUNDED LIVE: test_axis_a_two_dim_candidate_with_automation_tell_convicts (2-dim + webdriver -> campaign via the
+  new `automation` dim); test_axis_a_clean_two_dim_fleet_stays_candidate (the SAME fleet clean stays candidate —
+  the frontier holds); full harness green (374), coordination precision==1.0 preserved. This convicts a coordinated
+  BOT campaign (the members are per-session-flagged bots; the rung upgrades the COHORT verdict from N-independent-
+  bots to one campaign — attribution), NOT the fully-clean real-browser frontier fleet, which stays the external
+  wall. Two shipped rungs (2, 5) + one red-verify (3) + two dead-ends (1, 4) — the loop is NOT dry: rung 5 found a
+  real groundable gap on a non-timing angle.

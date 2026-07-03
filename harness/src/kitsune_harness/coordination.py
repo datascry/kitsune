@@ -968,6 +968,16 @@ def score_campaigns(corpus: list[tuple[str, Session]]) -> list[CampaignVerdict]:
                 dense.append("scheduled")
         if len(dense) < 2:
             continue
+        # CORROBORATION (the axis-A analog of score_cluster's conviction gate): a 2-dim community is only a
+        # `candidate` on soft correlation alone — but if a member carries a per-session BOT tell (an automation/
+        # headless/injection signal) or the community's shared build is a KNOWN automation-tool JA4, the cohort is
+        # a coordinated BOT campaign, not an ambiguous 2-dim coincidence. The tell is an INDEPENDENT layer
+        # (browser-automation / non-browser-stack), so it lifts the candidate to a campaign. FP-SAFE: a legit
+        # cohort never BOTH forms a 2-dim community (human descriptors spread past the eps; distinct real builds
+        # shed the ja4 dim) AND carries an automation tell / tool JA4 — the per-session bot signals are absent on
+        # real browsers by construction. Only baseline-free in-sandbox tells corroborate here (NOT IP reputation).
+        if len(dense) == 2 and (_has_automation_tell(sessions) or _has_known_automation_ja4(sessions)):
+            dense.append("automation")
         label = "campaign" if len(dense) >= _CAMPAIGN_MIN_DENSE_DIMS else "candidate"
         score = min(1.0, 0.3 + 0.18 * len(dense))
         evidence = [
