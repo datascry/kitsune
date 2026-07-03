@@ -3153,3 +3153,23 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   feature — both its grounding AND its FP-safety live on the real wire. Honest close, not a cheap floor: the MSS
   probe was BUILT + live-tested (edge advertised MSS 256, veth confound observed), and every other probe's blocker
   was verified against the kernel/caps. Loop 8033f6fc retired at the earned terminus.
+
+## Arena challenge-solve coherence (loop 2540efcf — the thesis applied to the challenge-interaction layer)
+
+- **[ARENA-SOLVE LOOP — rung 1: grounded what the gate captures + the enabling rung]** (2026-07-03). The arena
+  gates (arena/, Go: PoW hashcash/many-small/memory-hard, CAPTCHA text/math, slider, rotate, emoji, doodle,
+  honeypot) verify ANSWERS and — for slider/rotate only — a client-supplied TRAJECTORY with per-sample `t ms`
+  (SliderPoint/RotatePoint; slider.go already rejects "drag too fast to be human" + a MinPts trajectory bar — the
+  template). GROUNDED GAPS: (1) NO server-side solve-ELAPSED anywhere in the verify path (only the rate-limiter
+  touches time); PoW and CAPTCHA submit answer/counters with NO timing at all. (2) The NonceStore (pow.NewNonceStore,
+  replay-resistance) tracks issued nonces but the verify never measures issue->verify elapsed. PoW DESIGN is
+  telling: `hashcash` is deliberately browser-solvable (the compute-signature TARGET — a native/GPU solver finishes
+  too fast for a JS engine), while `memory-hard` (Argon2id) is built so "a native CPU solver loses the advantage"
+  (compute-signature won't separate there — note it, don't grind). ENABLING FIRST BLUE RUNG (next): stamp issue-time
+  in the NonceStore + compute server-side solve-elapsed at verify — this unlocks BOTH the PoW compute-signature
+  (elapsed vs difficulty => implied hash-rate => too-fast = non-browser) AND the CAPTCHA OCR-timing tell (solved
+  faster than a human can read+type). The solve-vs-session BIOMECHANICS lead (d) is groundable NOW (slider/rotate
+  trajectory is already captured; reuse the mature power_law/velocity_cv biomech). Red solvers in-box to verify
+  against: arena-solver, arena-solver-ocr, pow. FP-safety is load-bearing: a slow/careful/error-making human is
+  STILL human — conviction needs an automated signature (too-fast-for-JS, perfect-instant-OCR) or a solve-vs-session
+  divergence, never mere slowness.
