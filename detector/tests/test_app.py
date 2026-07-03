@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -261,6 +263,116 @@ def test_arena_unknown_gate_rejected(client: TestClient, monkeypatch: pytest.Mon
     monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
     assert client.get("/arena/challenge", params={"gate": "evil"}).status_code == 400
     assert client.get("/arena/challenge", params={"gate": "hashcash"}).status_code in (200, 502)
+
+
+def test_arena_catalog_relay(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Unconfigured the catalog manifest relay is inert (503); configured it forwards to the owned gate (502 here,
+    # since no real arena is up — proves the route is wired and forwards, not a 404).
+    assert client.get("/arena/catalog").status_code == 503
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    assert client.get("/arena/catalog").status_code in (200, 502)
+
+
+def test_arena_captcha_font_and_kinds(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # The captcha relay whitelists the kind and passes ?font= through; image-shapes is whitelisted, evil is not.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    assert client.get("/arena/captcha", params={"kind": "text", "font": "go-mono"}).status_code in (200, 502)
+    assert client.get("/arena/captcha", params={"kind": "image-shapes"}).status_code in (200, 502)
+    assert client.get("/arena/captcha", params={"kind": "evil"}).status_code == 400
+
+
+def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Configured, every arena relay forwards to the owned gate. No real arena is up here, so each returns 502
+    # (unreachable) or a validation status — proving the route is wired and forwards (not a 404/whitelist miss).
+    # This covers the relay bodies for the whole gate surface (the IO layer), per the established hit-pattern.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    ok = {200, 400, 422, 502}
+    assert client.get("/arena/slider", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/slider/verify", json={"id": "x", "x": 1, "trajectory": []}).status_code in ok
+    assert client.get("/arena/rotate", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/rotate/verify", json={"id": "x", "trajectory": []}).status_code in ok
+    assert client.get("/arena/queue", params={"level": "easy"}).status_code in ok
+    assert client.get("/arena/queue/status", params={"id": "x"}).status_code in ok
+    assert client.post("/arena/queue/act", json={"id": "x"}).status_code in ok
+    assert client.get("/arena/pact").status_code in ok
+    assert client.post("/arena/pact/verify", json={"id": "x"}).status_code in ok
+    assert client.get("/arena/managed", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/verify", content=b"{}").status_code in ok
+    assert client.post("/arena/captcha/verify", json={"kind": "text", "id": "x", "answer": "y"}).status_code in ok
+
+
+class _BenchResp:
+    # A canned upstream response so the arena-relay 200-branches (hoarding counter, anomaly->signal join,
+    # forwards) run without a live gate — the real behavioural logic, exercised deterministically.
+    def __init__(self, status: int, payload: object) -> None:
+        self.status_code = status
+        self.content = json.dumps(payload).encode()
+        self._payload = payload
+
+    def json(self) -> object:
+        return self._payload
+
+
+def _bench_async_client(get_payload: object, status: int = 200):  # type: ignore[no-untyped-def]
+    class _C:
+        def __init__(self, *a: object, **k: object) -> None:
+            pass
+
+        async def __aenter__(self) -> _C:
+            return self
+
+        async def __aexit__(self, *a: object) -> bool:
+            return False
+
+        async def get(self, *a: object, **k: object) -> _BenchResp:
+            return _BenchResp(status, get_payload() if callable(get_payload) else get_payload)
+
+        async def post(self, *a: object, **k: object) -> _BenchResp:
+            return _BenchResp(status, get_payload() if callable(get_payload) else get_payload)
+
+    return _C
+
+
+def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # With a mocked upstream 200, the forwarding relays return the body, and a gate /verify anomaly is mapped to a
+    # behavioral signal by _join_arena_anomaly — each anomaly kind (and the unknown fall-through) exercised.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"id": "tk", "ok": True}))
+    assert client.get("/arena/catalog").status_code == 200
+    assert client.get("/arena/captcha", params={"kind": "text"}).status_code == 200
+    for anomaly in (
+        "solved_faster_than_human",
+        "trajectory_exceeds_solve_time",
+        "honeypot_filled",
+        "acted_faster_than_human",
+        "queue_bypass",
+        "unknown",
+    ):
+        monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": anomaly}))
+        resp = client.post(
+            "/arena/captcha/verify",
+            json={"kind": "text", "id": "x", "answer": "y"},
+            headers={"Cookie": "ks_sid=s"},
+        )
+        assert resp.status_code == 200
+
+
+def test_arena_queue_hoarding_counts_tickets(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Repeated tickets under one ks_sid trip the server-side hoarding counter (_note_queue_ticket); status + act run
+    # the 200-branches and _drop_queue_ticket. Distinct ids per call so the held set grows past the threshold.
+    counter = {"n": 0}
+
+    def _ticket() -> dict[str, object]:
+        counter["n"] += 1
+        return {"id": f"tk-{counter['n']}", "position": counter["n"], "admitted": True, "ok": True}
+
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client(_ticket))
+    for _ in range(12):
+        got = client.get("/arena/queue", params={"level": "easy"}, headers={"Cookie": "ks_sid=scalper"})
+        assert got.status_code == 200
+    assert client.get("/arena/queue/status", params={"id": "tk-1"}).status_code == 200
+    assert client.post("/arena/queue/act", json={"id": "tk-1"}, headers={"Cookie": "ks_sid=scalper"}).status_code == 200
 
 
 def test_arena_index_renders_with_shell(client: TestClient) -> None:
