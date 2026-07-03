@@ -475,6 +475,43 @@ class ResidentialProxy:
 
 
 @register
+class SocksProxy:
+    name = "socks-proxy"
+    summary = (
+        "the SOCKS residential proxy the MSS tell misses: a diffuse humanizer fleet on clean residential IPs with "
+        "a NATIVE MSS (no tunnel/encapsulation) but routed through a proxy pool that RE-ORIGINATES TCP — every "
+        "node's SYN reveals the proxy's Linux kernel while the UA claims Windows. The proxy_egress dim (broadened "
+        "to the shared SYN-stack-vs-UA-OS divergence, gated on the descriptor humanizer signal) -> campaign."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        ja4 = _ja4(seed)
+        rng = random.Random(seed ^ 0x50C5)
+        offs: list[float] = []
+        t = 0.0
+        for _ in range(n):
+            offs.append(t)
+            t += rng.expovariate(1.0 / 300.0)  # Poisson -> no timing dim; the shared proxy-stack OS is the 3rd dim
+        return [
+            FleetMember(
+                f"socks-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("socksfp", seed, i),
+                trace_hash=_h("sockstrace", seed, i),
+                trace_descriptor=_diffuse_descriptor(seed, i),
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,  # clean: no bot tell, no datacenter flag, native MSS — only the stack divergence
+                tcp_kernel="linux",  # the SOCKS proxy's re-originated stack
+                ua_kernel="windows",  # the client OS the UA claims — divergence = a re-originating proxy
+                offset_seconds=offs[i],
+            )
+            for i in range(n)
+        ]
+
+
+@register
 class ToolFleet:
     name = "tool-fleet"
     summary = (
