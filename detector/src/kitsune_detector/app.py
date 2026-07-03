@@ -13,10 +13,11 @@ from __future__ import annotations
 import contextlib
 import hmac
 import html
+import json
 import os
 import re
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -157,6 +158,13 @@ _ARENA_CAPTCHAS = frozenset({"text", "math", "honeypot", "image-select", "image-
 #: Difficulty level (a cost dial — see arena/levels.go). Anything else falls back to medium, mirroring the
 #: gate's own ParseLevel, so a junk ?level= never errors — it just gets the default.
 _ARENA_LEVELS = frozenset({"easy", "medium", "hard"})
+#: Virtual-queue position hoarding: the max concurrent tickets ONE ks_sid may hold before it looks like a scalper
+#: maximising admission odds rather than a person. Threshold-CALIBRATED (even a multi-tab human does not hold this
+#: many queue positions at once), so bh.arena_queue_hoarding is EXPERIMENTAL/corroborating, not FP-safe-by-
+#: construction like the timing tells. Tickets older than the TTL are pruned so abandoned positions do not inflate
+#: the count. The SMART hoarder spreads across ks_sids (the sybil-farmer coordination frontier, external-data-bound).
+_QUEUE_HOARD_THRESHOLD = 8
+_QUEUE_TICKET_TTL = timedelta(minutes=2)
 
 
 def _arena_level(level: str | None) -> str:
@@ -258,6 +266,22 @@ def create_app(
     # --- Arena relay: forward the challenge/verify protocol to the owned arena gate (KITSUNE_ARENA_URL),
     # so a visitor reaches the gate on the SAME origin (through the edge) and the gate verdict can join the
     # detector verdict on ks_sid. The detector never imports the gate — it speaks HTTP, contracts-only. ---
+    # Per-session outstanding virtual-queue tickets, for the position-hoarding tell. ks_sid -> {ticket_id: issued}.
+    queue_holdings: dict[str, dict[str, datetime]] = {}
+
+    def _note_queue_ticket(ks_sid: str, ticket_id: str, now: datetime) -> int:
+        held = queue_holdings.setdefault(ks_sid, {})
+        held[ticket_id] = now
+        cutoff = now - _QUEUE_TICKET_TTL
+        for tid in [t for t, ts in held.items() if ts < cutoff]:
+            del held[tid]  # abandoned/expired positions do not count toward hoarding
+        return len(held)
+
+    def _drop_queue_ticket(ks_sid: str, ticket_id: str) -> None:
+        held = queue_holdings.get(ks_sid)
+        if held is not None:
+            held.pop(ticket_id, None)
+
     def _join_arena_anomaly(ks_sid: str | None, r: httpx.Response) -> None:
         # A gate /verify response may carry a SERVER-OBSERVED solve-anomaly (a CAPTCHA solved faster than a human,
         # a slider trajectory claiming more drag-time than the whole solve). Map it to a behavioral signal and
@@ -437,8 +461,8 @@ def create_app(
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/queue", include_in_schema=False)
-    async def arena_queue(level: str | None = None) -> Response:
-        # Relay a virtual waiting-room ticket from the owned gate; the wait-behaviour join happens at /act.
+    async def arena_queue(level: str | None = None, ks_sid: str | None = Cookie(default=None)) -> Response:
+        # Relay a virtual waiting-room ticket from the owned gate; the admission->action join happens at /act.
         if not ARENA_URL:
             raise HTTPException(status_code=503, detail="arena gate not configured")
         try:
@@ -446,6 +470,31 @@ def create_app(
                 r = await client.get(f"{ARENA_URL}/arena/queue", params={"level": _arena_level(level)})
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        # Position hoarding: one ks_sid holding many concurrent tickets is a scalper maximising admission odds, not a
+        # person. Count this session's outstanding tickets server-side; over the threshold, inject a corroborating
+        # signal. Experimental — threshold-calibrated, not by-construction.
+        if ks_sid and r.status_code == 200:
+            try:
+                ticket_id = r.json().get("id")
+            except ValueError:
+                ticket_id = None
+            if (
+                isinstance(ticket_id, str)
+                and ticket_id
+                and _note_queue_ticket(ks_sid, ticket_id, datetime.now(UTC)) > _QUEUE_HOARD_THRESHOLD
+            ):
+                _apply_signals(
+                    [
+                        Signal(
+                            session_id=ks_sid,
+                            layer=Layer.behavioral,
+                            kind="arena_queue_hoarding",
+                            value=True,
+                            source=Source.detector,
+                            observed_at=datetime.now(UTC),
+                        )
+                    ]
+                )
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/queue/status", include_in_schema=False)
@@ -474,6 +523,15 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)
+        # A ticket that is acted on (or bypass-attempted) is no longer an outstanding held position — drop it from
+        # the hoarding count so a session that cycles tickets one-at-a-time is not mistaken for a hoarder.
+        if ks_sid:
+            try:
+                acted_id = json.loads(body).get("id")
+            except (ValueError, AttributeError):
+                acted_id = None
+            if isinstance(acted_id, str):
+                _drop_queue_ticket(ks_sid, acted_id)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/pact", include_in_schema=False)
