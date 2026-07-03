@@ -626,6 +626,42 @@ def test_axis_a_poisson_stagger_evades_regularity() -> None:
     assert all(c.label != "campaign" for c in camps)  # Poisson timing -> scheduled silent -> at most a 2-dim candidate
 
 
+def _staggered_diffuse_fleet(n: int, gap_fn: object, seed: int) -> list[tuple[str, object]]:
+    import random
+
+    rng = random.Random(seed)
+    hu = humanizer_descriptors(n)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(n):
+        offs.append(t)
+        t += gap_fn(rng)  # type: ignore[operator]
+    return [
+        (
+            f"m{i}",
+            _sess(
+                f"m{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=offs[i] * 300.0,
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+            ),
+        )
+        for i in range(n)
+    ]
+
+
+def test_axis_a_poisson_stagger_evades_at_scale() -> None:
+    # The wall holds at scale (rung 4 grounded a DEAD-END here): a UNIFORM/mild stagger (CV ~ 0.58-0.67) does NOT
+    # separate cleanly from a Poisson cohort's lower tail (its 1st-percentile CV is ~0.70 at n=40), so a
+    # cohort-scaled ceiling that stays FP-safe cannot reliably catch it. Only a near-perfect SCHEDULE (CV ~ 0.20,
+    # rung 2) is cleanly separable. This large Poisson-staggered fleet (CV ~ 1) therefore correctly stays a
+    # candidate — its arrival process is indistinguishable from N independent users at any cohort size.
+    members = _staggered_diffuse_fleet(40, lambda r: r.expovariate(1.0), seed=2)  # exponential gaps -> CV ~ 1
+    assert all(c.label != "campaign" for c in score_campaigns(members))
+
+
 def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
     # A flash crowd: one popular build (shared JA4) + co-timed arrival, but REAL humans (descriptors spread) on
     # distinct IPs. Dense on only 2 dimensions (ja4_prefix + lockstep) → `candidate` for review, NOT a campaign.
