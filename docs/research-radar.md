@@ -3018,3 +3018,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   common real bot pattern — a residential-proxy pool encapsulates -> reduced MSS) is now caught by proxy_egress
   in-sandbox with no external data; the DIRECT-residential humanizer fleet (native MSS 1460) remains the true
   external-data-bound frontier.
+- **[PROXY-EGRESS LOOP — rung 3: broaden proxy_egress to SOCKS re-origination (SHIPPED, harness)]** (2026-07-03).
+  Lead (b): a SOCKS residential proxy does NOT reduce MSS (native 1460, no encapsulation) but RE-ORIGINATES TCP,
+  so its SYN reveals the PROXY's kernel, not the client's. Grounded the input: the edge emits BOTH `tcp_kernel`
+  (SYN OS, from ClassifyTCPOS) AND `ua_kernel` (UA-claimed OS), pre-normalized to linux/windows/macos — a direct
+  comparison, no normalizer needed (reverseproxy.go:564). Broadened `_dim_proxy_egress` to fire on EITHER the
+  tunnel MSS (rung 1) OR a shared SYN-stack-OS that DIVERGES from the UA-claimed OS (`_proxy_stack`), still gated
+  on the descriptor dim. GROUNDED 3-way: a SOCKS-proxy HUMANIZER fleet (native MSS, Linux SYN vs Windows claim) ->
+  `campaign [ja4, descriptor, proxy_egress]` — caught where the MSS tell is silent; a legit VPN-PROVIDER cohort
+  (shared Linux exit vs Windows claim, human traces, regular logins) -> `candidate` (descriptor gate holds); a
+  direct humanizer fleet (stack matches OS) -> `candidate` (the frontier). Precision 1.0 (379 harness green). The
+  proxy_egress dim now covers BOTH residential-proxy mechanisms — tunnel encapsulation (MSS) and SOCKS
+  re-origination (stack OS) — no external data. LIMITATION noted: the SOCKS tell needs an OS-MISMATCHED proxy
+  (Linux exit under a Windows UA); an OS-matched proxy (Windows exit + Windows UA) or an os-spoofed kernel evades
+  it, and the direct-native-residential fleet stays the external-data-bound frontier. In-sandbox tcp_kernel is
+  always the container (Linux), so the fleet grounding is synthetic (like MSS) but the dim + edge producer are
+  real; a live SOCKS red-verify needs tcp_kernel/ua_kernel on FleetMember (next).

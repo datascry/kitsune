@@ -193,6 +193,8 @@ def _sess(
     datacenter: bool = False,
     abuse_listed: bool = False,
     mss: int | None = None,
+    tcp_kernel: str | None = None,
+    ua_kernel: str | None = None,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -216,6 +218,10 @@ def _sess(
         sigs.append(mk(Layer.network, "ja4_client_hint", ja4_client, Source.edge))
     if mss is not None:  # TCP MSS via the JA4T fingerprint (window_options_MSS_scale); a tunnel/VPN reduces it
         sigs.append(mk(Layer.network, "ja4t", f"64240_2-4-8-1-3_{mss}_7", Source.edge))
+    if tcp_kernel is not None:  # SYN-derived kernel OS (edge sniffer); a re-originating proxy reveals ITS stack
+        sigs.append(mk(Layer.network, "tcp_kernel", tcp_kernel, Source.edge))
+    if ua_kernel is not None:  # kernel the UA claims (edge); tcp_kernel != ua_kernel = a re-originating proxy
+        sigs.append(mk(Layer.network, "ua_kernel", ua_kernel, Source.edge))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
@@ -793,6 +799,64 @@ def test_axis_a_legit_vpn_cohort_stays_candidate() -> None:
                 fp_hash=f"fp{i}",
                 trace_descriptor=hu[i],
                 mss=1380,
+            ),
+        )
+        for i in range(6)
+    ]
+    assert all(c.label != "campaign" for c in score_campaigns(members))
+
+
+def test_axis_a_socks_proxy_fleet_convicted_via_stack_divergence() -> None:
+    # The SOCKS residential proxy the MSS tell MISSES: NATIVE MSS (no tunnel) but the proxy re-originates TCP, so
+    # every node's SYN reveals the proxy's Linux stack while the UA claims Windows. proxy_egress (broadened to the
+    # shared SYN-stack-vs-UA-OS divergence, gated on descriptor) is the 3rd dim -> campaign.
+    import random
+
+    rng = random.Random(3)
+    hu = humanizer_descriptors(6)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(6):
+        offs.append(t)
+        t += rng.expovariate(1.0 / 300.0)
+    members = [
+        (
+            f"s{i}",
+            _sess(
+                f"s{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=offs[i],
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+                tcp_kernel="linux",
+                ua_kernel="windows",
+            ),
+        )
+        for i in range(6)
+    ]
+    camps = score_campaigns(members)
+    assert len(camps) == 1 and camps[0].label == "campaign"
+    assert "proxy_egress" in camps[0].dense_dimensions
+
+
+def test_axis_a_legit_vpn_provider_cohort_stays_candidate() -> None:
+    # FP control: a legit cohort all exiting through ONE VPN provider's Linux nodes (shared Linux SYN vs claimed
+    # Windows) with regular logins, but DISTINCT HUMAN traces — proxy_egress is gated on descriptor, so the shared
+    # exit-OS cannot lift ja4 + scheduled to a campaign.
+    hu = _human_traces(6)
+    members = [
+        (
+            f"v{i}",
+            _sess(
+                f"v{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=i * 300.0,
+                fp_hash=f"fp{i}",
+                trace_descriptor=hu[i],
+                tcp_kernel="linux",
+                ua_kernel="windows",
             ),
         )
         for i in range(6)
