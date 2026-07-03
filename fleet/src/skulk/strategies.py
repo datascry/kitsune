@@ -400,6 +400,43 @@ class DiffuseAutomated:
 
 
 @register
+class Diffuse:
+    name = "diffuse"
+    summary = (
+        "the MAXIMAL in-sandbox evader: diffuse-campaign's shape (one build + a humanizer descriptor family, but "
+        "distinct fp/trace/IP per node — no pairwise binding) POISSON-staggered and FULLY CLEAN (no automation "
+        "tell). Only 2 soft dims (ja4 + descriptor), no timing tell (Poisson CV~1), no bot signal — so it stays a "
+        "`candidate` on BOTH axes. Conviction is EXTERNAL-DATA-bound (IP reputation / prevalence baselines). The "
+        "economic bind: shedding the last correlation (distinct builds + real-hardware fps + clean residential "
+        "egress) = becoming N independent real users. This is the frontier the whole ladder converges on."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        ja4 = _ja4(seed)
+        rng = random.Random(seed ^ 0xD1FF)
+        offs: list[float] = []
+        t = 0.0
+        for _ in range(n):
+            offs.append(t)
+            t += rng.expovariate(1.0 / 300.0)  # Poisson gaps -> no lockstep, no scheduled -> exactly 2 soft dims
+        return [
+            FleetMember(
+                f"diff-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("difffp", seed, i),
+                trace_hash=_h("difftrace", seed, i),
+                trace_descriptor=_diffuse_descriptor(seed, i),
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,  # fully clean: no tell for the corroboration to key on
+                offset_seconds=offs[i],
+            )
+            for i in range(n)
+        ]
+
+
+@register
 class ToolFleet:
     name = "tool-fleet"
     summary = (

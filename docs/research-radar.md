@@ -2935,3 +2935,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   README strategy table updated. NOTE the plumbing win: skulk is pure-stdlib so it emits via PYTHONPATH in a bare
   network container; the harness score needs its venv (uv sync in-container). The end-to-end path (Skulk -> edge/
   detector -> live_coordination scorer) is now exercised, not just the offline scorer.
+- **[COORDINATION LOOP — rung 7: the `diffuse` maximal evader, GROUNDED LIVE to evade both axes — the frontier
+  DEFINED]** (2026-07-03). Added the Skulk `diffuse` strategy: diffuse-campaign's shape (one build + a humanizer
+  descriptor family, distinct fp/trace/IP per node — no pairwise binding) POISSON-staggered and FULLY CLEAN (no
+  automation tell). Only 2 soft dims (ja4 + descriptor), no timing tell (Poisson CV~1 evades rung 2), no bot
+  signal (evades rung 5). GROUNDED LIVE on a force-recreated clean detector: emit -> `score_campaigns_live` ->
+  axis A `candidate [ja4_prefix, descriptor]` (NO campaign), axis B `candidate` (NO fleet). So the maximally-clean
+  fleet EVADES everything in-sandbox — conviction is EXTERNAL-DATA-bound (IP reputation / prevalence baselines).
+  This is the red ladder's TOP rung and the precise frontier the whole axis converges on: a 2-dim (ja4+descriptor)
+  fleet is CANDIDATE-grade, and the ONLY baseline-free 3rd dims are the ones the shipped rungs add — a regular
+  SCHEDULE (rung 2) or a per-session BOT tell (rung 5) — which this fleet sheds by construction. FINDING: the
+  in-sandbox baseline-free conviction surface for a diversified fleet is now EXHAUSTED — every catchable fleet
+  leaks a high-entropy collision (axis B), a non-Poisson schedule, or a bot tell; the fully-clean fleet leaks
+  nothing and is N-independent-real-users by construction. This firing shipped a RED capability (the maximal
+  evader) but found NO new BLUE conviction for the clean frontier — a grounded dry for blue. Fleet green (26),
+  test_skulk asserts the clean 2-dim shape, README updated. One more genuinely-grounded dry against this frontier
+  = the earned close.
