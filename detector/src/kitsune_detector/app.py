@@ -258,6 +258,36 @@ def create_app(
     # --- Arena relay: forward the challenge/verify protocol to the owned arena gate (KITSUNE_ARENA_URL),
     # so a visitor reaches the gate on the SAME origin (through the edge) and the gate verdict can join the
     # detector verdict on ks_sid. The detector never imports the gate — it speaks HTTP, contracts-only. ---
+    def _join_arena_anomaly(ks_sid: str | None, r: httpx.Response) -> None:
+        # A gate /verify response may carry a SERVER-OBSERVED solve-anomaly (a CAPTCHA solved faster than a human,
+        # a slider trajectory claiming more drag-time than the whole solve). Map it to a behavioral signal and
+        # attach it to ks_sid so a PASSED gate corroborates the coherence verdict instead of clearing it (the arena
+        # thesis). Kinds are written as literals so the active-rule drift guard sees this as their live producer.
+        if not ks_sid or r.status_code != 200:
+            return
+        try:
+            anomaly = r.json().get("anomaly")
+        except ValueError:
+            return
+        if anomaly == "solved_faster_than_human":
+            kind = "arena_captcha_superhuman"
+        elif anomaly == "trajectory_exceeds_solve_time":
+            kind = "arena_slider_trajectory_forged"
+        else:
+            return
+        _apply_signals(
+            [
+                Signal(
+                    session_id=ks_sid,
+                    layer=Layer.behavioral,
+                    kind=kind,
+                    value=True,
+                    source=Source.detector,
+                    observed_at=datetime.now(UTC),
+                )
+            ]
+        )
+
     @app.get("/arena/challenge", include_in_schema=False)
     async def arena_challenge(
         gate: str = "hashcash", difficulty: int | None = None, level: str | None = None
@@ -339,27 +369,7 @@ def create_app(
                 )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
-        # Join the gate's solve-anomaly to the SESSION: a CAPTCHA solved faster than a human can read+type is
-        # automation (the arena measures it server-side, unforgeably). Attaching it to ks_sid makes a passed gate
-        # CONVICT a bot instead of clearing it — the gate-pass corroborates the coherence verdict (the arena thesis).
-        if ks_sid and r.status_code == 200:
-            try:
-                anomaly = r.json().get("anomaly")
-            except ValueError:
-                anomaly = None
-            if anomaly == "solved_faster_than_human":
-                _apply_signals(
-                    [
-                        Signal(
-                            session_id=ks_sid,
-                            layer=Layer.behavioral,
-                            kind="arena_captcha_superhuman",
-                            value=True,
-                            source=Source.detector,
-                            observed_at=datetime.now(UTC),
-                        )
-                    ]
-                )
+        _join_arena_anomaly(ks_sid, r)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/slider", include_in_schema=False)
@@ -375,7 +385,7 @@ def create_app(
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.post("/arena/slider/verify", include_in_schema=False)
-    async def arena_slider_verify(request: Request) -> Response:
+    async def arena_slider_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
         if not ARENA_URL:
             raise HTTPException(status_code=503, detail="arena gate not configured")
         body = await request.body()
@@ -388,6 +398,7 @@ def create_app(
                 )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        _join_arena_anomaly(ks_sid, r)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/rotate", include_in_schema=False)
@@ -403,7 +414,7 @@ def create_app(
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.post("/arena/rotate/verify", include_in_schema=False)
-    async def arena_rotate_verify(request: Request) -> Response:
+    async def arena_rotate_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
         if not ARENA_URL:
             raise HTTPException(status_code=503, detail="arena gate not configured")
         body = await request.body()
@@ -416,6 +427,7 @@ def create_app(
                 )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        _join_arena_anomaly(ks_sid, r)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/pact", include_in_schema=False)

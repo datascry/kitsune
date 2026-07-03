@@ -3234,3 +3234,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   solve-vs-CLAIM analog of the captcha timing tell, and it defeats trajectory synthesis (which beats the CV bar)
   by measuring the one thing the client cannot forge — WHEN the gate handed out the challenge. NEXT rung joins it
   to the session (extend rung 4's detector join to the slider relay: a new bh.arena_slider_trajectory_forged rule).
+- **[ARENA-SOLVE LOOP — rung 6: GENERALIZED the anomaly-join + slider conviction — GROUNDED LIVE END-TO-END]**
+  (2026-07-03). Extended rung 4's captcha-only join into a shared _join_arena_anomaly(ks_sid, r) helper that maps
+  ANY gate /verify anomaly to its behavioral signal and injects it into the session; wired it into the captcha,
+  slider AND rotate verify relays (all now read ks_sid). New rule bh.arena_slider_trajectory_forged (present,
+  automation, w0.85, active) convicts on the slider tell; catalog regenerated. GROUNDED LIVE END-TO-END: a forged
+  slider solve (instant + 2000ms padded trajectory) through the detector with a ks_sid cookie => /verdict shows
+  contradictions:[bh.arena_slider_trajectory_forged w0.85], conviction_score 0.85, LABEL:"bot". DRIFT-GUARD
+  lesson: the refactor first hid the signal kinds in a dict + a `kind=variable`, which the active-rule producer
+  guard (test_active_rules_are_live_producible — scans for kind="..." LITERALS) reads as DEAD; fixed by writing
+  the kinds as explicit `kind = "literal"` assignments the guard's regex sees. detector ruff+mypy+full suite green.
+  The arena challenge-solve-coherence axis now has TWO joined convictions (captcha superhuman-speed, slider
+  trajectory-forgery), both server-observed + unforgeable + FP-safe, on a layer the thesis had never touched.
+  Remaining groundable leads: the ROTATE trajectory-coherence tell (arena-side mirror of the slider — the relay
+  join is already wired, only the arena/rotate.go emit is missing) and the honeypot-trip join.
