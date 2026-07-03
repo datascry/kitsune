@@ -3279,3 +3279,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   Remaining groundable leads thinning: image-select ML-timing (c — likely already covered by the superhuman-speed
   floor if it routes through /captcha/verify; verify next) and the harder solve-vs-SESSION biomechanics (d). The
   PoW compute-signature (a) is grounded-dead (hardware-dependent, rung 2).
+- **[ARENA-SOLVE LOOP — rung 9: RED<->BLUE validation vs the REAL arena-solver + image-select (c) confirmed
+  covered]** (2026-07-03). Ran the actual evaders/arena-solver binary through the detector and read its REAL
+  per-gate solve behaviour — the red<->blue verification the discipline calls for (not a curl stand-in). It trips
+  the tells on EVERY gate it actually beats: math PASSED in 31 ms (< the 350ms superhuman floor => solved_faster_
+  than_human), slider PASSED in 38 ms while its synthesized trajectory claims 420 ms (white-boxed: t = f*420, no
+  Sleep => submitted instantly), rotate PASSED in 38 ms claiming 380 ms (t = f*380) — both 380-420 >> 38+150, so
+  trajectory_exceeds_solve_time fires. The honeypot it PASSES cleanly (leaves the trap empty — it is not a naive
+  form-filler), so bh.arena_honeypot_filled correctly does NOT fire: the exact FP-safe behaviour (a smart solver
+  is not framed by the honeypot; only a naive one trips it). text + image-select it FAILS outright here. So the
+  real evader's genuine behaviour is caught by 3 of the 4 solve-behaviour tells and cleanly passed by the 4th —
+  rungs 3-8 validated against the actual adversary. (Full end-to-end CONVICTION of the binary needs the edge in the
+  path to mint ks_sid — the arena-solver hits the detector directly, and the detector relay does not mint the
+  cookie; the tells + the session-join are each independently grounded, curl rungs 3-8.) IMAGE-SELECT lead (c)
+  CONFIRMED COVERED: CaptchaImageSelect/Doodle are in the minHumanCaptchaSolve floor map (500ms) and route through
+  the same /captcha/verify handler as math, so the superhuman-speed tell already convicts a fast image-select
+  solve — no new rung. Only groundable lead left standing: the harder solve-vs-SESSION biomechanics (d).
