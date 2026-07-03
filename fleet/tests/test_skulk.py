@@ -79,6 +79,20 @@ def test_diffuse_scheduled_staggers_on_a_regular_cadence() -> None:
     assert not any(m.automation for m in members)
 
 
+def test_diffuse_automated_is_two_dim_with_an_automation_tell() -> None:
+    members = get("diffuse-automated").members(6, seed=7)
+    assert all(m.automation for m in members)  # the per-session slip the corroboration keys on
+    assert len({m.fp_hash for m in members}) == 6  # diffuse: no exact pairwise binding
+    assert len({m.trace_hash for m in members}) == 6
+    assert len({m.ja4 for m in members}) == 1  # one build (the ja4 soft dim)
+    # Poisson stagger: irregular gaps -> not lockstep, not a fixed schedule -> only 2 soft dims (ja4 + descriptor)
+    import itertools
+
+    offs = sorted(m.offset_seconds for m in members)
+    gaps = [b - a for a, b in itertools.pairwise(offs)]
+    assert len(set(gaps)) > 1  # not a fixed cadence (would otherwise trip the scheduled dim)
+
+
 def test_similarity_jitters_hashes_but_clusters_descriptors() -> None:
     members = get("similarity").members(4, seed=9)
     # every EXACT hash differs (defeats exact-match, like fuzzy)...
