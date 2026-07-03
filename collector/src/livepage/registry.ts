@@ -4,12 +4,7 @@
 import type { Layer } from "../types.js";
 
 export type PredicateName =
-  | "present"
-  | "absent"
-  | "equals"
-  | "not_equal"
-  | "below_threshold"
-  | "above_threshold";
+  "present" | "absent" | "equals" | "not_equal" | "below_threshold" | "above_threshold";
 
 export type RuleStatus = "active" | "experimental";
 

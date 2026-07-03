@@ -147,8 +147,7 @@ function toStringTampered(): boolean {
     // getCoalescedEvents (v0.74.36): a COALESCE_SPOOF bot overrides it with a non-native fn to fake coalesced
     // pointer batches (beating bh.synthetic_no_coalesced); a real browser's is native.
     const pe = win()["PointerEvent"] as
-      | { prototype?: { getCoalescedEvents?: unknown } }
-      | undefined;
+      { prototype?: { getCoalescedEvents?: unknown } } | undefined;
     const fns = [
       Function.prototype.toString,
       HTMLCanvasElement.prototype.toDataURL,
@@ -226,8 +225,7 @@ function audioFP(): Promise<AudioResult> {
   return new Promise((resolve) => {
     try {
       const OAC = (win()["OfflineAudioContext"] ?? win()["webkitOfflineAudioContext"]) as
-        | OfflineAudioCtor
-        | undefined;
+        OfflineAudioCtor | undefined;
       if (OAC === undefined) {
         resolve({ missing: true });
         return;
@@ -289,8 +287,7 @@ function webrtcProbe(): Promise<RtcResult> {
     };
     try {
       const RPC = (win()["RTCPeerConnection"] ?? win()["webkitRTCPeerConnection"]) as
-        | RtcCtor
-        | undefined;
+        RtcCtor | undefined;
       if (RPC === undefined) {
         finish(true);
         return;
@@ -880,8 +877,7 @@ export function armCollector(): LiveCollector {
     }
     // Electron process leak: a renderer exposing a Node `process` is an Electron/automation runtime.
     const proc = (win()["process"] ?? undefined) as
-      | { versions?: { electron?: string }; type?: string }
-      | undefined;
+      { versions?: { electron?: string }; type?: string } | undefined;
     if (proc && (proc.versions?.electron || proc.type === "renderer")) {
       put("browser", "electron_process", true);
     }
@@ -1348,8 +1344,7 @@ export function armCollector(): LiveCollector {
     // diverges — corroborating (fires on Brave/Camoufox privacy farbling too).
     try {
       const OAC = (win()["OfflineAudioContext"] ?? win()["webkitOfflineAudioContext"]) as
-        | OfflineAudioCtor
-        | undefined;
+        OfflineAudioCtor | undefined;
       if (OAC) {
         const buf = new OAC(1, 2048, 44100).createBuffer(1, 2048, 44100);
         const chan = buf.getChannelData(0);
