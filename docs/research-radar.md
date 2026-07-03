@@ -3295,3 +3295,20 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   CONFIRMED COVERED: CaptchaImageSelect/Doodle are in the minHumanCaptchaSolve floor map (500ms) and route through
   the same /captcha/verify handler as math, so the superhuman-speed tell already convicts a fast image-select
   solve — no new rung. Only groundable lead left standing: the harder solve-vs-SESSION biomechanics (d).
+- **[ARENA-SOLVE LOOP — rung 10: solve-vs-session biomechanics (d) is external-data-bound — GROUNDED DRY #1]**
+  (2026-07-03). Tested the last lead against the real architecture + data, and it is blocked on THREE independent
+  external axes: (1) NO CROSS-REF CHANNEL — the detector's _join_arena_anomaly reads only r.json()['anomaly'] (the
+  gate's server-side VERDICT), never the raw solve-motion; the arena computes the trajectory check server-side and
+  forwards nothing biomechanical, so a solve-vs-session comparison would need a whole new arena->detector
+  solve-biomech channel. (2) NO GROUNDABLE DIVERGENT ADVERSARY — the tell's target is a bot that scripts a solve
+  while replaying a DIFFERENT session-trace, so the two motor signatures diverge; but the in-sandbox arena-solver
+  is HEADLESS (no browsing biomech at all to diverge from), and a real-browser evader's solve MATCHES its own
+  session (one motor system, no divergence). The divergent dual-signal adversary does not exist in-box and would
+  have to be built. (3) FP-SAFETY NEEDS EXTERNAL DATA — the conviction hinges on the biomech being PERSON-INVARIANT
+  across motion TYPES (a human's drag and their pointing share one power-law), but SapiMouse — the only biomech
+  second-source — is POINTING-motion only; drag-vs-point invariance is the paid/external human-solver-farm data the
+  loop pre-flagged as a dead-end. So (d) is external-data-bound on integration, adversary, AND FP-calibration. DRY
+  #1, each blocker traced in the code/data not reasoned away. With (a) grounded-dead (rung 2), (b) timing-covered
+  (rung 3, validated rung 9) + accuracy-external, (c) covered (rung 9), (e) done (rung 8), (f) done (the join), the
+  arena solve-behaviour lead-space is exhausted for groundable in-box tells. One more grounded-dry firing = the
+  earned close of a COMPLETE axis (4 tells x 4 gates, joined to the session, validated against the real evader).
