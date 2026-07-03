@@ -914,6 +914,18 @@ rules:
     last_validated: "2026-06-24"
     source: "FP-Agent (arXiv 2605.01247, radar G11): the #1 discriminative AI-agent signal — every tested LLM browser agent (Operator/Atlas, Claude-for-Chrome, Comet, Manus, Browser-Use, Skyvern) clicks at target coordinates with ZERO continuous mouse movement (CDP/vision-driven teleport). EVADES-first GROUNDED 2026-06-24: a CDP Input.dispatchMouseEvent click produced a trusted, mouse-origin (detail=1) click with 0 mousemove/pointermove events, while a real move+click fired 6. FP-safe gate: detail>=1 (excludes keyboard Enter/Space activation, detail=0) + maxTouchPoints==0 (a touch tap fires click with no mousemove) + zero total pointer movement (a real mouse cursor entering/jittering the page emits mousemove first). Behavioral/corroborating + experimental: the residual FP is a desktop user whose cursor was pre-positioned over the target and clicked without moving (rare); corroborating-only, so it cannot convict alone."
 
+  - id: bh.arena_captcha_superhuman
+    title: CAPTCHA answered correctly faster than a human can read and respond — automated solver
+    layers: [behavioral]
+    reads: [behavioral.arena_captcha_superhuman]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-07-03"
+    last_validated: "2026-07-03"
+    source: "Kitsune arena challenge-solve coherence: the owned arena gate measures the SERVER-OBSERVED solve time of a CAPTCHA (issue->verify elapsed, tracked in the captchaStore — unforgeable, unlike a client-asserted proof, since the client cannot fake WHEN the gate handed it the challenge). A CORRECT answer submitted below a conservative per-kind PHYSIOLOGICAL floor (text 600ms, math 350ms, image-select/doodle 500ms — no human perceives the challenge and responds faster) is an OCR/ML solver, not a human. The gate returns anomaly:solved_faster_than_human; the detector relay joins it to ks_sid so a bot that PASSES the gate is CONVICTED on coherence instead of cleared (the arena thesis: a challenge is not a bot/human discriminator — the SOLVE-BEHAVIOUR is). HUMAN-TIME-bound (read+type), NOT compute-bound, so it is HARDWARE-INDEPENDENT (unlike a PoW hash-rate, which is not FP-safe). FP-SAFE BY CONSTRUCTION: floors sit far under real human solve times (which run seconds), so a slow/careful/error-making human is never flagged; precision 1.0 is load-bearing. GROUNDED LIVE 2026-07-03: an instant programmatic math solve (solve_ms 5-6) trips anomaly:solved_faster_than_human and the joined session convicts; a 1.3s human-timed solve (solve_ms 1306) is SILENT. Convicting (w0.85) — a sub-physiological solve is unambiguous automation. See docs/research-radar.md (arena-solve loop)."
+
   - id: bh.action_cadence_deliberative
     title: Metronomic inter-action cadence at LLM-inference latency
     layers: [behavioral]
