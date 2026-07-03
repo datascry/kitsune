@@ -118,6 +118,25 @@ func TestImageSelect(t *testing.T) {
 	}
 }
 
+func TestImageShapes(t *testing.T) {
+	// image-shapes: owned procedural geometric-shape tiles. The correct index set passes; wrong/empty fail.
+	c, ans := MintCaptcha(CaptchaImageShapes, LevelMedium, "")
+	if len(c.Tiles) != 9 || ans == "" {
+		t.Fatalf("bad image-shapes challenge: tiles=%d ans=%q", len(c.Tiles), ans)
+	}
+	for _, tile := range c.Tiles {
+		if !strings.HasPrefix(tile, "data:image/png;base64,") {
+			t.Fatalf("image-shapes tile is not a raster PNG: %.40s", tile)
+		}
+	}
+	if !CheckCaptcha(CaptchaImageShapes, ans, ans) {
+		t.Fatal("correct image-shapes set rejected")
+	}
+	if CheckCaptcha(CaptchaImageShapes, ans, "") || CheckCaptcha(CaptchaImageShapes, ans, "99") {
+		t.Fatal("wrong/empty image-shapes set accepted")
+	}
+}
+
 func TestImageDoodle(t *testing.T) {
 	// image-doodle: Quick-Draw sketch tiles. Correct index set passes; wrong/empty fail. Tiles are PNGs.
 	c, ans := MintCaptcha(CaptchaImageDoodle, LevelMedium, "")
