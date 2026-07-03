@@ -2969,3 +2969,22 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   external-data-bound (IP reputation / prevalence / traffic baselines the sandbox cannot self-generate). Loop
   8c9f2c4c retired at the earned terminus. Shipped this run: 3 blue/red conviction rungs (2, 5, 6) + 2 red
   frontier-definers (3, 7) + 2 grounded dead-ends (1, 4) + this close — precision 1.0 throughout.
+- **[EXTERNAL-DATA HUNT — the coordination wall is ALREADY CROSSABLE; grounded the payoff]** (2026-07-03). After
+  the coordination close (frontier = external-data-bound), hunted for the real data every axis needs. FINDING: the
+  IP-reputation integration ALREADY EXISTS — `kitsune_detector.ip_reputation_refresh` pulls the Tor bulk-exit list
+  + AWS/GCP cloud ranges + the MIT-licensed **X4BNet** VPN (~12k CIDRs) + datacenter (~56k) + Spamhaus DROP/IPsum
+  abuse (~9k) into `data/*.txt` at deploy (uncommitted; the committed files are illustrative seeds). RAN the
+  refresh: 12,305 proxy + 55,624 datacenter + 9,095 abuse CIDRs pulled. GROUNDED the payoff: `IPReputation.classify`
+  flags real IPs (1.12.0.1 → datacenter, 2.26.157.5 → datacenter+proxy, 8.8.8.8 → datacenter), and the SAME clean
+  `diffuse` fleet that EVADED in-sandbox (rung 7, clean IPs → candidate) is CONVICTED `campaign [ja4_prefix,
+  descriptor, origin_reputation]` on DATACENTER egress — the origin_reputation dim becomes the independent 3rd dim.
+  So the coordination "external-data wall" is crossed FOR THE REAL-WORLD BOT CASE (fleets egress via datacenter/
+  proxy): the data + integration + the origin_reputation dim already ship; only the refresh (a deploy step) was
+  never run in the in-sandbox grounding. Locked in test_axis_a_clean_fleet_convicted_on_datacenter_egress. The TRUE
+  residuals now: (a) RESIDENTIAL-proxy egress (a fleet on real residential IPs → no datacenter flag → evades) needs
+  commercial residential-proxy data (ipapi.is-class, paid); (b) real-traffic PREVALENCE/density baselines (the
+  prevalence_prior is browserforge-derived, same-source-blind — a real fingerprint corpus like FP-STALKER/AmIUnique
+  would deepen it); (c) real-device GPU caps for the MOBILE axis (gpuinfo.org / android.gpuinfo.org has 20k+ real
+  OpenGL-ES/Vulkan device reports incl. MAX_TEXTURE_SIZE + uniform limits — bot-protected to WebFetch (403), needs
+  the desktop uploader client or a scrape). The free-data frontier is IP-reputation (DONE) + GPU-caps (obtainable,
+  needs an access path); residential-proxy + real-traffic-density are paid/gated.

@@ -704,6 +704,41 @@ def test_axis_a_clean_two_dim_fleet_stays_candidate() -> None:
     assert all(c.label != "campaign" for c in score_campaigns(_two_dim_diffuse_fleet(tell=False)))
 
 
+def test_axis_a_clean_fleet_convicted_on_datacenter_egress() -> None:
+    # The EXTERNAL-DATA payoff: the fully-clean diffuse fleet (2 dims: ja4 + descriptor, Poisson timing, no tell)
+    # is only a candidate in-sandbox, but on DATACENTER/proxy egress — which the IP-reputation feed flags (X4BNet +
+    # Tor + AWS/GCP + Spamhaus, refreshed at deploy via kitsune_detector.ip_reputation_refresh) — the
+    # origin_reputation dim becomes the independent 3rd dim -> campaign. The real-world bot case: fleets egress via
+    # datacenter/proxy, and the reputation data convicts what the sandbox's clean-IP fixtures cannot.
+    import random
+
+    rng = random.Random(3)
+    hu = humanizer_descriptors(6)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(6):
+        offs.append(t)
+        t += rng.expovariate(1.0 / 300.0)
+    members = [
+        (
+            f"d{i}",
+            _sess(
+                f"d{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=offs[i],
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+                datacenter=True,
+            ),
+        )
+        for i in range(6)
+    ]
+    camps = score_campaigns(members)
+    assert len(camps) == 1 and camps[0].label == "campaign"
+    assert "origin_reputation" in camps[0].dense_dimensions
+
+
 def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
     # A flash crowd: one popular build (shared JA4) + co-timed arrival, but REAL humans (descriptors spread) on
     # distinct IPs. Dense on only 2 dimensions (ja4_prefix + lockstep) → `candidate` for review, NOT a campaign.
