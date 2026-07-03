@@ -2888,3 +2888,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   actually being N independent users). Fleet + harness suites green (24 + 371), coordination precision==1.0
   preserved, README strategy table updated. The scheduled/Poisson pair is now the crisp red<->blue frontier line on
   the timing axis.
+- **[COORDINATION LOOP — rung 4: uniform-stagger regularity generalization is a GROUNDED DEAD-END] (2026-07-03).**
+  Tried to broaden the timing catch beyond fixed schedules to a UNIFORM/mild stagger (the jitter a naive scheduler
+  adds), using a cohort-size-scaled CV ceiling ``1 - C/sqrt(n)`` calibrated below the bootstrapped Poisson CV
+  1st-percentile (which rises with n: 0.24@6, 0.58@20, 0.70@40, 0.78@80). GROUNDED before shipping: a uniform
+  stagger's EMPIRICAL inter-arrival CV is ~0.58-0.67 at n=40 — which sits BETWEEN an FP-safe ceiling (0.60) and the
+  Poisson p1 (0.70), so the margin to catch it while staying below the Poisson tail is razor-thin and fragile
+  (uniform and Poisson-lower-tail OVERLAP). Only a NEAR-PERFECT schedule (CV ~ 0.20, rung 2) is cleanly separable
+  from independent arrivals; a merely-uniform stagger is not. REVERTED the generalization, kept rung 2's clean
+  fixed 0.35 threshold. Shipped only a regression test (test_axis_a_poisson_stagger_evades_at_scale) documenting
+  that the wall holds at scale. A distributional test (gap SKEWNESS: exponential ~2 vs uniform ~0, or a KS-fit)
+  MIGHT separate uniform from Poisson better than CV, but it needs a 3rd moment (noisy) for a marginal payoff
+  (catches only naive uniform-staggerers; a true Poisson evader wins either way) — noted, not pursued. This is the
+  coordination axis's first DRY firing after two shipped rungs: the timing axis's groundable win is the
+  regular-schedule catch, and the residual (any stagger whose arrival process approaches Poisson) is the genuine
+  external wall.
