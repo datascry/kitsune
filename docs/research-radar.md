@@ -3062,3 +3062,23 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   are all external/un-groundable: JA4T-entropy (real-traffic), QUIC-forced-TCP (no in-sandbox QUIC baseline; legit
   QUIC-blocked networks confound), geo-clustering (legit regional traffic), RTT/latency (localhost), clock-skew
   (one sandbox clock), residential-proxy PROVIDER ranges (paid). DRY #1. One more grounded dry = the earned close.
+- **[PROXY-EGRESS LOOP — rung 6: ECN/DF, HTTP-headers, hop-count all dead -> AXIS EARNED-CLOSED]** (2026-07-03).
+  Tested the last three untested leads against the REAL edge code: (1) ECN+DF flags — the edge DOES capture them
+  (syn.ECN/syn.DF, TestParseSYNDFAndECN) and they are NOT in the JA4T, but they are BINARY (low-entropy) and
+  OS-correlated, so a shared-ECN fleet dim is redundant with the stack tell (rung 3 already catches Linux-stack-
+  claims-Windows); no independent coordination signal (they could sharpen per-session OS classification, out of
+  scope). (2) HTTP proxy headers (XFF/Via) — the detector FORWARDS XFF for its rate-limit gate but does not DETECT
+  proxy-added headers; the SOCKS residential target adds none (naive HTTP proxies do, and legit corporate proxies
+  too) — not the target, low value. (3) hop-count — the TTL folds into the OS classifier ("linux after hops") and
+  in-sandbox everything is ~0 hops (localhost); un-groundable + subsumed. DRY #2, each grounded in the code not
+  reasoned. TWICE-IN-A-ROW grounded dry (rung 5 JA4T + rung 6 ECN/headers/hop-count). **The PROXY-EGRESS axis is
+  EARNED-CLOSED.** Delivered what the "residential-proxy needs paid data" assumption said was impossible: TWO real
+  residential-proxy detection mechanisms with NO external data — tunnel encapsulation (shared reduced MSS) and
+  SOCKS re-origination (shared SYN-stack OS diverging from the UA), each a blue Axis-A `proxy_egress` dim (gated on
+  the descriptor humanizer signal for FP-safety) AND a red Skulk strategy (residential-proxy, socks-proxy),
+  red<->blue-verified END-TO-END LIVE (skulk -> detector -> score_campaigns_live -> campaign). 4 shipped rungs + 2
+  grounded dries, precision 1.0 throughout. The in-sandbox structural SYN tells are EXHAUSTED (MSS + stack are the
+  only two independent fields; ECN/DF/wscale/window/options/TTL all fold into them or are low-entropy). The TRUE
+  residual is genuinely external-data-bound: an OS-MATCHED proxy (windows exit + windows UA), an os-spoofed kernel,
+  a FUZZY-trace proxy fleet (no descriptor dim), or DIRECT native-residential egress — plus RTT/latency, real-
+  traffic JA4T-entropy/density, and residential-proxy provider ranges. Loop e24a4d95 retired at the earned terminus.
