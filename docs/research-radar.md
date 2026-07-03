@@ -1140,6 +1140,19 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   is now REAL-DATA-CALIBRATED: two FPs found+fixed, coherence rungs confirmed to fire only on genuine incoherence.
   The validation was the right call — a detector that convicts real phones is worse than a smaller one, and it
   caught a real one."
+- **[POST-CLOSE — second-source corroboration: NOT available in-sandbox for mobile] (2026-07-03).** The standing
+  constraint ("never act on a single-source false-positive; corroborate") led me to the second generator, fpgen
+  (Scrapfly). GROUNDED: fpgen is DESKTOP-ONLY (300/300 desktop; its os.name schema rejects 'android') — it carries
+  the real WebGL caps browserforge lacks (params['3379']=MAX_TEXTURE_SIZE) but generates no mobile fingerprints,
+  so it CANNOT corroborate the mobile FP-findings. browserforge is the SOLE real-mobile-fingerprint source
+  in-sandbox. CONSEQUENCES, reasoned: (1) the mobile_cores_high 8->9 fix STANDS — raising a threshold is a
+  CONSERVATIVE FP-REDUCTION (it only removes convictions, never adds them), so it is safe even single-source. (2)
+  The mobile rungs correctly STAY experimental — promoting experimental->active makes a rule CONVICT more, which is
+  'acting on a single-source FP-safe number', and the constraint wants a second source first. So promotion is
+  EXTERNAL-DATA-BOUND: it needs a second real-mobile source (real-device captures, or a mobile-capable generator),
+  the same boundary the axis-close identified. The mobile suite is thus real-data-CALIBRATED (browserforge, 2 FPs
+  fixed) and FP-safe, but stays experimental-weighted pending a corroborating mobile corpus — the honest terminus
+  for in-sandbox FP-validation."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
