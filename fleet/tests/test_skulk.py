@@ -107,6 +107,17 @@ def test_diffuse_is_the_clean_two_dim_evader() -> None:
     assert len(set(gaps)) > 1  # Poisson stagger -> no lockstep, no scheduled tell -> exactly 2 soft dims
 
 
+def test_residential_proxy_shares_a_tunnel_mss() -> None:
+    members = get("residential-proxy").members(6, seed=7)
+    assert all(m.mss == 1380 for m in members)  # one tunnel pool -> shared reduced MSS
+    assert not any(m.automation or m.datacenter for m in members)  # clean residential: no bot tell, no IP-rep flag
+    assert len({m.fp_hash for m in members}) == 6  # diffuse: no exact pairwise binding
+    assert len({m.ja4 for m in members}) == 1  # one build
+    # emits the JA4T carrying the reduced tunnel MSS (the proxy_egress dim reads it)
+    ja4t = [s for s in members[0].signals("s", "2026-07-03T00:00:00Z") if s["kind"] == "ja4t"]
+    assert ja4t and str(ja4t[0]["value"]).split("_")[2] == "1380"
+
+
 def test_similarity_jitters_hashes_but_clusters_descriptors() -> None:
     members = get("similarity").members(4, seed=9)
     # every EXACT hash differs (defeats exact-match, like fuzzy)...

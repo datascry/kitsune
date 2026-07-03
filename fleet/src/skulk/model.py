@@ -39,6 +39,7 @@ class FleetMember:
     platform: str | None = None
     automation: bool = False
     datacenter: bool = False
+    mss: int | None = None  # TCP MSS (emitted via JA4T); a tunnel/VPN egress reduces it below the native 1460
     offset_seconds: float = 0.0  # arrival time relative to the run base — a `staggered` fleet spreads these out
 
     def signals(self, session_id: str, when: str) -> list[dict[str, object]]:
@@ -60,6 +61,8 @@ class FleetMember:
             sigs.append(_sig(session_id, "network", "tls_ticket_id", self.tls_ticket_id, when, "edge"))
         if self.ja4_client is not None:
             sigs.append(_sig(session_id, "network", "ja4_client_hint", self.ja4_client, when, "edge"))
+        if self.mss is not None:  # JA4T (window_options_MSS_scale); the edge derives this from the SYN options
+            sigs.append(_sig(session_id, "network", "ja4t", f"64240_2-4-8-1-3_{self.mss}_7", when, "edge"))
         if self.hardware_concurrency is not None:
             sigs.append(
                 _sig(session_id, "browser", "hardware_concurrency", self.hardware_concurrency, when, "collector")
