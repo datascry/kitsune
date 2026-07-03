@@ -3034,3 +3034,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   it, and the direct-native-residential fleet stays the external-data-bound frontier. In-sandbox tcp_kernel is
   always the container (Linux), so the fleet grounding is synthetic (like MSS) but the dim + edge producer are
   real; a live SOCKS red-verify needs tcp_kernel/ua_kernel on FleetMember (next).
+- **[PROXY-EGRESS LOOP — rung 4: red-verify the SOCKS/stack path END-TO-END LIVE (SHIPPED)]** (2026-07-03). Added
+  tcp_kernel/ua_kernel fields to FleetMember (emits both edge signals) and the Skulk `socks-proxy` strategy — a
+  diffuse humanizer fleet on clean residential IPs with a NATIVE MSS (no tunnel — the MSS tell is silent) but a
+  re-originated stack: every node's SYN kernel = linux while the UA claims windows. GROUNDED END-TO-END LIVE:
+  `skulk run socks-proxy` -> detector /ingest -> 6 sessions carrying tcp_kernel=linux + ua_kernel=windows ->
+  `score_campaigns_live` -> `campaign [ja4_prefix, descriptor, proxy_egress]` — convicted purely on the SYN-stack
+  divergence, the MSS path silent. This completes rung 3's red<->blue live, symmetric with rung 2 (MSS path). Fleet
+  green (28). STATE: the proxy_egress dim now catches BOTH residential-proxy mechanisms — tunnel encapsulation (MSS)
+  and SOCKS re-origination (stack OS) — each RED-VERIFIED END-TO-END LIVE, no external data. The two structural
+  SYN tells (MSS + classified stack) are EXHAUSTED: the SYN carries nothing else independent (window/options/TTL
+  fold into the stack classification; the raw JA4T is low-entropy; the timestamp value is clock-skew = external).
+  The residual is genuinely external-data-bound: an OS-MATCHED proxy (windows exit + windows UA), an os-spoofed
+  kernel, or DIRECT native-residential egress — none leave a structural tell. Next firing tests any remaining
+  angle; if dry, the proxy-egress axis reaches its earned close with 4 shipped rungs (2 mechanisms x blue+live-red).

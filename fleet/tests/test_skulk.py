@@ -118,6 +118,16 @@ def test_residential_proxy_shares_a_tunnel_mss() -> None:
     assert ja4t and str(ja4t[0]["value"]).split("_")[2] == "1380"
 
 
+def test_socks_proxy_reveals_a_diverging_stack_os() -> None:
+    members = get("socks-proxy").members(6, seed=7)
+    assert all(m.tcp_kernel == "linux" and m.ua_kernel == "windows" for m in members)  # re-originated stack vs claim
+    assert all(m.mss is None for m in members)  # NATIVE MSS -> the MSS tell is silent; only the stack divergence
+    assert not any(m.automation or m.datacenter for m in members)  # clean residential
+    assert len({m.fp_hash for m in members}) == 6 and len({m.ja4 for m in members}) == 1
+    ks = {s["kind"] for s in members[0].signals("s", "2026-07-03T00:00:00Z")}
+    assert "tcp_kernel" in ks and "ua_kernel" in ks  # the proxy_egress stack-divergence path reads these
+
+
 def test_similarity_jitters_hashes_but_clusters_descriptors() -> None:
     members = get("similarity").members(4, seed=9)
     # every EXACT hash differs (defeats exact-match, like fuzzy)...

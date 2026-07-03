@@ -40,6 +40,8 @@ class FleetMember:
     automation: bool = False
     datacenter: bool = False
     mss: int | None = None  # TCP MSS (emitted via JA4T); a tunnel/VPN egress reduces it below the native 1460
+    tcp_kernel: str | None = None  # SYN-derived kernel OS; a re-originating (SOCKS) proxy reveals ITS stack
+    ua_kernel: str | None = None  # kernel the UA claims; tcp_kernel != ua_kernel = a re-originating proxy
     offset_seconds: float = 0.0  # arrival time relative to the run base — a `staggered` fleet spreads these out
 
     def signals(self, session_id: str, when: str) -> list[dict[str, object]]:
@@ -63,6 +65,10 @@ class FleetMember:
             sigs.append(_sig(session_id, "network", "ja4_client_hint", self.ja4_client, when, "edge"))
         if self.mss is not None:  # JA4T (window_options_MSS_scale); the edge derives this from the SYN options
             sigs.append(_sig(session_id, "network", "ja4t", f"64240_2-4-8-1-3_{self.mss}_7", when, "edge"))
+        if self.tcp_kernel is not None:  # SYN-stack OS (edge sniffer); a SOCKS proxy re-originates -> ITS kernel
+            sigs.append(_sig(session_id, "network", "tcp_kernel", self.tcp_kernel, when, "edge"))
+        if self.ua_kernel is not None:  # kernel the UA claims (edge); divergence from tcp_kernel = re-origination
+            sigs.append(_sig(session_id, "network", "ua_kernel", self.ua_kernel, when, "edge"))
         if self.hardware_concurrency is not None:
             sigs.append(
                 _sig(session_id, "browser", "hardware_concurrency", self.hardware_concurrency, when, "collector")
