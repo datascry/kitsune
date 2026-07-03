@@ -926,6 +926,18 @@ rules:
     last_validated: "2026-07-03"
     source: "Kitsune arena challenge-solve coherence: the owned arena gate measures the SERVER-OBSERVED solve time of a CAPTCHA (issue->verify elapsed, tracked in the captchaStore — unforgeable, unlike a client-asserted proof, since the client cannot fake WHEN the gate handed it the challenge). A CORRECT answer submitted below a conservative per-kind PHYSIOLOGICAL floor (text 600ms, math 350ms, image-select/doodle 500ms — no human perceives the challenge and responds faster) is an OCR/ML solver, not a human. The gate returns anomaly:solved_faster_than_human; the detector relay joins it to ks_sid so a bot that PASSES the gate is CONVICTED on coherence instead of cleared (the arena thesis: a challenge is not a bot/human discriminator — the SOLVE-BEHAVIOUR is). HUMAN-TIME-bound (read+type), NOT compute-bound, so it is HARDWARE-INDEPENDENT (unlike a PoW hash-rate, which is not FP-safe). FP-SAFE BY CONSTRUCTION: floors sit far under real human solve times (which run seconds), so a slow/careful/error-making human is never flagged; precision 1.0 is load-bearing. GROUNDED LIVE 2026-07-03: an instant programmatic math solve (solve_ms 5-6) trips anomaly:solved_faster_than_human and the joined session convicts; a 1.3s human-timed solve (solve_ms 1306) is SILENT. Convicting (w0.85) — a sub-physiological solve is unambiguous automation. See docs/research-radar.md (arena-solve loop)."
 
+  - id: bh.arena_slider_trajectory_forged
+    title: Slider drag trajectory claims more drag-time than the whole server-observed solve — synthesized
+    layers: [behavioral]
+    reads: [behavioral.arena_slider_trajectory_forged]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-07-03"
+    last_validated: "2026-07-03"
+    source: "Kitsune arena challenge-solve coherence (slider gate): a GeeTest-style slider verifies the drag TRAJECTORY (arena/slider.go) — MinPts + 'drag too fast' + a velocity coefficient-of-variation floor (the uniform_velocity discriminator). But those checks read the CLIENT-SUPPLIED trajectory t-values, which a headless solver (evaders/arena-solver) PADS: it synthesizes a plausible variable-velocity smoothstep+jitter drag that clears the CV bar, then submits it near-instantly. The SERVER-OBSERVED solve time (issue->verify, tracked in the captchaStore since the OCR-timing rung) cannot be faked. A trajectory whose CLAIMED duration (last_t - first_t) exceeds the whole solve window by >150ms is IMPOSSIBLE — the drag happens WITHIN that window — so the arena emits anomaly:trajectory_exceeds_solve_time, and the detector's /arena/slider/verify relay joins it to ks_sid (bh.arena_captcha_superhuman sibling; the shared _join_arena_anomaly map). FP-SAFE BY CONSTRUCTION: a real drag's duration is always <= the server-observed elapsed (network RTT only inflates the server side), so a slow/careful human is never flagged — precision 1.0 is load-bearing. This is the solve-vs-CLAIM analog of the CAPTCHA solve-vs-human-floor tell, and it defeats trajectory synthesis by measuring the one thing the client cannot forge: WHEN the gate issued the challenge. GROUNDED LIVE 2026-07-03: an instant submit with a 2000ms padded trajectory trips the anomaly and the joined session convicts; the SAME trajectory with a real 2.5s wait is silent. Convicting (w0.85). See docs/research-radar.md (arena-solve loop rungs 5-6)."
+
   - id: bh.action_cadence_deliberative
     title: Metronomic inter-action cadence at LLM-inference latency
     layers: [behavioral]
