@@ -3517,3 +3517,21 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   REALIZED before this loop — the honest finding of grounding-before-building. One more grounded-dry firing = the
   earned close; the genuine remaining work (promote via real-GPU + privacy-browser calibration) is external-data-
   bound, and a BIGGER arena uplevel (evasion-technique catalog; multi-step flow coherence) is the better next axis.
+- **[EXEC-PROOF LOOP — rung 3: NOT dry — found the WORKER-REMOVED gap (the WORKER_DISABLE escalation)]**
+  (2026-07-03). Before declaring dry #2, genuinely tested lead (b) worker-absent — and it is a REAL uncaught gap,
+  not a dry. GROUNDED from the registry + collector: (1) NO worker-absent/removed tell exists; (2) every
+  worker-divergence tell EXPLICITLY skips when the worker value is missing (their own sources: "missing → never
+  fires", "fires only when the WORKER actually exposes userAgentData"); (3) worker_constructor_tampered catches a
+  NON-NATIVE Worker (WORKER_WRAP → the ctorTampered [native code] check) but a DELETED Worker slips through —
+  ctorTampered(self.Worker) with self.Worker === undefined does not fire. So the RED escalation BEYOND WORKER_WRAP —
+  DELETE window.Worker entirely (or make `new Worker` throw) to evade the divergence guards — currently evades ALL
+  of them (divergence tells silent, constructor-tampered silent), while the session still runs main-thread JS under
+  a modern-browser UA. THE TELL (design): the collector detects window.Worker ABSENT or NON-CALLABLE under a modern
+  browser => worker_removed, FP-SAFE BY CONSTRUCTION (every modern browser — even mobile — ships a native
+  window.Worker since ~2012, so a modern-UA client without it stripped it). This COMPLETES the realm escalation
+  ladder with no evasion: main-thread patch -> br.*_worker_divergence; WORKER_WRAP (wrap the ctor) ->
+  br.worker_constructor_tampered; WORKER_DISABLE (delete the ctor) -> br.worker_removed — each escalation forced
+  into a structural lie the next guard catches (the "hiding from the divergence guard forces a lie the escalation
+  guard catches" principle, one rung deeper). So the axis is NOT already-closed after all — this is a groundable
+  new rung. NEXT: build the collector worker-removed check + the br.worker_removed rule + a stealth WORKER_DISABLE
+  evader mode, ground LIVE (headful: real browser has native Worker => silent; WORKER_DISABLE => worker_removed).
