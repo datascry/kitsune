@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // CaptchaKind is the self-hosted CAPTCHA family.
@@ -54,28 +55,36 @@ type Captcha struct {
 
 // captchaStore holds id -> expected answer for single-use verification (the text/math families need the
 // server to remember the answer; honeypot is structural and stores ""). Safe for concurrent use.
-type captchaStore struct {
-	mu sync.Mutex
-	m  map[string]string
+type captchaRecord struct {
+	answer   string
+	issuedAt time.Time
 }
 
-func newCaptchaStore() *captchaStore { return &captchaStore{m: map[string]string{}} }
+type captchaStore struct {
+	mu sync.Mutex
+	m  map[string]captchaRecord
+}
+
+func newCaptchaStore() *captchaStore { return &captchaStore{m: map[string]captchaRecord{}} }
 
 func (s *captchaStore) put(id, answer string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.m[id] = answer
+	s.m[id] = captchaRecord{answer, time.Now()}
 }
 
-// take consumes an id (single-use): returns the stored answer and removes it, so a token cannot be replayed.
-func (s *captchaStore) take(id string) (string, bool) {
+// take consumes an id (single-use): returns the stored answer, the SERVER-OBSERVED solve time (issue->verify —
+// unforgeable, the client can't fake when the gate handed it the challenge), and removes it so a token cannot
+// be replayed. age is 0 for an unknown/redeemed id.
+func (s *captchaStore) take(id string) (answer string, age time.Duration, ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	a, ok := s.m[id]
-	if ok {
-		delete(s.m, id)
+	r, ok := s.m[id]
+	if !ok {
+		return "", 0, false
 	}
-	return a, ok
+	delete(s.m, id)
+	return r.answer, time.Since(r.issuedAt), true
 }
 
 func randHex(n int) string {

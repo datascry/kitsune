@@ -3189,3 +3189,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   a human can READ+TYPE is human-time-bound, NOT compute-bound, so it is hardware-INDEPENDENT and groundable
   (arena-solver-ocr solves instantly; a human takes seconds). Productive rung (infra shipped + grounded pivot),
   not a dry.
+- **[ARENA-SOLVE LOOP — rung 3: OCR/human-time CAPTCHA tell BUILT + GROUNDED LIVE (fires on automation, silent on
+  human)]** (2026-07-03). The groundable conviction the compute-signature couldn't be. Added issue-time to the
+  captchaStore (captchaRecord{answer, issuedAt}; take() now returns the SERVER-OBSERVED solve age) and a per-kind
+  PHYSIOLOGICAL floor map minHumanCaptchaSolve (text 600ms, math 350ms, image-select/doodle 500ms; honeypot has
+  none — its tell is the trap field). A CORRECT CAPTCHA solve below its floor raises `anomaly:
+  solved_faster_than_human` in /captcha/verify — HUMAN-TIME-bound (read/type), NOT compute-bound, so it is
+  HARDWARE-INDEPENDENT (unlike the PoW hash-rate) and FP-safe by construction (floors sit far under real human
+  solve times, which run seconds; the huge human-vs-OCR gap means the exact value is not critical). GROUNDED LIVE
+  vs the running arena: an instant programmatic math solve => solve_ms 5-6 => anomaly FIRES; a 1.3s human-timed
+  solve => solve_ms 1306 => SILENT (no anomaly). Red<->blue separation confirmed both ways, precision 1.0 intact.
+  Locked with TestCaptchaFlagsSubHumanSolveSpeed (httptest: instant solve must pass the gate AND be flagged).
+  Arena+pow green. The tell rides the /verify response; NEXT rung joins it to the SESSION — the detector relays
+  /arena/* and already holds the coherence verdict, so a session that solves a gate faster than a human CONVICTS
+  (gate-pass corroborates instead of clears — lead f). The compute-signature's solve_hps telemetry rides alongside
+  for a future hardware-aware join. The solve-vs-session BIOMECHANICS lead (d) remains groundable (slider/rotate
+  trajectory).
