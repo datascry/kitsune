@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **185 rules**: 125 active · 54 experimental · 6 retired; 133 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **186 rules**: 126 active · 54 experimental · 6 retired; 134 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,7 +56,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (135)
+### browser layer (136)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -165,6 +165,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.screen_impossible` | artifact✦ | present | 0.5 | active | Available screen area exceeds the physical screen (impossible geometry) |
 | `br.webgl_renderer_artifact` | artifact✦ | present | 0.8 | active | WebGL renderer string is an anti-detect spoofing placeholder, not a real driver |
 | `br.worker_constructor_tampered` | artifact✦ | present | 0.75 | active | Web Worker / OffscreenCanvas constructor is not native (worker-realm spoof injection) |
+| `br.worker_removed` | artifact✦ | present | 0.8 | active | window.Worker absent while the collector runs — the Worker realm was stripped to hide from divergence guards |
 | `br.worker_source_rewritten` | artifact✦ | present | 0.75 | active | Web Worker ran from a different source than the page passed (worker-scope spoof injection) |
 | `br.adblock_present` | environment | present | 0.3 | experimental | A content blocker hides the ad bait element (Camoufox default-bundles uBlock Origin) |
 | `br.audio_missing` | environment | present | 0.5 | experimental | No OfflineAudioContext (audio stack absent) |

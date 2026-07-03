@@ -101,6 +101,12 @@ const WORKER_PROXY_FIX = process.env.WORKER_PROXY_FIX === "1";
 // only the AUTOMATION floor (CDP itself → br.cdp_runtime_enabled) — i.e. the realm ladder's terminus is CDP, which a
 // non-CDP JS injector cannot reach and a CDP tool already trips on the automation layer.
 const WORKER_CDP = process.env.WORKER_CDP === "1";
+// WORKER_DISABLE: the escalation that STRIPS the worker realm instead of hiding inside it. WORKER_WRAP/PROXY reach
+// worker scope (and get caught injecting the spoof); this deletes window.Worker entirely so the realm-divergence
+// guards have NO worker value to compare (they skip on "missing") and ctorTampered skips an absent ctor. The test:
+// does removing the worker realm evade the divergence family? It should trip br.worker_removed (a real browser
+// always has a native window.Worker — its absence while JS runs is a strip).
+const WORKER_DISABLE = process.env.WORKER_DISABLE === "1";
 // WORKER_CDP_PAUSE: the DEFINITIVE version of WORKER_CDP that pauses the worker before it runs any code
 // (Target.setAutoAttach waitForDebuggerOnStart) and injects the spoof BEFORE the navigator read — closing the
 // race the plain worker.evaluate channel loses (iter-49). Grounds whether worker_divergence is race-defeatable.
@@ -550,6 +556,19 @@ if (KS_ENGINE === "webkit" && ksDevice && deviceOpts.isMobile) {
     if (typeof navigator.standalone === "undefined") {
       Object.defineProperty(Navigator.prototype, "standalone", { get: () => false, configurable: true });
     }
+  });
+}
+// WORKER_DISABLE: strip the worker realm entirely (remove window.Worker) before the page runs — the escalation
+// that tests whether REMOVING the worker (rather than hiding inside it) evades the divergence family. A real
+// browser always has a native window.Worker, so this trips br.worker_removed.
+if (WORKER_DISABLE) {
+  await context.addInitScript(() => {
+    try {
+      Object.defineProperty(window, "Worker", { value: undefined, configurable: true, writable: true });
+    } catch (e) {}
+    try {
+      delete window.Worker;
+    } catch (e) {}
   });
 }
 // KS_RENDERER=<string>: patch the WebGL UNMASKED_RENDERER to an arbitrary string (main realm) — the red probe
