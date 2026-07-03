@@ -196,6 +196,13 @@ func NewMux(secret []byte) http.Handler {
 		_ = json.NewEncoder(w).Encode(resp)
 	})
 
+	// --- CATALOG: the machine-readable manifest of the CAPTCHA challenge space (kinds x levels x fonts/categories)
+	// so a red-teamer can iterate the whole bench programmatically. Assembled from the live sources — never drifts. ---
+	mux.HandleFunc("GET /arena/catalog", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(arenaCatalog())
+	})
+
 	// --- CAPTCHA gates: same shape as PoW (issue → answer → verify → single-use token), but the "work" is a
 	// human-readable test. Self-hosted, generic reproductions of documented mechanisms — not a vendor clone. ---
 	mux.HandleFunc("GET /arena/captcha", func(w http.ResponseWriter, r *http.Request) {

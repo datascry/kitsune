@@ -370,6 +370,19 @@ def create_app(
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
+    @app.get("/arena/catalog", include_in_schema=False)
+    async def arena_catalog() -> Response:
+        # Relay the CAPTCHA bench MANIFEST (kinds x levels x fonts/categories) from the owned gate, so a red-teamer
+        # iterating the challenge space reaches it on the same origin as the challenges themselves.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/catalog")
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
     @app.get("/arena/captcha", include_in_schema=False)
     async def arena_captcha(kind: str = "text", level: str | None = None, font: str | None = None) -> Response:
         # Relay a self-hosted CAPTCHA challenge (text/math/honeypot) from the owned gate — same pattern as the
