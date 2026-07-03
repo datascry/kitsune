@@ -3375,3 +3375,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   of the CAPTCHA superhuman-speed tell, reusing the same server-observed-timing + physiological-floor pattern. NEXT
   rung: join it to the session (detector relays /arena/queue/* + _join_arena_anomaly maps acted_faster_than_human
   -> bh.arena_queue_superhuman), then the fuller wait surface (no-presence-during-wait, multi-position-per-origin).
+- **[WAIT-ROOM LOOP — rung 3: joined the queue superhuman admission->action to the SESSION — GROUNDED LIVE]**
+  (2026-07-03). Added the detector relays for /arena/queue, /arena/queue/status, /arena/queue/act (the last reads
+  ks_sid + calls _join_arena_anomaly), extended the shared anomaly map (acted_faster_than_human ->
+  arena_queue_superhuman, literal kind for the drift guard), and added rule bh.arena_queue_superhuman (present,
+  automation, w0.85). Catalog regenerated. GROUNDED LIVE END-TO-END: a position-holding bot that GET-queues, waits
+  to admission, and acts instantly (through the detector, with a ks_sid) => /verdict rule_id
+  bh.arena_queue_superhuman, conviction 0.85, LABEL:"bot" — a scalper that clears the waiting-room is convicted on
+  its wait-behaviour, the arena thesis applied to the WAIT. detector ruff+mypy+495 + arena green. The waiting-room
+  gate is now a COMPLETE red<->blue loop (mechanism -> admission-timing tell -> session conviction) mirroring the
+  solve axis's rungs 2-4, and the arena finally reproduces its last missing open-challenge family (Queue-it /
+  Cloudflare Waiting Room). NEXT: the fuller wait surface — NO-PRESENCE-DURING-WAIT (a headless holder polls
+  admission with no collector focus/visibility/heartbeat; corroborating, or a long zero-presence hold) and
+  MULTI-POSITION-PER-ORIGIN (a hoarder holding many concurrent tickets from one origin/fp — feeds the coordination
+  axis: ticket/fp/shared-origin collision).
