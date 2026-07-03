@@ -3005,3 +3005,16 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   case (humanizer + residential-proxy tunnel) that IP-rep misses; the direct-residential humanizer fleet stays
   external-data-bound. NEXT: red-verify with a Skulk residential-proxy strategy emitting a shared-tunnel-MSS ja4t,
   grounded end-to-end live.
+- **[PROXY-EGRESS LOOP — rung 2: red-verify proxy_egress END-TO-END LIVE (SHIPPED)]** (2026-07-03). Extended
+  FleetMember with an `mss` field (emits a JA4T `window_options_MSS_scale` signal, exactly the edge's wire shape)
+  and added the Skulk `residential-proxy` strategy — the `diffuse` fleet on CLEAN residential IPs (no datacenter/
+  proxy IP-rep flag) routed through ONE tunnel pool, so every node shares a reduced tunnel MSS 1380. GROUNDED
+  END-TO-END LIVE: `skulk run residential-proxy` -> detector /ingest -> 6 sessions correlated carrying
+  ja4t=64240_2-4-8-1-3_1380_7 -> `score_campaigns_live` -> `campaign [ja4_prefix, descriptor, proxy_egress]` — the
+  fleet that the IP-rep feed MISSES (clean residential IPs) is convicted purely on the structural tunnel-MSS tell,
+  no paid data. Red<->blue line: `residential-proxy` (shared tunnel MSS + humanizer) -> campaign; `diffuse` (native
+  MSS, no tunnel) -> candidate — the tunnel signature is the exact converter. Fleet green (27), test_skulk asserts
+  the shape + JA4T emission, README updated. So the residential-proxy residual is split: the TUNNELED case (the
+  common real bot pattern — a residential-proxy pool encapsulates -> reduced MSS) is now caught by proxy_egress
+  in-sandbox with no external data; the DIRECT-residential humanizer fleet (native MSS 1460) remains the true
+  external-data-bound frontier.

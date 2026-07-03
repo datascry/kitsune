@@ -437,6 +437,44 @@ class Diffuse:
 
 
 @register
+class ResidentialProxy:
+    name = "residential-proxy"
+    summary = (
+        "the residential-proxy fleet: diffuse (one build + humanizer descriptors, distinct fp/trace/IP, "
+        "Poisson-staggered, CLEAN residential IPs — no datacenter/proxy IP-rep flag) but routed through ONE tunnel "
+        "pool, so every node shares a reduced tunnel MSS (1380, WireGuard-class). The proxy_egress dim — gated on "
+        "the descriptor humanizer signal — makes the shared tunnel MSS the 3rd dim -> campaign, catching what the "
+        "datacenter/proxy IP-reputation feed misses on residential exits."
+    )
+    _TUNNEL_MSS = 1380  # WireGuard-class encapsulation; native ethernet is 1460
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        ja4 = _ja4(seed)
+        rng = random.Random(seed ^ 0x4235)
+        offs: list[float] = []
+        t = 0.0
+        for _ in range(n):
+            offs.append(t)
+            t += rng.expovariate(1.0 / 300.0)  # Poisson -> no timing dim; the shared tunnel MSS is the 3rd dim
+        return [
+            FleetMember(
+                f"resi-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("resifp", seed, i),
+                trace_hash=_h("resitrace", seed, i),
+                trace_descriptor=_diffuse_descriptor(seed, i),
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,  # clean: no bot tell, no datacenter flag — only the shared tunnel MSS convicts
+                mss=self._TUNNEL_MSS,  # the residential-proxy tunnel signature
+                offset_seconds=offs[i],
+            )
+            for i in range(n)
+        ]
+
+
+@register
 class ToolFleet:
     name = "tool-fleet"
     summary = (
