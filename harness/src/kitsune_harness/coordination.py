@@ -778,6 +778,25 @@ _CAMPAIGN_EDGE_DIMS = 2  # a pair links when similar on >= this many independent
 _CAMPAIGN_DENSITY = 0.5  # a dimension is "dense" in a community when >= this fraction of its pairs share it
 _CAMPAIGN_MIN_DENSE_DIMS = 3  # a community is a `campaign` when dense on >= this many independent dimensions
 _CAMPAIGN_MIN_MEMBERS = 3
+_CAMPAIGN_REGULARITY_CV = 0.35  # inter-arrival CV below which a community's arrivals are SCHEDULED, not organic
+_CAMPAIGN_REGULARITY_MIN = 5  # need >= 5 arrivals (4 gaps) before an inter-arrival CV is a meaningful estimate
+
+
+def _arrival_regularity(sessions: list[Session]) -> float | None:
+    """Inter-arrival coefficient of variation of a community's arrivals — the SCHEDULED-STAGGER timing tell.
+    Independent users arrive as a Poisson process (exponential gaps, CV -> 1); a fleet that staggers PAST the
+    lockstep co-arrival window but on a REGULAR schedule has near-constant gaps (CV -> 0). BASELINE-FREE: the
+    Poisson CV=1 is intrinsic to independent arrivals, not a population statistic, so a CV well below 1 marks a
+    scheduled cohort regardless of the absolute rate. Returns the CV, or None when too few arrivals for a
+    meaningful estimate or when arrivals are simultaneous (that is lockstep, handled by its own dim)."""
+    if len(sessions) < _CAMPAIGN_REGULARITY_MIN:
+        return None
+    ts = sorted(s.first_seen.timestamp() for s in sessions)
+    gaps = [b - a for a, b in itertools.pairwise(ts)]
+    mean = statistics.mean(gaps)
+    if mean <= 0:
+        return None
+    return statistics.pstdev(gaps) / mean
 
 
 def _session_rep_flag(s: Session) -> bool:
@@ -939,6 +958,14 @@ def score_campaigns(corpus: list[tuple[str, Session]]) -> list[CampaignVerdict]:
             hits = sum(1 for i, j in pairs if fn(corpus[i][1], corpus[j][1]))
             if pairs and hits / len(pairs) >= _CAMPAIGN_DENSITY:
                 dense.append(name)
+        # TIMING layer via SCHEDULED REGULARITY: a fleet that staggers past the lockstep co-arrival window but
+        # arrives on a REGULAR schedule still leaks the timing layer (independent users arrive Poisson, CV~1; a
+        # scheduled fleet regular, CV<<1). Count it ONLY when lockstep is not already dense, so the timing layer
+        # contributes AT MOST ONE dimension (no double-count that would inflate the independent-dim tally).
+        if "lockstep" not in dense:
+            cv = _arrival_regularity(sessions)
+            if cv is not None and cv <= _CAMPAIGN_REGULARITY_CV:
+                dense.append("scheduled")
         if len(dense) < 2:
             continue
         label = "campaign" if len(dense) >= _CAMPAIGN_MIN_DENSE_DIMS else "candidate"

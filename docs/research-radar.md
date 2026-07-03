@@ -2854,3 +2854,24 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   external-data-bound (IP reputation). The discipline worked: grounded the hypothesis, it failed, shipped nothing.
   Next rungs to test (NOT descriptor dispersion): new Axis-A soft dimensions that need no absolute baseline;
   within-cohort structure a one-tool fleet can't shed without becoming genuinely N-independent.
+- **[COORDINATION LOOP — rung 2: SCHEDULED-STAGGER regularity — a NEW baseline-free Axis-A timing dim (SHIPPED)]
+  (2026-07-03).** The diffuse-staggered fleet shares ja4 + descriptor (2 pairwise dims) but defeats the LOCKSTEP
+  co-arrival dim by spreading in time -> only a `candidate`. GROUNDED: a cohort's inter-arrival coefficient of
+  variation cleanly separates a SCHEDULED fleet (regular gaps, CV 0.08-0.15) from independent users (a Poisson
+  process, exponential gaps, CV 0.5-1.16) — and it is BASELINE-FREE because CV=1 is INTRINSIC to independent
+  arrivals, not a population statistic. Built `_arrival_regularity` + wired it into score_campaigns as the
+  `scheduled` timing signal: when a community is NOT lockstep-dense but its arrivals are regular (CV <= 0.35, >= 5
+  members), the TIMING layer counts ONCE (no double-count) -> the scheduled-stagger fleet reaches 3 independent
+  dims (ja4 + descriptor + scheduled) -> `campaign`. FP-SAFE by construction: `scheduled` only UPGRADES a
+  community that already formed on 2 PAIRWISE dims (ja4 + a clustered-descriptor humanizer) — a legit regular
+  cohort (scheduled corporate sync) has diverse HUMAN descriptors, so the descriptor dim denies it and no
+  2-pairwise-dim community even forms. GROUNDED LIVE: new test_axis_a_scheduled_stagger_caught (staggered every
+  300s -> campaign via `scheduled`, lockstep silent) convicts; test_axis_a_regular_legit_cohort_not_a_campaign
+  (regular + human traces) stays clean; coordination precision==1.0 preserved (370 harness tests green). Residual:
+  a Poisson-STAGGERED fleet (random gaps, CV~1) still evades — but then its timing IS indistinguishable from
+  independent users, the genuine external wall. SECONDARY grounded-negative this rung: CLOCK-SKEW COLLISION (a
+  co-hosted fleet sharing one OS clock's TCP-timestamp skew across proxied IPs) is a genuinely NEW binding idea,
+  distinct from the rejected G24 clock-COHERENCE (which needed a skew DISTRIBUTION) — but un-groundable in-sandbox:
+  the edge captures no TCP timestamps, and every sandbox session shares the ONE sandbox clock, so distinct-host
+  skews cannot be produced to test it; FP-safety of a continuous fuzzy-match also needs real-traffic precision
+  calibration. External-data-bound.

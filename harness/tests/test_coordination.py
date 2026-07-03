@@ -543,6 +543,57 @@ def test_axis_a_ignores_a_diverse_cohort() -> None:
     assert score_campaigns(members) == []
 
 
+def test_axis_a_scheduled_stagger_caught_via_regularity() -> None:
+    # A fleet that shares a JA4 build + a humanizer descriptor cluster but STAGGERS past the 120s lockstep window
+    # on a REGULAR schedule (every 300s). It forms a community on ja4+descriptor (2 pairwise dims) but defeats the
+    # co-arrival lockstep dim, so alone it is only a `candidate`. The inter-arrival regularity (independent users
+    # arrive Poisson, CV~1; a schedule -> CV~0) restores the TIMING layer as the 3rd independent dim -> `campaign`.
+    # Baseline-free: Poisson CV=1 is intrinsic, not a population statistic.
+    hu = humanizer_descriptors(6)
+    members = [
+        (
+            f"s{i}",
+            _sess(
+                f"s{i}",
+                "X",
+                observed_ip=f"71.{i}.{i}.{i}",
+                offset_s=i * 300.0,
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+            ),
+        )
+        for i in range(6)
+    ]
+    camps = score_campaigns(members)
+    assert len(camps) == 1 and camps[0].label == "campaign"
+    assert "scheduled" in camps[0].dense_dimensions
+    assert "lockstep" not in camps[0].dense_dimensions  # staggered past the co-arrival window
+    assert set(camps[0].dense_dimensions) >= {"ja4_prefix", "descriptor", "scheduled"}
+
+
+def test_axis_a_regular_legit_cohort_not_a_campaign() -> None:
+    # FP control for the regularity dim: a cohort arriving on a REGULAR cadence (a scheduled corporate sync) on
+    # ONE build but with DISTINCT HUMAN traces (descriptors spread above the campaign eps) must NOT be a campaign.
+    # The human spread denies the descriptor dim, so no 2-pairwise-dim community even forms (ja4 alone) -> no
+    # campaign. Regularity only ever UPGRADES a community that already correlates on build + behaviour.
+    hu = _human_traces(6)
+    members = [
+        (
+            f"u{i}",
+            _sess(
+                f"u{i}",
+                "X",
+                observed_ip=f"71.{i}.{i}.{i}",
+                offset_s=i * 300.0,
+                fp_hash=f"fp{i}",
+                trace_descriptor=hu[i],
+            ),
+        )
+        for i in range(6)
+    ]
+    assert all(c.label != "campaign" for c in score_campaigns(members))
+
+
 def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
     # A flash crowd: one popular build (shared JA4) + co-timed arrival, but REAL humans (descriptors spread) on
     # distinct IPs. Dense on only 2 dimensions (ja4_prefix + lockstep) → `candidate` for review, NOT a campaign.
