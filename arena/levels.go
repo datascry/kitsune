@@ -70,7 +70,7 @@ func imageParams(lv Level) imageKnobs {
 	case LevelEasy:
 		return imageKnobs{Tiles: 6, Noise: 20}
 	case LevelHard:
-		return imageKnobs{Tiles: 9, Noise: 120}
+		return imageKnobs{Tiles: 12, Noise: 120}
 	default:
 		return imageKnobs{Tiles: 9, Noise: 45}
 	}
