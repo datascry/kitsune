@@ -363,6 +363,43 @@ class DiffuseScheduled:
 
 
 @register
+class DiffuseAutomated:
+    name = "diffuse-automated"
+    summary = (
+        "the SLOPPY-but-diversified bot: a diffuse fleet (no pairwise binding, distinct fp/trace/IP, one build) "
+        "STAGGERED on Poisson gaps (only a 2-dim candidate — evades lockstep AND the scheduled tell) that LEAKS a "
+        "per-session automation tell. Axis-A corroboration lifts the 2-dim candidate to a campaign on the bot "
+        "signal; a fully-clean diffuse fleet (no tell) stays a candidate — the real-browser frontier."
+    )
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # diffuse-campaign shape (no pairwise binding) + Poisson stagger (2 soft dims, no timing tell) + the SLIP:
+        # a per-session webdriver tell. The corroboration in co.score_campaigns keys on it to convict the cohort.
+        ja4 = _ja4(seed)
+        rng = random.Random(seed ^ 0xA5)
+        offs: list[float] = []
+        t = 0.0
+        for _ in range(n):
+            offs.append(t)
+            t += rng.expovariate(1.0 / 300.0)  # Poisson gaps -> no lockstep, no scheduled -> exactly 2 soft dims
+        return [
+            FleetMember(
+                f"auto-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("autofp", seed, i),
+                trace_hash=_h("autotrace", seed, i),
+                trace_descriptor=_diffuse_descriptor(seed, i),
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=True,  # the slip: a per-session webdriver tell the corroboration keys on
+                offset_seconds=offs[i],
+            )
+            for i in range(n)
+        ]
+
+
+@register
 class ToolFleet:
     name = "tool-fleet"
     summary = (

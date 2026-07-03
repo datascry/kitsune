@@ -2921,3 +2921,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   bots to one campaign — attribution), NOT the fully-clean real-browser frontier fleet, which stays the external
   wall. Two shipped rungs (2, 5) + one red-verify (3) + two dead-ends (1, 4) — the loop is NOT dry: rung 5 found a
   real groundable gap on a non-timing angle.
+- **[COORDINATION LOOP — rung 6: red-verify rung 5, grounded END-TO-END LIVE (SHIPPED)]** (2026-07-03). Added the
+  Skulk `diffuse-automated` strategy — the sloppy-but-diversified bot: a diffuse fleet (distinct fp/trace/IP, one
+  build) POISSON-staggered (only 2 soft dims — evades lockstep AND the scheduled tell) that LEAKS a per-session
+  automation tell (webdriver). This is the red counterpart to rung 5's corroboration. GROUNDED FULLY LIVE for the
+  first time on the coordination axis: `skulk run diffuse-automated` -> POST to the live detector's /ingest -> the
+  detector correlated 6 sessions (shared ja4 confirmed, webdriver tell on all, 6 distinct staggered first_seen —
+  the Poisson offsets flowed through as the runner stamps observed_at=base+offset and the detector sets
+  first_seen=min(timestamps)) -> `score_campaigns_live` returned `campaign | [ja4_prefix, descriptor, automation]`
+  over the 6 members. So the rung-5 `automation` dim does the work on the REAL wire path, not just a constructed
+  corpus. RED<->BLUE line: `diffuse-automated` -> campaign (the slip converts it); a fully-clean diffuse fleet
+  (no tell) -> candidate (the real-browser frontier holds). Fleet suite green (25), test_skulk asserts the shape,
+  README strategy table updated. NOTE the plumbing win: skulk is pure-stdlib so it emits via PYTHONPATH in a bare
+  network container; the harness score needs its venv (uv sync in-container). The end-to-end path (Skulk -> edge/
+  detector -> live_coordination scorer) is now exercised, not just the offline scorer.
