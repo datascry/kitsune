@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"time"
 )
 
 // RealmProof is a client-asserted browser-execution proof (the cap-style instrumentation): the hash of a
@@ -39,6 +40,7 @@ func SignToken(secret []byte, c Challenge, s Solution) string {
 type record struct {
 	difficulty   int
 	instrumented bool
+	issuedAt     time.Time
 }
 
 // NonceStore tracks issued, not-yet-redeemed nonces so each challenge passes the gate at most once
@@ -55,7 +57,20 @@ func NewNonceStore() *NonceStore { return &NonceStore{issued: map[string]record{
 func (s *NonceStore) Issue(c Challenge) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.issued[c.Nonce] = record{c.Difficulty, c.Instrumented}
+	s.issued[c.Nonce] = record{c.Difficulty, c.Instrumented, time.Now()}
+}
+
+// Age reports how long ago the nonce was issued — the SERVER-OBSERVED solve time (issue->verify). Unlike a
+// client-asserted RealmProof this cannot be forged: a solver can lie about counters but not about when the
+// gate handed it the challenge. ok is false for an unknown/redeemed nonce. Call before Redeem (which consumes).
+func (s *NonceStore) Age(nonce string) (time.Duration, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	r, ok := s.issued[nonce]
+	if !ok {
+		return 0, false
+	}
+	return time.Since(r.issuedAt), true
 }
 
 // Peek reports a nonce's issued difficulty + whether it requires the instrumented proof, without consuming

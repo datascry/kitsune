@@ -3173,3 +3173,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   against: arena-solver, arena-solver-ocr, pow. FP-safety is load-bearing: a slow/careful/error-making human is
   STILL human — conviction needs an automated signature (too-fast-for-JS, perfect-instant-OCR) or a solve-vs-session
   divergence, never mere slowness.
+- **[ARENA-SOLVE LOOP — rung 2: server-observed solve-timing infra BUILT; compute-signature is hardware-bound]**
+  (2026-07-03). Built the enabling foundation: `issuedAt` + an `Age(nonce)` accessor on the pow NonceStore
+  (evaders/pow/gate.go — the SERVER-OBSERVED solve time issue->verify; unlike the client-asserted RealmProof the
+  same file flags as forgeable, timing cannot be faked), and wired the arena /verify to compute the solve RATE
+  (sum(counters)/age; counters ≈ hashes tried, confirmed from Solve's incrementing loop) into a `solve_hps` response
+  field. Arena+pow build/vet/test green; added TestAgeReportsServerObservedSolveTime. GROUNDED the PoW
+  COMPUTE-SIGNATURE live and it INVERTS: a native single-threaded Go SHA-256 solve runs ~2.0 M H/s in this
+  container (no SHA-NI, shared CPU) — SLOWER than a browser WASM SHA-256 (~10-15 M/s). So an ABSOLUTE hash-rate
+  ceiling is HARDWARE-DEPENDENT (a fast desktop browser would exceed a slow native solver) => not an FP-safe
+  standalone conviction, and ungroundable in-box (the native solver never looks "too fast"; even 8-core stays
+  ~16 M/s here). STRIPPED the `compute_too_fast` conviction + the ceiling; kept `solve_hps` as TELEMETRY a
+  hardware-aware detector can later join (solve-rate-vs-claimed-cores — the coherence framing, external model).
+  The Age infra is the reusable win: it enables the OCR/HUMAN-TIME tell (next rung) — a CAPTCHA solved faster than
+  a human can READ+TYPE is human-time-bound, NOT compute-bound, so it is hardware-INDEPENDENT and groundable
+  (arena-solver-ocr solves instantly; a human takes seconds). Productive rung (infra shipped + grounded pivot),
+  not a dry.
