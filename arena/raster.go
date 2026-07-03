@@ -13,6 +13,7 @@ package arena
 import (
 	"bytes"
 	"encoding/base64"
+	_ "embed"
 	"image"
 	"image/color"
 	"image/draw"
@@ -30,11 +31,18 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-// captchaFaces is the text-gate FONT POOL — the OCR bench's typeface axis. Every entry is the Go font family
-// (golang.org/x/image/font/gofont, BSD-licensed, no embedding needed): regular/bold/italic/mono/smallcaps span
-// weight, slant and fixed-vs-proportional metrics, so an OCR model that handles one face may still miss another.
-// captchaFontNames is the sorted, deterministic name list the /arena/catalog manifest enumerates and ?font=<name>
-// selects. Adding an OFL serif/slab face (embedded, like the emoji font) is a later rung.
+// liberationSerifTTF is a DISTINCT-DESIGN serif face (Liberation Serif, SIL OFL 1.1 — see
+// assets/LiberationSerif.LICENSE.txt), embedded like the emoji font. Rung 4 grounded that the Go font FAMILY
+// (one sans design, varied weight/slant) does not harden TrOCR; a serif's different letterforms are the real
+// test of whether the typeface axis moves the model — hence a genuinely different design, not another Go weight.
+//
+//go:embed assets/LiberationSerif.ttf
+var liberationSerifTTF []byte
+
+// captchaFaces is the text-gate FONT POOL — the OCR bench's typeface axis. The Go font family
+// (golang.org/x/image/font/gofont, BSD): regular/bold/italic/mono/smallcaps span weight, slant and
+// fixed-vs-proportional metrics; liberation-serif (OFL) adds a distinct serif DESIGN. captchaFontNames is the
+// sorted, deterministic name list the /arena/catalog manifest enumerates and ?font=<name> selects.
 var (
 	captchaFaces     map[string]font.Face
 	captchaFontNames []string
@@ -42,11 +50,12 @@ var (
 
 func init() {
 	ttfs := map[string][]byte{
-		"go-regular":   goregular.TTF,
-		"go-bold":      gobold.TTF,
-		"go-italic":    goitalic.TTF,
-		"go-mono":      gomono.TTF,
-		"go-smallcaps": gosmallcaps.TTF,
+		"go-regular":       goregular.TTF,
+		"go-bold":          gobold.TTF,
+		"go-italic":        goitalic.TTF,
+		"go-mono":          gomono.TTF,
+		"go-smallcaps":     gosmallcaps.TTF,
+		"liberation-serif": liberationSerifTTF,
 	}
 	captchaFaces = make(map[string]font.Face, len(ttfs))
 	for name, ttf := range ttfs {

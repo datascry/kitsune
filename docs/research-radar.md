@@ -3651,3 +3651,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   solver ruff+format green; no registry/detector/arena change (red-side only). NEXT: embed one OFL serif + one slab
   face, re-benchmark per font at easy — expect the distinct designs to drop below 8/8, proving the pool tests the
   model; then charset variants (digits-only/mixed-case) and the image-model surface.
+- **[CAPTCHA-BENCH LOOP — rung 5: liberation-serif (OFL) — a DISTINCT DESIGN drops TrOCR, hypothesis CONFIRMED]**
+  (2026-07-03). Rung 4 grounded that the Go font FAMILY (one sans design) does not harden TrOCR (all 8/8); the
+  hypothesis was that a genuinely DIFFERENT design would. Tested it: vendored Liberation Serif (SIL OFL 1.1,
+  extracted from Debian fonts-liberation2, arena/assets/LiberationSerif.ttf + LiberationSerif.LICENSE.txt), embedded
+  it in raster.go (//go:embed, mirroring the Noto Emoji font) and added liberation-serif to the pool (now 6 faces;
+  the /arena/catalog manifest + ?font= pick it up automatically). GROUNDED LIVE: renders human-solvable ("PW9B"
+  with visible serifs, a clearly different design from the Go sans) and — the decisive red<->bench test — TrOCR
+  (level=easy, 8 rounds) scores 7/8 on liberation-serif vs 8/8 on every Go-family face: round 4 misread the serif
+  glyphs and FAILED. A small but REAL drop, so the finding stands: the typeface axis DOES move the model when the
+  DESIGN differs (serifs / proportions), not merely the weight/slant within one family — the serif is a genuine
+  bench-hardening face, and rung 4's direction was right. arena build/vet/test green; detector unchanged; OFL
+  attribution committed; license-clean + human-solvable both held. NEXT: a slab/condensed OFL face (should drop it
+  further than the serif's 7/8), charset variants (digits-only/mixed-case via a ?charset= selector), then the
+  untouched image-model surface (broaden the emoji taxonomy beyond animal/food/vehicle; an owned synthetic source).
