@@ -3499,3 +3499,21 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   => webgl_worker_divergence / canvas_worker_divergence should FIRE, a real headful capture SILENT (the
   unexercised-active-rules discipline: light an active-but-maybe-unexercised realm tell via a faithful evader).
   NEXT: check whether canvas_worker_divergence has a live positive yet + build the main-only-forge evader mode.
+- **[EXEC-PROOF LOOP — rung 2: the proof is ALREADY grounded + red-laddered — GROUNDED DRY #1]** (2026-07-03).
+  Checked whether the reframed rung (validate the worker proof with a live positive) is groundable-new — it is NOT,
+  because it is already done. canvas_worker_divergence + webgl_worker_divergence both carry a GROUNDED-LIVE note in
+  the registry: a real (SwiftShader) browser hashes/reports IDENTICALLY in both realms (no fire), a MAIN-ONLY
+  getImageData farble / getParameter spoof DIVERGES (fires) — the live positive already exists. The RED ladder also
+  already exists (evaders/stealth): CANVAS_LIE -> canvas_lie, a main-only pixel farble -> canvas_worker_divergence,
+  WORKER_WRAP -> defeats worker_divergence but trips worker_constructor_tampered, WORKER_PROXY -> the further
+  escalation. Both tells are EXPERIMENTAL for HONEST + EXTERNAL reasons, not for lack of grounding: (1) real-GPU
+  grounding needs actual hardware (the sandbox is SwiftShader — external), and (2) Mullvad/Tor resistFingerprinting
+  applies PER-CALL canvas randomization, so a REAL privacy browser's main and Worker OffscreenCanvas DIVERGE — an FP
+  the tell would cause if promoted to convicting (grounded on a real Mullvad 15.0.16 capture). So promotion is
+  blocked by external data (real GPU + privacy-browser calibration), NOT a missing rung. The cap-gate join is
+  thesis-redundant (a forgeable gate is CONSISTENT with the thesis — the detector convicts on coherence, and it
+  already does via these very rules); a nonce adds no server-verifiability (rung 1). DRY #1, grounded in the
+  registry + the evader ladder. The axis premise ("build a server-observed browser-execution proof") was ALREADY
+  REALIZED before this loop — the honest finding of grounding-before-building. One more grounded-dry firing = the
+  earned close; the genuine remaining work (promote via real-GPU + privacy-browser calibration) is external-data-
+  bound, and a BIGGER arena uplevel (evasion-technique catalog; multi-step flow coherence) is the better next axis.
