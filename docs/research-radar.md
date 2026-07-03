@@ -3612,3 +3612,15 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   enumerating kinds/fonts/sources/categories; then OFL serif/slab faces (embedded, like the emoji font), and the
   TrOCR bench (arena-solver-ocr) solve-rate PER FONT (a slab/mono/italic should drop it) to prove the pool tests
   the model. Then the image-model surface: more emoji categories + an owned synthetic source.
+- **[CAPTCHA-BENCH LOOP — rung 2: ?font= selector + the challenge reports its face — GROUNDED LIVE]**
+  (2026-07-03). Made the font pool a BENCH: threaded a font name through the text gate so a red-teamer can TARGET a
+  specific typeface and know which one their OCR model faced. rasterText(code, k, fontName) now returns (dataURI,
+  chosenFont) via pickFace (named = the selector, empty = a random pool face); MintCaptcha(kind, lv, fontName)
+  passes it and sets a new Captcha.Font report field (json:"font"); the /arena/captcha handler reads ?font=; the
+  detector's /arena/captcha relay passes ?font= through (length-guarded, falls back to random on unknown). GROUNDED
+  LIVE against the running arena: GET ?kind=text&level=easy&font=go-mono/go-bold/go-italic each returns
+  "font":"<the requested face>", and the rendered PNGs are visibly the right typeface + human-readable (go-mono
+  "GQNP" fixed-width upright; go-italic "PJKQ" slanted). arena build/vet/test green; detector ruff+mypy green; 8
+  MintCaptcha test callers updated to the 3-arg signature. NEXT: the GET /arena/catalog manifest (enumerate
+  kinds/fonts/sources/categories/levels — the thing that makes it programmatically iterable) + the TrOCR bench
+  (arena-solver-ocr solve-rate per font). Then OFL serif/slab faces (embedded) and the image-model surface.

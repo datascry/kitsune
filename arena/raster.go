@@ -80,11 +80,12 @@ func pickFace(name string) (font.Face, string) {
 // rasterText renders code as a distorted-text PNG (warped + noisy), returned as a base64 data URI. The
 // plaintext answer exists only as pixels — there is no <text> element to parse. The difficulty knobs scale
 // the warp amplitude, the noise density and the stroke count (a harder level is heavier to OCR).
-func rasterText(code string, k textKnobs) string {
+func rasterText(code string, k textKnobs, fontName string) (string, string) {
+	face, chosenFont := pickFace(fontName)
 	w, h := 30*len(code)+30, 64
 	base := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(base, base.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
-	if face, _ := pickFace(""); face != nil {
+	if face != nil {
 		d := &font.Drawer{Dst: base, Src: image.NewUniform(color.RGBA{40, 40, 40, 255}), Face: face}
 		x := 16
 		for _, ch := range code {
@@ -134,7 +135,7 @@ func rasterText(code string, k textKnobs) string {
 	}
 	var buf bytes.Buffer
 	_ = png.Encode(&buf, out)
-	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes()), chosenFont
 }
 
 // noiseGrey returns a random mid-grey so speckle/lines vary in tone (a single threshold can't strip them).
