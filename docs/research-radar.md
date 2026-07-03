@@ -2875,3 +2875,16 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   the edge captures no TCP timestamps, and every sandbox session shares the ONE sandbox clock, so distinct-host
   skews cannot be produced to test it; FP-safety of a continuous fuzzy-match also needs real-traffic precision
   calibration. External-data-bound.
+- **[COORDINATION LOOP — rung 3: RED-verify the scheduled dim + ground the evasion boundary (SHIPPED)]
+  (2026-07-03).** Completed rung 2's red<->blue. RED: added the Skulk `diffuse-scheduled` strategy — a diffuse
+  fleet (no pairwise binding, distinct fp/trace/IP, one build, clean) whose members carry REGULAR `offset_seconds`
+  (300s cadence past the 120s lockstep window). GROUNDED it produces the scheduled shape (constant gaps, 6 distinct
+  fp/trace, one ja4) and that axis A now flags it `campaign` via the `scheduled` timing dim. BOUNDARY: added
+  test_axis_a_poisson_stagger_evades — the SAME diffuse fleet with POISSON-random gaps (exponential inter-arrivals,
+  CV~1) correctly stays a 2-dim `candidate`, because its timing IS statistically that of N independent users. So
+  the scheduled-stagger rung is precisely bounded: it convicts a fixed-schedule fleet, and the residual (a
+  Poisson-randomised stagger) is the GENUINE external wall — a fleet whose arrival process is indistinguishable
+  from independent users cannot be convicted on timing, which is the economic bind (full timing-diversification =
+  actually being N independent users). Fleet + harness suites green (24 + 371), coordination precision==1.0
+  preserved, README strategy table updated. The scheduled/Poisson pair is now the crisp red<->blue frontier line on
+  the timing axis.

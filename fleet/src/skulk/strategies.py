@@ -330,6 +330,39 @@ class DiffuseCampaign:
 
 
 @register
+class DiffuseScheduled:
+    name = "diffuse-scheduled"
+    summary = (
+        "diffuse-campaign that STAGGERS on a fixed SCHEDULE (regular gaps past the lockstep window) instead of "
+        "co-arriving — sheds the lockstep co-arrival dim, but the REGULAR inter-arrival cadence restores the "
+        "timing layer (independent users are Poisson, CV~1; a schedule is CV~0), so axis A still flags a "
+        "campaign. A Poisson-RANDOM stagger evades — but then the timing is indistinguishable from N independent "
+        "users, the genuine external wall."
+    )
+    _INTERVAL_S = 300.0  # regular cadence, well past the 120s lockstep window
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        # Identical to diffuse-campaign (no pairwise binding) EXCEPT arrivals fall on a fixed schedule rather than
+        # co-timed — the scheduled-stagger shape that co.`_arrival_regularity` restores the timing dim on.
+        ja4 = _ja4(seed)
+        return [
+            FleetMember(
+                f"sched-{i}",
+                ja4,
+                _ip(seed, i),
+                fp_hash=_h("schedfp", seed, i),  # distinct → no fp_collision
+                trace_hash=_h("schedtrace", seed, i),  # distinct → no exact trace_collision
+                trace_descriptor=_diffuse_descriptor(seed, i),  # just above the floor → template_similarity silent
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,
+                offset_seconds=i * self._INTERVAL_S,  # REGULAR schedule → the scheduled-stagger timing tell
+            )
+            for i in range(n)
+        ]
+
+
+@register
 class ToolFleet:
     name = "tool-fleet"
     summary = (
