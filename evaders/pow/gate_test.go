@@ -75,3 +75,15 @@ func TestRedeemRejectsUnknownAndDowngrade(t *testing.T) {
 		t.Fatal("redeeming below the issued difficulty must fail (downgrade attack)")
 	}
 }
+
+func TestAgeReportsServerObservedSolveTime(t *testing.T) {
+	s := NewNonceStore()
+	c := mustMint(t, ClassHashcash, 20, 0, 0, 0)
+	s.Issue(c)
+	if age, ok := s.Age(c.Nonce); !ok || age < 0 {
+		t.Fatalf("Age after Issue: age=%v ok=%v — want ok + non-negative elapsed", age, ok)
+	}
+	if _, ok := s.Age("never-issued"); ok {
+		t.Fatal("Age of an unknown nonce must report ok=false")
+	}
+}

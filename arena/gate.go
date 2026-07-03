@@ -25,6 +25,18 @@ import (
 // an absurd puzzle (the per-class defaults below are the norm; this is only the upper bound).
 const MaxDifficulty = 26
 
+// minMeasurableHashes/minMeasurableSolve gate solve-rate telemetry to solves with enough work + elapsed to
+// measure a rate at all (an easy/near-instant solve is too noisy to report). The rate is SERVER-OBSERVED
+// (hashes tried / issue->verify elapsed) — unforgeable, unlike a client-asserted realm proof — but it is NOT a
+// standalone conviction: the ABSOLUTE hash rate reflects the CLIENT's hardware (grounded — a slow native solver
+// runs ~2 M H/s, below a fast browser's WASM SHA-256), so "too fast" is hardware-dependent. It ships as telemetry
+// a hardware-aware detector can later join (solve-rate-vs-claimed-cores); the groundable conviction is the
+// OCR/human-time tell (a CAPTCHA solved faster than a human can read+type), which the same issue-time enables.
+const (
+	minMeasurableHashes = 5e4
+	minMeasurableSolve  = 5 * time.Millisecond
+)
+
 func classOf(s string) pow.Class {
 	switch s {
 	case "many-small":
@@ -129,15 +141,31 @@ func NewMux(secret []byte) http.Handler {
 		}
 		c, sol := body.Challenge, pow.Solution{Counters: body.Counters}
 		token, ok := pow.CheckSolution(secret, c, sol)
-		// Single-use: the nonce must be outstanding at >= the claimed difficulty, then it is consumed, so a
-		// solver cannot replay a token or downgrade the difficulty.
+		// Server-observed solve RATE (hashes tried / issue->verify elapsed), measured BEFORE Redeem consumes the
+		// nonce. Telemetry only — the absolute rate is hardware-dependent (see minMeasurableHashes), so it is not a
+		// standalone conviction; a hardware-aware detector can join it to the claimed core count later.
+		var solveHPS float64
 		if ok {
+			if age, aged := store.Age(c.Nonce); aged && age >= minMeasurableSolve {
+				var hashes float64
+				for _, ct := range body.Counters {
+					hashes += float64(ct)
+				}
+				if hashes >= minMeasurableHashes {
+					solveHPS = hashes / age.Seconds()
+				}
+			}
+			// Single-use: the nonce must be outstanding at >= the claimed difficulty, then it is consumed, so a
+			// solver cannot replay a token or downgrade the difficulty.
 			ok = store.Redeem(c.Nonce, c.Difficulty)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		resp := map[string]any{"ok": ok, "gate": string(c.Class)}
 		if ok {
 			resp["token"] = token
+		}
+		if solveHPS > 0 {
+			resp["solve_hps"] = solveHPS
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})
