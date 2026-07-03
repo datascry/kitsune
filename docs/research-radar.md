@@ -3624,3 +3624,16 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   MintCaptcha test callers updated to the 3-arg signature. NEXT: the GET /arena/catalog manifest (enumerate
   kinds/fonts/sources/categories/levels — the thing that makes it programmatically iterable) + the TrOCR bench
   (arena-solver-ocr solve-rate per font). Then OFL serif/slab faces (embedded) and the image-model surface.
+- **[CAPTCHA-BENCH LOOP — rung 3: GET /arena/catalog manifest — the space is now programmatically iterable]**
+  (2026-07-03). Built the thing that turns the assets into a BENCH: a machine-readable manifest a red-teamer reads
+  to iterate every variant when benchmarking a solver. New arena/catalog.go (Catalog + catalogChallenge) assembles
+  from the LIVE sources so it never drifts — captchaFontNames (the ?font= pool), emojiCatOrder/doodleGroupOrder
+  (the image category domains), the kinds, levels, and charset. GET /arena/catalog handler (gate.go) + the detector
+  relay (app.py arena_catalog, same-origin as the challenges). GROUNDED LIVE both paths: arena:8095/arena/catalog
+  and detector:8080/arena/catalog both return the manifest — 5 challenge kinds (text/math/image-select/
+  image-doodle/honeypot), 3 levels, the 5-font pool with ?font= selectable, animal/food/vehicle categories per
+  image source. A red-teamer now: GET /arena/catalog -> enumerate -> for each font/category GET /arena/captcha?...
+  -> run their OCR/CV model -> tabulate solve-rate. arena build/vet/test green; detector ruff+mypy green; no
+  registry rule changed. NEXT: the TrOCR bench (arena-solver-ocr solve-rate PER FONT — the red half that proves a
+  mono/italic face drops the model), then OFL serif/slab faces (embedded, real typeface spread), then the
+  image-model surface (more emoji categories via the Unicode taxonomy + an owned synthetic 3rd source).
