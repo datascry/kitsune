@@ -18,21 +18,63 @@ import (
 	"image/draw"
 	"image/png"
 	"math"
+	"sort"
 
 	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/gobold"
+	"golang.org/x/image/font/gofont/goitalic"
+	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/gofont/gosmallcaps"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 )
 
-var captchaFace font.Face
+// captchaFaces is the text-gate FONT POOL — the OCR bench's typeface axis. Every entry is the Go font family
+// (golang.org/x/image/font/gofont, BSD-licensed, no embedding needed): regular/bold/italic/mono/smallcaps span
+// weight, slant and fixed-vs-proportional metrics, so an OCR model that handles one face may still miss another.
+// captchaFontNames is the sorted, deterministic name list the /arena/catalog manifest enumerates and ?font=<name>
+// selects. Adding an OFL serif/slab face (embedded, like the emoji font) is a later rung.
+var (
+	captchaFaces     map[string]font.Face
+	captchaFontNames []string
+)
 
 func init() {
-	f, err := opentype.Parse(goregular.TTF)
-	if err != nil {
-		return
+	ttfs := map[string][]byte{
+		"go-regular":   goregular.TTF,
+		"go-bold":      gobold.TTF,
+		"go-italic":    goitalic.TTF,
+		"go-mono":      gomono.TTF,
+		"go-smallcaps": gosmallcaps.TTF,
 	}
-	captchaFace, _ = opentype.NewFace(f, &opentype.FaceOptions{Size: 34, DPI: 72, Hinting: font.HintingFull})
+	captchaFaces = make(map[string]font.Face, len(ttfs))
+	for name, ttf := range ttfs {
+		f, err := opentype.Parse(ttf)
+		if err != nil {
+			continue
+		}
+		face, err := opentype.NewFace(f, &opentype.FaceOptions{Size: 32, DPI: 72, Hinting: font.HintingFull})
+		if err != nil {
+			continue
+		}
+		captchaFaces[name] = face
+		captchaFontNames = append(captchaFontNames, name)
+	}
+	sort.Strings(captchaFontNames)
+}
+
+// pickFace returns the named face (the ?font= bench selector), or a random pool face when name is empty/unknown
+// (real-world variety). It returns the resolved name so the challenge can report which typeface it rendered.
+func pickFace(name string) (font.Face, string) {
+	if f, ok := captchaFaces[name]; ok {
+		return f, name
+	}
+	if len(captchaFontNames) == 0 {
+		return nil, ""
+	}
+	n := captchaFontNames[randInt(int64(len(captchaFontNames)))]
+	return captchaFaces[n], n
 }
 
 // rasterText renders code as a distorted-text PNG (warped + noisy), returned as a base64 data URI. The
@@ -42,8 +84,8 @@ func rasterText(code string, k textKnobs) string {
 	w, h := 30*len(code)+30, 64
 	base := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(base, base.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
-	if captchaFace != nil {
-		d := &font.Drawer{Dst: base, Src: image.NewUniform(color.RGBA{40, 40, 40, 255}), Face: captchaFace}
+	if face, _ := pickFace(""); face != nil {
+		d := &font.Drawer{Dst: base, Src: image.NewUniform(color.RGBA{40, 40, 40, 255}), Face: face}
 		x := 16
 		for _, ch := range code {
 			// Per-glyph colour variation (a different dark tone per char) defeats single-threshold binarization.
