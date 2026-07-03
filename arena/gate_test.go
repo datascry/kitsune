@@ -220,3 +220,51 @@ func TestRotateFlagsTrajectoryExceedingSolveTime(t *testing.T) {
 		t.Fatalf("a rotation trajectory claiming more time than the whole solve must be flagged: %v", out)
 	}
 }
+
+func TestCaptchaFlagsHoneypotTrip(t *testing.T) {
+	srv := newServer(t)
+	defer srv.Close()
+	get := func() string {
+		r, err := http.Get(srv.URL + "/arena/captcha?kind=honeypot")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var ch struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&ch); err != nil {
+			t.Fatal(err)
+		}
+		r.Body.Close()
+		return ch.ID
+	}
+	verify := func(id, answer string) map[string]any {
+		body, _ := json.Marshal(map[string]any{"kind": "honeypot", "id": id, "answer": answer})
+		vr, err := http.Post(srv.URL+"/arena/captcha/verify", "application/json", bytes.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer vr.Body.Close()
+		var out map[string]any
+		if err := json.NewDecoder(vr.Body).Decode(&out); err != nil {
+			t.Fatal(err)
+		}
+		return out
+	}
+	// A FILLED trap (a human never sees the hidden field) must FAIL the gate AND raise the anomaly.
+	filled := verify(get(), "http://spam.example")
+	if filled["ok"] != false {
+		t.Fatalf("a filled honeypot must fail the gate: %v", filled)
+	}
+	if filled["anomaly"] != "honeypot_filled" {
+		t.Fatalf("a filled honeypot must be flagged: %v", filled)
+	}
+	// Negative control: an EMPTY submission passes and is silent (a real human leaves it empty).
+	empty := verify(get(), "")
+	if empty["ok"] != true {
+		t.Fatalf("an empty honeypot submission should pass: %v", empty)
+	}
+	if _, has := empty["anomaly"]; has {
+		t.Fatalf("an empty honeypot submission must be silent: %v", empty)
+	}
+}

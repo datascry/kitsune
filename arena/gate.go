@@ -226,6 +226,14 @@ func NewMux(secret []byte) http.Handler {
 				resp["anomaly"] = "solved_faster_than_human"
 			}
 		}
+		// Honeypot trip: the challenge asks the client to leave a HIDDEN field empty. A human never sees it; a
+		// naive form-filling bot completes it, so a non-empty answer (the trap value) is an unambiguous bot — the
+		// gate fails (ok=false) but the anomaly rides the verdict so the SESSION convicts. FP-safe by construction
+		// (a real user cannot fill a field they are never shown). Gated on `known` so a garbage/replayed id can't
+		// synthesize the tell against a session.
+		if known && body.Kind == CaptchaHoneypot && strings.TrimSpace(body.Answer) != "" {
+			resp["anomaly"] = "honeypot_filled"
+		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})
 

@@ -273,6 +273,8 @@ def create_app(
             kind = "arena_captcha_superhuman"
         elif anomaly == "trajectory_exceeds_solve_time":
             kind = "arena_trajectory_forged"
+        elif anomaly == "honeypot_filled":
+            kind = "arena_honeypot_filled"
         else:
             return
         _apply_signals(

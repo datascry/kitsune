@@ -938,6 +938,18 @@ rules:
     last_validated: "2026-07-03"
     source: "Kitsune arena challenge-solve coherence (slider + rotate gates): the GeeTest-style slider (arena/slider.go) and Arkose-style rotate (arena/rotate.go) verify the drag/rotation TRAJECTORY — MinPts + 'drag too fast' + a velocity coefficient-of-variation floor (the uniform_velocity discriminator). But those checks read the CLIENT-SUPPLIED trajectory t-values, which a headless solver (evaders/arena-solver) PADS: it synthesizes a plausible variable-velocity smoothstep+jitter drag that clears the CV bar, then submits it near-instantly. The SERVER-OBSERVED solve time (issue->verify, tracked in the captchaStore since the OCR-timing rung) cannot be faked. A trajectory whose CLAIMED duration (last_t - first_t) exceeds the whole solve window by >150ms is IMPOSSIBLE — the drag happens WITHIN that window — so the gate emits anomaly:trajectory_exceeds_solve_time, and the detector's /arena/slider/verify AND /arena/rotate/verify relays join it to ks_sid (bh.arena_captcha_superhuman sibling; the shared _join_arena_anomaly map). FP-SAFE BY CONSTRUCTION: a real drag's duration is always <= the server-observed elapsed (network RTT only inflates the server side), so a slow/careful human is never flagged — precision 1.0 is load-bearing. This is the solve-vs-CLAIM analog of the CAPTCHA solve-vs-human-floor tell, and it defeats trajectory synthesis by measuring the one thing the client cannot forge: WHEN the gate issued the challenge. GROUNDED LIVE 2026-07-03: an instant submit with a 2000ms padded slider trajectory trips the anomaly and the joined session convicts, and the rotate gate mirrors it; the SAME trajectory with a real 2.5s wait is silent. Convicting (w0.85). See docs/research-radar.md (arena-solve loop rungs 5-7)."
 
+  - id: bh.arena_honeypot_filled
+    title: Filled a hidden honeypot form field — a naive form-filling bot, never a human
+    layers: [behavioral]
+    reads: [behavioral.arena_honeypot_filled]
+    predicate: present
+    weight: 0.9
+    status: active
+    category: automation
+    added: "2026-07-03"
+    last_validated: "2026-07-03"
+    source: "Kitsune arena challenge-solve coherence (honeypot gate): the classic hidden-field honeypot. The arena mints a CAPTCHA whose prompt asks the client to submit WITHOUT filling a hidden trap field (arena/captcha.go MintCaptcha CaptchaHoneypot, Field: website_url); the page renders the field with display:none so a human never sees or fills it. A non-empty answer (the trap value) on a honeypot challenge is an unambiguous naive form-filling bot — the gate fails structurally, and the arena emits anomaly:honeypot_filled, which the detector's /arena/captcha/verify relay joins to ks_sid (shared _join_arena_anomaly map). FP-SAFE BY CONSTRUCTION: a real user CANNOT fill a field they are never shown, so nothing a human does trips it — precision 1.0 is load-bearing. Gated on `known` (the honeypot id was actually issued to this session), so a garbage or replayed id cannot synthesize the tell against a victim session. Convicting (w0.9 — a honeypot trip is one of the highest-precision bot signals; it needs no timing or biomechanics). This is the interaction-with-a-trap analog of the timing (superhuman-speed) and trajectory (forgery) solve-behaviour tells. GROUNDED LIVE 2026-07-03: a honeypot verify with a non-empty trap field through the detector convicts the session (label bot); an empty submission is silent. See docs/research-radar.md (arena-solve loop rung 8)."
+
   - id: bh.action_cadence_deliberative
     title: Metronomic inter-action cadence at LLM-inference latency
     layers: [behavioral]
