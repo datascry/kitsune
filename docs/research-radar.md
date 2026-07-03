@@ -3389,3 +3389,20 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   admission with no collector focus/visibility/heartbeat; corroborating, or a long zero-presence hold) and
   MULTI-POSITION-PER-ORIGIN (a hoarder holding many concurrent tickets from one origin/fp — feeds the coordination
   axis: ticket/fp/shared-origin collision).
+- **[WAIT-ROOM LOOP — rung 4: queue-BYPASS tell (act before admission) BUILT + GROUNDED LIVE]** (2026-07-03). The
+  wait-behaviour complement of the superhuman tell: superhuman = acted too fast AFTER admission; bypass = acted
+  BEFORE admission (skipping the wait entirely). The arena /queue/act handler now emits anomaly:queue_bypass when a
+  KNOWN ticket is acted on before its admission instant; the detector maps queue_bypass -> arena_queue_bypass +
+  rule bh.arena_queue_bypass (present, automation, w0.85). FP-SAFE BY CONSTRUCTION (not calibration-dependent): a
+  real human's page only enables the action after /status reports admitted, so a human client NEVER POSTs /act
+  early — only a script bypassing the page UI does; an unknown/garbage ticket id does not fire (only a real issued
+  ticket acted on early). Honeypot-style: the gate FAILS (ok:false) but the anomaly still convicts the session.
+  GROUNDED LIVE END-TO-END: a client that GET-queues then POSTs /act immediately (before the 4s hard wait) through
+  the detector with a ks_sid => /verdict rule_id bh.arena_queue_bypass, conviction 0.85, LABEL:"bot"; a human waits
+  for admission and never fires it. detector ruff+mypy+496 + arena green; catalog regen. The queue's ACT-path is
+  now fully covered (too-fast-after + before-admission), both server-observed + FP-safe-by-construction. Remaining
+  wait-surface leads: NO-PRESENCE-DURING-WAIT (largely overlaps the existing no_js_execution — a headless holder
+  loads no collector; corroborating) and MULTI-POSITION hoarding (per-ks_sid concurrent-ticket count — FP-safe only
+  at a HIGH threshold since multi-tab humans share a ks_sid, and the smart hoarder spreads across ks_sids = the
+  sybil-farmer coordination frontier, external-data-bound). Next firing tests whether either yields a NEW groundable
+  FP-safe tell beyond what exists.
