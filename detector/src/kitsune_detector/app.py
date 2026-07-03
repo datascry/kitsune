@@ -16,6 +16,7 @@ import html
 import os
 import re
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -35,7 +36,7 @@ from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
 from .geo import lookup as geo_lookup
-from .models import MISSING, Layer, RuleCategory, Session, Signal, Verdict
+from .models import MISSING, Layer, RuleCategory, Session, Signal, Source, Verdict
 from .pages import (
     bypass_index,
     parse_fleet,
@@ -325,7 +326,7 @@ def create_app(
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.post("/arena/captcha/verify", include_in_schema=False)
-    async def arena_captcha_verify(request: Request) -> Response:
+    async def arena_captcha_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
         if not ARENA_URL:
             raise HTTPException(status_code=503, detail="arena gate not configured")
         body = await request.body()
@@ -338,6 +339,27 @@ def create_app(
                 )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        # Join the gate's solve-anomaly to the SESSION: a CAPTCHA solved faster than a human can read+type is
+        # automation (the arena measures it server-side, unforgeably). Attaching it to ks_sid makes a passed gate
+        # CONVICT a bot instead of clearing it — the gate-pass corroborates the coherence verdict (the arena thesis).
+        if ks_sid and r.status_code == 200:
+            try:
+                anomaly = r.json().get("anomaly")
+            except ValueError:
+                anomaly = None
+            if anomaly == "solved_faster_than_human":
+                _apply_signals(
+                    [
+                        Signal(
+                            session_id=ks_sid,
+                            layer=Layer.behavioral,
+                            kind="arena_captcha_superhuman",
+                            value=True,
+                            source=Source.detector,
+                            observed_at=datetime.now(UTC),
+                        )
+                    ]
+                )
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/slider", include_in_schema=False)
@@ -732,8 +754,9 @@ def create_app(
             "network_contradictions": contradictions,
         }
 
-    @app.post("/ingest", response_model=list[Verdict])
-    def ingest(signals: list[Signal]) -> list[Verdict]:
+    def _apply_signals(signals: list[Signal]) -> list[Verdict]:
+        # Correlate signals into their sessions, merge with what the store already holds, and re-score. Shared by
+        # /ingest (edge/collector signals) and the arena relay's solve-anomaly join (a detector-sourced tell).
         from .ingest import group_signals, merge_sessions
 
         verdicts: list[Verdict] = []
@@ -745,6 +768,10 @@ def create_app(
             store.save_verdict(verdict)
             verdicts.append(verdict)
         return verdicts
+
+    @app.post("/ingest", response_model=list[Verdict])
+    def ingest(signals: list[Signal]) -> list[Verdict]:
+        return _apply_signals(signals)
 
     @app.get(
         "/session/{session_id}",

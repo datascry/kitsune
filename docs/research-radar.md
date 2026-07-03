@@ -3205,3 +3205,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   (gate-pass corroborates instead of clears — lead f). The compute-signature's solve_hps telemetry rides alongside
   for a future hardware-aware join. The solve-vs-session BIOMECHANICS lead (d) remains groundable (slider/rotate
   trajectory).
+- **[ARENA-SOLVE LOOP — rung 4: JOINED the solve-anomaly to the SESSION verdict — GROUNDED LIVE END-TO-END]**
+  (2026-07-03). Lead (f) realised: the challenge-interaction layer now CONVICTS. The detector's /arena/captcha/verify
+  relay reads ks_sid (cookie) + the gate's response; on anomaly:solved_faster_than_human it injects a
+  behavioral.arena_captcha_superhuman signal into the session (Source.detector) via a shared _apply_signals helper
+  (extracted from /ingest — group->merge->save->score). New registry rule bh.arena_captcha_superhuman (present,
+  category automation, w0.85, active) fires on it; `task`-equivalent catalog regenerated (rule_catalog). GROUNDED
+  LIVE END-TO-END through the running detector+arena: a math CAPTCHA solved in 18 ms with a ks_sid cookie =>
+  /verdict/conv-fast shows contradictions:[bh.arena_captcha_superhuman w0.85], conviction_score 0.85, LABEL:"bot"
+  — a session that PASSED the gate is CONVICTED on HOW it solved it (the gate-pass corroborates the coherence
+  verdict instead of clearing it — the arena thesis). The 1.3s human-timed solve raises no anomaly, injects no
+  signal, and creates NO session (not convicted) — precision 1.0 intact. detector ruff+mypy+492 tests green.
+  The arena challenge-solve-coherence axis is now a COMPLETE red<->blue loop: gate measures solve-behaviour
+  (rung 2 timing infra) -> FP-safe conviction (rung 3 OCR/human-time tell) -> joined to the session (rung 4).
+  Remaining groundable leads: solve-vs-session BIOMECHANICS (d, slider/rotate trajectory vs the session's mouse
+  biomech) and a RED counter (a solver that DELAYS to clear the human floor — which itself imposes a real cost).
