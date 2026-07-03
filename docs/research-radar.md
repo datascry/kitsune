@@ -3335,3 +3335,26 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   (external-data-bound, not in-box): solve-vs-session biomechanics (needs cross-motion invariance data + a divergent
   dual-signal adversary + an arena->detector biomech channel), OCR accuracy/hesitation + human-solver-farm timing
   distributions, and the PoW absolute hash-rate (hardware-dependent). Loop 2540efcf retired at the earned terminus.
+
+## Arena waiting-room / virtual-queue (loop fff09fa2 — the last gate family + WAIT-behaviour coherence)
+
+- **[WAIT-ROOM LOOP — rung 1: mechanism design + reuse plan (grounded on rate.go + the solve-axis infra)]**
+  (2026-07-03). The last documented open-challenge family the arena is missing (docs/arena.md:115: Queue-it /
+  Cloudflare Waiting Room), and the WAIT-behaviour analog of the just-closed SOLVE-behaviour axis. DESIGN grounded
+  on the existing arena/rate.go pattern (a per-origin store, mutex+map, IPv6-/64-folded via ipOrigin) + the solve
+  axis's reusable infra: (1) MECHANISM — GET /arena/queue issues a ticket {id, position, admit_after_ms} and
+  records issued-at + admit-after in a queueStore (mirrors captchaStore); the client POLLS GET /arena/queue/status
+  until admitted:true (the gate records admitted-at, SERVER-side, the first time it flips); on admission the client
+  takes the protected action POST /arena/queue/act, and the gate measures the SERVER-OBSERVED admission->action
+  elapsed (admitted-at -> act-time) — the unforgeable analog of the captcha issue->verify Age. (2) FIRST TELL
+  (rung 2) — SUPERHUMAN ADMISSION->ACTION: a human reads "you're in" and clicks (seconds); a bot polls + acts in
+  ms. elapsed < a physiological floor => anomaly:acted_faster_than_human, joined to ks_sid via the EXISTING
+  _join_arena_anomaly helper (add the mapping + a bh.arena_queue_superhuman rule, kinds as literals for the drift
+  guard). FP-SAFE by construction: the floor is a LOWER bound on human perceive+act time, so a patient/slow human
+  is never flagged. REUSE: Age-style server-observed timing, the physiological-floor pattern, _join_arena_anomaly,
+  the monotonic-ladder test. LATER-RUNG wait-behaviour leads: no-presence-during-wait (collector focus/visibility,
+  corroborating — a human may background the tab), multi-position-per-origin (a hoarder — feeds the coordination
+  axis: fp/ticket/shared-origin collision), automated non-Poisson re-entry after a bounce. EXTERNAL (do not grind):
+  the sybil-farmer (diversified-fp fleet, one human-like hold each) is the coordination frontier already mapped
+  closed; human-wait-time farm distributions are paid. NEXT: build the queue gate + the admission-timing tell,
+  ground live vs a position-holding bot (instant act => convicted) and a human-timed act (silent).
