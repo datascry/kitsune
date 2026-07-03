@@ -37,6 +37,19 @@ const (
 	minMeasurableSolve  = 5 * time.Millisecond
 )
 
+// minHumanCaptchaSolve is the conservative PHYSIOLOGICAL floor per CAPTCHA kind — no human perceives the
+// challenge and submits a CORRECT answer faster than this (reaction + read/decode + type/click). A correct
+// solve below the floor is OCR/ML automation, not a human. Set well UNDER real human solve times (which run
+// seconds) so a fast, careful, or practised human is NEVER flagged — precision 1.0 is load-bearing; the huge
+// human-vs-OCR gap means the exact value is not critical. Honeypot has no entry (its tell is the trap field,
+// not speed). Tighter, farm-calibrated floors that would catch SLOWER automation are external data.
+var minHumanCaptchaSolve = map[CaptchaKind]time.Duration{
+	CaptchaText:        600 * time.Millisecond, // decode distorted glyphs + type them
+	CaptchaMath:        350 * time.Millisecond, // read + compute + type (trivial arithmetic is fast for a human)
+	CaptchaImageSelect: 500 * time.Millisecond, // perceive the grid + click the matching tiles
+	CaptchaImageDoodle: 500 * time.Millisecond,
+}
+
 func classOf(s string) pow.Class {
 	switch s {
 	case "many-small":
@@ -191,12 +204,21 @@ func NewMux(secret []byte) http.Handler {
 		}
 		// take() consumes the id (single-use): an unknown or already-redeemed id fails, so a token cannot
 		// be replayed and an answer cannot be brute-forced against a live challenge across requests.
-		expected, known := captchas.take(body.ID)
+		expected, age, known := captchas.take(body.ID)
 		ok := known && CheckCaptcha(body.Kind, expected, body.Answer)
 		w.Header().Set("Content-Type", "application/json")
 		resp := map[string]any{"ok": ok, "kind": string(body.Kind)}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, body.Kind, body.ID)
+			// Server-observed solve time. A CAPTCHA answered CORRECTLY faster than a human can perceive+answer is
+			// OCR/ML automation — human-time-bound (reading/typing), NOT compute-bound, so hardware-independent
+			// (unlike the PoW hash-rate). The gate still passes; the anomaly rides the verdict so the detector
+			// convicts a bot that solved it. floors are conservative physiological lower bounds (FP-safe: a slow
+			// human is never flagged; no floor for honeypot, whose tell is the trap field not speed).
+			resp["solve_ms"] = age.Milliseconds()
+			if floor, has := minHumanCaptchaSolve[body.Kind]; has && age > 0 && age < floor {
+				resp["anomaly"] = "solved_faster_than_human"
+			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})
@@ -220,7 +242,7 @@ func NewMux(secret []byte) http.Handler {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		state, known := captchas.take(body.ID) // single-use; state is "gapX:level"
+		state, _, known := captchas.take(body.ID) // single-use; state is "gapX:level"
 		w.Header().Set("Content-Type", "application/json")
 		if !known {
 			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "slider", "reason": "unknown or used"})
@@ -254,7 +276,7 @@ func NewMux(secret []byte) http.Handler {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		lvStr, known := captchas.take(body.ID) // single-use; stored value is the level
+		lvStr, _, known := captchas.take(body.ID) // single-use; stored value is the level
 		w.Header().Set("Content-Type", "application/json")
 		if !known {
 			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "rotate", "reason": "unknown or used"})
@@ -293,7 +315,7 @@ func NewMux(secret []byte) http.Handler {
 		}
 		ok, nonce, reason := issuer.Verify(body.Token, time.Now().Unix())
 		if ok {
-			_, known := captchas.take("pact:" + nonce) // single-use: a token cannot be replayed
+			_, _, known := captchas.take("pact:" + nonce) // single-use: a token cannot be replayed
 			ok = known
 			if !known {
 				reason = "token already redeemed"

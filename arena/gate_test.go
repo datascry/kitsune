@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 
 	pow "github.com/datascry/kitsune/evaders/pow"
@@ -89,5 +91,53 @@ func TestGateNonceIsSingleUse(t *testing.T) {
 	}
 	if verify(t, srv, c, sol.Counters)["ok"] != false {
 		t.Fatal("a replayed (already-redeemed) nonce must be rejected")
+	}
+}
+
+func TestCaptchaFlagsSubHumanSolveSpeed(t *testing.T) {
+	srv := newServer(t)
+	defer srv.Close()
+	// Fetch a math captcha and compute its answer.
+	resp, err := http.Get(srv.URL + "/arena/captcha?kind=math")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ch struct{ ID, Prompt string }
+	if err := json.NewDecoder(resp.Body).Decode(&ch); err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	f := strings.Fields(strings.TrimSuffix(strings.TrimPrefix(ch.Prompt, "What is "), "?")) // "A <op> B"
+	if len(f) != 3 {
+		t.Fatalf("unexpected math prompt %q", ch.Prompt)
+	}
+	a, _ := strconv.Atoi(f[0])
+	b, _ := strconv.Atoi(f[2])
+	ans := a + b
+	switch f[1] {
+	case "-":
+		ans = a - b
+	case "+":
+		ans = a + b
+	default: // × or *
+		ans = a * b
+	}
+	// Verify INSTANTLY (sub-human speed): the correct answer must PASS the gate AND raise the anomaly — no human
+	// perceives+answers in ~0 ms. A slow human solve stays silent (grounded live at solve_ms 1306, no anomaly).
+	body, _ := json.Marshal(map[string]any{"kind": "math", "id": ch.ID, "answer": strconv.Itoa(ans)})
+	vr, err := http.Post(srv.URL+"/arena/captcha/verify", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var out map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&out); err != nil {
+		t.Fatal(err)
+	}
+	if out["ok"] != true {
+		t.Fatalf("instant correct solve should pass the gate: %v", out)
+	}
+	if out["anomaly"] != "solved_faster_than_human" {
+		t.Fatalf("a sub-human-speed solve must be flagged, got: %v", out)
 	}
 }
