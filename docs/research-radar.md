@@ -3312,3 +3312,26 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   (rung 3, validated rung 9) + accuracy-external, (c) covered (rung 9), (e) done (rung 8), (f) done (the join), the
   arena solve-behaviour lead-space is exhausted for groundable in-box tells. One more grounded-dry firing = the
   earned close of a COMPLETE axis (4 tells x 4 gates, joined to the session, validated against the real evader).
+- **[ARENA-SOLVE LOOP — rung 11: gate-surface exhausted (dry #2) -> AXIS EARNED-CLOSED]** (2026-07-03). Enumerated
+  EVERY arena gate endpoint and tested each for a remaining solve-behaviour tell: (1) the "reCAPTCHA-style
+  checkbox" the brief mentions is the EMOJI IMAGE-SELECT grid ("select every animal", emoji.go) — already covered
+  by the superhuman-speed floor (rung 9), NOT a separate checkbox gate with a mouse-approach path. (2) The `cap`
+  gate is a PoW variant whose RealmProof is CLIENT-ASSERTED and thus FORGEABLE (grounded rung 2 / the pow gate
+  comment: "a client-side proof is forgeable, so robust instrumentation must be SERVER-OBSERVED") — external/dead.
+  (3) /arena/pact is a token BYPASS by design (no interaction to instrument); /arena/rate is a 429 budget, "never
+  a bot/human test." So across the whole gate surface (PoW, CAPTCHA text/math, image-select/doodle, slider, rotate,
+  honeypot, PACT, rate) there is NO new groundable solve-behaviour tell. DRY #2, each checked in the code. TWICE-
+  IN-A-ROW grounded dry (rung 10 lead-d external + rung 11 gate-surface exhausted). **The ARENA CHALLENGE-SOLVE
+  COHERENCE axis is EARNED-CLOSED.** Delivered a whole NEW detection layer the thesis had never touched — the
+  CHALLENGE-INTERACTION layer — with FOUR server-observed, unforgeable, FP-safe solve-behaviour tells across FOUR
+  gates, each joined to the session verdict via one _join_arena_anomaly helper and each red<->blue-verified:
+  SUPERHUMAN-SPEED (bh.arena_captcha_superhuman — a correct CAPTCHA/image-select below a per-kind physiological
+  floor; the OCR/human-time tell the hardware-dependent PoW compute-signature could not be), TRAJECTORY-FORGERY
+  (bh.arena_trajectory_forged — a slider/rotate trajectory claiming more drag-time than the whole server-observed
+  solve; the client-claim-vs-server-truth tell that defeats trajectory synthesis), and HONEYPOT-TRIP
+  (bh.arena_honeypot_filled — a filled hidden field). VALIDATED LIVE against the real arena-solver (caught on all 3
+  gates it beats: math 31ms, slider 38ms/claims-420ms, rotate 38ms/claims-380ms; honeypot correctly clean). Plus
+  the server-observed solve-timing infra (issue-time + Age on the pow NonceStore + captchaStore). The frontier
+  (external-data-bound, not in-box): solve-vs-session biomechanics (needs cross-motion invariance data + a divergent
+  dual-signal adversary + an arena->detector biomech channel), OCR accuracy/hesitation + human-solver-farm timing
+  distributions, and the PoW absolute hash-rate (hardware-dependent). Loop 2540efcf retired at the earned terminus.
