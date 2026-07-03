@@ -8,9 +8,9 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **24 evader tools**, **103 exercised techniques** (93 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **27 evader tools**, **103 exercised techniques** (93 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
-### Fleet — the evader tools (24)
+### Fleet — the evader tools (27)
 
 | evader | lang | what it is |
 |---|---|---|
@@ -21,17 +21,20 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `azuretls` | Go | drive azuretls-client (Go TLS/JA3 + HTTP/2 forger) through the edge. |
 | `brave` | TS/Node | drive Brave (farbling browser) through the edge and read the verdict. |
 | `camoufox` | Python | drive Camoufox (engine-level anti-detect Firefox) through the edge. |
+| `chain-mitm` | Go | a uTLS MITM front that forges a browser TLS+H2 handshake to the edge. |
 | `curl-impersonate` | Python | drive curl_cffi (curl-impersonate) through the edge and read the verdict. |
 | `firefox-os-spoof` | TS/Node | a Firefox bot that fakes its UA OS but forgets navigator.oscpu. |
 | `go-tls` | Go | forge a real-browser TLS ClientHello with uTLS. |
 | `h2-rapid-reset` | Go | HTTP/2 frame-abuse floods against the edge (rapid-reset / continuation / control). |
 | `mobile-emulation` | TS/Node | a desktop Chromium emulating an Android phone (Playwright Pixel 5 device). |
 | `nodriver` | Python | drive nodriver (undetected-chromedriver successor) through the edge. |
+| `os-spoof` | Go | morph the client's OS: a userspace TCP stack forges a chosen kernel's SYN options, |
 | `playwright-extra` | TS/Node | drive playwright-extra + puppeteer-extra-plugin-stealth through the edge. |
 | `pow` | Go | multi-class proof-of-work primitive (anubis · friendlycaptcha · altcha families). |
 | `primp` | Python | drive one request through the edge with a browser-impersonating TLS stack. |
 | `pydoll` | Python | drive pydoll (async CDP-native, no webdriver) through the edge and read the verdict. |
 | `selenium-driverless` | Python | drive selenium-driverless through the edge and read the verdict. |
+| `slow-http` | Go | HTTP/1.1 slow-header (slowloris) hold against the edge. |
 | `stealth` | TS/Node | drive a real Chromium through the edge and read the detector's verdict. |
 | `undetected` | Python | drive undetected-chromedriver through the edge and read the verdict. |
 | `vanilla` | Python | drive one request through the edge and read the verdict. |
