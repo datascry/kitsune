@@ -3110,3 +3110,22 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   build it in the edge (TCP_MAXSEG on the listener + a sniffer segment-size-vs-advertised-MSS check + the rule),
   grounded LIVE with a real client (honors it, silent) vs os-spoof (ignores it, fires). The out-of-order-stall
   probe (gap 1) is the stronger fallback but needs raw injection.
+- **[ACTIVE-PROBE LOOP — rung 3: MSS probe BUILT + grounded, but the sandbox VETH confounds it (external-in-box)]**
+  (2026-07-03). Built it: a probeMSS_linux.go setting TCP_MAXSEG=256 on the edge listener (via net.ListenConfig.
+  Control + unix.SetsockoptInt) — edge compiles+tests green, x/sys promoted to direct. GROUNDED the mechanism LIVE:
+  tcpdump confirms the edge's SYN-ACK now advertises `mss 256` (client SYN said 1460). BUT the DISCRIMINATION is
+  ungroundable here: a real client (curl) STILL emits a 1220-byte segment to the edge despite the advertised MSS
+  256 — even with GSO/GRO/TSO disabled on its interface. The docker VETH has no physical wire to segment for, so
+  the kernel hands the large buffer straight across the namespace; MSS-sized segmentation never happens locally.
+  The premise HOLDS (a real kernel honours MSS on a physical network; os-spoof's source hardcodes 1400 regardless),
+  but the observable — segment size <= advertised MSS — CANNOT be produced in-sandbox. This is exactly the
+  real-network half the prompt pre-flagged. REVERTED the edge change (won't clamp all traffic for a probe whose
+  detection can't be grounded here, and won't ship a segment-size rule that would FP on every real client's
+  GSO/veth super-segment). BROADER FINDING: the two structural active probes both hit an in-sandbox wall —
+  segment-SIZE probes (MSS, segmentation) are veth/offload-confounded (no real wire), and the RAW-INJECTION probes
+  (out-of-order stall, gap 1) need NET_ADMIN to suppress the kernel's own reply, which the EDGE lacks (only NET_RAW;
+  os-spoof has NET_ADMIN, the edge does not). So the active-probe DISCRIMINATION is largely external-data/
+  real-network/privilege-bound in-sandbox even though the capability (rung 1) and the target gaps (rung 2) are
+  real. DRY #1 for a groundable in-sandbox probe. Remaining untested leads: TCP-FLAG/ECN-negotiation probes (in the
+  header, NOT offload-confounded — the edge's SYN-ACK sets ECE, read the client's ECN echo); or grant the edge
+  NET_ADMIN to unlock raw injection. Next firing tests those; if both dry, the axis is external-data-bound in-box.
