@@ -50,6 +50,12 @@ var minHumanCaptchaSolve = map[CaptchaKind]time.Duration{
 	CaptchaImageDoodle: 500 * time.Millisecond,
 }
 
+// sliderClaimMarginMs is the clock/network slack when comparing the client's CLAIMED drag duration (trajectory
+// t-values, which a synthesizer can pad) to the SERVER-OBSERVED solve time (issue->verify, unforgeable). Beyond
+// it, a trajectory claiming MORE drag-time than the whole solve window is impossible for a real drag (which
+// happens WITHIN it). FP-safe by construction: a real drag's duration is always <= the server-observed elapsed.
+const sliderClaimMarginMs = 150.0
+
 func classOf(s string) pow.Class {
 	switch s {
 	case "many-small":
@@ -242,7 +248,7 @@ func NewMux(secret []byte) http.Handler {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		state, _, known := captchas.take(body.ID) // single-use; state is "gapX:level"
+		state, age, known := captchas.take(body.ID) // single-use; state is "gapX:level"; age = server solve time
 		w.Header().Set("Content-Type", "application/json")
 		if !known {
 			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "slider", "reason": "unknown or used"})
@@ -254,6 +260,17 @@ func NewMux(secret []byte) http.Handler {
 		resp := map[string]any{"ok": ok, "kind": "slider", "reason": reason}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, "slider", body.ID)
+			// Client-claim vs server-truth coherence: the "drag too fast" check trusts the client's trajectory
+			// t-values, which a synthesizer can PAD. The SERVER-OBSERVED solve time (issue->verify) cannot be
+			// faked. A trajectory claiming MORE drag-time than the whole solve window is impossible (the drag
+			// happens WITHIN it) — a padded trajectory submitted near-instantly. FP-safe: a real drag's duration
+			// is always <= the server-observed elapsed. Rides the verdict for the detector to convict the session.
+			if n := len(body.Trajectory); n >= 2 && age > 0 {
+				trajMs := body.Trajectory[n-1].T - body.Trajectory[0].T
+				if trajMs > age.Seconds()*1000+sliderClaimMarginMs {
+					resp["anomaly"] = "trajectory_exceeds_solve_time"
+				}
+			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})

@@ -141,3 +141,43 @@ func TestCaptchaFlagsSubHumanSolveSpeed(t *testing.T) {
 		t.Fatalf("a sub-human-speed solve must be flagged, got: %v", out)
 	}
 }
+
+func TestSliderFlagsTrajectoryExceedingSolveTime(t *testing.T) {
+	srv := newServer(t)
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/arena/slider?level=easy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var s struct {
+		ID   string  `json:"id"`
+		GapX float64 `json:"gap_x"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&s); err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	g := s.GapX
+	// A valid, variable-velocity drag that CLAIMS a 2000ms duration, ending at the gap.
+	traj := []map[string]float64{
+		{"t": 0, "x": 0}, {"t": 250, "x": g * 0.10}, {"t": 600, "x": g * 0.32}, {"t": 950, "x": g * 0.56},
+		{"t": 1300, "x": g * 0.76}, {"t": 1650, "x": g * 0.90}, {"t": 1850, "x": g * 0.97}, {"t": 2000, "x": g},
+	}
+	// Submit INSTANTLY: the 2000ms claimed drag exceeds the ~0ms server-observed solve => synthetic trajectory.
+	body, _ := json.Marshal(map[string]any{"id": s.ID, "x": g, "trajectory": traj})
+	vr, err := http.Post(srv.URL+"/arena/slider/verify", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var out map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&out); err != nil {
+		t.Fatal(err)
+	}
+	if out["ok"] != true {
+		t.Fatalf("a valid drag to the gap should pass: %v", out)
+	}
+	if out["anomaly"] != "trajectory_exceeds_solve_time" {
+		t.Fatalf("a trajectory claiming more drag-time than the whole solve must be flagged: %v", out)
+	}
+}
