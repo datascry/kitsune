@@ -49,7 +49,7 @@ type Captcha struct {
 	Prompt string      `json:"prompt"`          // human instruction
 	Image  string      `json:"image,omitempty"` // text: rasterized PNG (needs OCR); rotate: an SVG arrow
 	Field  string      `json:"field,omitempty"` // honeypot: the trap field name that must stay empty to pass
-	Tiles  []string    `json:"tiles,omitempty"` // image-select: 9 owned raster PNG tiles (must be classified by CV)
+	Tiles  []string    `json:"tiles,omitempty"` // image-select: 6/9/12 owned raster PNG tiles by level (classify via CV)
 	Angle  int         `json:"angle,omitempty"` // rotate: the initial rotation the user must undo to reach upright
 }
 
