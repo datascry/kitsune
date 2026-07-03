@@ -3680,3 +3680,14 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   geometrically-simplest domain — so image-shapes is the EASY, distinct-domain tier for a red-teamer's real model).
   arena build/vet/test green; detector ruff+mypy green. NEXT: broaden emoji categories (Unicode taxonomy beyond
   animal/food/vehicle), a slab/condensed OFL text face (drop TrOCR below the serif's 7/8), a ?charset= selector.
+- **[CAPTCHA-BENCH LOOP — rung 7: emoji taxonomy doubled 3->6 categories]** (2026-07-04). Broadened the emoji
+  image source beyond animal/food/vehicle with plant/weather/sport (arena/emoji.go — 10 Noto Emoji glyphs + a
+  prompt noun each), zero-license (the vendored Noto Emoji OFL font already carries the glyphs). GROUNDED LIVE:
+  rendered a sport captcha tile — a crisp, human-solvable basketball glyph (Noto renders the new categories, not
+  blank); the /arena/catalog manifest now auto-lists all six emoji categories (Categories: emojiCatOrder is
+  dynamic, no code change); and the radial CV heuristic still scores 0/3 on image-select (it can neither parse the
+  category words nor classify glyphs — the emoji domain needs a real VLM, as before). Real bench breadth for a
+  red-teamer's image classifier: 6 emoji categories over the harder glyph domain. arena build/test green; no
+  detector/registry change (image-select already whitelisted). NEXT: a slab/condensed OFL text face (TrOCR < 7/8),
+  a ?charset= selector (digits/confusable — TrOCR-benchmarkable), doodle-source categories are data-bound (the
+  vendored quickdraw.ndjson is animal/food/vehicle only).

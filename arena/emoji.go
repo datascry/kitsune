@@ -37,7 +37,7 @@ func init() {
 
 // emojiCatOrder is the stable category list (deterministic iteration); emojiCategories maps each to its
 // glyph pool and the human prompt noun.
-var emojiCatOrder = []string{"animal", "food", "vehicle"}
+var emojiCatOrder = []string{"animal", "food", "vehicle", "plant", "weather", "sport"}
 
 var emojiCategories = map[string]struct {
 	noun   string
@@ -46,6 +46,9 @@ var emojiCategories = map[string]struct {
 	"animal":  {"animal", []string{"🐘", "🐅", "🦊", "🐢", "🐬", "🦉", "🐝", "🐌", "🦋", "🐙"}},
 	"food":    {"food item", []string{"🍕", "🍔", "🍎", "🍌", "🍩", "🌮", "🍇", "🥐", "🍒", "🌽"}},
 	"vehicle": {"vehicle", []string{"🚗", "🚌", "🚲", "🚂", "🚁", "🚜", "⛵", "🚀", "🚕", "🛴"}},
+	"plant":   {"plant", []string{"🌵", "🌲", "🌳", "🌴", "🌷", "🌻", "🍀", "🌾", "🍄", "🌸"}},
+	"weather": {"weather symbol", []string{"☀", "🌧", "⛈", "❄", "🌈", "☁", "🌙", "⭐", "🔥", "💧"}},
+	"sport":   {"sports item", []string{"⚽", "🏀", "🏈", "⚾", "🎾", "🏐", "🎳", "🏓", "🏸", "⛳"}},
 }
 
 // rasterEmoji renders one emoji glyph centred on a 64×64 white tile (noise per level) as a base64 PNG data
