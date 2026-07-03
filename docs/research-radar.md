@@ -2840,3 +2840,17 @@ So the stagger lever alone downgrades CAMPAIGN -> CANDIDATE; stacking distinct-b
 reaches the `diversified` evades-both frontier. The maximal in-sandbox diversification (stagger + distinct builds
 + distinct behaviour) evades both axes; the LAST two levers (clean residential egress, real-hardware fps) are
 external-data-bound — i.e. fully reducing correlation = becoming N independent real users, the economic bind.
+
+- **[COORDINATION LOOP — rung 1: descriptor-dispersion is a GROUNDED DEAD-END] (2026-07-03).** The `fuzzy` fleet
+  (jitters fp+trace per instance, descriptors tuned just above the template floor) evades template_similarity's
+  MEDIAN test and scores `candidate`. Hypothesised blue counter: a cohort DISPERSION signal — the SPREAD (std, or
+  coefficient of variation) of pairwise descriptor distances, which should be implausibly narrow for a one-model
+  cluster vs wide for diverse humans, and is baseline-free (calibrated on the SapiMouse human distribution, no
+  absolute traffic baseline). GROUNDED it before building: a one-humanizer fleet with enough jitter to clear the
+  0.10 floor (j≈9-12) reaches median 0.17-0.18 AND CV 0.54-0.61 — both OVERLAPPING distinct-human cohorts (median
+  0.17-0.25, CV 0.29-0.64). No clean separator: pushing jitter to spread the descriptors past the floor also
+  spreads the dispersion into the human range. So the descriptor-structure approach to the fuzzy frontier is DEAD
+  in-sandbox — confirming (not refuting) the map's verdict that a fully-diversified fleet's conviction is
+  external-data-bound (IP reputation). The discipline worked: grounded the hypothesis, it failed, shipped nothing.
+  Next rungs to test (NOT descriptor dispersion): new Axis-A soft dimensions that need no absolute baseline;
+  within-cohort structure a one-tool fleet can't shed without becoming genuinely N-independent.
