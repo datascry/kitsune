@@ -3535,3 +3535,21 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   guard catches" principle, one rung deeper). So the axis is NOT already-closed after all — this is a groundable
   new rung. NEXT: build the collector worker-removed check + the br.worker_removed rule + a stealth WORKER_DISABLE
   evader mode, ground LIVE (headful: real browser has native Worker => silent; WORKER_DISABLE => worker_removed).
+- **[EXEC-PROOF LOOP — rung 4: worker_removed tell BUILT + GROUNDED LIVE — the escalation ladder is CLOSED]**
+  (2026-07-03). Built the tell designed in rung 3: the inline collector (demo.py) now emits worker_removed when
+  `typeof self.Worker !== 'function'` while it is executing (right after the ctorTampered check that guarded
+  typeof-function and skipped an absent ctor); new ACTIVE rule br.worker_removed (present, artifact, w0.8, FP-safe
+  by construction — every modern browser since ~2012 ships a native callable window.Worker). Added the RED
+  escalation WORKER_DISABLE to evaders/stealth (an addInitScript that deletes window.Worker before the page runs).
+  GROUNDED LIVE HEADFUL through the edge: WORKER_DISABLE=1 (Worker deleted) => worker_removed FIRES; a plain STEALTH
+  run (native Worker present) => worker_removed SILENT — red<->blue confirmed both ways, precision intact. (First
+  headful run missed it because the detector container still served the OLD collector — rebuilt, then it fired.)
+  detector ruff+mypy+drift-guard green; catalog regen. This CLOSES the realm-coherence escalation ladder with NO
+  residual exit: main-thread patch -> br.*_worker_divergence; WORKER_WRAP (plain wrap) -> worker_constructor_tampered
+  (native-toString invariant); WORKER_PROXY (Proxy over native) -> worker_constructor_tampered (constructor-identity
+  invariant); WORKER_DISABLE (delete the ctor) -> br.worker_removed. Every way to hide from / strip the worker realm
+  is now a structural lie a guard catches. The "server-observed browser-execution proof" axis delivered a REAL new
+  rung after the reduced-scope core (rungs 1-2 grounded the proof already exists): the discipline (test lead (b)
+  before declaring dry #2) found + closed the last worker-realm exit. Remaining leads: (a) nonce'd main+worker
+  canvas EXECUTION proof adds no server-verifiability (rung 1); (c) cap-gate join is thesis-redundant. Likely
+  near an earned close now, but the next firing tests any last angle first.

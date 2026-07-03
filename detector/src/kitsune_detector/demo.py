@@ -2086,6 +2086,14 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       if (ctorTampered(self.Worker) || ctorTampered(self.OffscreenCanvas)) {
         sigs.push(S("browser", "worker_constructor_tampered", true));
       }
+      // WORKER REMOVED (WORKER_DISABLE) — the escalation BEYOND WORKER_WRAP: strip window.Worker entirely so the
+      // realm-divergence guards have no worker value to compare (they skip on "missing") AND ctorTampered's
+      // typeof-function guard skips (nothing to check). But a real modern browser — every one, since ~2012, even
+      // mobile — ALWAYS exposes a native, callable window.Worker; its absence WHILE THIS JS RUNS is a deliberate
+      // strip to hide from the worker realm. FP-safe by construction (a real browser running the collector has it).
+      if (typeof self.Worker !== "function") {
+        sigs.push(S("browser", "worker_removed", true));
+      }
     } catch (e) {}
     // Electron process leak: a renderer exposing a Node `process` (type=renderer or versions.electron) is
     // an Electron/automation runtime, never a real browser. Guarded to the Electron-specific markers so a
