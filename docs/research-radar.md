@@ -3048,3 +3048,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   The residual is genuinely external-data-bound: an OS-MATCHED proxy (windows exit + windows UA), an os-spoofed
   kernel, or DIRECT native-residential egress — none leave a structural tell. Next firing tests any remaining
   angle; if dry, the proxy-egress axis reaches its earned close with 4 shipped rungs (2 mechanisms x blue+live-red).
+- **[PROXY-EGRESS LOOP — rung 5: JA4T (lead c) is subsumed by MSS+stack — GROUNDED DRY #1]** (2026-07-03). Tested
+  the last prompt lead (c): a shared TCP-option fingerprint (JA4T) across a fleet. GROUNDED it by reading the edge:
+  `JA4T = WindowSize_OptionKinds_MSS_WindowScale` (tcpip.go:137). Every field is ALREADY consumed — MSS by
+  proxy_egress rung 1, and WindowSize+OptionOrder(+the OS-default WindowScale) by ClassifyTCPOS (the stack tell,
+  rung 3, which reads TTL+Window+OptionOrder). So the JA4T carries NOTHING independent of the two structural tells
+  already shipped; a "shared JA4T" dim would double-count MSS+stack, and its COLLISION-entropy (is a shared JA4T
+  improbable for independent residential users?) is un-measurable in-sandbox — every container SYN is identical, so
+  it needs a real-traffic JA4T distribution = external-data. Also confirmed FP-structurally: MSS and stack must
+  stay ONE dim (proxy_egress) gated on descriptor — splitting them into two would let a legit cohort behind ONE
+  tunnel+SOCKS proxy reach 3 dims (proxy_mss + proxy_stack + ja4) without a humanizer, a false convict. So the
+  in-sandbox STRUCTURAL SYN tells are EXHAUSTED (MSS + stack, both shipped + red-verified live). Remaining leads
+  are all external/un-groundable: JA4T-entropy (real-traffic), QUIC-forced-TCP (no in-sandbox QUIC baseline; legit
+  QUIC-blocked networks confound), geo-clustering (legit regional traffic), RTT/latency (localhost), clock-skew
+  (one sandbox clock), residential-proxy PROVIDER ranges (paid). DRY #1. One more grounded dry = the earned close.
