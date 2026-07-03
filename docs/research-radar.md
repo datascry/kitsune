@@ -3594,3 +3594,21 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   Loop fb9f8c86 retired at the earned terminus. NEXT high-leverage arena uplevel (queued, un-started): the
   EVASION-TECHNIQUE CATALOG (auto-generate docs/evasion-catalog.md from the evader ladder, mirroring the
   detection-catalog — concrete, groundable, no external data) or MULTI-STEP FLOW COHERENCE.
+
+## Arena CAPTCHA challenge-variety bench (loop 2213d137 — real-world sim + red-team OCR/image-model lab)
+
+- **[CAPTCHA-BENCH LOOP — rung 1: text FONT POOL (1 -> 5 typefaces) BUILT + GROUNDED LIVE]** (2026-07-03). The
+  arena text gate rasterized with EXACTLY ONE font (Go Regular) — a monotone OCR target. Built a FONT POOL from the
+  Go font family (golang.org/x/image/font/gofont, BSD, no embedding): go-regular/go-bold/go-italic/go-mono/
+  go-smallcaps span weight, slant and fixed-vs-proportional metrics, so an OCR model tuned on one face can still
+  miss another. raster.go now holds captchaFaces (name->face) + a sorted captchaFontNames list (the /arena/catalog
+  axis + the ?font= selector, next rung) and a pickFace(name) helper (named = the bench selector; empty = a random
+  pool face = real-world variety); rasterText picks a random face per challenge. LICENSE-CLEAN (Go fonts are BSD,
+  already a dep — zero embedding) + HUMAN-SOLVABLE (grounded). GROUNDED LIVE: rendered 6 medium text captchas
+  against the running arena — all valid PNGs (3.8-4.3KB, sizes varying with the face), and viewed samples confirm
+  distinct typefaces + human-readability (e.g. "EY2D2" in a light face, "S39JN" in a clearly BOLD face). arena
+  build/vet/test green; no registry rule changed (this axis adds no detection — the solve-behaviour tells apply to
+  any challenge). NEXT: ?font=<name> selector + the challenge reporting its face; the GET /arena/catalog manifest
+  enumerating kinds/fonts/sources/categories; then OFL serif/slab faces (embedded, like the emoji font), and the
+  TrOCR bench (arena-solver-ocr) solve-rate PER FONT (a slab/mono/italic should drop it) to prove the pool tests
+  the model. Then the image-model surface: more emoji categories + an owned synthetic source.
