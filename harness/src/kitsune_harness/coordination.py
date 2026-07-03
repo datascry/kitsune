@@ -853,6 +853,36 @@ def _dim_prevalence(a: Session, b: Session) -> bool:
     return a.value(Layer.browser, "prevalence_low") is True and b.value(Layer.browser, "prevalence_low") is True
 
 
+_NATIVE_MSS = 1452  # >= this is a native ethernet path; below is a tunnel/VPN/mobile-reduced MSS (mirrors demo.py)
+
+
+def _session_mss(session: Session) -> int | None:
+    """The TCP MSS from the session's JA4T fingerprint (``window_options_MSS_scale``). None if absent/unparseable."""
+    v = session.value(Layer.network, "ja4t")
+    if v is MISSING:
+        return None
+    parts = str(v).split("_")
+    if len(parts) < 3:
+        return None
+    try:
+        return int(parts[2])
+    except ValueError:
+        return None
+
+
+@_campaign_dim("proxy_egress")
+def _dim_proxy_egress(a: Session, b: Session) -> bool:
+    """Two members share a REDUCED (tunnel/VPN) MSS AND the SAME value — a shared proxy/tunnel egress that the
+    datacenter/proxy IP-reputation feed misses on RESIDENTIAL exits. The TRANSPORT layer, independent of ja4
+    (TLS) and descriptor (behaviour). FP-SAFE as a SOFT dim: a single reduced MSS is a legit VPN/mobile path
+    (demo.py marks it informational), and independent users VARY their MSS by access network — so this fires only
+    when a cohort shares ONE reduced value, and it convicts only inside the >= 3-independent-dim gate. A legit VPN/
+    mobile COHORT shares an MSS but carries HUMAN traces, so the descriptor dim is denied and the community caps at
+    2 dims (candidate) — the residential-proxy analog of the origin_reputation dim for datacenter egress."""
+    ma, mb = _session_mss(a), _session_mss(b)
+    return ma is not None and mb is not None and ma == mb and ma < _NATIVE_MSS
+
+
 @dataclass(frozen=True)
 class CampaignVerdict:
     """A graded population/aggregate coordination verdict for one community (axis A)."""
@@ -958,6 +988,13 @@ def score_campaigns(corpus: list[tuple[str, Session]]) -> list[CampaignVerdict]:
             hits = sum(1 for i, j in pairs if fn(corpus[i][1], corpus[j][1]))
             if pairs and hits / len(pairs) >= _CAMPAIGN_DENSITY:
                 dense.append(name)
+        # PROXY_EGRESS is a soft transport tell (a shared reduced tunnel MSS) that a LEGIT VPN/mobile cohort ALSO
+        # carries — so on its own it must NOT lift ja4 + timing to a campaign (that false-convicts a corporate-VPN
+        # cohort with regular logins). Gate it on the DESCRIPTOR dim: a shared tunnel MSS convicts only alongside a
+        # humanizer-trace cluster (the one dim a real cohort's human traces cannot fake). This makes it the
+        # residential-proxy analog of origin_reputation — a corroborator of a humanizer fleet, not a standalone dim.
+        if "proxy_egress" in dense and "descriptor" not in dense:
+            dense.remove("proxy_egress")
         # TIMING layer via SCHEDULED REGULARITY: a fleet that staggers past the lockstep co-arrival window but
         # arrives on a REGULAR schedule still leaks the timing layer (independent users arrive Poisson, CV~1; a
         # scheduled fleet regular, CV<<1). Count it ONLY when lockstep is not already dense, so the timing layer

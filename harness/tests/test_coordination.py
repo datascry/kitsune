@@ -192,6 +192,7 @@ def _sess(
     webdriver: bool = False,
     datacenter: bool = False,
     abuse_listed: bool = False,
+    mss: int | None = None,
 ) -> Session:
     when = FIXED + timedelta(seconds=offset_s)
 
@@ -213,6 +214,8 @@ def _sess(
         sigs.append(mk(Layer.network, "tls_ticket_id", tls_ticket_id, Source.edge))
     if ja4_client is not None:  # edge JA4→client hint: a non-browser HTTP stack (curl/go-http/python-urllib)
         sigs.append(mk(Layer.network, "ja4_client_hint", ja4_client, Source.edge))
+    if mss is not None:  # TCP MSS via the JA4T fingerprint (window_options_MSS_scale); a tunnel/VPN reduces it
+        sigs.append(mk(Layer.network, "ja4t", f"64240_2-4-8-1-3_{mss}_7", Source.edge))
     if hw is not None:
         sigs.append(mk(Layer.browser, "hardware_concurrency", hw, Source.collector))
     if plat is not None:
@@ -737,6 +740,64 @@ def test_axis_a_clean_fleet_convicted_on_datacenter_egress() -> None:
     camps = score_campaigns(members)
     assert len(camps) == 1 and camps[0].label == "campaign"
     assert "origin_reputation" in camps[0].dense_dimensions
+
+
+def test_axis_a_residential_proxy_fleet_convicted_via_shared_tunnel_mss() -> None:
+    # The residential-proxy residual (no datacenter IP-rep flag): a humanizer fleet on RESIDENTIAL IPs routed
+    # through ONE proxy/tunnel pool shares the SAME reduced MSS (1380, a WireGuard-class tunnel). The proxy_egress
+    # transport dim, gated on the descriptor (humanizer) dim, becomes the 3rd independent dim -> campaign — the
+    # residential analog of origin_reputation, catching what the datacenter/proxy IP-rep feed misses.
+    import random
+
+    rng = random.Random(3)
+    hu = humanizer_descriptors(6)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(6):
+        offs.append(t)
+        t += rng.expovariate(1.0 / 300.0)  # Poisson -> no timing dim; the tunnel MSS is the 3rd dim
+    members = [
+        (
+            f"p{i}",
+            _sess(
+                f"p{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=offs[i],
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+                mss=1380,
+            ),
+        )
+        for i in range(6)
+    ]
+    camps = score_campaigns(members)
+    assert len(camps) == 1 and camps[0].label == "campaign"
+    assert "proxy_egress" in camps[0].dense_dimensions
+
+
+def test_axis_a_legit_vpn_cohort_stays_candidate() -> None:
+    # FP control (load-bearing): a real VPN/mobile COHORT on one build shares a reduced MSS (all 1380) AND arrives
+    # on a regular cadence (a 9am corporate sync) — but each has a DISTINCT HUMAN trace. proxy_egress is gated on
+    # the descriptor dim (which human traces deny), so a shared tunnel MSS cannot by itself lift ja4 + scheduled to
+    # a campaign. A single reduced MSS is a legit tunnel path; only a humanizer fleet through the proxy convicts.
+    hu = _human_traces(6)
+    members = [
+        (
+            f"v{i}",
+            _sess(
+                f"v{i}",
+                "X",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=i * 300.0,
+                fp_hash=f"fp{i}",
+                trace_descriptor=hu[i],
+                mss=1380,
+            ),
+        )
+        for i in range(6)
+    ]
+    assert all(c.label != "campaign" for c in score_campaigns(members))
 
 
 def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
