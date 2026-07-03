@@ -58,4 +58,7 @@ func TestDifficultyLadderIsMonotonic(t *testing.T) {
 		dh, _, _ := powLevelParams(cls, h)
 		up("pow."+string(cls), de, dm, dh)
 	}
+
+	// queue (waiting-room): the admit-wait cost dial lengthens every level.
+	upf("queue.admitWait", float64(queueAdmitWait(e)), float64(queueAdmitWait(m)), float64(queueAdmitWait(h)))
 }
