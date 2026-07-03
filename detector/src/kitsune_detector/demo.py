@@ -2342,13 +2342,17 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     if (/Android/i.test(ua) && /Mobile/i.test(ua) && window.devicePixelRatio === 1) {
       sigs.push(S("browser", "android_mobile_dpr1", true));
     }
-    // A real phone (a "Mobile" UA) exposes at most ~8 CPU cores to navigator.hardwareConcurrency: mobile SoCs are
-    // octa-core at most and iOS caps lower (A-series 6). A "Mobile" UA reporting hardwareConcurrency > 8 is a
-    // desktop wearing a phone UA that never shrank the core count — and Playwright/CDP device emulation sets the
-    // UA + screen + touch but NOT hardwareConcurrency (it reads the REAL host), so even a full device emulation on
-    // a many-core host leaks it. FP-safe: no current phone exposes > 8 web cores; gated on the "Mobile" token
-    // (phones/iPhones, NOT M-series iPads which run desktop-mode Safari without the token). EXPERIMENTAL.
-    if (/Mobile/i.test(ua) && navigator.hardwareConcurrency > 8) {
+    // A real phone (a "Mobile" UA) reports at most 9 CPU cores to navigator.hardwareConcurrency. THRESHOLD > 9
+    // CALIBRATED against real mobile fingerprints (browserforge FP-audit 2026-07-03): the coherent-Android
+    // hardwareConcurrency distribution is 8 (dominant) with a real 9-core tail (~1.4%) and a single 12 (a likely
+    // cross-sample); iPhone is 4. An earlier > 8 threshold FALSE-FIRED on real 9-core Android — this is the SECOND
+    // latent FP the calibration pass caught (after the Adreno-620 caps assumption). A "Mobile" UA reporting > 9 is
+    // a desktop wearing a phone UA that never shrank the core count — Playwright/CDP device emulation sets UA+
+    // screen+touch but NOT hardwareConcurrency (it reads the REAL host), so a full emulation on the 12-core test
+    // host leaks it (12 > 9 → fires). FP-safe: the real mobile ceiling is 9; gated on the "Mobile" token (phones/
+    // iPhones, NOT M-series iPads which run desktop-mode Safari without the token). EXPERIMENTAL (w0.5,
+    // corroborating: the residual is a hypothetical 10-12-core phone, essentially non-existent).
+    if (/Mobile/i.test(ua) && navigator.hardwareConcurrency > 9) {
       sigs.push(S("browser", "mobile_cores_high", true));
     }
     // navigator.contacts (ContactsManager / Contact Picker API) is a MOBILE-ONLY web platform API: present on

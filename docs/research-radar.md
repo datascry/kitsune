@@ -1121,6 +1121,25 @@ desktop side did) and **mobile/WebView** (X7). The Berke corpus (X4 prevalence) 
   answer stands, hardened: NO in-sandbox path to a coherent Android fingerprint; a JS fork is self-incriminating
   (tamper checks), a binary fork is caught by the GPU actual-behaviour substrate (real silicon), the emulation by
   cores/contacts. Loop 49807012 retired at the EARNED terminus."
+- **[POST-CLOSE FP-VALIDATION] the mobile rungs run against REAL browserforge mobile fingerprints — found + fixed
+  a second latent FP; the coherence rules validated FP-safe (2026-07-03).** User picked 'validate FP-safety' over
+  shipping/new-axis. browserforge samples REAL mobile fingerprints (Android + iPhone) WITH the high-entropy model,
+  platformVersion, GPU renderer, screen, DPR, cores — complete data to test every model↔X + GPU + cores + DPR rung.
+  Ran ~800 coherent-only mobile fingerprints (dropping browserforge's UA/platform-incoherent cross-samples) through
+  each rule's logic. FINDINGS: (1) FOUND A REAL FP — mobile_cores_high (> 8) FALSE-FIRED on real 9-core Android
+  (grounded distribution: Android hardwareConcurrency = 8 dominant + a 9-tail ~1.4% + a lone 12; iPhone 4). FIXED
+  to > 9 (still catches the 12-core host leak; clears real 8-9-core phones). This is the SECOND latent FP the
+  discipline caught (after the Adreno-620 caps assumption) — both were unverified-constant assumptions the REAL
+  DATA refuted, which is exactly why this validation pass mattered. (2) VALIDATED FP-SAFE: the coherence rungs
+  (model↔screen/DPR/GPU/OS, mobile_gpu_not_mobile) fire ONLY on browserforge's cross-sampled model↔hardware combos
+  (Pixel 8+Adreno, Pixel 5+wrong-screen, Pixel 8+Android-10) — genuinely incoherent, NOT real devices, so they are
+  WORKING CORRECTLY, not FPing. (3) CONFIRMED two prior findings against real data: real Android userAgentData.
+  architecture is '' (empty — the arch dead-end was right) and real mobile DPR is 2-3.5 never 1 (android_mobile_dpr1
+  fires only on cross-samples). (4) The GPU-caps NARROWING was validated: real mid-range mobile GPUs in the corpus
+  are Mali-G68/Adreno 610/506 — EXACTLY the ones the FP-fix excluded from the 16384 pattern. So the mobile detector
+  is now REAL-DATA-CALIBRATED: two FPs found+fixed, coherence rungs confirmed to fire only on genuine incoherence.
+  The validation was the right call — a detector that convicts real phones is worse than a smaller one, and it
+  caught a real one."
 - **Environmental evasions split spoof vs provision — and the floor never convicts (2026-07-02).** Can the
   environment floor itself be evaded? Two paths, and only one is coherent: (1) SPOOF the values in JS (fake
   `getVoices()`/`enumerateDevices()`/renderer string) — CAUGHT by coherence (`FLOOR_SPOOF` fakes voices+devices
