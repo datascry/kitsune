@@ -3450,3 +3450,27 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   (hoarding, experimental) joined to the session and real-tool-verified; presence/re-entry redundant with existing
   tells; poll-rate rate-overlapping; humanized-evasion re-grounds FP-safety. One more grounded-dry firing = the
   earned close of a COMPLETE, real-tool-verified waiting-room axis (the arena's last missing open-challenge family).
+- **[WAIT-ROOM LOOP — rung 8: acted-without-polling is FP-risky (dry #2) -> AXIS EARNED-CLOSED]** (2026-07-03).
+  Tested the last plausible new angle: an "acted with ZERO /status polls" tell (a human's page must poll to know
+  when to enable the action, so a script that computes admission and acts might never poll). GROUNDED it FP-RISKY
+  from the mechanism: GET /arena/queue returns admit_after_ms, so admission is DETERMINISTIC + CLIENT-COMPUTABLE —
+  a legitimate countdown-timer page can compute the admission instant (issuedAt+admitAfter) and enable the action
+  WITHOUT polling /status, so "acted without polling" false-positives on a countdown page (page-design-dependent,
+  NOT FP-safe by construction). Making it safe would need non-deterministic admission (a mechanism change that
+  breaks the honest queue). Every other remaining angle is no-tell/redundant/external: position-consistency (no
+  client control), re-queue-rate (redundant with coordination `scheduled`), act-payload (no behavioural data),
+  cross-gate (the tells already stack — rung 6). No new groundable FP-safe DETECTION rung. DRY #2, grounded in the
+  mechanism. TWICE-IN-A-ROW grounded dry (rung 7 humanized-evasion re-grounds FP-safety + rung 8 acted-without-
+  polling FP-risky). **The ARENA WAITING-ROOM / VIRTUAL-QUEUE axis is EARNED-CLOSED.** Reproduced the arena's LAST
+  missing documented open-challenge family (Queue-it / Cloudflare Waiting Room), and applied the thesis to the WAIT
+  exactly as the solve axis applied it to the SOLVE: a mechanism (arena/queue.go: issue -> poll-to-admission ->
+  act, with a canonical server-side admission instant) + THREE wait-behaviour tells joined to the session via the
+  shared _join_arena_anomaly helper and real-tool-verified — SUPERHUMAN admission->action (bh.arena_queue_superhuman,
+  by-construction, physiological floor) and QUEUE-BYPASS acting before admission (bh.arena_queue_bypass,
+  by-construction) + HOARDING many concurrent positions (bh.arena_queue_hoarding, experimental/corroborating) +
+  a red queue-abuse capability (arena-solver abuseQueue) that convicts the real evader end-to-end at 0.9966. All
+  server-observed, unforgeable, FP-safe (the two act-path tells by-construction, the hold-path one honestly
+  experimental). The frontier is external-data-bound (sybil-farmer: a patient diversified-fp fleet each holding one
+  position; human-wait-time/abuse-farm distributions) — the coordination frontier, already mapped closed. Loop
+  a6756223 retired at the earned terminus. NEXT high-leverage arena uplevel (queued): the SERVER-OBSERVED
+  browser-execution proof (the cap gate's RealmProof is client-asserted/forgeable — evaders/pow/gate.go names it).
