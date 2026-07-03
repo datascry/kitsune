@@ -5,6 +5,69 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.13.0](https://github.com/datascry/kitsune/compare/v1.12.0...v1.13.0) (2026-07-03)
+
+
+### Features
+
+* **detector:** br.android_mobile_dpr1 — Android backing-scale realism (mobile B-androiddpr) ([5f783f5](https://github.com/datascry/kitsune/commit/5f783f55cdf82a7cec2ca0dbfb61735e3ed4b7d4))
+* **detector:** br.android_model_dpr_incoherent ([6833c6b](https://github.com/datascry/kitsune/commit/6833c6b51cf61a4c00ff2e94040fa59c51878981))
+* **detector:** br.android_model_gpu_incoherent ([48ae6fa](https://github.com/datascry/kitsune/commit/48ae6fa7deff0584b5cf36571c7d1d2a43601377))
+* **detector:** br.android_model_os_exceeds ([c3a0dd0](https://github.com/datascry/kitsune/commit/c3a0dd0ba459a052430baed5566d4c4e7563dff0))
+* **detector:** br.android_model_os_predates ([7ae7f8e](https://github.com/datascry/kitsune/commit/7ae7f8e873428f15d17de456a6d2872382ccc6cb))
+* **detector:** br.android_model_screen_incoherent ([7d51032](https://github.com/datascry/kitsune/commit/7d51032c2b8b146ffff2ce7e2a967b95526d8bce))
+* **detector:** br.android_no_contacts_api ([122a446](https://github.com/datascry/kitsune/commit/122a446cb11cf3a2612c405b819da48a7e17140c))
+* **detector:** br.android_phone_screen_oversized — first Android device-coherence check (loop B5) ([f761e49](https://github.com/datascry/kitsune/commit/f761e494c09d10ae36f94d9ad0e4fd9bff976b98))
+* **detector:** br.devicememory_vs_engine — Blink-only deviceMemory under a non-Blink UA (loop B2) ([ee014fe](https://github.com/datascry/kitsune/commit/ee014fe6f63efb681aeadd0ac1bd828148cdb95a))
+* **detector:** br.devicememory_worker_divergence — realm coherence for deviceMemory (loop B2b) ([a4972fd](https://github.com/datascry/kitsune/commit/a4972fdb4f512d84d8abe893188686ada5631467))
+* **detector:** br.gpu_uniform_underreport ([6d86154](https://github.com/datascry/kitsune/commit/6d86154b6eb752ea729d7980bab73dc070c3b6e7))
+* **detector:** br.ios_dpr_incoherent — device&lt;-&gt;DPR joint coherence (loop B1) ([6f42122](https://github.com/datascry/kitsune/commit/6f421223547b431ce65f29f6aebb349965cd7904))
+* **detector:** br.ios_no_standalone — iOS-Safari surface that beats the WebKit iOS node (loop B-ns) ([fc146d9](https://github.com/datascry/kitsune/commit/fc146d980c8d6de8682b754e3d4fe63c66c59f25))
+* **detector:** br.ios_screen_desktop_res — sub-1400 desktop-res under iOS UA (loop B4-slice) ([5008664](https://github.com/datascry/kitsune/commit/50086641f8bdabb441da0089b1d9c93256a2340d))
+* **detector:** br.ios_screen_offmanifold — full iOS device-screen set (loop B4-full) ([f158f40](https://github.com/datascry/kitsune/commit/f158f4002154191ada32e54a0ea3116234f17772))
+* **detector:** br.ios_screen_oversized — device&lt;-&gt;screen joint coherence (X5 iOS slice) ([276f40b](https://github.com/datascry/kitsune/commit/276f40b24b3d7b61f27e5fea200531f200f500d1))
+* **detector:** br.mobile_cores_high ([84f5da9](https://github.com/datascry/kitsune/commit/84f5da98e31d41d349e47f4a19d5b499ae46d15e))
+* **detector:** br.mobile_gpu_caps_mismatch ([e47ae9a](https://github.com/datascry/kitsune/commit/e47ae9a7e42439a7b2f0d65e86f249835a375c96))
+* **detector:** br.mobile_gpu_not_mobile ([51787ee](https://github.com/datascry/kitsune/commit/51787eeb51e19aaae0330e498bf551601938b179))
+* **detector:** br.mobile_gpu_uniforms_software — close the low-end-GPU evasion (mobile B-uniforms) ([efa0091](https://github.com/datascry/kitsune/commit/efa0091eeaddfe8e5529b3429d271e78bfd05500))
+* **detector:** br.mobile_no_js_model ([201749e](https://github.com/datascry/kitsune/commit/201749efc17a285bdaf76c5276fe70de45993b61))
+* **detector:** br.mobile_pointer_hover_desktop ([f4e8749](https://github.com/datascry/kitsune/commit/f4e87490ae73b49f71786966c0ecae5fad5f7610))
+* **detector:** br.uadata_model_worker_divergence ([4f5bbea](https://github.com/datascry/kitsune/commit/4f5bbead9b82a474ab47e042e1b904ee764613c9))
+* **detector:** br.uadata_worker_divergence ([0f81ae4](https://github.com/datascry/kitsune/commit/0f81ae486f632bac66e9cbb756a96f92e670551e))
+* **detector:** br.webgl_maxtexture_unallocatable ([192f6a5](https://github.com/datascry/kitsune/commit/192f6a5cda59448ec8108bbf5269397ab1cea46a))
+* **detector:** generalise ch_ua_on_non_chromium_ua — close the Firefox Sec-CH-UA gap (loop B-nc) ([bcb2057](https://github.com/datascry/kitsune/commit/bcb20572617e92767bffeaba9e4b3b1be999ad1d))
+* **detector:** harden mobile_gpu_caps_mismatch to the full WebGL cap triad; webgpu tested-dead ([705a4c2](https://github.com/datascry/kitsune/commit/705a4c297de9a4c0d99dad565d6a5f9d43891558))
+* **detector:** net.ch_ua_mobile_no_model ([1cf80ec](https://github.com/datascry/kitsune/commit/1cf80ec61a8510f31534ad3363f4b228d9025a2b))
+* **detector:** net.ch_ua_on_safari_ua — Blink-faking-Safari at the header layer (loop B-chua) ([6a789b1](https://github.com/datascry/kitsune/commit/6a789b134c8aff150b17031fb99aa70a2e911d99))
+* **detector:** net.tcp_static_window — flow-level TCP behavior, the first tell below the SYN ([5d0d1b5](https://github.com/datascry/kitsune/commit/5d0d1b5a305d00d0bfec48a50deb9a1735201835))
+* **detector:** net.tcp_syn_anomaly — p0f-grounded SYN value-vs-order coherence ([acf88ef](https://github.com/datascry/kitsune/commit/acf88efb1598eec25ed54fcf13d5dd889d88da4e))
+* **edge:** wire slow-HTTP (slowloris) detection end to end + driver (G16) ([158d50b](https://github.com/datascry/kitsune/commit/158d50b028f58f24d8771b6c275118d878c660a9))
+* **evaders:** add chain-mitm harness — chained tool stacks are counterproductive ([d200a09](https://github.com/datascry/kitsune/commit/d200a092a78a7d85c564e0acaeac11434c847bba))
+* **evaders:** add KS_ANDROID_FONTS — Android-coherent font set for a Chromium mobile device ([07e1c85](https://github.com/datascry/kitsune/commit/07e1c859f298bc6dc832349ae6124833646434fe))
+* **evaders:** add KS_DEVICE — a coherent per-OS device randomizer (the vision's red half) ([372a086](https://github.com/datascry/kitsune/commit/372a086f9e714aa66b02433677ca030c98e0b377))
+* **evaders:** add KS_ENGINE=webkit — the coherent iOS device runtime (loop R3) ([b0e176f](https://github.com/datascry/kitsune/commit/b0e176f7e279f4e4c1f5b414a76c9976fe9ddd38))
+* **evaders:** add KS_FORGE_JS_MODEL ([9d00dc5](https://github.com/datascry/kitsune/commit/9d00dc5be7c2996ff42f53ac30b955e312ce2733))
+* **evaders:** add KS_FORGE_MODEL ([a13bbbf](https://github.com/datascry/kitsune/commit/a13bbbf7722b619c1d74a1c101c3f00b60872881))
+* **evaders:** add KS_MOBILE_FONTS ([7482710](https://github.com/datascry/kitsune/commit/748271095ee85fc14bc2a0ab446a2469222fdddb))
+* **evaders:** add KS_RENDERER_WORKER ([7d55628](https://github.com/datascry/kitsune/commit/7d55628b6fed508b51e5258a2e80f3e08caa7ed9))
+* **evaders:** add KS_STRIP_CHUA evades ch_ua_on_safari_ua — TLS/h2 substrate holds (loop R-chua) ([148e826](https://github.com/datascry/kitsune/commit/148e8265b5d07de99eead44e607a8df7c5151995))
+* **evaders:** camoufox KS_PROVISION ([44f0423](https://github.com/datascry/kitsune/commit/44f0423068cb8a5443c0383dacfecac178f433d4))
+* **evaders:** camoufox KS_REAL_INPUT — the fused maximal coherent single-session stack ([69686ed](https://github.com/datascry/kitsune/commit/69686ed5cfd306a347d7f895896b2e3a1a112905))
+* **evaders:** camoufox macOS Retina DPR — engine-level spoof beats macos_dpr1 (loop R-mac) ([21bab3a](https://github.com/datascry/kitsune/commit/21bab3a4bbd3cc264edfd5c22838acb48dd79630))
+* **evaders:** compose KS_DEVICE + KS_PROVISION in the stealth image (loop R1) ([6e0f464](https://github.com/datascry/kitsune/commit/6e0f464f99bc7ea29f8042d47c04a3f0932ca0c5))
+* **evaders:** os-spoof — userspace TCP + uTLS forges the kernel, beats net.tcp_os_vs_ua ([6bf190a](https://github.com/datascry/kitsune/commit/6bf190a0f6f66303f288d290ac366fe991596160))
+* **evaders:** os-spoof coherent OS profiles — a fleet morphs into any mix ([b742546](https://github.com/datascry/kitsune/commit/b7425464575ab51d07f5aa06a5f254077a3beaf8))
+* **evaders:** os-spoof proxy mode ([f265eed](https://github.com/datascry/kitsune/commit/f265eed784bbbe0d633e5206a9ffe60bc90c2bdc))
+* **evaders:** strip camoufox macOS internal dot-fonts — evades font_mac_internal (loop R-font) ([50e6250](https://github.com/datascry/kitsune/commit/50e6250b8841cb3ec9810734f928a433a82ffabd))
+* **evaders:** synthesize navigator.standalone on the WebKit iOS node (loop R3++) ([dd4348e](https://github.com/datascry/kitsune/commit/dd4348e98e538f3f9d0d05488d03baf407fdcfa1))
+* **harness:** wire the coordination scorer as an L7-flood attributor (G17) ([ab0712b](https://github.com/datascry/kitsune/commit/ab0712b94c55b1951514116bda5b368d3ff2cd43))
+
+
+### Bug Fixes
+
+* **detector:** mobile_cores_high threshold 8-&gt;9 ([a6065ae](https://github.com/datascry/kitsune/commit/a6065aeb1c3acb95d17b40bf5baa129fdd9a3628))
+* **detector:** narrow mobile_gpu_caps_mismatch to confidently-16384 GPUs ([d225e9b](https://github.com/datascry/kitsune/commit/d225e9bb1ce2290c5e6107c43577e86625cb7082))
+
 ## [1.12.0](https://github.com/datascry/kitsune/compare/v1.11.0...v1.12.0) (2026-06-29)
 
 
