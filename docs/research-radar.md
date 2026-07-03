@@ -3572,3 +3572,25 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   DRY #1, grounded in the tell coverage. One more grounded-dry firing = the earned close of the reframed axis
   (the server-observed worker proof already existed; this loop's real deliverable was closing the WORKER_DISABLE
   exit with br.worker_removed).
+- **[EXEC-PROOF LOOP — rung 6: WORKER_PROXY_FIX still caught (dry #2) -> AXIS EARNED-CLOSED]** (2026-07-03).
+  Tested the last untested worker-realm escalation LIVE, not asserted: WORKER_PROXY_FIX — a Proxy over Worker that
+  ALSO rewrites RealWorker.prototype.constructor back to the Proxy to restore the identity round-trip, which the
+  worker_constructor_tampered source explicitly DEFERRED as "a future rung." GROUNDED LIVE (stealth
+  WORKER_PROXY_FIX=1 through the edge): it is STILL CAUGHT, two ways — br.worker_source_rewritten (its construct-trap
+  worker-scope injection means the worker runs a rewritten source, so self.location.href != the page's blob URL)
+  AND br.cdp_runtime_enabled (the automation floor). So the WORKER-REALM ESCALATION LADDER IS FULLY CLOSED, every
+  exit grounded: main-thread patch -> br.*_worker_divergence; WORKER_WRAP -> worker_constructor_tampered (invariant
+  1, native toString); WORKER_PROXY -> worker_constructor_tampered (invariant 2, constructor identity);
+  WORKER_PROXY_FIX -> worker_source_rewritten + cdp_runtime_enabled; WORKER_CDP -> cdp_runtime_enabled; WORKER_DISABLE
+  -> br.worker_removed. No non-CDP way to inject into, hide inside, or strip the worker realm without tripping a
+  guard; the forge terminus is CDP (the automation floor). DRY #2, grounded live. TWICE-IN-A-ROW grounded dry (rung
+  5 OffscreenCanvas-strip backstopped + rung 6 WORKER_PROXY_FIX caught). **The SERVER-OBSERVED BROWSER-EXECUTION
+  PROOF axis is EARNED-CLOSED.** HONEST OUTCOME: rungs 1-2 grounded that the axis premise was ALREADY REALIZED (the
+  detector already server-observes the worker via the collector's dual-realm canvas/WebGL/Navigator report ->
+  webgl/canvas/uadata/etc._worker_divergence), so the loop's genuine deliverable was the ONE real gap the discipline
+  surfaced by testing lead (b) before a cheap dry: br.worker_removed (rung 4, grounded live headful), closing the
+  WORKER_DISABLE strip-the-realm exit and completing the escalation ladder. A nonce adds no server-verifiability
+  (the server has no GPU); the cap-gate join is thesis-redundant (a forgeable gate is fine — the detector convicts).
+  Loop fb9f8c86 retired at the earned terminus. NEXT high-leverage arena uplevel (queued, un-started): the
+  EVASION-TECHNIQUE CATALOG (auto-generate docs/evasion-catalog.md from the evader ladder, mirroring the
+  detection-catalog — concrete, groundable, no external data) or MULTI-STEP FLOW COHERENCE.
