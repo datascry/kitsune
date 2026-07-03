@@ -594,6 +594,38 @@ def test_axis_a_regular_legit_cohort_not_a_campaign() -> None:
     assert all(c.label != "campaign" for c in score_campaigns(members))
 
 
+def test_axis_a_poisson_stagger_evades_regularity() -> None:
+    # The RESIDUAL after the scheduled-stagger rung (the genuine external wall): a diffuse fleet that staggers on
+    # POISSON-RANDOM gaps (not a fixed schedule) has inter-arrival CV ~1 — statistically the timing of N
+    # independent users — so the regularity signal CORRECTLY stays silent and the fleet caps at a 2-dim candidate.
+    # A fleet whose timing IS that of independent users cannot be convicted on timing; that reduction is the bind.
+    import random
+
+    rng = random.Random(4)
+    hu = humanizer_descriptors(6)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(6):
+        offs.append(t)
+        t += rng.expovariate(1.0 / 300.0)  # Poisson arrivals -> exponential gaps -> CV ~ 1
+    members = [
+        (
+            f"p{i}",
+            _sess(
+                f"p{i}",
+                "X",
+                observed_ip=f"71.{i}.{i}.{i}",
+                offset_s=offs[i],
+                fp_hash=f"fp{i}",
+                trace_descriptor=list(hu[i]),
+            ),
+        )
+        for i in range(6)
+    ]
+    camps = score_campaigns(members)
+    assert all(c.label != "campaign" for c in camps)  # Poisson timing -> scheduled silent -> at most a 2-dim candidate
+
+
 def test_axis_a_flash_crowd_is_only_candidate_not_campaign() -> None:
     # A flash crowd: one popular build (shared JA4) + co-timed arrival, but REAL humans (descriptors spread) on
     # distinct IPs. Dense on only 2 dimensions (ja4_prefix + lockstep) → `candidate` for review, NOT a campaign.

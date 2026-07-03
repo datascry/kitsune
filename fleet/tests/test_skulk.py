@@ -65,6 +65,20 @@ def test_fuzzy_has_no_byte_identical_collision() -> None:
     assert len({m.trace_hash for m in members}) == 4
 
 
+def test_diffuse_scheduled_staggers_on_a_regular_cadence() -> None:
+    members = get("diffuse-scheduled").members(6, seed=7)
+    import itertools
+
+    offs = [m.offset_seconds for m in members]
+    gaps = [b - a for a, b in itertools.pairwise(offs)]
+    assert len(set(gaps)) == 1 and gaps[0] > 120.0  # a fixed cadence, past the lockstep window
+    # diffuse like diffuse-campaign: no exact pairwise binding, one build
+    assert len({m.fp_hash for m in members}) == 6
+    assert len({m.trace_hash for m in members}) == 6
+    assert len({m.ja4 for m in members}) == 1
+    assert not any(m.automation for m in members)
+
+
 def test_similarity_jitters_hashes_but_clusters_descriptors() -> None:
     members = get("similarity").members(4, seed=9)
     # every EXACT hash differs (defeats exact-match, like fuzzy)...
