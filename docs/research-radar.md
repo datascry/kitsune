@@ -3082,3 +3082,31 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   residual is genuinely external-data-bound: an OS-MATCHED proxy (windows exit + windows UA), an os-spoofed kernel,
   a FUZZY-trace proxy fleet (no descriptor dim), or DIRECT native-residential egress — plus RTT/latency, real-
   traffic JA4T-entropy/density, and residential-proxy provider ranges. Loop e24a4d95 retired at the earned terminus.
+
+## Active TCP/IP stack probing (loop 8033f6fc — make network fingerprinting UNFORGEABLE)
+
+- **[ACTIVE-PROBE LOOP — rung 1: feasibility gate PASSES]** (2026-07-03). Can the edge send crafted packets /
+  observe the client's live reply in-sandbox? YES: the edge has CAP_NET_RAW (docker-compose.yml:35, for the SYN
+  sniffer; os-spoof has NET_RAW+NET_ADMIN), its AF_PACKET socket can SEND as well as capture, and it runs its OWN
+  accept loop (h1serve.go:serveConns) with connection-level control. No dead-end at the gate. Design challenge for
+  the build: a crafted packet on an OS-managed connection conflicts with the kernel's own reply — approaches are a
+  userspace probe stack, raw injection + iptables-suppress the OS reply (NET_ADMIN available), or the cleaner
+  socket-option path (clamp advertised MSS/window, observe the client's response via the sniffer).
+- **[ACTIVE-PROBE LOOP — rung 2: white-boxed os-spoof — the probe target is its happy-path stack (GROUNDED)]**
+  (2026-07-03). The pivotal question: does os-spoof forge the whole connection or just the SYN? Read its source
+  (the white-box lesson): os-spoof runs a FULL userspace TCP stack (stack.go, 299 lines) and iptables-drops the
+  kernel's RSTs so userspace owns the flows — so a passive data-phase view sees its MIMICRY, not the real kernel.
+  BUT the stack is HAPPY-PATH ("assumes a lossless docker bridge", line 73) with three exact, source-proven gaps:
+  (1) Read (line 200) accepts a segment ONLY if tcp.Seq == c.ack — OUT-OF-ORDER segments are silently DROPPED (no
+  reassembly buffer), so an out-of-order response STALLS it; (2) Write (line 219) hardcodes `const mss = 1400`,
+  IGNORING the server's advertised MSS; (3) no window-following (sends everything regardless of the receive
+  window). A REAL kernel does all three (reassembles+SACKs, honors the peer MSS, follows the window). THE PROBE
+  (cleanest, no raw injection): the edge advertises a SMALL MSS in its SYN-ACK (TCP_MAXSEG on the listener); a real
+  client segments its ClientHello/request to <= that MSS, os-spoof sends a larger segment (its hardcoded 1400 /
+  the whole ClientHello) — the sniffer observes an INBOUND segment > the advertised MSS => net.active_stack_mss_
+  ignored, a userspace/forged stack. FP-SAFE by construction: EVERY real kernel honors the receiver's advertised
+  MSS (a legit VPN/proxy/NAT has a real kernel); only a non-kernel stack ignores it — this is the ACTUAL-BEHAVIOUR
+  probe (like the mobile GPU allocation probe), unforgeable without reimplementing the kernel's MSS honoring. NEXT:
+  build it in the edge (TCP_MAXSEG on the listener + a sniffer segment-size-vs-advertised-MSS check + the rule),
+  grounded LIVE with a real client (honors it, silent) vs os-spoof (ignores it, fires). The out-of-order-stall
+  probe (gap 1) is the stronger fallback but needs raw injection.
