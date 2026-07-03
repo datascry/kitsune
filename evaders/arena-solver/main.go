@@ -71,6 +71,11 @@ func main() {
 
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{Jar: jar, Timeout: 30 * time.Second}
+	// A real bot maintains a session cookie; seed one so the detector joins our gate-anomalies to a session
+	// (the detector only relays /arena/* — it never mints ks_sid, and we do not run through the edge).
+	if u, err := url.Parse(base); err == nil {
+		jar.SetCookies(u, []*http.Cookie{{Name: "ks_sid", Value: "arena-solver"}})
+	}
 
 	families := []struct {
 		name string
@@ -82,6 +87,7 @@ func main() {
 		{"image-select", solveImageSelect},
 		{"rotate", solveRotate},
 		{"slider", solveSlider},
+		{"queue", abuseQueue},
 	}
 	for _, f := range families {
 		ok, ms, err := f.fn(c, base)
@@ -99,6 +105,53 @@ func main() {
 	fmt.Println("      real OCR (evaders/arena-solver-ocr), and IMAGE-SELECT now uses real emoji glyphs (Noto Emoji) —")
 	fmt.Println("      the radial-shape classifier no longer reads them; it needs a real CV/VLM. Either way the")
 	fmt.Println("      detector convicts the no-JS client: coherence is durable, the puzzle is not.")
+}
+
+// abuseQueue is the scalper move on the virtual waiting-room: take a ticket, poll to admission as fast as
+// possible, then act the INSTANT we're in — no human perceive+click delay. The gate passes but the detector
+// convicts on the superhuman admission->action (bh.arena_queue_superhuman).
+func abuseQueue(c *http.Client, base string) (bool, int64, error) {
+	return timed(func() (bool, error) {
+		var q struct {
+			ID string `json:"id"`
+		}
+		if err := getJSON(c, base+"/arena/queue?level=easy", &q); err != nil {
+			return false, err
+		}
+		for {
+			var s struct {
+				Admitted bool `json:"admitted"`
+			}
+			if err := getJSON(c, base+"/arena/queue/status?id="+q.ID, &s); err != nil {
+				return false, err
+			}
+			if s.Admitted {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+		body, _ := json.Marshal(map[string]string{"id": q.ID})
+		resp, err := c.Post(base+"/arena/queue/act", "application/json", bytes.NewReader(body))
+		if err != nil {
+			return false, err
+		}
+		defer resp.Body.Close()
+		var out struct {
+			OK bool `json:"ok"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		return out.OK, nil
+	})
+}
+
+// getJSON GETs endpoint and decodes the JSON body into v.
+func getJSON(c *http.Client, endpoint string, v any) error {
+	r, err := c.Get(endpoint)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	return json.NewDecoder(r.Body).Decode(v)
 }
 
 func getCaptcha(c *http.Client, base, kind string) (*captcha, error) {

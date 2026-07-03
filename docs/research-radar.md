@@ -3422,3 +3422,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   external-data-bound (mapped closed). WAIT-SURFACE now: act-path fully covered by-construction (superhuman +
   bypass), hold-path covered by the experimental hoarding corroborator; (b)/(d) are redundant with existing tells.
   The groundable wait-behaviour lead-space is nearly exhausted — one more grounded-dry firing = the earned close.
+- **[WAIT-ROOM LOOP — rung 6: RED capability (arena-solver queue-abuse) + FULL red-verify — GROUNDED LIVE]**
+  (2026-07-03). Not a dry: built the RED side the prompt lists (every prior wait-room rung was curl-grounded, not
+  a real tool). Added a queue-abuse mode to evaders/arena-solver (abuseQueue: take a ticket, poll admission as fast
+  as possible, act the INSTANT admitted — the scalper's edge) + seeded a ks_sid cookie so the detector joins the
+  bot's gate-anomalies to a session (the detector never mints ks_sid; the solver hits it directly). GROUNDED LIVE
+  END-TO-END: the real arena-solver ran queue gate PASSED in 1258ms, and /verdict/arena-solver shows the session
+  convicted on THREE tells at once — bh.arena_captcha_superhuman (math 330ms) + bh.arena_trajectory_forged (slider
+  synthesis) + bh.arena_queue_superhuman (instant admission->action) => score 0.9966, LABEL:"bot". This resolves
+  the solve-axis rung-9 ks_sid caveat (a seeded cookie makes the real evader convict end-to-end) AND red-verifies
+  the WAIT tell against the real tool, not curl. arena-solver builds+vets clean. The arena waiting-room axis is now
+  COMPLETE + real-tool-verified: the last missing open-challenge family (Queue-it / Cloudflare Waiting Room) is
+  reproduced, with a mechanism (queue.go) + 3 wait-behaviour tells (superhuman admission->action + bypass
+  by-construction, hoarding experimental) joined to the session, and a red queue-abuse capability in the ladder.
+  Groundable wait-behaviour DETECTION is exhausted (act-path + hold-path covered; presence/re-entry redundant;
+  poll-rate rate-overlapping). One genuine dry firing remains to the earned close.
