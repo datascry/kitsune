@@ -363,9 +363,15 @@ func NewMux(secret []byte) http.Handler {
 		w.Header().Set("Content-Type", "application/json")
 		resp := map[string]any{"kind": "queue"}
 		if !known || !admitted {
-			// Acted before admission (or an unknown/used ticket) — the client never completed the wait (a queue bypass).
+			// Acted before admission (or an unknown/used ticket) — the client never completed the wait.
 			resp["ok"] = false
 			resp["reason"] = "not admitted"
+			// A KNOWN ticket acted on BEFORE its admission wait elapsed is a deliberate queue-skip: a human's page
+			// only enables the action after /status reports admitted, so only a script POSTs /act early. FP-safe by
+			// construction. The gate fails, but the anomaly rides the verdict so the session convicts (like honeypot).
+			if known {
+				resp["anomaly"] = "queue_bypass"
+			}
 			_ = json.NewEncoder(w).Encode(resp)
 			return
 		}

@@ -277,6 +277,8 @@ def create_app(
             kind = "arena_honeypot_filled"
         elif anomaly == "acted_faster_than_human":
             kind = "arena_queue_superhuman"
+        elif anomaly == "queue_bypass":
+            kind = "arena_queue_bypass"
         else:
             return
         _apply_signals(

@@ -962,6 +962,18 @@ rules:
     last_validated: "2026-07-03"
     source: "Kitsune arena challenge-solve coherence (waiting-room / virtual-queue gate — Queue-it / Cloudflare Waiting Room family): the arena issues a queue ticket, admits it after a controlled wait, and on the protected action (POST /arena/queue/act) measures the SERVER-OBSERVED admission->action elapsed against the CANONICAL admission instant (issuedAt+admitAfter — the client cannot backdate when the server admitted it). A human reads 'you're in' and moves+clicks the action in seconds; an automated position-holder polls admission and acts in milliseconds. An elapsed below the queueActFloor (600ms — the physiological perceive+read+move+click lower bound) is a scalper bot holding the position, not a human; the arena emits anomaly:acted_faster_than_human and the detector's /arena/queue/act relay joins it to ks_sid (shared _join_arena_anomaly map). This is the WAIT-behaviour analog of the SOLVE-behaviour tells (bh.arena_captcha_superhuman sibling), applied to the queue's admission->action instead of a puzzle solve. FP-SAFE BY CONSTRUCTION: the floor is a LOWER bound on human perceive+act, so a slow, distracted, or backgrounded-tab human who acts late is never flagged — precision 1.0 is load-bearing. A queue BYPASS (acting before admission) fails structurally (ok:false, not-admitted) and cannot skip the wait. Convicting (w0.85). GROUNDED LIVE 2026-07-03: a bot acting instantly on admission (act_ms 105) trips the anomaly and the joined session convicts; a human-timed act (act_ms 1204) is silent; a pre-admission act is rejected. See docs/research-radar.md (arena waiting-room loop)."
 
+  - id: bh.arena_queue_bypass
+    title: Took a virtual-queue protected action BEFORE admission — skipped the wait, a queue-bypass bot
+    layers: [behavioral]
+    reads: [behavioral.arena_queue_bypass]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-07-03"
+    last_validated: "2026-07-03"
+    source: "Kitsune arena challenge-solve coherence (waiting-room / virtual-queue gate): the queue admits a ticket only after a controlled wait (issuedAt+admitAfter). A client that POSTs the protected action /arena/queue/act on a KNOWN ticket BEFORE that admission instant is deliberately skipping the wait — the fairness mechanism the queue exists to enforce. FP-SAFE BY CONSTRUCTION: a real human's page only enables the action after GET /arena/queue/status reports admitted, so a human client never POSTs /act early; only a script that bypasses the page UI does. The gate fails structurally (ok:false, not-admitted) and the arena emits anomaly:queue_bypass, which the detector's /arena/queue/act relay joins to ks_sid (shared _join_arena_anomaly map) — a passed OR failed gate corroborates the coherence verdict (the arena thesis, honeypot-style: a bot that trips the trap is convicted even though it did not pass). This is the wait-behaviour complement of bh.arena_queue_superhuman: superhuman = acted too fast AFTER admission; bypass = acted BEFORE admission. An unknown/garbage ticket id does NOT fire (only a real, issued ticket acted on early). Convicting (w0.85). GROUNDED LIVE 2026-07-03: a client that POSTs /act immediately after GET /queue (before the 1s wait) trips the anomaly and the joined session convicts; a human waits for admission and never fires it. See docs/research-radar.md (arena waiting-room loop)."
+
   - id: bh.action_cadence_deliberative
     title: Metronomic inter-action cadence at LLM-inference latency
     layers: [behavioral]
