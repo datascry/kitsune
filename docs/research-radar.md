@@ -3474,3 +3474,28 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   position; human-wait-time/abuse-farm distributions) — the coordination frontier, already mapped closed. Loop
   a6756223 retired at the earned terminus. NEXT high-leverage arena uplevel (queued): the SERVER-OBSERVED
   browser-execution proof (the cap gate's RealmProof is client-asserted/forgeable — evaders/pow/gate.go names it).
+
+## Server-observed browser-execution proof (loop fb9f8c86)
+
+- **[EXEC-PROOF LOOP — rung 1: the server-observed worker proof ALREADY EXISTS — axis REFRAMED]** (2026-07-03).
+  Grounded the collector's Worker infra before building, and it changes the axis: the detector ALREADY server-
+  observes a worker-execution proof. The inline collector (demo.py ~1640-1710) spawns `new Worker(blobURL)` that
+  builds an `OffscreenCanvas`, computes a WebGL UNMASKED_RENDERER + caps digest AND a 2D canvas hash, and
+  postMessages them back; the detector cross-checks against the MAIN-thread values => existing ACTIVE rules
+  webgl_worker_divergence + canvas_worker_divergence (a main-thread addInitScript/CDP patch cannot reach Worker
+  scope, so a MAIN-ONLY canvas/WebGL forge diverges from the real worker — exactly the "detector independently sees
+  the worker" the cap-gate comment calls for). So "build a server-observed proof" is LARGELY ALREADY REALIZED; the
+  arena cap-gate RealmProof (client-asserted realm_main==realm_worker) is the intentionally-WEAK version, forgeable
+  by submit-anything but detector-backed — which is CONSISTENT with the arena thesis (a gate does not discriminate;
+  the detector does), and the gate's own comment says as much. TWO honest sub-findings: (1) the canvas/WebGL proof
+  uses FIXED draw ops ("Kitsune-CW-7", device-constant caps), NOT a per-session nonce — but a nonce does NOT add
+  server-verifiability here: the server cannot VERIFY an absolute canvas/GPU hash (it has no GPU), it can only check
+  main-vs-worker CONSISTENCY, and equal-value fabrication (main==worker==anything) defeats consistency regardless of
+  nonce; the real strength is against MAIN-ONLY spoofs (a real browser + a main-thread patch), where the worker
+  betrays the patch. (2) full-fabrication (POST fake coherent signals, no browser) is the browserforge coherence
+  frontier caught by OTHER tells (no_js_execution + whole-fingerprint coherence), already saturated. So the axis
+  REFRAMES to what is genuinely groundable + new: VALIDATE the existing server-observed proof with a live positive
+  — a faithful RED evader that forges the MAIN canvas/WebGL but NOT the worker (a CANVAS_LIE-style main-only patch)
+  => webgl_worker_divergence / canvas_worker_divergence should FIRE, a real headful capture SILENT (the
+  unexercised-active-rules discipline: light an active-but-maybe-unexercised realm tell via a faithful evader).
+  NEXT: check whether canvas_worker_divergence has a live positive yet + build the main-only-forge evader mode.
