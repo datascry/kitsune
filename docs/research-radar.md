@@ -3637,3 +3637,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   registry rule changed. NEXT: the TrOCR bench (arena-solver-ocr solve-rate PER FONT — the red half that proves a
   mono/italic face drops the model), then OFL serif/slab faces (embedded, real typeface spread), then the
   image-model surface (more emoji categories via the Unicode taxonomy + an owned synthetic 3rd source).
+- **[CAPTCHA-BENCH LOOP — rung 4: TrOCR per-font benchmark (the RED half) — GROUNDED, honest result]**
+  (2026-07-03). Added the OCR bench's red half: OCR_FONT=<name> in arena-solver-ocr (solver.solve_text gained a
+  font param -> ?font= via the detector relay; runner reads OCR_FONT + labels the report) so the TrOCR solve-rate
+  is measured on ONE pinned typeface. GROUNDED LIVE (real TrOCR model, anuashok/ocr-captcha-v3, through the
+  detector relay, level=easy, 8 rounds each): go-regular 8/8, go-mono 8/8, go-italic 8/8 — ALL PERFECT. HONEST
+  FINDING (the point of a bench is to reveal this): the Go font FAMILY does NOT harden OCR — TrOCR is robust to
+  weight/mono/slant WITHIN one design family, so the pool is real-world FIDELITY (varied typefaces, license-clean)
+  but not an OCR-hardening axis by itself. This DIRECTS the next rung precisely: the genuine hardening axis is a
+  DISTINCT-DESIGN face (an OFL SERIF/SLAB/handwritten typeface whose letterforms differ from the Go sans design),
+  which should actually drop the TrOCR rate — a Go-family sans variation does not. (A hard-level sweep would only
+  show the DISTORTION dominating, not the font, so easy is the right isolation for the font axis.) evaders OCR
+  solver ruff+format green; no registry/detector/arena change (red-side only). NEXT: embed one OFL serif + one slab
+  face, re-benchmark per font at easy — expect the distinct designs to drop below 8/8, proving the pool tests the
+  model; then charset variants (digits-only/mixed-case) and the image-model surface.
