@@ -3553,3 +3553,22 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   before declaring dry #2) found + closed the last worker-realm exit. Remaining leads: (a) nonce'd main+worker
   canvas EXECUTION proof adds no server-verifiability (rung 1); (c) cap-gate join is thesis-redundant. Likely
   near an earned close now, but the next firing tests any last angle first.
+- **[EXEC-PROOF LOOP — rung 5: OffscreenCanvas-strip is backstopped — GROUNDED DRY #1]** (2026-07-03). Tested the
+  one angle parallel to worker_removed: a spoofer that KEEPS window.Worker (evading worker_removed) but deletes
+  OffscreenCanvas to blind the canvas/WebGL worker checks. GROUNDED from the registry that it is BACKSTOPPED and
+  gains the attacker nothing: (1) only canvas_worker_divergence + webgl_worker_divergence need OffscreenCanvas; the
+  OTHER worker tells (uadata/devicememory/languages/timezone/uadata_model_worker_divergence) read the worker's
+  Navigator, NOT OffscreenCanvas, so a main-only spoof of platform/ua/dm/model is still caught with OffscreenCanvas
+  gone; (2) a GPU/webgl spoof is caught by the MAIN-realm substrate probes (webgl_software, webgl_renderer_caps_
+  mismatch, webgl_maxtexture_unallocatable — the allocation probe reaches the REAL driver, no worker needed) +
+  mobile_gpu_caps_mismatch; (3) a canvas spoof is still caught by canvas_lie (main-thread toString) + canvas_noise.
+  So stripping OffscreenCanvas blinds two worker tells whose targets are ALL independently caught elsewhere — a
+  non-threat, and a dedicated offscreencanvas_removed tell (which would also need Chromium-scoping since Firefox
+  <105 / Safari <16.4 legitimately lack OffscreenCanvas — not FP-safe by construction) is not worth building. The
+  worker-realm ladder is CLOSED (worker_removed rung 4); the worker-FORGE terminus is CDP (automation floor,
+  br.cdp_runtime_enabled — a non-CDP injector cannot reach worker scope, a CDP one trips the automation layer); the
+  nonce'd execution proof adds no server-verifiability (rung 1 — the server has no GPU); the cap-gate join is
+  thesis-redundant (a forgeable gate is fine, the detector convicts). No new high-value FP-safe groundable rung.
+  DRY #1, grounded in the tell coverage. One more grounded-dry firing = the earned close of the reframed axis
+  (the server-observed worker proof already existed; this loop's real deliverable was closing the WORKER_DISABLE
+  exit with br.worker_removed).
