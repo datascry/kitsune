@@ -3220,3 +3220,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   (rung 2 timing infra) -> FP-safe conviction (rung 3 OCR/human-time tell) -> joined to the session (rung 4).
   Remaining groundable leads: solve-vs-session BIOMECHANICS (d, slider/rotate trajectory vs the session's mouse
   biomech) and a RED counter (a solver that DELAYS to clear the human floor — which itself imposes a real cost).
+- **[ARENA-SOLVE LOOP — rung 5: slider CLIENT-CLAIM vs SERVER-TRUTH coherence tell BUILT + GROUNDED LIVE]**
+  (2026-07-03). A hard, FP-safe-by-construction coherence tell that closes a real gap: the slider's existing
+  "drag too fast" check trusts the CLIENT-SUPPLIED trajectory t-values, which a synthesizer can PAD. The
+  SERVER-OBSERVED solve time (issue->verify, from the age that take() now returns since rung 3) cannot be faked.
+  A trajectory that CLAIMS more drag-time than the whole solve window is IMPOSSIBLE — the drag happens WITHIN it —
+  so trajMs > server_age + 150ms margin => anomaly:trajectory_exceeds_solve_time. This catches the exact
+  arena-solver move (synthesize a plausible variable-velocity drag, submit it instantly): the drag "took 2s" but
+  the server saw ~0ms. FP-SAFE by construction: a real drag's duration is always <= the server-observed elapsed
+  (network RTT only inflates the server side). GROUNDED LIVE vs the running arena: an instant submit with a
+  2000ms padded trajectory => anomaly FIRES (ok:true, token issued, anomaly rides); the SAME trajectory with a
+  real 2.5s wait => SILENT. Locked with TestSliderFlagsTrajectoryExceedingSolveTime. Arena green. This is the
+  solve-vs-CLAIM analog of the captcha timing tell, and it defeats trajectory synthesis (which beats the CV bar)
+  by measuring the one thing the client cannot forge — WHEN the gate handed out the challenge. NEXT rung joins it
+  to the session (extend rung 4's detector join to the slider relay: a new bh.arena_slider_trajectory_forged rule).
