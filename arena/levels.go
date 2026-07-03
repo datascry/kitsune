@@ -11,6 +11,8 @@
 
 package arena
 
+import "time"
+
 // Level is a gate's difficulty tier.
 type Level string
 
@@ -105,5 +107,19 @@ func rotateParams(lv Level) behaviorKnobs {
 		return behaviorKnobs{Tol: 8, MinPts: 12, MinMs: 300, MinCV: rotateMinCV}
 	default: // medium = the grounded baseline constants
 		return behaviorKnobs{Tol: rotateTol, MinPts: rotateMinPts, MinMs: rotateMinMs, MinCV: rotateMinCV}
+	}
+}
+
+// queueAdmitWait is the virtual waiting-room's admit delay — the COST dial: a longer queue is a bigger wait,
+// never a better bot/human test (the admission->action behaviour is what the detector reads). Kept SHORT (demo
+// scale — a real deployment waits minutes) so the gate is exercisable; monotonic easy<medium<hard.
+func queueAdmitWait(lv Level) time.Duration {
+	switch lv {
+	case LevelEasy:
+		return 1 * time.Second
+	case LevelHard:
+		return 4 * time.Second
+	default:
+		return 2 * time.Second
 	}
 }

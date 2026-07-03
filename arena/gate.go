@@ -56,6 +56,12 @@ var minHumanCaptchaSolve = map[CaptchaKind]time.Duration{
 // happens WITHIN it). FP-safe by construction: a real drag's duration is always <= the server-observed elapsed.
 const sliderClaimMarginMs = 150.0
 
+// queueActFloor is the PHYSIOLOGICAL floor on a virtual-queue admission->action: no human perceives "you're in"
+// and completes the protected action faster than this (reaction + read + move + click). A faster admission->action
+// is an automated position-holder that polled and acted instantly. FP-safe — a LOWER bound, so a slow, distracted,
+// or backgrounded-tab human who acts late is never flagged.
+const queueActFloor = 600 * time.Millisecond
+
 func classOf(s string) pow.Class {
 	switch s {
 	case "many-small":
@@ -125,6 +131,7 @@ func captchaKindOf(s string) CaptchaKind {
 func NewMux(secret []byte) http.Handler {
 	store := pow.NewNonceStore()
 	captchas := newCaptchaStore()
+	queues := newQueueStore()
 	issuer := NewPACTIssuer()
 	mux := http.NewServeMux()
 
@@ -320,6 +327,55 @@ func NewMux(secret []byte) http.Handler {
 					resp["anomaly"] = "trajectory_exceeds_solve_time"
 				}
 			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- WAITING-ROOM / VIRTUAL QUEUE (Queue-it / Cloudflare Waiting Room family): issue a position, admit after
+	// a controlled wait, then take the protected action. Not a puzzle — a fairness/rate mechanism. The detector
+	// reads the WAIT-behaviour: a scalper bot polls admission and acts in ms; a human reads "you're in" and acts
+	// in seconds. On-thesis, owned infra. ---
+	mux.HandleFunc("GET /arena/queue", func(w http.ResponseWriter, r *http.Request) {
+		wait := queueAdmitWait(ParseLevel(r.URL.Query().Get("level")))
+		id := randHex(16)
+		pos := queues.issue(id, wait, time.Now())
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"kind": "queue", "id": id, "position": pos, "admit_after_ms": wait.Milliseconds(),
+		})
+	})
+
+	mux.HandleFunc("GET /arena/queue/status", func(w http.ResponseWriter, r *http.Request) {
+		admitted, pos, known := queues.status(r.URL.Query().Get("id"), time.Now())
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"kind": "queue", "admitted": admitted, "position": pos, "known": known})
+	})
+
+	mux.HandleFunc("POST /arena/queue/act", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		elapsed, admitted, known := queues.act(body.ID, time.Now())
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"kind": "queue"}
+		if !known || !admitted {
+			// Acted before admission (or an unknown/used ticket) — the client never completed the wait (a queue bypass).
+			resp["ok"] = false
+			resp["reason"] = "not admitted"
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		resp["ok"] = true
+		resp["token"] = SignCaptchaToken(secret, "queue", body.ID)
+		resp["act_ms"] = elapsed.Milliseconds()
+		// SERVER-OBSERVED admission->action: faster than a human can perceive "you're in" and act is an automated
+		// position-holder. The gate still passes; the anomaly rides the verdict so the detector convicts the session.
+		if elapsed < queueActFloor {
+			resp["anomaly"] = "acted_faster_than_human"
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})

@@ -3358,3 +3358,20 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   the sybil-farmer (diversified-fp fleet, one human-like hold each) is the coordination frontier already mapped
   closed; human-wait-time farm distributions are paid. NEXT: build the queue gate + the admission-timing tell,
   ground live vs a position-holding bot (instant act => convicted) and a human-timed act (silent).
+- **[WAIT-ROOM LOOP — rung 2: queue gate + SUPERHUMAN ADMISSION->ACTION tell BUILT + GROUNDED LIVE]**
+  (2026-07-03). Built the waiting-room gate (arena/queue.go queueStore + three gate.go handlers): GET /arena/queue
+  issues a ticket into the store at position N with a per-level admit-wait (queueAdmitWait — a COST dial, easy 1s /
+  medium 2s / hard 4s, monotonic, added to levels_test.go); GET /arena/queue/status polls admitted (now >=
+  issuedAt+admitAfter); POST /arena/queue/act consumes the ticket and measures the SERVER-OBSERVED admission->action
+  elapsed against the CANONICAL admission instant (issuedAt+admitAfter — the client cannot backdate it). Tell:
+  elapsed < queueActFloor (600ms — the physiological perceive+read+move+click lower bound) => anomaly:acted_faster_
+  than_human. Plus a QUEUE-BYPASS guard: acting before admission returns ok:false "not admitted" (the wait cannot
+  be skipped). FP-SAFE by construction (the floor is a LOWER bound; a slow/distracted/backgrounded human who acts
+  late is never flagged). GROUNDED LIVE vs the running arena, all three cases: BYPASS (act before the 1s wait) =>
+  ok:false not-admitted; BOT (poll to admission, act instantly) => act_ms 105 => anomaly FIRES (ok:true, token
+  issued); HUMAN (act after a ~1.2s perceive+act pause) => act_ms 1204 => SILENT. Red<->blue separation confirmed
+  both ways, precision 1.0. Locked with TestQueueAdmissionAndAction (deterministic clock: admission gating, exact
+  elapsed, bypass, single-use) + the extended monotonic-ladder test. Arena green. This is the wait-behaviour analog
+  of the CAPTCHA superhuman-speed tell, reusing the same server-observed-timing + physiological-floor pattern. NEXT
+  rung: join it to the session (detector relays /arena/queue/* + _join_arena_anomaly maps acted_faster_than_human
+  -> bh.arena_queue_superhuman), then the fuller wait surface (no-presence-during-wait, multi-position-per-origin).
