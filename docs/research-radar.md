@@ -2951,3 +2951,21 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   evader) but found NO new BLUE conviction for the clean frontier — a grounded dry for blue. Fleet green (26),
   test_skulk asserts the clean 2-dim shape, README updated. One more genuinely-grounded dry against this frontier
   = the earned close.
+- **[COORDINATION LOOP — rung 8: descriptor-band conviction is FP-UNSAFE → AXIS EARNED-CLOSED]** (2026-07-03). A
+  distinct, concrete blue-conviction attempt against the clean frontier: could a 2-dim (ja4 + descriptor) community
+  be CONVICTED (not just candidate) by proving the descriptor cluster is tighter than ANY real human cohort? The
+  descriptor dim fires at pairwise median <= 0.15; if the tightest real cohort is comfortably ABOVE 0.15, the band
+  is purely one-humanizer fleets. GROUNDED the real-cohort median distribution: distinct-human cohorts reach min
+  0.094 (size 4), p1 0.108-0.147, p5 0.125-0.160 — they OVERLAP the 0.10-0.15 humanizer band. So a descriptor-dense
+  community is NOT provably a humanizer; convicting it would FP tight real cohorts (~5% of small cohorts sit below
+  0.15). FP-UNSAFE -> stays candidate -> external-data-bound (a population baseline is needed to price the
+  coincidence). This is dry #2, GROUNDED. With rung 7 (the maximal `diffuse` evader grounded live to evade both
+  axes), that is TWICE IN A ROW a genuinely-grounded attempt found NO new baseline-free BLUE conviction for the
+  clean 2-dim frontier. **The coordination axis is EARNED-CLOSED.** The in-sandbox baseline-free conviction surface
+  is EXHAUSTED and now data-mapped: a fleet is convictable iff it leaks (a) a high-entropy collision [axis B], (b)
+  a non-Poisson schedule [rung 2], or (c) a per-session bot tell [rung 5] — each an independent 3rd dim improbable
+  under a parameter-free null. The fully-clean fleet (2 COMMON dims: a shared build + a humanizer cluster that
+  overlaps tight real cohorts) sheds all three and is N-independent-real-users by construction; its conviction is
+  external-data-bound (IP reputation / prevalence / traffic baselines the sandbox cannot self-generate). Loop
+  8c9f2c4c retired at the earned terminus. Shipped this run: 3 blue/red conviction rungs (2, 5, 6) + 2 red
+  frontier-definers (3, 7) + 2 grounded dead-ends (1, 4) + this close — precision 1.0 throughout.
