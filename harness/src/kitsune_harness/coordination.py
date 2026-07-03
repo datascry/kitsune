@@ -870,17 +870,32 @@ def _session_mss(session: Session) -> int | None:
         return None
 
 
+def _proxy_stack(session: Session) -> str | None:
+    """The SYN-derived kernel OS when it DIVERGES from the UA-claimed kernel — a re-originating (SOCKS) proxy
+    reveals its OWN TCP stack, not the client's, which a MSS reduction (a tunnel) does not require. Both edge
+    signals are normalized (linux/windows/macos). None when either is absent or they agree (a direct client, or an
+    OS-matched proxy). This catches the SOCKS residential proxy that the MSS tell misses (native MSS, wrong OS)."""
+    tcp = session.value(Layer.network, "tcp_kernel")
+    ua = session.value(Layer.network, "ua_kernel")
+    if tcp is MISSING or ua is MISSING or str(tcp) == str(ua):
+        return None
+    return str(tcp)
+
+
 @_campaign_dim("proxy_egress")
 def _dim_proxy_egress(a: Session, b: Session) -> bool:
-    """Two members share a REDUCED (tunnel/VPN) MSS AND the SAME value — a shared proxy/tunnel egress that the
-    datacenter/proxy IP-reputation feed misses on RESIDENTIAL exits. The TRANSPORT layer, independent of ja4
-    (TLS) and descriptor (behaviour). FP-SAFE as a SOFT dim: a single reduced MSS is a legit VPN/mobile path
-    (demo.py marks it informational), and independent users VARY their MSS by access network — so this fires only
-    when a cohort shares ONE reduced value, and it convicts only inside the >= 3-independent-dim gate. A legit VPN/
-    mobile COHORT shares an MSS but carries HUMAN traces, so the descriptor dim is denied and the community caps at
-    2 dims (candidate) — the residential-proxy analog of the origin_reputation dim for datacenter egress."""
+    """Two members share a proxy/tunnel EGRESS signature the datacenter/proxy IP-reputation feed misses on
+    RESIDENTIAL exits — either (TUNNEL) a REDUCED MSS at the SAME value (encapsulation overhead), or (SOCKS) the
+    SAME SYN-stack OS that DIVERGES from the UA-claimed OS (a re-originating proxy). The TRANSPORT layer,
+    independent of ja4 (TLS) and descriptor (behaviour). FP-SAFE as a SOFT dim gated on the descriptor dim: a
+    single reduced MSS / a lone proxied session is a legit VPN/mobile path (demo.py marks MSS informational), and
+    a legit VPN/mobile COHORT (even one provider, shared MSS or shared exit-OS) carries HUMAN traces so the
+    descriptor dim is denied and it caps at 2 dims (candidate) — the residential analog of origin_reputation."""
     ma, mb = _session_mss(a), _session_mss(b)
-    return ma is not None and mb is not None and ma == mb and ma < _NATIVE_MSS
+    if ma is not None and mb is not None and ma == mb and ma < _NATIVE_MSS:
+        return True
+    sa, sb = _proxy_stack(a), _proxy_stack(b)
+    return sa is not None and sb is not None and sa == sb
 
 
 @dataclass(frozen=True)
