@@ -293,7 +293,7 @@ func NewMux(secret []byte) http.Handler {
 			http.Error(w, "bad json", http.StatusBadRequest)
 			return
 		}
-		lvStr, _, known := captchas.take(body.ID) // single-use; stored value is the level
+		lvStr, age, known := captchas.take(body.ID) // single-use; stored value is the level; age = server solve time
 		w.Header().Set("Content-Type", "application/json")
 		if !known {
 			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "kind": "rotate", "reason": "unknown or used"})
@@ -303,6 +303,15 @@ func NewMux(secret []byte) http.Handler {
 		resp := map[string]any{"ok": ok, "kind": "rotate", "reason": reason}
 		if ok {
 			resp["token"] = SignCaptchaToken(secret, "rotate", body.ID)
+			// Same client-claim vs server-truth coherence as the slider: a rotation trajectory claiming more
+			// drag-time than the whole server-observed solve is a synthesized trajectory submitted near-instantly.
+			// FP-safe: a real rotation's duration is always <= the server-observed elapsed.
+			if n := len(body.Trajectory); n >= 2 && age > 0 {
+				trajMs := body.Trajectory[n-1].T - body.Trajectory[0].T
+				if trajMs > age.Seconds()*1000+sliderClaimMarginMs {
+					resp["anomaly"] = "trajectory_exceeds_solve_time"
+				}
+			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})

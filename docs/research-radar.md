@@ -3248,3 +3248,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   trajectory-forgery), both server-observed + unforgeable + FP-safe, on a layer the thesis had never touched.
   Remaining groundable leads: the ROTATE trajectory-coherence tell (arena-side mirror of the slider — the relay
   join is already wired, only the arena/rotate.go emit is missing) and the honeypot-trip join.
+- **[ARENA-SOLVE LOOP — rung 7: rotate trajectory-coherence tell + gate-agnostic rule rename — GROUNDED LIVE]**
+  (2026-07-03). Mirrored the slider client-claim-vs-server-truth tell to the ROTATE gate (Arkose-style): the
+  rotate verify now uses the age take() returns and emits anomaly:trajectory_exceeds_solve_time when the rotation
+  trajectory claims more drag-time than the whole server-observed solve. Since both gates share that anomaly, the
+  signal + rule were RENAMED gate-agnostic: bh.arena_slider_trajectory_forged -> bh.arena_trajectory_forged (reads
+  behavioral.arena_trajectory_forged; the detector helper's literal kind updated so the drift guard still sees the
+  producer) — a rotate conviction no longer shows "slider" in its evidence. The rotate relay join was already wired
+  (rung 6). GROUNDED LIVE END-TO-END: a forged rotate solve (instant + 2000ms padded rotation) through the detector
+  with a ks_sid => /verdict rule_id bh.arena_trajectory_forged, conviction 0.85, LABEL:"bot". Locked with
+  TestRotateFlagsTrajectoryExceedingSolveTime. detector ruff+mypy+493 tests + arena green; catalog regenerated.
+  The arena challenge-solve-coherence axis now convicts on THREE tells across FOUR gates: CAPTCHA superhuman-speed
+  (text/math/image), and trajectory-forgery (slider + rotate) — all server-observed, unforgeable, FP-safe. The
+  trajectory-time-coherence vein (client-claim vs server-truth) is now exhausted across the drag gates. Remaining
+  groundable leads: the honeypot-trip join (a bot that fills the hidden field), and the harder solve-vs-SESSION
+  biomechanics (d).

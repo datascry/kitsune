@@ -202,7 +202,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 |---|---|---|---|---|---|
 | `bh.trace_replay_within_session` | coherence✦ | present | 0.65 | active | One session replayed an identical pointer trajectory across page loads (record-and-replay bot) |
 | `bh.arena_captcha_superhuman` | automation✦ | present | 0.85 | active | CAPTCHA answered correctly faster than a human can read and respond — automated solver |
-| `bh.arena_slider_trajectory_forged` | automation✦ | present | 0.85 | active | Slider drag trajectory claims more drag-time than the whole server-observed solve — synthesized |
+| `bh.arena_trajectory_forged` | automation✦ | present | 0.85 | active | Slider/rotate drag trajectory claims more drag-time than the whole server-observed solve — synthesized |
 | `bh.action_cadence_deliberative` | behavioral | present | 0.5 | experimental | Metronomic inter-action cadence at LLM-inference latency |
 | `bh.click_without_trajectory` | behavioral | present | 0.5 | experimental | Trusted mouse click with no pointer trajectory in the session (teleport-click) |
 | `bh.input_entropy_floor` | behavioral | below_threshold | 0.6 | experimental | Mouse-movement entropy below the human floor |

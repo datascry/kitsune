@@ -181,3 +181,42 @@ func TestSliderFlagsTrajectoryExceedingSolveTime(t *testing.T) {
 		t.Fatalf("a trajectory claiming more drag-time than the whole solve must be flagged: %v", out)
 	}
 }
+
+func TestRotateFlagsTrajectoryExceedingSolveTime(t *testing.T) {
+	srv := newServer(t)
+	defer srv.Close()
+	resp, err := http.Get(srv.URL + "/arena/rotate?level=easy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rc struct {
+		ID    string  `json:"id"`
+		Angle float64 `json:"angle"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rc); err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	a := rc.Angle
+	// A valid, variable-velocity rotation from the initial angle down to upright (0), CLAIMING a 2000ms drag.
+	traj := []map[string]float64{
+		{"t": 0, "angle": a}, {"t": 250, "angle": a * 0.88}, {"t": 600, "angle": a * 0.66}, {"t": 950, "angle": a * 0.44},
+		{"t": 1300, "angle": a * 0.24}, {"t": 1650, "angle": a * 0.10}, {"t": 1850, "angle": a * 0.03}, {"t": 2000, "angle": 0},
+	}
+	body, _ := json.Marshal(map[string]any{"id": rc.ID, "trajectory": traj})
+	vr, err := http.Post(srv.URL+"/arena/rotate/verify", "application/json", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer vr.Body.Close()
+	var out map[string]any
+	if err := json.NewDecoder(vr.Body).Decode(&out); err != nil {
+		t.Fatal(err)
+	}
+	if out["ok"] != true {
+		t.Fatalf("a valid rotation to upright should pass: %v", out)
+	}
+	if out["anomaly"] != "trajectory_exceeds_solve_time" {
+		t.Fatalf("a rotation trajectory claiming more time than the whole solve must be flagged: %v", out)
+	}
+}

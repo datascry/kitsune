@@ -272,7 +272,7 @@ def create_app(
         if anomaly == "solved_faster_than_human":
             kind = "arena_captcha_superhuman"
         elif anomaly == "trajectory_exceeds_solve_time":
-            kind = "arena_slider_trajectory_forged"
+            kind = "arena_trajectory_forged"
         else:
             return
         _apply_signals(
