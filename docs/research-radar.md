@@ -3263,3 +3263,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   trajectory-time-coherence vein (client-claim vs server-truth) is now exhausted across the drag gates. Remaining
   groundable leads: the honeypot-trip join (a bot that fills the hidden field), and the harder solve-vs-SESSION
   biomechanics (d).
+- **[ARENA-SOLVE LOOP — rung 8: honeypot-trip join (lead e) — GROUNDED LIVE END-TO-END]** (2026-07-03). The
+  highest-precision solve-behaviour tell, and the simplest: the arena's honeypot CAPTCHA asks the client to submit
+  WITHOUT filling a hidden field (rendered display:none). A non-empty answer (the trap value) is a naive
+  form-filling bot — the gate fails structurally (ok=false) and the arena now also emits anomaly:honeypot_filled,
+  which the shared _join_arena_anomaly map routes to a behavioral.arena_honeypot_filled signal on ks_sid. New rule
+  bh.arena_honeypot_filled (present, automation, w0.9 — a honeypot trip needs no timing/biomechanics). FP-SAFE BY
+  CONSTRUCTION: a real user cannot fill a field they are never shown; gated on `known` so a garbage/replayed id
+  can't synthesize the tell against a victim session. GROUNDED LIVE END-TO-END: a honeypot verify with a non-empty
+  trap through the detector => /verdict rule_id bh.arena_honeypot_filled, conviction 0.9, LABEL:"bot"; an empty
+  submission passes and is silent (TestCaptchaFlagsHoneypotTrip covers both). detector ruff+mypy+494 + arena green;
+  catalog regen. The arena challenge-solve-coherence axis now convicts on FOUR solve-behaviour tells — CAPTCHA
+  superhuman-speed (timing), trajectory-forgery (slider+rotate, client-claim vs server-truth), and honeypot-trip
+  (trap interaction) — ALL server-observed, unforgeable, FP-safe, joined to the session verdict via one helper.
+  Remaining groundable leads thinning: image-select ML-timing (c — likely already covered by the superhuman-speed
+  floor if it routes through /captcha/verify; verify next) and the harder solve-vs-SESSION biomechanics (d). The
+  PoW compute-signature (a) is grounded-dead (hardware-dependent, rung 2).
