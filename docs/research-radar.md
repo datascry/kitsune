@@ -3437,3 +3437,16 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   by-construction, hoarding experimental) joined to the session, and a red queue-abuse capability in the ladder.
   Groundable wait-behaviour DETECTION is exhausted (act-path + hold-path covered; presence/re-entry redundant;
   poll-rate rate-overlapping). One genuine dry firing remains to the earned close.
+- **[WAIT-ROOM LOOP — rung 7: humanized-evasion re-grounds known FP-safety — GROUNDED DRY #1]** (2026-07-03).
+  Tested the last listed lead — a RED humanized-evasion mode ("a red rung makes the wait more human to evade"). A
+  queue bot that waits for admission and then acts at HUMAN speed evades bh.arena_queue_superhuman by paying the
+  full human-time cost (admission->action > the 600ms floor) — which is the tell working AS DESIGNED (FP-safe by
+  construction: a patient bot is indistinguishable from a patient human on timing, and SHOULD be), already grounded
+  at rung 2 (curl human-timed act 1204ms => silent) and by the naive-vs-patient bracket (rung 6 real arena-solver
+  instant-act CONVICTED at 0.9966 vs the rung-2 patient-act silent). It is not a NEW tell — it re-confirms the
+  boundary. The residual (a patient bot spread across many fingerprinted sessions, one human-like hold each) is the
+  SYBIL-FARMER, external-data-bound (the coordination frontier, mapped closed). No new groundable DETECTION rung.
+  DRY #1. The wait-behaviour surface is exhausted: act-path (superhuman + bypass, by-construction) + hold-path
+  (hoarding, experimental) joined to the session and real-tool-verified; presence/re-entry redundant with existing
+  tells; poll-rate rate-overlapping; humanized-evasion re-grounds FP-safety. One more grounded-dry firing = the
+  earned close of a COMPLETE, real-tool-verified waiting-room axis (the arena's last missing open-challenge family).
