@@ -974,6 +974,18 @@ rules:
     last_validated: "2026-07-03"
     source: "Kitsune arena challenge-solve coherence (waiting-room / virtual-queue gate): the queue admits a ticket only after a controlled wait (issuedAt+admitAfter). A client that POSTs the protected action /arena/queue/act on a KNOWN ticket BEFORE that admission instant is deliberately skipping the wait — the fairness mechanism the queue exists to enforce. FP-SAFE BY CONSTRUCTION: a real human's page only enables the action after GET /arena/queue/status reports admitted, so a human client never POSTs /act early; only a script that bypasses the page UI does. The gate fails structurally (ok:false, not-admitted) and the arena emits anomaly:queue_bypass, which the detector's /arena/queue/act relay joins to ks_sid (shared _join_arena_anomaly map) — a passed OR failed gate corroborates the coherence verdict (the arena thesis, honeypot-style: a bot that trips the trap is convicted even though it did not pass). This is the wait-behaviour complement of bh.arena_queue_superhuman: superhuman = acted too fast AFTER admission; bypass = acted BEFORE admission. An unknown/garbage ticket id does NOT fire (only a real, issued ticket acted on early). Convicting (w0.85). GROUNDED LIVE 2026-07-03: a client that POSTs /act immediately after GET /queue (before the 1s wait) trips the anomaly and the joined session convicts; a human waits for admission and never fires it. See docs/research-radar.md (arena waiting-room loop)."
 
+  - id: bh.arena_queue_hoarding
+    title: One session holding many concurrent virtual-queue positions — a position-hoarding scalper
+    layers: [behavioral]
+    reads: [behavioral.arena_queue_hoarding]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: automation
+    added: "2026-07-03"
+    last_validated: "2026-07-03"
+    source: "Kitsune arena challenge-solve coherence (waiting-room / virtual-queue gate): a scalper maximises its odds in a rate-limited waiting-room by HOARDING many concurrent positions. The detector counts a session's (ks_sid) outstanding queue tickets SERVER-SIDE (minted at GET /arena/queue, dropped at POST /arena/queue/act, pruned by a 2-minute TTL so abandoned positions do not accumulate); more than 8 concurrent is a position-hoarder, not a person — even a multi-tab human does not hold 9+ queue positions at once. On threshold-crossing the detector injects behavioral.arena_queue_hoarding on ks_sid. EXPERIMENTAL / corroborating (w0.5, cannot convict alone): unlike the by-construction admission-timing tells (bh.arena_queue_superhuman / bh.arena_queue_bypass), the hoarding threshold is CALIBRATED, so a rare heavy-multi-tab human is not framed on this alone. The per-ORIGIN form is in-sandbox-confounded (all lab traffic shares the detector egress), so this is keyed per-ks_sid — which catches the NAIVE hoarder reusing one session; the SMART hoarder spreads positions across distinct ks_sids/fingerprints, which is the sybil-farmer coordination frontier (external-data-bound, mapped closed on the coordination axis). GROUNDED LIVE 2026-07-03: a session that mints 9 concurrent tickets trips the signal + rule; a session cycling one ticket at a time (mint->act->mint) never does. See docs/research-radar.md (arena waiting-room loop)."
+
   - id: bh.action_cadence_deliberative
     title: Metronomic inter-action cadence at LLM-inference latency
     layers: [behavioral]

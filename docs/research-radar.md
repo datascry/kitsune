@@ -3406,3 +3406,19 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   at a HIGH threshold since multi-tab humans share a ks_sid, and the smart hoarder spreads across ks_sids = the
   sybil-farmer coordination frontier, external-data-bound). Next firing tests whether either yields a NEW groundable
   FP-safe tell beyond what exists.
+- **[WAIT-ROOM LOOP — rung 5: multi-position HOARDING tell (experimental) BUILT + GROUNDED LIVE]** (2026-07-03).
+  Tested leads (b)/(c)/(d): (b) no-presence-during-wait OVERLAPS the existing no_js_execution (a headless holder
+  loads no collector) — not a new rung; (d) non-Poisson re-entry OVERLAPS the coordination `scheduled` tell — not
+  new; (c) MULTI-POSITION is genuinely new and built. The per-ORIGIN form is in-sandbox-confounded (all lab traffic
+  shares the detector egress = one IP), so it is keyed PER-KS_SID: the detector counts a session's OUTSTANDING queue
+  tickets server-side (noted at GET /arena/queue, dropped at POST /arena/queue/act, pruned by a 2-min TTL so
+  abandoned positions do not accumulate); > 8 concurrent injects behavioral.arena_queue_hoarding -> rule
+  bh.arena_queue_hoarding. EXPERIMENTAL / corroborating (w0.5, status experimental): the threshold is CALIBRATED
+  (not FP-safe-by-construction like the timing tells), so a rare heavy-multi-tab human is not framed on this alone.
+  GROUNDED LIVE: a session that mints 9 concurrent tickets => /verdict shows bh.arena_queue_hoarding, score 0.5,
+  LABEL:"suspicious" (corroborates, does not convict alone); a modest 3-ticket session => no verdict at all
+  (silent). detector ruff+mypy+496 + arena green; catalog regen. The NAIVE hoarder (one ks_sid) is caught; the
+  SMART hoarder spreads positions across distinct ks_sids/fingerprints = the sybil-farmer coordination frontier,
+  external-data-bound (mapped closed). WAIT-SURFACE now: act-path fully covered by-construction (superhuman +
+  bypass), hold-path covered by the experimental hoarding corroborator; (b)/(d) are redundant with existing tells.
+  The groundable wait-behaviour lead-space is nearly exhausted — one more grounded-dry firing = the earned close.
