@@ -2988,3 +2988,20 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   OpenGL-ES/Vulkan device reports incl. MAX_TEXTURE_SIZE + uniform limits — bot-protected to WebFetch (403), needs
   the desktop uploader client or a scrape). The free-data frontier is IP-reputation (DONE) + GPU-caps (obtainable,
   needs an access path); residential-proxy + real-traffic-density are paid/gated.
+- **[PROXY-EGRESS LOOP — rung 1: `proxy_egress` dim convicts a residential-proxy fleet on a shared tunnel MSS
+  (SHIPPED, harness)]** (2026-07-03). The residential-proxy residual (a fleet on real residential IPs, no
+  datacenter IP-rep flag) leaves a STRUCTURAL transport tell the fp-randomizer can't hide: a proxy/tunnel pool
+  reduces the TCP MSS below native 1460 (WireGuard-class ~1380). Grounded the input is on the wire — the edge
+  parses SYN option kind 2 into the JA4T (`window_options_MSS_scale`), and demo.py already derives a tunnel hint
+  from it. Added a `_session_mss` reader (parses ja4t.split('_')[2]) + a `proxy_egress` Axis-A dim: members share a
+  REDUCED (< 1452) MSS AND the same value = one tunnel pool. THE DISCIPLINE CAUGHT A REAL FP mid-build: as an
+  independent dim, a legit corporate-VPN cohort (shared build + shared VPN MSS + regular 9am logins + HUMAN traces)
+  scored `campaign [ja4, proxy_egress, scheduled]` — a false convict. FIX: gate proxy_egress on the DESCRIPTOR dim
+  (the one dim a real cohort's human traces cannot fake), making it a corroborator of a humanizer fleet, not a
+  standalone dim — the residential analog of origin_reputation. GROUNDED 3-way: residential-proxy HUMANIZER fleet
+  (shared MSS 1380) -> `campaign [ja4, descriptor, proxy_egress]`; legit VPN cohort (human traces, regular logins)
+  -> `candidate`; the same humanizer fleet on NATIVE MSS 1460 (direct residential) -> `candidate` (correctly still
+  the frontier — no tunnel to detect). Precision 1.0 preserved (377 harness green). Catches the COMMON real bot
+  case (humanizer + residential-proxy tunnel) that IP-rep misses; the direct-residential humanizer fleet stays
+  external-data-bound. NEXT: red-verify with a Skulk residential-proxy strategy emitting a shared-tunnel-MSS ja4t,
+  grounded end-to-end live.
