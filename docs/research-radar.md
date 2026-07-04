@@ -3891,3 +3891,35 @@ LLM-characteristic) and win (goal-pursuit like a human).
   DISTRIBUTIONS (log-normal vs uniform-jitter), real navigation GRAPHs, and a coherent-fingerprint real-browser
   arena-flow driver (the axis's true target — a browserless bot is caught on fingerprint regardless). Loop b3fbbe22
   retired at the earned terminus.
+
+## LLM-agent detection <-> evasion axis (loop 459f4ab2 — the reasoning-agent frontier)
+
+An LLM-driven browser agent (evaders/agent — claude -p as the brain: snapshot -> reason -> act in real
+Chromium via CDP) is a NEW kind of client: it uses a real browser (coherent fingerprint) AND pursues goals like a
+human (evading behavioral/session-intent tells), yet its LLM decision process may carry tells a human and a
+scripted bot do not both share. The frontier is unsaturated (Kitsune detects scripted-bot fingerprint+behavior).
+
+- **[LLM-AGENT LOOP — rung 1: grounded the baseline + designed the LLM-specific frontier (no build)]** (2026-07-04).
+  GROUNDED the baseline from the agent's own measured run (evaders/agent/README) + its code: the agent BEATS the
+  network (0.0, TLS clean) and browser/FINGERPRINT (0.0, webdriver+headless patched) layers, and is caught only on
+  BEHAVIORAL (0.80): bh.input_entropy_floor ("Mouse-movement entropy below the human floor") + bh.no_input_before_
+  action ("Action with zero pointer events"). KEY FINDING: these two tells are GENERIC, NOT LLM-specific — they
+  catch ANY bot lacking human mouse-input synthesis (a scripted click-bot trips them identically). So the README's
+  "phase-4 frontier" (ghost-cursor human-input synthesis) would evade them like any bot; they are the input-
+  synthesis layer, not the reasoning-agent layer. runner.py confirms the loop: page snapshot -> decide() via
+  claude -> page.wait_for_timeout(3500) -> execute. The genuinely-LLM-SPECIFIC frontier (must survive input
+  synthesis + distinguish agent from BOTH human and script): the agent acts off a STALE PAGE SNAPSHOT after
+  SECONDS of reasoning. DESIGN of the first tell (rung 2) — STALE-SNAPSHOT / live-tracking: an arena gate with a
+  TIME-VARYING target (an element that moves/changes over the agent's multi-second reasoning window); the client
+  must act on the target's CURRENT position. A human tracks it live (acts on current); a FAST script acts before it
+  moves (also current); only a SNAPSHOT-then-SLOWLY-REASON agent acts on the STALE (snapshot-time) position —
+  LLM-agent-CHARACTERISTIC and FP-SAFE BY CONSTRUCTION (a human sees live, so never acts on a seconds-old stale
+  position). This keys on the STRUCTURE (snapshot + slow reasoning), not raw timing — so it is not in the wide
+  session-intent timing band, and ghost-cursor input synthesis (which fixes the MOUSE, not the stale DECISION) does
+  not evade it. FP-safety profile: a real human tracking a moving target + a distracted human who acts late but on
+  the CURRENT position (humans re-perceive before acting) must both be silent; only acting on the provably-stale
+  position convicts. NEXT (rung 2): build the moving-target arena gate + the stale-position tell; ground LIVE by
+  running evaders/agent against it (a fresh claude -p run — note the usage cost) — the agent acts stale (caught),
+  a human/live-tracking client acts current (silent). NOTE: a fresh live re-run of the full agent recursively
+  invokes claude -p (usage + orchestration); the baseline here is the README's REAL prior measurement, and the
+  live validation is deferred to the tell-building rung where it is load-bearing.
