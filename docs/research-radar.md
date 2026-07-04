@@ -4015,3 +4015,25 @@ scripted bot do not both share. The frontier is unsaturated (Kitsune detects scr
   claude agent on a browser-RENDERED moving target (rung 2 showed the in-sandbox agent is fingerprint-gated first,
   so this needs a coherent-fingerprint agent); real diverse-agent + human corpora for the calibration-bound
   latency tells. Loop 459f4ab2 retired at the earned terminus.
+
+## Rendered real-time challenge loop (629b3150 — productize the stale-snapshot CAPTCHA)
+
+Turns the server-side moving-target gate (bh.arena_stale_snapshot) into a deployable, rendered, end-to-end
+LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent validation on a rendered target.
+
+- **[RENDERED-CHALLENGE LOOP — rung 1: the widget BUILT + live-tracker FP-safety grounded LIVE]** (2026-07-04).
+  Grounded the agent's perception+action model FIRST (decisive): the agent is TEXT-SNAPSHOT + COORDINATE-CLICK —
+  brain.py snapshots page.inner_text[:500] and emits {kind:click, x, y}; runner._execute does page.mouse.click(x,y).
+  A canvas dot has no text, so the widget renders the dot's CURRENT position AS LIVE TEXT (the hint line) — which a
+  text-snapshot agent freezes at snapshot time and clicks stale after seconds of reasoning — PLUS the visual
+  animated dot a human tracks and clicks live. Built: arena/track.go trackWidgetHTML (canvas + requestAnimationFrame
+  from the server's start+velocity; live position hint; click -> POST /arena/track/verify -> shows verified/stale);
+  GET /arena/track now returns vx,vy (for the client animation); GET /arena/track/play serves the widget; the
+  detector relays /arena/track/play (same origin so its fetches ride the relay + join ks_sid). GROUNDED LIVE in a
+  REAL browser (Playwright over the CDP browser container, page at detector:8080/arena/track/play): a LIVE-TRACKER
+  human-proxy (reads the live position hint, clicks the current dot) gets "verified (human)" -> HIT, NOT stale ->
+  FP-SAFE + HUMAN-SOLVABLE grounded, not asserted. arena build/vet/test green; detector ruff+mypy green; track/play
+  relay coverage added. NEXT (rung 2, the payoff): run the LIVE claude agent (evaders/agent, KITSUNE_AGENT_STEPS
+  bounded) against detector:8080/arena/track/play with goal "click the moving dot" -> it snapshots the frozen text
+  position -> reasons seconds -> clicks the stale position -> ✗ stale-snapshot (CAUGHT) — the real-agent proof that
+  closes the axis gap; then hardening (unpredictable motion vs a motion-predicting agent) + tuning.

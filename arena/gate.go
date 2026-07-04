@@ -401,9 +401,18 @@ func NewMux(secret []byte) http.Handler {
 	// position it saw at snapshot time — the one behavioral signal that survives a coherent fingerprint. ---
 	mux.HandleFunc("GET /arena/track", func(w http.ResponseWriter, _ *http.Request) {
 		id := randHex(16)
-		x, y := tracks.issue(id, time.Now())
+		x, y, vx, vy := tracks.issue(id, time.Now())
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"kind": "track", "id": id, "x": x, "y": y, "canvas": trackCanvas})
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"kind": "track", "id": id, "x": x, "y": y, "vx": vx, "vy": vy, "canvas": trackCanvas,
+		})
+	})
+
+	// The rendered widget: a human tracks the animated dot and clicks it live; a text-snapshot agent freezes the
+	// dot's position and clicks it stale after reasoning. Same-origin fetches ride the detector relay (ks_sid join).
+	mux.HandleFunc("GET /arena/track/play", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte(trackWidgetHTML))
 	})
 
 	mux.HandleFunc("GET /arena/track/pos", func(w http.ResponseWriter, r *http.Request) {

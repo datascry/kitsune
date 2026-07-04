@@ -57,7 +57,7 @@ func TestTrackStaleSnapshot(t *testing.T) {
 
 func TestTrackIssueAndClamp(t *testing.T) {
 	s := newTrackStore()
-	x, y := s.issue("id", time.Now())
+	x, y, _, _ := s.issue("id", time.Now())
 	if x < 0 || x > trackCanvas || y < 0 || y > trackCanvas {
 		t.Fatalf("issue position off canvas: (%v,%v)", x, y)
 	}

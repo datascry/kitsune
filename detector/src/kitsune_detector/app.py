@@ -654,6 +654,19 @@ def create_app(
                 _drop_queue_ticket(ks_sid, acted_id)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
+    @app.get("/arena/track/play", include_in_schema=False)
+    async def arena_track_play() -> Response:
+        # Relay the rendered moving-target widget page (same origin as /arena/track + /verify, so its fetches ride
+        # this relay and the stale-snapshot anomaly joins to ks_sid).
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/track/play")
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="text/html; charset=utf-8", status_code=r.status_code)
+
     @app.get("/arena/track", include_in_schema=False)
     async def arena_track() -> Response:
         # Relay the moving-target (stale-snapshot) probe issue: {id, x, y} — the target's start position.

@@ -45,15 +45,16 @@ type trackStore struct {
 
 func newTrackStore() *trackStore { return &trackStore{m: map[string]*trackTarget{}} }
 
-// issue seeds a moving target and returns its id + START position (the "snapshot" a client sees at issue time).
-func (s *trackStore) issue(id string, now time.Time) (float64, float64) {
+// issue seeds a moving target and returns its START position + velocity (the client animates the dot from these;
+// the START position is also the "snapshot" a step-start snapshot sees at issue time).
+func (s *trackStore) issue(id string, now time.Time) (x0, y0, vx, vy float64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// start in the interior; velocity biased so the target clearly leaves its start within ~1-2s
-	x0 := 60 + float64(randInt(80))
-	y0 := 60 + float64(randInt(80))
-	vx := 60 + float64(randInt(60))
-	vy := 60 + float64(randInt(60))
+	x0 = 60 + float64(randInt(80))
+	y0 = 60 + float64(randInt(80))
+	vx = 60 + float64(randInt(60))
+	vy = 60 + float64(randInt(60))
 	if randInt(2) == 0 {
 		vx = -vx
 	}
@@ -61,7 +62,7 @@ func (s *trackStore) issue(id string, now time.Time) (float64, float64) {
 		vy = -vy
 	}
 	s.m[id] = &trackTarget{x0: x0, y0: y0, vx: vx, vy: vy, issued: now}
-	return x0, y0
+	return x0, y0, vx, vy
 }
 
 // current reports the target's position now, for a client that re-perceives before acting (a human tracking it).
@@ -98,3 +99,36 @@ func (s *trackStore) verify(id string, cx, cy float64, now time.Time) (hit, stal
 	stale = nearIssue && !hit && now.Sub(t.issued) > trackStaleAge
 	return hit, stale, true
 }
+
+// trackWidgetHTML is the rendered moving-target challenge: a human sees the animated dot (canvas) and clicks it
+// live; the hint line renders the dot's CURRENT pixel position as text, so a text-snapshot LLM agent freezes it at
+// snapshot time and — after seconds of reasoning — clicks the stale position. Served at GET /arena/track/play; its
+// fetches are same-origin so they ride the detector relay (ks_sid join).
+const trackWidgetHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Verification</title>
+<style>body{font-family:sans-serif;text-align:center;margin-top:24px}#c{border:1px solid #ccc;cursor:crosshair}
+#r{font-weight:bold;height:24px}</style></head><body>
+<h3>Click the moving dot to verify you are human</h3>
+<canvas id="c" width="320" height="320"></canvas>
+<p id="hint"></p><p id="r"></p>
+<script>
+(async function(){
+  var t = await (await fetch('/arena/track')).json();
+  var cv=document.getElementById('c'), ctx=cv.getContext('2d'), hint=document.getElementById('hint');
+  var t0=performance.now();
+  function pos(now){var dt=(now-t0)/1000;
+    return [Math.max(0,Math.min(320,t.x+t.vx*dt)), Math.max(0,Math.min(320,t.y+t.vy*dt))];}
+  function frame(now){var p=pos(now);
+    ctx.clearRect(0,0,320,320);
+    ctx.beginPath();ctx.arc(p[0],p[1],12,0,7);ctx.fillStyle='#c0392b';ctx.fill();
+    hint.textContent='Verification target is at pixel ('+Math.round(p[0])+', '+Math.round(p[1])+'). Click the moving dot.';
+    requestAnimationFrame(frame);}
+  requestAnimationFrame(frame);
+  cv.addEventListener('click',async function(e){
+    var rc=cv.getBoundingClientRect();
+    var out=await (await fetch('/arena/track/verify',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id:t.id,x:e.clientX-rc.left,y:e.clientY-rc.top})})).json();
+    document.getElementById('r').textContent=out.ok?'✓ verified (human)':
+      (out.anomaly==='stale_snapshot'?'✗ stale-snapshot (LLM agent)':'✗ missed — try again');
+  });
+})();
+</script></body></html>`
