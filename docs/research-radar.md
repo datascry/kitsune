@@ -4188,3 +4188,21 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   rung 3, core count rung 2). So the coherent morph closes every field that has a NATIVE route, and is bounded only
   where the field is real hardware. NEXT (rung 5): br.codec_os_incoherent (a mobile UA claims H.264/AAC the container
   lacks) + br.android_no_contacts_api — are these native-routable (CDP/flags/provisioning) or environment-bound?
+- **[COHERENT-STACK LOOP — rung 5: codec + contacts are STACK/ENVIRONMENT, not corpus fields — corpus wiring complete]**
+  (2026-07-04). Classified the two remaining Android-coherence tells, both grounded live. br.codec_os_incoherent:
+  the Playwright chromium genuinely cannot play H.264 (canPlayType('video/mp4;codecs="avc1.42E01E"') = "" — confirmed
+  by direct eval), because it ships codec-free by policy (no libffmpeg.so to swap — statically codec-free). It is a
+  UNIVERSAL tell (fires for ANY non-Linux UA morph, desktop or mobile), and NATIVE-ROUTABLE via a codec-enabled real
+  browser (channel:chrome — network IS available to install it) — the same class as KS_PROVISION (provision the real
+  capability, not a JS canPlayType lie which would violate the thesis). NOT implemented: it is a STACK-provisioning /
+  browser-switch change (re-validates every chromium-tuned stealth patch), NOT a per-device corpus field — recorded
+  as a stack follow-up. br.android_no_contacts_api: navigator.contacts is an Android-Chrome-ONLY web API, absent even
+  on desktop Google Chrome, so it is ENVIRONMENT-BOUND (needs real Android); a JS shim would be a spoof (not shipped).
+  CONCLUSION: these are STACK/ENVIRONMENT capabilities, not corpus fields — so the CORPUS-WIRING is COMPLETE: the
+  per-device corpus fields are all handled — model + CH brands coherently wired (rung 4, CDP native), GPU/webgl real-
+  hardware-bound (rung 3), cores desktop-coherent/mobile-env-bound + memory native-coherent (rung 2), UA/screen/DPR/
+  touch native (Playwright). The GPU (no-silicon -> webgl_software) is the UNIVERSAL wall that keeps EVERY in-sandbox
+  morph from fully clean. The loop's governing result stands: NATIVE routes morph coherently, JS patches are caught,
+  hardware + codec/platform capabilities are provisioning/real-hardware-bound. Remaining verification worth adding:
+  end-to-end a DESKTOP tuple (cores coherent, no model tell, but GPU+codec walls) and an iOS tuple (webkit: no
+  deviceMemory, Apple GPU) — dry #1 for NEW corpus wiring; next firing verifies those or converges to close.
