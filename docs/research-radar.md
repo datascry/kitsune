@@ -4110,3 +4110,24 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   brain already grounded), speculative (unpredictable-motion hardening defends against a motion-COMPUTING script,
   caught on fingerprint, not the inner_text agent), or variety-not-detection (a timing/disappearing challenge is
   the same real-time-perception principle and risks FP on slow humans) — the loop is at its terminus.
+
+## Coherent morphing stack loop (5218dbd1 — wire + verify the device corpus)
+
+- **[COHERENT-STACK LOOP — rung 1: baseline GROUNDED — the device-corpus coherence gap mapped live]**
+  (2026-07-04). Ran the stealth stack live against the detector (kitsune-stealth:latest on kitsune_default →
+  edge:8443 → detector:8080) with KS_DEVICE="Pixel 5" KS_ENGINE=chromium KS_PROVISION=1 KS_MOBILE_FONTS=1 — it
+  reads its own /verdict and logs __KS__<json>. Result: label=bot, 16 tells, cleanly separable into three causes:
+  (1) DEVICE-CORPUS GAP — the tells devices.json's data closes: br.mobile_cores_high (hardwareConcurrency = the
+  container's real cores, not the Pixel's) ← cores; br.mobile_gpu_not_mobile + br.webgl_software (the container's
+  SwiftShader/llvmpipe headless GPU, not an Adreno) ← webgl_renderer; br.mobile_no_js_model +
+  net.ch_ua_mobile_no_model (no device model in navigator / Sec-CH-UA-Model) ← a MODEL field the corpus should add;
+  br.codec_os_incoherent + br.android_no_contacts_api (Android-API coherence). (2) RUNTIME LAYER (NOT this loop's
+  target — headful+patchright neutralises these; this baseline ran plain headless): automation_globals,
+  webdriver_present, cdp_runtime_enabled, permissions_anomaly, no_chrome_object, ch_he_headless. (3) PROVISIONING
+  residual: voices_empty (KS_PROVISION's speech-dispatcher did not take in this headless run). NET: the exact gap
+  the curated corpus unblocks is the mobile_cores_high / mobile_gpu_not_mobile / webgl_software / mobile_no_js_model
+  / ch_ua_mobile_no_model cluster (cores + GPU + model). NEXT (rung 2): wire the EASY coherent fields first —
+  hardwareConcurrency + deviceMemory from devices.json into run.mjs (BOTH realms — a main-only patch trips
+  worker_constructor_tampered), re-run, confirm br.mobile_cores_high goes silent with no new realm-divergence tell.
+  Then the GPU string (mobile_gpu_not_mobile) — noting the real-silicon caps wall (mobile-axis-closed) is where a
+  string spoof stops. A MODEL field (Sec-CH-UA-Model + navigator) is a corpus + wiring extension.
