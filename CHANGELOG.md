@@ -5,6 +5,50 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.14.0](https://github.com/datascry/kitsune/compare/v1.13.0...v1.14.0) (2026-07-04)
+
+
+### Features
+
+* **arena:** ?charset= selector — the second text ocr bench axis ([5da81f0](https://github.com/datascry/kitsune/commit/5da81f0e6c665dd784ad9e83806e52d0c7476669))
+* **arena:** ?font= selector + captcha reports its typeface (the ocr bench) ([018f2af](https://github.com/datascry/kitsune/commit/018f2af1c0544defa1f0dfb306eb6282b0c95a19))
+* **arena:** add dancing-script (cursive OFL) — drops TrOCR to 5/8, the hardest face ([3369c34](https://github.com/datascry/kitsune/commit/3369c348bccf61607b77a238e90eed287798d65a))
+* **arena:** add liberation-serif (OFL) — a distinct design that drops TrOCR to 7/8 ([65b4d38](https://github.com/datascry/kitsune/commit/65b4d3847cbb96d4e72ca20fb751ef4d2fcaaeca))
+* **arena:** convict a queue client that acts before admission (queue-bypass) ([13fc818](https://github.com/datascry/kitsune/commit/13fc818eb5ad9a246a42a3213e5f7274b3f2386a))
+* **arena:** convict a session that fills a hidden honeypot field ([3339fec](https://github.com/datascry/kitsune/commit/3339fec2f6f682da939ebefb4a074f92acbb0d68))
+* **arena:** double the emoji taxonomy — add plant/weather/sport categories ([8dcf831](https://github.com/datascry/kitsune/commit/8dcf8312f4d4dafae6604332a8455461b52310a7))
+* **arena:** flag a captcha solved faster than a human can read+type (ocr/ml tell) ([6a47130](https://github.com/datascry/kitsune/commit/6a4713080faf2dc58a8f19a38e136e80a7f99e49))
+* **arena:** flag a forged rotate trajectory + make the trajectory rule gate-agnostic ([9018e1b](https://github.com/datascry/kitsune/commit/9018e1bf11e0097a8e9069182209713a38197259))
+* **arena:** flag a slider trajectory that claims more drag-time than the whole solve ([9ae691a](https://github.com/datascry/kitsune/commit/9ae691aa946ae13f41f402626c6ef4fe29f81f6f))
+* **arena:** GET /arena/catalog manifest — enumerate the captcha bench space ([b1b14cf](https://github.com/datascry/kitsune/commit/b1b14cf51e9fd8d546e15682d3e6b3d2db780076))
+* **arena:** image-shapes — a 3rd owned image source (procedural geometry) ([7af79e7](https://github.com/datascry/kitsune/commit/7af79e7f63019b44e57655163d1b36451d60cedc))
+* **arena:** image-shapes 4-&gt;7 categories — add pentagon/hexagon/cross ([53e8a5f](https://github.com/datascry/kitsune/commit/53e8a5f7d89393c9efeadda594ac8eacb34d6588))
+* **arena:** per-glyph rotation — real-world fidelity for the text gate ([e9528e0](https://github.com/datascry/kitsune/commit/e9528e02040f330520abdfe0e9d73005e6256ccf))
+* **arena:** server-observed solve-timing (issue-&gt;verify age) + pow solve-rate telemetry ([674c6fb](https://github.com/datascry/kitsune/commit/674c6fb99705dec13359dd0f1486c3241e892941))
+* **arena:** text captcha font pool — 5 go-family typefaces for the ocr bench ([bad9336](https://github.com/datascry/kitsune/commit/bad93361a4044e0d2440bd16fa512ae7e9c98955))
+* **arena:** waiting-room queue gate + superhuman admission-action tell ([e61b1b3](https://github.com/datascry/kitsune/commit/e61b1b3cca78ebe0455d95b65e99b116f15a812b))
+* **detector:** convict a session that solves an arena captcha faster than a human ([cd10de9](https://github.com/datascry/kitsune/commit/cd10de9b0fb8ddd6080234e743e672f947794e20))
+* **detector:** flag a session hoarding many concurrent queue positions (experimental) ([68562ae](https://github.com/datascry/kitsune/commit/68562aeb7ba6ad5ec8d8719d2811b6ddab8e0b95))
+* **detector:** join the queue superhuman admission-action anomaly to the session ([fb7f9e5](https://github.com/datascry/kitsune/commit/fb7f9e554b4b0e402a09505c9a987912c1803d03))
+* **detector:** join the slider trajectory-forgery anomaly to the session verdict ([3661af1](https://github.com/datascry/kitsune/commit/3661af1d070a8ad110af351442ee0e69bb6e566f))
+* **detector:** worker_removed — catch a client that strips window.Worker to hide the realm ([2dca627](https://github.com/datascry/kitsune/commit/2dca6272f04045d923f6de25766c10240599fe1c))
+* **evaders:** arena-solver queue-abuse mode + full red-verify of the wait tells ([4481fd4](https://github.com/datascry/kitsune/commit/4481fd4b5a190dfc8c33388155e3e964dfc3bdd8))
+* **evaders:** OCR_FONT selector — benchmark arena-solver-ocr per typeface ([a25b3b9](https://github.com/datascry/kitsune/commit/a25b3b90414c4d4f8fe2f68a5523e8ef08cc4170))
+* **fleet:** diffuse strategy — the maximal in-sandbox evader, grounded live to evade both axes ([01e4f13](https://github.com/datascry/kitsune/commit/01e4f1315f3fcf00cd11b354d4ce76ab7bd67e4c))
+* **fleet:** diffuse-automated strategy — red-verify axis-a corroboration end-to-end live ([7578de7](https://github.com/datascry/kitsune/commit/7578de7f84a2d899f5ea9641837e5a3f6fb03e10))
+* **fleet:** diffuse-scheduled strategy — red-verify the scheduled-stagger timing dim ([9517765](https://github.com/datascry/kitsune/commit/95177656323b2b2bc7dd3a78c2d625542119c484))
+* **fleet:** residential-proxy strategy — red-verify proxy_egress end-to-end live ([ba180fa](https://github.com/datascry/kitsune/commit/ba180fa43a36707dfb1f6eb2481fd143ca1279fb))
+* **fleet:** socks-proxy strategy — red-verify the stack-divergence path end-to-end live ([73aa17b](https://github.com/datascry/kitsune/commit/73aa17bd488867500054586e7819bc6f675fb3ee))
+* **harness:** broaden proxy_egress to catch socks re-origination via stack-vs-ua divergence ([f6ebc81](https://github.com/datascry/kitsune/commit/f6ebc812349ac13cac2612f995020f49189e92a7))
+* **harness:** corroborate a 2-dim axis-a candidate to campaign on a per-session bot tell ([678bfcf](https://github.com/datascry/kitsune/commit/678bfcfa75051f79b714ab0230550298dc2f7245))
+* **harness:** proxy_egress dim — convict a residential-proxy fleet on a shared tunnel MSS ([507c7bb](https://github.com/datascry/kitsune/commit/507c7bba2f166d776e6c383b5cc8e394a2218171))
+* **harness:** scheduled-stagger regularity — a baseline-free axis-a coordination timing dim ([8a14fa2](https://github.com/datascry/kitsune/commit/8a14fa2f2adde292bbb722ac2dbfa0afb1915107))
+
+
+### Bug Fixes
+
+* **arena:** make the difficulty ladder monotonic — image-select hard grows to 12 tiles ([017693e](https://github.com/datascry/kitsune/commit/017693e84b6de91e07706b027f3d6eabc5900426))
+
 ## [1.13.0](https://github.com/datascry/kitsune/compare/v1.12.0...v1.13.0) (2026-07-03)
 
 
