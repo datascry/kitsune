@@ -4070,3 +4070,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   motion hardening (vs a sophisticated velocity-reading/motion-predicting agent) remains the frontier — but that
   threat is a motion-COMPUTING client, which is a script (caught on the fingerprint/automation layer), not the
   inner_text LLM agent the widget targets; the shippable baseline catches the real agent and passes real humans.
+- **[RENDERED-CHALLENGE LOOP — rung 4: end-to-end DETECTOR-INTEGRATION grounded (session convicted)]** (2026-07-04).
+  Proved the widget is not just a local message but a real detector-integrated gate that CONVICTS THE SESSION.
+  Grounded the full chain in a real browser, BOTH ways, with a ks_sid cookie on the widget origin (modelling the
+  widget embedded in an existing session): (1) a stale click (agent-style: freeze the position, act 2.5s later) ->
+  widget "stale-snapshot" AND the detector's /verdict/<ks_sid> returns label=bot, score 0.85, with
+  bh.arena_stale_snapshot present on the session — the anomaly rode /arena/track/verify -> _join_arena_anomaly ->
+  the ks_sid session, exactly as designed; (2) a live-tracker (clicks the current dot after ~150ms human lag) ->
+  widget "verified (human)" AND the session verdict is 404 (no signal joined, session never created) — CLEAN. So
+  the complete loop is grounded end-to-end: widget -> /arena/track/verify -> anomaly:stale_snapshot -> join ->
+  bh.arena_stale_snapshot -> session label=bot for the agent, and nothing for the human. The stale-snapshot CAPTCHA
+  is now a fully wired, deployable detection gate: HUMAN-SOLVABLE (9/10, rung 3) + FP-SAFE end-to-end (human session
+  clean) + AGENT-CATCHING end-to-end (agent session convicted), every link grounded in a real browser, not asserted.
