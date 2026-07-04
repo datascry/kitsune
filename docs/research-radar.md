@@ -3845,3 +3845,26 @@ LLM-characteristic) and win (goal-pursuit like a human).
   detector cannot reject uniform-ish pacing without FP-risking real humans). NEXT: pivot OFF cadence to the
   narrower-band structural sub-axes — DECISION-LATENCY (gate-ready -> first-action, per-step, harder to pace) and
   TASK-STRUCTURE (acting before a prerequisite completes / out-of-order — structural, so jitter does not help).
+- **[SESSION-INTENT LOOP — rung 5: remaining leads assessed — no new FP-safe convicting tell (GROUNDED DRY #1)]**
+  (2026-07-04). After the cadence sub-axis (floor rung 2 + regularity rung 4), genuinely assessed every remaining
+  session-intent lead against the precision-1.0 bar AND the arena's actual structure — none yields a NEW FP-safe
+  CONVICTING tell in-sandbox: (b) DECISION-LATENCY is REDUNDANT — the per-step issue->verify floor is already the
+  single-step tells (minHumanCaptchaSolve per captcha kind, queueActFloor, solved/acted_faster_than_human, grounded:
+  they fire on the arena-solver), and a session-level aggregate adds no FP-safe conviction (a padded-solve bot
+  evades both). (c) ACCESS-PATTERN cadence == the regularity tell (done). (f) TASK-STRUCTURE — the arena's gate
+  prerequisites are STRUCTURALLY/CRYPTO-ENFORCED (queue admission returns ok=false if unadmitted -> the queue-bypass
+  tell; PACT is an Ed25519 single-use token -> unforgeable/unreplayable), so there is no "act before a prerequisite"
+  a bot can DO that is not already blocked or caught; the other gates are independent (no cross-gate order to
+  violate). (d) EXPLORATION/DWELL needs page-navigation data the arena does not model + is corroborating-only, not
+  convicting. (e) ERROR-RECOVERY (a flawless multi-step flow) FPs on competent flawless humans -> rejected -> band.
+  PARALLELISM/overlap FPs on multi-tab humans (two tabs, one ks_sid) -> rejected -> band. So the session-intent
+  axis's IN-SANDBOX FP-SAFE CONVICTING tells ARE the cadence sub-axis (superhuman-floor + machine-regularity); the
+  deeper leads reduce to existing tells, FP on human diversity, or need external nav/think-time data. THE STRATEGIC
+  BET IS VALIDATED: the session-intent band is WIDE — a JITTERED (evades floor+regularity) + SERIAL (evades
+  parallelism) + occasionally-FAILING (evades error-recovery) + humanly-PADDED-SOLVE (evades decision-latency) bot
+  lives entirely in the band, and the blue side cannot close it without FP-ing real humans. That IS the red-team
+  finding for this axis: the session-intent/timing layer catches only the NAIVE tiers (instant, fixed-sleep);
+  everything above is a permanent band. SCOPE LIMIT: a browserless bot (arena-solver) is caught on FINGERPRINT
+  regardless of timing, so the session-intent axis's real target is a COHERENT-FINGERPRINT real-browser bot where
+  timing is the only tell — demonstrating that end-to-end needs a real-browser arena-flow driver (external-ish to
+  the in-sandbox arena-solver). DRY #1. One more grounded-dry firing = the earned close of the session-intent axis.
