@@ -3747,3 +3747,17 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   heuristic-uniform-0 (no in-repo model classifies the image domains — the OCR half's TrOCR gradient has no image
   equivalent without an external VLM), so image rungs add VARIETY not a benchmark gradient; the strong-benchmark
   work (OCR) is complete. Increasingly a clean, well-grounded release.
+- **[CAPTCHA-BENCH LOOP — rung 12: TrOCR level-distortion gradient (RED benchmark) — the OCR picture is COMPLETE]**
+  (2026-07-04). Capstone RED benchmark (no code change): swept TrOCR across easy/medium/hard on go-regular (6
+  rounds/level) to ground the DISTORTION axis with numbers, the complement to the design axis. RESULT: easy 6/6 ->
+  medium 5/6 -> HARD 0/6 — heavy distortion (warp + interference + overlap + rotation compounded at the hard cost
+  tier) COMPLETELY defeats TrOCR. So the OCR bench now has BOTH orthogonal hardening levers grounded end-to-end:
+  DESIGN (at easy, isolating typeface): Go-sans 8/8 -> serif 7/8 -> cursive 5/8; DISTORTION (go-regular, isolating
+  the level dial): easy 6/6 -> medium 5/6 -> hard 0/6. Together they fully characterize when a strong modern OCR
+  model fails — a genuinely useful, live-grounded result for a red-teamer sizing their solver. The single-axis
+  mild variations (font-family weight/mono, charset digits/confusable, mild ±14° rotation) do NOT move TrOCR; only
+  a fundamentally different glyph DESIGN or COMPOUNDED heavy distortion does. THE OCR BENCH IS COMPLETE. The image
+  half is variety-only (no in-repo classifier gives it a gradient; a real VLM is external). Remaining leads (a slab
+  to interpolate the design gradient, larger rotation, occlusion, a 4th image source) are pure marginal
+  refinements. RECOMMENDATION: consolidate — the 12-rung batch (11 bench rungs + the coverage fix) is a clean,
+  CI-green (96.12%), well-grounded release that also un-reds origin/main; a release PR supersedes the stale 1.14.0.
