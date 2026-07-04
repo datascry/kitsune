@@ -3810,3 +3810,20 @@ LLM-characteristic) and win (goal-pursuit like a human).
   (variable think-time between gates) that lives in the band -> confirm SILENT live; then (blue) the machine-
   REGULARITY tell (inter-step CV ~= 0, the robotic-timer shape) and DECISION-LATENCY (gate-ready -> first-action),
   each with its own diverse-human FP-safety population.
+- **[SESSION-INTENT LOOP — rung 3 (RED): humanized flow pacing EVADES the floor tell — grounded]** (2026-07-04).
+  The honest arms-race counter to rung 2. Added KS_HUMANIZE (variable 1.2-4.0s think-time between gates, jittered)
+  + KS_SID (distinct session per run) to evaders/arena-solver. GROUNDED LIVE: the NAIVE flow (ks_sid=solver-naive,
+  instant) trips bh.session_flow_superhuman (True); the HUMANIZED flow (ks_sid=solver-human, KS_HUMANIZE=1) does NOT
+  (False) — a paced flow's median inter-step gap is seconds, inside the human band, so the superhuman-FLOOR tell
+  can no longer convict on it. RED WIN (recorded): the flow-cadence floor tell catches ONLY naive/instant flows.
+  NOTE: the humanized session is STILL label=bot — its individual SOLVES remain superhuman (the single-step arena
+  tells, a separate closed axis, fire); this rung isolates the FLOW-cadence tell's evasion, not full silence.
+  ARMS-RACE STATE on the cadence sub-axis: floor (rung 2) catches instant -> jittered pacing evades it. The blue
+  counter (machine-REGULARITY, inter-step CV ~= 0) would catch a FIXED-sleep bot, but this jittered humanizer
+  (CV > 0) already evades regularity too — so the deeper counter is the think-time DISTRIBUTION SHAPE (human
+  think-time is log-normal with a floor + long tail; a uniform-jitter bot is not), which is EXTERNAL-CALIBRATION-
+  BOUND (needs a real human think-time corpus, and the detector cannot reject "uniform-ish" without FP-risk on real
+  humans) — so the jittered-flow band is likely a PERMANENT RED WIN on the cadence axis. The still-unexhausted blue
+  session-intent sub-axes: DECISION-LATENCY (gate-ready -> first-action, harder to pace convincingly) and
+  TASK-STRUCTURE / prerequisite-ordering (a flow analog of the queue-bypass tell). NEXT: the machine-REGULARITY
+  tell (a real rung — catches the naive fixed-sleep humanization tier), then pivot to decision-latency / task-order.

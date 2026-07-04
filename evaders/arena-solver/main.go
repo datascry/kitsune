@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"math/rand/v2"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -72,10 +73,19 @@ func main() {
 	jar, _ := cookiejar.New(nil)
 	c := &http.Client{Jar: jar, Timeout: 30 * time.Second}
 	// A real bot maintains a session cookie; seed one so the detector joins our gate-anomalies to a session
-	// (the detector only relays /arena/* — it never mints ks_sid, and we do not run through the edge).
-	if u, err := url.Parse(base); err == nil {
-		jar.SetCookies(u, []*http.Cookie{{Name: "ks_sid", Value: "arena-solver"}})
+	// (the detector only relays /arena/* — it never mints ks_sid, and we do not run through the edge). KS_SID
+	// overrides it so distinct runs (naive vs humanized) score as distinct sessions.
+	sid := os.Getenv("KS_SID")
+	if sid == "" {
+		sid = "arena-solver"
 	}
+	if u, err := url.Parse(base); err == nil {
+		jar.SetCookies(u, []*http.Cookie{{Name: "ks_sid", Value: sid}})
+	}
+	// KS_HUMANIZE=1 paces the multi-gate FLOW with variable human think-time between steps — the arms-race counter
+	// to bh.session_flow_superhuman. It does NOT make the individual solves human (those trip other tells); it puts
+	// the FLOW CADENCE inside the human band, so the superhuman-inter-step-floor tell can no longer convict on it.
+	humanize := os.Getenv("KS_HUMANIZE") == "1"
 
 	families := []struct {
 		name string
@@ -90,7 +100,11 @@ func main() {
 		{"slider", solveSlider},
 		{"queue", abuseQueue},
 	}
-	for _, f := range families {
+	for i, f := range families {
+		if humanize && i > 0 {
+			// variable 1.2–4.0s think-time before each subsequent gate — human-diverse inter-step cadence
+			time.Sleep(time.Duration(1200+rand.IntN(2800)) * time.Millisecond)
+		}
 		ok, ms, err := f.fn(c, base)
 		status := "PASSED"
 		if !ok || err != nil {
