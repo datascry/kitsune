@@ -1,5 +1,8 @@
 # Adversary-emulation roadmap
 
+> **Current reconciled state lives in [`frontier.md`](frontier.md)** — these phases are the structured plan and
+> can lag it. When they disagree, `frontier.md` is authoritative.
+
 The plan for maturing Kitsune's **red team** from a *technique ladder* (does evasion X defeat tell Y) into
 an **adversary-emulation platform** (emulate threat actor Z end-to-end — tooling + infrastructure +
 behavior + scale + objective — and measure which layer catches it, at what scale, over what time).

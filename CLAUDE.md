@@ -2,7 +2,9 @@
 
 Kitsune is a **bot detection ⇄ evasion lab**: a blue-team `detector` and a red-team evader fleet,
 run against each other to produce a per-layer scoreboard. Core thesis: **flag incoherence across
-layers, not just bad signals.** Start with [`docs/architecture.md`](docs/architecture.md).
+layers, not just bad signals.** Start with [`docs/architecture.md`](docs/architecture.md); for where the
+arms race currently stands (saturated / open / external-bound), see [`docs/frontier.md`](docs/frontier.md) —
+the living state doc, kept current on every axis close.
 
 ## ⛔ Hard rules (non-negotiable)
 

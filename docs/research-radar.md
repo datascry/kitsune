@@ -1,5 +1,8 @@
 # Research radar — the detection⇄evasion loop's intake queue
 
+> **For the current reconciled state of the arms race, see [`frontier.md`](frontier.md).** This file is the
+> append-only *detail log* (every rung, dated); `frontier.md` is the ≤1-screen live snapshot reconciled from it.
+
 This file is the durable queue of the **research-fed red⇄blue loop**: external papers/tools/techniques for
 bot detection & evasion, each mapped to a Kitsune seam, tagged **groundable-in-sandbox** vs
 **external-data-bound**, and tracked from `lead → grounded` (or `→ external queue`). It is fed by periodic
