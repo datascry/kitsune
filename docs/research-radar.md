@@ -3946,3 +3946,27 @@ scripted bot do not both share. The frontier is unsaturated (Kitsune detects scr
   real claude agent validates later. NEXT (rung 3): build the moving-target gate + bh.arena_stale_snapshot + ground
   the stale-anomaly (stale client caught, live/human client silent — FP-safe: a human re-perceives before acting,
   so never clicks a seconds-old stale position).
+- **[LLM-AGENT LOOP — rung 3 (BLUE): the STALE-SNAPSHOT tell — BUILT + grounded server-side + FP-safe]**
+  (2026-07-04). Built the one LLM-agent tell that survives a coherent fingerprint. New arena moving-target gate
+  (arena/track.go): GET /arena/track issues a target at a start position that MOVES over time (server-seeded
+  linear motion, clamped to a 320px canvas); GET /arena/track/pos re-perceives the CURRENT position (a human
+  tracking it); POST /arena/track/verify classifies a click. STALE-SNAPSHOT = the click is near the ISSUE-TIME
+  position (where a step-start snapshot saw the target), far from where the target is NOW, AND more than
+  trackStaleAge (1.2s) after issue — i.e. the client acted on a >1.2s-old view. The gate emits anomaly:
+  stale_snapshot; the detector's /arena/track/verify relay joins it to bh.arena_stale_snapshot (new active rule,
+  w0.85). GROUNDED LIVE (server-side, through the detector relay): a STALE client (GET /track -> sleep 2s -> POST
+  verify the issue position) trips anomaly:stale_snapshot and the session convicts (bh.arena_stale_snapshot
+  present); a LIVE client (GET /track -> GET /pos -> POST verify the CURRENT position) hits the target with NO
+  anomaly and NO signal (silent). FP-SAFE BY CONSTRUCTION + tested (arena/track_test.go): a human re-perceives and
+  clicks the CURRENT target (never a seconds-old view), so a live click, a SLOW human clicking current 5s later,
+  and a FAST click below the age floor are ALL not-stale; only the snapshot-then-slowly-reason pattern convicts.
+  NON-REDUNDANT: a fast script clicks before the target moves (current) or re-queries the live position; only an
+  LLM reasoning loop (snapshot at step start -> inference seconds -> act) clicks the stale position — and this
+  survives ghost-cursor input synthesis (which humanizes the MOUSE, not the stale DECISION) and a coherent
+  fingerprint. arena build/vet/test green; detector ruff+mypy+drift-guard green; catalog regenerated; store +
+  relay + join tests added. SCOPE (honest): this is grounded SERVER-SIDE with faithful stale-vs-live clients
+  modelling runner.py's snapshot->reason->act loop; the real claude-agent browser-RENDERED validation (the agent
+  clicking a live-animated target) is gated behind a coherent-fingerprint agent (rung 2: the in-sandbox agent is
+  caught on fingerprint first) — so the rule ships as a working, FP-safe capability whose LLM-agent-specific claim
+  is server-side-grounded, with the rendered-target live-agent validation the next (infra-gated) step. This is the
+  FIRST FP-safe tell on this axis that is NOT the saturated automation fingerprint — the genuinely-novel result.
