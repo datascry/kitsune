@@ -3989,3 +3989,29 @@ scripted bot do not both share. The frontier is unsaturated (Kitsune detects scr
   the snapshot->reason(seconds)->act loop cannot do continuous visual tracking of a moving target, while a human's
   visual servoing is sub-100ms. Structure beats reasoning-tells. This leaves the stale-snapshot as the one novel
   FP-safe LLM-agent result (its full strength browser-rendered-gated), and the reasoning-based leads as bands.
+- **[LLM-AGENT LOOP — rung 5: no other FP-safe structural tell (dry #2) -> AXIS EARNED-CLOSED]** (2026-07-04).
+  Rung 4 established structure beats reasoning-tells; rung 5 confirms the stale-snapshot's real-time-PERCEPTION
+  principle is the ONE clean FP-safe structural class of LLM-agent tell, and no independent new tell remains. All
+  the agent's structural constraints are the SAME qualitative gap — it lacks real-time perception/feedback
+  (snapshot -> reason(seconds) -> act vs a human's sub-100ms visual servoing); every variant (tracking a moving
+  target [rung 3, built], timing a sweeping element, following a live path) is the same principle, not a new tell.
+  The other leads reduce away: DECISION-LATENCY is a quantitative threshold (agent ~seconds/action vs human
+  ~1-2s) -> calibration-bound / the session-intent timing band, not FP-safe by construction; REFLEX/REACTION FPs on
+  a distracted human; SNAPSHOT->ACT structure (reading the whole DOM) is a LOCAL inner_text read, not
+  server-observable; EXPLORATION needs nav data + a corpus; REASONING-based honeypots (prompt injection) are
+  DEFEATED BY ALIGNMENT (rung 4). TWICE-IN-A-ROW grounded dry (rung 4 + rung 5). **The LLM-AGENT axis is
+  EARNED-CLOSED.** OUTCOME + the strategic answer to "what betrays an LLM agent beyond the fingerprint": NOT its
+  reasoning — its LOOP STRUCTURE. (1) In the current in-sandbox stack the agent is FINGERPRINT-GATED (rung 2, run
+  live: caught on cdp/webdriver/headless/font/codec — the saturated layer; a fingerprint-clean agent needs a
+  stealth driver + coherent device, infra-bound). (2) The ONE novel FP-safe tell that survives a coherent
+  fingerprint AND ghost-cursor input synthesis AND good reasoning is bh.arena_stale_snapshot (rung 3, built +
+  server-side-grounded + FP-safety-tested): the moving-target gate catches a client acting on a seconds-old view,
+  which a human (continuous perception) never does and a script (fast/re-queries) never does, but the agent's
+  reason-loop structurally must. (3) Reasoning-based tells (honeypots/injection) are defeated by an aligned agent
+  behaving like a careful human (rung 4). (4) Timing/latency tells land in the wide session-intent band. RED-TEAM
+  TAKEAWAY: a coherent-fingerprint, humanly-paced, well-aligned LLM agent evades everything EXCEPT tasks requiring
+  real-time sensorimotor feedback (continuous tracking) — the physics of its perceive-think-act loop, not its
+  cognition, is the durable tell. FRONTIER (external-gated): validate bh.arena_stale_snapshot against the live
+  claude agent on a browser-RENDERED moving target (rung 2 showed the in-sandbox agent is fingerprint-gated first,
+  so this needs a coherent-fingerprint agent); real diverse-agent + human corpora for the calibration-bound
+  latency tells. Loop 459f4ab2 retired at the earned terminus.
