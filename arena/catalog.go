@@ -3,10 +3,11 @@
 
 package arena
 
-// catalogChallenge describes one CAPTCHA kind and the axes a red-teamer can vary on it when benchmarking a solver.
+// catalogChallenge describes one challenge kind and the axes a red-teamer can vary on it when benchmarking a solver.
 type catalogChallenge struct {
 	Kind       string   `json:"kind"`
 	Prompt     string   `json:"prompt"`
+	Endpoint   string   `json:"endpoint,omitempty"`   // the route to fetch it, if not the default GET /arena/captcha?kind=
 	Params     []string `json:"params,omitempty"`     // query params the caller can set (e.g. ["font"] on text)
 	Fonts      []string `json:"fonts,omitempty"`      // text: the ?font=<name> typeface pool (the OCR bench axis)
 	Charsets   []string `json:"charsets,omitempty"`   // text: the ?charset=<name> character-set options (the OCR bench axis)
@@ -25,9 +26,11 @@ type Catalog struct {
 // drifts from what the gates actually serve — add a font or a category and it appears here automatically.
 func arenaCatalog() Catalog {
 	return Catalog{
-		Note: "Owned, allowlist-scoped CAPTCHA bench. Iterate kind x level (x font/category) to benchmark OCR / " +
-			"image-classification models against a rich corpus. Every asset is license-clean; every challenge is " +
-			"human-solvable. Fetch a challenge at GET /arena/captcha?kind=<kind>&level=<level>[&font=<font>].",
+		Note: "Owned, allowlist-scoped challenge bench. The image/OCR kinds (text/math/image-*/honeypot) are an OCR / " +
+			"image-classification benchmark corpus — iterate kind x level (x font/category); fetch at GET " +
+			"/arena/captcha?kind=<kind>&level=<level>[&font=<font>]. The 'track' kind is a distinct REAL-TIME " +
+			"visual-tracking gate (its own endpoint) that catches LLM browser agents by the physics of their " +
+			"snapshot->reason->act loop, not OCR. Every asset is license-clean; every challenge is human-solvable.",
 		Levels: []string{"easy", "medium", "hard"},
 		Challenges: []catalogChallenge{
 			{
@@ -49,6 +52,12 @@ func arenaCatalog() Catalog {
 				Categories: shapeOrder,
 			},
 			{Kind: "honeypot", Prompt: "Submit without filling the hidden field (no difficulty axis)."},
+			{
+				Kind:     "track",
+				Prompt:   "Click the moving dot. A real-time visual-tracking gate: a human servos to the current dot; a snapshot-then-reason LLM agent clicks the seconds-old position it last saw and is convicted (bh.arena_stale_snapshot). Level sets dot speed.",
+				Endpoint: "GET /arena/track/play?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }
