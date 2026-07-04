@@ -134,6 +134,7 @@ func NewMux(secret []byte) http.Handler {
 	store := pow.NewNonceStore()
 	captchas := newCaptchaStore()
 	queues := newQueueStore()
+	tracks := newTrackStore()
 	issuer := NewPACTIssuer()
 	mux := http.NewServeMux()
 
@@ -391,6 +392,44 @@ func NewMux(secret []byte) http.Handler {
 		// position-holder. The gate still passes; the anomaly rides the verdict so the detector convicts the session.
 		if elapsed < queueActFloor {
 			resp["anomaly"] = "acted_faster_than_human"
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- TRACK / moving-target: the LLM-agent STALE-SNAPSHOT probe. A target moves; the client must click its
+	// CURRENT position. A human tracks it live; a snapshot-then-slowly-reason agent clicks the STALE (seconds-old)
+	// position it saw at snapshot time — the one behavioral signal that survives a coherent fingerprint. ---
+	mux.HandleFunc("GET /arena/track", func(w http.ResponseWriter, _ *http.Request) {
+		id := randHex(16)
+		x, y := tracks.issue(id, time.Now())
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"kind": "track", "id": id, "x": x, "y": y, "canvas": trackCanvas})
+	})
+
+	mux.HandleFunc("GET /arena/track/pos", func(w http.ResponseWriter, r *http.Request) {
+		x, y, known := tracks.current(r.URL.Query().Get("id"), time.Now())
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"kind": "track", "x": x, "y": y, "known": known})
+	})
+
+	mux.HandleFunc("POST /arena/track/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID string  `json:"id"`
+			X  float64 `json:"x"`
+			Y  float64 `json:"y"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<12)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		hit, stale, known := tracks.verify(body.ID, body.X, body.Y, time.Now())
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"kind": "track", "ok": hit, "known": known}
+		// A click on the target's SECONDS-OLD position (far from where it is now) is a stale-snapshot action: no
+		// human acts on a >1.2s-old view (they re-perceive before acting), only a snapshot-then-slowly-reason LLM
+		// agent does. The anomaly rides the verdict so the detector convicts the session (like the other gates).
+		if stale {
+			resp["anomaly"] = "stale_snapshot"
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})

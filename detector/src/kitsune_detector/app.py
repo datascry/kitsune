@@ -395,6 +395,8 @@ def create_app(
             kind = "arena_queue_superhuman"
         elif anomaly == "queue_bypass":
             kind = "arena_queue_bypass"
+        elif anomaly == "stale_snapshot":
+            kind = "arena_stale_snapshot"
         else:
             return
         _apply_signals(
@@ -650,6 +652,50 @@ def create_app(
                 acted_id = None
             if isinstance(acted_id, str):
                 _drop_queue_ticket(ks_sid, acted_id)
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.get("/arena/track", include_in_schema=False)
+    async def arena_track() -> Response:
+        # Relay the moving-target (stale-snapshot) probe issue: {id, x, y} — the target's start position.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/track")
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.get("/arena/track/pos", include_in_schema=False)
+    async def arena_track_pos(id: str = "") -> Response:
+        # The target's CURRENT position — a client that re-perceives before acting (a human tracking it) reads it.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/track/pos", params={"id": id})
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/track/verify", include_in_schema=False)
+    async def arena_track_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
+        # Verify a click on the moving target; a stale-snapshot click carries anomaly:stale_snapshot, which the
+        # join maps to bh.arena_stale_snapshot on the session (the LLM-agent tell that survives a clean fingerprint).
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 4096:
+            raise HTTPException(status_code=413, detail="body too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/track/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        _join_arena_anomaly(ks_sid, r)
+        _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/pact", include_in_schema=False)

@@ -299,6 +299,9 @@ def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatc
     assert client.get("/arena/pact").status_code in ok
     assert client.post("/arena/pact/verify", json={"id": "x"}).status_code in ok
     assert client.get("/arena/managed", params={"level": "easy"}).status_code in ok
+    assert client.get("/arena/track").status_code in ok
+    assert client.get("/arena/track/pos", params={"id": "x"}).status_code in ok
+    assert client.post("/arena/track/verify", json={"id": "x", "x": 1.0, "y": 2.0}).status_code in ok
     assert client.post("/arena/verify", content=b"{}").status_code in ok
     assert client.post("/arena/captcha/verify", json={"kind": "text", "id": "x", "answer": "y"}).status_code in ok
 
@@ -348,6 +351,7 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
         "honeypot_filled",
         "acted_faster_than_human",
         "queue_bypass",
+        "stale_snapshot",
         "unknown",
     ):
         monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": anomaly}))
@@ -357,6 +361,14 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
             headers={"Cookie": "ks_sid=s"},
         )
         assert resp.status_code == 200
+    # the moving-target relay's 200-branch (its join + flow-note calls) — a stale-snapshot anomaly rides the verdict
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "stale_snapshot"}))
+    assert (
+        client.post(
+            "/arena/track/verify", json={"id": "x", "x": 1.0, "y": 2.0}, headers={"Cookie": "ks_sid=s"}
+        ).status_code
+        == 200
+    )
 
 
 def test_arena_queue_hoarding_counts_tickets(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
