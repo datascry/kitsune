@@ -166,6 +166,25 @@ _ARENA_LEVELS = frozenset({"easy", "medium", "hard"})
 _QUEUE_HOARD_THRESHOLD = 8
 _QUEUE_TICKET_TTL = timedelta(minutes=2)
 
+#: Session-intent MULTI-STEP FLOW cadence (the session-intent axis's first tell). A human completing a multi-gate
+#: flow needs perceive+decide+solve+submit time PER step (seconds); a bot chains gate completions in milliseconds.
+#: _FLOW_STEP_FLOOR_MS is a conservative physiological floor on the MEDIAN inter-step gap — far under any real human's
+#: per-gate time, so NO human session trips it (precision 1.0), only a machine chaining >= _FLOW_MIN_STEPS gates that
+#: fast. FP-safe by construction as a LOWER bound; the median is robust to a single slow step (a resumed/idle flow).
+_FLOW_STEP_FLOOR_MS = 500.0
+_FLOW_MIN_STEPS = 3
+_FLOW_TTL = timedelta(minutes=5)
+
+
+def _flow_superhuman(steps: list[datetime]) -> bool:
+    """True when a session's gate-completion sequence is superhuman: the MEDIAN inter-step gap across at least
+    ``_FLOW_MIN_STEPS`` steps is below the physiological floor. Pure over the timestamp list so it is directly
+    FP-safety-testable against a synthesized population of diverse human session timings."""
+    if len(steps) < _FLOW_MIN_STEPS:
+        return False
+    gaps = sorted((steps[i] - steps[i - 1]).total_seconds() * 1000 for i in range(1, len(steps)))
+    return gaps[len(gaps) // 2] < _FLOW_STEP_FLOOR_MS
+
 
 def _arena_level(level: str | None) -> str:
     return level if level in _ARENA_LEVELS else "medium"
@@ -281,6 +300,37 @@ def create_app(
         held = queue_holdings.get(ks_sid)
         if held is not None:
             held.pop(ticket_id, None)
+
+    # session-intent flow log: the ordered gate-completion timestamps per ks_sid — the multi-step FLOW substrate the
+    # arena did not track (each gate was independent). This is where the SESSION-SHAPE tells live.
+    flow_log: dict[str, list[datetime]] = {}
+
+    def _note_flow_step(ks_sid: str, now: datetime) -> bool:
+        # Record a gate-completion step; return True when the session's multi-step flow is SUPERHUMAN — the MEDIAN
+        # inter-step gap is below the physiological floor across >= _FLOW_MIN_STEPS steps. Steps older than the TTL
+        # are pruned so a slow/resumed session never accumulates a false pattern.
+        steps = flow_log.setdefault(ks_sid, [])
+        cutoff = now - _FLOW_TTL
+        steps[:] = [t for t in steps if t >= cutoff]
+        steps.append(now)
+        return _flow_superhuman(steps)
+
+    def _note_flow(ks_sid: str | None) -> None:
+        # Call on every arena gate COMPLETION (verify/act). When the flow cadence is superhuman, inject a convicting
+        # session-intent signal — the multi-step generalization of the single-step superhuman-speed floor.
+        if ks_sid and _note_flow_step(ks_sid, datetime.now(UTC)):
+            _apply_signals(
+                [
+                    Signal(
+                        session_id=ks_sid,
+                        layer=Layer.behavioral,
+                        kind="session_flow_superhuman",
+                        value=True,
+                        source=Source.detector,
+                        observed_at=datetime.now(UTC),
+                    )
+                ]
+            )
 
     def _join_arena_anomaly(ks_sid: str | None, r: httpx.Response) -> None:
         # A gate /verify response may carry a SERVER-OBSERVED solve-anomaly (a CAPTCHA solved faster than a human,
@@ -422,6 +472,7 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)
+        _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/slider", include_in_schema=False)
@@ -451,6 +502,7 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)
+        _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/rotate", include_in_schema=False)
@@ -480,6 +532,7 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)
+        _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
     @app.get("/arena/queue", include_in_schema=False)
@@ -545,6 +598,7 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)
+        _note_flow(ks_sid)
         # A ticket that is acted on (or bypass-attempted) is no longer an outstanding held position — drop it from
         # the hoarding count so a session that cycles tickets one-at-a-time is not mistaken for a hoarder.
         if ks_sid:
