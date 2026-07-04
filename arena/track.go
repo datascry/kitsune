@@ -46,17 +46,31 @@ type trackStore struct {
 
 func newTrackStore() *trackStore { return &trackStore{m: map[string]*trackTarget{}} }
 
+// trackSpeedForLevel maps a difficulty level to a per-axis speed range (px/s). Easy is leisurely for a human; hard
+// is brisk but still humanly trackable — every level strands the agent, whose ~seconds reasoning latency dwarfs any
+// dot speed, so difficulty tunes only HUMAN effort, never the agent catch.
+func trackSpeedForLevel(lvl Level) (base, span int64) {
+	switch lvl {
+	case LevelEasy:
+		return 20, 20 // 20-40 px/s
+	case LevelHard:
+		return 60, 50 // 60-110 px/s
+	default:
+		return 30, 40 // medium: 30-70 px/s (the grounded default)
+	}
+}
+
 // issue seeds a moving target and returns its START position + velocity (the client animates the dot from these;
 // the START position is also the "snapshot" a step-start snapshot sees at issue time).
-func (s *trackStore) issue(id string, now time.Time) (x0, y0, vx, vy float64) {
+func (s *trackStore) issue(id string, now time.Time, base, span int64) (x0, y0, vx, vy float64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// start in the interior; moderate speed (~30-70 px/s per axis) — fast enough to strand a snapshot-then-reason
-	// agent, slow enough that a laggy human reliably tracks and clicks the dot (grounded human-solvability)
+	// start in the interior; speed (base..base+span px/s per axis) is set by difficulty — fast enough to strand a
+	// snapshot-then-reason agent at every level, slow enough that a laggy human reliably tracks and clicks the dot
 	x0 = 60 + float64(randInt(80))
 	y0 = 60 + float64(randInt(80))
-	vx = 30 + float64(randInt(40))
-	vy = 30 + float64(randInt(40))
+	vx = float64(base + randInt(span))
+	vy = float64(base + randInt(span))
 	if randInt(2) == 0 {
 		vx = -vx
 	}
@@ -133,7 +147,7 @@ const trackWidgetHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title
 <div id="panel"><h3>Click the moving dot to verify you are human</h3><p id="hint"></p><p id="r"></p></div>
 <script>
 (async function(){
-  var t = await (await fetch('/arena/track')).json();
+  var t = await (await fetch('/arena/track' + location.search)).json();
   var cv=document.getElementById('c'), ctx=cv.getContext('2d'), hint=document.getElementById('hint');
   var t0=performance.now();
   function pos(now){var dt=(now-t0)/1000;

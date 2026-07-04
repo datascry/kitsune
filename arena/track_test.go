@@ -64,11 +64,20 @@ func TestTrackStaleSnapshot(t *testing.T) {
 
 func TestTrackIssueAndClamp(t *testing.T) {
 	s := newTrackStore()
-	x, y, _, _ := s.issue("id", time.Now())
+	x, y, _, _ := s.issue("id", time.Now(), 30, 40)
 	if x < 0 || x > trackCanvas || y < 0 || y > trackCanvas {
 		t.Fatalf("issue position off canvas: (%v,%v)", x, y)
 	}
 	if _, _, ok := s.current("id", time.Now().Add(time.Hour)); !ok { // far future -> clamped, still known
 		t.Fatal("known ticket lost")
+	}
+}
+
+func TestTrackSpeedForLevel(t *testing.T) {
+	e, _ := trackSpeedForLevel(LevelEasy)
+	m, _ := trackSpeedForLevel(LevelMedium)
+	h, _ := trackSpeedForLevel(LevelHard)
+	if !(e < m && m < h) {
+		t.Fatalf("dot speed must rise with difficulty: easy=%d medium=%d hard=%d", e, m, h)
 	}
 }

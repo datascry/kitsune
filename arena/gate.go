@@ -399,9 +399,10 @@ func NewMux(secret []byte) http.Handler {
 	// --- TRACK / moving-target: the LLM-agent STALE-SNAPSHOT probe. A target moves; the client must click its
 	// CURRENT position. A human tracks it live; a snapshot-then-slowly-reason agent clicks the STALE (seconds-old)
 	// position it saw at snapshot time — the one behavioral signal that survives a coherent fingerprint. ---
-	mux.HandleFunc("GET /arena/track", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("GET /arena/track", func(w http.ResponseWriter, r *http.Request) {
 		id := randHex(16)
-		x, y, vx, vy := tracks.issue(id, time.Now())
+		base, span := trackSpeedForLevel(ParseLevel(r.URL.Query().Get("level")))
+		x, y, vx, vy := tracks.issue(id, time.Now(), base, span)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"kind": "track", "id": id, "x": x, "y": y, "vx": vx, "vy": vy, "canvas": trackCanvas,

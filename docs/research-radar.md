@@ -4082,3 +4082,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   bh.arena_stale_snapshot -> session label=bot for the agent, and nothing for the human. The stale-snapshot CAPTCHA
   is now a fully wired, deployable detection gate: HUMAN-SOLVABLE (9/10, rung 3) + FP-SAFE end-to-end (human session
   clean) + AGENT-CATCHING end-to-end (agent session convicted), every link grounded in a real browser, not asserted.
+- **[RENDERED-CHALLENGE LOOP — rung 5: difficulty levels (easy/medium/hard), human-solvable at every level]**
+  (2026-07-04). Made the widget a first-class configurable arena gate like the others (ParseLevel). GET
+  /arena/track?level= sets the dot speed via trackSpeedForLevel (easy 20-40, medium 30-70, hard 60-110 px/s per
+  axis); the widget passes its own ?level through (fetch '/arena/track'+location.search); the detector relay
+  forwards it. GROUNDED the realistic laggy+noisy human tracker at each level, 10 trials: easy 9/10, medium 10/10,
+  hard 10/10 hits — and 0 STALE at EVERY level (FP-safe across the full difficulty range). The agent catch is
+  speed-INDEPENDENT (its ~22s reasoning latency dwarfs any dot speed, so the frozen snapshot is stale at every
+  level — grounded live at medium in rungs 2-3), so difficulty tunes only HUMAN effort, never the agent catch — the
+  same elegant asymmetry: the challenge can be made arbitrarily easy for a human and the agent still cannot beat its
+  own clock. Go level-mapping test added (speed rises with difficulty). arena build/vet/test green; detector
+  ruff+mypy green. The stale-snapshot CAPTCHA is now a complete, configurable, deployable gate.
