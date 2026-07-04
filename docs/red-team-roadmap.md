@@ -1,5 +1,8 @@
 # Red-team roadmap — Kitsune's evasion arms-race backlog
 
+> **Current reconciled state lives in [`frontier.md`](frontier.md)** — this backlog is the structured detail and
+> can lag it. When they disagree, `frontier.md` is authoritative.
+
 The work queue for the **red-team loop**. Kitsune is a detection ⇄ evasion lab; a sharper red-team is how
 you find the blue-team's blind spots. **Ethics (hard, enforced in code):** every evader here targets ONLY
 Kitsune's own detector + the approved endpoints in `harness/src/kitsune_harness/allowlist.py` — self-contained
