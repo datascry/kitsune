@@ -300,6 +300,7 @@ def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatc
     assert client.post("/arena/pact/verify", json={"id": "x"}).status_code in ok
     assert client.get("/arena/managed", params={"level": "easy"}).status_code in ok
     assert client.get("/arena/track").status_code in ok
+    assert client.get("/arena/track/play").status_code in ok
     assert client.get("/arena/track/pos", params={"id": "x"}).status_code in ok
     assert client.post("/arena/track/verify", json={"id": "x", "x": 1.0, "y": 2.0}).status_code in ok
     assert client.post("/arena/verify", content=b"{}").status_code in ok
