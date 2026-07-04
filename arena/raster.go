@@ -42,6 +42,14 @@ import (
 //go:embed assets/LiberationSerif.ttf
 var liberationSerifTTF []byte
 
+// dancingScriptOTF is a CURSIVE SCRIPT face (Dancing Script, SIL OFL 1.1 — see assets/DancingScript.LICENSE.txt),
+// embedded like the serif. The OCR-hardening frontier: cursive letterforms differ most from the training-typical
+// upright print, so this is the design axis's strongest dropper. Rendered per-glyph (the letters do not connect),
+// so it stays human-readable. OTF/CFF outlines — opentype.Parse handles them.
+//
+//go:embed assets/DancingScript.otf
+var dancingScriptOTF []byte
+
 // captchaFaces is the text-gate FONT POOL — the OCR bench's typeface axis. The Go font family
 // (golang.org/x/image/font/gofont, BSD): regular/bold/italic/mono/smallcaps span weight, slant and
 // fixed-vs-proportional metrics; liberation-serif (OFL) adds a distinct serif DESIGN. captchaFontNames is the
@@ -59,6 +67,7 @@ func init() {
 		"go-mono":          gomono.TTF,
 		"go-smallcaps":     gosmallcaps.TTF,
 		"liberation-serif": liberationSerifTTF,
+		"dancing-script":   dancingScriptOTF,
 	}
 	captchaFaces = make(map[string]font.Face, len(ttfs))
 	for name, ttf := range ttfs {

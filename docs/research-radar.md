@@ -3721,3 +3721,16 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   BENCH STATE: text OCR axes (font x charset x rotation x level) are now thoroughly characterized against TrOCR;
   the remaining leads (a slab/handwriting OFL face, larger rotation, occlusion, more image sources) are
   increasingly marginal refinements of a rich, well-grounded bench.
+- **[CAPTCHA-BENCH LOOP — rung 10: dancing-script (cursive OFL) — 5/8, the design axis CONFIRMED as THE lever]**
+  (2026-07-04). Added Dancing Script, a CURSIVE SCRIPT face (SIL OFL 1.1, from Debian fonts-dancingscript,
+  arena/assets/DancingScript.otf + .LICENSE.txt — OTF/CFF outlines, which opentype.Parse handles; verified). 7th
+  pool face; the catalog + ?font= pick it up. Cursive letterforms differ MOST from the training-typical upright
+  print, so this is the design axis's strongest dropper. GROUNDED LIVE: renders human-solvable (viewed "MC9B" and
+  "UCT9" — cursive but readable; rendered per-glyph so the letters do not connect); TrOCR at easy = 5/8 (rounds 2,
+  3, 8 FAILED). DECISIVE RESULT — a clean OCR-hardening GRADIENT by design distance from upright print: Go family
+  (upright sans) 8/8 -> liberation-serif (serif) 7/8 -> dancing-script (cursive) 5/8. This CONFIRMS the whole
+  loop's finding: DISTINCT GLYPH DESIGN is THE OCR-hardening lever (font-family / charset / mild rotation are not),
+  and cursive is its strongest form — the bench's hardest text face, still within human reach. arena build/vet/test
+  green; no detector change (font-only). The OCR bench is now decisively characterized end-to-end; further text
+  variants (a slab, larger rotation, occlusion) would only fill in the gradient. NEXT (if continuing): the image
+  half — a 4th synthetic source or more shape categories; otherwise the batch is a clean, well-grounded release.
