@@ -32,14 +32,16 @@ have no in-sandbox source for**.
 
 ## The red frontier — the morphing-human headful fleet
 
-The composed evader that keeps coming up. **Its components are built and grounded.** A *fleet* of them, fully clean,
-is the terminus — external-bound.
+**→ Documented as the research output in [`coherent-stack.md`](coherent-stack.md)** (the composed stack, its layers,
+and the atomic morph-on-demand mechanism). The composed evader that keeps coming up. **Its components are built and
+grounded.** A *fleet* of them, fully clean, is the terminus — external-bound.
 
 **Config (the knobs — `evaders/stealth/run.mjs` unless noted):**
 - `KS_DEVICE=<name>|random|list` — coherent per-OS **device sampler** (morphing devices drawn from a real device DB)
 - `KS_ENGINE=webkit` — WebKit/Safari runtime (a coherent iOS slice; Blink self-defeats into `apple_ua_nonwebkit`)
 - `KS_PROVISION` — the **provisioned floor** (audio / voices / webrtc) that lifts a bare headless past the empty-realm tells
 - `KS_HUMANIZE` / `HUMAN_MOUSE` — **humanized input** (bézier mouse + paced, jittered timing)
+- **`evaders/stealth/devices.json`** — the **curated device corpus** (17 coherent tuples w/ GPU + cores + memory, the fields Playwright's registry lacks); the morph data source
 - **Headful** engine-coherent stack: `patchright-headful` / `camoufox-headful` (kills `cdp_runtime_enabled`, `no_chrome_object`, `permissions_anomaly`)
 - **Fleet composition + capture:** `harness/tools/fleet_capture.sh` (`task coordination-fleet-capture`), `harness/tools/headful_capture.mjs`
 
@@ -59,7 +61,7 @@ is the honest boundary of the lab.
 | External input | Unblocks |
 |---|---|
 | **Residential proxy egress** (paid pool) | the clean-fleet coordination frontier; the direct-residential humanizer fleet (native MSS, no tunnel tell) |
-| **Real-hardware fingerprint corpora** (real GPUs / devices) | distinct-build fleet fingerprints; Tier-3 real-GPU validation |
+| **Real-hardware fingerprint corpora** (real GPUs / devices) | distinct-build fleet fingerprints; Tier-3 real-GPU validation. *Partly curated:* `evaders/stealth/devices.json` holds 17 coherent tuples (screen/DPR/GPU/cores/memory) from verified public specs — what's still external is **live-capture verification** of each tuple + real-silicon GPU-behaviour validation |
 | **Prevalence / production traffic** | IP-reputation, rarity/prevalence scoring, think-time distributions, the corpus-wide trace-similarity floor |
 | **Real mobile devices** | the coherent Android / iOS device slice |
 | **A physical network** (`NET_ADMIN`, middleboxes) | active TCP-stack probing; QUIC/HTTP-3 paths (ADR-0005) |
