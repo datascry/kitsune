@@ -10,15 +10,35 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
+	"math"
 )
 
 // shapeOrder is the stable shape-category list (deterministic iteration, enumerated by /arena/catalog); shapeNoun
 // maps each to its prompt noun. A THIRD image-select source alongside emoji (glyphs) and doodle (sketches): the
 // visual domain is procedural geometry, so a classifier tuned on one domain still faces a fresh one here.
 var (
-	shapeOrder = []string{"circle", "square", "triangle", "diamond"}
-	shapeNoun  = map[string]string{"circle": "circle", "square": "square", "triangle": "triangle", "diamond": "diamond"}
+	shapeOrder = []string{"circle", "square", "triangle", "diamond", "pentagon", "hexagon", "cross"}
+	shapeNoun  = map[string]string{
+		"circle": "circle", "square": "square", "triangle": "triangle", "diamond": "diamond",
+		"pentagon": "pentagon", "hexagon": "hexagon", "cross": "cross",
+	}
 )
+
+// inNGon reports whether the centre-offset (dx,dy) is inside a regular n-gon of circumradius r with a vertex up.
+// The boundary distance at a given angle is the apothem (r·cos(π/n)) divided by the cosine of the angle to the
+// nearest edge midpoint — the standard regular-polygon inradius formula.
+func inNGon(dx, dy, r, n int) bool {
+	d := math.Hypot(float64(dx), float64(dy))
+	if d > float64(r) {
+		return false
+	}
+	seg := 2 * math.Pi / float64(n)
+	a := math.Mod(math.Atan2(float64(dy), float64(dx))+math.Pi/2, seg)
+	if a < 0 {
+		a += seg
+	}
+	return d <= float64(r)*math.Cos(seg/2)/math.Cos(a-seg/2)
+}
 
 // randShapeCategory returns a uniformly-random shape category from the stable order.
 func randShapeCategory() string { return shapeOrder[randInt(int64(len(shapeOrder)))] }
@@ -65,6 +85,13 @@ func shapeContains(shape string, dx, dy, r int) bool {
 		}
 		halfW := (dy + r) * r / (2 * r)
 		return dx >= -halfW && dx <= halfW
+	case "pentagon":
+		return inNGon(dx, dy, r, 5)
+	case "hexagon":
+		return inNGon(dx, dy, r, 6)
+	case "cross": // a plus sign: two perpendicular bars of half-width arm
+		arm := r / 3
+		return (abs(dx) <= arm && abs(dy) <= r) || (abs(dy) <= arm && abs(dx) <= r)
 	}
 	return false
 }
