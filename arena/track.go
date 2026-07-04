@@ -21,7 +21,8 @@ type trackTarget struct {
 
 const (
 	trackCanvas    = 320.0                   // WxH canvas the target moves within
-	trackTolerance = 28.0                    // a click within this of a position "hit" it (generous — human aim varies)
+	trackTolerance = 40.0                    // a click within this of a position "hit" it (generous — a laggy, noisy
+	//                                          human aim must reliably land; grounded against a realistic tracker)
 	trackStaleAge  = 1200 * time.Millisecond // a click on a position the target left more than this ago is STALE:
 	//                                          no human acts on a >1.2s-old view (they re-perceive), only a
 	//                                          snapshot-then-slowly-reason agent does. FP-safe LOWER bound.
@@ -50,11 +51,12 @@ func newTrackStore() *trackStore { return &trackStore{m: map[string]*trackTarget
 func (s *trackStore) issue(id string, now time.Time) (x0, y0, vx, vy float64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	// start in the interior; velocity biased so the target clearly leaves its start within ~1-2s
+	// start in the interior; moderate speed (~30-70 px/s per axis) — fast enough to strand a snapshot-then-reason
+	// agent, slow enough that a laggy human reliably tracks and clicks the dot (grounded human-solvability)
 	x0 = 60 + float64(randInt(80))
 	y0 = 60 + float64(randInt(80))
-	vx = 60 + float64(randInt(60))
-	vy = 60 + float64(randInt(60))
+	vx = 30 + float64(randInt(40))
+	vy = 30 + float64(randInt(40))
 	if randInt(2) == 0 {
 		vx = -vx
 	}
@@ -138,7 +140,7 @@ const trackWidgetHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title
     return [Math.max(0,Math.min(320,t.x+t.vx*dt)), Math.max(0,Math.min(320,t.y+t.vy*dt))];}
   function frame(now){var p=pos(now);
     ctx.clearRect(0,0,320,320);
-    ctx.beginPath();ctx.arc(p[0],p[1],12,0,7);ctx.fillStyle='#c0392b';ctx.fill();
+    ctx.beginPath();ctx.arc(p[0],p[1],16,0,7);ctx.fillStyle='#c0392b';ctx.fill();
     hint.textContent='Verification target is at pixel ('+Math.round(p[0])+', '+Math.round(p[1])+'). Click the moving dot.';
     requestAnimationFrame(frame);}
   requestAnimationFrame(frame);
