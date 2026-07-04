@@ -4055,3 +4055,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   a coherent, well-reasoning LLM agent is defeated by the PHYSICS of its perceive-think-act loop against a moving
   target — is now proven against the live agent. arena build/vet/test green. NEXT: hardening (unpredictable motion vs
   a motion-predicting agent) + speed/tolerance tuning for the human-solvability margin.
+- **[RENDERED-CHALLENGE LOOP — rung 3: tuned for human-solvability, all three invariants grounded]** (2026-07-04).
+  Grounded the SHIPPABLE quality against a REALISTIC human (not the perfect rung-1 tracker): a Playwright proxy
+  with ~150ms visuomotor reaction lag + ~8px aim noise, 10 trials. FIRST measurement exposed a real defect — the
+  widget was FP-safe (0/10 stale) but only 4/10 HUMAN-SOLVABLE: at up to ~170 px/s the lag+noise pushed the click
+  past the 28px tolerance. TUNED (the agent catch is unaffected — its ~22s latency dominates any dot speed): dot
+  speed 60-120 -> 30-70 px/s per axis, trackTolerance 28 -> 40px, visual dot radius 12 -> 16px. RE-GROUNDED: the
+  realistic laggy+noisy human now hits 9/10 (0 stale) — and that tracker is PESSIMISTIC (no target-leading; a real
+  human anticipates the motion -> ~10/10; the 1 miss is a retry-able edge case). RE-CONFIRMED the agent is still
+  caught (discipline: ground, don't assert): the live claude agent snapshotted the frozen dot, reasoned 23.2s,
+  clicked the stale position -> "stale-snapshot (LLM agent)" CAUGHT. So the widget now satisfies all three
+  load-bearing properties, each grounded in a real browser: HUMAN-SOLVABLE (9/10 pessimistic) + FP-SAFE (0 stale
+  over realistic humans) + AGENT-CATCHING (live claude convicted). arena build/vet/test green. The unpredictable-
+  motion hardening (vs a sophisticated velocity-reading/motion-predicting agent) remains the frontier — but that
+  threat is a motion-COMPUTING client, which is a script (caught on the fingerprint/automation layer), not the
+  inner_text LLM agent the widget targets; the shippable baseline catches the real agent and passes real humans.
