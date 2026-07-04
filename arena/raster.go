@@ -28,7 +28,10 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/gofont/gosmallcaps"
 	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/math/f64"
 	"golang.org/x/image/math/fixed"
+
+	xdraw "golang.org/x/image/draw"
 )
 
 // liberationSerifTTF is a DISTINCT-DESIGN serif face (Liberation Serif, SIL OFL 1.1 — see
@@ -86,6 +89,27 @@ func pickFace(name string) (font.Face, string) {
 	return captchaFaces[n], n
 }
 
+// drawRotatedGlyph renders one glyph to a per-glyph tile, rotates it by angle (radians) about the glyph centre, and
+// composites it (over) onto base at horizontal offset x — the per-glyph rotation that hardens OCR while a human still
+// reads it. The tile is full-height so the vertical baseline jitter is preserved.
+func drawRotatedGlyph(base *image.RGBA, face font.Face, ch string, x, baseline int, tone uint8, angle float64) {
+	h := base.Bounds().Dy()
+	const tw = 40
+	tile := image.NewRGBA(image.Rect(0, 0, tw, h))
+	d := &font.Drawer{Dst: tile, Src: image.NewUniform(color.RGBA{tone, tone, tone, 255}), Face: face}
+	d.Dot = fixed.P(6, baseline)
+	d.DrawString(ch)
+	// Rotate the tile about the glyph centre (rcx, rcy) and place it at base offset x. xdraw.Transform's matrix
+	// maps SRC (tile) coords to DST (base) coords: base = R·(tile-centre) + centre + (x,0).
+	s, c := math.Sin(angle), math.Cos(angle)
+	rcx, rcy := float64(tw)/2, float64(baseline)-9
+	m := f64.Aff3{
+		c, -s, float64(x) + rcx - (c*rcx - s*rcy),
+		s, c, rcy - (s*rcx + c*rcy),
+	}
+	xdraw.ApproxBiLinear.Transform(base, m, tile, tile.Bounds(), xdraw.Over, nil)
+}
+
 // rasterText renders code as a distorted-text PNG (warped + noisy), returned as a base64 data URI. The
 // plaintext answer exists only as pixels — there is no <text> element to parse. The difficulty knobs scale
 // the warp amplitude, the noise density and the stroke count (a harder level is heavier to OCR).
@@ -95,14 +119,15 @@ func rasterText(code string, k textKnobs, fontName string) (string, string) {
 	base := image.NewRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(base, base.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
 	if face != nil {
-		d := &font.Drawer{Dst: base, Src: image.NewUniform(color.RGBA{40, 40, 40, 255}), Face: face}
 		x := 16
 		for _, ch := range code {
 			// Per-glyph colour variation (a different dark tone per char) defeats single-threshold binarization.
 			tone := uint8(20 + randInt(60))
-			d.Src = image.NewUniform(color.RGBA{tone, tone, tone, 255})
-			d.Dot = fixed.P(x, 46+int(randInt(13))-6) // per-character vertical jitter
-			d.DrawString(string(ch))
+			baseline := 46 + int(randInt(13)) - 6 // per-character vertical jitter
+			// Per-glyph ROTATION (±14°) — the distinct OCR-hardening lever the bench grounded: models trained on
+			// upright text lose accuracy when each glyph is rotated, while a human still reads it. See drawRotatedGlyph.
+			angle := float64(randInt(29)-14) * math.Pi / 180
+			drawRotatedGlyph(base, face, string(ch), x, baseline, tone, angle)
 			// Overlap shaves the advance so glyphs touch/overlap at harder levels — kills per-glyph segmentation.
 			x += 27 + int(randInt(9)) - 4 - k.Overlap
 		}

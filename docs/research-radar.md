@@ -3706,3 +3706,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   capability + completeness axis, not a strong hardening lever. arena+detector green (coverage 96.12%, the charset
   relay branch tested). NEXT: a slab/condensed OFL face (design axis — most likely to drop TrOCR further); a
   distortion/style variant (per-glyph rotation) as the other hardening axis.
+- **[CAPTCHA-BENCH LOOP — rung 9: per-glyph rotation — real-world fidelity; TrOCR robust to it too (honest)]**
+  (2026-07-04). Added per-glyph ROTATION (±14°) to the text rasterizer (arena/raster.go drawRotatedGlyph — each
+  glyph is drawn to a tile, rotated about its centre via golang.org/x/image/draw.Transform, and composited Over the
+  base; the tile is full-height so the baseline jitter is preserved). Real-world fidelity: real CAPTCHAs rotate
+  glyphs, and the arena now does too. GROUNDED LIVE: renders human-solvable (viewed "GQPT" and "YVB3", each glyph
+  visibly tilted, all readable); TrOCR on go-regular at easy = 8/8 — UNCHANGED from the rung-4 baseline. HONEST
+  FINDING: ±14° per-glyph rotation does NOT harden TrOCR (it is a standard captcha distortion the model trains on,
+  well within its tolerance). This COMPLETES the OCR-hardening characterization: TrOCR (a strong modern model) is
+  robust to EVERY single mild distortion the bench tried — font-family (rung 4), charset (rung 8), and now mild
+  rotation — and only DISTINCT GLYPH DESIGN (liberation-serif, 7/8, rung 5) or COMPOUNDED heavy level-distortion
+  moves it. The rotation is kept: real-world fidelity + it hardens WEAKER OCR models (not every red-teamer runs a
+  TrOCR-class model), even though the reference model tolerates it. arena build/vet/test green; no detector change.
+  BENCH STATE: text OCR axes (font x charset x rotation x level) are now thoroughly characterized against TrOCR;
+  the remaining leads (a slab/handwriting OFL face, larger rotation, occlusion, more image sources) are
+  increasingly marginal refinements of a rich, well-grounded bench.
