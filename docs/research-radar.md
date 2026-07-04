@@ -4149,3 +4149,26 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   and is infra-bound for the mobile core-count. Recorded, not faked. NEXT (rung 3): webgl_renderer — the ANGLE
   string is spoofable (run.mjs KS_RENDERER), but the GPU BEHAVIOUR/CAPS (software SwiftShader vs a real Adreno's
   maxTextureSize) is the real-silicon wall (mobile-axis-closed) — map exactly where the string spoof stops.
+- **[COHERENT-STACK LOOP — rung 3: webgl_renderer is FULLY real-hardware-bound (the GPU wall, mapped completely)]**
+  (2026-07-04). Attacked the GPU-coherence gap and mapped EVERY approach live — all caught. The container's real
+  software GL (SwiftShader) trips br.webgl_software + br.mobile_gpu_not_mobile under a mobile UA. Spoofing the
+  UNMASKED_RENDERER string: a main-realm getParameter patch trips br.webgl_getparameter_tampered (the override is a
+  non-native fn) + br.webgl_worker_vs_main (worker realm still real) + br.webgpu_webgl_vs (the WebGPU adapter exposes
+  the REAL GPU) — I initially under-checked and wrongly called it "clean"; the FULL tell set shows it trades 2
+  string tells for 3 tampering/divergence tells (NET WORSE). The both-realm Worker-wrap trips br.worker_source_rewritten
+  + br.worker_constructor_tampered (rung-2 finding). The CAPS are the silicon floor: a high-end GPU string (Adreno
+  730/740, Mali-G78 = real 16384) trips br.mobile_gpu_caps_mismatch ("MAX_TEXTURE_SIZE below the 16384 mobile floor",
+  SwiftShader=8192), and faking MAX_TEXTURE_SIZE up to 16384 trips br.webgl_maxtexture_unallocatable (can't allocate
+  what you claim). Only a LOW-END GPU string (Adreno 505 = real 8192) passes the caps check (8192==8192) — but the
+  string STILL needs the getParameter patch, so it is still caught by getparameter_tampered/worker_vs_main/webgpu_vs.
+  CONCLUSION: the GPU/webgl layer is NOT coherently morphable in a no-GPU container by ANY JS means — it needs REAL
+  silicon (GPU passthrough) whose caps match the claimed device. REVERTED the corpus-string auto-apply (net worse);
+  KS_RENDERER stays an explicit probe. KEPT the corpus's verified webgl_renderer + added max_texture_size + a
+  low-end (Adreno 505, 8192) tuple + a _meta caps rule (correct data for a real-GPU host / the coherence gate).
+  BLUE side-finding (not fixed here — RED loop): br.mobile_gpu_caps_mismatch under-classifies mid-range Adreno 6xx
+  (real 16384) as not-high-end, so an Adreno 618 string passes with 8192 — the caps floor could tighten to all
+  modern mobile GPUs. NET: rungs 2 (cores) + 3 (GPU) both hit the REAL-HARDWARE wall — the hardware-behaviour layer
+  is real-silicon-bound in-sandbox (sibling of mobile-axis-closed); the software-observable layers (UA/screen/DPR/
+  fonts) morph coherently already. NEXT (rung 4): the MODEL field (br.mobile_no_js_model / net.ch_ua_mobile_no_model)
+  — a STRING (Sec-CH-UA-Model + navigator), not hardware, so potentially coherently morphable (KS_FORGE_MODEL /
+  KS_FORGE_JS_MODEL) — test whether it closes cleanly or trips its own worker-realm divergence.

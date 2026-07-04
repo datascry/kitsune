@@ -387,6 +387,17 @@ if (ksDevice) {
     /* corpus optional — fall back to native hardware */
   }
 }
+// GPU/webgl is REAL-HARDWARE-BOUND — GROUNDED (rung 3): the webgl_renderer is NOT coherently morphable in a no-GPU
+// (SwiftShader) container, so the corpus's webgl_renderer is NOT auto-applied (it stays a probe under KS_RENDERER).
+// Every JS approach is caught: the container's real software GL trips br.webgl_software + br.mobile_gpu_not_mobile;
+// a main-realm getParameter patch trips br.webgl_getparameter_tampered (non-native fn) + br.webgl_worker_vs_main
+// (worker realm differs) + br.webgpu_webgl_vs (WebGPU adapter exposes the REAL GPU); the both-realm Worker-wrap trips
+// br.worker_source_rewritten + br.worker_constructor_tampered; and a high-end GPU string trips
+// br.mobile_gpu_caps_mismatch (MAX_TEXTURE_SIZE < the 16384 mobile floor) while faking the cap up trips
+// br.webgl_maxtexture_unallocatable (can't allocate what you claim). A coherent GPU needs REAL silicon in the
+// container (GPU passthrough) whose caps match the claimed device — external-hardware-bound. So KS_RENDERER stays an
+// explicit probe; a device morph leaves the real GPU alone (and is thus GPU-incoherent until run on real hardware).
+const ksRenderer = process.env.KS_RENDERER || "";
 
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
@@ -602,7 +613,7 @@ if (WORKER_DISABLE) {
 // for the mobile GPU caps check. Set it to a high-end mobile GPU (e.g. an Adreno 730 string) over the container's
 // SwiftShader backend: the string reads as a real mobile GPU (evading mobile_gpu_not_mobile) but MAX_TEXTURE_SIZE
 // stays SwiftShader's 8192, which br.mobile_gpu_caps_mismatch catches — the source-fork's unspoofable-silicon tell.
-if (process.env.KS_RENDERER) {
+if (ksRenderer) {
   await context.addInitScript((cfg) => {
     const patch = (proto) => {
       if (!proto || !proto.getParameter) return;
@@ -616,7 +627,7 @@ if (process.env.KS_RENDERER) {
     };
     patch(window.WebGLRenderingContext && WebGLRenderingContext.prototype);
     patch(window.WebGL2RenderingContext && WebGL2RenderingContext.prototype);
-  }, { rndr: process.env.KS_RENDERER, ftex: process.env.KS_FAKE_MAXTEX === "1", fvu: Number(process.env.KS_FAKE_VU) || 0 });
+  }, { rndr: ksRenderer, ftex: process.env.KS_FAKE_MAXTEX === "1", fvu: Number(process.env.KS_FAKE_VU) || 0 });
 }
 // KS_RENDERER_WORKER=1: the TRUE both-realm source-fork — also inject the renderer patch into WORKER scope by
 // wrapping Worker() to prepend it to the worker source (fetched from its blob URL). This DEFEATS
