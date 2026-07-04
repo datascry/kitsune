@@ -3691,3 +3691,18 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   detector/registry change (image-select already whitelisted). NEXT: a slab/condensed OFL text face (TrOCR < 7/8),
   a ?charset= selector (digits/confusable — TrOCR-benchmarkable), doodle-source categories are data-bound (the
   vendored quickdraw.ndjson is animal/food/vehicle only).
+- **[CAPTCHA-BENCH LOOP — rung 8: ?charset= selector — a new OCR axis; charset barely moves TrOCR (honest)]**
+  (2026-07-04). Added the second text OCR bench axis (orthogonal to ?font=): ?charset=readable|confusable|digits|
+  alpha selects the character set the code is drawn from, isolating the OCR effect of the class space from the
+  distortion level. captcha.go gained the digits/alpha alphabets + resolveCharset + captchaCharsetNames; threaded
+  through MintCaptcha(kind, lv, font, charset) -> the handler -> the detector relay (length-guarded) -> the
+  /arena/catalog manifest (Charsets), with a self-reported Captcha.charset field; added OCR_CHARSET to
+  arena-solver-ocr. GROUNDED LIVE: renders human-solvable ("8558" digits, "0ISL" confusable — the ambiguous
+  0/O·I·L), each reports its resolved charset; TrOCR at easy (8 rounds): readable 8/8, digits 7/8, confusable 8/8.
+  HONEST FINDING: the character set barely moves TrOCR — the confusable 0/O·I·L set did NOT trip it (the Go font's
+  glyphs stay distinct at easy distortion so TrOCR reads them fine; digits lost one to noise). Same pattern as the
+  Go font family (rung 4): TrOCR is ROBUST to charset/weight variation; the genuine OCR-hardening axes are DISTINCT
+  DESIGN (liberation-serif dropped it to 7/8, rung 5) and DISTORTION (the level dial) — the charset is a real bench
+  capability + completeness axis, not a strong hardening lever. arena+detector green (coverage 96.12%, the charset
+  relay branch tested). NEXT: a slab/condensed OFL face (design axis — most likely to drop TrOCR further); a
+  distortion/style variant (per-glyph rotation) as the other hardening axis.

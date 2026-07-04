@@ -21,7 +21,9 @@ def main() -> None:
     # OCR_FONT=<name> pins the text-gate typeface (the OCR BENCH axis) so the solve-rate is measured on ONE face;
     # empty lets the gate randomize. Sweep the pool (GET /arena/catalog) to see which typeface drops the model.
     font = os.environ.get("OCR_FONT", "")
-    label = f" font={font}" if font else ""
+    # OCR_CHARSET pins the character set (readable/confusable/digits/alpha) — the other OCR bench axis.
+    charset = os.environ.get("OCR_CHARSET", "")
+    label = "".join(f" {k}={v}" for k, v in (("font", font), ("charset", charset)) if v)
     print(f"loading TrOCR captcha model… (target {base}{label})")
     recognizer = TrOCRRecognizer()
     with httpx.Client(timeout=60.0) as client:
@@ -29,7 +31,7 @@ def main() -> None:
             passed = 0
             for i in range(rounds):
                 t0 = time.time()
-                ok, text = solve_text(base, recognizer, client, level, font)
+                ok, text = solve_text(base, recognizer, client, level, font, charset)
                 ms = int((time.time() - t0) * 1000)
                 passed += 1 if ok else 0
                 print(f"  [{level}{label}] round {i + 1}: read {text!r} -> {'PASSED' if ok else 'FAILED'} in {ms} ms")

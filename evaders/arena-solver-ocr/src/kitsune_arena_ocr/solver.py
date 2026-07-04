@@ -53,12 +53,12 @@ def decode_png_data_uri(data_uri: str) -> bytes:
 
 
 def solve_text(
-    base: str, recognizer: Recognizer, client: httpx.Client, level: str = "medium", font: str = ""
+    base: str, recognizer: Recognizer, client: httpx.Client, level: str = "medium", font: str = "", charset: str = ""
 ) -> tuple[bool, str]:
     """Fetch the text gate at the given level, OCR the image, submit the read-back. Returns (passed, read).
 
-    font selects the text-gate typeface (the OCR bench axis) — pass a pool name from GET /arena/catalog to
-    measure the model's solve-rate on a SPECIFIC face; empty lets the gate pick a random pool face.
+    font selects the text-gate typeface and charset the character set (both OCR bench axes) — pass values from
+    GET /arena/catalog to measure the model's solve-rate on a SPECIFIC face/charset; empty lets the gate default.
     """
     base = base.rstrip("/")
     if not is_own_target(base):
@@ -66,6 +66,8 @@ def solve_text(
     params = {"kind": "text", "level": level}
     if font:
         params["font"] = font
+    if charset:
+        params["charset"] = charset
     chal = client.get(f"{base}/arena/captcha", params=params).json()
     png = decode_png_data_uri(chal["image"])
     answer = _ANSWER_CHARS.sub("", recognizer.recognize(png).strip().upper())

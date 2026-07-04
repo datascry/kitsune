@@ -15,7 +15,7 @@ import (
 
 func TestMintCaptchaAndCheck(t *testing.T) {
 	for _, kind := range []CaptchaKind{CaptchaText, CaptchaMath, CaptchaHoneypot} {
-		c, answer := MintCaptcha(kind, LevelMedium, "")
+		c, answer := MintCaptcha(kind, LevelMedium, "", "")
 		if c.ID == "" || c.Kind != kind {
 			t.Fatalf("%s: bad challenge %+v", kind, c)
 		}
@@ -28,7 +28,7 @@ func TestMintCaptchaAndCheck(t *testing.T) {
 	}
 	// text: the answer is rendered as a distorted RASTER PNG (not SVG markup), so it needs OCR — the plaintext
 	// answer is not parseable from the challenge (no <text> element; only base64 pixels).
-	c, answer := MintCaptcha(CaptchaText, LevelMedium, "")
+	c, answer := MintCaptcha(CaptchaText, LevelMedium, "", "")
 	if !strings.HasPrefix(c.Image, "data:image/png;base64,") {
 		t.Fatalf("text captcha is not a raster PNG: %.40s", c.Image)
 	}
@@ -101,7 +101,7 @@ func TestCaptchaRejectsWrongAnswer(t *testing.T) {
 
 func TestImageSelect(t *testing.T) {
 	// image-select: the correct index set passes; a wrong set and an empty set fail. Tiles are raster PNGs.
-	c, ans := MintCaptcha(CaptchaImageSelect, LevelMedium, "")
+	c, ans := MintCaptcha(CaptchaImageSelect, LevelMedium, "", "")
 	if len(c.Tiles) != 9 || ans == "" {
 		t.Fatalf("bad image-select challenge: tiles=%d ans=%q", len(c.Tiles), ans)
 	}
@@ -120,7 +120,7 @@ func TestImageSelect(t *testing.T) {
 
 func TestImageShapes(t *testing.T) {
 	// image-shapes: owned procedural geometric-shape tiles. The correct index set passes; wrong/empty fail.
-	c, ans := MintCaptcha(CaptchaImageShapes, LevelMedium, "")
+	c, ans := MintCaptcha(CaptchaImageShapes, LevelMedium, "", "")
 	if len(c.Tiles) != 9 || ans == "" {
 		t.Fatalf("bad image-shapes challenge: tiles=%d ans=%q", len(c.Tiles), ans)
 	}
@@ -139,7 +139,7 @@ func TestImageShapes(t *testing.T) {
 
 func TestImageDoodle(t *testing.T) {
 	// image-doodle: Quick-Draw sketch tiles. Correct index set passes; wrong/empty fail. Tiles are PNGs.
-	c, ans := MintCaptcha(CaptchaImageDoodle, LevelMedium, "")
+	c, ans := MintCaptcha(CaptchaImageDoodle, LevelMedium, "", "")
 	if len(c.Tiles) != 9 || ans == "" {
 		t.Fatalf("bad image-doodle challenge: tiles=%d ans=%q", len(c.Tiles), ans)
 	}
@@ -158,8 +158,8 @@ func TestImageDoodle(t *testing.T) {
 
 func TestCaptchaLevelsScaleDifficulty(t *testing.T) {
 	// text: easy is 4 confusable-free chars, hard is 6 with the confusable alphabet allowed.
-	easy, ea := MintCaptcha(CaptchaText, LevelEasy, "")
-	hard, ha := MintCaptcha(CaptchaText, LevelHard, "")
+	easy, ea := MintCaptcha(CaptchaText, LevelEasy, "", "")
+	hard, ha := MintCaptcha(CaptchaText, LevelHard, "", "")
 	if len(ea) != 4 || len(ha) != 6 {
 		t.Fatalf("text length per level wrong: easy=%d hard=%d", len(ea), len(ha))
 	}
@@ -167,14 +167,14 @@ func TestCaptchaLevelsScaleDifficulty(t *testing.T) {
 		t.Fatal("text image missing")
 	}
 	// math: easy is always addition; hard is always multiplication (bigger operands).
-	if em, _ := MintCaptcha(CaptchaMath, LevelEasy, ""); !strings.Contains(em.Prompt, "+") {
+	if em, _ := MintCaptcha(CaptchaMath, LevelEasy, "", ""); !strings.Contains(em.Prompt, "+") {
 		t.Fatalf("easy math should be addition: %q", em.Prompt)
 	}
-	if hm, _ := MintCaptcha(CaptchaMath, LevelHard, ""); !strings.Contains(hm.Prompt, "×") {
+	if hm, _ := MintCaptcha(CaptchaMath, LevelHard, "", ""); !strings.Contains(hm.Prompt, "×") {
 		t.Fatalf("hard math should be multiplication: %q", hm.Prompt)
 	}
 	// image-select: easy has 6 tiles, medium/hard have 9.
-	if es, _ := MintCaptcha(CaptchaImageSelect, LevelEasy, ""); len(es.Tiles) != 6 {
+	if es, _ := MintCaptcha(CaptchaImageSelect, LevelEasy, "", ""); len(es.Tiles) != 6 {
 		t.Fatalf("easy image-select should have 6 tiles, got %d", len(es.Tiles))
 	}
 }
