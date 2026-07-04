@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **187 rules**: 127 active · 54 experimental · 6 retired; 135 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **188 rules**: 128 active · 54 experimental · 6 retired; 136 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -197,7 +197,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (22)
+### behavioral layer (23)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -208,6 +208,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.arena_queue_hoarding` | automation✦ | present | 0.5 | experimental | One session holding many concurrent virtual-queue positions — a position-hoarding scalper |
 | `bh.arena_queue_superhuman` | automation✦ | present | 0.85 | active | Acted on a virtual-queue admission faster than a human can perceive it — position-holding bot |
 | `bh.arena_trajectory_forged` | automation✦ | present | 0.85 | active | Slider/rotate drag trajectory claims more drag-time than the whole server-observed solve — synthesized |
+| `bh.session_flow_robotic` | automation✦ | present | 0.8 | active | Multi-step gate flow paced at machine-regular intervals (near-zero inter-step CV — a timer, not a human) |
 | `bh.session_flow_superhuman` | automation✦ | present | 0.85 | active | Multi-step gate flow completed at superhuman inter-step cadence (session-intent, not a single step) |
 | `bh.action_cadence_deliberative` | behavioral | present | 0.5 | experimental | Metronomic inter-action cadence at LLM-inference latency |
 | `bh.click_without_trajectory` | behavioral | present | 0.5 | experimental | Trusted mouse click with no pointer trajectory in the session (teleport-click) |
