@@ -3734,3 +3734,16 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   green; no detector change (font-only). The OCR bench is now decisively characterized end-to-end; further text
   variants (a slab, larger rotation, occlusion) would only fill in the gradient. NEXT (if continuing): the image
   half — a 4th synthetic source or more shape categories; otherwise the batch is a clean, well-grounded release.
+- **[CAPTCHA-BENCH LOOP — rung 11: image-shapes 4->7 categories (pentagon/hexagon/cross)]** (2026-07-04). Broadened
+  the under-developed IMAGE half: extended the owned synthetic-shapes source from 4 to 7 geometric categories —
+  added pentagon + hexagon (a regular-n-gon point test, inNGon, via the standard apothem/cos formula) and cross
+  (two perpendicular bars). Zero-license, in-code. GROUNDED LIVE: rendered + viewed a clean hexagon and pentagon
+  (the polygon geometry is correct) plus the existing circle/triangle, all human-solvable; the /arena/catalog
+  manifest auto-lists all seven (shapeOrder is dynamic); TestImageShapes still passes; and the radial CV heuristic
+  stays 0 on image-shapes (it has labels only for circle/square/triangle and does not match the filled procedural
+  rendering — the source needs a real VLM, as before). Real breadth for a red-teamer's image classifier: 7 shape
+  categories over the procedural-geometry domain. arena build/vet/test green; no detector change (image-shapes
+  already whitelisted; shapeOrder feeds the catalog dynamically). The image half's benchmark remains
+  heuristic-uniform-0 (no in-repo model classifies the image domains — the OCR half's TrOCR gradient has no image
+  equivalent without an external VLM), so image rungs add VARIETY not a benchmark gradient; the strong-benchmark
+  work (OCR) is complete. Increasingly a clean, well-grounded release.
