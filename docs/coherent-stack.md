@@ -70,12 +70,25 @@ and carries UA/screen/DPR/touch but **no GPU/cores/memory**):
   residential egress · Poisson-staggered). That fully-clean diffuse fleet is **the frontier**, external-data-bound —
   see [`frontier.md`](frontier.md) and `coordination-axis-closed`.
 
-## Current limits → the next steps this unblocks
+## The in-sandbox coherence boundary (GROUNDED — the wiring loop ran to close)
 
-1. **Wire `pickDevice` → `devices.json`.** Today the sampler draws from Playwright's registry (UA/screen/DPR only);
-   applying the corpus's `webgl_renderer` / `cores` / `memory` coherently **in both the main and worker realms**
-   (the realm-divergence traps in `run.mjs` are the hard part) is the next red rung.
-2. **Grow + verify the corpus.** Extend `devices.json` toward a comprehensive per-OS generator and confirm each
-   tuple with a live capture (the coherence gate above).
-3. **The fleet frontier stays external-bound** — residential egress, real-hardware fingerprints, and prevalence data
-   are the inputs that would let a fleet of this stack evade coordination too (the buy list in `frontier.md`).
+The 6-rung coherent-morphing-stack loop (see `docs/research-radar.md`, memory `coherent-morph-boundary`) wired what is
+coherently morphable and mapped every wall. The governing result:
+
+- **Native mechanisms morph coherently.** Playwright device (UA/screen/DPR/touch) and **CDP `userAgentMetadata`**
+  (model + CH brands) close their tells with no divergence — the model wiring is the one clean in-sandbox win.
+- **JS patches are caught.** A `getParameter` renderer patch → `webgl_getparameter_tampered` + `webgl_worker_vs_main`
+  + `webgpu_webgl_vs`; a Worker-wrap → `worker_source_rewritten` + `worker_constructor_tampered`; a
+  `getHighEntropyValues` model wrap → `uadata_model_worker_divergence`. **You cannot spoof coherence.**
+- **Hardware + OS-stack are real-silicon/infra-bound.** The no-GPU container's software GL is the **universal wall**
+  (`webgl_software` on every morph; caps `mobile_gpu_caps_mismatch`); `hardwareConcurrency` can't be lowered (JS
+  caught, `--cpuset-cpus` ignored) so desktop tuples are core-coherent but mobile need ≤8-core hardware; a **cross-OS
+  morph** trips the raw TCP/TLS stack (`tcp_os_vs_ua`, `tls_grease_vs_ua`) — the container's Linux kernel, changeable
+  only via os-spoof / `NET_ADMIN`. iOS/webkit is the cleanest cross-OS target (Safari exposes less → sidesteps the
+  Android GPU/cores/model walls).
+
+So **in-sandbox the morph is coherent for the software-fingerprint layers within one OS; the GPU, mobile core-count,
+and cross-OS TCP/TLS stack are real-hardware/infra-bound.** The corpus is correct data for a real-GPU/real-OS host;
+those bound fields become coherent on real hardware. Remaining follow-ups: `navigator.platform` on the iOS morph; a
+codec-enabled real Chrome (`channel:chrome`) for `codec_os_incoherent` on non-Linux UAs; the fleet frontier stays
+external-bound (the buy list in `frontier.md`).
