@@ -64,7 +64,11 @@ jitters its `trace_hash` distinct (exact-match finds nothing), but the collector
 cluster below the human floor (calibrated against real human motion — `task template-calibrate`, SapiMouse),
 so on datacenter/proxy egress the IP-reputation flag corroborates the cluster and it convicts.
 
-### Grounded live (Kitsune detector, ruleset 0.74.52)
+### Grounded live (Kitsune detector, ruleset 0.74.57)
+> Results are stable across ruleset 0.74.52 → 0.74.57: the coordination scorer
+> (`kitsune_harness.coordination` / `live_coordination`) is unchanged since these were first grounded — the
+> intervening releases are unrelated axes (arena gates, session-flow, mobile, the `track` LLM-agent gate).
+> Re-confirmed live at 0.74.57: `cloned → fleet 1.00` reproduces exactly.
 ```
 skulk run cloned        →  detector grades `fleet` 1.00   (cloned-profile reuse caught)
 skulk run similarity    →  detector grades `fleet` 1.00   (humanizer-model descriptors cluster below the human floor)
