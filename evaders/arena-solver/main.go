@@ -82,10 +82,18 @@ func main() {
 	if u, err := url.Parse(base); err == nil {
 		jar.SetCookies(u, []*http.Cookie{{Name: "ks_sid", Value: sid}})
 	}
-	// KS_HUMANIZE=1 paces the multi-gate FLOW with variable human think-time between steps — the arms-race counter
-	// to bh.session_flow_superhuman. It does NOT make the individual solves human (those trip other tells); it puts
-	// the FLOW CADENCE inside the human band, so the superhuman-inter-step-floor tell can no longer convict on it.
+	// KS_HUMANIZE=1 paces the multi-gate FLOW with variable (jittered) human think-time between steps — the
+	// arms-race counter to bh.session_flow_superhuman. It does NOT make the individual solves human (those trip
+	// other tells); it puts the FLOW CADENCE inside the human band, so the superhuman-floor tell cannot convict.
 	humanize := os.Getenv("KS_HUMANIZE") == "1"
+	// KS_PACE_MS=<n> paces with a FIXED n-ms sleep between steps — the naive fixed-sleep tier. It clears the
+	// superhuman floor but its near-zero inter-step CV trips the machine-REGULARITY tell (bh.session_flow_robotic).
+	paceMs := 0
+	if v := os.Getenv("KS_PACE_MS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			paceMs = n
+		}
+	}
 
 	families := []struct {
 		name string
@@ -101,9 +109,13 @@ func main() {
 		{"queue", abuseQueue},
 	}
 	for i, f := range families {
-		if humanize && i > 0 {
-			// variable 1.2–4.0s think-time before each subsequent gate — human-diverse inter-step cadence
-			time.Sleep(time.Duration(1200+rand.IntN(2800)) * time.Millisecond)
+		if i > 0 {
+			switch {
+			case paceMs > 0:
+				time.Sleep(time.Duration(paceMs) * time.Millisecond) // FIXED pace — machine-regular (near-zero CV)
+			case humanize:
+				time.Sleep(time.Duration(1200+rand.IntN(2800)) * time.Millisecond) // jittered human think-time
+			}
 		}
 		ok, ms, err := f.fn(c, base)
 		status := "PASSED"

@@ -3827,3 +3827,21 @@ LLM-characteristic) and win (goal-pursuit like a human).
   session-intent sub-axes: DECISION-LATENCY (gate-ready -> first-action, harder to pace convincingly) and
   TASK-STRUCTURE / prerequisite-ordering (a flow analog of the queue-bypass tell). NEXT: the machine-REGULARITY
   tell (a real rung — catches the naive fixed-sleep humanization tier), then pivot to decision-latency / task-order.
+- **[SESSION-INTENT LOOP — rung 4 (BLUE): the machine-REGULARITY tell — catches the fixed-sleep tier]**
+  (2026-07-04). The blue counter to rung 3's paced bot. New active rule bh.session_flow_robotic (behavioral,
+  automation, w0.8): over the per-ks_sid flow log, when the inter-step gaps' coefficient of variation across >= 5
+  completions is below _FLOW_REGULAR_CV (0.03) AND the mean gap clears the physiological floor (a PACED flow, not a
+  superhuman one — the floor tell owns those), inject the signal. Pure _flow_robotic(steps) so it is directly
+  FP-safety-testable. FP-SAFE BY CONSTRUCTION: no human's reaction+think-time is that regular — even a metronomic
+  human at a steady pace carries reaction-time variance (CV ~0.05-0.1), so 0.03 sits below the human floor. Red
+  side: added KS_PACE_MS (fixed inter-step sleep) to arena-solver. GROUNDED LIVE — the full cadence arms race in
+  three tiers: NAIVE instant flow -> floor=True, robotic=False; FIXED-pace 1000ms -> floor=False, robotic=True
+  (paced but machine-regular); JITTERED (KS_HUMANIZE, variable think-time) -> BOTH False (evades both, lives in the
+  band). FP-safety population (fast/slow/bursty + a METRONOMIC human at CV ~0.055) all silent on robotic; a
+  superhuman-fast constant flow stays the floor tell's domain (robotic defers). detector ruff+mypy+drift-guard
+  green; catalog regenerated; FP-safety-population test extended. This CLOSES the cadence sub-axis's blue side:
+  floor catches instant, regularity catches fixed-sleep, and a JITTERED bot evades both — the residual band is a
+  RECORDED RED WIN (the only deeper counter, the think-time DISTRIBUTION shape, is external-calibration-bound; the
+  detector cannot reject uniform-ish pacing without FP-risking real humans). NEXT: pivot OFF cadence to the
+  narrower-band structural sub-axes — DECISION-LATENCY (gate-ready -> first-action, per-step, harder to pace) and
+  TASK-STRUCTURE (acting before a prerequisite completes / out-of-order — structural, so jitter does not help).

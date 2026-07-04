@@ -14,6 +14,7 @@ import contextlib
 import hmac
 import html
 import json
+import math
 import os
 import re
 from collections.abc import Callable
@@ -176,6 +177,15 @@ _FLOW_MIN_STEPS = 3
 _FLOW_TTL = timedelta(minutes=5)
 
 
+#: Machine-REGULARITY: a PACED bot (fixed inter-step sleep) chains gates at a near-constant interval — a
+#: coefficient of variation (stddev/mean) far below what any human's reaction+think-time variance produces. Needs
+#: more steps than the floor tell for a stable CV. _FLOW_REGULAR_CV sits below the CV floor of even a metronomic
+#: human (~0.05-0.1), so no human trips it — only a machine timer. FP-safe by construction; catches the naive
+#: fixed-sleep humanization tier (a jittered bot, CV well above this, evades it — the residual band).
+_FLOW_REGULAR_MIN_STEPS = 5
+_FLOW_REGULAR_CV = 0.03
+
+
 def _flow_superhuman(steps: list[datetime]) -> bool:
     """True when a session's gate-completion sequence is superhuman: the MEDIAN inter-step gap across at least
     ``_FLOW_MIN_STEPS`` steps is below the physiological floor. Pure over the timestamp list so it is directly
@@ -184,6 +194,22 @@ def _flow_superhuman(steps: list[datetime]) -> bool:
         return False
     gaps = sorted((steps[i] - steps[i - 1]).total_seconds() * 1000 for i in range(1, len(steps)))
     return gaps[len(gaps) // 2] < _FLOW_STEP_FLOOR_MS
+
+
+def _flow_robotic(steps: list[datetime]) -> bool:
+    """True when a session's inter-step gaps are MACHINE-REGULAR: the coefficient of variation is below the
+    human floor across >= ``_FLOW_REGULAR_MIN_STEPS`` steps AND the mean gap is above the physiological floor (a
+    PACED bot, not a superhuman one — that is the floor tell's job). No human's reaction+think-time is that
+    regular. Pure so it is directly FP-safety-testable against diverse human timings (including a metronomic one)."""
+    if len(steps) < _FLOW_REGULAR_MIN_STEPS:
+        return False
+    gaps = [(steps[i] - steps[i - 1]).total_seconds() * 1000 for i in range(1, len(steps))]
+    mean = sum(gaps) / len(gaps)
+    if mean < _FLOW_STEP_FLOOR_MS:
+        return False  # superhuman-fast flows are the floor tell's domain, not regularity
+    variance = sum((g - mean) * (g - mean) for g in gaps) / len(gaps)
+    cv = math.sqrt(variance) / mean
+    return cv < _FLOW_REGULAR_CV
 
 
 def _arena_level(level: str | None) -> str:
@@ -305,32 +331,48 @@ def create_app(
     # arena did not track (each gate was independent). This is where the SESSION-SHAPE tells live.
     flow_log: dict[str, list[datetime]] = {}
 
-    def _note_flow_step(ks_sid: str, now: datetime) -> bool:
-        # Record a gate-completion step; return True when the session's multi-step flow is SUPERHUMAN — the MEDIAN
-        # inter-step gap is below the physiological floor across >= _FLOW_MIN_STEPS steps. Steps older than the TTL
-        # are pruned so a slow/resumed session never accumulates a false pattern.
+    def _record_flow_step(ks_sid: str, now: datetime) -> list[datetime]:
+        # Record a gate-completion step and return the session's live step sequence. Steps older than the TTL are
+        # pruned so a slow/resumed session never accumulates a false pattern.
         steps = flow_log.setdefault(ks_sid, [])
         cutoff = now - _FLOW_TTL
         steps[:] = [t for t in steps if t >= cutoff]
         steps.append(now)
-        return _flow_superhuman(steps)
+        return steps
 
     def _note_flow(ks_sid: str | None) -> None:
-        # Call on every arena gate COMPLETION (verify/act). When the flow cadence is superhuman, inject a convicting
-        # session-intent signal — the multi-step generalization of the single-step superhuman-speed floor.
-        if ks_sid and _note_flow_step(ks_sid, datetime.now(UTC)):
-            _apply_signals(
-                [
-                    Signal(
-                        session_id=ks_sid,
-                        layer=Layer.behavioral,
-                        kind="session_flow_superhuman",
-                        value=True,
-                        source=Source.detector,
-                        observed_at=datetime.now(UTC),
-                    )
-                ]
+        # Call on every arena gate COMPLETION (verify/act). Inject the session-intent tells the flow shape trips:
+        # session_flow_superhuman (median inter-step below the floor) and/or session_flow_robotic (near-zero CV,
+        # a machine timer) — the multi-step generalizations of the single-step timing tells.
+        if not ks_sid:
+            return
+        now = datetime.now(UTC)
+        steps = _record_flow_step(ks_sid, now)
+        sigs = []
+        if _flow_superhuman(steps):
+            sigs.append(
+                Signal(
+                    session_id=ks_sid,
+                    layer=Layer.behavioral,
+                    kind="session_flow_superhuman",
+                    value=True,
+                    source=Source.detector,
+                    observed_at=now,
+                )
             )
+        if _flow_robotic(steps):
+            sigs.append(
+                Signal(
+                    session_id=ks_sid,
+                    layer=Layer.behavioral,
+                    kind="session_flow_robotic",
+                    value=True,
+                    source=Source.detector,
+                    observed_at=now,
+                )
+            )
+        if sigs:
+            _apply_signals(sigs)
 
     def _join_arena_anomaly(ks_sid: str | None, r: httpx.Response) -> None:
         # A gate /verify response may carry a SERVER-OBSERVED solve-anomaly (a CAPTCHA solved faster than a human,

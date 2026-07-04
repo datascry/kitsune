@@ -381,7 +381,7 @@ def test_session_flow_cadence_is_fp_safe() -> None:
     # The session-intent flow-cadence tell's PRECISION-1.0 test (load-bearing): a bot chaining gates in ms is
     # caught, and EVERY plausible human session shape (fast/slow/bursty/exploring/one-fast-step) stays SILENT —
     # a single false positive on a human shape would sink the tell.
-    from kitsune_detector.app import _flow_superhuman
+    from kitsune_detector.app import _flow_robotic, _flow_superhuman
 
     base = datetime(2026, 1, 1, tzinfo=UTC)
 
@@ -391,6 +391,7 @@ def test_session_flow_cadence_is_fp_safe() -> None:
             ts.append(ts[-1] + timedelta(seconds=g))
         return ts
 
+    # --- floor tell: bot chaining gates in ms is caught; every human shape is silent ---
     assert _flow_superhuman(steps([0.1, 0.12, 0.09, 0.11]))  # bot: ~100 ms/step -> caught
     human_population = {
         "fast": [1.2, 0.9, 1.5, 1.1],
@@ -400,8 +401,21 @@ def test_session_flow_cadence_is_fp_safe() -> None:
         "one_fast_step": [0.3, 2.0, 2.5, 3.0],
     }
     for name, gaps in human_population.items():
-        assert not _flow_superhuman(steps(gaps)), f"false positive on {name} human session"
+        assert not _flow_superhuman(steps(gaps)), f"floor false positive on {name} human session"
     assert not _flow_superhuman(steps([0.1]))  # below the minimum step count -> never judged
+
+    # --- regularity tell: a fixed-sleep (near-constant) paced bot is caught; every human shape stays silent ---
+    assert _flow_robotic(steps([1.0, 1.02, 0.99, 1.01, 1.0, 0.98]))  # fixed ~1s pace, tiny jitter -> CV<0.03 caught
+    regular_population = {
+        "fast": [1.2, 0.9, 1.5, 1.1, 1.3, 0.8],
+        "slow": [6.0, 8.0, 5.0, 7.0, 6.5, 5.5],
+        "bursty": [0.7, 4.0, 0.8, 3.0, 0.9, 3.5],
+        "metronomic": [2.0, 2.15, 1.85, 2.1, 1.9, 2.05],  # a steady human — reaction variance keeps CV ~0.06 > 0.03
+    }
+    for name, gaps in regular_population.items():
+        assert not _flow_robotic(steps(gaps)), f"regularity false positive on {name} human session"
+    assert not _flow_robotic(steps([0.1, 0.1, 0.1, 0.1, 0.1, 0.1]))  # superhuman-fast is the floor tell's domain
+    assert not _flow_robotic(steps([1.0, 1.0, 1.0]))  # below the regularity min step count -> never judged
 
 
 def test_session_flow_superhuman_injected_via_relay(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
