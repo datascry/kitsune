@@ -4093,3 +4093,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   same elegant asymmetry: the challenge can be made arbitrarily easy for a human and the agent still cannot beat its
   own clock. Go level-mapping test added (speed rises with difficulty). arena build/vet/test green; detector
   ruff+mypy green. The stale-snapshot CAPTCHA is now a complete, configurable, deployable gate.
+- **[RENDERED-CHALLENGE LOOP — rung 6: FP-safety re-grounded via the human's REAL channel (vision)]** (2026-07-04).
+  Closed a genuine caveat in the earlier groundings: the rung-1/3/5 "human tracker" read the HINT TEXT (the dot's
+  position), which is the AGENT's perception channel (inner_text), not a human's — a skeptic could object that a
+  human using VISION was never actually shown to be silent/solvable. Built a VISION-based human proxy that locates
+  the dot in the ACTUAL RENDERED PIXELS (canvas getImageData -> centroid of the red-dot pixels), then clicks with
+  ~150ms human visuomotor lag + ~8px aim noise. GROUNDED at every difficulty level, 10 trials each: easy 10/10,
+  medium 10/10, hard 10/10 hits, and 0 STALE everywhere. So the FP-safety + human-solvability claim now rests on
+  the human's REAL channel (rendered vision), not the hint text: a human who SEES the moving dot and clicks it is
+  silent (never a stale click) and solves reliably at all levels. This hardens the central deployability claim
+  against the strongest objection. The widget is complete: rendered + live-agent-caught + human-solvable (via
+  vision) + FP-safe end-to-end + leveled. Remaining leads are confirmatory (the real run_session wraps the same
+  brain already grounded), speculative (unpredictable-motion hardening defends against a motion-COMPUTING script,
+  caught on fingerprint, not the inner_text agent), or variety-not-detection (a timing/disappearing challenge is
+  the same real-time-perception principle and risks FP on slow humans) — the loop is at its terminus.
