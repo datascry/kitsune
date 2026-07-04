@@ -4131,3 +4131,21 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   worker_constructor_tampered), re-run, confirm br.mobile_cores_high goes silent with no new realm-divergence tell.
   Then the GPU string (mobile_gpu_not_mobile) — noting the real-silicon caps wall (mobile-axis-closed) is where a
   string spoof stops. A MODEL field (Sec-CH-UA-Model + navigator) is a corpus + wiring extension.
+- **[COHERENT-STACK LOOP — rung 2: cores coherence GROUNDED as environment-bound; the spoof-is-caught wall]**
+  (2026-07-04). Wired the corpus load into run.mjs (ksHw = the devices.json tuple matched to the picked device by
+  OS-class + engine; devices.json added to the Dockerfile COPY) and attacked the br.mobile_cores_high tell TWO ways,
+  both grounded LIVE. (1) A both-realm JS override (set navigator.hardwareConcurrency in the main realm via
+  addInitScript AND in the worker realm via the KS_RENDERER_WORKER Worker-wrap pattern): br.mobile_cores_high
+  SILENCED, but it tripped br.worker_source_rewritten + br.worker_constructor_tampered — THE INJECTION METHOD IS
+  ITSELF A TELL. You cannot SPOOF cores coherently (the worker-wrap that reaches the worker realm is a non-native
+  Worker constructor + a rewritten worker source). (2) Container CPU limits (--cpuset-cpus=0-7 / 0-3 / --cpus=4):
+  IGNORED here — os.cpus().length (and navigator.hardwareConcurrency) stays the HOST's 12 regardless (the sandbox
+  runtime does not expose cgroup cpuset to the reported CPU count). CONCLUSION: hardwareConcurrency is NOT coherently
+  morphable below the host core count in-sandbox. DESKTOP tuples (claim 8-16 cores) are NATIVELY coherent on the
+  12-core host (no tell); MOBILE tuples (need <=8) are ENVIRONMENT-BOUND — coherence requires a host whose real core
+  count matches the device (a <=8-core host, or a cpuset-honoring runtime), the KS_PROVISION principle gated on infra
+  we lack (sibling of active-probe-axis-infra-bound + mobile-axis-closed). deviceMemory: already the Chrome cap (8)
+  natively on a >=8GB host -> coherent for a flagship, no action. So the coherent morph WORKS for desktop hardware
+  and is infra-bound for the mobile core-count. Recorded, not faked. NEXT (rung 3): webgl_renderer — the ANGLE
+  string is spoofable (run.mjs KS_RENDERER), but the GPU BEHAVIOUR/CAPS (software SwiftShader vs a real Adreno's
+  maxTextureSize) is the real-silicon wall (mobile-axis-closed) — map exactly where the string spoof stops.

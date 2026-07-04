@@ -2,6 +2,7 @@
 // Modes: naive (automation tells) · STEALTH=1 (patched) · SPOOF_UA=<ua> (Chrome TLS, lying UA).
 
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const EDGE = process.env.KITSUNE_EDGE || "https://edge:8443/";
 const DETECTOR = process.env.KITSUNE_DETECTOR || "http://detector:8080";
@@ -361,6 +362,32 @@ function pickDevice(sel) {
 }
 const ksDevice = pickDevice(process.env.KS_DEVICE);
 
+// Coherent hardware from the curated corpus (devices.json): the GPU/cores/memory Playwright's registry lacks.
+// Match the picked device to a corpus tuple by OS-class + engine, so a morphed device's hardware AGREES with its
+// claimed model (closes br.mobile_cores_high / mobile_gpu_not_mobile). Applied in BOTH realms further below.
+let ksHw = null;
+if (ksDevice) {
+  try {
+    const corpus = JSON.parse(readFileSync(new URL("./devices.json", import.meta.url), "utf8")).devices;
+    const ua = ksDevice.userAgent || "";
+    const os = /iPad/.test(ua)
+      ? "iPadOS"
+      : /iPhone/.test(ua)
+        ? "iOS"
+        : /Android/.test(ua)
+          ? "Android"
+          : /Macintosh|Mac OS X/.test(ua)
+            ? "macOS"
+            : /Windows/.test(ua)
+              ? "Windows"
+              : null;
+    const matches = corpus.filter((d) => d.os === os && d.engine === KS_ENGINE);
+    if (matches.length) ksHw = matches[Math.floor(Math.random() * matches.length)];
+  } catch {
+    /* corpus optional — fall back to native hardware */
+  }
+}
+
 const CHROME_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 // Coherent with the container's real Linux platform (no headless token, Linux Client-Hints).
@@ -625,6 +652,17 @@ if (process.env.KS_SPOOF_DM) {
     Object.defineProperty(Navigator.prototype, "deviceMemory", { get: () => v, configurable: true });
   }, Number(process.env.KS_SPOOF_DM));
 }
+// COHERENT HARDWARE (device corpus) — GROUNDED (rung 2), the honest boundary:
+//   hardwareConcurrency: NOT coherently morphable below the host's core count in-sandbox. A both-realm JS override
+//   (Worker-wrap) silences br.mobile_cores_high but trips br.worker_source_rewritten + br.worker_constructor_tampered
+//   (the injection is itself a tell — you cannot SPOOF it coherently); and container CPU limits (--cpuset-cpus /
+//   --cpus) are IGNORED here — os.cpus().length stays the host's 12 regardless. So DESKTOP tuples (claim 8-16 cores)
+//   are natively coherent on a 12-core host, but MOBILE tuples (need <=8) are ENVIRONMENT-BOUND: coherence needs a
+//   host whose real core count matches the device (a <=8-core host, or a cpuset-honoring runtime) — the KS_PROVISION
+//   principle (be the device, don't fake it), gated on infra we don't have in-sandbox. Recorded, not faked.
+//   deviceMemory: already the Chrome cap (8) natively on a >=8GB host — coherent for a flagship; no action.
+// ksHw carries the corpus match (used by the webgl_renderer rung + the fleet launcher).
+if (ksHw && process.env.KS_DEBUG === "1") console.error("[coherent-hw] corpus match:", ksHw.name, "cores", ksHw.cores, "mem", ksHw.memory);
 // KS_SPOOF_UADATA=<platform>: a NAIVE main-thread-only navigator.userAgentData override (the standard OS-spoof
 // move, which never reaches Worker scope) — the red probe for br.uadata_worker_divergence.
 if (process.env.KS_SPOOF_UADATA) {
