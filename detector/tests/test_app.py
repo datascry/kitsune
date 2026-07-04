@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -374,6 +375,49 @@ def test_arena_queue_hoarding_counts_tickets(client: TestClient, monkeypatch: py
         assert got.status_code == 200
     assert client.get("/arena/queue/status", params={"id": "tk-1"}).status_code == 200
     assert client.post("/arena/queue/act", json={"id": "tk-1"}, headers={"Cookie": "ks_sid=scalper"}).status_code == 200
+
+
+def test_session_flow_cadence_is_fp_safe() -> None:
+    # The session-intent flow-cadence tell's PRECISION-1.0 test (load-bearing): a bot chaining gates in ms is
+    # caught, and EVERY plausible human session shape (fast/slow/bursty/exploring/one-fast-step) stays SILENT —
+    # a single false positive on a human shape would sink the tell.
+    from kitsune_detector.app import _flow_superhuman
+
+    base = datetime(2026, 1, 1, tzinfo=UTC)
+
+    def steps(gaps: list[float]) -> list[datetime]:
+        ts = [base]
+        for g in gaps:
+            ts.append(ts[-1] + timedelta(seconds=g))
+        return ts
+
+    assert _flow_superhuman(steps([0.1, 0.12, 0.09, 0.11]))  # bot: ~100 ms/step -> caught
+    human_population = {
+        "fast": [1.2, 0.9, 1.5, 1.1],
+        "slow": [6.0, 8.0, 5.0, 7.0],
+        "bursty": [0.7, 4.0, 0.8, 3.0, 0.9],
+        "exploring": [3.0, 12.0, 2.5, 9.0],
+        "one_fast_step": [0.3, 2.0, 2.5, 3.0],
+    }
+    for name, gaps in human_population.items():
+        assert not _flow_superhuman(steps(gaps)), f"false positive on {name} human session"
+    assert not _flow_superhuman(steps([0.1]))  # below the minimum step count -> never judged
+
+
+def test_session_flow_superhuman_injected_via_relay(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Hitting a gate-completion relay several times in rapid succession under one ks_sid trips the flow tell (the
+    # relay-side injection path); a mocked-200 upstream lets the verify relay succeed without a live gate.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"ok": True}))
+    for _ in range(4):
+        client.post(
+            "/arena/captcha/verify",
+            json={"kind": "text", "id": "x", "answer": "y"},
+            headers={"Cookie": "ks_sid=flowbot"},
+        )
+    v = client.get("/verdict/flowbot")
+    assert v.status_code == 200
+    assert any("session_flow" in c["rule_id"] for c in v.json().get("contradictions", []))
 
 
 def test_arena_index_renders_with_shell(client: TestClient) -> None:

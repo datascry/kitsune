@@ -3791,3 +3791,22 @@ LLM-characteristic) and win (goal-pursuit like a human).
   and the residual band is recorded as a RED WIN. NEXT (rung 2): build the per-ks_sid arena flow-sequence log + the
   multi-step cadence tell + the diverse-human FP-safety population; ground live (a naive arena-solver session,
   instant/regular across gates, CAUGHT; humanized + diverse-human sessions SILENT).
+- **[SESSION-INTENT LOOP — rung 2: the multi-step FLOW-CADENCE tell — BUILT + GROUNDED both ways]** (2026-07-04).
+  Built the substrate + the first tell. The detector now keeps a per-ks_sid FLOW LOG (flow_log: ordered
+  gate-completion timestamps) populated by _note_flow() from every arena gate-completion relay (captcha/slider/
+  rotate verify + queue act, all already carrying the ks_sid cookie) — the cross-gate sequence the arena never
+  tracked. New active rule bh.session_flow_superhuman (behavioral, automation, w0.85): when the MEDIAN inter-step
+  gap across >= 3 gate completions is below _FLOW_STEP_FLOOR_MS (500ms — a physiological floor far under any human's
+  per-gate perceive+solve+submit time), inject a convicting signal. The cadence check is a pure module-level
+  _flow_superhuman(steps) so it is directly FP-safety-testable. GROUNDED LIVE BOTH WAYS: (BLUE) the browserless
+  arena-solver's multi-gate run (ms/step) trips bh.session_flow_superhuman and the ks_sid=arena-solver session
+  convicts (score 0.999, present alongside the single-step arena tells); (FP-SAFETY, the load-bearing precision-1.0
+  test) a synthesized DIVERSE-HUMAN POPULATION — fast (~1s/gate), slow (~6s), bursty (fast-then-pause), exploring
+  (dwell/backtrack), one-fast-step (a single sub-floor step, human median) — is ALL SILENT; the median-not-min
+  choice makes it robust to a single quick step, and the 500ms floor sits far below real human per-gate times so no
+  plausible human shape trips it. detector ruff+mypy+drift-guard green; catalog regenerated; relay-injection +
+  FP-safety-population tests added. This is the multi-step generalization of the single-step superhuman-speed floor
+  — the FIRST session-SHAPE tell, holding precision 1.0 by construction. NEXT (red): a humanized arena-solver mode
+  (variable think-time between gates) that lives in the band -> confirm SILENT live; then (blue) the machine-
+  REGULARITY tell (inter-step CV ~= 0, the robotic-timer shape) and DECISION-LATENCY (gate-ready -> first-action),
+  each with its own diverse-human FP-safety population.
