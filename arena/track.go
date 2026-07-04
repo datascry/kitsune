@@ -90,14 +90,33 @@ func (s *trackStore) verify(id string, cx, cy float64, now time.Time) (hit, stal
 	delete(s.m, id) // single-use
 	curX, curY := t.pos(now)
 	hit = math.Hypot(cx-curX, cy-curY) <= trackTolerance
-	// STALE-SNAPSHOT: the click is near the ISSUE-TIME position (the target where a step-start snapshot saw it),
-	// the target has since MOVED away (the click is not on the current target), AND more than trackStaleAge has
-	// elapsed since issue — i.e. the client acted on a >1.2s-old view. A human re-perceives and clicks the current
-	// target; a fast script clicks before the target moves (age below the floor); only a snapshot-then-slowly-reason
-	// agent clicks the old position this late.
-	nearIssue := math.Hypot(cx-t.x0, cy-t.y0) <= trackTolerance
-	stale = nearIssue && !hit && now.Sub(t.issued) > trackStaleAge
+	// STALE-SNAPSHOT: the click landed on a position the target occupied more than trackStaleAge ago and has since
+	// left (it is not on the current target). A human re-perceives and clicks where the dot IS; a fast script clicks
+	// before the target moves; only a snapshot-then-slowly-reason agent clicks a seconds-old view this late.
+	stale = !hit && t.staleClick(cx, cy, now)
 	return hit, stale, true
+}
+
+// staleClick reports whether (cx,cy) lies on the target's PAST path at a time more than trackStaleAge ago — the
+// signature of acting on a seconds-old snapshot, wherever along the flight the snapshot was taken. It projects the
+// click onto the motion ray to find WHEN the target was nearest it, then checks that instant was really on the
+// (clamped) path, within the elapsed window, and older than the stale floor.
+func (t *trackTarget) staleClick(cx, cy float64, now time.Time) bool {
+	v2 := t.vx*t.vx + t.vy*t.vy
+	if v2 == 0 {
+		return false
+	}
+	dt := ((cx-t.x0)*t.vx + (cy-t.y0)*t.vy) / v2 // seconds since issue when the ray was nearest the click
+	elapsed := now.Sub(t.issued).Seconds()
+	if dt < 0 || dt > elapsed {
+		return false // before the start, or not yet reached
+	}
+	px := clampf(t.x0+t.vx*dt, 0, trackCanvas)
+	py := clampf(t.y0+t.vy*dt, 0, trackCanvas)
+	if math.Hypot(cx-px, cy-py) > trackTolerance {
+		return false // the click was not actually on the travelled path
+	}
+	return (elapsed - dt) > trackStaleAge.Seconds()
 }
 
 // trackWidgetHTML is the rendered moving-target challenge: a human sees the animated dot (canvas) and clicks it
@@ -105,11 +124,11 @@ func (s *trackStore) verify(id string, cx, cy float64, now time.Time) (hit, stal
 // snapshot time and — after seconds of reasoning — clicks the stale position. Served at GET /arena/track/play; its
 // fetches are same-origin so they ride the detector relay (ks_sid join).
 const trackWidgetHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Verification</title>
-<style>body{font-family:sans-serif;text-align:center;margin-top:24px}#c{border:1px solid #ccc;cursor:crosshair}
-#r{font-weight:bold;height:24px}</style></head><body>
-<h3>Click the moving dot to verify you are human</h3>
+<style>body{font-family:sans-serif;margin:0}
+#c{position:fixed;left:0;top:0;border:1px solid #ccc;cursor:crosshair}
+#panel{position:absolute;top:328px;left:8px}#r{font-weight:bold;height:24px}</style></head><body>
 <canvas id="c" width="320" height="320"></canvas>
-<p id="hint"></p><p id="r"></p>
+<div id="panel"><h3>Click the moving dot to verify you are human</h3><p id="hint"></p><p id="r"></p></div>
 <script>
 (async function(){
   var t = await (await fetch('/arena/track')).json();

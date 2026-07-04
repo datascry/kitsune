@@ -20,15 +20,22 @@ func TestTrackStaleSnapshot(t *testing.T) {
 		t.Fatalf("stale click: hit=%v stale=%v ok=%v — want false/true/true", hit, stale, ok)
 	}
 
+	// MID-PATH STALE: the widget agent snapshots MID-FLIGHT (not at the start). At t0+3s it clicks (160,100), where
+	// the dot was at dt=1s — a 2s-old view, far from current (280,100) -> stale wherever along the path it was seen.
+	seed()
+	if _, stale, _ := s.verify("tk", 160, 100, t0.Add(3*time.Second)); !stale {
+		t.Fatal("a mid-path click on a >1.2s-old position must be stale")
+	}
+
 	// LIVE: a human re-perceives and clicks the CURRENT target (220,100) at t0+2s -> hit, not stale.
 	seed()
 	if hit, stale, _ := s.verify("tk", 220, 100, t0.Add(2*time.Second)); !hit || stale {
 		t.Fatalf("live click: hit=%v stale=%v — want true/false", hit, stale)
 	}
 
-	// SLOW human who still clicks current, 5s later -> not stale (a human never acts on a stale view).
+	// SLOW human who still clicks the CURRENT (clamped) target 5s later -> not stale (a human never acts on a stale view).
 	seed()
-	if _, stale, _ := s.verify("tk", 100+300, 100, t0.Add(5*time.Second)); stale {
+	if _, stale, _ := s.verify("tk", 320, 100, t0.Add(5*time.Second)); stale {
 		t.Fatal("a slow human clicking the CURRENT target must not be stale")
 	}
 

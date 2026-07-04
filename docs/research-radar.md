@@ -4037,3 +4037,21 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   bounded) against detector:8080/arena/track/play with goal "click the moving dot" -> it snapshots the frozen text
   position -> reasons seconds -> clicks the stale position -> ✗ stale-snapshot (CAUGHT) — the real-agent proof that
   closes the axis gap; then hardening (unpredictable motion vs a motion-predicting agent) + tuning.
+- **[RENDERED-CHALLENGE LOOP — rung 2 (THE PAYOFF): live claude agent CAUGHT on the rendered widget]** (2026-07-04).
+  The real-agent proof that closes the LLM-agent axis's one gap. Fixed a real bug first: the verify's stale check
+  keyed on the ISSUE-START position, but the rendered agent snapshots MID-FLIGHT (the dot has already moved from
+  start) — so generalized it to trackTarget.staleClick, which projects the click onto the motion ray to find WHEN
+  the target was nearest it and convicts if that instant was on the travelled path AND more than trackStaleAge
+  (1.2s) ago AND not the current position (stale wherever along the flight the snapshot was taken). Put the canvas
+  at page origin so the agent's hint-derived page-coordinate click maps 1:1 to the target's canvas position.
+  GROUNDED LIVE end-to-end (real browser, real claude): pointed evaders/agent's brain (claude -p) at
+  detector:8080/arena/track/play — it snapshotted the dot frozen at pixel (173,17), REASONED FOR 22.3 SECONDS, then
+  clicked (173,17); the dot had long since moved -> the widget returned "✗ stale-snapshot (LLM agent)" — CAUGHT. The
+  22.3s inference latency is the structural tell made vivid: a human clicks a moving dot in ~1s, the agent's
+  snapshot->reason->act loop took 22s to decide and acted on a 22-second-old view. Paired with rung 1 (a live-tracker
+  human-proxy clicks the current dot -> "verified (human)", SILENT), the widget now catches the REAL agent AND stays
+  silent on a live tracker — FP-safe + human-solvable + agent-catching, all grounded in a real browser, not asserted.
+  This CLOSES the gap the LLM-agent axis left (bh.arena_stale_snapshot was server-side-only): the durable finding —
+  a coherent, well-reasoning LLM agent is defeated by the PHYSICS of its perceive-think-act loop against a moving
+  target — is now proven against the live agent. arena build/vet/test green. NEXT: hardening (unpredictable motion vs
+  a motion-predicting agent) + speed/tolerance tuning for the human-solvability margin.
