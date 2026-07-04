@@ -204,17 +204,21 @@ scorers, levers and the showcase — is documented in [**docs/fleet.md**](docs/f
 
 The [**arena**](docs/arena.md) (`arena/`, Go) is a public, self-hosted reproduction of the documented **open**
 web-challenge families — **proof-of-work**, **CAPTCHA** (text / math / honeypot), **slider**, **rotate**,
-**emoji & Quick-Draw image-select**, a **reCAPTCHA-style checkbox**, a **Turnstile-style managed ladder**,
-and **PACT / Privacy-Pass** attestation — each (where it has a difficulty axis) at **easy / medium / hard**.
-A visitor brings any client to a gate and sees **two verdicts at once**: did you *solve* the challenge, and
-does your client *cohere* across layers, read independently over the edge?
+**emoji / Quick-Draw / procedural-shape image-select**, a **reCAPTCHA-style checkbox**, a **Turnstile-style
+managed ladder**, **PACT / Privacy-Pass** attestation, a **rate-limit** and a **virtual waiting-room queue** —
+plus one Kitsune-original gate, **`track`**, a **real-time visual-tracking** challenge — each (where it has a
+difficulty axis) at **easy / medium / hard**. A visitor brings any client to a gate and sees **two verdicts at
+once**: did you *solve* the challenge, and does your client *cohere* across layers, read independently over the edge?
 
 That juxtaposition is the whole point: **a solved challenge is a cost or Turing test, not a bot/human
 discriminator.** Every gate here falls to the right scripted solver (`evaders/arena-solver`,
 `arena-solver-ocr`) — and the detector still convicts the no-JS client on the network layer regardless.
-**Coherence + attestation is the durable signal; the puzzle is not.** Like everything else in the lab, the
-gates and solvers are vendor-neutral and talk only to Kitsune's own infrastructure — never a third-party
-widget.
+**Coherence + attestation is the durable signal; the puzzle is not.** The one refinement is **`track`**: against
+an **LLM browser agent** (a real, coherent, humanly-paced browser that evades every fingerprint and behavioural
+tell), a real-time tracking task *is* a discriminator — its snapshot→reason(seconds)→act loop clicks a stale
+position while a human servos to the live one, convicting it (`bh.arena_stale_snapshot`), validated live against a
+claude-driven agent. Like everything else in the lab, the gates and solvers are vendor-neutral and talk only to
+Kitsune's own infrastructure — never a third-party widget.
 
 ## What's novel — detections unique to Kitsune
 

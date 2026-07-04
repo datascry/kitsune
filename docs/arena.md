@@ -12,6 +12,13 @@ discriminator.** A script can pass any gate here and still be convicted on the n
 attestation is the durable signal, not the puzzle.** Every gate falls to the right evader; the detector
 convicts the no-JS client regardless.
 
+**One refinement — the `track` gate.** It is the exception that proves where the puzzle *is* a discriminator:
+against an **LLM browser agent** (a real, coherent, humanly-paced browser that evades every fingerprint and
+behavioural tell), a **real-time visual-tracking** task convicts by construction — the agent's
+snapshot→reason(seconds)→act loop clicks a stale position while a human servos to the live one. The physics of
+the loop, not its cognition, is the tell. (A plain script still "beats" `track` by computing the motion — and is
+convicted on fingerprint, exactly as the thesis predicts.)
+
 It is the lab's **ethics boundary made concrete**: the arena gates and the reference solvers only ever talk
 to Kitsune's *own* infrastructure (the `arena` Go service, relayed by the detector). They never contact,
 proxy to, or solve a third-party challenge (Cloudflare Turnstile, reCAPTCHA, hCaptcha). The gates reproduce
@@ -48,6 +55,10 @@ pact, checkbox and managed are coherence/binary-gated and have no level dial.
 | `image-select` | CAPTCHA · reCAPTCHA-v2 | "select every animal" over **emoji glyph** tiles | **real CV/VLM** — the radial-shape heuristic fails | 6 / 9 tiles + noise |
 | `doodle` | CAPTCHA · reCAPTCHA-v2 | same, over **Quick, Draw! sketch** tiles | **real CV/VLM** (harder than emoji) | 6 / 9 tiles + noise |
 | `rotate` | CAPTCHA · Arkose / FunCaptcha | drag the object upright; **rotation-trajectory** scored | variable-rate drag synthesis | angle tolerance + trajectory bar |
+| `image-shapes` | CAPTCHA · reCAPTCHA-v2 | "select every &lt;shape&gt;" over **owned procedural geometric** tiles (zero-license) | shape classifier / VLM | 6 / 9 tiles + noise |
+| `track` | **Real-time visual tracking (anti-LLM-agent)** | click the **moving** dot; a snapshot→reason→act agent clicks the seconds-old position it last saw | a **human** (live visual servo) passes; an **LLM browser agent is CAUGHT** (`bh.arena_stale_snapshot`) — the one gate that convicts a *coherent, well-reasoned* agent, by the physics of its loop | easy / medium / hard (dot speed) |
+| `queue` | Defense · virtual waiting-room | admission only after a controlled wait; act-before-admission + position-hoarding are server-observed | wait for admission (a bot that skips the wait or hoards positions is convicted) | admission wait |
+| `rate` | Defense · rate-limit | per-origin request budget over a window | stay under the budget | budget / window |
 | `pact` | Defense · Private Access Tokens | an anonymous Ed25519 proof-of-personhood token **skips** the challenge | present a token → skip (the documented bypass) — detector still convicts a no-JS one | — |
 
 `pact` is the human-personhood twin of the shipped Web Bot Auth good-bot identity (`net.web_bot_auth_*`):
@@ -91,6 +102,11 @@ Two browserless solvers, both allow-list-scoped to our own gates:
 - `arena-solver-ocr` (Python, HuggingFace TrOCR `anuashok/ocr-captcha-v3`) beats the **text** gate at every
   level — even hard (6 confusable chars + heavy noise); a charset clean-up strips the model's occasional
   stray separator.
+- The **`track`** gate has no solver here *by design* — it is the one gate built to **catch**, not cost. A human
+  passes it (live visual tracking); an **LLM browser agent is convicted** (`bh.arena_stale_snapshot`), validated
+  live end-to-end (a claude-driven agent reasoned ~22s then clicked a stale position → caught; a realistic human
+  proxy solves 9-10/10 with zero false convictions). A motion-computing *script* passes it — and is convicted on
+  fingerprint, exactly as the thesis predicts.
 
 The image-select hardening is the on-thesis move: the gate got harder than the heuristic solver, forcing a
 real CV/VLM (the frontier) — and at the end of every chain the **detector convicts the no-JS client anyway**.
@@ -103,17 +119,25 @@ Together they cover the persona ladder:
 | Archetype | Detector verdict | Gate(s) that price it | Public mechanism reproduced |
 |---|---|---|---|
 | credential-stuffer | caught (fp_collision) | `rate` + PoW + `checkbox`/captcha | rate-limit · Turnstile · mCaptcha |
-| scalper | caught (fp_collision) | `rate` + PoW | rate-limit · PoW · *waiting-room (gap)* |
+| scalper | caught (fp_collision) | `rate` + PoW + `queue` | rate-limit · PoW · waiting-room |
 | scraper | caught (fp_collision) | `rate` + PoW/page | rate-limit · Turnstile |
 | review-farmer | caught (trace_collision) | captcha + `slider` (behavioral) | behavioral biometrics |
 | proxy-botnet | caught (shared_origin) | `rate` (per-origin) + IP-rep | IP reputation · PAT |
 | **sybil-farmer** | **candidate — evades detection** | **`pact`** | **Private Access Tokens** |
+| **llm-browser-agent** | **evades detection** (real browser ⇒ coherent fp, humanly paced, aligned) | **`track`** | **real-time visual tracking** |
 
-The synthesis: the `sybil-farmer` is the one archetype detection cannot convict (diversify fingerprints →
-`candidate`). The **`pact`** gate covers exactly that — you can fake infinite fingerprints, but not N anonymous
-personhood tokens without N attested devices. **The gate addresses what detection can't.** The one public
-mechanism not yet reproduced is a **waiting-room / virtual queue** (Queue-it / Cloudflare Waiting Room) — the
-canonical scalper defense (admit N/sec, queue the rest), fairer than `rate`'s hard 429.
+The synthesis: **the gate addresses what detection can't.** Two archetypes evade fingerprint/behaviour
+conviction, and each has a gate built for it:
+- The `sybil-farmer` diversifies fingerprints → `candidate`. **`pact`** covers it — you can fake infinite
+  fingerprints, but not N anonymous personhood tokens without N attested devices.
+- The `llm-browser-agent` drives a *real* browser (coherent fingerprint), paces itself like a human, and (being
+  aligned) walks through reasoning honeypots — it evades every per-session and behavioural tell. **`track`**
+  covers it: a moving target it cannot hit, because its snapshot→reason(seconds)→act loop clicks a stale position
+  while a human servos to the live one. The physics of the loop, not its cognition, is the tell.
+
+The canonical scalper **waiting-room / virtual queue** (Queue-it / Cloudflare Waiting Room) is now reproduced as
+the **`queue`** gate (admit after a controlled wait; act-before-admission and position-hoarding are server-observed),
+fairer than `rate`'s hard 429.
 
 ## Ethics (enforced)
 
