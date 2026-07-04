@@ -3868,3 +3868,26 @@ LLM-characteristic) and win (goal-pursuit like a human).
   regardless of timing, so the session-intent axis's real target is a COHERENT-FINGERPRINT real-browser bot where
   timing is the only tell — demonstrating that end-to-end needs a real-browser arena-flow driver (external-ish to
   the in-sandbox arena-solver). DRY #1. One more grounded-dry firing = the earned close of the session-intent axis.
+- **[SESSION-INTENT LOOP — rung 6: no new FP-safe tell (dry #2) -> AXIS EARNED-CLOSED]** (2026-07-04). Confirmed
+  the remaining session-intent leads that could be NEW tells are all in the COLLECTOR's browser-behavioral domain
+  (mouse/pointer/scroll/dwell/interaction — 139 refs in demo.py already), a SEPARATE, SATURATED axis, NOT the
+  arena's API-driven multi-gate flow. So the arena-flow substrate's FP-safe CONVICTING session-intent tells ARE the
+  cadence sub-axis (bh.session_flow_superhuman + bh.session_flow_robotic). No new in-sandbox band evasion worth
+  adding either (the humanized arena-solver already grounds the flow-timing band; a coherent-fingerprint real-browser
+  arena-flow demo is external-ish and would only re-demonstrate an already-located band). TWICE-IN-A-ROW grounded
+  dry (rung 5 lead-assessment + rung 6 collector-domain confirmation). **The SESSION-INTENT axis is EARNED-CLOSED.**
+  OUTCOME: shipped TWO FP-safe session-SHAPE tells, both grounded LIVE both ways (a bot-shaped flow caught + a
+  synthesized diverse-human population, incl. a metronomic human, all silent) — the multi-step generalization of the
+  single-step timing floors: (1) bh.session_flow_superhuman — median inter-step gap below a 500ms physiological
+  floor across >=3 gates; (2) bh.session_flow_robotic — inter-step CV below 0.03 (machine-regular) across >=5 gates.
+  Built the substrate the arena lacked: a per-ks_sid FLOW LOG (flow_log) populated from every gate-completion relay.
+  Red side: arena-solver KS_HUMANIZE (jittered) + KS_PACE_MS (fixed) grounded the full three-tier arms race (naive
+  ->floor; fixed-sleep->robotic; jittered->evades both). THE STRATEGIC BET IS VALIDATED + the band LOCATED: the
+  session-intent/timing layer catches only the NAIVE tiers (instant, fixed-sleep); a JITTERED + SERIAL +
+  occasionally-FAILING + humanly-PADDED-SOLVE bot lives entirely in a PERMANENT band the blue side cannot close
+  without FP-ing real humans (precision 1.0 + human session diversity). For a red-team engagement: the timing/
+  session-intent layer is SOFT — humanly-paced behavior defeats it by construction; the durable fight stays on
+  fingerprint COHERENCE. Frontiers that reopen this axis are all external: real production-traffic think-time
+  DISTRIBUTIONS (log-normal vs uniform-jitter), real navigation GRAPHs, and a coherent-fingerprint real-browser
+  arena-flow driver (the axis's true target — a browserless bot is caught on fingerprint regardless). Loop b3fbbe22
+  retired at the earned terminus.
