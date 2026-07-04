@@ -3761,3 +3761,33 @@ external-data-bound — i.e. fully reducing correlation = becoming N independent
   to interpolate the design gradient, larger rotation, occlusion, a 4th image source) are pure marginal
   refinements. RECOMMENDATION: consolidate — the 12-rung batch (11 bench rungs + the coverage fix) is a clean,
   CI-green (96.12%), well-grounded release that also un-reds origin/main; a release PR supersedes the stale 1.14.0.
+
+## Session-intent coherence axis (loop b3fbbe22 — the FP-safety-band frontier)
+
+The strategic bet: per-session FINGERPRINT detection is saturated (a real browser is coherent — binary, no
+evasion band), but BEHAVIOR + SESSION-INTENT have a WIDE human-plausible band because the blue side is bound by
+PRECISION 1.0 (never flag a real human) AND real human session behavior is enormously diverse. The loop's hard
+edge every rung: can a blue session-intent tell survive precision 1.0 against human session DIVERSITY? When it
+can't, that band is a PERMANENT RED WIN (record it); when it can, red adapts into the residual band. This is the
+layer real anti-bot (DataDome/HUMAN/Akamai) runs and the one Kitsune skipped (per-session fingerprint+behavior+
+coordination, never intent/flow); it is also where LLM agents both get caught (decision-latency + exploration are
+LLM-characteristic) and win (goal-pursuit like a human).
+
+- **[SESSION-INTENT LOOP — rung 1: grounded the substrate + designed the first tell (no build)]** (2026-07-04).
+  Grounded what session-temporal data EXISTS: (1) the detector Signal carries observed_at (per-signal timestamp) +
+  Session has first_seen/last_seen/request_count — but these are WITHIN-PAGE (one collector /ingest batch), not a
+  multi-step FLOW; (2) the arena captures per-GATE server-observed timing (captcha issuedAt + time.Since; queue
+  issuedAt + admitAfter + elapsed) but does NOT track the CROSS-GATE per-ks_sid SEQUENCE — each gate is
+  independent. So the genuine multi-step FLOW substrate (the ordered sequence of a session's gate interactions +
+  inter-step timing) DOES NOT EXIST yet; it must be built (a per-ks_sid flow-sequence log). DESIGN of the first
+  tell: MULTI-STEP INTER-STEP CADENCE — over a session's gate sequence, convict if the inter-step timing is
+  SUPERHUMAN (below a physiological multi-step floor: no human completes N distinct perceive->decide->act steps
+  faster than the floor) OR MACHINE-REGULAR (inter-step coefficient-of-variation ~= 0 — perfectly-regular timing
+  no human produces; humans have variable think-time). FP-SAFE BY CONSTRUCTION: a LOWER floor (a human is never
+  faster) + a regularity bound so tight only a machine timer (CV ~= 0) trips it. THE FP-SAFETY POPULATION
+  (load-bearing, this axis's precision-1.0 test): synthesize DIVERSE human sessions — fast/slow/regular-ish/bursty
+  inter-step distributions, focused vs exploring, error-prone — and confirm ALL are SILENT; only superhuman-fast OR
+  machine-regular (CV ~= 0) convicts. If ANY plausible human distribution trips a candidate tell, it is REJECTED
+  and the residual band is recorded as a RED WIN. NEXT (rung 2): build the per-ks_sid arena flow-sequence log + the
+  multi-step cadence tell + the diverse-human FP-safety population; ground live (a naive arena-solver session,
+  instant/regular across gates, CAUGHT; humanized + diverse-human sessions SILENT).
