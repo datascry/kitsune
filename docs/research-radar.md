@@ -3923,3 +3923,26 @@ scripted bot do not both share. The frontier is unsaturated (Kitsune detects scr
   a human/live-tracking client acts current (silent). NOTE: a fresh live re-run of the full agent recursively
   invokes claude -p (usage + orchestration); the baseline here is the README's REAL prior measurement, and the
   live validation is deferred to the tell-building rung where it is load-bearing.
+- **[LLM-AGENT LOOP — rung 2: agent RUN LIVE — it is fingerprint-gated in the current stack (grounded)]**
+  (2026-07-04). Fulfilled rung 1's deferred live run: the claude CLI IS in-sandbox (/home/user/.local/bin/claude,
+  v2.1.199), brain.py shells to it (subprocess ["claude","-p",prompt]), and the agent stack came up
+  (docker-compose.agent.yml: detector:8090 + a CDP Chrome browser:9222). Ran evaders/agent (KITSUNE_AGENT_STEPS=2)
+  -> EXIT=0, a real verdict returned: label=bot, score 0.99998. BUT the verdict is caught ENTIRELY on the
+  FINGERPRINT/AUTOMATION layer — br.cdp_runtime_enabled, br.webdriver_spoofed, headless/voices/hover/media tells,
+  br.font_linux_leak, br.codec_os_incoherent, net.tcp_os_vs_ua, net.tls_ext_order_static — the SATURATED layer;
+  NO behavioral input tells fired. This does NOT reproduce the README's behavioral-only baseline (network 0.0 +
+  browser 0.0 + behavioral 0.80): that run used a STEALTH-patched browser (webdriver+headless patched), while the
+  current compose browser is RAW Playwright Chrome (--headless=new, no stealth). KEY FINDING: in the current
+  in-sandbox stack the LLM agent is FINGERPRINT-GATED — caught on the saturated automation layer (cdp/webdriver/
+  headless), so the NOVEL LLM-behavioral frontier is not reachable head-on; it sits BEHIND a coherent-fingerprint
+  prerequisite (a stealth-CDP agent driver: patchright/nodriver + a coherent device profile — a substantial RED
+  build, the same coherent-real-browser-bot infra the session-intent axis flagged as the axis's true target).
+  THE PATH AROUND IT (rung 3): the STALE-SNAPSHOT tell (designed rung 1) is a BEHAVIORAL gate anomaly that fires
+  INDEPENDENT of the fingerprint verdict — a moving-target arena gate where a snapshot-then-slowly-act client
+  clicks the STALE position while a human/live-tracker clicks the current one; the stale-click ANOMALY convicts
+  regardless of whether the client's fingerprint is clean. So it is groundable in-sandbox WITHOUT first building a
+  stealth agent: build the gate + the tell, ground with a SIMULATED stale-vs-live Playwright client (faithfully
+  modelling the agent's snapshot->reason(seconds)->act loop from runner.py — no claude -p / usage needed), and the
+  real claude agent validates later. NEXT (rung 3): build the moving-target gate + bh.arena_stale_snapshot + ground
+  the stale-anomaly (stale client caught, live/human client silent — FP-safe: a human re-perceives before acting,
+  so never clicks a seconds-old stale position).
