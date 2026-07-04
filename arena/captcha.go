@@ -42,6 +42,37 @@ const captchaAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 // the hard alphabet ADDS the confusable glyphs back (0/O, 1/I/L) — harder to OCR, used only at the hard level.
 const captchaAlphabetHard = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
+// digits-only / letters-only are the ?charset= bench selectors — a red-teamer isolates the OCR effect of the
+// character set (a smaller class space vs the readable/confusable mixes) independent of the distortion level.
+const (
+	captchaDigits = "0123456789"
+	captchaAlpha  = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+)
+
+// captchaCharsetNames enumerates the ?charset= options for the /arena/catalog manifest.
+var captchaCharsetNames = []string{"readable", "confusable", "digits", "alpha"}
+
+// resolveCharset maps a ?charset= name to its alphabet + the resolved name; an empty/unknown name falls back to the
+// level default (readable, or confusable at the hard level). The resolved name is reported so a red-teamer knows the
+// class set their OCR model just faced.
+func resolveCharset(name string, confusableByLevel bool) (string, string) {
+	switch name {
+	case "digits":
+		return captchaDigits, "digits"
+	case "alpha":
+		return captchaAlpha, "alpha"
+	case "confusable":
+		return captchaAlphabetHard, "confusable"
+	case "readable":
+		return captchaAlphabet, "readable"
+	default:
+		if confusableByLevel {
+			return captchaAlphabetHard, "confusable"
+		}
+		return captchaAlphabet, "readable"
+	}
+}
+
 // Captcha is the PUBLIC challenge shown to the client. The answer is NEVER included — it lives only in the
 // gate's store (text/math) or is structural (honeypot: the trap field must come back empty).
 type Captcha struct {
@@ -53,6 +84,7 @@ type Captcha struct {
 	Tiles  []string    `json:"tiles,omitempty"` // image-select: 6/9/12 owned raster PNG tiles by level (classify via CV)
 	Angle  int         `json:"angle,omitempty"` // rotate: the initial rotation the user must undo to reach upright
 	Font   string      `json:"font,omitempty"`  // text: the typeface the image was rendered in (the OCR bench axis)
+	Chars  string      `json:"charset,omitempty"` // text: the character set the code was drawn from (the OCR bench axis)
 }
 
 // captchaStore holds id -> expected answer for single-use verification (the text/math families need the
@@ -140,7 +172,7 @@ func mintMath(lv Level) (string, string) {
 // MintCaptcha builds a fresh challenge of the kind at the given difficulty level and returns it with the
 // expected answer (the caller stores the answer for verify; for honeypot the stored answer is "" — it verifies
 // structurally). honeypot has no difficulty axis and ignores the level.
-func MintCaptcha(kind CaptchaKind, lv Level, fontName string) (Captcha, string) {
+func MintCaptcha(kind CaptchaKind, lv Level, fontName, charset string) (Captcha, string) {
 	id := randHex(16)
 	switch kind {
 	case CaptchaMath:
@@ -201,17 +233,14 @@ func MintCaptcha(kind CaptchaKind, lv Level, fontName string) (Captcha, string) 
 		return Captcha{Kind: CaptchaImageShapes, ID: id, Prompt: "Select every " + shapeNoun[target] + ".", Tiles: tiles}, joinInts(want)
 	default:
 		k := textParams(lv)
-		alphabet := captchaAlphabet
-		if k.Confusable {
-			alphabet = captchaAlphabetHard
-		}
+		alphabet, charsetName := resolveCharset(charset, k.Confusable)
 		code := randCodeFrom(k.Length, alphabet)
 		// Rendered as a DISTORTED RASTER PNG (not SVG): the answer is in the pixels, not the markup, so a
 		// browserless parser can no longer read it — solving the text gate now needs real OCR. See raster.go.
-		// fontName selects the typeface (?font=<name>, the OCR bench); empty picks a random pool face. The chosen
-		// face is reported back so a red-teamer knows which typeface their OCR model just faced.
+		// fontName selects the typeface (?font=), charset the character set (?charset=) — both OCR bench axes; the
+		// resolved face + charset are reported so a red-teamer knows exactly what their OCR model just faced.
 		img, chosen := rasterText(code, k, fontName)
-		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: img, Font: chosen}, strings.ToUpper(code)
+		return Captcha{Kind: CaptchaText, ID: id, Prompt: "Type the characters in the image.", Image: img, Font: chosen, Chars: charsetName}, strings.ToUpper(code)
 	}
 }
 

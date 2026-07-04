@@ -9,6 +9,7 @@ type catalogChallenge struct {
 	Prompt     string   `json:"prompt"`
 	Params     []string `json:"params,omitempty"`     // query params the caller can set (e.g. ["font"] on text)
 	Fonts      []string `json:"fonts,omitempty"`      // text: the ?font=<name> typeface pool (the OCR bench axis)
+	Charsets   []string `json:"charsets,omitempty"`   // text: the ?charset=<name> character-set options (the OCR bench axis)
 	Categories []string `json:"categories,omitempty"` // image gates: the category domains (randomized per challenge)
 	Charset    string   `json:"charset,omitempty"`    // text: the glyph set the answer is drawn from
 }
@@ -31,7 +32,7 @@ func arenaCatalog() Catalog {
 		Challenges: []catalogChallenge{
 			{
 				Kind: "text", Prompt: "Type the characters in the image.",
-				Params: []string{"font"}, Fonts: captchaFontNames,
+				Params: []string{"font", "charset"}, Fonts: captchaFontNames, Charsets: captchaCharsetNames,
 				Charset: captchaAlphabet + " (+ the 0O/1IL confusables at hard)",
 			},
 			{Kind: "math", Prompt: "Arithmetic — addition (easy), mixed ops (medium), multiplication (hard)."},

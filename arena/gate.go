@@ -208,7 +208,7 @@ func NewMux(secret []byte) http.Handler {
 	// --- CAPTCHA gates: same shape as PoW (issue → answer → verify → single-use token), but the "work" is a
 	// human-readable test. Self-hosted, generic reproductions of documented mechanisms — not a vendor clone. ---
 	mux.HandleFunc("GET /arena/captcha", func(w http.ResponseWriter, r *http.Request) {
-		c, answer := MintCaptcha(captchaKindOf(r.URL.Query().Get("kind")), ParseLevel(r.URL.Query().Get("level")), r.URL.Query().Get("font"))
+		c, answer := MintCaptcha(captchaKindOf(r.URL.Query().Get("kind")), ParseLevel(r.URL.Query().Get("level")), r.URL.Query().Get("font"), r.URL.Query().Get("charset"))
 		captchas.put(c.ID, answer)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(c) // the answer is NOT serialised — only the public challenge is sent
