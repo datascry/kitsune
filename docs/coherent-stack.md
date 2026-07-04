@@ -20,7 +20,8 @@ swapping a whole coherent identity atomically — never perturbing a field.**
 | **Runtime** (headful, patchright/camoufox) | real display + CDP-stealth driver | `cdp_runtime_enabled`, `no_chrome_object`, `permissions_anomaly`, `webdriver_*` |
 | **Engine ↔ device** (`KS_ENGINE`) | chromium↔Android/desktop-Chrome, webkit↔iPhone/iPad — engine and claimed UA agree | `apple_ua_nonwebkit`, engine-stack incoherence |
 | **Device identity** (`KS_DEVICE`) | one tuple (UA + Sec-CH-UA + screen + DPR + touch + isMobile) applied **natively** by the engine — no JS patch, so **no realm-divergence tell** | `ios_screen_oversized`, `ios_dpr_incoherent`, `navplatform_vs_ua`, `ch_ua_version_vs_ua` |
-| **GPU / cores / memory** (`devices.json`) | the curated corpus supplies the coherent `webgl_renderer` / `hardwareConcurrency` / `deviceMemory` for the sampled model | `webgl_*`, `mobile_gpu_caps_mismatch`, hardware↔UA incoherence |
+| **Model + UA-CH brands** (CDP `setUserAgentOverride`) | the browser's own `userAgentMetadata` (model, platform, clean brands) set natively in both realms | `mobile_no_js_model`, `ch_ua_mobile_no_model`, `ch_he_headless` |
+| **GPU / cores / memory** (real hardware) | **NOT software-morphable** — a JS spoof is caught (tampering/worker-divergence) and the caps/count are real silicon; coherent only with real hardware whose caps match the model | *(real-hardware-bound — see the loop)* |
 | **Provisioned floor** (`KS_PROVISION`) | audio / voices / webrtc present, as a real device has | `voices_empty`, `media_devices_empty`, empty-realm tells |
 | **Behaviour** (`KS_HUMANIZE` / `HUMAN_MOUSE`) | bézier mouse + paced, jittered timing | `input_entropy_floor`, `no_input_before_action`, cadence floors |
 

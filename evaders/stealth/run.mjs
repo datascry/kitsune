@@ -1288,6 +1288,47 @@ if (UACH_COHERENT) {
     },
   });
 }
+// COHERENT MODEL for a morphed ANDROID device — GROUNDED (rung 4): the device MODEL is set via CDP
+// Network.setUserAgentOverride's userAgentMetadata (the browser's OWN CH data, applied in BOTH realms, no JS patch),
+// closing br.mobile_no_js_model + net.ch_ua_mobile_no_model. The JS forge route (KS_FORGE_JS_MODEL) is MAIN-only and
+// trips br.uadata_model_worker_divergence (the worker realm keeps the empty model); the CDP metadata does not, being
+// native. Same mechanism as UACH_COHERENT, per-device. Chromium-only (UA-CH does not exist on WebKit/iOS).
+if (
+  ksDevice &&
+  KS_ENGINE === "chromium" &&
+  /Android/.test(deviceOpts.userAgent || "") &&
+  !UACH_COHERENT &&
+  process.env.KS_DEVICE_UACH !== "0"
+) {
+  const ua = deviceOpts.userAgent;
+  const ver = (/Chrome\/(\d+)/.exec(ua) || [])[1] || "125";
+  const model = ((/Android [\d.]+; ([^)]+?)(?:\s+Build\/[^)]*)?\)/.exec(ua) || [])[1] || "").trim();
+  const platVer = ((/Android ([\d.]+)/.exec(ua) || [])[1] || "13") + ".0.0";
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Network.setUserAgentOverride", {
+    userAgent: ua,
+    userAgentMetadata: {
+      brands: [
+        { brand: "Chromium", version: ver },
+        { brand: "Google Chrome", version: ver },
+        { brand: "Not.A/Brand", version: "99" },
+      ],
+      fullVersionList: [
+        { brand: "Chromium", version: ver + ".0.0.0" },
+        { brand: "Google Chrome", version: ver + ".0.0.0" },
+        { brand: "Not.A/Brand", version: "99.0.0.0" },
+      ],
+      fullVersion: ver + ".0.0.0",
+      platform: "Android",
+      platformVersion: platVer,
+      architecture: "",
+      model,
+      mobile: true,
+      bitness: "",
+      wow64: false,
+    },
+  });
+}
 await page.goto(EDGE, { waitUntil: "load" });
 const human = HUMAN_MOUSE || MAX_STEALTH;
 if (REPLAY_TRACE) {

@@ -4172,3 +4172,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   fonts) morph coherently already. NEXT (rung 4): the MODEL field (br.mobile_no_js_model / net.ch_ua_mobile_no_model)
   — a STRING (Sec-CH-UA-Model + navigator), not hardware, so potentially coherently morphable (KS_FORGE_MODEL /
   KS_FORGE_JS_MODEL) — test whether it closes cleanly or trips its own worker-realm divergence.
+- **[COHERENT-STACK LOOP — rung 4: the MODEL wiring is a CLEAN COHERENT WIN (CDP native metadata)]** (2026-07-04).
+  First fully-coherent field the loop wires. The JS forge (KS_FORGE_JS_MODEL) closed the model tells but is MAIN-only
+  -> br.uadata_model_worker_divergence (caught by the full-delta check, applying the rung-3 lesson). The COHERENT
+  route: CDP Network.setUserAgentOverride with the device's userAgentMetadata (model parsed from the UA + platform
+  Android + platformVersion + mobile + clean brands) — the browser's OWN CH data, applied in BOTH realms, no JS
+  patch. Wired it for Android chromium morphs (gated !UACH_COHERENT, KS_DEVICE_UACH!=0). GROUNDED LIVE
+  (KS_DEVICE="Pixel 5"): br.mobile_no_js_model + net.ch_ua_mobile_no_model -> SILENT, br.uadata_model_worker_divergence
+  stays silent (native, no divergence), and the full delta shows ZERO new tells. BONUS: it also silenced
+  br.ch_he_headless (the clean Chromium/Chrome/Not.A-Brand brands replace the leaked HeadlessChrome brand list) — one
+  wiring, three tells closed. THE PATTERN NOW CLEAR across the loop: NATIVE mechanisms morph coherently (Playwright
+  device UA/screen/DPR; CDP userAgentMetadata for model+brands; container provisioning for audio/voices) with no
+  tell; JS PATCHES are caught (getParameter -> getparameter_tampered; Worker-wrap -> worker_source_rewritten;
+  getHighEntropyValues wrap -> uadata_model_worker_divergence); HARDWARE BEHAVIOUR is real-silicon-bound (GPU caps
+  rung 3, core count rung 2). So the coherent morph closes every field that has a NATIVE route, and is bounded only
+  where the field is real hardware. NEXT (rung 5): br.codec_os_incoherent (a mobile UA claims H.264/AAC the container
+  lacks) + br.android_no_contacts_api — are these native-routable (CDP/flags/provisioning) or environment-bound?
