@@ -4206,3 +4206,23 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   hardware + codec/platform capabilities are provisioning/real-hardware-bound. Remaining verification worth adding:
   end-to-end a DESKTOP tuple (cores coherent, no model tell, but GPU+codec walls) and an iOS tuple (webkit: no
   deviceMemory, Apple GPU) — dry #1 for NEW corpus wiring; next firing verifies those or converges to close.
+- **[COHERENT-STACK LOOP — rung 6: iOS + Linux-desktop verified — the boundary is COMPLETE -> EARNED CLOSE (dry #2)]**
+  (2026-07-04). Two end-to-end verifications completed the map. (1) iOS morph (KS_ENGINE=webkit, iPhone 13): only 5
+  tells and ZERO device-layer tells — Safari exposes LESS (undefined deviceMemory = coherent, no UA-CH model, GPU
+  not checked as mobile_gpu_not_mobile), so morphing to iOS SIDESTEPS the Android GPU-caps/cores/model walls; the
+  residue is runtime (automation/webdriver) + the NETWORK OS layer (net.tcp_os_vs_ua + net.tls_grease_vs_ua — the
+  raw Linux TCP/TLS stack vs the iOS UA) + br.navplatform_vs_ua. (2) Linux-desktop NATIVE identity (UACH_COHERENT,
+  same OS as the container): net.tcp_os_vs_ua, net.tls_grease_vs_ua, br.codec_os_incoherent, br.navplatform_vs_ua
+  ALL SILENT — a same-OS identity is OS/network/codec-coherent; residue is runtime (headful+patchright handles) +
+  environment (mimetypes/plugins/pdfviewer/voices — provisioning/headful) + br.webgl_software (the universal GPU
+  wall) + a within-session TLS-order tell. THE DEEPEST WALL, now grounded: a CROSS-OS morph (to any OS != the
+  container's Linux) trips the NETWORK layer (tcp_os_vs_ua, tls_grease_vs_ua) — the raw TCP/TLS stack is the Linux
+  kernel, changeable only via os-spoof / NET_ADMIN (INFRA-BOUND, sibling of active-probe-axis-infra-bound).
+  **THE COHERENT-MORPH BOUNDARY IS COMPLETE (loop EARNED-CLOSED, dry #2):** native-route fields (UA/screen/DPR/touch
+  via Playwright; model+CH brands via CDP metadata) morph coherently WITHIN the same OS; the GPU (no silicon ->
+  webgl_software) is the UNIVERSAL real-hardware wall; a CROSS-OS morph additionally trips the TCP/TLS stack
+  (infra-bound) and (Android) the GPU-caps/cores/model walls; iOS/webkit is the CLEANEST cross-OS target (device-
+  layer clean); cores are desktop-coherent/mobile-env-bound; codec/contacts are Linux-coherent (no tell for a Linux
+  UA) / cross-OS provisioning+platform-bound. GOVERNING PRINCIPLE (the durable deliverable): NATIVE mechanisms morph
+  coherently, JS PATCHES are caught (tampering/worker-divergence), HARDWARE + OS-STACK are real-silicon/infra-bound.
+  Marginal follow-ups (not blocking close): navigator.platform on the iOS morph; the codec Chrome-channel provision.
