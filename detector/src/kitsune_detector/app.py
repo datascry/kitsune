@@ -668,13 +668,14 @@ def create_app(
         return Response(content=r.content, media_type="text/html; charset=utf-8", status_code=r.status_code)
 
     @app.get("/arena/track", include_in_schema=False)
-    async def arena_track() -> Response:
-        # Relay the moving-target (stale-snapshot) probe issue: {id, x, y} — the target's start position.
+    async def arena_track(level: str = "") -> Response:
+        # Relay the moving-target (stale-snapshot) probe issue: {id, x, y, vx, vy}. The level sets dot speed
+        # (difficulty) — forwarded so the rendered widget's ?level reaches the gate.
         if not ARENA_URL:
             raise HTTPException(status_code=503, detail="arena gate not configured")
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.get(f"{ARENA_URL}/arena/track")
+                r = await client.get(f"{ARENA_URL}/arena/track", params={"level": level})
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
