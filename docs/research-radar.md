@@ -4270,3 +4270,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   net.tcp_os_vs_ua (os-spoof composes it away, grounded), br.webrtc_unavailable (provisioning), bh.synthetic_no_
   coalesced (behavioral input — HUMAN_MOUSE/real-input). So coherent-stack.md is now fully live-grounded: engine-
   level fields coherently morph via camoufox; only the GPU CAPS wall is real-hardware.
+- **[COHERENT-STACK — #2 gVisor premise GROUNDED: the deep-TCP tell exists but os-spoof passes it on a normal morph]**
+  (2026-07-05). Before building gVisor netstack into os-spoof, grounded the premise. FINDING: the detector ALREADY
+  ships the deep-TCP-behaviour tells — net.tcp_static_window (w0.4, corroborating: a real kernel auto-tunes its
+  receive window across a flow, a hardcoded userspace stack holds it static; registry:769 says it was grounded
+  catching the os-spoof forger's single 64240 window) + net.tcp_syn_anomaly (the SYN wscale VALUE vs the darwin
+  order; registry:757, catches os-spoof's wscale=6). So "deep TCP behaviour" is NOT a settled software task (my
+  prior doc claim) — it's a LIVE blue tell. BUT tcp_static_window is FP-conservative (>=12-segment static flow), and
+  GROUNDED: a full stealth-chromium collector flow through an os-spoof windows-chrome proxy → net.tcp_static_window
+  + net.tcp_syn_anomaly + net.tcp_os_vs_ua ALL SILENT — os-spoof's happy-path stack PASSES a normal browser morph.
+  So gVisor netstack (real window auto-tuning) is the red counter only for LONG/sizable static sessions — a MAJOR
+  build (huge gvisor dependency, netstack over AF_PACKET, SYN-option config, and gVisor's OWN fingerprint is a new
+  surface) for a marginal, corroborating, long-session-only gain that a normal morph already passes. DEFERRED as a
+  production-robustness upgrade, not built (no current-morph gain to justify the major rewrite). Corrected the doc:
+  deep-TCP is a live blue tell os-spoof passes on normal flows, not a free software task.
