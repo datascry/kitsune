@@ -1,9 +1,12 @@
 # The Coherent Morphing Stack — the research output
 
-This is the single evader configuration the red-team research converges on: **one coherent real browser that scores
-`human` across every layer *and* morphs its device identity on demand.** Not a technique in a ladder — the
-*composed* stack, documented as the deliverable. Lives in `evaders/stealth/` (`run.mjs` + `devices.json`); its place
-in the arms race is the "red frontier" row of [`frontier.md`](frontier.md).
+This is the configuration the red-team research converges on: **one coherent real browser that scores `human` across
+every layer *and* morphs its identity on demand.** Not a technique in a ladder — the *composed* stack, documented as
+the deliverable. It is **composed from the fleet, the right tool per layer** — no single evader does it all:
+`evaders/stealth` (native UA/screen/DPR + CDP model/CH metadata + provisioning + humanized input), **`camoufox`**
+(engine-level renderer / canvas / font spoofing — patched *natively*, where `stealth`'s JS patches get caught), and
+**`os-spoof`** (the TCP SYN kernel, for cross-OS morphs). The device corpus is `evaders/stealth/devices.json`. Its
+place in the arms race is the "red frontier" row of [`frontier.md`](frontier.md).
 
 ## The thesis, in one line
 
@@ -20,9 +23,10 @@ swapping a whole coherent identity atomically — never perturbing a field.**
 | **Network / OS kernel** (`os-spoof` proxy) | forges the TCP SYN kernel fingerprint (userspace stack over `AF_PACKET`, `NET_RAW`+`NET_ADMIN`) so the kernel the SYN reveals matches the claimed OS — route the browser through `KS_PROXY=socks5://os-spoof:1080` | `tcp_os_vs_ua` (cross-OS) |
 | **Runtime** (headful, patchright/camoufox) | real display + CDP-stealth driver | `cdp_runtime_enabled`, `no_chrome_object`, `permissions_anomaly`, `webdriver_*` |
 | **Engine ↔ device** (`KS_ENGINE`) | chromium↔Android/desktop-Chrome, webkit↔iPhone/iPad — engine and claimed UA agree | `apple_ua_nonwebkit`, engine-stack incoherence |
-| **Device identity** (`KS_DEVICE`) | one tuple (UA + Sec-CH-UA + screen + DPR + touch + isMobile) applied **natively** by the engine — no JS patch, so **no realm-divergence tell** | `ios_screen_oversized`, `ios_dpr_incoherent`, `navplatform_vs_ua`, `ch_ua_version_vs_ua` |
+| **Device identity** (`KS_DEVICE`) | one tuple (UA + Sec-CH-UA + screen + DPR + touch + isMobile) applied **natively** by the engine — no JS patch, so **no realm-divergence tell** | `ios_screen_oversized`, `ios_dpr_incoherent`, `ch_ua_version_vs_ua` |
 | **Model + UA-CH brands** (CDP `setUserAgentOverride`) | the browser's own `userAgentMetadata` (model, platform, clean brands) set natively in both realms | `mobile_no_js_model`, `ch_ua_mobile_no_model`, `ch_he_headless` |
-| **GPU / cores / memory** (real hardware) | **NOT software-morphable** — a JS spoof is caught (tampering/worker-divergence) and the caps/count are real silicon; coherent only with real hardware whose caps match the model | *(real-hardware-bound — see the loop)* |
+| **GPU renderer string / canvas / fonts** (engine-level: `camoufox` / source-fork) | patched **natively** across both realms — *not* a JS getter override, so no tampering/`worker_vs_main` tell (a `stealth` addInitScript patch **is** caught; camoufox is not) | `webgl_renderer_artifact`, `canvas_lie`, `font_os_vs_ua` (the string layer) |
+| **GPU caps + core count** (real silicon — **the durable wall**) | *not morphable by any tool* — `MAX_TEXTURE_SIZE` 8192 < the 16384 floor, and the real core count, are physical; needs real hardware whose caps match the model | `mobile_gpu_caps_mismatch`, `webgl_maxtexture_unallocatable`, `mobile_cores_high` |
 | **Provisioned floor** (`KS_PROVISION`) | audio / voices / webrtc present, as a real device has | `voices_empty`, `media_devices_empty`, empty-realm tells |
 | **Behaviour** (`KS_HUMANIZE` / `HUMAN_MOUSE`) | bézier mouse + paced, jittered timing | `input_entropy_floor`, `no_input_before_action`, cadence floors |
 
@@ -40,10 +44,11 @@ KS_DEVICE="MacBook Pro 14 (M3)"                                  # pin a specifi
 ```
 
 `KS_DEVICE=random` draws **one whole tuple** and applies UA + screen + DPR + touch + isMobile **together**, scoped to
-the launched engine. With `devices.json` wired in, the same draw also fixes `webgl_renderer` + `cores` + `memory`.
-Because the whole identity swaps as a unit, **no field can disagree with another** — the property spoofers can't
-hold. That is the difference between *morphing* (swap a coherent real identity) and *spoofing* (perturb fields into
-incoherence).
+the launched engine, and CDP metadata sets the model + CH brands natively. Because the identity swaps as a unit,
+**no field can disagree with another** — the difference between *morphing* (swap a coherent real identity) and
+*spoofing* (perturb fields into incoherence). The GPU renderer *string* is swapped at the **engine level** (camoufox
+/ source-fork), not by a JS patch; the GPU *caps* and *core count* are physical and follow the host hardware (see the
+boundary below).
 
 ## The device corpus — `evaders/stealth/devices.json`
 
@@ -78,9 +83,14 @@ coherently morphable and mapped every wall. The governing result:
 
 - **Native mechanisms morph coherently.** Playwright device (UA/screen/DPR/touch) and **CDP `userAgentMetadata`**
   (model + CH brands) close their tells with no divergence — the model wiring is the one clean in-sandbox win.
-- **JS patches are caught.** A `getParameter` renderer patch → `webgl_getparameter_tampered` + `webgl_worker_vs_main`
-  + `webgpu_webgl_vs`; a Worker-wrap → `worker_source_rewritten` + `worker_constructor_tampered`; a
-  `getHighEntropyValues` model wrap → `uadata_model_worker_divergence`. **You cannot spoof coherence.**
+- **`stealth`'s JS patches are caught — but engine-level browsers are not.** Via `stealth` (Playwright addInitScript):
+  a `getParameter` renderer patch → `webgl_getparameter_tampered` + `webgl_worker_vs_main` + `webgpu_webgl_vs`; a
+  Worker-wrap → `worker_source_rewritten` + `worker_constructor_tampered`; a `getHighEntropyValues` model wrap →
+  `uadata_model_worker_divergence`. **But that is a `stealth` limitation, not fundamental** — `camoufox` (Firefox
+  source-level) and Brave (farbling) patch the renderer string / canvas / fonts **natively** across both realms, so
+  those tampering/`worker_vs_main` tells can't see them (grounded: `webgl_renderer_spoof.mjs`, radar R-gl, the
+  `privacy-browser-fp-surface` memory). So the engine-level fields **are** coherently morphable — with the right tool.
+  You cannot *JS-patch* coherence; you compose a browser that is already coherent.
 - **The cross-OS TCP kernel is SOLVED — compose `os-spoof`.** A cross-OS morph trips `net.tcp_os_vs_ua` (the SYN
   option order reveals the container's Linux kernel), but the **`os-spoof` evader** (`KS_MODE=proxy`) forges the SYN
   via a userspace TCP stack (`NET_RAW`+`NET_ADMIN`, both available in-sandbox) and routes the real browser through it.
@@ -90,12 +100,24 @@ coherently morphable and mapped every wall. The governing result:
   `h2_unknown_vs_ua`, so it needs a **native-TLS-matching browser**, real-browser/build-bound) and **deep TCP
   behaviour** (window/retransmit dynamics — a happy-path userspace stack doesn't reproduce; production = gVisor
   netstack). iOS/webkit is the cleanest target (Safari exposes less → sidesteps the Android GPU/cores/model walls).
-- **Hardware is real-silicon-bound.** The no-GPU container's software GL is the **universal wall** (`webgl_software`
-  on every morph; caps `mobile_gpu_caps_mismatch`); `hardwareConcurrency` can't be lowered (JS caught, `--cpuset-cpus`
-  ignored) so desktop tuples are core-coherent but mobile need ≤8-core hardware.
+- **The GPU *caps* and *core count* are real-silicon-bound.** The renderer string morphs at the engine level (above),
+  but the no-GPU container's software GL has `MAX_TEXTURE_SIZE` 8192 (< the 16384 floor real GPUs expose) → the
+  **caps mismatch is the durable catch no string spoof fixes**; and `hardwareConcurrency` can't be lowered (`stealth`
+  JS caught, `--cpuset-cpus` ignored → stays the host's count), so desktop tuples are core-coherent but mobile need
+  ≤8-core hardware.
 
-So **in-sandbox the morph is coherent for the software-fingerprint layers within one OS; the GPU, mobile core-count,
-and cross-OS TCP/TLS stack are real-hardware/infra-bound.** The corpus is correct data for a real-GPU/real-OS host;
-those bound fields become coherent on real hardware. Remaining follow-ups: `navigator.platform` on the iOS morph; a
-codec-enabled real Chrome (`channel:chrome`) for `codec_os_incoherent` on non-Linux UAs; the fleet frontier stays
-external-bound (the buy list in `frontier.md`).
+### The three durable walls (they survive *every* tool)
+
+Composing the right tool per layer closes far more than any single evader. What remains real-hardware/real-browser-bound:
+
+1. **GPU caps** — `MAX_TEXTURE_SIZE` / real core count: physical, needs real silicon whose caps match the model.
+2. **Deep TCP behaviour** — window/retransmit dynamics beyond the SYN option order (`os-spoof`'s happy-path userspace
+   stack doesn't reproduce it; production swaps in gVisor `netstack`).
+3. **Cross-OS native TLS** — the browser's real ClientHello must *be* the claimed OS's; fronting it with a uTLS MITM
+   (`chain-mitm`) is counterproductive (adds the Go-h2 seam), so it needs a browser whose native TLS matches the OS.
+
+Everything else morphs coherently with the right tool: UA/screen/DPR/model+CH (`stealth` + CDP), renderer
+string/canvas/fonts (`camoufox` engine-level), and the TCP kernel (`os-spoof`). The corpus is correct data for a
+real-GPU/real-OS host, where the three walls fall too. Minor follow-ups: `navigator.platform` on the iOS morph; a
+codec-enabled real Chrome for `codec_os_incoherent` on non-Linux UAs; the fleet frontier stays external-bound (the
+buy list in `frontier.md`).
