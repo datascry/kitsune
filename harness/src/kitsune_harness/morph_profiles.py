@@ -50,7 +50,30 @@ REGISTRY: dict[str, MorphProfile] = {
         provision=True,
         humanize=False,
     ),
+    # A CROSS-OS identity: the host is Linux, so the kernel/TLS are forged to Windows by os-spoof (windows-firefox —
+    # the engine matches camoufox's Firefox), while camoufox supplies the Windows UA + a coherent Windows NVIDIA GPU
+    # @ 16384 (llvmpipe). One Windows story across kernel + TLS + UA + GPU.
+    "windows-firefox": MorphProfile(
+        name="windows-firefox",
+        os_target="windows",
+        browser="camoufox",
+        os_spoof="windows-firefox",
+        mobile=False,
+        touch=False,
+        gpu=Gpu(
+            vendor="Google Inc. (NVIDIA)",
+            renderer="ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar",
+            caps=16384,
+            backend="llvmpipe",
+        ),
+        provision=True,
+        humanize=False,
+    ),
 }
+
+
+# The container name the validator gives the os-spoof SOCKS5 proxy (so composed browser env can reach it).
+OS_SPOOF_HOST = "os-spoof-proxy"
 
 
 def compose(name: str) -> dict[str, str]:
@@ -72,4 +95,10 @@ def compose(name: str) -> dict[str, str]:
         env["KS_OS"] = p.os_target
         env["KS_WEBGL_VENDOR"] = p.gpu.vendor
         env["KS_WEBGL_RENDERER"] = p.gpu.renderer
+    if p.os_spoof is not None:
+        # Route the browser through the os-spoof SOCKS5 proxy so the TCP SYN kernel is forged to the target OS. The
+        # validator launches os-spoof with KS_PROFILE=<p.os_spoof>. camoufox reads SOCKS via KS_SOCKS (routes WebRTC
+        # too, ice.proxy_only); stealth reads KS_PROXY.
+        proxy = f"socks5://{OS_SPOOF_HOST}:1080"
+        env["KS_SOCKS" if p.browser == "camoufox" else "KS_PROXY"] = proxy
     return env

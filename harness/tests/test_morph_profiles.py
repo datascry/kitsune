@@ -25,3 +25,17 @@ def test_registry_profiles_are_internally_coherent() -> None:
         # a profile whose target OS is the container's Linux host needs no kernel forge
         if p.os_target == "linux":
             assert p.os_spoof is None, p.name
+
+
+def test_windows_firefox_composes_cross_os_proxy() -> None:
+    env = compose("windows-firefox")
+    assert env["KS_OS"] == "windows"
+    assert "GTX 980" in env["KS_WEBGL_RENDERER"]
+    # a cross-OS target forges the kernel via the os-spoof SOCKS proxy (camoufox reads KS_SOCKS)
+    assert env["KS_SOCKS"] == "socks5://os-spoof-proxy:1080"
+
+
+def test_cross_os_profiles_declare_a_kernel_forge() -> None:
+    for p in REGISTRY.values():
+        if p.os_target != "linux":  # a target != the Linux host must forge the kernel
+            assert p.os_spoof is not None, p.name
