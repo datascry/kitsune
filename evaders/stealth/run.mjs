@@ -387,16 +387,16 @@ if (ksDevice) {
     /* corpus optional — fall back to native hardware */
   }
 }
-// GPU/webgl is REAL-HARDWARE-BOUND — GROUNDED (rung 3): the webgl_renderer is NOT coherently morphable in a no-GPU
-// (SwiftShader) container, so the corpus's webgl_renderer is NOT auto-applied (it stays a probe under KS_RENDERER).
-// Every JS approach is caught: the container's real software GL trips br.webgl_software + br.mobile_gpu_not_mobile;
-// a main-realm getParameter patch trips br.webgl_getparameter_tampered (non-native fn) + br.webgl_worker_vs_main
-// (worker realm differs) + br.webgpu_webgl_vs (WebGPU adapter exposes the REAL GPU); the both-realm Worker-wrap trips
-// br.worker_source_rewritten + br.worker_constructor_tampered; and a high-end GPU string trips
-// br.mobile_gpu_caps_mismatch (MAX_TEXTURE_SIZE < the 16384 mobile floor) while faking the cap up trips
-// br.webgl_maxtexture_unallocatable (can't allocate what you claim). A coherent GPU needs REAL silicon in the
-// container (GPU passthrough) whose caps match the claimed device — external-hardware-bound. So KS_RENDERER stays an
-// explicit probe; a device morph leaves the real GPU alone (and is thus GPU-incoherent until run on real hardware).
+// GPU/webgl — REVISED (2026-07-05, Mesa llvmpipe): the caps wall is NOT real-hardware-bound after all. The old
+// dead-end below assumed a JS renderer SPOOF (caught: getparameter_tampered / worker_vs_main / webgpu_webgl_vs) OR
+// SwiftShader's 8192 cap. Rendering on Mesa llvmpipe (GALLIUM_DRIVER=llvmpipe) instead reports+ALLOCATES the real
+// 16384 cap with NO JS spoof — so for CHROMIUM under llvmpipe every renderer/caps/tamper tell is SILENT and the ONLY
+// residual is br.webgl_software (llvmpipe IS a software rasterizer — an ENVIRONMENT/corroborating tell, not a
+// cross-layer contradiction; can't convict alone). The gap vs camoufox: camoufox spoofs the renderer STRING to a
+// hardware GPU at the ENGINE level (webgl_config) so webgl_software goes silent too — Chromium's JS can't, so a
+// Chromium morph presents as software-GL (coherent-except-webgl_software) unless run on real silicon. So KS_RENDERER
+// stays an explicit probe (a JS string spoof is still caught); the coherent Chromium path is llvmpipe + a UA whose OS
+// matches the Mesa renderer, accepting webgl_software. Fully-coherent hardware-GPU morphs remain camoufox-only.
 const ksRenderer = process.env.KS_RENDERER || "";
 
 const CHROME_UA =
