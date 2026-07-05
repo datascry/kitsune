@@ -19,6 +19,10 @@ profiles:
       caps: 16384
       backend: llvmpipe
     provision: true
+    # humanize (KS_REAL_INPUT genuine XTEST input) silences synthetic_no_coalesced but its cursor-driving worsens the
+    # headful-camoufox collector-timing flake (net.no_js_execution) — a RUN-robustness residual, not coherence; kept
+    # off for the reliable coherent demo. Reaching a stable `human` verdict is a validator-robustness + webrtc-provision
+    # tuning task (below), outside the unification scope.
     humanize: false
 
   # CROSS-OS: os-spoof forges the Windows kernel/TLS (windows-firefox matches camoufox's Firefox engine); camoufox

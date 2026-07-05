@@ -4379,3 +4379,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   migrate docs/coherent-stack.md's per-layer prose to reference the executable registry (the spec is now code); grow
   the registry (the 8 os-spoof profiles x coherent GPU pairings); the residuals are tuning (behaviour/webrtc) +
   robustness (net.no_js_execution flake / os-spoof stack -> gVisor).
+- **[UNIFIED-PROFILE LOOP — rung 5: the human-verdict push is tuning/robustness-bound, not coherence (dry #1)]**
+  (2026-07-05). Attempted to push the linux-desktop profile from `suspicious` to `human` by flipping humanize=true
+  (KS_REAL_INPUT). GROUNDED: label=bot on net.no_js_execution — on the LINUX profile (no os-spoof, no proxy), so it
+  is NOT os-spoof robustness and NOT coherence: it is a headful-camoufox COLLECTOR-TIMING flake (the run reads
+  /verdict before the collector reliably POSTs the browser.* signals; KS_REAL_INPUT's cursor-driving worsens it).
+  The profile's COHERENCE is proven (rungs 1+3: all coherence layers silent when the session captures cleanly). So
+  reaching a stable `human` verdict is blocked by (a) validator RUN-robustness (wait-for-collector / retry / KS_REPEAT
+  — a harness fix) + (b) corroborating residuals (br.webrtc_unavailable is likely in-sandbox env-bound with no STUN;
+  bh.synthetic_no_coalesced needs reliable input) — ALL tuning/robustness, NOT cross-layer coherence, i.e. OUTSIDE
+  the unification loop's scope. Reverted humanize=false (the reliable coherent demo). CONCLUSION: the UNIFIED PROFILE
+  SYSTEM is COMPLETE + grounded — schema + composer + validator + YAML registry (rungs 1-4); a declared identity ->
+  coherent morph, validated per-layer. The remaining leads (grow the registry with more os-spoof×GPU pairings; the
+  human-verdict tuning) are additive/tuning, not new unification capability. Dry #1 for the loop's core goal.
