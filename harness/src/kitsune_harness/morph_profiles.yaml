@@ -40,3 +40,20 @@ profiles:
       backend: llvmpipe
     provision: true
     humanize: false
+
+  # CROSS-OS macOS: os-spoof forges the darwin kernel/TLS (macos-firefox); camoufox os=macos supplies the macOS UA +
+  # an Apple-GPU renderer whose caps are 16384 (camoufox's DB Apple entry, corrected from its buggy 8192 by
+  # patch_webgl_db.py) backed by llvmpipe. One macOS story across kernel + TLS + UA + Apple GPU.
+  macos-firefox:
+    os_target: macos
+    browser: camoufox
+    os_spoof: macos-firefox
+    mobile: false
+    touch: false
+    gpu:
+      vendor: Apple
+      renderer: "Apple M1, or similar"
+      caps: 16384
+      backend: llvmpipe
+    provision: true
+    humanize: false

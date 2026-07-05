@@ -4392,3 +4392,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   SYSTEM is COMPLETE + grounded — schema + composer + validator + YAML registry (rungs 1-4); a declared identity ->
   coherent morph, validated per-layer. The remaining leads (grow the registry with more os-spoof×GPU pairings; the
   human-verdict tuning) are additive/tuning, not new unification capability. Dry #1 for the loop's core goal.
+
+## Grow-morph-profile-registry loop (72e21f90 — more coherent identities across the OS×engine matrix)
+
+- **[GROW-REGISTRY LOOP — rung 1: macos-firefox UNBLOCKED + added, validates COHERENT (3rd identity, new OS)]**
+  (2026-07-05). Unblocked macOS (was blocked by camoufox's webgl DB bug). TWO fixes: (1) evaders/camoufox/
+  patch_webgl_db.py (run in the Dockerfile) CORRECTS camoufox's Apple GPU entries' MAX_TEXTURE_SIZE from a buggy
+  8192 to the real 16384 (targeted to vendor=Apple; a real M1/M2/M3 exposes 16384) → br.webgl_renderer_caps_mismatch
+  clears for an Apple renderer; (2) run.py now applies the macOS Retina DPR-2 on the PROFILE-driven path (KS_OS=macos,
+  not just the KS_MACOS knob) → br.macos_dpr1 clears. Added macos-firefox to morph_profiles.yaml (os-spoof macos-
+  firefox darwin kernel/TLS + camoufox os=macos + Apple M1 @ 16384 llvmpipe). GROUNDED COHERENT: label suspicious,
+  EVERY coherence layer SILENT — br.macos_dpr1, net.tcp_os_vs_ua, net.tls_grease_vs_ua, br.webgl_renderer_caps_
+  mismatch, br.navplatform_vs_ua, br.font_mac_internal. Only 2 residuals: bh.synthetic_no_coalesced (behaviour) +
+  br.webrtc_unavailable (provision) — the standard tuning pair, not coherence. Also mapped br.macos_dpr1 into the
+  validator's device coherence layer (was unmapped). Registry now 3 coherent identities: linux-desktop, windows-
+  firefox, macos-firefox — Linux + Windows + macOS, all validated. NEXT: iOS/Safari (WebKit — needs stealth engine)
+  or more GPU/device variety on the camoufox+llvmpipe path.

@@ -11,6 +11,11 @@ RUN pip install --no-cache-dir "camoufox[geoip]" && python -m camoufox fetch \
 # under KS_MACOS. Strip them so the macOS profile's web-measurable font set matches a real Mac (the ~524 non-dot
 # fonts remain, so font_os_vs_ua stays macOS-coherent). The faithful engine-bundled-font fix.
 RUN python -c "import camoufox, os, json; p=os.path.join(os.path.dirname(camoufox.__file__),'fonts.json'); d=json.load(open(p)); d['mac']=[f for f in d['mac'] if not f.startswith('.')]; json.dump(d, open(p,'w'))"
+# camoufox's webgl_data.db caps its Apple GPU entries' MAX_TEXTURE_SIZE at a BUGGY 8192 (a real Apple M1/M2/M3
+# exposes 16384) — an "Apple M1" renderer @ 8192 is self-incoherent and trips br.webgl_renderer_caps_mismatch,
+# blocking a coherent macOS morph. Correct the wrong data (backed by llvmpipe's real 16384 allocation).
+COPY patch_webgl_db.py /patch_webgl_db.py
+RUN python3 /patch_webgl_db.py
 # xdotool = real XTEST input (KS_REAL_INPUT); pulseaudio/espeak-ng/speech-dispatcher/dbus = a provisioned
 # ENVIRONMENT (KS_PROVISION: real audio devices + TTS voices) so the environment-floor tells go silent
 # coherently — the "become a real desktop" evasion vs the JS spoof coherence catches. Base ships Xvfb.

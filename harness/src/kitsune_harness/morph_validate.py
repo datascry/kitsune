@@ -16,7 +16,13 @@ COHERENCE_LAYERS: dict[str, tuple[str, ...]] = {
     "kernel": ("net.tcp_os_vs_ua", "net.tcp_syn_anomaly", "net.tcp_static_window", "net.tls_os_vs_tcp_os"),
     "tls": ("net.tls_grease_vs_ua", "net.tls_vs_ua_browser", "net.tls_pq_keyshare_vs_ua", "net.h2_unknown_vs_ua"),
     "ua_ch": ("net.ch_ua_mobile_no_model", "net.ch_ua_version_vs_ua", "br.mobile_no_js_model", "br.ch_he_headless"),
-    "device": ("br.ios_screen_oversized", "br.ios_dpr_incoherent", "br.navplatform_vs_ua", "br.mobile_cores_high"),
+    "device": (
+        "br.ios_screen_oversized",
+        "br.ios_dpr_incoherent",
+        "br.macos_dpr1",
+        "br.navplatform_vs_ua",
+        "br.mobile_cores_high",
+    ),
     "gpu_string": (
         "br.webgl_software",
         "br.mobile_gpu_not_mobile",
