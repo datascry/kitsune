@@ -4243,3 +4243,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (device-layer, marginal). NET: the coherent cross-OS morph is BETTER than rung 6 said — os-spoof closes the TCP
   kernel cleanly; only the TLS fingerprint (real-browser-bound) + deep-TCP-behaviour remain. Corrected the boundary
   in coherent-stack.md + the coherent-morph-boundary memory.
+- **[COHERENT-STACK LOOP — CORRECTION 2: "JS patches caught" was STEALTH-only; engine-level browsers patch natively]**
+  (2026-07-05). Audit finding: I built the whole coherent-morph boundary on the `stealth` evader (Playwright
+  addInitScript JS patches) and over-generalised "JS patches are caught". That is a STEALTH limitation, not
+  fundamental. The fleet's ENGINE-LEVEL anti-detect browsers do those same spoofs NATIVELY: camoufox (Firefox
+  source-level) spoofs the WebGL renderer STRING consistently across main+worker realms (radar R-gl: "camoufox can
+  spoof the renderer string; caps-mismatch is the durable catch"), and Brave's engine-level canvas farbling stays
+  NATIVE so br.canvas_lie never fires (privacy-browser-fp-surface). harness/tools/webgl_renderer_spoof.mjs grounds
+  exactly this: a source-fork (CloakBrowser/BotBrowser-class) patches the renderer string in BOTH realms so
+  br.webgl_worker_vs_main cannot see it — only MAX_TEXTURE_SIZE (caps) stays truthful. SO: the ENGINE-LEVEL fields
+  (renderer STRING, canvas, fonts) ARE coherently morphable with the RIGHT tool (camoufox / a source-fork), NOT the
+  stealth JS patch (which trips getparameter_tampered/worker_vs_main). The DURABLE GPU wall is unchanged: MAX_TEXTURE_
+  SIZE 8192 < the 16384 mobile/desktop floor -> the caps mismatch, which NO string spoof (engine-level or not) can
+  fix without real silicon. NET: the coherent morph is stronger than the stealth-only boundary said — compose the
+  RIGHT tool per layer: camoufox/source-fork (engine-level: renderer string/canvas/fonts) + os-spoof (TCP kernel) +
+  stealth-CDP (native UA/screen/DPR/model). The durable walls that survive EVERY tool: GPU CAPS (real silicon),
+  deep TCP behaviour (gVisor for prod), cross-OS native TLS (a browser whose real TLS matches the OS). Corrected the
+  coherent-morph-boundary memory.
