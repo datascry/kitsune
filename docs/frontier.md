@@ -8,7 +8,7 @@ other trackers can't be a current snapshot: [`research-radar.md`](research-radar
 current**: when an axis closes or a frontier moves, edit it *here*. If a claim here disagrees with the radar, the
 radar's newest dated entry wins — reconcile it up into this doc.
 
-_Last reconciled: **2026-07-04**, detector ruleset **0.74.57**._
+_Last reconciled: **2026-07-05**, detector ruleset **0.74.57**._
 
 ## The one-sentence state
 
@@ -27,7 +27,7 @@ have no in-sandbox source for**.
 | behavioural (mouse / input) | **band** | biomech power-law floor, 2-source corroborated (SapiMouse); a good humanizer lives in the band | production behavioural corpora |
 | coordination / fleet | **earned-closed** | convicts on collision · non-Poisson schedule · per-session bot tell · shared proxy-egress (tunnel MSS / SOCKS stack-divergence) · IP-rep | a fully-clean diffuse fleet ⇒ **residential egress + real-hardware fps + prevalence** |
 | LLM-agent | **earned-closed** | `track` gate convicts by the snapshot→reason→act loop's physics; reasoning honeypots defeated by alignment | — (structural tell shipped + live-validated) |
-| active TCP-stack probe | **infra-bound** | unforgeable net fp, but veth never segments to MSS, edge has `NET_RAW` not `NET_ADMIN`, no middleboxes | a physical network + real middleboxes (ADR-0005) |
+| active TCP-stack probe | **partly forgeable (red)** | the SYN **kernel** fp IS forgeable — `os-spoof` (client `NET_RAW`+`NET_ADMIN`) closes `tcp_os_vs_ua`, grounded; the residual **deep TCP behaviour** (window/retransmit) is a *software* build (gVisor `netstack`), not a hardware wall | gVisor netstack (in-sandbox) + real middleboxes for blue-side validation (ADR-0005) |
 | mobile (Android / iOS) | **earned-closed** | no in-sandbox coherent Android fp; actual-behaviour GPU probes convict emulation/forks | real device hardware |
 
 ## The red frontier — the morphing-human headful fleet
@@ -41,7 +41,7 @@ grounded.** A *fleet* of them, fully clean, is the terminus — external-bound.
 - `KS_ENGINE=webkit` — WebKit/Safari runtime (a coherent iOS slice; Blink self-defeats into `apple_ua_nonwebkit`)
 - `KS_PROVISION` — the **provisioned floor** (audio / voices / webrtc) that lifts a bare headless past the empty-realm tells
 - `KS_HUMANIZE` / `HUMAN_MOUSE` — **humanized input** (bézier mouse + paced, jittered timing)
-- **`evaders/stealth/devices.json`** — the **curated device corpus** (17 coherent tuples w/ GPU + cores + memory, the fields Playwright's registry lacks); the morph data source
+- **`evaders/stealth/devices.json`** — the **curated device corpus** (18 coherent tuples w/ GPU + cores + memory + `max_texture_size` tier, the fields Playwright's registry lacks); the morph data source
 - **Headful** engine-coherent stack: `patchright-headful` / `camoufox-headful` (kills `cdp_runtime_enabled`, `no_chrome_object`, `permissions_anomaly`)
 - **`camoufox`** — **engine-level** renderer / canvas / font spoofing, patched *natively* where `stealth`'s JS patches get caught (`getparameter_tampered` / `worker_vs_main`)
 - **`os-spoof`** (`KS_MODE=proxy`) — forges the **TCP SYN kernel** fingerprint for cross-OS morphs (`NET_RAW`+`NET_ADMIN`); route the browser via `KS_PROXY=socks5://os-spoof:1080` (grounded closing `tcp_os_vs_ua`)
