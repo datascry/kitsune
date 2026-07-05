@@ -89,8 +89,10 @@ coherently morphable and mapped every wall. The governing result:
   Worker-wrap → `worker_source_rewritten` + `worker_constructor_tampered`; a `getHighEntropyValues` model wrap →
   `uadata_model_worker_divergence`. **But that is a `stealth` limitation, not fundamental** — `camoufox` (Firefox
   source-level) and Brave (farbling) patch the renderer string / canvas / fonts **natively** across both realms, so
-  those tampering/`worker_vs_main` tells can't see them (grounded: `webgl_renderer_spoof.mjs`, radar R-gl, the
-  `privacy-browser-fp-surface` memory). So the engine-level fields **are** coherently morphable — with the right tool.
+  those tampering/`worker_vs_main` tells can't see them. **Grounded live (2026-07-05):** camoufox macOS (headful) →
+  `webgl_getparameter_tampered` + `webgl_worker_vs_main` + `webgpu_webgl_vs` + `webgl_software` + `canvas_lie` **all
+  silent**; the only GPU tell left is `webgl_renderer_caps_mismatch` — the durable caps wall (#1). So the engine-level
+  fields **are** coherently morphable — with the right tool.
   You cannot *JS-patch* coherence; you compose a browser that is already coherent.
 - **The cross-OS TCP kernel is SOLVED — compose `os-spoof`.** A cross-OS morph trips `net.tcp_os_vs_ua` (the SYN
   option order reveals the container's Linux kernel), but the **`os-spoof` evader** (`KS_MODE=proxy`) forges the SYN

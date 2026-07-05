@@ -4260,3 +4260,13 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   stealth-CDP (native UA/screen/DPR/model). The durable walls that survive EVERY tool: GPU CAPS (real silicon),
   deep TCP behaviour (gVisor for prod), cross-OS native TLS (a browser whose real TLS matches the OS). Corrected the
   coherent-morph-boundary memory.
+- **[COHERENT-STACK — camoufox engine-level renderer GROUNDED LIVE (closes the last asserted claim)]** (2026-07-05).
+  Ran camoufox (KS_MACOS=1 KS_HEADFUL=1 KS_PROVISION=1) against the detector to freshly verify the engine-level
+  claim (previously taken from the radar/tools, not a session run). RESULT: 4 tells, and every tampering/divergence
+  tell the STEALTH JS patch trips is SILENT — br.webgl_getparameter_tampered, br.webgl_worker_vs_main,
+  br.webgpu_webgl_vs, br.webgl_software, br.canvas_lie all clear (engine-level = native, not a JS getter override).
+  The one GPU tell remaining is br.webgl_renderer_caps_mismatch — the DURABLE caps wall (#1), exactly as predicted
+  (the renderer STRING morphs, the software backend's caps don't). The other 3 residuals map cleanly to the model:
+  net.tcp_os_vs_ua (os-spoof composes it away, grounded), br.webrtc_unavailable (provisioning), bh.synthetic_no_
+  coalesced (behavioral input — HUMAN_MOUSE/real-input). So coherent-stack.md is now fully live-grounded: engine-
+  level fields coherently morph via camoufox; only the GPU CAPS wall is real-hardware.
