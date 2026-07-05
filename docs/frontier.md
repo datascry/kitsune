@@ -48,6 +48,7 @@ grounded.** A *fleet* of them, fully clean, is the terminus — external-bound.
 - **Fleet composition + capture:** `harness/tools/fleet_capture.sh` (`task coordination-fleet-capture`), `harness/tools/headful_capture.mjs`
 - **`KS_LLVMPIPE`** (camoufox) — **falls the GPU-caps wall in software**: Mesa `llvmpipe` reports + *allocates* 16384 (RAM-backed) under a coherent-16384 renderer entry → every caps tell silent, **no GPU** (grounded 2026-07-05)
 - **The composition is per-layer, not one tool** — see [`coherent-stack.md`](coherent-stack.md); the GPU-caps "hardware wall" **fell in software**, so a **Linux-target morph is fully coherent in-sandbox**; what's left is cross-OS native TLS (target-OS browser), camoufox's mac DB caps bug, and the mobile core count
+- **Now an EXECUTABLE registry** — `harness/src/kitsune_harness/morph_profiles.yaml` (one identity per row, all layers) + `compose()` + `morph_validate.py` (the `profile → {layer: status}` coherence table); a declared identity yields a validated coherent morph in one run (grounded: `linux-desktop` COHERENT, `windows-firefox` cross-OS coherent)
 
 **State.** A single coherent headful, morphing, humanized node scores **`human`** (per-session is saturated → it
 evades). A **fleet** of them also evades per-session, and evades **coordination** *unless it leaks a binding* —

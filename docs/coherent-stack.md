@@ -34,6 +34,31 @@ swapping a whole coherent identity atomically — never perturbing a field.**
 The point of the table: coherence is **compositional** — each layer must agree with the ones above and below. A
 patched browser breaks one seam; a real, natively-configured browser breaks none.
 
+### This table is now executable — the profile registry
+
+The composition above is no longer prose you assemble by hand: it is a **unified registry**. Each identity is one
+row in [`harness/src/kitsune_harness/morph_profiles.yaml`](../harness/src/kitsune_harness/morph_profiles.yaml)
+pinning every layer; `morph_profiles.compose(name)` fans it to the per-tool env; and `morph_validate.py` runs it
+end-to-end and asserts **every coherence layer is silent** — a `profile → {layer: status}` table with the detector
+as oracle. Add a profile by editing the YAML, validate it live.
+
+```yaml
+profiles:
+  linux-desktop:                       # FULLY coherent in-sandbox (grounded)
+    os_target: linux
+    os_spoof: null                     # native Linux kernel/TLS — no forge
+    gpu: {vendor: Mesa, renderer: "GeForce GTX 980, or similar", caps: 16384, backend: llvmpipe}
+    provision: true
+  windows-firefox:                     # cross-OS: os-spoof forges the kernel/TLS
+    os_target: windows
+    os_spoof: windows-firefox
+    gpu: {vendor: "Google Inc. (NVIDIA)", renderer: "ANGLE (NVIDIA, ... GTX 980 ...)", caps: 16384, backend: llvmpipe}
+```
+
+Grounded 2026-07-05: `linux-desktop` validates **COHERENT** (every coherence layer silent); the cross-OS
+`windows-firefox` too — its one residual being os-spoof's happy-path stack robustness (→ gVisor), not coherence.
+The layer table above is the human-readable view of this registry.
+
 ## Morph on demand — the atomic swap
 
 ```sh
