@@ -4408,3 +4408,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   validator's device coherence layer (was unmapped). Registry now 3 coherent identities: linux-desktop, windows-
   firefox, macos-firefox — Linux + Windows + macOS, all validated. NEXT: iOS/Safari (WebKit — needs stealth engine)
   or more GPU/device variety on the camoufox+llvmpipe path.
+- **[GROW-REGISTRY LOOP — rung 2: Chromium/WebKit GPU boundary RE-CHARACTERIZED via llvmpipe (dry #1 new engines)]**
+  (2026-07-05). GROUNDED the question "can the registry grow beyond Firefox?": ran stealth-Chromium + llvmpipe
+  against the detector. FINDING that overturns the stale run.mjs dead-end (which claimed the Chromium GPU is
+  real-hardware-bound, every JS approach caught): under Mesa llvmpipe the GPU family shows ONLY br.webgl_software —
+  the renderer/caps/tamper tells (getparameter_tampered, worker_vs_main, webgpu_webgl_vs, webgl_maxtexture_
+  unallocatable, mobile_gpu_caps_mismatch) are ALL SILENT, because there is NO JS spoof and llvmpipe reports+allocates
+  the real 16384 cap. (The 14 total tells were headless-automation noise — automation_globals/cdp_runtime_enabled/
+  webdriver_present — orthogonal to GPU.) So the Chromium boundary is NARROW: the sole residual is br.webgl_software
+  (llvmpipe IS a software rasterizer — ENVIRONMENT/corroborating, can't convict). The gap vs camoufox: camoufox
+  spoofs the renderer STRING to a hardware GPU at the ENGINE level (webgl_config) so webgl_software goes silent;
+  Chromium's JS renderer spoof is caught, so it presents as software-GL. CONCLUSION: FULLY-coherent hardware-GPU
+  morphs are camoufox/Firefox-only (the 3 Firefox×OS profiles: linux/windows/macos — REGISTRY COMPLETE for full
+  coherence in-sandbox). A Chromium/WebKit identity is "coherent-except-webgl_software" — evades conviction but
+  carries the software-GL environment tell; shedding it needs real GPU silicon OR a patched-Chromium engine build
+  (external). Corrected the stale run.mjs comment. Dry #1 for NEW fully-coherent engines; the Firefox×OS ceiling is
+  reached, remaining Firefox additions are GPU/device VARIETY (additive), and Chromium/WebKit full coherence is
+  external-hardware-bound.
