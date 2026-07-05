@@ -4331,3 +4331,21 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   are all capped at a buggy 8192 (no mac 16384 entry) — a macOS morph needs camoufox's DB corrected (patch the Apple
   M1 param 3379 8192->16384) — a camoufox-data fix, not a hardware wall. A LINUX-target morph (Linux 16384 Mesa entry
   + native TLS + native kernel + llvmpipe) is now FULLY coherent in-sandbox. LOOP EARNED-CLOSED: the wall fell.
+
+## Unified morphing-profile loop (2261af44 — one identity, coherent across all layers)
+
+- **[UNIFIED-PROFILE LOOP — rung 1: schema + composer + linux-desktop profile GROUNDED coherent end-to-end]**
+  (2026-07-05). Built the first executable form of the cross-layer coherence that docs/coherent-stack.md described in
+  prose. harness/src/kitsune_harness/morph_profiles.py: a MorphProfile dataclass (name, os_target, browser, os_spoof,
+  mobile/touch, Gpu{vendor,renderer,caps,backend}, provision, humanize) + a REGISTRY + compose(name)->env (pure,
+  mypy-strict, tested). Seeded the LINUX-DESKTOP profile (fully coherent in-sandbox: host IS Linux so kernel/TLS are
+  native, no os-spoof; Mesa "GeForce GTX 980" renderer @ 16384 via llvmpipe). Generalized evaders/camoufox/run.py to
+  be profile-env-driven (KS_OS + KS_WEBGL_VENDOR + KS_WEBGL_RENDERER, default Windows-NVIDIA). GROUNDED LIVE: composed
+  the profile -> env -> ran camoufox -> verdict label "SUSPICIOUS" (not bot!), only 2 tells, and EVERY declared-layer
+  coherence tell SILENT — net.tcp_os_vs_ua, net.tls_grease_vs_ua, br.webgl_renderer_caps_mismatch, br.webgl_maxtexture_
+  unallocatable, br.webgl_software, br.navplatform_vs_ua all clear. The unified profile abstraction WORKS: one declared
+  identity fans out to the coherent per-tool env and produces a cross-layer-coherent morph. The 2 residuals are NOT
+  coherence tells: bh.synthetic_no_coalesced (behavioural input — the profile can flip humanize=true -> KS_REAL_INPUT)
+  and br.webrtc_unavailable (a provisioning gap). NEXT (rung 2): flip humanize + fix webrtc provisioning to push the
+  linux profile to "human"; then a CROSS-OS profile (ios-safari / windows-chrome) that composes os-spoof for the
+  kernel/TLS + camoufox for the engine; then the full-stack validator (a profile->{layer:tell} table).

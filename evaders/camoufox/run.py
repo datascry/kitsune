@@ -377,16 +377,19 @@ def main() -> None:
         kwargs["proxy"] = {"server": socks}
         kwargs["firefox_user_prefs"] = {"media.peerconnection.ice.proxy_only": True}
     if os.environ.get("KS_LLVMPIPE") == "1":
-        # Fall the GPU-caps wall in software. camoufox's default webgl fingerprint can pair a real-GPU renderer
-        # STRING with a WRONG MAX_TEXTURE_SIZE — its "Apple M1" DB entry reports 8192 though a real M1 exposes 16384
-        # → br.webgl_renderer_caps_mismatch. Pin a webgl_config whose DB entry carries the COHERENT 16384 cap (a
-        # Windows NVIDIA GTX 980), and render on Mesa llvmpipe (MAX_TEXTURE_SIZE 16384, RAM-backed) so the 16384
-        # claim also genuinely ALLOCATES → br.webgl_maxtexture_unallocatable stays silent. The "one true hardware
-        # wall" falls with NO GPU. Set GALLIUM_DRIVER=llvmpipe + LIBGL_ALWAYS_SOFTWARE=1 in the env alongside this.
-        kwargs["os"] = "windows"
+        # Fall the GPU-caps wall in software, and be PROFILE-DRIVEN. camoufox's default webgl fingerprint can pair a
+        # real-GPU renderer STRING with a WRONG MAX_TEXTURE_SIZE (its "Apple M1" DB entry reports 8192 though a real
+        # M1 exposes 16384) → br.webgl_renderer_caps_mismatch. Pin a webgl_config whose DB entry carries a COHERENT
+        # 16384 cap, and render on Mesa llvmpipe (16384, RAM-backed) so the claim also genuinely ALLOCATES →
+        # br.webgl_maxtexture_unallocatable stays silent. The composer sets KS_OS + KS_WEBGL_VENDOR + KS_WEBGL_RENDERER
+        # from a unified profile; the default (no env) is a Windows NVIDIA GTX 980. Set GALLIUM_DRIVER=llvmpipe in env.
+        kwargs["os"] = os.environ.get("KS_OS", "windows")
+        _v = os.environ.get("KS_WEBGL_VENDOR")
+        _r = os.environ.get("KS_WEBGL_RENDERER")
         kwargs["webgl_config"] = (
-            "Google Inc. (NVIDIA)",
-            "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar",
+            (_v, _r)
+            if _v and _r
+            else ("Google Inc. (NVIDIA)", "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar")
         )
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
