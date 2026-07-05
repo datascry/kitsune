@@ -391,6 +391,12 @@ def main() -> None:
             if _v and _r
             else ("Google Inc. (NVIDIA)", "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar")
         )
+        if kwargs["os"] == "macos":
+            # A profile-driven macOS morph (KS_OS=macos, distinct from the KS_MACOS knob above) must also be Retina —
+            # a real Mac is DPR >= 2; Camoufox defaults to 1 → br.macos_dpr1. Pin DPR 2 at the engine level (all realms).
+            _cfg_mac: dict[str, object] = dict(kwargs.get("config") or {})  # type: ignore[arg-type]
+            _cfg_mac["window.devicePixelRatio"] = 2.0
+            kwargs["config"] = _cfg_mac
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
     if NOTOUCH:
