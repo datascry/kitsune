@@ -46,7 +46,7 @@ grounded.** A *fleet* of them, fully clean, is the terminus — external-bound.
 - **`camoufox`** — **engine-level** renderer / canvas / font spoofing, patched *natively* where `stealth`'s JS patches get caught (`getparameter_tampered` / `worker_vs_main`)
 - **`os-spoof`** (`KS_MODE=proxy`) — forges the **TCP SYN kernel** fingerprint for cross-OS morphs (`NET_RAW`+`NET_ADMIN`); route the browser via `KS_PROXY=socks5://os-spoof:1080` (grounded closing `tcp_os_vs_ua`)
 - **Fleet composition + capture:** `harness/tools/fleet_capture.sh` (`task coordination-fleet-capture`), `harness/tools/headful_capture.mjs`
-- **The composition is per-layer, not one tool** — see [`coherent-stack.md`](coherent-stack.md); the three durable walls are GPU caps, deep TCP behaviour, and cross-OS native TLS
+- **The composition is per-layer, not one tool** — see [`coherent-stack.md`](coherent-stack.md); the one true hardware wall is **GPU caps**; cross-OS native TLS needs the target-OS browser; deep-TCP is a live blue tell os-spoof passes on a normal morph
 
 **State.** A single coherent headful, morphing, humanized node scores **`human`** (per-session is saturated → it
 evades). A **fleet** of them also evades per-session, and evades **coordination** *unless it leaks a binding* —
@@ -64,7 +64,7 @@ is the honest boundary of the lab.
 | External input | Unblocks |
 |---|---|
 | **Residential proxy egress** (paid pool) | the clean-fleet coordination frontier; the direct-residential humanizer fleet (native MSS, no tunnel tell) |
-| **Real-hardware fingerprint corpora** (real GPUs / devices) | distinct-build fleet fingerprints; Tier-3 real-GPU validation. *Partly curated:* `evaders/stealth/devices.json` holds 17 coherent tuples (screen/DPR/GPU/cores/memory) from verified public specs — what's still external is **live-capture verification** of each tuple + real-silicon GPU-behaviour validation |
+| **Real-hardware fingerprint corpora** (real GPUs / devices) | distinct-build fleet fingerprints; Tier-3 real-GPU validation. *Partly curated:* `evaders/stealth/devices.json` holds 18 coherent tuples (screen/DPR/GPU/cores/memory) from verified public specs — what's still external is **live-capture verification** of each tuple + real-silicon GPU-behaviour validation |
 | **Prevalence / production traffic** | IP-reputation, rarity/prevalence scoring, think-time distributions, the corpus-wide trace-similarity floor |
 | **Real mobile devices** | the coherent Android / iOS device slice |
 | **A physical network** (`NET_ADMIN`, middleboxes) | active TCP-stack probing; QUIC/HTTP-3 paths (ADR-0005). *Partly addressed (red side):* `os-spoof` forges the TCP SYN kernel with client-side `NET_RAW`+`NET_ADMIN` (available in-sandbox — grounded closing `tcp_os_vs_ua`); what's still external is deep TCP *behaviour* (window/retransmit → gVisor `netstack`) + real middlebox validation |
