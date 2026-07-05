@@ -4284,3 +4284,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   surface) for a marginal, corroborating, long-session-only gain that a normal morph already passes. DEFERRED as a
   production-robustness upgrade, not built (no current-morph gain to justify the major rewrite). Corrected the doc:
   deep-TCP is a live blue tell os-spoof passes on normal flows, not a free software task.
+
+## GPU-caps-via-software loop (e72810d9 — fall the last hardware wall in software)
+
+- **[GPU-CAPS LOOP — rung 1: BASELINE — llvmpipe gives 16384 caps in software (hypothesis confirmed)]** (2026-07-05).
+  The premise that the "GPU caps hardware wall" is really a SwiftShader default — GROUNDED at the GL layer. The
+  camoufox container already ships Mesa (libgl1-mesa-dri, swrast_dri.so = the gallium software rasterizer / llvmpipe)
+  and llvmpipe is the default GLX renderer over Xvfb (OpenGL 4.5, Mesa 23.2.1). glxinfo -l on it: **GL_MAX_TEXTURE_
+  SIZE = 16384** (+ GL_MAX_RENDERBUFFER_SIZE 16384, GL_MAX_CUBE_MAP_TEXTURE_SIZE 16384) — the exact 16384 floor real
+  RTX/Apple-M/Adreno GPUs expose, in PURE SOFTWARE, RAM-backed (so it genuinely ALLOCATES, unlike a JS value spoof
+  which br.webgl_maxtexture_unallocatable catches). So the wall is not "no GPU" — it is SwiftShader's 8192 cap, and a
+  software rasterizer already on disk (llvmpipe) clears it. But camoufox's WebGL still fired br.webgl_renderer_caps_
+  mismatch (grounded 2026-07-05), so the BROWSER is not yet rendering WebGL on llvmpipe — it uses ANGLE→SwiftShader
+  (8192) even though the system GLX is llvmpipe (16384). NEXT (rung 2): point the browser's WebGL at native GLX/
+  llvmpipe not ANGLE — Firefox/camoufox prefs `webgl.disable-angle=true` (+ GALLIUM_DRIVER=llvmpipe), Chromium
+  `--use-gl=angle --use-angle=gl` — then page-eval MAX_TEXTURE_SIZE=16384 and ground br.webgl_renderer_caps_mismatch
+  + br.webgl_maxtexture_unallocatable SILENT against the detector. If it lands, the frontier's "one true hardware
+  wall" claim falls — no rented GPU.
