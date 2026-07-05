@@ -376,6 +376,15 @@ def main() -> None:
         # (residential) — not the real machine's (datacenter) — is what the WebRTC reveals. The do-it-right bot.
         kwargs["proxy"] = {"server": socks}
         kwargs["firefox_user_prefs"] = {"media.peerconnection.ice.proxy_only": True}
+    if os.environ.get("KS_LLVMPIPE") == "1":
+        # Force WebGL onto NATIVE GLX (Mesa llvmpipe, MAX_TEXTURE_SIZE 16384, RAM-backed) instead of ANGLE/
+        # SwiftShader (8192) — the software path to a real-GPU cap that genuinely ALLOCATES (so the renderer STRING
+        # camoufox spoofs to a real GPU is backed by matching 16384 caps → br.webgl_renderer_caps_mismatch clears).
+        # Pair with GALLIUM_DRIVER=llvmpipe + LIBGL_ALWAYS_SOFTWARE=1 in the env. Merges with any existing prefs.
+        _prefs: dict[str, object] = dict(kwargs.get("firefox_user_prefs") or {})  # type: ignore[arg-type]
+        _prefs["webgl.disable-angle"] = True
+        _prefs["webgl.force-enabled"] = True
+        kwargs["firefox_user_prefs"] = _prefs
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
     if NOTOUCH:

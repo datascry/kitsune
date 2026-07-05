@@ -4301,3 +4301,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   `--use-gl=angle --use-angle=gl` — then page-eval MAX_TEXTURE_SIZE=16384 and ground br.webgl_renderer_caps_mismatch
   + br.webgl_maxtexture_unallocatable SILENT against the detector. If it lands, the frontier's "one true hardware
   wall" claim falls — no rented GPU.
+- **[GPU-CAPS LOOP — rung 2: the wall is a CAMOUFOX DATA BUG, not hardware/backend (proven live)]** (2026-07-05).
+  Diagnosed the caps wall to its root with direct page-evals. (1) A MINIMAL Firefox (Playwright firefox, NO camoufox
+  spoofing) on llvmpipe reports MAX_TEXTURE_SIZE=16384, renderer "llvmpipe" — by DEFAULT (Firefox on Linux uses
+  native Mesa GLX). So the software path genuinely gives 16384 (RAM-backed, allocatable). (2) camoufox macOS reports
+  MAX_TEXTURE_SIZE=**8192** with renderer "Apple M1, or similar" — camoufox's OWN webgl fingerprint (from its bundled
+  webgl_data.db) caps the texture size at 8192 while claiming an Apple M1 (a real M1 exposes 16384). THAT self-
+  incoherence (M1 string + 8192 cap) is what fires br.webgl_renderer_caps_mismatch — NOT the backend (llvmpipe under
+  it is 16384) and NOT hardware. Grounded that env (GALLIUM_DRIVER=llvmpipe) and the Firefox pref (webgl.disable-
+  angle, added as the KS_LLVMPIPE knob) do NOT flip it, because camoufox overrides getParameter at the engine level
+  with its DB value. So the "one true hardware wall" is really: a software rasterizer already on disk (llvmpipe)
+  supplies 16384, and the only gap is camoufox reporting a coherent 16384 for the GPU it claims. NEXT (rung 3): make
+  camoufox report MAX_TEXTURE_SIZE=16384 coherently (config its webgl params to match the claimed GPU, or pick a DB
+  entry whose renderer+caps are both 16384) — backed by llvmpipe's real 16384 allocation so br.webgl_maxtexture_
+  unallocatable stays silent — and ground both caps tells silent. If it lands the wall falls with zero rented GPU.
