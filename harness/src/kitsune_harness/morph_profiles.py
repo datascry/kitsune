@@ -4,6 +4,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
 
 
 @dataclass(frozen=True)
@@ -37,39 +41,30 @@ class MorphProfile:
 
 # The registry. Seeded with the Linux-desktop identity — FULLY coherent in-sandbox (grounded 2026-07-05): the host
 # IS Linux so the kernel/TLS are native (no os-spoof needed), and llvmpipe supplies a real 16384 GPU cap under a
-# coherent Mesa renderer string. Cross-OS profiles (ios-safari, windows-chrome) compose os-spoof for the kernel/TLS.
-REGISTRY: dict[str, MorphProfile] = {
-    "linux-desktop": MorphProfile(
-        name="linux-desktop",
-        os_target="linux",
-        browser="camoufox",
-        os_spoof=None,
-        mobile=False,
-        touch=False,
-        gpu=Gpu(vendor="Mesa", renderer="GeForce GTX 980, or similar", caps=16384, backend="llvmpipe"),
-        provision=True,
-        humanize=False,
-    ),
-    # A CROSS-OS identity: the host is Linux, so the kernel/TLS are forged to Windows by os-spoof (windows-firefox —
-    # the engine matches camoufox's Firefox), while camoufox supplies the Windows UA + a coherent Windows NVIDIA GPU
-    # @ 16384 (llvmpipe). One Windows story across kernel + TLS + UA + GPU.
-    "windows-firefox": MorphProfile(
-        name="windows-firefox",
-        os_target="windows",
-        browser="camoufox",
-        os_spoof="windows-firefox",
-        mobile=False,
-        touch=False,
-        gpu=Gpu(
-            vendor="Google Inc. (NVIDIA)",
-            renderer="ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar",
-            caps=16384,
-            backend="llvmpipe",
-        ),
-        provision=True,
-        humanize=False,
-    ),
-}
+# coherent Mesa renderer string. The registry is DATA (morph_profiles.yaml) — add a profile by editing the YAML, no
+# code change; it is loaded + validated into the typed dataclasses here so mypy + the composer see one coherent object.
+def _load_registry() -> dict[str, MorphProfile]:
+    raw: Any = yaml.safe_load(Path(__file__).with_name("morph_profiles.yaml").read_text())
+    out: dict[str, MorphProfile] = {}
+    for name, p in raw["profiles"].items():
+        g = p["gpu"]
+        out[str(name)] = MorphProfile(
+            name=str(name),
+            os_target=str(p["os_target"]),
+            browser=str(p["browser"]),
+            os_spoof=None if p["os_spoof"] is None else str(p["os_spoof"]),
+            mobile=bool(p["mobile"]),
+            touch=bool(p["touch"]),
+            gpu=Gpu(
+                vendor=str(g["vendor"]), renderer=str(g["renderer"]), caps=int(g["caps"]), backend=str(g["backend"])
+            ),
+            provision=bool(p["provision"]),
+            humanize=bool(p["humanize"]),
+        )
+    return out
+
+
+REGISTRY: dict[str, MorphProfile] = _load_registry()
 
 
 # The container name the validator gives the os-spoof SOCKS5 proxy (so composed browser env can reach it).

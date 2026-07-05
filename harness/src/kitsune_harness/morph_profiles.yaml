@@ -1,0 +1,38 @@
+# harness/kitsune_harness/morph_profiles — the unified cross-layer morphing-profile registry (data).
+# One entry per identity, pinning every layer coherently; morph_profiles.py loads it, compose() fans it to the tools.
+#
+# Coherence invariant: every field tells ONE OS story. A firing coherence tell on a composed run is a registry bug.
+# os_spoof: the os-spoof KS_PROFILE (kernel/TLS forge) — null when os_target == the Linux host (native, no forge).
+# gpu.backend llvmpipe: Mesa software rasterizer that reports AND allocates 16384 caps (the GPU-caps wall, in software).
+
+profiles:
+  # FULLY coherent in-sandbox: host IS Linux, so kernel/TLS are native (no os-spoof); Mesa renderer @ 16384 via llvmpipe.
+  linux-desktop:
+    os_target: linux
+    browser: camoufox
+    os_spoof: null
+    mobile: false
+    touch: false
+    gpu:
+      vendor: Mesa
+      renderer: "GeForce GTX 980, or similar"
+      caps: 16384
+      backend: llvmpipe
+    provision: true
+    humanize: false
+
+  # CROSS-OS: os-spoof forges the Windows kernel/TLS (windows-firefox matches camoufox's Firefox engine); camoufox
+  # supplies the Windows UA + a coherent Windows NVIDIA GPU @ 16384 (llvmpipe). One Windows story across all layers.
+  windows-firefox:
+    os_target: windows
+    browser: camoufox
+    os_spoof: windows-firefox
+    mobile: false
+    touch: false
+    gpu:
+      vendor: "Google Inc. (NVIDIA)"
+      renderer: "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar"
+      caps: 16384
+      backend: llvmpipe
+    provision: true
+    humanize: false
