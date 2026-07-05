@@ -4425,3 +4425,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (external). Corrected the stale run.mjs comment. Dry #1 for NEW fully-coherent engines; the Firefox×OS ceiling is
   reached, remaining Firefox additions are GPU/device VARIETY (additive), and Chromium/WebKit full coherence is
   external-hardware-bound.
+- **[GROW-REGISTRY LOOP — rung 3: headful-Chromium attempt blocked by multi-layer residuals (dry #2 → terminus)]**
+  (2026-07-05). To turn the "coherent-except-webgl_software" Chromium into a real registry entry, the automation
+  tells must die → ran stealth HEADFUL=1 PATCHRIGHT=1 MAX_STEALTH=1 + llvmpipe (Linux-Chrome). GROUNDED: it does NOT
+  cleanly cohere — 3 convicting tells: net.no_js_execution (patchright SELF-DEFEATS the page collector — the exact
+  documented stealth failure, run.mjs:202), net.ch_ua_version_vs_ua (Sec-CH-UA version vs UA), net.tls_ext_order_
+  static_within_session (TLS). So the headful+patchright config needed to kill automation brings its OWN coherence +
+  robustness problems ON TOP of webgl_software — a clean Chromium identity needs substantial multi-layer stealth
+  hardening (CH-version, TLS-order, collector-robustness), which is OUT OF the registry-growth scope (per-layer
+  grounding is a separate closed axis — do-not-re-grind). TERMINUS: two grounded dry attempts at a NEW engine (rung 2
+  headless characterization, rung 3 headful attempt), no clean non-Firefox profile addable in-sandbox. The registry's
+  fully-coherent identities are the 3 Firefox×OS profiles (linux-desktop, windows-firefox, macos-firefox) — the
+  in-sandbox CEILING. Chromium/WebKit full coherence + mobile are external-hardware / stealth-hardening bound. Loop
+  earned-closed: the registry is grown to its in-sandbox ceiling.
