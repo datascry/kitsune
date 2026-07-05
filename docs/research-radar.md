@@ -4349,3 +4349,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   and br.webrtc_unavailable (a provisioning gap). NEXT (rung 2): flip humanize + fix webrtc provisioning to push the
   linux profile to "human"; then a CROSS-OS profile (ios-safari / windows-chrome) that composes os-spoof for the
   kernel/TLS + camoufox for the engine; then the full-stack validator (a profile->{layer:tell} table).
+- **[UNIFIED-PROFILE LOOP — rung 2: cross-OS profile COHERENT; the residual is os-spoof stack robustness (gVisor)]**
+  (2026-07-05). Added the windows-firefox cross-OS profile (os_spoof="windows-firefox" so the engine matches
+  camoufox's Firefox) + extended compose() to wire the os-spoof SOCKS proxy (KS_SOCKS for camoufox, KS_PROXY for
+  stealth; OS_SPOOF_HOST). GROUNDED LIVE the full composition — os-spoof-proxy(windows-firefox, kernel/TLS forge) +
+  camoufox(Windows UA + NVIDIA GTX 980 @ 16384 via llvmpipe) routed through it: EVERY cross-layer coherence tell
+  SILENT — net.tcp_os_vs_ua, net.tls_grease_vs_ua, net.tls_os_vs_tcp_os, br.webgl_renderer_caps_mismatch,
+  br.webgl_maxtexture_unallocatable, br.webgl_software. The composer UNIFIES os-spoof + camoufox coherently. The ONE
+  residual tell is net.no_js_execution — NOT a coherence bug: os-spoof's HAPPY-PATH userspace TCP stack drops
+  camoufox's collector POST (its README's documented limit: "camoufox's collector POST didn't always land through
+  it"). THE FIX is a ROBUST os-spoof stack = gVisor netstack — which REFRAMES gVisor from "marginal" (the deep-TCP
+  tell, which os-spoof passes on normal flows) to THE ENABLER for a full-flow cross-OS composed morph (carrying a
+  real browser's full session through the forged kernel). So: cross-layer coherence is DONE for cross-OS; the full-
+  flow blocker is os-spoof transport robustness (gVisor), the one genuine build left. NEXT (rung 3): the full-stack
+  validator (profile -> {layer: tell} table, launching os-spoof+browser); the linux-desktop profile has no such
+  residual (native kernel, no os-spoof) so it is the clean fully-coherent demo.
