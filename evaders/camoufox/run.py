@@ -377,14 +377,17 @@ def main() -> None:
         kwargs["proxy"] = {"server": socks}
         kwargs["firefox_user_prefs"] = {"media.peerconnection.ice.proxy_only": True}
     if os.environ.get("KS_LLVMPIPE") == "1":
-        # Force WebGL onto NATIVE GLX (Mesa llvmpipe, MAX_TEXTURE_SIZE 16384, RAM-backed) instead of ANGLE/
-        # SwiftShader (8192) — the software path to a real-GPU cap that genuinely ALLOCATES (so the renderer STRING
-        # camoufox spoofs to a real GPU is backed by matching 16384 caps → br.webgl_renderer_caps_mismatch clears).
-        # Pair with GALLIUM_DRIVER=llvmpipe + LIBGL_ALWAYS_SOFTWARE=1 in the env. Merges with any existing prefs.
-        _prefs: dict[str, object] = dict(kwargs.get("firefox_user_prefs") or {})  # type: ignore[arg-type]
-        _prefs["webgl.disable-angle"] = True
-        _prefs["webgl.force-enabled"] = True
-        kwargs["firefox_user_prefs"] = _prefs
+        # Fall the GPU-caps wall in software. camoufox's default webgl fingerprint can pair a real-GPU renderer
+        # STRING with a WRONG MAX_TEXTURE_SIZE — its "Apple M1" DB entry reports 8192 though a real M1 exposes 16384
+        # → br.webgl_renderer_caps_mismatch. Pin a webgl_config whose DB entry carries the COHERENT 16384 cap (a
+        # Windows NVIDIA GTX 980), and render on Mesa llvmpipe (MAX_TEXTURE_SIZE 16384, RAM-backed) so the 16384
+        # claim also genuinely ALLOCATES → br.webgl_maxtexture_unallocatable stays silent. The "one true hardware
+        # wall" falls with NO GPU. Set GALLIUM_DRIVER=llvmpipe + LIBGL_ALWAYS_SOFTWARE=1 in the env alongside this.
+        kwargs["os"] = "windows"
+        kwargs["webgl_config"] = (
+            "Google Inc. (NVIDIA)",
+            "ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar",
+        )
     if LINUX:
         kwargs["os"] = "linux"  # coherent with the Linux host → silence net.tcp_os_vs_ua
     if NOTOUCH:

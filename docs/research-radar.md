@@ -4315,3 +4315,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   camoufox report MAX_TEXTURE_SIZE=16384 coherently (config its webgl params to match the claimed GPU, or pick a DB
   entry whose renderer+caps are both 16384) — backed by llvmpipe's real 16384 allocation so br.webgl_maxtexture_
   unallocatable stays silent — and ground both caps tells silent. If it lands the wall falls with zero rented GPU.
+- **[GPU-CAPS LOOP — rung 3: THE WALL FELL — GPU caps close in software, zero rented GPU (WIN, loop earned-closed)]**
+  (2026-07-05). Composed the fix and GROUNDED IT LIVE: camoufox `webgl_config=("Google Inc. (NVIDIA)", "ANGLE
+  (NVIDIA, NVIDIA GeForce GTX 980 ...)")` (a DB entry whose MAX_TEXTURE_SIZE is a COHERENT 16384, unlike its buggy
+  Apple-M1-@-8192) + os=windows + Mesa llvmpipe backend (GALLIUM_DRIVER=llvmpipe) → EVERY GPU caps tell SILENT:
+  br.webgl_renderer_caps_mismatch, br.webgl_maxtexture_unallocatable, br.mobile_gpu_caps_mismatch,
+  br.webgl_caps_worker_vs_main, br.webgl_software, br.webgl2_missing. Crucially br.webgl_maxtexture_unallocatable is
+  SILENT — the detector's ALLOCATION probe PASSED, proving the browser actually allocated a 16384 texture (llvmpipe,
+  RAM-backed) — it is REAL coherence, not a value lie (a lie trips that exact tell). Wired as the KS_LLVMPIPE knob in
+  evaders/camoufox/run.py. THE "ONE TRUE HARDWARE WALL" IS NOT HARDWARE: it was SwiftShader's 8192 default + camoufox's
+  incoherent mac fingerprint data. A software rasterizer already on disk (llvmpipe, 16384) + a coherent renderer entry
+  closes it, no GPU/VPS. Residuals (all non-GPU): bh.synthetic_no_coalesced (input — HUMAN_MOUSE), br.pointer_touch_
+  incoherent (camoufox Windows profile — KS_NOTOUCH fixes), br.webrtc_unavailable (provisioning), net.tcp_os_vs_ua
+  (os-spoof composes it away, grounded). CAVEAT: this used a WINDOWS/NVIDIA 16384 DB entry; camoufox's mac entries
+  are all capped at a buggy 8192 (no mac 16384 entry) — a macOS morph needs camoufox's DB corrected (patch the Apple
+  M1 param 3379 8192->16384) — a camoufox-data fix, not a hardware wall. A LINUX-target morph (Linux 16384 Mesa entry
+  + native TLS + native kernel + llvmpipe) is now FULLY coherent in-sandbox. LOOP EARNED-CLOSED: the wall fell.
