@@ -55,7 +55,8 @@ boundary below).
 The curated coherence data this research produced, filling the gap in Playwright's registry (which is mobile-heavy
 and carries UA/screen/DPR/touch but **no GPU/cores/memory**):
 
-- **17 real tuples** across Windows (5) · macOS (4) · Android (4) · iOS (3) · iPadOS (1), chromium + webkit engines.
+- **18 real tuples** across Windows (5) · macOS (4) · Android (5) · iOS (3) · iPadOS (1), chromium + webkit engines,
+  each tagged with its `max_texture_size` tier (8192 low-end vs 16384 flagship — the GPU-caps coherence gate).
 - Each carries the **verified** `webgl_renderer` (exact `UNMASKED_RENDERER_WEBGL` string per GPU), plus
   `hardwareConcurrency` and `deviceMemory` under the documented Chrome rules (memory capped at 8 + quantized;
   undefined on iOS; ANGLE-wrapped renderer strings per platform).
@@ -106,18 +107,26 @@ coherently morphable and mapped every wall. The governing result:
   JS caught, `--cpuset-cpus` ignored → stays the host's count), so desktop tuples are core-coherent but mobile need
   ≤8-core hardware.
 
-### The three durable walls (they survive *every* tool)
+### The residual three — and only ONE is a true hardware wall
 
-Composing the right tool per layer closes far more than any single evader. What remains real-hardware/real-browser-bound:
+Composing the right tool per layer closes far more than any single evader. Three things remain — but they are **not
+equal**, and this is the sharp edge of the frontier:
 
-1. **GPU caps** — `MAX_TEXTURE_SIZE` / real core count: physical, needs real silicon whose caps match the model.
-2. **Deep TCP behaviour** — window/retransmit dynamics beyond the SYN option order (`os-spoof`'s happy-path userspace
-   stack doesn't reproduce it; production swaps in gVisor `netstack`).
-3. **Cross-OS native TLS** — the browser's real ClientHello must *be* the claimed OS's; fronting it with a uTLS MITM
-   (`chain-mitm`) is counterproductive (adds the Go-h2 seam), so it needs a browser whose native TLS matches the OS.
+1. **GPU caps — the ONE genuine real-silicon wall.** `MAX_TEXTURE_SIZE` 8192 < the 16384 floor, and the real core
+   count, are physical. No spoof (JS or engine-level) reaches them; it needs real GPU silicon whose caps match the
+   model, or GPU passthrough. **This is the only hard hardware wall.**
+2. **Deep TCP behaviour — NOT a wall, a software build.** Window/retransmit dynamics beyond the SYN option order are
+   unreproduced only because `os-spoof` ships a *happy-path* userspace stack. Its own README's roadmap is to swap in
+   **gVisor `netstack`** — a robust userspace TCP that reproduces the behaviour, **buildable in-sandbox, no hardware
+   needed.** Reclassified: an engineering task, not a frontier.
+3. **Cross-OS native TLS — real-*target-OS* browser, not silicon.** The residual `tls_grease_vs_ua` is only that our
+   in-sandbox browser (Playwright's Linux WebKit) isn't the target OS's build; fronting it with a uTLS MITM
+   (`chain-mitm`) is counterproductive (adds the Go-h2 seam). Running the **actual target-OS browser** (real macOS
+   Chrome / iOS Safari) makes its native ClientHello the OS's by construction — a real-OS host, not GPU hardware.
 
-Everything else morphs coherently with the right tool: UA/screen/DPR/model+CH (`stealth` + CDP), renderer
-string/canvas/fonts (`camoufox` engine-level), and the TCP kernel (`os-spoof`). The corpus is correct data for a
-real-GPU/real-OS host, where the three walls fall too. Minor follow-ups: `navigator.platform` on the iOS morph; a
-codec-enabled real Chrome for `codec_os_incoherent` on non-Linux UAs; the fleet frontier stays external-bound (the
-buy list in `frontier.md`).
+So the true terminus is **one hardware wall (GPU caps)**, one **software task** (gVisor netstack), and one **real-OS
+requirement** (the target browser). Everything else morphs coherently in-sandbox with the right tool: UA/screen/DPR/
+model+CH (`stealth` + CDP), renderer string/canvas/fonts (`camoufox` engine-level), the TCP kernel (`os-spoof`). The
+corpus is correct data for a real-GPU/real-OS host, where even the GPU wall falls. Minor follow-ups: `navigator.
+platform` on the iOS morph; a codec-enabled real Chrome for `codec_os_incoherent` on non-Linux UAs; the fleet
+frontier stays external-bound (the buy list in `frontier.md`).
