@@ -4226,3 +4226,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   UA) / cross-OS provisioning+platform-bound. GOVERNING PRINCIPLE (the durable deliverable): NATIVE mechanisms morph
   coherently, JS PATCHES are caught (tampering/worker-divergence), HARDWARE + OS-STACK are real-silicon/infra-bound.
   Marginal follow-ups (not blocking close): navigator.platform on the iOS morph; the codec Chrome-channel provision.
+- **[COHERENT-STACK LOOP — rung 6 CORRECTION: the cross-OS TCP kernel is SOLVED by os-spoof (not infra-bound)]**
+  (2026-07-05). The rung-6 "a cross-OS morph trips the raw TCP/TLS stack, infra-bound" claim was WRONG for the TCP
+  kernel. The os-spoof evader (built, kitsune-os-spoof) forges the TCP SYN option order via a userspace stack over
+  AF_PACKET (needs NET_RAW+NET_ADMIN — both AVAILABLE in-sandbox), and KS_MODE=proxy routes a real browser through
+  it. GROUNDED LIVE: os-spoof proxy (KS_PROFILE=ios-safari) + the iOS morph (stealth KS_ENGINE=webkit
+  KS_DEVICE="iPhone 13" KS_PROXY=socks5://os-spoof-proxy:1080) -> net.tcp_os_vs_ua SILENT (5 tells -> 4; without the
+  proxy it FIRED). So the composed cross-OS node is stealth(device) + os-spoof(TCP kernel), and the TCP kernel is
+  coherently spoofable, NOT infra-bound. The CROSS-OS RESIDUALS are: (1) net.tls_grease_vs_ua — the browser's OWN
+  TLS (Playwright's Linux WebKit ClientHello) != real iOS Safari's GREASE/JA4; a uTLS re-origination front
+  (evaders/chain-mitm) forges the ClientHello but ADDS net.h2_unknown_vs_ua (the Go-h2 seam), and chain-mitm's own
+  grounding shows fronting a real browser is COUNTERPRODUCTIVE (every chain config raised the network score) — so
+  the clean fix is a browser whose NATIVE TLS matches the OS (real-browser/build-bound), not tool-chaining; (2) deep
+  TCP BEHAVIOUR (window dynamics, retransmit timers) — the happy-path userspace stack doesn't reproduce it
+  (production swaps for gVisor netstack), the sibling of active-probe-axis-infra-bound; (3) br.navplatform_vs_ua
+  (device-layer, marginal). NET: the coherent cross-OS morph is BETTER than rung 6 said — os-spoof closes the TCP
+  kernel cleanly; only the TLS fingerprint (real-browser-bound) + deep-TCP-behaviour remain. Corrected the boundary
+  in coherent-stack.md + the coherent-morph-boundary memory.

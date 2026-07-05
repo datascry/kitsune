@@ -17,6 +17,7 @@ swapping a whole coherent identity atomically — never perturbing a field.**
 | Layer | How it's made coherent | Tells it neutralises |
 |---|---|---|
 | **Transport** (TLS/JA4, HTTP/2) | a *real* browser engine — nothing to spoof | `ja4_*`, `h2_*` static-order / tool-JA4 tells |
+| **Network / OS kernel** (`os-spoof` proxy) | forges the TCP SYN kernel fingerprint (userspace stack over `AF_PACKET`, `NET_RAW`+`NET_ADMIN`) so the kernel the SYN reveals matches the claimed OS — route the browser through `KS_PROXY=socks5://os-spoof:1080` | `tcp_os_vs_ua` (cross-OS) |
 | **Runtime** (headful, patchright/camoufox) | real display + CDP-stealth driver | `cdp_runtime_enabled`, `no_chrome_object`, `permissions_anomaly`, `webdriver_*` |
 | **Engine ↔ device** (`KS_ENGINE`) | chromium↔Android/desktop-Chrome, webkit↔iPhone/iPad — engine and claimed UA agree | `apple_ua_nonwebkit`, engine-stack incoherence |
 | **Device identity** (`KS_DEVICE`) | one tuple (UA + Sec-CH-UA + screen + DPR + touch + isMobile) applied **natively** by the engine — no JS patch, so **no realm-divergence tell** | `ios_screen_oversized`, `ios_dpr_incoherent`, `navplatform_vs_ua`, `ch_ua_version_vs_ua` |
@@ -80,12 +81,18 @@ coherently morphable and mapped every wall. The governing result:
 - **JS patches are caught.** A `getParameter` renderer patch → `webgl_getparameter_tampered` + `webgl_worker_vs_main`
   + `webgpu_webgl_vs`; a Worker-wrap → `worker_source_rewritten` + `worker_constructor_tampered`; a
   `getHighEntropyValues` model wrap → `uadata_model_worker_divergence`. **You cannot spoof coherence.**
-- **Hardware + OS-stack are real-silicon/infra-bound.** The no-GPU container's software GL is the **universal wall**
-  (`webgl_software` on every morph; caps `mobile_gpu_caps_mismatch`); `hardwareConcurrency` can't be lowered (JS
-  caught, `--cpuset-cpus` ignored) so desktop tuples are core-coherent but mobile need ≤8-core hardware; a **cross-OS
-  morph** trips the raw TCP/TLS stack (`tcp_os_vs_ua`, `tls_grease_vs_ua`) — the container's Linux kernel, changeable
-  only via os-spoof / `NET_ADMIN`. iOS/webkit is the cleanest cross-OS target (Safari exposes less → sidesteps the
-  Android GPU/cores/model walls).
+- **The cross-OS TCP kernel is SOLVED — compose `os-spoof`.** A cross-OS morph trips `net.tcp_os_vs_ua` (the SYN
+  option order reveals the container's Linux kernel), but the **`os-spoof` evader** (`KS_MODE=proxy`) forges the SYN
+  via a userspace TCP stack (`NET_RAW`+`NET_ADMIN`, both available in-sandbox) and routes the real browser through it.
+  **Grounded live:** the iOS morph via `KS_PROXY=socks5://os-spoof:1080 KS_PROFILE=ios-safari` → `tcp_os_vs_ua`
+  **silent**. So the composed cross-OS node is `stealth`(device) + `os-spoof`(kernel). Residuals: `net.tls_grease_vs_ua`
+  (the browser's *own* TLS ≠ the claimed OS's — a uTLS front [`chain-mitm`] only trades it for the Go-h2 seam
+  `h2_unknown_vs_ua`, so it needs a **native-TLS-matching browser**, real-browser/build-bound) and **deep TCP
+  behaviour** (window/retransmit dynamics — a happy-path userspace stack doesn't reproduce; production = gVisor
+  netstack). iOS/webkit is the cleanest target (Safari exposes less → sidesteps the Android GPU/cores/model walls).
+- **Hardware is real-silicon-bound.** The no-GPU container's software GL is the **universal wall** (`webgl_software`
+  on every morph; caps `mobile_gpu_caps_mismatch`); `hardwareConcurrency` can't be lowered (JS caught, `--cpuset-cpus`
+  ignored) so desktop tuples are core-coherent but mobile need ≤8-core hardware.
 
 So **in-sandbox the morph is coherent for the software-fingerprint layers within one OS; the GPU, mobile core-count,
 and cross-OS TCP/TLS stack are real-hardware/infra-bound.** The corpus is correct data for a real-GPU/real-OS host;
