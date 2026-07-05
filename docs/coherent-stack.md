@@ -117,10 +117,14 @@ equal**, and this is the sharp edge of the frontier:
 1. **GPU caps — the ONE genuine real-silicon wall.** `MAX_TEXTURE_SIZE` 8192 < the 16384 floor, and the real core
    count, are physical. No spoof (JS or engine-level) reaches them; it needs real GPU silicon whose caps match the
    model, or GPU passthrough. **This is the only hard hardware wall.**
-2. **Deep TCP behaviour — NOT a wall, a software build.** Window/retransmit dynamics beyond the SYN option order are
-   unreproduced only because `os-spoof` ships a *happy-path* userspace stack. Its own README's roadmap is to swap in
-   **gVisor `netstack`** — a robust userspace TCP that reproduces the behaviour, **buildable in-sandbox, no hardware
-   needed.** Reclassified: an engineering task, not a frontier.
+2. **Deep TCP behaviour — a live blue tell that os-spoof *passes* on a normal morph.** The detector already ships the
+   deep-TCP tells: `net.tcp_static_window` (w0.4, corroborating — a real kernel auto-tunes its receive window; a
+   hardcoded one is static) and `net.tcp_syn_anomaly` (the SYN wscale *value*), both built against the os-spoof
+   forger. **But `tcp_static_window` is FP-conservative** (fires only on a sizable ≥12-segment static flow), and
+   **grounded 2026-07-05: a full stealth-chromium flow through an os-spoof proxy leaves all deep-TCP tells silent** —
+   the happy-path stack *passes* a normal browser morph. So gVisor `netstack` (real window auto-tuning) is the red
+   counter *only for long/sizable static sessions* — a **major** build for a marginal, corroborating, long-session
+   gain. Deferred as a production-robustness upgrade, not a current-morph need.
 3. **Cross-OS native TLS — real-*target-OS* browser, not silicon.** The residual `tls_grease_vs_ua` is only that our
    in-sandbox browser (Playwright's Linux WebKit) isn't the target OS's build; fronting it with a uTLS MITM
    (`chain-mitm`) is counterproductive (adds the Go-h2 seam). Running the **actual target-OS browser** (real macOS

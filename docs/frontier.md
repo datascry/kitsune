@@ -27,7 +27,7 @@ have no in-sandbox source for**.
 | behavioural (mouse / input) | **band** | biomech power-law floor, 2-source corroborated (SapiMouse); a good humanizer lives in the band | production behavioural corpora |
 | coordination / fleet | **earned-closed** | convicts on collision · non-Poisson schedule · per-session bot tell · shared proxy-egress (tunnel MSS / SOCKS stack-divergence) · IP-rep | a fully-clean diffuse fleet ⇒ **residential egress + real-hardware fps + prevalence** |
 | LLM-agent | **earned-closed** | `track` gate convicts by the snapshot→reason→act loop's physics; reasoning honeypots defeated by alignment | — (structural tell shipped + live-validated) |
-| active TCP-stack probe | **partly forgeable (red)** | the SYN **kernel** fp IS forgeable — `os-spoof` (client `NET_RAW`+`NET_ADMIN`) closes `tcp_os_vs_ua`, grounded; the residual **deep TCP behaviour** (window/retransmit) is a *software* build (gVisor `netstack`), not a hardware wall | gVisor netstack (in-sandbox) + real middleboxes for blue-side validation (ADR-0005) |
+| active TCP-stack probe | **partly forgeable (red)** | the SYN **kernel** fp IS forgeable — `os-spoof` (client `NET_RAW`+`NET_ADMIN`) closes `tcp_os_vs_ua`, grounded; the residual **deep TCP behaviour** is a live blue tell (`net.tcp_static_window`, w0.4) that os-spoof **passes on a normal morph** (grounded 2026-07-05) — gVisor `netstack` closes it only for long static flows | gVisor netstack (a major build, marginal gain) |
 | mobile (Android / iOS) | **earned-closed** | no in-sandbox coherent Android fp; actual-behaviour GPU probes convict emulation/forks | real device hardware |
 
 ## The red frontier — the morphing-human headful fleet
