@@ -26,7 +26,8 @@ swapping a whole coherent identity atomically — never perturbing a field.**
 | **Device identity** (`KS_DEVICE`) | one tuple (UA + Sec-CH-UA + screen + DPR + touch + isMobile) applied **natively** by the engine — no JS patch, so **no realm-divergence tell** | `ios_screen_oversized`, `ios_dpr_incoherent`, `ch_ua_version_vs_ua` |
 | **Model + UA-CH brands** (CDP `setUserAgentOverride`) | the browser's own `userAgentMetadata` (model, platform, clean brands) set natively in both realms | `mobile_no_js_model`, `ch_ua_mobile_no_model`, `ch_he_headless` |
 | **GPU renderer string / canvas / fonts** (engine-level: `camoufox` / source-fork) | patched **natively** across both realms — *not* a JS getter override, so no tampering/`worker_vs_main` tell (a `stealth` addInitScript patch **is** caught; camoufox is not) | `webgl_renderer_artifact`, `canvas_lie`, `font_os_vs_ua` (the string layer) |
-| **GPU caps + core count** (real silicon — **the durable wall**) | *not morphable by any tool* — `MAX_TEXTURE_SIZE` 8192 < the 16384 floor, and the real core count, are physical; needs real hardware whose caps match the model | `mobile_gpu_caps_mismatch`, `webgl_maxtexture_unallocatable`, `mobile_cores_high` |
+| **GPU caps** (Mesa `llvmpipe` — `KS_LLVMPIPE`) | **falls in software** — llvmpipe reports AND allocates `MAX_TEXTURE_SIZE` 16384 (RAM-backed, so the allocation probe passes), paired with a camoufox renderer whose DB caps are a coherent 16384. No GPU. Grounded 2026-07-05: every caps tell silent | `webgl_renderer_caps_mismatch`, `webgl_maxtexture_unallocatable`, `mobile_gpu_caps_mismatch` |
+| **Mobile core count** (real cores) | *host-bound* — `hardwareConcurrency` can't be lowered (JS caught, `--cpuset-cpus` ignored → stays the host's count); desktop tuples are core-coherent, **mobile** morphs need ≤8-core hardware | `mobile_cores_high` |
 | **Provisioned floor** (`KS_PROVISION`) | audio / voices / webrtc present, as a real device has | `voices_empty`, `media_devices_empty`, empty-realm tells |
 | **Behaviour** (`KS_HUMANIZE` / `HUMAN_MOUSE`) | bézier mouse + paced, jittered timing | `input_entropy_floor`, `no_input_before_action`, cadence floors |
 
@@ -109,14 +110,17 @@ coherently morphable and mapped every wall. The governing result:
   JS caught, `--cpuset-cpus` ignored → stays the host's count), so desktop tuples are core-coherent but mobile need
   ≤8-core hardware.
 
-### The residual three — and only ONE is a true hardware wall
+### The residuals — and NONE is a true hardware wall (the GPU caps wall fell)
 
-Composing the right tool per layer closes far more than any single evader. Three things remain — but they are **not
-equal**, and this is the sharp edge of the frontier:
+Composing the right tool per layer closes far more than any single evader. What was called "the one true hardware
+wall" — GPU caps — **fell in software (2026-07-05)**. What actually remains is smaller and none of it is a GPU:
 
-1. **GPU caps — the ONE genuine real-silicon wall.** `MAX_TEXTURE_SIZE` 8192 < the 16384 floor, and the real core
-   count, are physical. No spoof (JS or engine-level) reaches them; it needs real GPU silicon whose caps match the
-   model, or GPU passthrough. **This is the only hard hardware wall.**
+1. **GPU caps — FELL, in software, no GPU.** `MAX_TEXTURE_SIZE` 8192 was **SwiftShader's default**, not hardware.
+   Mesa **`llvmpipe`** (already on disk, RAM-backed) reports AND *allocates* 16384; paired with a camoufox renderer
+   whose DB caps are a coherent 16384 (`KS_LLVMPIPE`), **every caps tell goes silent** — including the allocation
+   probe `webgl_maxtexture_unallocatable`, which passing proves it is *real*, not a value lie. Grounded live. The
+   only residue here is **camoufox's mac fingerprint data** (its Apple-M1 entry has a buggy 8192; a macOS morph needs
+   the DB corrected) and the **mobile core count** (host-bound) — a data fix and a resource limit, not a wall.
 2. **Deep TCP behaviour — a live blue tell that os-spoof *passes* on a normal morph.** The detector already ships the
    deep-TCP tells: `net.tcp_static_window` (w0.4, corroborating — a real kernel auto-tunes its receive window; a
    hardcoded one is static) and `net.tcp_syn_anomaly` (the SYN wscale *value*), both built against the os-spoof
@@ -130,9 +134,12 @@ equal**, and this is the sharp edge of the frontier:
    (`chain-mitm`) is counterproductive (adds the Go-h2 seam). Running the **actual target-OS browser** (real macOS
    Chrome / iOS Safari) makes its native ClientHello the OS's by construction — a real-OS host, not GPU hardware.
 
-So the true terminus is **one hardware wall (GPU caps)**, one **software task** (gVisor netstack), and one **real-OS
-requirement** (the target browser). Everything else morphs coherently in-sandbox with the right tool: UA/screen/DPR/
-model+CH (`stealth` + CDP), renderer string/canvas/fonts (`camoufox` engine-level), the TCP kernel (`os-spoof`). The
-corpus is correct data for a real-GPU/real-OS host, where even the GPU wall falls. Minor follow-ups: `navigator.
-platform` on the iOS morph; a codec-enabled real Chrome for `codec_os_incoherent` on non-Linux UAs; the fleet
-frontier stays external-bound (the buy list in `frontier.md`).
+So the true terminus has **no in-sandbox hardware wall left.** The GPU caps wall fell in software; and a
+**Linux-target morph is now FULLY coherent in-sandbox** — native TLS (Linux), native kernel (Linux), `llvmpipe`
+16384 GPU caps, engine-level renderer. Everything morphs coherently with the right tool: UA/screen/DPR/model+CH
+(`stealth` + CDP), renderer string/canvas/fonts + coherent GPU caps (`camoufox` + `llvmpipe`), the TCP kernel
+(`os-spoof`). What remains is **not hardware**: a *cross-OS* morph still needs the target-OS browser for native TLS
+(a real-OS requirement, moot for a Linux target); camoufox's mac fingerprint data has a buggy 8192 cap (a DB fix);
+the mobile core count is host-bound; and the fleet frontier stays external-data-bound (the buy list in
+`frontier.md`). Minor follow-ups: `navigator.platform` on the iOS morph; a codec-enabled real Chrome for
+`codec_os_incoherent` on non-Linux UAs.
