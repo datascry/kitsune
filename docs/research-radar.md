@@ -4364,3 +4364,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   flow blocker is os-spoof transport robustness (gVisor), the one genuine build left. NEXT (rung 3): the full-stack
   validator (profile -> {layer: tell} table, launching os-spoof+browser); the linux-desktop profile has no such
   residual (native kernel, no os-spoof) so it is the clean fully-coherent demo.
+- **[UNIFIED-PROFILE LOOP — rung 3: the full-stack VALIDATOR — schema+composer+validator complete, grounded]**
+  (2026-07-05). Built harness/src/kitsune_harness/morph_validate.py: COHERENCE_LAYERS (kernel/tls/ua_ch/device/
+  gpu_string/gpu_caps) + OTHER_LAYERS (provision/behaviour/runtime/robustness) map every detector tell to its morph
+  layer; classify(tells) + assess(profile,label,tells) are PURE (mypy-strict, tested), and coherent==True iff NO
+  coherence-layer tell fired; _run_profile()/main() do the docker orchestration (compose -> launch os-spoof if
+  declared + the browser -> read __KS__) as pragma-no-cover IO. GROUNDED LIVE on linux-desktop: composed -> ran ->
+  per-layer table -> ALL 6 COHERENCE layers SILENT -> COHERENT. (The one firing tell, net.no_js_execution, is a
+  flaky collector-execution/robustness NOTE, correctly bucketed OUTSIDE the coherence invariant — it fired even for
+  the no-os-spoof linux profile, i.e. it is headful-collector timing, not a cross-layer disagreement.) So the UNIFIED
+  PROFILE SYSTEM is complete: SCHEMA (rung 1) + COMPOSER (rungs 1-2) + VALIDATOR (rung 3), all executable + grounded.
+  A declared identity now composes to coherent per-tool env, runs, and is validated as a per-layer table asserting
+  the coherence invariant. This IS "profiles tracked+tuned across all layers" — the answer, executable. NEXT (rung 4):
+  migrate docs/coherent-stack.md's per-layer prose to reference the executable registry (the spec is now code); grow
+  the registry (the 8 os-spoof profiles x coherent GPU pairings); the residuals are tuning (behaviour/webrtc) +
+  robustness (net.no_js_execution flake / os-spoof stack -> gVisor).

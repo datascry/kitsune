@@ -39,3 +39,17 @@ def test_cross_os_profiles_declare_a_kernel_forge() -> None:
     for p in REGISTRY.values():
         if p.os_target != "linux":  # a target != the Linux host must forge the kernel
             assert p.os_spoof is not None, p.name
+
+
+def test_classify_and_assess() -> None:
+    from kitsune_harness.morph_validate import assess, classify
+
+    b = classify(["net.tcp_os_vs_ua", "br.webgl_renderer_caps_mismatch", "bh.synthetic_no_coalesced", "zz.unknown"])
+    assert b["kernel"] == ["net.tcp_os_vs_ua"]
+    assert b["gpu_caps"] == ["br.webgl_renderer_caps_mismatch"]
+    assert b["behaviour"] == ["bh.synthetic_no_coalesced"]
+    assert b["other"] == ["zz.unknown"]
+    # linux-desktop's grounded residuals (behaviour + provision) are NOT coherence tells -> coherent
+    assert assess("linux-desktop", "suspicious", ["bh.synthetic_no_coalesced", "br.webrtc_unavailable"]).coherent
+    # a GPU-caps tell IS a coherence-layer fail
+    assert not assess("x", "bot", ["br.webgl_renderer_caps_mismatch"]).coherent
