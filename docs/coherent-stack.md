@@ -53,7 +53,17 @@ profiles:
     os_target: windows
     os_spoof: windows-firefox
     gpu: {vendor: "Google Inc. (NVIDIA)", renderer: "ANGLE (NVIDIA, ... GTX 980 ...)", caps: 16384, backend: llvmpipe}
+  macos-firefox:                       # cross-OS: darwin kernel + Apple GPU (camoufox DB caps corrected to 16384)
+    os_target: macos
+    os_spoof: macos-firefox
+    gpu: {vendor: Apple, renderer: "Apple M1, or similar", caps: 16384, backend: llvmpipe}
 ```
+
+The 3 fully-coherent identities are **Firefox-engine (camoufox)** across Linux/Windows/macOS — the in-sandbox
+ceiling. Only camoufox spoofs the renderer STRING to a hardware GPU at the engine level, so `webgl_software` stays
+silent. A **Chromium/WebKit** morph (stealth) reports the real software-GL renderer → `webgl_software`, and the
+headful+patchright config needed to shed automation tells adds its own CH-version/TLS/collector residuals — so a
+clean non-Firefox identity is external-hardware / stealth-hardening bound (grounded 2026-07-05).
 
 Grounded 2026-07-05: `linux-desktop` validates **COHERENT** (every coherence layer silent); the cross-OS
 `windows-firefox` too — its one residual being os-spoof's happy-path stack robustness (→ gVisor), not coherence.
