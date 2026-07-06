@@ -79,6 +79,42 @@ cleanly reach, and the one hook that could is too invasive to survive. The "chea
 coherent Chromium needs a **real build**: a patched Mesa llvmpipe (rename `GL_RENDERER` at the driver, a
 Mesa rebuild) or a patched Chromium/ANGLE. Both external. This **reinforces** the decision above.
 
+## Scoped path if pursued: patch Mesa llvmpipe (not Chromium)
+
+Grounded scope (2026-07-06). The renderer string ANGLE reports is `ANGLE (<GL_VENDOR>, <GL_RENDERER>, OpenGL
+<ver>)` where the inner fields come from the **Mesa llvmpipe driver**, not from Chromium. So the leverage point
+is Mesa, and the fix is a **tiny driver patch**, not a browser fork.
+
+- **Where:** Mesa 23.2.1 in the stealth image; llvmpipe compiles into `swrast_dri.so`. The strings come from
+  `src/gallium/drivers/llvmpipe/lp_screen.c` — `llvmpipe_get_name()` (→ `"llvmpipe (LLVM …)"` = GL_RENDERER) and
+  the screen's vendor getters (→ `"Mesa"` = GL_VENDOR). NB the `webgl_software` rule matches
+  `/swiftshader|llvmpipe|software|mesa/i`, so BOTH the renderer AND the vendor must lose their Mesa/llvmpipe
+  tokens — patch both.
+- **The patch (elegant form):** make `get_name`/`get_vendor` honor an **env override** (e.g.
+  `KS_GL_RENDERER` / `KS_GL_VENDOR`), defaulting to the real strings. Then a Linux-Chrome node sets
+  `KS_GL_RENDERER="NVIDIA GeForce GTX 1080/PCIe/SSE2"`, `KS_GL_VENDOR="NVIDIA Corporation"` → ANGLE reports
+  `ANGLE (NVIDIA Corporation, NVIDIA GeForce GTX 1080/PCIe/SSE2, OpenGL 4.5)`. ~3 string returns.
+- **Build + inject:** Mesa builds with meson+ninja against LLVM 15; a Dockerfile stage clones Mesa 23.2, applies
+  the patch, builds the swrast target, copies `swrast_dri.so` over the image's `/usr/lib/x86_64-linux-gnu/dri/`
+  (or point `LIBGL_DRIVERS_PATH` at it). ~10–20 min build; deps are apt-gettable.
+- **Why it beats a Chromium fork:** it's **engine-agnostic** — one driver patch makes *every* browser on
+  llvmpipe (stealth-Chromium AND stealth-WebKit) report the coherent renderer, natively, in all realms (it's
+  below JS, so no `getparameter_tampered` / `worker_divergence`), with the real 16384 caps. Env-configurable →
+  distinct GPUs per fleet node. Mesa churns ~quarterly and the patch (three static strings) rebases trivially —
+  nothing like Chromium's monthly-rebase treadmill.
+- **What clears vs residual caveats:** clears `webgl_software`, `webgl_renderer_caps_mismatch`, the tamper/worker
+  family → a coherent hardware-GPU Chromium/WebKit. Caveats to handle: the GL_VERSION string still reads
+  `Mesa 23.2.1` (patch it too, or accept a mild version-vs-renderer tell — check whether the detector reads it);
+  and if WebGPU is ever enabled (Vulkan/lavapipe) its adapter is a *separate* identity that a GL-only patch
+  leaves mismatched (grounded: default stealth doesn't expose it, so not a factor today — but patch lavapipe's
+  device name too if WebGPU is turned on). The renderer must stay OS-coherent (a Linux GPU string under a
+  Linux-Chrome UA; never an Apple/Windows string).
+- **Verdict:** feasibility HIGH, effort MODERATE (~1 day: patch + Mesa build stage + inject + ground), value
+  MODERATE-HIGH (unlocks coherent Chromium *and* WebKit — the two engines the registry lacks — per-node
+  configurable). It is the **least-bad** in-sandbox path to non-Firefox coherence, well below a Chromium fork.
+  Still a custom driver build to carry, so pursue only if Chromium/WebKit coherence is worth that upkeep;
+  otherwise it stays parked as the documented plan.
+
 ## References
 
 - `evaders/stealth/run.mjs:390-399` (the in-code analysis), `evaders/camoufox/run.py:379-393` +
