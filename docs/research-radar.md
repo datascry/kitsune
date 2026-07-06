@@ -4530,3 +4530,22 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   internal/handle path no userspace preload cleanly reaches. So coherent Chromium needs a REAL build (patched Mesa
   llvmpipe renderer rename, or a patched Chromium/ANGLE) — recorded in ADR-0008. The earlier "cheap shim, one day"
   estimate was WRONG; external-bound stands. Do NOT re-attempt the LD_PRELOAD path.
+
+## Mesa-renderer-patch loop (e108f329 — coherent Chromium/WebKit via a patched llvmpipe)
+
+- **[MESA-PATCH LOOP — rungs 2-4: the Mesa GL renderer patch WORKS — coherent Chromium WebGL, grounded]**
+  (2026-07-06). Built a patched Mesa 23.2.1 llvmpipe (evaders/stealth/mesa-patch/build.sh) whose lp_screen.c
+  llvmpipe_get_name()/get_vendor() honor KS_GL_RENDERER/KS_GL_VENDOR env overrides. TWO build blockers solved +
+  grounded: (a) missing xcb-shm dep; (b) libGL's DRI version check rejects any driver whose version string differs
+  ("not from this Mesa build") -> stamp the base image's EXACT Mesa version (23.2.1-1ubuntu3.1~22.04.3) into VERSION
+  + drop .git. GROUNDED at 3 levels: glxinfo reports "OpenGL renderer: NVIDIA GeForce GTX 1080/PCIe/SSE2" / vendor
+  "NVIDIA Corporation" (native); Chromium/ANGLE WebGL reports "ANGLE (NVIDIA Corporation, NVIDIA GeForce GTX 1080/
+  PCIe/SSE2, OpenGL 4.5)" maxTex 16384 (NO mesa/llvmpipe, no JS spoof); vs the DETECTOR (stealth-Chromium headful +
+  patched Mesa through the edge) FOUR of five GPU tells SILENT — br.webgl_software, br.webgl_renderer_caps_mismatch,
+  br.webgl_getparameter_tampered, br.webgl_worker_vs_main. This overturns ADR-0008's "external-bound" for the WebGL
+  renderer: engine-agnostic coherent Chromium GPU IS in-sandbox via a ~3-line Mesa patch. REMAINING (the scope's
+  WebGPU caveat, now REAL): br.webgpu_webgl_vs FIRES — WebGPU (Dawn via Vulkan) exposes a separate GPU identity the
+  GL-only patch leaves mismatched; needs a lavapipe (Vulkan) device-name patch OR WebGPU-disable. The bot label came
+  from orthogonal headful-automation tells (automation_globals/cdp_runtime_enabled/webdriver_present), not GPU.
+  NEXT: close webgpu_webgl_vs (lavapipe patch), wire the Mesa build stage into evaders/stealth/Dockerfile + a
+  KS_GL_RENDERER knob in run.mjs, add a coherent linux-chrome profile to the registry.
