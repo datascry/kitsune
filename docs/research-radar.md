@@ -4521,3 +4521,12 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   synthetic_no_coalesced (behaviour/humanize), pointer_touch_incoherent (camoufox NOTOUCH), webrtc_unavailable
   (provision). The gVisor path (parked) would add the deep-TCP-behaviour close (net.tcp_static_window) + fuller
   congestion control, but is NOT needed for this goal. BOTH in-sandbox frontiers now landed.
+- **[SCOPE 2 follow-up — the LD_PRELOAD chromium-renderer shim is GROUNDED non-viable]** (2026-07-06). Prototyped
+  the "cheap" native-interception idea (rewrite native glGetString so ANGLE reports a hardware GPU, no JS patch).
+  Grounded against stealth-Chromium (headful, --use-gl=angle --use-angle=gl, Mesa llvmpipe): FAILS at 3 interposer
+  levels — (1) PLT glGetString: shim loads in all 9 processes but glGetString(RENDERER/VENDOR) is never called
+  through it; (2) eglGetProcAddress/glXGetProcAddress hooks: never invoked for glGetString; (3) dlsym hook (the
+  dlopen+dlsym bypass): breaks Chromium startup (dlsym is universal). ANGLE reaches Mesa's renderer string via an
+  internal/handle path no userspace preload cleanly reaches. So coherent Chromium needs a REAL build (patched Mesa
+  llvmpipe renderer rename, or a patched Chromium/ANGLE) — recorded in ADR-0008. The earlier "cheap shim, one day"
+  estimate was WRONG; external-bound stands. Do NOT re-attempt the LD_PRELOAD path.
