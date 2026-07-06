@@ -4549,3 +4549,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   from orthogonal headful-automation tells (automation_globals/cdp_runtime_enabled/webdriver_present), not GPU.
   NEXT: close webgpu_webgl_vs (lavapipe patch), wire the Mesa build stage into evaders/stealth/Dockerfile + a
   KS_GL_RENDERER knob in run.mjs, add a coherent linux-chrome profile to the registry.
+- **[MESA-PATCH LOOP — rung 5: WebGPU closure BLOCKED on Dawn+software-Vulkan; lavapipe Vulkan-side proven]**
+  (2026-07-06). br.webgpu_webgl_vs (w0.7) fires because "WebGL claims a hardware GPU but WebGPU exposes no real
+  adapter" — our spoofed-NVIDIA WebGL + a null WebGPU adapter (the stealth image ships NO Vulkan loader, so Dawn
+  gets no adapter). Built Mesa lavapipe (the Vulkan software driver, -Dvulkan-drivers=swrast) + GROUNDED that my
+  existing lp_screen.c patch FLOWS THROUGH to it: `vulkaninfo` reports deviceName="NVIDIA GeForce GTX 1080/PCIe/
+  SSE2" (lavapipe reuses the llvmpipe gallium screen). So the Vulkan device reports the coherent GPU. BLOCKER: making
+  Dawn (Chromium WebGPU) actually USE the software lavapipe adapter — it needs libvulkan1 + the lavapipe ICD +
+  --ignore-gpu-blocklist --enable-features=Vulkan — HANGS headful Chromium in this xvfb/software environment (5+ min,
+  no verdict), and the ad-hoc secure-context probe keeps hitting edge-nav timeouts. So the full webgpu closure is
+  ENV-BOUND (Dawn's software-Vulkan path is unstable here), NOT a patch problem. Reverted the run.mjs Vulkan flags
+  (ungrounded + destabilizing). NET: the Mesa GL patch LANDS the WebGL coherence (webgl_software + caps + tamper +
+  worker silent — committed, the headline overturning ADR-0008); a Chromium morph is "coherent-except-webgpu_webgl_vs"
+  in-sandbox, the last GPU tell gated on a stable Dawn+lavapipe path (baked loader/ICD in a real GPU-less deployment,
+  or real silicon). lavapipe recipe + the finding recorded for when that path stabilizes.
