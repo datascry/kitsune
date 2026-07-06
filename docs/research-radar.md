@@ -4471,3 +4471,8 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   control: N > #engines -> JA4 repeats -> ja4_prefix re-densifies = the FINITE-distinct-coherent-builds ceiling
   (the "distinct builds" economic wall made concrete). Residual after: descriptor (one-humanizer), IP-rep,
   proxy-egress = external-data-bound.
+- **[FRONTIER 1 — gVisor rung-1 feasibility gate PASSED (2026-07-06)]** `go get gvisor.dev/gvisor@go` in the
+  os-spoof module vendors clean (v0.0.0-20260701204157-69c2d17aea96) and the baseline still `go build`s in
+  golang:1.26-alpine — so gVisor is buildable in-sandbox. NEXT: the channel.Endpoint-over-AF_PACKET scaffold +
+  gonet.DialContextTCP handshake proof (rung 1 proper). NB: keep the gVisor import in real code or `go mod tidy`
+  drops it; the go.mod bump was reverted until the scaffold lands. A stray `osspoof` build artifact is gitignore-worthy.
