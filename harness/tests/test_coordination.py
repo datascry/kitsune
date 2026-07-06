@@ -1490,3 +1490,57 @@ def test_ja4_rotating_corporate_fp_collision_caps_at_candidate() -> None:
         for i in range(4)
     ]
     assert [v for v in score_corpus(corpus) if v.label == "fleet"] == []
+
+
+# Distinct coherent engine JA4 prefixes (Firefox/Chromium/WebKit — the few real builds the sandbox runs).
+_ENGINE_JA4S = ("t13d1717h2_5b57614c22b0", "t13d1516h2_8daaf6152771", "t13d2013h2_a09f3c5b1e77")
+
+
+def _morph_diffuse_fleet(n: int, *, engines: int = 3) -> list[tuple[str, object]]:
+    # diffuse's fully-clean shape (Poisson stagger, one humanizer family, distinct fp/IP, no tell) but each node
+    # runs one of `engines` DISTINCT coherent engine builds -> its JA4 prefix is that engine's. engines=1 is the
+    # shared-build diffuse case; engines=3 is the sandbox's real coherent-build count.
+    import random
+
+    rng = random.Random(30)
+    hu = humanizer_descriptors(n)
+    offs: list[float] = []
+    t = 0.0
+    for _ in range(n):
+        offs.append(t)
+        t += rng.expovariate(1.0 / 300.0)
+    return [
+        (
+            f"m{i}",
+            _sess(
+                f"m{i}",
+                _ENGINE_JA4S[i % engines] + f"_ext{i}",
+                observed_ip=f"71.{i + 1}.1.1",
+                offset_s=offs[i],
+                fp_hash=f"mfp{i}",
+                trace_descriptor=list(hu[i]),
+                webdriver=False,
+            ),
+        )
+        for i in range(n)
+    ]
+
+
+def test_axis_a_distinct_build_fleet_sheds_ja4_prefix() -> None:
+    # FRONTIER 3: a diffuse fleet whose nodes run DISTINCT coherent engine builds spans distinct JA4 prefixes. With
+    # the sandbox's ~3 real engines only ~1/3 of pairs share a prefix (< the 0.5 density threshold), so ja4_prefix
+    # is NOT dense -> the fleet drops below the 2-dim candidate. And this holds AT SCALE (n=9), not just n<=engines:
+    # 3 distinct coherent builds suffice to shed the last in-sandbox-reducible coordination binding.
+    for n in (3, 9):
+        camps = score_campaigns(_morph_diffuse_fleet(n, engines=3))
+        assert all("ja4_prefix" not in c.dense_dimensions for c in camps), n
+        assert all(c.label != "campaign" for c in camps), n
+
+
+def test_axis_a_shared_build_keeps_the_ja4_prefix_binding() -> None:
+    # The contrast that shows what distinct builds BUY: the SAME clean diffuse shape but ONE shared build keeps
+    # ja4_prefix maximally dense (every pair shares it) -> a 2-dim (ja4 + descriptor) candidate. Distinct coherent
+    # builds are exactly what removes that dim; the residual wall (one-humanizer descriptor, IP-rep, egress) is
+    # external-data-bound, not the build count.
+    camps = score_campaigns(_morph_diffuse_fleet(6, engines=1))
+    assert any("ja4_prefix" in c.dense_dimensions for c in camps)

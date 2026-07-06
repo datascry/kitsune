@@ -121,6 +121,27 @@ def _ja4_rot(seed: int, i: int) -> str:
     return "t13d" + _h("rotpre", seed, i)[:4] + "h2_" + _h("rotja4", seed, i)[:12] + "_" + _h("rotext", seed, i)[:12]
 
 
+# The distinct COHERENT engine builds the sandbox actually runs (this session's grounding): Firefox (camoufox,
+# fully coherent), Chromium + WebKit (stealth, coherent-except-webgl_software — a per-session ENVIRONMENT tell, NOT
+# a coordination binding). Each engine's TLS stack yields a distinct JA4 PREFIX (JA4_a+JA4_b = TLS version/ALPN +
+# cipher-suite identity, what _ja4_prefix keys on). A diffuse fleet of *coherent* nodes can span only these few real
+# engines: the finite-distinct-builds ceiling — the "distinct builds" economic wall made concrete. Defined here, not
+# imported from the harness morph registry (components never import each other); it mirrors that coherent-build set.
+_ENGINE_JA4_PREFIXES: tuple[str, ...] = (
+    "t13d1717h2_5b57614c22b0",  # Firefox  (camoufox)
+    "t13d1516h2_8daaf6152771",  # Chromium (stealth)
+    "t13d2013h2_a09f3c5b1e77",  # WebKit   (stealth)
+)
+
+
+def _ja4_engine(seed: int, i: int, engines: int) -> str:
+    """Node i's JA4 = one of the ``engines`` distinct COHERENT engine prefixes (round-robin) + a per-node JA4_c.
+    So the fleet's JA4-prefix diversity is min(n, engines): distinct builds shed the prefix binding only up to the
+    finite number of real coherent engines — past that, nodes re-cluster into engine buckets (the ceiling)."""
+    prefix = _ENGINE_JA4_PREFIXES[i % engines]
+    return prefix + "_" + _h("morphext", seed, i)[:12]
+
+
 @register
 class ClonedProfile:
     name = "cloned"
@@ -430,6 +451,44 @@ class Diffuse:
                 hardware_concurrency=8,
                 platform="Win32",
                 automation=False,  # fully clean: no tell for the corroboration to key on
+                offset_seconds=offs[i],
+            )
+            for i in range(n)
+        ]
+
+
+@register
+class MorphDiffuse:
+    name = "morph-diffuse"
+    summary = (
+        "the distinct-COHERENT-build diffuse fleet: diffuse's fully-clean shape (distinct fp/trace/IP, one humanizer "
+        "family, Poisson-staggered, no tell) but each node runs a DISTINCT coherent engine build, so its JA4 prefix "
+        "is one of the few real engines the sandbox runs (Firefox/Chromium/WebKit). At n <= #engines the prefix "
+        "binding is SHED (every node a JA4 singleton) -> the fleet drops below `candidate` (descriptor-only). At n > "
+        "#engines nodes RE-CLUSTER into engine buckets -> ja4_prefix re-densifies: the finite-distinct-builds ceiling, "
+        "the 'distinct builds' economic wall. Residual bindings (one-humanizer descriptor, IP-rep, proxy-egress) stay "
+        "external-data-bound."
+    )
+    engines = len(_ENGINE_JA4_PREFIXES)  # the finite coherent-build count the sandbox can run
+
+    def members(self, n: int, seed: int) -> list[FleetMember]:
+        rng = random.Random(seed ^ 0x30FF)
+        offs: list[float] = []
+        t = 0.0
+        for _ in range(n):
+            offs.append(t)
+            t += rng.expovariate(1.0 / 300.0)  # Poisson gaps -> no lockstep, no scheduled dim
+        return [
+            FleetMember(
+                f"morph-{i}",
+                _ja4_engine(seed, i, self.engines),  # distinct engine prefix per node, up to the finite #engines
+                _ip(seed, i),
+                fp_hash=_h("morphfp", seed, i),
+                trace_hash=_h("morphtrace", seed, i),
+                trace_descriptor=_diffuse_descriptor(seed, i),  # one humanizer family — external-bound residual
+                hardware_concurrency=8,
+                platform="Win32",
+                automation=False,  # fully clean
                 offset_seconds=offs[i],
             )
             for i in range(n)
