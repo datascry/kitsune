@@ -4490,3 +4490,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   reducible coordination binding is SHED; the residual (one-humanizer descriptor, IP-rep, proxy-egress) is ALL
   external-data-bound. Frontier 3 landed in-sandbox. NB the engine JA4 pool lives in fleet/ (components never import
   each other), mirroring the coherent-build set the harness morph registry declares.
+- **[FRONTIER 1 — gVisor rung 1: BLOCKED by an upstream go-build bug; pivot to a direct flowConn fix]**
+  (2026-07-06). Wrote the full gVisor netstack integration (evaders/os-spoof/netstack.go): a gvisorStack via
+  fdbased over a BOUND AF_PACKET socket + a static neighbor for the edge (reusing os-spoof's routeIface/arpLookup/
+  defaultGateway), and dialTCP -> gonet.DialContextTCP returning a net.Conn (the drop-in flowConn replacement per
+  the plan) + a main.go gvisor-direct probe. BLOCKER, grounded with real exit codes (NOT masked by a pipe) across
+  four @go-branch commits (2026-04-15/05-15/06-15/07-01): gVisor's pkg/tcpip/stack/bridge_test.go declares
+  `package bridge` INSIDE the `stack` dir, so `go build` of any importer of pkg/tcpip/stack (incl adapters/gonet)
+  fails "found packages stack and bridge". An UPSTREAM go-branch bug, not our code — the gVisor API otherwise
+  compiles. `go mod vendor` + rm the stray file would fix it but bloats the repo with all of gVisor; pinning a
+  pre-2026 commit risks API drift (AddrFromSlice/AddProtocolAddress). netstack.go is PARKED (//go:build ignore) so
+  os-spoof's default build stays green (build=0/vet=0/gofmt=0) — revive it when a clean gVisor pin exists.
+  **PIVOT (next rung, no gVisor):** the docker bridge is LOSSLESS, so flowConn's drops are SELF-INFLICTED — the
+  lossy 256-inbox (stack.go:91 default-drop) + the strict in-order Read (stack.go:191, discards any seq!=ack).
+  Fix those directly (non-lossy/blocking inbox + an out-of-order reassembly buffer in Read; no retransmit needed on
+  a lossless bridge) -> the collector POST lands -> net.no_js_execution clears. A self-contained robust-TCP fix
+  that sidesteps the gVisor dependency entirely.
