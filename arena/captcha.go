@@ -77,13 +77,13 @@ func resolveCharset(name string, confusableByLevel bool) (string, string) {
 // gate's store (text/math) or is structural (honeypot: the trap field must come back empty).
 type Captcha struct {
 	Kind   CaptchaKind `json:"kind"`
-	ID     string      `json:"id"`              // single-use nonce
-	Prompt string      `json:"prompt"`          // human instruction
-	Image  string      `json:"image,omitempty"` // text: rasterized PNG (needs OCR); rotate: an SVG arrow
-	Field  string      `json:"field,omitempty"` // honeypot: the trap field name that must stay empty to pass
-	Tiles  []string    `json:"tiles,omitempty"` // image-select: 6/9/12 owned raster PNG tiles by level (classify via CV)
-	Angle  int         `json:"angle,omitempty"` // rotate: the initial rotation the user must undo to reach upright
-	Font   string      `json:"font,omitempty"`  // text: the typeface the image was rendered in (the OCR bench axis)
+	ID     string      `json:"id"`                // single-use nonce
+	Prompt string      `json:"prompt"`            // human instruction
+	Image  string      `json:"image,omitempty"`   // text: rasterized PNG (needs OCR); rotate: an SVG arrow
+	Field  string      `json:"field,omitempty"`   // honeypot: the trap field name that must stay empty to pass
+	Tiles  []string    `json:"tiles,omitempty"`   // image-select: 6/9/12 owned raster PNG tiles by level (classify via CV)
+	Angle  int         `json:"angle,omitempty"`   // rotate: the initial rotation the user must undo to reach upright
+	Font   string      `json:"font,omitempty"`    // text: the typeface the image was rendered in (the OCR bench axis)
 	Chars  string      `json:"charset,omitempty"` // text: the character set the code was drawn from (the OCR bench axis)
 }
 
