@@ -5,6 +5,20 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.16.0](https://github.com/datascry/kitsune/compare/v1.15.0...v1.16.0) (2026-07-06)
+
+
+### Features
+
+* **evaders:** park gvisor netstack for os-spoof — blocked on an upstream go-build bug ([c7ec0f8](https://github.com/datascry/kitsune/commit/c7ec0f88399cc66efb13e3c4aa99686414c14e92))
+* **evaders:** patched mesa llvmpipe flips chromium's webgl renderer to hardware (grounded) ([fa449ae](https://github.com/datascry/kitsune/commit/fa449ae3ac6f7762bfdb84d18f9ac42a5d478277))
+* **fleet:** morph-diffuse strategy — distinct coherent builds shed the ja4_prefix binding ([beb2bea](https://github.com/datascry/kitsune/commit/beb2beaf795f550c810002f31cdd8ecc8cb38e91))
+
+
+### Bug Fixes
+
+* **evaders:** land a full browser session through os-spoof (deep inbox + reassembly) ([7f77975](https://github.com/datascry/kitsune/commit/7f7797589efdca4c6a2b0eed1e23f1e5e11b9dff))
+
 ## [1.15.0](https://github.com/datascry/kitsune/compare/v1.14.0...v1.15.0) (2026-07-06)
 
 
