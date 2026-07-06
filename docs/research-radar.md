@@ -4438,3 +4438,36 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   fully-coherent identities are the 3 Firefox×OS profiles (linux-desktop, windows-firefox, macos-firefox) — the
   in-sandbox CEILING. Chromium/WebKit full coherence + mobile are external-hardware / stealth-hardening bound. Loop
   earned-closed: the registry is grown to its in-sandbox ceiling.
+
+## Next-frontier scoping (2026-07-06 — grounded via 3 parallel investigations)
+
+- **[SCOPE 2 — Chromium engine-level renderer = EXTERNAL-BOUND (ADR-0008)]** Grounded per-tool: NO fleet
+  Chromium tool (stealth/patchright/rebrowser, nodriver, zendriver, pydoll, undetected, selenium-driverless,
+  brave) has an engine-level renderer override; ANGLE can't be flagged to report an arbitrary GPU; CDP has no
+  renderer primitive. In-sandbox ceiling = "coherent-except-webgl_software". Needs real GPU silicon OR a
+  patched-Chromium binary (the Blink analog of camoufox webgl_config) that doesn't exist in the fleet. Recorded
+  in docs/adr/0008. DO NOT re-grind JS spoofs / ANGLE flags.
+- **[FRONTIER 1 — gVisor netstack for os-spoof: PLAN grounded]** os-spoof's flowConn TCP is happy-path (Read
+  drops any out-of-order seg, no reassembly/retransmit; Write blasts w/o flow control; lossy 256-inbox) → the
+  browser's multi-KB collector POST loses a segment → detector sees network.browser_absent → net.no_js_execution.
+  FIX: gVisor gonet.TCPConn is a drop-in net.Conn for flowConn (uTLS + proxy io.Copy unchanged). Bridge netstack
+  to the EXISTING AF_PACKET fd via a channel.Endpoint (NO TUN; NET_RAW+NET_ADMIN suffice); reuse ARP/MAC + the
+  RST-drop iptables. THE HARD PART: netstack emits a fixed Linux-ish SYN option ORDER + derives window/wscale from
+  rcvbuf — it has NO knob for option-order or literal window/wscale, so forging synWindows/synDarwin needs a
+  VENDORED PATCH to gVisor's EncodeSYNOptions/makeSynOptions. TTL/MSS/SACK/TS ARE configurable. Increments: (1)
+  vendor gVisor + channel.Endpoint echo through AF_PACKET (robust transport, Linux-shaped SYN); (2) wire the SYN
+  fingerprint override (config + the vendored option-order/window/wscale patch), validate vs edge ClassifyTCPOS +
+  JA4T + SYNValueAnomaly; (3) swap mgr.dial to return gonet.TCPConn -> net.no_js_execution clears, net.tcp_os_vs_ua
+  stays silent. Full session now rides real TCP.
+- **[FRONTIER 3 — distinct-build diffuse fleet: PLAN grounded]** Coordination logic is in harness coordination.py
+  (score_cluster + score_campaigns/Axis-A _CAMPAIGN_DIMS), NOT registry.yaml. The `diffuse` Skulk strategy ALREADY
+  sheds every in-sandbox binding (distinct fp/trace, Poisson stagger CV~1, no automation tell, descriptor above the
+  0.10 floor) -> a 2-dim (ja4_prefix + descriptor) CANDIDATE, not a campaign (test_coordination.py:710). The ONE
+  reducible-in-sandbox binding left is ja4_prefix (shared build). morph_profiles is NOT wired into fleet/ (grep
+  morph = empty). BLOCKER: the registry seeds ONLY camoufox (Firefox) -> all one JA4; the registry TYPES
+  browser=stealth(chromium) but no stealth profile exists. Increments: (A) add distinct-ENGINE profiles + a Skulk
+  `morph-diffuse` strategy drawing N profiles -> distinct coherent JA4 per node (FleetMember.ja4 is already
+  per-node); (B) ground the detector does NOT convict on ja4_prefix (community collapses to 1-dim); (C) negative
+  control: N > #engines -> JA4 repeats -> ja4_prefix re-densifies = the FINITE-distinct-coherent-builds ceiling
+  (the "distinct builds" economic wall made concrete). Residual after: descriptor (one-humanizer), IP-rep,
+  proxy-egress = external-data-bound.
