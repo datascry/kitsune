@@ -4476,3 +4476,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   golang:1.26-alpine — so gVisor is buildable in-sandbox. NEXT: the channel.Endpoint-over-AF_PACKET scaffold +
   gonet.DialContextTCP handshake proof (rung 1 proper). NB: keep the gVisor import in real code or `go mod tidy`
   drops it; the go.mod bump was reverted until the scaffold lands. A stray `osspoof` build artifact is gitignore-worthy.
+- **[FRONTIER 3 — rung A/B: the diffuse fleet SHEDS ja4_prefix via distinct coherent builds (grounded)]**
+  (2026-07-06). Added the Skulk `morph-diffuse` strategy (fleet/src/skulk/strategies.py): diffuse's fully-clean
+  shape (Poisson stagger, one humanizer family, distinct fp/IP, no tell) but each node runs one of the sandbox's
+  DISTINCT coherent engine builds (Firefox/Chromium/WebKit — _ENGINE_JA4_PREFIXES), so its JA4 prefix is that
+  engine's. GROUNDED via score_campaigns (the tested coordination oracle): with 3 distinct engines only ~1/3 of
+  pairs share a prefix (< _CAMPAIGN_DENSITY 0.5), so ja4_prefix is NOT dense -> the fleet drops BELOW the 2-dim
+  candidate, and this HOLDS AT SCALE (n=9, not just n<=engines). Correction to the earlier "ceiling re-densifies"
+  guess: 3 coherent builds SUFFICE to shed ja4_prefix (0.33<0.5), so the finite-builds count does NOT bite for the
+  JA4 binding. The shared-build (engines=1) fleet keeps ja4_prefix dense — the contrast showing what distinct builds
+  buy. Tests: test_axis_a_distinct_build_fleet_sheds_ja4_prefix + _shared_build_keeps_the_ja4_prefix_binding
+  (harness), test_morph_diffuse_spans_finite_distinct_engine_builds (fleet, caps at 3). So the LAST in-sandbox-
+  reducible coordination binding is SHED; the residual (one-humanizer descriptor, IP-rep, proxy-egress) is ALL
+  external-data-bound. Frontier 3 landed in-sandbox. NB the engine JA4 pool lives in fleet/ (components never import
+  each other), mirroring the coherent-build set the harness morph registry declares.

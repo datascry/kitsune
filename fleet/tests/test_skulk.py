@@ -329,3 +329,17 @@ def test_staggered_run_stamps_members_at_spread_times(monkeypatch: pytest.Monkey
     # first_seen span exceeds the lockstep window — distinct stamps across the three members.
     stamps = [next(s["observed_at"] for s in p["body"]) for p in posted]
     assert len(set(stamps)) == 3 and stamps[0] == "2026-06-27T00:00:00Z"
+
+
+def test_morph_diffuse_spans_finite_distinct_engine_builds() -> None:
+    # The distinct-COHERENT-build fleet: each node's JA4 prefix is one of the few real engines the sandbox runs, so
+    # the fleet's distinct-prefix count is capped at that engine count (the finite-distinct-builds ceiling) — enough
+    # to shed the ja4_prefix coordination binding, not more. Fully clean (no automation tell).
+    small = get("morph-diffuse").members(3, seed=1)
+    small_prefixes = {"_".join(m.ja4.split("_")[:2]) for m in small}
+    assert len(small_prefixes) == 3  # 3 nodes -> 3 distinct engine prefixes (all singletons -> ja4_prefix shed)
+    assert all(not m.automation for m in small)
+
+    large = get("morph-diffuse").members(9, seed=1)
+    large_prefixes = {"_".join(m.ja4.split("_")[:2]) for m in large}
+    assert len(large_prefixes) == 3  # 9 nodes still cap at the finite #engines: prefixes repeat, not N-distinct
