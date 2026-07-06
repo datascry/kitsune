@@ -4506,3 +4506,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   Fix those directly (non-lossy/blocking inbox + an out-of-order reassembly buffer in Read; no retransmit needed on
   a lossless bridge) -> the collector POST lands -> net.no_js_execution clears. A self-contained robust-TCP fix
   that sidesteps the gVisor dependency entirely.
+- **[FRONTIER 1 — LANDED via the pivot: flowConn robustness fix clears net.no_js_execution (no gVisor)]**
+  (2026-07-06). Fixed os-spoof's happy-path TCP directly (the gVisor path stays parked on its upstream blocker).
+  Root cause: the docker bridge is lossless+in-order, so flowConn's drops were SELF-INFLICTED — a 256-deep inbox
+  that default-dropped bursts + a strict in-order Read that discarded any seg with seq!=c.ack (a gap then
+  deadlocked the stream). FIX (stack.go): grow the inbox to 8192 (a full session's POST + reply burst fits, no
+  drop) + an out-of-order reassembly buffer (c.ooo keyed by start-seq; Read buffers future segs, drains contiguous
+  ones when the gap fills, re-ACKs dups; seqGT wraparound-safe). GROUNDED LIVE: camoufox through KS_MODE=proxy
+  (os-spoof windows-firefox) -> net.no_js_execution SILENT (it FIRED on the happy-path stack in the earlier
+  windows-firefox grounding), net.tcp_os_vs_ua SILENT (the SYN forge is untouched), br.webgl_renderer_caps_mismatch
+  SILENT. The collector POST now lands through the forged kernel — a real browser's FULL session rides the spoofed
+  OS robustly. Proven by the run producing behavioral tells (bh.power_law_violation, bh.synthetic_no_coalesced)
+  that REQUIRE the JS collector to have executed+POSTed. Residuals (per-session, not transport): power_law +
+  synthetic_no_coalesced (behaviour/humanize), pointer_touch_incoherent (camoufox NOTOUCH), webrtc_unavailable
+  (provision). The gVisor path (parked) would add the deep-TCP-behaviour close (net.tcp_static_window) + fuller
+  congestion control, but is NOT needed for this goal. BOTH in-sandbox frontiers now landed.

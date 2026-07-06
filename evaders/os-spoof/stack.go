@@ -101,7 +101,11 @@ func (m *manager) dial(prof Profile, dstPort uint16) (*flowConn, error) {
 	c := &flowConn{
 		m: m, srcPort: uint16(20000 + rand.Intn(40000)), dstPort: dstPort,
 		seq: rand.Uint32(), ttl: prof.TTL, window: prof.Window, syn: prof.SYN,
-		inbox: make(chan *layers.TCP, 256),
+		// A deep inbox absorbs a full browser session's bursts (the collector POST + the edge's multi-KB reply)
+		// so readLoop never drops on the lossless docker bridge; ooo reassembles any segment that still arrives
+		// out of order, so a gap never deadlocks the stream (the happy-path Read used to discard seq != ack).
+		inbox: make(chan *layers.TCP, 8192),
+		ooo:   map[uint32][]byte{},
 	}
 	m.mu.Lock()
 	m.conns[c.srcPort] = c
@@ -127,8 +131,12 @@ type flowConn struct {
 	syn      func() []layers.TCPOption
 	inbox    chan *layers.TCP
 	inbuf    []byte
+	ooo      map[uint32][]byte // out-of-order segments held by start-seq until the gap ahead of c.ack fills
 	deadline time.Time
 }
+
+// seqGT reports a > b in TCP sequence space (wraparound-safe).
+func seqGT(a, b uint32) bool { return int32(a-b) > 0 }
 
 type tcpFlags struct{ syn, ack, psh, fin, rst bool }
 
@@ -197,10 +205,30 @@ func (c *flowConn) Read(p []byte) (int, error) {
 		if tcp.RST {
 			return 0, errors.New("peer reset")
 		}
-		if len(tcp.Payload) > 0 && tcp.Seq == c.ack {
-			c.inbuf = append(c.inbuf, tcp.Payload...)
-			c.ack += uint32(len(tcp.Payload))
-			_ = c.send(tcpFlags{ack: true}, nil, nil)
+		if len(tcp.Payload) > 0 {
+			switch {
+			case tcp.Seq == c.ack:
+				// in-order: take it, then drain any contiguous segments buffered ahead of the now-filled gap.
+				c.inbuf = append(c.inbuf, tcp.Payload...)
+				c.ack += uint32(len(tcp.Payload))
+				for nxt, ok := c.ooo[c.ack]; ok; nxt, ok = c.ooo[c.ack] {
+					delete(c.ooo, c.ack)
+					c.inbuf = append(c.inbuf, nxt...)
+					c.ack += uint32(len(nxt))
+				}
+				_ = c.send(tcpFlags{ack: true}, nil, nil)
+			case seqGT(tcp.Seq, c.ack):
+				// a future segment (a gap precedes it): buffer for reassembly, dup-ACK the hole.
+				if _, dup := c.ooo[tcp.Seq]; !dup {
+					buf := make([]byte, len(tcp.Payload))
+					copy(buf, tcp.Payload)
+					c.ooo[tcp.Seq] = buf
+				}
+				_ = c.send(tcpFlags{ack: true}, nil, nil)
+			default:
+				// already-delivered (a peer retransmit): re-ACK so the peer advances.
+				_ = c.send(tcpFlags{ack: true}, nil, nil)
+			}
 		}
 		if tcp.FIN {
 			c.ack++
