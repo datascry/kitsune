@@ -12,8 +12,8 @@ package arena
 
 import (
 	"bytes"
-	"encoding/base64"
 	_ "embed"
+	"encoding/base64"
 	"image"
 	"image/color"
 	"image/draw"

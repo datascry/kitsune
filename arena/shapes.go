@@ -51,7 +51,7 @@ func rasterShape(shape string, noise int) string {
 	img := image.NewRGBA(image.Rect(0, 0, sz, sz))
 	draw.Draw(img, img.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Src)
 	cx, cy := sz/2+int(randInt(9))-4, sz/2+int(randInt(9))-4 // slight off-centre jitter
-	r := 20 + int(randInt(6))                               // radius 20..25
+	r := 20 + int(randInt(6))                                // radius 20..25
 	tone := uint8(20 + randInt(60))
 	col := color.RGBA{tone, tone, tone, 255}
 	for y := 0; y < sz; y++ {

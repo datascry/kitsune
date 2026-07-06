@@ -20,10 +20,10 @@ type trackTarget struct {
 }
 
 const (
-	trackCanvas    = 320.0                   // WxH canvas the target moves within
-	trackTolerance = 40.0                    // a click within this of a position "hit" it (generous — a laggy, noisy
+	trackCanvas    = 320.0 // WxH canvas the target moves within
+	trackTolerance = 40.0  // a click within this of a position "hit" it (generous — a laggy, noisy
 	//                                          human aim must reliably land; grounded against a realistic tracker)
-	trackStaleAge  = 1200 * time.Millisecond // a click on a position the target left more than this ago is STALE:
+	trackStaleAge = 1200 * time.Millisecond // a click on a position the target left more than this ago is STALE:
 	//                                          no human acts on a >1.2s-old view (they re-perceive), only a
 	//                                          snapshot-then-slowly-reason agent does. FP-safe LOWER bound.
 )
