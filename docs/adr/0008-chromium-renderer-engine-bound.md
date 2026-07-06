@@ -115,6 +115,28 @@ is Mesa, and the fix is a **tiny driver patch**, not a browser fork.
   Still a custom driver build to carry, so pursue only if Chromium/WebKit coherence is worth that upkeep;
   otherwise it stays parked as the documented plan.
 
+## Outcome (grounded 2026-07-06): the Mesa patch WORKS for WebGL; WebGPU is env-bound
+
+The scoped Mesa-patch path was BUILT and GROUNDED, and it **overturns this ADR's "external-bound" verdict for the
+WebGL renderer.** A patched Mesa 23.2.1 llvmpipe (`evaders/stealth/mesa-patch/build.sh`) whose `lp_screen.c`
+honors `KS_GL_RENDERER`/`KS_GL_VENDOR` makes Chromium/ANGLE report a hardware GPU **natively** — grounded at three
+levels (glxinfo, Chromium WebGL, the detector): `webgl_software`, `webgl_renderer_caps_mismatch`,
+`getparameter_tampered`, `worker_vs_main` **all silent**, 16384 caps, no JS spoof. Two build gotchas solved: the
+`xcb-shm` dep, and libGL's DRI **version-string check** (stamp the base image's exact Mesa version + drop `.git`).
+
+**The one residual — `webgpu_webgl_vs` (w0.7) — is environment-bound, not a patch problem.** It fires because
+"WebGL claims a hardware GPU but WebGPU exposes no real adapter" (the stealth image ships no Vulkan loader, so
+Dawn gets a null adapter). Building Mesa **lavapipe** (the Vulkan software driver) proved the same `lp_screen.c`
+patch flows through — `vulkaninfo` reports `deviceName = NVIDIA GeForce GTX 1080…`. But making **Dawn actually use**
+the software lavapipe adapter (loader + ICD + `--ignore-gpu-blocklist --enable-features=Vulkan`) **hangs headful
+Chromium** in this xvfb/software environment (5+ min, no verdict). So a Chromium morph is
+**coherent-except-`webgpu_webgl_vs`** in-sandbox; closing that last tell is gated on a stable Dawn+lavapipe path
+(a real GPU-less deployment with the loader/ICD baked in and Vulkan stable) or real silicon — genuinely external.
+
+**Net:** coherent Chromium WebGL is now in-sandbox via a ~3-line Mesa patch (engine-agnostic — it also fixes
+stealth-WebKit); the last GPU tell is env-bound. The value-proposition analysis + scope held up; the fork was never
+needed.
+
 ## References
 
 - `evaders/stealth/run.mjs:390-399` (the in-code analysis), `evaders/camoufox/run.py:379-393` +
