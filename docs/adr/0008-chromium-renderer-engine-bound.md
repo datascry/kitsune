@@ -60,6 +60,25 @@ A fully-coherent hardware-GPU Chromium morph needs **one of**:
 - **Do not re-grind** JS renderer spoofs or ANGLE-flag hunts; the next move is either real silicon or a
   patched-Chromium binary, both external.
 
+## Grounded 2026-07-06: the `LD_PRELOAD` native-interception shortcut does NOT work
+
+A tempting cheaper-than-a-fork idea: `LD_PRELOAD` a shim that rewrites the native `glGetString(GL_RENDERER/
+GL_VENDOR)` so ANGLE (under `--use-gl=angle --use-angle=gl` on Mesa llvmpipe, headful) reports a hardware
+GPU **natively** (no JS patch → no tamper/worker tells). Prototyped and grounded against stealth-Chromium;
+it **fails** at three escalating interposer levels:
+1. **PLT interpose `glGetString`** — the shim loads in all 9 Chromium processes (`LD_PRELOAD` propagates
+   fine with `--no-sandbox`), but `glGetString(RENDERER/VENDOR)` is **never called** through it. Renderer
+   unchanged (`ANGLE (Mesa, llvmpipe …)`).
+2. **Hook the resolvers** `eglGetProcAddress` / `glXGetProcAddress[ARB]` — never invoked for `glGetString`
+   either. ANGLE resolves the native GL entry points through neither the PLT nor the public resolvers.
+3. **Hook `dlsym` itself** (the only remaining path — a `dlopen(libGL)+dlsym` handle lookup bypasses 1+2) —
+   **breaks Chromium startup** (dlsym is universal; interposing it destabilizes node+Chromium; the probe
+   produced no render at all).
+So ANGLE reaches Mesa's renderer string via an internal/handle path that a userspace preload cannot
+cleanly reach, and the one hook that could is too invasive to survive. The "cheap shim" does not exist —
+coherent Chromium needs a **real build**: a patched Mesa llvmpipe (rename `GL_RENDERER` at the driver, a
+Mesa rebuild) or a patched Chromium/ANGLE. Both external. This **reinforces** the decision above.
+
 ## References
 
 - `evaders/stealth/run.mjs:390-399` (the in-code analysis), `evaders/camoufox/run.py:379-393` +
