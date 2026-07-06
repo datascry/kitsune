@@ -84,6 +84,22 @@ def test_solve_text_passes_level_through() -> None:
     assert seen["level"] == "hard"
 
 
+def test_solve_text_passes_font_and_charset_through() -> None:
+    # the two OCR-bench selectors (typeface + character set) must reach the gate as query params
+    seen: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/arena/captcha":
+            seen["font"] = request.url.params.get("font", "")
+            seen["charset"] = request.url.params.get("charset", "")
+            return httpx.Response(200, json={"kind": "text", "id": "t1", "image": _png_data_uri()})
+        return httpx.Response(200, json={"ok": True, "kind": "text"})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        solve_text("http://detector:8080", _StubRecognizer("X"), client, font="mono", charset="alnum")
+    assert seen["font"] == "mono" and seen["charset"] == "alnum"
+
+
 def test_solve_text_refuses_foreign_target() -> None:
     with httpx.Client(transport=_fake_gate("X")) as client:
         with pytest.raises(EthicsError, match="own gates"):
