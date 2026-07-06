@@ -5,6 +5,35 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.15.0](https://github.com/datascry/kitsune/compare/v1.14.0...v1.15.0) (2026-07-06)
+
+
+### Features
+
+* **arena:** difficulty levels for the moving-target widget (easy/medium/hard) ([07bc53f](https://github.com/datascry/kitsune/commit/07bc53f99d95915964d8443fe6f2c0ae3070fbd0))
+* **arena:** live claude agent caught on the rendered moving-target widget ([edf86ae](https://github.com/datascry/kitsune/commit/edf86ae59865883b0a786a451fb6b4a674ae3e3d))
+* **arena:** rendered moving-target widget — the stale-snapshot captcha, fp-safe grounded ([406ae40](https://github.com/datascry/kitsune/commit/406ae4029bad47a61f3846889b9231a669fabe61))
+* **arena:** stale-snapshot tell — catch an llm agent acting on a seconds-old view ([f20c94b](https://github.com/datascry/kitsune/commit/f20c94bf5491033b490fb2798013754acd3f6a3c))
+* **arena:** tune moving-target widget for human-solvability (9/10, fp-safe, agent-caught) ([9fb8616](https://github.com/datascry/kitsune/commit/9fb8616a5ff927ea295e803999412db72db5c4df))
+* **detector:** session_flow_robotic — the machine-regularity flow tell ([0cf7ada](https://github.com/datascry/kitsune/commit/0cf7adac7d93538c38fb5554657fe7a93cb71659))
+* **detector:** session_flow_superhuman — the multi-step flow-cadence tell ([3f35b16](https://github.com/datascry/kitsune/commit/3f35b16b31e4fa0aa9fc5dddd480e5d61eebd1a3))
+* **evaders:** add macos-firefox morph profile — camoufox mac caps bug fixed, coherent ([1c18441](https://github.com/datascry/kitsune/commit/1c184415287d65f87389bb8b8824a35c5cce3396))
+* **evaders:** arena-solver KS_HUMANIZE — paced flow evades the cadence floor tell ([e10ad84](https://github.com/datascry/kitsune/commit/e10ad84618792b8e572ceb79ab26eb71e1690645))
+* **evaders:** coherently morph the device model via cdp metadata (clean win) ([3b2ce6e](https://github.com/datascry/kitsune/commit/3b2ce6e42ab2b9ee78a45ffc013cda92b607f4bf))
+* **evaders:** curate a coherent device corpus + document the morphing stack ([a5b42d0](https://github.com/datascry/kitsune/commit/a5b42d0faa4a0f4d71798f56aedb4de935b410bf))
+* **evaders:** fall the gpu-caps wall in software (llvmpipe + coherent renderer, no gpu) ([76c8ce6](https://github.com/datascry/kitsune/commit/76c8ce6b4e5af023ac93ae30a47c0b1d9f7dba34))
+* **evaders:** ground the gpu-caps wall to a camoufox data bug (llvmpipe gives 16384 in software) ([d054eb4](https://github.com/datascry/kitsune/commit/d054eb4279d9f4c426bfb1e2455f4c4b902fc541))
+* **evaders:** ground the gpu/webgl wall — real-hardware-bound; revert corpus-string auto-apply ([28e53f2](https://github.com/datascry/kitsune/commit/28e53f24e7a0f1c1f3589983f5d6ad960f84738c))
+* **evaders:** wire the device corpus load; ground cores coherence as environment-bound ([4baa36f](https://github.com/datascry/kitsune/commit/4baa36fd7e9accf7a7a6ba4c9b7d1c4da94e5c21))
+* **harness:** cross-os morph profile (os-spoof + camoufox) — coherent; robustness is the residual ([fa1ba0e](https://github.com/datascry/kitsune/commit/fa1ba0e3a5c21f0e05331b73772358b6946f402e))
+* **harness:** full-stack morph-profile validator — per-layer coherence table, grounded ([440fc58](https://github.com/datascry/kitsune/commit/440fc5897f57eb11fc375215e7e6231162680f7b))
+* **harness:** unified morphing-profile registry + composer — linux-desktop coherent live ([a32f472](https://github.com/datascry/kitsune/commit/a32f472e8a3ca026eab283d18a109bf33cbb5d6d))
+
+
+### Bug Fixes
+
+* **arena:** apply go 1.26 gofmt import ordering (blank _ embed import) ([ca080c6](https://github.com/datascry/kitsune/commit/ca080c698fbb15a082a7763b8c354e5d547f4dac))
+
 ## [1.14.0](https://github.com/datascry/kitsune/compare/v1.13.0...v1.14.0) (2026-07-04)
 
 
