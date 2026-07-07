@@ -4636,3 +4636,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   JA4/TCP/H2. FOLLOW-UP (defense-in-depth, not blocking — the detector is internal/edge-only in the deployment): the
   detector could also reject/quarantine client-sourced network signals (authenticate the edge's own submissions), so
   a direct-to-detector path stays safe if the topology ever changes.
+- **[PRIORITY 2 / rung 1: WebKit self-normalizes WebGL — the Mesa patch is Chromium-only, NOT engine-agnostic]**
+  (2026-07-07). GROUNDED stealth-WebKit + the patched Mesa: WebKit reports a FIXED WebGL identity —
+  unmasked_renderer="Apple GPU", renderer="WebKit WebGL", vendor="WebKit", maxTex=16384 — REGARDLESS of the
+  underlying driver (the patched Mesa had ZERO effect on WebKit's output). This is Safari's privacy normalisation:
+  WebKit hardcodes the renderer strings and never exposes the GL backend, so (a) the Mesa patch is MOOT for WebKit
+  (it doesn't consume the driver string), and (b) WebKit never leaked llvmpipe in the first place (webgl_software
+  silent by construction). CORRECTS the ADR-0008 "engine-agnostic — it also fixes stealth-WebKit" claim: the patch
+  fixes CHROMIUM only (ANGLE exposes the driver renderer); WebKit's GPU is coherent by its own normalisation. Full
+  stealth-WebKit verdict through the edge: label=bot score=0.6 but GPU tells NONE (GPU coherent). The blockers are
+  CROSS-OS coherence — a Linux container under a macOS-Safari UA trips br.navplatform_vs_ua + br.font_os_vs_ua +
+  net.tcp_os_vs_ua + net.tls_grease_vs_ua + br.macos_dpr1 — plus automation (br.webdriver_present +
+  br.automation_globals) and br.media_devices_empty. So a coherent Safari/iOS WebKit slice is CROSS-OS-BOUND (the
+  container is Linux; the natural WebKit identity is macOS/iOS), NOT Mesa-unlocked: Playwright-WebKit can't forge
+  platform/fonts/TLS-GREASE natively (no engine-level spoof like camoufox; patchright is Chromium-only). A
+  same-OS Linux-WebKitGTK (Epiphany-like) identity is the only all-coherent WebKit path in-sandbox — a follow-up.

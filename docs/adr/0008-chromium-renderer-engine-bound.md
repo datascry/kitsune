@@ -133,8 +133,11 @@ Chromium** in this xvfb/software environment (5+ min, no verdict). So a Chromium
 **coherent-except-`webgpu_webgl_vs`** in-sandbox; closing that last tell is gated on a stable Dawn+lavapipe path
 (a real GPU-less deployment with the loader/ICD baked in and Vulkan stable) or real silicon — genuinely external.
 
-**Net:** coherent Chromium WebGL is now in-sandbox via a ~3-line Mesa patch (engine-agnostic — it also fixes
-stealth-WebKit); the last GPU tell is env-bound. The value-proposition analysis + scope held up; the fork was never
+**Net:** coherent Chromium WebGL is now in-sandbox via a ~3-line Mesa patch; the last GPU tell is env-bound.
+**NB (grounded 2026-07-07): the patch is Chromium-only, NOT engine-agnostic** — WebKit self-normalises its
+WebGL renderer to Safari's fixed `Apple GPU`/`WebKit WebGL`/`WebKit` and ignores the GL driver entirely, so the
+patch is moot for WebKit (which never leaked the software renderer anyway). A coherent Safari/iOS WebKit slice
+is cross-OS-bound (Linux-WebKit under a macOS UA), not Mesa-unlocked. The value-proposition analysis + scope held up; the fork was never
 needed.
 
 ## References
