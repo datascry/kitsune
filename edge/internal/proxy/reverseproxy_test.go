@@ -656,12 +656,14 @@ func TestJA4TWindowScale(t *testing.T) {
 	}
 }
 
-func TestSanitizeClientIngestStripsNetwork(t *testing.T) {
-	// A client-proxied /ingest body carrying a FORGED network signal (source lies about the layer's
-	// authority) alongside a legitimate browser signal — the network one must be dropped, browser kept.
+func TestSanitizeClientIngestStripsServerLayers(t *testing.T) {
+	// A client-proxied /ingest body carrying FORGED server-authoritative signals (network JA4 + a clean
+	// reputation) alongside legitimate browser+behavioral signals — only browser+behavioral must survive.
 	body := `[` +
 		`{"session_id":"s","layer":"network","kind":"ja4","value":"forged","source":"collector","observed_at":"2026-01-01T00:00:00Z"},` +
-		`{"session_id":"s","layer":"browser","kind":"user_agent","value":"UA","source":"collector","observed_at":"2026-01-01T00:00:00Z"}]`
+		`{"session_id":"s","layer":"reputation","kind":"asn_is_datacenter","value":false,"source":"collector","observed_at":"2026-01-01T00:00:00Z"},` +
+		`{"session_id":"s","layer":"browser","kind":"user_agent","value":"UA","source":"collector","observed_at":"2026-01-01T00:00:00Z"},` +
+		`{"session_id":"s","layer":"behavioral","kind":"trace_hash","value":"abc","source":"collector","observed_at":"2026-01-01T00:00:00Z"}]`
 	r := httptest.NewRequest(http.MethodPost, "/ingest", strings.NewReader(body))
 	sanitizeClientIngest(r)
 	out, _ := io.ReadAll(r.Body)
@@ -669,8 +671,13 @@ func TestSanitizeClientIngestStripsNetwork(t *testing.T) {
 	if err := json.Unmarshal(out, &sigs); err != nil {
 		t.Fatalf("rewritten body not valid signal JSON: %v", err)
 	}
-	if len(sigs) != 1 || sigs[0].Layer != "browser" || sigs[0].Kind != "user_agent" {
-		t.Fatalf("expected only the browser signal to survive, got %+v", sigs)
+	if len(sigs) != 2 {
+		t.Fatalf("expected only browser+behavioral to survive, got %+v", sigs)
+	}
+	for _, s := range sigs {
+		if s.Layer != "browser" && s.Layer != "behavioral" {
+			t.Fatalf("server-authoritative layer %q survived: %+v", s.Layer, s)
+		}
 	}
 	if int(r.ContentLength) != len(out) {
 		t.Fatalf("Content-Length %d != body len %d", r.ContentLength, len(out))

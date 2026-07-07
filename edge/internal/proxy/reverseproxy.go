@@ -620,12 +620,14 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.backend.ServeHTTP(w, r)
 }
 
-// sanitizeClientIngest strips network-layer signals from a client-proxied /ingest POST body. The edge is the
-// SOLE authority for network signals — it observes the raw ClientHello/TCP/H2 and forwards them via forward();
-// a browser client legitimately POSTs only browser/behavioral signals. Without this, a client can inject a
-// forged layer=network signal (a coherent browser's JA4) that OVERRIDES the edge's server-observed fingerprint
-// in the detector's latest-per-kind merge, collapsing the network layer's unforgeability (research-radar
-// PRIORITY 3). Fail-open on any read/parse error — no worse than the prior pass-through behaviour.
+// sanitizeClientIngest keeps ONLY browser+behavioral signals in a client-proxied /ingest POST body, dropping any
+// server-authoritative layer (network, reputation, …) a client tries to inject. The collector emits only
+// browser+behavioral (grounded: 140 browser + 18 behavioral S() calls, zero network/reputation); the edge is the
+// SOLE authority for network signals (raw ClientHello/TCP/H2, forwarded via forward()) and the detector for
+// reputation (its IP classifier). Without this, a client could inject a forged layer=network JA4 (or a clean
+// reputation signal) with a future observed_at that OVERRIDES the server-observed value in the detector's
+// latest-per-kind merge — collapsing those layers' unforgeability (research-radar PRIORITY 3). Fail-open on any
+// read/parse error — no worse than the prior pass-through behaviour.
 func sanitizeClientIngest(r *http.Request) {
 	if r.Method != http.MethodPost || r.URL.Path != "/ingest" || r.Body == nil {
 		return
@@ -643,7 +645,7 @@ func sanitizeClientIngest(r *http.Request) {
 	kept := make([]signal.Signal, 0, len(sigs))
 	dropped := false
 	for _, s := range sigs {
-		if s.Layer == "network" {
+		if s.Layer != "browser" && s.Layer != "behavioral" {
 			dropped = true
 			continue
 		}
