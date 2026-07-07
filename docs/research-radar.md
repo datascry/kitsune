@@ -4600,3 +4600,25 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (ANGLE-normalized or needing a real-GPU reference DB); the durable perf tell is VALIDATED + specced but its
   promotion wants a real-GPU perf corpus (external). The detector is robust against the renderer spoof this session
   built; further GPU-substance hardening is external-data-bound.
+
+## Three-in-sandbox-frontiers loop (41c2d24b)
+
+- **[PRIORITY 3 / rung 1: GROUNDED a network-signal TRUST-BOUNDARY gap — the replay axis's real payoff]**
+  (2026-07-07). Chasing the replay axis surfaced a FOUNDATIONAL gap, grounded live. The coherence thesis rests on the
+  network layer being SERVER-OBSERVED (you can't forge your JA4 — the edge reads it from the raw ClientHello). But:
+  (1) the collector POSTs signals to `/ingest` via the edge proxy (demo.py:8,2849 — same-origin, proxied to the
+  detector); (2) the edge forwards the client body VERBATIM (reverseproxy.go:617 backend.ServeHTTP — no sanitisation)
+  while separately POSTing its own edge-observed network signals; (3) the detector's `merge_sessions`
+  (ingest.py:383-398) keeps the LATEST signal per (layer,kind) by the CLIENT-CONTROLLED `observed_at`, with NO
+  source-trust check (Source enum has edge/collector/detector but nothing enforces layer=network => source=edge). So a
+  client can POST a forged `layer=network` signal (a coherent browser's JA4/TCP/H2) with a future `observed_at` and it
+  OVERRIDES the edge's real observation. GROUNDED: POSTed an edge ja4 then a client (source=collector) forged ja4 with
+  a later timestamp under one session -> `/session/{id}` shows the FORGED value stored (override CONFIRMED); two
+  identical replayed payloads both score `human` (no freshness/dedup at /ingest either). IMPACT: the "unforgeable"
+  network layer is client-forgeable — a bot can clear net.tls_vs_ua / ja4_tool_vs_ua etc. by POSTing a matching JA4,
+  and a full captured (network+browser) payload replays coherently with NO real browser and NO uTLS/os-spoof forge.
+  This is the replay/freshness axis's real find: not a niche replay, but a source-trust hole under the whole net layer.
+  FIX (rung 2, BLUE): a source-trust boundary — authenticate the edge's OWN network-signal POSTs (a shared secret the
+  edge attaches to forward() and STRIPS from proxied client requests); the detector accepts layer=network signals ONLY
+  from authenticated edge POSTs; client-proxied POSTs may submit browser/behavioral only. Then ground: forged network
+  via the edge is REJECTED (before: override; after: the edge's real fp stands), a real browser still scores coherent.
