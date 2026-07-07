@@ -4,6 +4,15 @@
 # Coherence invariant: every field tells ONE OS story. A firing coherence tell on a composed run is a registry bug.
 # os_spoof: the os-spoof KS_PROFILE (kernel/TLS forge) — null when os_target == the Linux host (native, no forge).
 # gpu.backend llvmpipe: Mesa software rasterizer that reports AND allocates 16384 caps (the GPU-caps wall, in software).
+#
+# Why camoufox-only (grounded 2026-07-07 — do NOT add a Chromium/WebKit profile expecting full coherence):
+# - CHROMIUM via the Mesa renderer patch (ADR-0008) clears the WebGL string tells (webgl_software/caps/tamper/worker)
+#   but STILL trips (a) webgpu_webgl_vs — env-bound, Dawn+software-Vulkan hangs headful Chromium — AND (b) our own
+#   br.webgl_perf_vs_renderer, which catches the software render SPEED behind the hardware string. Two firing coherence
+#   tells => it violates the zero-coherence-tell invariant above. Not registry-coherent until real GPU silicon.
+# - WEBKIT self-normalises its WebGL renderer (Safari's Apple GPU / WebKit), so its GPU is coherent, but a Safari/iOS
+#   identity is CROSS-OS-bound (the container is Linux; Playwright-WebKit can't forge platform/fonts/TLS-GREASE
+#   natively). A same-OS Linux-WebKitGTK identity is the only candidate WebKit path — unbuilt.
 
 profiles:
   # FULLY coherent in-sandbox: host IS Linux, so kernel/TLS are native (no os-spoof); Mesa renderer @ 16384 via llvmpipe.

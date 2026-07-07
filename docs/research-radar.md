@@ -4665,3 +4665,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   weak-GPU boundary (the sandbox has only software GL); browser.webgl_render_ms rides for that calibration. This is
   the DURABLE substance tell: it survives a webgpu_webgl_vs closure (lavapipe) because SPEED can't be string-spoofed.
   Detector suite green (507 passed, 95.71% coverage); catalog regenerated.
+- **[PRIORITY 1 / rungs 1a+1b: the linux-chrome profile is BLOCKED — Chromium can't be registry-coherent]**
+  (2026-07-07). Grounded that a coherent `linux-chrome` morph-registry profile (1b) is not addable, and the red<->blue
+  dynamic is why: the morph registry's invariant is ZERO firing coherence tells ("a firing coherence tell on a
+  composed run is a registry bug"). A Chromium morph via the Mesa renderer patch clears the WebGL STRING tells but
+  trips (a) webgpu_webgl_vs (env-bound — Dawn+software-Vulkan hangs) AND (b) our OWN new br.webgl_perf_vs_renderer
+  (the perf tell from 1c catches the software render speed behind the hardware string). So the blue perf tell we just
+  shipped REINFORCES that Chromium is not registry-coherent in-sandbox — the registry stays camoufox-only until real
+  GPU silicon. Documented the reasoning in morph_profiles.yaml so a future contributor doesn't retry it. 1a (bake the
+  Mesa driver into the stealth Dockerfile) is DEFERRED as low-ROI: a ~15-20min image build to productise a morph that
+  is itself now caught (webgpu + perf), no new frontier. NET: Priority 1's value was rung 1c (the durable perf tell,
+  landed); 1a/1b are marginal/blocked. The three frontiers' high-value in-sandbox rungs are now exhausted — P3
+  network-signal trust boundary (fixed), P2 WebKit (grounded: cross-OS-bound), P1c perf tell (landed) — the remainder
+  is external-data-bound (real GPU silicon, residential egress, prevalence) or marginal productization.
