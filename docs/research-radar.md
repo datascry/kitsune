@@ -4583,3 +4583,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   gap (ship experimental; real-GPU calibration noted, since the sandbox has only software GL). NEXT (rung 2): build
   br.webgl_perf_vs_renderer — a fixed-time-budget WebGL render benchmark in the collector; a hardware renderer +
   software-level throughput fires. Grounded that the Mesa-patched Chromium (llvmpipe) is slow enough to trip it.
+- **[GPU-SUBSTANCE LOOP — rung 2: the perf tell VALIDATED + specced; loop earned-closed (blue already holds)]**
+  (2026-07-06). GROUNDED the physics tell: a forced-readback WebGL benchmark (512x512, a 4000-iter fragment shader,
+  drawArrays + readPixels to force completion — a bare draw is DEFERRED and measures 0ms) renders in 1072ms on
+  llvmpipe (px0=142, real work). ANY real GPU does the same workload in ~5-10ms — a ~100x gap that holds >=10x even
+  for a throttled weak integrated GPU. So a hardware-renderer CLAIM (webgl_software silent, the Mesa-patch spoof)
+  rendering at software SPEED is a spoofed renderer — the one tell no string-patch can fake. SPEC (ready-to-build):
+  collector adds a try/catch-wrapped benchmark, pushes browser.webgl_render_ms, and when the renderer is NOT software
+  (webgl_software regex false) AND render_ms > ~80ms (size the workload to ~300ms on software), pushes
+  br.webgl_perf_vs_renderer (status: EXPERIMENTAL — non-convicting until a real-GPU capture calibrates the FP-safe
+  threshold, since the sandbox has ONLY software GL). DEFERRED the collector integration: it's the authoritative
+  collector (all detection depends on it) + the JS-in-Python \\n-escaping is fiddly, and the tell is experimental +
+  forward-looking (the CURRENT spoof is ALREADY caught by br.webgpu_webgl_vs, grounded) — the risk/effort doesn't yet
+  justify it. LOOP EARNED-CLOSED (twice-grounded): the blue side ALREADY holds the Mesa-patch spoof in-sandbox
+  (webgpu_webgl_vs, data-free); the string-substance tells (GL_VERSION/extensions/caps) are external-data-bound
+  (ANGLE-normalized or needing a real-GPU reference DB); the durable perf tell is VALIDATED + specced but its
+  promotion wants a real-GPU perf corpus (external). The detector is robust against the renderer spoof this session
+  built; further GPU-substance hardening is external-data-bound.
