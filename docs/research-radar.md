@@ -4678,3 +4678,12 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   landed); 1a/1b are marginal/blocked. The three frontiers' high-value in-sandbox rungs are now exhausted — P3
   network-signal trust boundary (fixed), P2 WebKit (grounded: cross-OS-bound), P1c perf tell (landed) — the remainder
   is external-data-bound (real GPU silicon, residential egress, prevalence) or marginal productization.
+- **[PRIORITY 3 / rung 3: generalise the trust boundary — strip ALL server-authoritative layers, not just network]**
+  (2026-07-07). Extended the rung-2 fix after auditing the other layers: the collector emits ONLY browser+behavioral
+  (140 + 18 S() calls, grounded), so REPUTATION is server-authoritative too (detector IP classifier — asn_is_datacenter,
+  is_abuse_listed) and was equally client-injectable via the same latest-per-kind merge — a client could POST a clean
+  reputation signal (asn_is_datacenter=false) to clear a datacenter/abuse tell. sanitizeClientIngest now keeps ONLY
+  browser+behavioral and drops any other layer (network, reputation, future). GROUNDED live: a forged network ja4 +
+  a forged reputation asn_is_datacenter=false POSTed through the edge are BOTH stripped (session network=[]
+  reputation=[]) with the browser signal kept. Unit test covers both layers; full edge vet/test green. The trust
+  boundary is now complete across every server-observed layer, not just the one the replay probe first hit.
