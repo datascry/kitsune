@@ -4731,3 +4731,22 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   reference matrix = EXTERNAL-DATA-BOUND (the sandbox has ONE version per engine; can't ground "claims N, runs M").
   So #2's in-sandbox win is already shipped; the version extension = PRIORITY 3 (JS quirks), also version-matrix-bound.
   This redirects the loop: the family joint-coherence is done, and the version leverage is external.
+- **[PRIORITY 3 / rung 3: engine JS-identity is ALSO already covered — the loop's premise was wrong; TERMINUS]**
+  (2026-07-08). Checked the engine-level JS-quirk coherence against the registry: it is comprehensively shipped.
+  Engine-identity-vs-UA already reads multiple surfaces — br.apple_ua_nonwebkit (window.chrome under a Safari UA),
+  br.firefox_ua_nongecko (buildID under a non-Firefox UA), net.ch_ua_on_non_chromium_ua (Sec-CH-UA present under a
+  Safari/Firefox UA), net.ch_ua_vs_ua_browser, and browser.vendor_engine vs browser.ua_engine. The KNOWN forged-JA4
+  gap (uTLS/curl-impersonate emitting a Chrome-identical JA4 to beat the family tells) is CLOSED by
+  net.tls_ext_order_static — a pinned Chrome template that copies the cipher list + GREASE + PQ but does not permute
+  the ClientHello extension order per-connection like real Chrome >=110 (grounded on the go-tls KS_STATICEXT evader,
+  "critically non-redundant with the family"). Plus native-function tamper detection (function_tostring_tampered +
+  the native-constructor invariants) and the within-session rotation family (ja4/h2/ip/ua). So a DEEPER JS-engine
+  tell (Error.stack format, property order, Math ULP) would be REDUNDANT: the realistic evaders are already caught by
+  JA4 + tls_ext_order_static + the shallow-JS engine tells, and the only case a deeper tell adds is redundant with
+  those. TERMINUS (twice-in-a-row grounded no-new-rung): the loop's three high-leverage moves are ALL banked or
+  external — #2 family cross-layer coherence DONE (4 grounded rules), #3 engine JS-identity DONE (5+ grounded rules
+  incl. the forged-TLS closer), #2/#3 VERSION-level external-data-bound (JA4/H2 are engine-stable; needs a
+  browser-version reference matrix), #1 LIVENESS hard/arena-converging (strong form needs a per-build render
+  reference; freshness form marginal since the network layer already catches whole-body replay). NET: the
+  cross-layer + engine-coherence detection suite is far deeper + more grounded than the loop assumed — a
+  confidence result, not a gap. The frontier stays where prior loops left it: external-data-bound or economic.
