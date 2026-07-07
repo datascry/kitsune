@@ -1177,6 +1177,18 @@ rules:
     last_validated: "2026-06-18"
     source: "Headless Chrome falls back to SwiftShader. Weight 0.3 (< suspicious): corporate VM/VDI users also have software WebGL, so it must corroborate (with other headless tells) rather than convict alone"
 
+  - id: br.webgl_perf_vs_renderer
+    title: WebGL renderer names hardware but renders at software speed — the substance behind the string
+    layers: [browser]
+    reads: [browser.webgl_perf_vs_renderer]
+    predicate: present
+    weight: 0.3
+    status: experimental
+    category: environment
+    added: "2026-07-07"
+    last_validated: "2026-07-07"
+    source: "The DURABLE GPU-substance tell. A driver patch (the Mesa mesa-patch red evader) can name a hardware GPU while rendering on software (llvmpipe), clearing webgl_software + the caps/tamper/worker family (grounded, ADR-0008) — but it CANNOT fake SPEED. The collector renders a heavy fragment shader and forces completion with a readPixels readback (a bare draw is DEFERRED and times ~0), clocking the render; software (llvmpipe) is ~40-100x slower than any real GPU (grounded: 512x512x4000-iter = 1072ms on llvmpipe vs ~10ms on hardware). webgl_perf_vs_renderer fires when the renderer names HARDWARE (webgl_software silent) yet renders slower than the threshold — a physics gap no string-spoof closes. Complements webgpu_webgl_vs (which catches the same spoof via a null WebGPU adapter but is closeable with lavapipe); this survives that. EXPERIMENTAL + category environment (corroborating, not convicting) until a REAL-GPU perf corpus calibrates the FP-safe threshold: the sandbox has only software GL, so the fast-hardware side is un-groundable in-box, and a throttled weak integrated GPU could approach the threshold. FP-safe by construction on the honest paths: a real software renderer NAMES itself (webgl_software) so it is excluded, and a real hardware GPU renders fast so it never fires; only the hardware-string-plus-software-speed contradiction trips it. browser.webgl_render_ms rides alongside for calibration. Promote to category coherence (convicting) once the real-GPU threshold is set."
+
   - id: br.permissions_anomaly
     title: Notification.permission contradicts the Permissions API state
     layers: [browser]

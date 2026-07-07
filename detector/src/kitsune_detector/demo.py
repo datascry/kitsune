@@ -1917,6 +1917,37 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       sigs.push(S("browser", "webgl_renderer_caps_mismatch", true));
     }
     if (/swiftshader|llvmpipe|software|mesa/i.test(wg.renderer)) sigs.push(S("browser", "webgl_software", true));
+    // GPU-SUBSTANCE perf probe (G-perf): a driver patch (Mesa mesa-patch) can name a hardware GPU while rendering
+    // on software (llvmpipe) — clearing webgl_software + the caps/tamper family — but it CANNOT fake SPEED. Render a
+    // heavy fragment shader, force completion with a readback (a bare draw is DEFERRED, times ~0), and clock it.
+    // Software is ~40-100x slower than any real GPU (a physics gap no string-spoof closes). webgl_perf_vs_renderer
+    // fires when the renderer names HARDWARE yet renders at software speed. WebGL1 one-line shader (no #version, no
+    // escaping). Wrapped so a compile/context failure never breaks the collector; the raw ms rides for calibration.
+    try {
+      var _bc = document.createElement("canvas"); _bc.width = 256; _bc.height = 256;
+      var _bg = _bc.getContext("webgl") || _bc.getContext("experimental-webgl");
+      if (_bg) {
+        var _vs = "attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }";
+        var _fs = "precision highp float; void main(){ float x = 0.0; for (int i = 0; i < 3000; i++) { x += sin(float(i) * 0.017 + gl_FragCoord.x) * cos(float(i) * 0.013 + gl_FragCoord.y); } gl_FragColor = vec4(fract(x), 0.2, 0.3, 1.0); }";
+        var _mk = function (t, s) { var o = _bg.createShader(t); _bg.shaderSource(o, s); _bg.compileShader(o); return o; };
+        var _pr = _bg.createProgram(); _bg.attachShader(_pr, _mk(_bg.VERTEX_SHADER, _vs)); _bg.attachShader(_pr, _mk(_bg.FRAGMENT_SHADER, _fs)); _bg.linkProgram(_pr);
+        if (_bg.getProgramParameter(_pr, _bg.LINK_STATUS)) {
+          _bg.useProgram(_pr);
+          var _pbuf = _bg.createBuffer(); _bg.bindBuffer(_bg.ARRAY_BUFFER, _pbuf); _bg.bufferData(_bg.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), _bg.STATIC_DRAW);
+          var _ploc = _bg.getAttribLocation(_pr, "p"); _bg.enableVertexAttribArray(_ploc); _bg.vertexAttribPointer(_ploc, 2, _bg.FLOAT, false, 0, 0);
+          var _ppx = new Uint8Array(4);
+          _bg.drawArrays(_bg.TRIANGLES, 0, 3); _bg.readPixels(0, 0, 1, 1, _bg.RGBA, _bg.UNSIGNED_BYTE, _ppx); // warm + force
+          var _pnow = function () { return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now(); };
+          var _pt0 = _pnow();
+          _bg.drawArrays(_bg.TRIANGLES, 0, 3); _bg.readPixels(0, 0, 1, 1, _bg.RGBA, _bg.UNSIGNED_BYTE, _ppx);
+          var _pms = _pnow() - _pt0;
+          sigs.push(S("browser", "webgl_render_ms", Math.round(_pms)));
+          // Renderer names hardware (not caught by webgl_software) yet renders at software speed -> spoofed backend.
+          var _psoft = /swiftshader|llvmpipe|software|mesa|angle \\(google/i.test(wg.renderer || "");
+          if (!_psoft && wg.renderer && _pms > 50) sigs.push(S("browser", "webgl_perf_vs_renderer", true));
+        }
+      }
+    } catch (_pe) {}
     // The MOBILE analog of webgl_renderer_caps_mismatch (which only patterns DESKTOP high-end GPUs: RTX/Radeon/
     // Apple-M/Arc). A recent-FLAGSHIP mobile GPU exposes MAX_TEXTURE/RENDERBUFFER/VIEWPORT all 16384; a renderer
     // string naming one with any of those < 16384 is a string spoofed over a lesser/SwiftShader (8192) backend —
