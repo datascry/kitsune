@@ -4563,3 +4563,23 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   worker silent — committed, the headline overturning ADR-0008); a Chromium morph is "coherent-except-webgpu_webgl_vs"
   in-sandbox, the last GPU tell gated on a stable Dawn+lavapipe path (baked loader/ICD in a real GPU-less deployment,
   or real silicon). lavapipe recipe + the finding recorded for when that path stabilizes.
+
+## GPU-substance-coherence loop (4cfe6ae5 — blue counter to the Mesa-patch renderer spoof)
+
+- **[GPU-SUBSTANCE LOOP — rung 1: grounded the spoof's residual substance; performance is the durable tell]**
+  (2026-07-06). Probed the Mesa-patched Chromium (renderer spoofed to NVIDIA GTX 1080, br.webgl_software silent) for
+  the substance the STRING-spoof left behind. Grounded: GL_VERSION + shading-language = ANGLE-NORMALIZED to "WebGL
+  2.0 (OpenGL ES 3.0 Chromium)" — GPU-agnostic, NOT a tell (ANGLE hides the underlying Mesa version from the WebGL
+  VERSION param). getSupportedExtensions() = 32, only 1 NV extension ("NV_shader_noperspective_interpolation") — a
+  real NVIDIA exposes a richer NV set, but ANGLE curates the WebGL extension surface, so distinguishing needs
+  real-GPU reference data. Caps vector = llvmpipe's REAL values (not ANGLE-clamped — MAX_TEXTURE_SIZE 16384
+  proven-allocatable, maxVertexUniform 1024) but telling them from a real GTX 1080's needs a real-GPU caps DB. So the
+  string-level substance is either ANGLE-NORMALIZED or EXTERNAL-DATA-BOUND (a real-GPU reference), and there is NO
+  real GPU in-sandbox to calibrate FP-safety. The EXISTING br.webgpu_webgl_vs (w0.7: WebGL claims a hardware GPU but
+  WebGPU exposes no real adapter) is the DATA-FREE, FP-safe catch and ALREADY convicts the spoof (grounded); the red
+  side's only in-sandbox bypass (lavapipe) hangs Dawn (env-bound). The one DURABLE, ~data-free in-sandbox tell left is
+  PERFORMANCE: software (llvmpipe) renders ~40-100x slower than ANY real GPU (incl. low-end integrated), a physics gap
+  no string-spoof can fake — a hardware-GPU renderer claim with software-level throughput convicts, FP-safe by the
+  gap (ship experimental; real-GPU calibration noted, since the sandbox has only software GL). NEXT (rung 2): build
+  br.webgl_perf_vs_renderer — a fixed-time-budget WebGL render benchmark in the collector; a hardware renderer +
+  software-level throughput fires. Grounded that the Mesa-patched Chromium (llvmpipe) is slow enough to trip it.
