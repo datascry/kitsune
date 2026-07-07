@@ -12,7 +12,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/big"
 	"net"
@@ -614,7 +616,49 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	p.forward(prep.signals)
+	sanitizeClientIngest(r)
 	p.backend.ServeHTTP(w, r)
+}
+
+// sanitizeClientIngest strips network-layer signals from a client-proxied /ingest POST body. The edge is the
+// SOLE authority for network signals — it observes the raw ClientHello/TCP/H2 and forwards them via forward();
+// a browser client legitimately POSTs only browser/behavioral signals. Without this, a client can inject a
+// forged layer=network signal (a coherent browser's JA4) that OVERRIDES the edge's server-observed fingerprint
+// in the detector's latest-per-kind merge, collapsing the network layer's unforgeability (research-radar
+// PRIORITY 3). Fail-open on any read/parse error — no worse than the prior pass-through behaviour.
+func sanitizeClientIngest(r *http.Request) {
+	if r.Method != http.MethodPost || r.URL.Path != "/ingest" || r.Body == nil {
+		return
+	}
+	raw, err := io.ReadAll(r.Body)
+	_ = r.Body.Close()
+	r.Body = io.NopCloser(bytes.NewReader(raw))
+	if err != nil {
+		return
+	}
+	var sigs []signal.Signal
+	if json.Unmarshal(raw, &sigs) != nil {
+		return // not a signal list — leave the body untouched
+	}
+	kept := make([]signal.Signal, 0, len(sigs))
+	dropped := false
+	for _, s := range sigs {
+		if s.Layer == "network" {
+			dropped = true
+			continue
+		}
+		kept = append(kept, s)
+	}
+	if !dropped {
+		return
+	}
+	out, err := signal.Marshal(kept)
+	if err != nil {
+		return // keep the original body on the unexpected marshal failure
+	}
+	r.Body = io.NopCloser(bytes.NewReader(out))
+	r.ContentLength = int64(len(out))
+	r.Header.Set("Content-Length", strconv.Itoa(len(out)))
 }
 
 func (p *ReverseProxy) forward(sigs []signal.Signal) {
