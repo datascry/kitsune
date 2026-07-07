@@ -59,15 +59,21 @@ profiles:
     gpu: {vendor: Apple, renderer: "Apple M1, or similar", caps: 16384, backend: llvmpipe}
 ```
 
-The 3 fully-coherent identities are **Firefox-engine (camoufox)** across Linux/Windows/macOS — the in-sandbox
-ceiling. Only camoufox spoofs the renderer STRING to a hardware GPU at the engine level, so `webgl_software` stays
-silent. A **Chromium/WebKit** morph (stealth) reports the real software-GL renderer → `webgl_software`, and the
-headful+patchright config needed to shed automation tells adds its own CH-version/TLS/collector residuals — so a
-clean non-Firefox identity is external-hardware / stealth-hardening bound (grounded 2026-07-05).
+The 3 fully-coherent identities are **Firefox-engine (camoufox)** across Linux/Windows/macOS. **Chromium/WebKit are
+no longer external-bound for the renderer** (grounded 2026-07-06, overturning the earlier claim + ADR-0008): a
+**patched Mesa llvmpipe** (`evaders/stealth/mesa-patch/build.sh`, env-override `KS_GL_RENDERER`/`KS_GL_VENDOR`)
+reports a hardware renderer STRING **natively** — engine-agnostic, below Blink — so Chromium's WebGL is coherent
+(`webgl_software` + caps + tamper + worker all silent, no JS spoof). camoufox does it at the Gecko level; the Mesa
+patch does it at the driver level for every engine. A Chromium morph is now **coherent-except-`webgpu_webgl_vs`**
+in-sandbox: that last GPU tell needs a stable Dawn+lavapipe path (env-bound — software Vulkan hangs headful Chromium;
+lavapipe *does* report the GPU at the Vulkan level, proven) or real silicon. The headful+patchright config to shed
+automation tells still carries CH-version/TLS/collector residuals — a separate stealth-hardening axis.
 
-Grounded 2026-07-05: `linux-desktop` validates **COHERENT** (every coherence layer silent); the cross-OS
-`windows-firefox` too — its one residual being os-spoof's happy-path stack robustness (→ gVisor), not coherence.
-The layer table above is the human-readable view of this registry.
+Grounded 2026-07-05/06: `linux-desktop` validates **COHERENT** (every coherence layer silent); the cross-OS
+`windows-firefox` too. Its one residual — os-spoof's happy-path stack dropping the collector POST
+(`net.no_js_execution`) — was **fixed directly** (2026-07-06): a deep inbox + out-of-order reassembly in `flowConn`
+land a full browser session through the forged kernel, no gVisor needed. The layer table above is the
+human-readable view of this registry.
 
 ## Morph on demand — the atomic swap
 

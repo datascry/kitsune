@@ -8,7 +8,7 @@ other trackers can't be a current snapshot: [`research-radar.md`](research-radar
 current**: when an axis closes or a frontier moves, edit it *here*. If a claim here disagrees with the radar, the
 radar's newest dated entry wins — reconcile it up into this doc.
 
-_Last reconciled: **2026-07-05**, detector ruleset **0.74.57**._
+_Last reconciled: **2026-07-06**, detector ruleset **0.74.57**._
 
 ## The one-sentence state
 
@@ -47,7 +47,8 @@ grounded.** A *fleet* of them, fully clean, is the terminus — external-bound.
 - **`os-spoof`** (`KS_MODE=proxy`) — forges the **TCP SYN kernel** fingerprint for cross-OS morphs (`NET_RAW`+`NET_ADMIN`); route the browser via `KS_PROXY=socks5://os-spoof:1080` (grounded closing `tcp_os_vs_ua`)
 - **Fleet composition + capture:** `harness/tools/fleet_capture.sh` (`task coordination-fleet-capture`), `harness/tools/headful_capture.mjs`
 - **`KS_LLVMPIPE`** (camoufox) — **falls the GPU-caps wall in software**: Mesa `llvmpipe` reports + *allocates* 16384 (RAM-backed) under a coherent-16384 renderer entry → every caps tell silent, **no GPU** (grounded 2026-07-05)
-- **The composition is per-layer, not one tool** — see [`coherent-stack.md`](coherent-stack.md); the GPU-caps "hardware wall" **fell in software**, so a **Linux-target morph is fully coherent in-sandbox**; what's left is cross-OS native TLS (target-OS browser), camoufox's mac DB caps bug, and the mobile core count
+- **`KS_GL_RENDERER`/`KS_GL_VENDOR`** (stealth Chromium/WebKit) — a **patched Mesa llvmpipe** (`evaders/stealth/mesa-patch/build.sh`) reports a hardware GPU renderer/vendor **natively** (no JS spoof), so Chromium's WebGL renderer is coherent: `webgl_software` + caps + tamper + worker all silent (grounded 2026-07-06). The engine-level renderer fix ADR-0008 first called external-bound — now in-sandbox via a ~3-line driver patch, engine-agnostic. Residual `webgpu_webgl_vs` is env-bound (Dawn+software-Vulkan hangs headful Chromium; lavapipe proven to report the GPU at the Vulkan level)
+- **The composition is per-layer, not one tool** — see [`coherent-stack.md`](coherent-stack.md); the GPU-caps "hardware wall" **fell in software**, and the Chromium/WebKit **renderer wall fell too** (patched Mesa), so a **Linux-target morph is fully coherent in-sandbox on Firefox AND coherent-except-`webgpu` on Chromium**; what's left is cross-OS native TLS (target-OS browser), camoufox's mac DB caps bug, the mobile core count, and the env-bound WebGPU adapter
 - **Now an EXECUTABLE registry** — `harness/src/kitsune_harness/morph_profiles.yaml` (one identity per row, all layers) + `compose()` + `morph_validate.py` (the `profile → {layer: status}` coherence table); a declared identity yields a validated coherent morph in one run (grounded: `linux-desktop` COHERENT, `windows-firefox` cross-OS coherent)
 
 **State.** A single coherent headful, morphing, humanized node scores **`human`** (per-session is saturated → it
@@ -66,7 +67,7 @@ is the honest boundary of the lab.
 | External input | Unblocks |
 |---|---|
 | **Residential proxy egress** (paid pool) | the clean-fleet coordination frontier; the direct-residential humanizer fleet (native MSS, no tunnel tell) |
-| **Real-hardware fingerprint corpora** (real GPUs / devices) | distinct-build fleet fingerprints; live-capture verification of the `devices.json` corpus (18 tuples). **NB: GPU *caps* no longer need real silicon** — Mesa `llvmpipe` reports + allocates the 16384 floor in software (grounded 2026-07-05, `KS_LLVMPIPE`); what's still external is the distinct-*build* fleet diversity + Tier-3 real-GPU *behavioural* nuance beyond the caps |
+| **Real-hardware fingerprint corpora** (real GPUs / devices) | distinct-build fleet fingerprints; live-capture verification of the `devices.json` corpus (18 tuples). **NB: GPU *caps* AND the *renderer string* no longer need real silicon** — Mesa `llvmpipe` reports + allocates the 16384 caps floor (`KS_LLVMPIPE`) and a patched Mesa reports a hardware *renderer* natively (`KS_GL_RENDERER`, engine-agnostic — Chromium/WebKit too), both in software (grounded 2026-07-05/06); what's still external is the distinct-*build* fleet diversity, Tier-3 real-GPU *behavioural* nuance, and a stable Dawn+Vulkan path for the WebGPU adapter (`webgpu_webgl_vs`) |
 | **Prevalence / production traffic** | IP-reputation, rarity/prevalence scoring, think-time distributions, the corpus-wide trace-similarity floor |
 | **Real mobile devices** | the coherent Android / iOS device slice |
 | **A physical network** (`NET_ADMIN`, middleboxes) | active TCP-stack probing; QUIC/HTTP-3 paths (ADR-0005). *Partly addressed (red side):* `os-spoof` forges the TCP SYN kernel with client-side `NET_RAW`+`NET_ADMIN` (available in-sandbox — grounded closing `tcp_os_vs_ua`); what's still external is deep TCP *behaviour* (window/retransmit → gVisor `netstack`) + real middlebox validation |
