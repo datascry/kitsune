@@ -59,12 +59,15 @@ profiles:
     gpu: {vendor: Apple, renderer: "Apple M1, or similar", caps: 16384, backend: llvmpipe}
 ```
 
-The 3 fully-coherent identities are **Firefox-engine (camoufox)** across Linux/Windows/macOS. **Chromium/WebKit are
+The 3 fully-coherent identities are **Firefox-engine (camoufox)** across Linux/Windows/macOS. **Chromium is
 no longer external-bound for the renderer** (grounded 2026-07-06, overturning the earlier claim + ADR-0008): a
 **patched Mesa llvmpipe** (`evaders/stealth/mesa-patch/build.sh`, env-override `KS_GL_RENDERER`/`KS_GL_VENDOR`)
-reports a hardware renderer STRING **natively** — engine-agnostic, below Blink — so Chromium's WebGL is coherent
+reports a hardware renderer STRING **natively** — below Blink — so Chromium's WebGL is coherent
 (`webgl_software` + caps + tamper + worker all silent, no JS spoof). camoufox does it at the Gecko level; the Mesa
-patch does it at the driver level for every engine. A Chromium morph is now **coherent-except-`webgpu_webgl_vs`**
+patch does it at the ANGLE/driver level. **NB (grounded 2026-07-07): Chromium-only, NOT engine-agnostic** — WebKit
+self-normalises its WebGL renderer to Safari's fixed `Apple GPU`/`WebKit` and ignores the GL driver, so the patch is
+moot for it; WebKit's GPU is coherent by that normalisation (it never leaked llvmpipe). A Chromium morph is now
+**coherent-except-`webgpu_webgl_vs`**
 in-sandbox: that last GPU tell needs a stable Dawn+lavapipe path (env-bound — software Vulkan hangs headful Chromium;
 lavapipe *does* report the GPU at the Vulkan level, proven) or real silicon. The headful+patchright config to shed
 automation tells still carries CH-version/TLS/collector residuals — a separate stealth-hardening axis.
