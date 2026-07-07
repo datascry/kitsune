@@ -4687,3 +4687,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   a forged reputation asn_is_datacenter=false POSTed through the edge are BOTH stripped (session network=[]
   reputation=[]) with the browser signal kept. Unit test covers both layers; full edge vet/test green. The trust
   boundary is now complete across every server-observed layer, not just the one the replay probe first hit.
+- **[THREE-FRONTIERS LOOP — reconciled + at terminus]** (2026-07-07). The loop's high-value in-sandbox rungs are
+  exhausted. Landed this cycle: P3 the signal-integrity axis (the network-signal trust-boundary gap — found, fixed,
+  and generalized to all server-authoritative layers), P2 the WebKit grounding (self-normalises; the Mesa patch is
+  Chromium-only; a Safari slice is cross-OS-bound), P1c the durable GPU-substance perf tell. Reconciled the new
+  **signal integrity / replay** axis into frontier.md (earned-closed). Remaining candidates are all marginal or
+  external-bound, deliberately NOT pursued: (a) a detector-side defense-in-depth for the trust boundary needs a
+  shared edge↔detector secret for marginal value — the edge is the trusted sole gateway and the detector is internal;
+  (b) baking the Mesa driver into the stealth Dockerfile (1a) productises a morph that is itself now caught (webgpu +
+  the new perf tell), no new frontier; (c) a same-OS Linux-WebKitGTK slice is speculative and likely partial
+  (tls_grease + automation residuals). The residual P3 frontier — a coherent-network replay (uTLS+os-spoof + replayed
+  browser signals) — needs a server-observed liveness challenge for the base collector, which converges on the
+  existing arena gate and is hard/external. Recommend cutting the batch (10+ commits) rather than grinding marginals.
