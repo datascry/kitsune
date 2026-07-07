@@ -4699,3 +4699,21 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (tls_grease + automation residuals). The residual P3 frontier — a coherent-network replay (uTLS+os-spoof + replayed
   browser signals) — needs a server-observed liveness challenge for the base collector, which converges on the
   existing arena gate and is hard/external. Recommend cutting the batch (10+ commits) rather than grinding marginals.
+
+## High-leverage-detections loop (1fbcb3f0)
+
+- **[PRIORITY 1 / rung 1: liveness design grounded — strong liveness is coupled to the P2 build reference]**
+  (2026-07-07). Traced the session flow: the edge sets the ks_sid COOKIE, the collector reads it (demo.py:740
+  document.cookie ks_sid) and tags its signals, the edge posts network signals under that session. Today there is NO
+  server-issued liveness binding — only the collector's own client-generated KS_LOAD nonce (for trace_replay). Design
+  for the base-collector liveness challenge: the edge mints a per-load CHALLENGE nonce (cookie + a network.challenge
+  signal via forward(), which the trust-boundary strip leaves intact since it is the edge's OWN direct POST), the
+  collector echoes it (browser.challenge_echo), and the detector cross-checks (network.challenge == browser echo, the
+  same shape as net.tcp_os_vs_ua). BUT: the FRESHNESS-only echo (rung 1a) is marginal — a scripted replayer through
+  the edge reads the fresh cookie and echoes it correctly, and a whole-body replay is already caught by the
+  post-trust-boundary network layer (the edge observes the replayer's real JA4). The VALUABLE form is nonce-SEEDED
+  liveness (rung 1b): the nonce parameterises the fingerprint compute (a nonce-seeded canvas/WebGL draw) so a
+  replayer can't reuse a captured static render — but VERIFYING the seeded response requires knowing what the claimed
+  build SHOULD produce = the PRIORITY 2 build reference. So #1(strong) is COUPLED to #2: sequence #2's reference
+  capture first, then nonce-seed it. Kicked off the P2 reference capture (Chromium/Firefox/WebKit per-layer vectors
+  through the edge, background) — the enabler for both the exact-build coherence tell AND the liveness verification.
