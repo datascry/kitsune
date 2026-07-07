@@ -61,6 +61,15 @@ the realm the patch never reached; `WORKER_WRAP` is the escalation that hides fr
 but trips `worker_constructor_tampered`. See [`stealth/README.md`](stealth/README.md) for the full
 mode table.
 
+**GPU coherence without a JS spoof — `mesa-patch/`** (grounded 2026-07-06): every JS renderer spoof is
+caught (`getparameter_tampered` / `worker_vs_main` / `webgpu_webgl_vs`), so `mesa-patch/build.sh` builds
+a patched Mesa 23.2.1 llvmpipe whose `lp_screen.c` honours `KS_GL_RENDERER`/`KS_GL_VENDOR` env overrides.
+Injected over the image's `swrast_dri.so`, it makes Chromium/ANGLE report a **hardware** GPU renderer
+*natively* — `webgl_software` + caps + tamper + worker all silent, no JS. It's the driver-level analog of
+camoufox's Gecko-level `webgl_config`, and **engine-agnostic** (Chromium AND WebKit). This overturned
+ADR-0008's "external-bound" for the Chromium WebGL renderer; the one residual (`webgpu_webgl_vs`) is
+env-bound on a stable Dawn+Vulkan path. See [`docs/adr/0008`](../docs/adr/0008-chromium-renderer-engine-bound.md).
+
 ## Ethics — non-negotiable, enforced in code
 
 Every evader may target **only** Kitsune's own detector/edge and the approved public test endpoints in
