@@ -4651,3 +4651,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   container is Linux; the natural WebKit identity is macOS/iOS), NOT Mesa-unlocked: Playwright-WebKit can't forge
   platform/fonts/TLS-GREASE natively (no engine-level spoof like camoufox; patchright is Chromium-only). A
   same-OS Linux-WebKitGTK (Epiphany-like) identity is the only all-coherent WebKit path in-sandbox — a follow-up.
+- **[PRIORITY 1 / rung 1c: BUILT the blue perf tell br.webgl_perf_vs_renderer — the durable GPU-substance tell]**
+  (2026-07-07). The collector now runs a try/catch-wrapped forced-readback WebGL benchmark (256x256, a 3000-iter
+  fragment shader, drawArrays+readPixels — a bare draw is DEFERRED and clocks ~0), pushes browser.webgl_render_ms,
+  and when the renderer names HARDWARE (webgl_software regex false) yet renders slower than 50ms emits
+  browser.webgl_perf_vs_renderer -> the new rule (weight 0.3, category environment = CORROBORATING not convicting,
+  status experimental). WebGL1 one-line shader (no #version -> no JS-in-Python newline escaping). GROUNDED red<->blue
+  end-to-end through the detector: (a) the Mesa-patched Chromium (hardware string NVIDIA + llvmpipe speed) FIRES
+  webgl_perf_vs_renderer with render_ms=102ms while webgl_software stays SILENT; (b) a plain Chromium (honest
+  llvmpipe string) does NOT fire it (webgl_software fires instead — honest software names itself, excluded by the
+  _psoft guard). FP-safe by construction on the honest paths: real software self-names, real hardware renders fast
+  (~10ms << 50ms). EXPERIMENTAL/corroborating until a real-GPU perf corpus calibrates the fast-hardware + throttled-
+  weak-GPU boundary (the sandbox has only software GL); browser.webgl_render_ms rides for that calibration. This is
+  the DURABLE substance tell: it survives a webgpu_webgl_vs closure (lavapipe) because SPEED can't be string-spoofed.
+  Detector suite green (507 passed, 95.71% coverage); catalog regenerated.

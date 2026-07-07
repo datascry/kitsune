@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **189 rules**: 129 active · 54 experimental · 6 retired; 137 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **190 rules**: 129 active · 55 experimental · 6 retired; 137 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,7 +56,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (136)
+### browser layer (137)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -190,6 +190,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.voices_empty` | environment | present | 0.5 | experimental | No speech-synthesis voices (headless/container — a real desktop has OS TTS) |
 | `br.webgl2_missing` | environment | present | 0.4 | experimental | WebGL2 unsupported (headless software rendering) |
 | `br.webgl_not_angle` | environment | present | 0.55 | experimental | Chromium UA but the WebGL renderer is not ANGLE-wrapped — renderer spoof |
+| `br.webgl_perf_vs_renderer` | environment | present | 0.3 | experimental | WebGL renderer names hardware but renders at software speed — the substance behind the string |
 | `br.webgl_software` | environment | present | 0.3 | active | WebGL renderer is software (SwiftShader / llvmpipe / Mesa) — headless tell |
 | `br.webgpu_webgl_vs` | environment | present | 0.7 | active | WebGL renderer claims a hardware GPU but WebGPU exposes no real adapter (spoofed renderer) |
 | `br.webrtc_unavailable` | environment | present | 0.6 | active | WebRTC gathers no ICE candidates (disabled/blocked) |
