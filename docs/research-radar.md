@@ -4717,3 +4717,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   build SHOULD produce = the PRIORITY 2 build reference. So #1(strong) is COUPLED to #2: sequence #2's reference
   capture first, then nonce-seed it. Kicked off the P2 reference capture (Chromium/Firefox/WebKit per-layer vectors
   through the edge, background) — the enabler for both the exact-build coherence tell AND the liveness verification.
+- **[PRIORITY 2 / rung 2: family-level exact-build coherence is ALREADY comprehensively covered — version is external]**
+  (2026-07-07). Captured the real Chromium reference vector through the edge and read it against the registry — the
+  loop's premise ("JA4/H2/CH-UA checked independently") is WRONG. The edge derives per-layer browser HINTS
+  (ja4_browser_hint, h2_browser_hint, ch_ua_browser) and FOUR shipped rules already bind them to the UA family:
+  net.tls_vs_ua_browser (ja4 vs ua), net.h2_vs_ua_browser (Akamai h2 vs ua), net.ja4_tool_vs_ua (no-JS tool JA4 vs
+  UA header), net.h2_unknown_vs_ua (unknown h2 order under a browser UA) — all grounded + FP-safe, with a
+  Chromium-family collapse (edge/brave/opera -> chrome) that fixed real-Edge FPs. The real Chromium ref confirms it:
+  ja4/h2/ch_ua hints all = chrome, ua_browser = chrome -> every family tell SILENT (coherent, no fire). So the
+  FAMILY-level cross-layer exact-engine coherence — the highest-leverage joint constraint — is ALREADY BANKED. What's
+  NOT covered is the VERSION level (chrome 131 vs 120), but JA4/H2 are engine-STABLE (they identify the engine, not
+  the version; version leaks only via CH-UA-full-version + JS quirks), so version-coherence needs a browser-VERSION
+  reference matrix = EXTERNAL-DATA-BOUND (the sandbox has ONE version per engine; can't ground "claims N, runs M").
+  So #2's in-sandbox win is already shipped; the version extension = PRIORITY 3 (JS quirks), also version-matrix-bound.
+  This redirects the loop: the family joint-coherence is done, and the version leverage is external.
