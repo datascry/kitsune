@@ -8,15 +8,18 @@ other trackers can't be a current snapshot: [`research-radar.md`](research-radar
 current**: when an axis closes or a frontier moves, edit it *here*. If a claim here disagrees with the radar, the
 radar's newest dated entry wins — reconcile it up into this doc.
 
-_Last reconciled: **2026-07-06**, detector ruleset **0.74.57**._
+_Last reconciled: **2026-07-07**, detector ruleset **0.74.57**._
 
 ## The one-sentence state
 
 Per-session **fingerprint** detection is saturated and per-session evasion needs a **coherent real browser** (built);
 the live arms race has moved to **behaviour** (a wide, permanent human band), **coordination** (earned-closed
 in-sandbox — the fully-clean fleet is external-bound), and **LLM agents** (caught by loop *structure*, not cognition
-— the `track` gate). Every remaining frontier is either a **permanent human band** or **gated on external data we
-have no in-sandbox source for**.
+— the `track` gate). A distinct new axis — **signal integrity** — was found *and* closed this cycle: the network layer
+is only unforgeable if server-*observed*, and a client could overwrite the edge's JA4 / IP-rep by POSTing forged
+signals through the same `/ingest` proxy — now fixed (the edge is the sole authority for server-observed layers).
+Every remaining frontier is either a **permanent human band** or **gated on external data we have no in-sandbox
+source for**.
 
 ## Axis status board
 
@@ -29,6 +32,7 @@ have no in-sandbox source for**.
 | LLM-agent | **earned-closed** | `track` gate convicts by the snapshot→reason→act loop's physics; reasoning honeypots defeated by alignment | — (structural tell shipped + live-validated) |
 | active TCP-stack probe | **forgeable + robust (red)** | `os-spoof` closes `tcp_os_vs_ua` (grounded) AND now carries a **full browser session** — the flowConn robustness fix (deep inbox + out-of-order reassembly) clears `net.no_js_execution` on a real camoufox session through `KS_MODE=proxy` (grounded 2026-07-06); `net.tcp_static_window` stays silent even on the full flow. gVisor netstack (parked on an upstream go-build bug) would add fuller congestion control | a physical network with middleboxes (deep-TCP-behaviour validation) |
 | mobile (Android / iOS) | **earned-closed** | no in-sandbox coherent Android fp; actual-behaviour GPU probes convict emulation/forks | real device hardware |
+| signal integrity / replay | **earned-closed** (blue) | grounded a foundational gap — a client could OVERWRITE the edge's server-observed JA4/TCP + the detector's IP-rep by POSTing forged network/reputation signals through the same `/ingest` proxy (latest-per-kind merge, no source-trust). FIXED: the edge's `sanitizeClientIngest` keeps only browser+behavioral in client-proxied bodies, dropping every server-authoritative layer (grounded before→after, network + reputation). Also shipped the durable GPU-**substance** tell `webgl_perf_vs_renderer` (a hardware renderer string rendering at software speed — the Mesa-patch red evader's speed betrays it) | the coherent-network replay (uTLS+os-spoof + replayed browser signals) needs a server-observed **liveness challenge** (arena-style) for the base collector — hard/arena-converging |
 
 ## The red frontier — the morphing-human headful fleet
 
