@@ -4622,3 +4622,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   edge attaches to forward() and STRIPS from proxied client requests); the detector accepts layer=network signals ONLY
   from authenticated edge POSTs; client-proxied POSTs may submit browser/behavioral only. Then ground: forged network
   via the edge is REJECTED (before: override; after: the edge's real fp stands), a real browser still scores coherent.
+- **[PRIORITY 3 / rung 2: BLUE fix — the edge enforces the network-signal source-trust boundary]**
+  (2026-07-07). Closed the rung-1 gap. The edge is the SOLE authority for network signals (it observes the raw
+  ClientHello/TCP/H2 and forwards them via forward(), a separate direct POST); a browser client legitimately POSTs
+  only browser/behavioral. Added `sanitizeClientIngest` (edge reverseproxy.go): on a client-proxied POST /ingest it
+  parses the body and STRIPS any layer=network signal before proxying to the detector (fail-open on read/parse
+  error — no worse than before). Verified the collector NEVER emits a network-layer signal (138 browser + 18
+  behavioral S() calls, zero network — the network layer is exclusively edge-observed), so stripping is FP-safe by
+  construction. GROUNDED RED->BLUE end-to-end: POSTing a forged network ja4 THROUGH the edge now yields
+  `/session/{id}` network=[] (stripped) with the browser signal kept — vs rung-1's override CONFIRMED. Unit tests
+  (strip-network + leave-other-paths-untouched) pass; full edge `go vet`+`go test ./...` green; gofmt clean. Net:
+  the network layer's unforgeability is restored — a client can no longer overwrite the edge's server-observed
+  JA4/TCP/H2. FOLLOW-UP (defense-in-depth, not blocking — the detector is internal/edge-only in the deployment): the
+  detector could also reject/quarantine client-sourced network signals (authenticate the edge's own submissions), so
+  a direct-to-detector path stays safe if the topology ever changes.

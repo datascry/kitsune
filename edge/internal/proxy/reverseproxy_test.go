@@ -6,6 +6,7 @@ package proxy
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"io"
 	"net"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/datascry/kitsune/edge/internal/fingerprint"
 	"github.com/datascry/kitsune/edge/internal/session"
+	"github.com/datascry/kitsune/edge/internal/signal"
 )
 
 func helloFixture(t *testing.T) *fingerprint.ClientHello {
@@ -650,6 +652,45 @@ func TestJA4TWindowScale(t *testing.T) {
 		s, p := ja4tWindowScale(c.ja4t)
 		if s != c.scale || p != c.present {
 			t.Errorf("ja4tWindowScale(%q)=(%d,%v) want (%d,%v)", c.ja4t, s, p, c.scale, c.present)
+		}
+	}
+}
+
+func TestSanitizeClientIngestStripsNetwork(t *testing.T) {
+	// A client-proxied /ingest body carrying a FORGED network signal (source lies about the layer's
+	// authority) alongside a legitimate browser signal — the network one must be dropped, browser kept.
+	body := `[` +
+		`{"session_id":"s","layer":"network","kind":"ja4","value":"forged","source":"collector","observed_at":"2026-01-01T00:00:00Z"},` +
+		`{"session_id":"s","layer":"browser","kind":"user_agent","value":"UA","source":"collector","observed_at":"2026-01-01T00:00:00Z"}]`
+	r := httptest.NewRequest(http.MethodPost, "/ingest", strings.NewReader(body))
+	sanitizeClientIngest(r)
+	out, _ := io.ReadAll(r.Body)
+	var sigs []signal.Signal
+	if err := json.Unmarshal(out, &sigs); err != nil {
+		t.Fatalf("rewritten body not valid signal JSON: %v", err)
+	}
+	if len(sigs) != 1 || sigs[0].Layer != "browser" || sigs[0].Kind != "user_agent" {
+		t.Fatalf("expected only the browser signal to survive, got %+v", sigs)
+	}
+	if int(r.ContentLength) != len(out) {
+		t.Fatalf("Content-Length %d != body len %d", r.ContentLength, len(out))
+	}
+}
+
+func TestSanitizeClientIngestLeavesOtherPathsUntouched(t *testing.T) {
+	// A GET, a non-/ingest POST, and a non-signal body must pass through byte-for-byte.
+	for _, tc := range []struct {
+		method, path, body string
+	}{
+		{http.MethodGet, "/ingest", ""},
+		{http.MethodPost, "/other", `[{"layer":"network"}]`},
+		{http.MethodPost, "/ingest", `not json`},
+	} {
+		r := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
+		sanitizeClientIngest(r)
+		out, _ := io.ReadAll(r.Body)
+		if string(out) != tc.body {
+			t.Fatalf("%s %s: body altered %q -> %q", tc.method, tc.path, tc.body, string(out))
 		}
 	}
 }
