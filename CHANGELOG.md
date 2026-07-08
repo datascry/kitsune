@@ -5,6 +5,21 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.17.0](https://github.com/datascry/kitsune/compare/v1.16.0...v1.17.0) (2026-07-08)
+
+
+### Features
+
+* **detector:** add the webgl perf-vs-renderer gpu-substance tell (experimental) ([e19bc02](https://github.com/datascry/kitsune/commit/e19bc027ee35682d35aedad7d5e6c73f81eba7c6))
+
+
+### Bug Fixes
+
+* **edge:** block detector admin endpoints from the public edge (data-disclosure) ([e7e0c5f](https://github.com/datascry/kitsune/commit/e7e0c5fe35b606047b02c8e0eefbd53a7aac60f7))
+* **edge:** cap the /ingest body size to prevent memory-exhaustion dos ([f146fcc](https://github.com/datascry/kitsune/commit/f146fcc65a0832de267ca0576e255c36290088b9))
+* **edge:** enforce the network-signal source-trust boundary at the proxy ([0e84b76](https://github.com/datascry/kitsune/commit/0e84b76b8d9f43e41402bbca2364338a22296632))
+* **edge:** generalize the trust boundary — keep only browser+behavioral client signals ([63a3d15](https://github.com/datascry/kitsune/commit/63a3d15624ed01ca3227ed99de9a7f68931115f2))
+
 ## [1.16.0](https://github.com/datascry/kitsune/compare/v1.15.0...v1.16.0) (2026-07-06)
 
 
