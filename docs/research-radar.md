@@ -4903,3 +4903,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   A documented gap (the reCAPTCHA/hCaptcha audio-accessibility family) is now a fully-featured, coherence-joined
   ASR-benchmark gate that mirrors every property of the existing gates. NEXT: PRIORITY 3 — the 3D-FunCaptcha spatial
   gate (a variety extension of rotate).
+- **[PRIORITY 3 / rung 1: 3D-FunCaptcha spatial gate CORE built + unit-grounded]**
+  (2026-07-08). Built arena/spatial.go — the Arkose/FunCaptcha 3D-object family, a variety extension of the 2D
+  `rotate` gate. Renders a grid of ISOMETRIC CUBES (pure-Go: fillQuad scanline-fills the top diamond + two shaded
+  side faces, drawLine edges, per-level speckle) at random orientations, each with a distinct top-face colour;
+  MintSpatial picks a target colour and asks "Select every cube with the <colour> face on top" (6 tiles easy, 9
+  medium/hard), guaranteeing >=1 match. The answer (sorted matching tile indices) stays server-side; CheckSpatial is
+  an order-independent, de-duped set match. Genuinely spatial (identify the TOP face of a rotated cube, not a 2D
+  glyph), procedural + OWNED zero-license (like the shapes gate), reusing the image-select grid + PNG-data-URI
+  primitives. GROUNDED via 2 unit tests (arena go test): mint yields the right tile count + a non-empty answer + valid
+  PNG tiles at every level; verify passes an order-independent correct set and rejects subset/superset/empty. NEXT
+  (rung 2): wire GET /arena/spatial + POST /arena/spatial/verify (single-use take + token + superhuman-speed floor),
+  register the `spatial` slug + grid page widget, add to the catalog, then the detector relay + coherence join.
