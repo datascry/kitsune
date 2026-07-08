@@ -5049,3 +5049,12 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   reliable + packaged; the sole residual is the provisionable container GPU/WebRTC environment floor, which is
   neither a gate nor a coherence tell. The arena-gate-defeat ladder is COMPLETE — the arena thesis is proven from
   the red side: defeat requires BEING coherent + pacing, exactly as designed.
+- **[R4+ (generalize): the WHOLE latest arena defeated in ONE coherent session — grounded]**
+  (2026-07-08). Generalized the profile: KS_ARENA_SOLVE accepts "all" (or a comma list) — one coherent camoufox
+  session solves clock + spatial + audio SEQUENTIALLY on a single ks_sid. GROUNDED LIVE first attempt: gate oks =
+  {clock:True, spatial:True, audio:True} (ALL THREE PASSED, each paced past its floor, no arena anomaly) and the
+  session is label=SUSPICIOUS 0.360 (NOT bot) with only br.webgl_perf_vs_renderer + br.webrtc_unavailable (the
+  environment floor). So a SINGLE coherent, provisioned, real-input browser session defeats the ENTIRE latest arena
+  in one shot — net.no_js_execution + all three arena_*_superhuman absent, network/behavioral/reputation 0.0. This
+  is the capstone: the arena-gate-defeat ladder is COMPLETE and GENERALIZED. The only residual remains the
+  provisionable container GPU/WebRTC floor. Documented the `all` invocation in evaders/arena-defeat/README.md.
