@@ -938,6 +938,18 @@ rules:
     last_validated: "2026-07-08"
     source: "Kitsune arena AUDIO-gate solve coherence — the ASR-benchmark twin of bh.arena_captcha_superhuman. The owned arena/audio gate mints a spoken-digit WAV and measures the SERVER-OBSERVED solve time (issue->verify, tracked in the audio store — unforgeable, unlike a client-asserted proof). A human must PLAY the clip in real time before answering; an ASR solver batch-transcribes it in milliseconds. A CORRECT transcription submitted faster than the clip's real-time listen floor (len x 450ms, under FSDD's ~600ms/digit playback) is automation, not a listener. The gate returns anomaly:solved_faster_than_audio; the detector relay (/arena/audio/verify) joins it to ks_sid so a solver that PASSES the gate is CONVICTED on coherence instead of cleared (the arena thesis: a challenge is not a bot/human discriminator — the SOLVE-BEHAVIOUR is). HUMAN-TIME-bound (listen+type), NOT compute-bound, so HARDWARE-INDEPENDENT. FP-SAFE BY CONSTRUCTION: the floor sits under the clip's real-time playback so no human answers before hearing it; precision 1.0 is load-bearing. GROUNDED LIVE 2026-07-08: the matched-filter evaders/arena-solver-audio transcribes an easy clip (solve_ms << floor) -> anomaly + the joined session convicts; a real-time listen is silent. Convicting (w0.85). See docs/research-radar.md (arena-gate-gaps loop)."
 
+  - id: bh.arena_shell_precomputed
+    title: Shell-game answered correctly before the shuffle could finish — swap payload precomputed, not watched
+    layers: [behavioral]
+    reads: [behavioral.arena_shell_precomputed]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-07-09"
+    last_validated: "2026-07-09"
+    source: "Kitsune arena SHELL-GAME solve coherence — a track-under-OCCLUSION gate (arena/shellgame.go), the object-permanence sibling of the arena timing tells. A ball hidden under one of N cups is shuffled by a server-defined swap sequence; the client must WATCH the occluded ball and click its final cup. The SERVER-OBSERVED solve time (issue->verify, tracked in the shell store — unforgeable) is measured against the shuffle runtime (sum of the per-swap animation ms, minted WITH the challenge). A human cannot know the final cup until the shuffle animation SETTLES, so a correct answer necessarily arrives at or after shuffleMs; an automation that reads the swap payload COMPUTES the final position and submits in milliseconds — a correct answer FASTER than the shuffle runtime is precomputed, not watched. The gate returns anomaly:solved_before_shuffle; the detector relay (/arena/shell/verify) joins it to ks_sid so a solver that PASSES the gate is CONVICTED on coherence (the arena thesis: the solve-BEHAVIOUR discriminates, not the puzzle). Targets the snapshot->reason->act agent specifically: sampling the DOM at discrete times cannot follow a ball INVISIBLE during the shuffle, so the agent guesses wrong or reads the payload and answers too fast. HUMAN-TIME-bound (watch the shuffle), NOT compute-bound, so HARDWARE-INDEPENDENT. FP-SAFE BY CONSTRUCTION: the floor is the exact animation runtime the client was given, and no human can answer before the ball settles -> precision 1.0 is load-bearing. GROUNDED LIVE 2026-07-09 BOTH DIRECTIONS: an automation replaying the swaps submits in 1ms -> anomaly + the joined session convicts; a human who waits the 2100ms shuffle then clicks is silent. Convicting (w0.85). See docs/research-radar.md (novel-arena-gates loop)."
+
   - id: bh.arena_trajectory_forged
     title: Slider/rotate drag trajectory claims more drag-time than the whole server-observed solve — synthesized
     layers: [behavioral]
