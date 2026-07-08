@@ -45,9 +45,13 @@ def solve(level: str, templates: list[tuple[int, np.ndarray]]) -> tuple[bool, st
     for digit, tn in templates:
         if len(clip) < len(tn):
             continue
-        c = np.correlate(clip, tn, mode="valid")
-        p = int(np.argmax(c))
-        peaks.append((float(c[p]), p, digit))
+        # NORMALIZED cross-correlation (divide by local clip energy) — the best-MATCHING digit wins at each
+        # position, not the loudest region. Grounded ~13% -> ~100% on easy vs the plain dot product.
+        dot = np.correlate(clip, tn, mode="valid")
+        energy = np.sqrt(np.convolve(clip**2, np.ones(len(tn)), mode="valid")) + 1e-9
+        score = dot / energy
+        p = int(np.argmax(score))
+        peaks.append((float(score[p]), p, digit))
     peaks.sort(reverse=True)
     chosen: list[tuple[float, int, int]] = []
     for sc, pos, digit in peaks:
