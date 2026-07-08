@@ -5036,3 +5036,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   clear it toward human) and is NEITHER a gate tell NOR a coherence tell — the arena thesis holds exactly: a solved
   gate is not a discriminator; only the (defeated) per-session coherence + the (provisionable) environment floor are.
   NEXT (R4): harden into a reusable arena-defeat profile + improve the matched-filter reliability.
+- **[R4 (polish): audio NCC solve (~13%->~100% easy) + reusable arena-defeat PROFILE — ladder hardened]**
+  (2026-07-08). Hardened the defeat. (1) Replaced the audio matched-filter's plain dot-product with NORMALIZED
+  cross-correlation (divide by local clip energy so the best-MATCHING digit wins, not the loudest) — grounded 15/15
+  vs plain 2/15 on easy against the arena. Ported to both evaders/camoufox/run.py and evaders/arena-solver-audio.
+  Re-grounded the audio DEFEAT: now clean on the FIRST attempt (answer=4909 ok=True, label=suspicious 0.360, only
+  webgl_software + webrtc_unavailable) — no more retry loop for the solve. (2) Wrote evaders/arena-defeat/README.md:
+  the reusable profile documenting the recipe (coherent camoufox stack KS_HARDENED+PROVISION+HEADFUL+REAL_INPUT +
+  KS_ARENA_SOLVE={clock|spatial|audio}), the two tells each naive solve trips + how the stack clears each, the
+  grounded per-gate results, and the honest caveats (suspicious-not-human, audio needs the corpus for easy / real
+  ASR for medium-hard, the flaky software-WebGL floor). LADDER STATE: all three latest gates DEFEATED and now
+  reliable + packaged; the sole residual is the provisionable container GPU/WebRTC environment floor, which is
+  neither a gate nor a coherence tell. The arena-gate-defeat ladder is COMPLETE — the arena thesis is proven from
+  the red side: defeat requires BEING coherent + pacing, exactly as designed.
