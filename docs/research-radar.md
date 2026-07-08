@@ -4825,3 +4825,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   AUDIT COMPLETE: 2 grounded fixes this loop (rung 1 admin data-disclosure, rung 2 /ingest body-size DoS) + 3
   safe-clears (input-validation, arena gates, edge proxy) + the noted rate-limit observation; session_id entropy +
   unbounded-store recorded. The pipeline-security surface is now audited end-to-end.
+
+## Arena-gate-gaps loop (48346582)
+
+- **[PRIORITY 1 / rung 1: audio/ASR gate — SCOPED the source; embedded licensed spoken-digit corpus]**
+  (2026-07-08). Scoped the in-sandbox audio-source constraint. No audio tools (espeak/sox/ffmpeg absent) and the
+  arena runtime is DISTROLESS (gcr.io/distroless/static — no runtime binaries), so TTS-at-mint is out; audio must be
+  pure-Go synthesis + //go:embed, mirroring the image gates (embedded NotoEmoji.ttf, quickdraw.ndjson CC-BY, procedural
+  shapes). Internet IS reachable in-box (raw.githubusercontent 200), so a FAITHFUL spoken-digit gate (the reCAPTCHA/
+  hCaptcha audio-accessibility analog = the ASR benchmark twin of text/OCR + image/CV) is buildable via an EMBEDDED
+  licensed corpus: the Free Spoken Digit Dataset (FSDD, github Jakobovski) — 3000 8kHz WAVs of digits 0-9,
+  {digit}_{speaker}_{index}.wav. PLAN: embed a small curated FSDD subset (a few speakers x digits 0-9, ~tens of small
+  WAVs) with attribution + license (like quickdraw.ATTRIBUTION.txt), then arena/audio.go mints a random digit
+  SEQUENCE by concatenating samples in pure Go + per-difficulty distortion (additive noise / pitch / tempo / speaker-
+  mix / overlap), serves a WAV, single-use verifies the transcription (digit string), signs the token; a superhuman-
+  speed floor (answered faster than the clip's listen-time = automation) rides the verdict. Reference solver = Whisper/
+  ASR (evaders/arena-solver-ocr sibling). NEXT (rung 2): fetch + curate + embed the FSDD subset with license.
