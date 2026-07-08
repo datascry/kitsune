@@ -4841,3 +4841,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   mix / overlap), serves a WAV, single-use verifies the transcription (digit string), signs the token; a superhuman-
   speed floor (answered faster than the clip's listen-time = automation) rides the verdict. Reference solver = Whisper/
   ASR (evaders/arena-solver-ocr sibling). NEXT (rung 2): fetch + curate + embed the FSDD subset with license.
+- **[PRIORITY 1 / rung 2: audio gate CORE built + unit-grounded — embed + pure-Go WAV codec + mint/verify]**
+  (2026-07-08). Fetched + embedded a curated FSDD subset (60 8kHz WAVs: 3 speakers x digits 0-9 x 2, CC-BY-SA 4.0,
+  arena/assets/fsdd/ + fsdd.ATTRIBUTION.txt). Built arena/audio.go: a pure-Go WAV codec (encode/decode 8kHz mono
+  16-bit PCM — no runtime deps, satisfying the distroless-runtime constraint), loadDigitSamples() embeds the corpus
+  via //go:embed, MintAudio(level) picks a random digit sequence (4/5/6 by easy/medium/hard), concatenates a random
+  speaker sample per digit with a per-level inter-digit gap (250/125/50ms — shrinks so clips bleed), applies additive
+  noise + a background tone per level, and returns the clip as a data:audio/wav;base64 URI + the answer (digit
+  string, server-side only). CheckAudio digits-only-normalises + exact-matches. GROUNDED via 4 unit tests (arena go
+  test): corpus loads for all 10 digits, mint yields a decodable non-empty WAV + correct-length answer at every level,
+  verify accepts the right/​spaced answer + rejects wrong/empty, the WAV codec roundtrips. NEXT (rung 3): wire the
+  GET /arena/audio + POST /arena/audio/verify mux (single-use take + token + superhuman-speed floor), register the
+  `audio` slug + page widget, add to the catalog, and ground the full mint->solve->verify + coherence join live.
