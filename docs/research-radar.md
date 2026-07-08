@@ -5058,3 +5058,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   in one shot — net.no_js_execution + all three arena_*_superhuman absent, network/behavioral/reputation 0.0. This
   is the capstone: the arena-gate-defeat ladder is COMPLETE and GENERALIZED. The only residual remains the
   provisionable container GPU/WebRTC floor. Documented the `all` invocation in evaders/arena-defeat/README.md.
+- **[R4+ (boundary): the webrtc floor is INFRA-BOUND, not config-defeatable — arena-defeat ladder at TERMINUS]**
+  (2026-07-08). Took the last in-sandbox swing: tried to clear br.webrtc_unavailable (the last tell between the
+  defeat's `suspicious` and `human`) by disabling Firefox mDNS host-obfuscation (firefox_user_prefs
+  media.peerconnection.ice.obfuscate_host_addresses=false) so a raw private-IP host candidate would gather without
+  internet/mDNS. GROUNDED: it did NOT clear (3/3 runs still br.webrtc_unavailable) — the floor is deeper than
+  obfuscation: with no egress the collector's STUN (stun.l.google.com) is unreachable AND camoufox's ICE gathers no
+  host candidate in the container, so the probe sees nothing. So webrtc_unavailable is INFRA-BOUND (needs real
+  network egress or an in-network STUN the collector would use), reverted the non-default pref. TERMINUS: the
+  arena-gate-defeat ladder is COMPLETE — all three latest gates (clock/spatial/audio) DEFEATED individually + in one
+  coherent session (label=suspicious, not bot), reliable (NCC audio), packaged (evaders/arena-defeat). The ONLY
+  residual is the environment floor (br.webgl_software/perf + br.webrtc_unavailable), and BOTH halves are now
+  grounded as INFRA-BOUND: WebGL needs a real GPU (software llvmpipe trips the perf/software tells), WebRTC needs
+  real network egress. Neither is a gate tell nor a coherence tell — the arena thesis holds and the in-sandbox
+  frontier is reached. No groundable in-sandbox rung remains (medium/hard audio needs real ASR = external too).

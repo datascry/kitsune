@@ -106,6 +106,10 @@ MODE = _BASE_MODE + ("-task" if TASK else "-realinput" if REAL_INPUT else "-beha
 HARDENED_KW: dict[str, object] = {
     "os": "linux",  # coherent with the Linux host: dodges the macOS dpr/font tells AND net.tcp_os_vs_ua
     "block_webrtc": False,  # keep WebRTC → avoid webrtc_unavailable
+    # NB: br.webrtc_unavailable is NOT clearable by a browser pref in-sandbox — it is INFRA-BOUND. The collector's
+    # STUN (stun.l.google.com) is unreachable with no egress, and disabling mDNS host-obfuscation still yields no
+    # host candidate here (grounded), so ICE gathers nothing. Needs real network egress (or an in-network STUN the
+    # collector would use), not a config. Left ON so a real-network deployment gathers candidates normally.
     "config": {"navigator.maxTouchPoints": 0},  # coherent desktop → kill the ~7% pointer_touch_incoherent flake
     # NB: br.webgl_renderer_artifact (the ", or similar" Firefox WebGL generalisation) does NOT apply to Gecko —
     # detector.applicability drops it for ua_engine==firefox since v0.74.10, so it is NOT a Camoufox tell.
