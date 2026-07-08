@@ -4939,3 +4939,24 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   the endpoint disclosure; the /arena index lists it). Detector suite green (508 passed, 95.36%); arena go test
   green; docs/arena.md updated. The SPATIAL GATE IS LANDED across all layers. BOTH buildable arena gaps (audio + 3D
   spatial) are now FILLED. NEXT: PRIORITY 2 — SCOPE the server-observed browser-execution proof for sandbox feasibility.
+- **[PRIORITY 2 / SCOPED: server-observed browser-execution proof — in-sandbox path exists; human-layer external]**
+  (2026-07-08). Scoped the durable replacement for the forgeable client-asserted RealmProof. CONFIRMED forgeable:
+  evaders/pow/gate.go RealmProof is a CLIENT-signed hash of realm-agreement; coherent() only checks it is non-empty +
+  the realms agree ("all a gate can check on a CLIENT-ASSERTED proof — and exactly why it is forgeable"). SERVER-
+  OBSERVED proofs that ARE in-sandbox + unforgeable, TWO already shipped: (1) SOLVE-TIME (issue->verify Age, tracked
+  server-side in every gate's store — the client cannot fake WHEN the gate handed it the challenge; it powers every
+  speed floor incl. the new audio/spatial gates). (2) The TRACK gate — a server-observed perception-action loop: the
+  client servos to a server-controlled MOVING target, and a snapshot->reason->act agent clicks the stale position
+  (bh.arena_stale_snapshot) — this convicts even a COHERENT LLM agent by the physics of its loop, no forgeable client
+  claim. The BUILDABLE in-sandbox UPGRADE to RealmProof: SUB-RESOURCE-FETCH OBSERVATION — the gate serves a page with
+  a nonce-seeded sub-resource (an <img>/beacon at /arena/.../<nonce>) and the EDGE/arena OBSERVES on the wire whether
+  the client actually fetched it. A no-browser scripted client that only POSTs /verify never loads+executes the page,
+  so it never fetches the beacon -> the server-observed proof fails (unforgeable, vs the client-signed RealmProof).
+  In-sandbox (the edge already proxies + can attribute the fetch to ks_sid); grounded principle = the liveness
+  finding (server-observed beats client-asserted). EXTERNAL BOUNDARY: proving a HUMAN vs a COHERENT HEADLESS BROWSER
+  via execution is external — a real headless browser fetches the beacon + passes, so the in-sandbox ceiling for a
+  coherent agent is the TRACK gate's perception physics (built) + cross-layer coherence; a hardware-backed execution
+  attestation (WebAuthn/App-Attest, device-bound) is external-infra-bound. NET: the server-observed execution proof
+  is REALISABLE in-sandbox (sub-resource-fetch observation, the RealmProof upgrade) — a buildable follow-up gate —
+  while the human-distinguishing layer stays external. ARENA-GATE-GAPS LOOP COMPLETE: audio + 3D spatial LANDED,
+  Priority 2 SCOPED (in-sandbox path + external boundary recorded).
