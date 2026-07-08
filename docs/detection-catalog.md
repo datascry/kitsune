@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **192 rules**: 131 active · 55 experimental · 6 retired; 139 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **193 rules**: 132 active · 55 experimental · 6 retired; 140 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -198,7 +198,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (26)
+### behavioral layer (27)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -211,6 +211,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.arena_queue_superhuman` | automation✦ | present | 0.85 | active | Acted on a virtual-queue admission faster than a human can perceive it — position-holding bot |
 | `bh.arena_shell_precomputed` | automation✦ | present | 0.85 | active | Shell-game answered correctly before the shuffle could finish — swap payload precomputed, not watched |
 | `bh.arena_stale_snapshot` | automation✦ | present | 0.85 | active | Acted on a moving target's SECONDS-OLD position — a snapshot-then-slowly-reason LLM agent |
+| `bh.arena_timing_superhuman` | automation✦ | present | 0.85 | active | Motor-timing gate solved with superhuman release precision or impossible claimed hold time |
 | `bh.arena_trajectory_forged` | automation✦ | present | 0.85 | active | Slider/rotate drag trajectory claims more drag-time than the whole server-observed solve — synthesized |
 | `bh.session_flow_robotic` | automation✦ | present | 0.8 | active | Multi-step gate flow paced at machine-regular intervals (near-zero inter-step CV — a timer, not a human) |
 | `bh.session_flow_superhuman` | automation✦ | present | 0.85 | active | Multi-step gate flow completed at superhuman inter-step cadence (session-intent, not a single step) |
