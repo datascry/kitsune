@@ -140,6 +140,7 @@ func NewMux(secret []byte) http.Handler {
 	spatials := newCaptchaStore()
 	shells := newCaptchaStore()
 	timings := newCaptchaStore()
+	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
 	issuer := NewPACTIssuer()
@@ -404,6 +405,45 @@ func NewMux(secret []byte) http.Handler {
 			// physical fact that a human's elapsed always covers the holds it performed.
 			if errStd < timingPrecisionFloorMs || sumHold > int(age.Milliseconds()) {
 				resp["anomaly"] = "timing_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- BROKEN/REMAPPED KEYBOARD: the keys silently produce other characters; discover the mapping and type the
+	// target. NOVEL tell: a correct answer with ZERO exploration (no backspaces) = the client decoded the remap from
+	// the payload and typed it directly; OR a solve faster than the discover+type floor. A human must probe. ---
+	mux.HandleFunc("GET /arena/keymap", func(w http.ResponseWriter, r *http.Request) {
+		km, answer := MintKeymap(ParseLevel(r.URL.Query().Get("level")))
+		keymaps.put(km.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(km)
+	})
+
+	mux.HandleFunc("POST /arena/keymap/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID    string   `json:"id"`
+			Trace []string `json:"trace"` // ordered keys pressed (a key char, or the literal "BACK")
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := keymaps.take(body.ID) // single-use
+		pass, keystrokes, backspaces := CheckKeymap(expected, body.Trace)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "keymap"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "keymap", body.ID)
+			resp["keystrokes"] = keystrokes
+			resp["backspaces"] = backspaces
+			resp["solve_ms"] = age.Milliseconds()
+			// ZERO exploration (no backspaces -> the client never made a mistake discovering a HIDDEN mapping, so it
+			// decoded the payload), OR a solve faster than the discover+type floor. Either is automation; FP-safe by
+			// construction: a hidden remap is undiscoverable without probing, and probing produces corrections.
+			if backspaces == 0 || (age > 0 && int(age.Milliseconds()) < keymapFloorMs(expected)) {
+				resp["anomaly"] = "typed_without_exploration"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

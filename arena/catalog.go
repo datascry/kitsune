@@ -83,6 +83,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/timing?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "keymap",
+				Prompt:   "The keyboard is silently remapped — discover the mapping by probing and type the target. A broken-keyboard gate (not a wild-captcha clone): a correct answer with ZERO exploration (no backspaces) means the client decoded the remap from the payload instead of probing it (typed_without_exploration); a solve faster than the discover+type floor also convicts.",
+				Endpoint: "GET /arena/keymap?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }
