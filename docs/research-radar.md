@@ -4795,3 +4795,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   128-bit crypto/rand ks_sid cookie — so a client cannot forge another session's attribution (poisoning needs the
   victim's unguessable cookie). Two cleared items, no fix needed. Remaining high-value un-audited targets: the ARENA
   gate solve-verification (forge/replay a solve, bypass difficulty) and edge request-smuggling.
+- **[RUNG 4: arena gate solve-verification — SAFE (grounded, no forge/replay/bypass)]**
+  (2026-07-08). Audited the arena challenge/solve verification (the richest remaining target) — SAFE across the board,
+  code-reviewed + live-grounded through the edge. SECRET: arena/cmd/arena-gate mints a 256-bit crypto/rand secret
+  fresh per start (rand.Read on make([]byte,32)), so the HMAC-SHA256 captcha/slider/rotate/queue tokens and the
+  ed25519 PACT tokens are UNFORGEABLE (no hardcoded/default key). CAPTCHA VERIFY (gate.go): the answer is stored
+  server-side (captchas.put) and NEVER serialised (only the public challenge is sent), verify does a single-use
+  captchas.take(id) (an unknown or already-redeemed id fails -> no replay, no cross-request brute-force) then
+  CheckCaptcha(answer) BEFORE signing the token, and the body is MaxBytesReader-capped at 64 KiB. GROUNDED live
+  through edge:8443: minted a math captcha (answer NOT in the response), a WRONG answer -> ok:false no token, an
+  UNKNOWN id -> ok:false no token, a REPLAYED consumed id -> ok:false (take() consumed it). PoW uses
+  pow.CheckSolution(secret,...) (server-verified work), PACT tracks redemption ("token already redeemed") + expiry
+  (5 min). No forge, no replay, no answer-bypass, no difficulty bypass. Second consecutive grounded safe-clear (after
+  the input-validation + X-KS-Session clears). One fresh high-value target remains before terminus: edge
+  request-smuggling / the edge's custom TLS+ClientHello-peek + QUIC handling.
