@@ -280,6 +280,7 @@ def test_arena_captcha_font_and_kinds(client: TestClient, monkeypatch: pytest.Mo
     assert client.get("/arena/captcha", params={"kind": "text", "font": "go-mono"}).status_code in (200, 502)
     assert client.get("/arena/captcha", params={"kind": "text", "charset": "confusable"}).status_code in (200, 502)
     assert client.get("/arena/captcha", params={"kind": "image-shapes"}).status_code in (200, 502)
+    assert client.get("/arena/captcha", params={"kind": "clock"}).status_code in (200, 502)
     assert client.get("/arena/captcha", params={"kind": "evil"}).status_code == 400
 
 

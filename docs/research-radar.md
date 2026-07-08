@@ -4972,3 +4972,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   -> ok=True + solved_faster_than_human, which joins the session as bh.arena_captcha_superhuman (inherited from the
   captcha family). Arena go test green; detector suite green (508 passed, 95.36%); arena.md updated. A distinct
   visual-reasoning gate (read analog hands) beyond glyph OCR.
+
+## Arena-gate-defeat loop (2920bfa3)
+- **[R1: PACING defeats the server-observed speed tell — grounded; + fixed a real clock-relay bug]**
+  (2026-07-08). Goal: DEFEAT the latest gates (pass + escape conviction), not just solve. First, fixed a REAL bug the
+  live grounding surfaced — `clock` was missing from the detector's `_ARENA_CAPTCHAS` relay whitelist, so the clock
+  gate 400'd through the edge (its page's runCaptcha was broken end-to-end); added `clock` + a relay test. R1 proper:
+  drove the clock solver through the EDGE but PACED the solve 2.5s past the 800ms human floor before POSTing verify.
+  GROUNDED: read=4:10 -> ok=True (gate PASSED) with anomaly=None — the server-observed speed anomaly is GONE, and the
+  session verdict drops `bh.arena_captcha_superhuman` (only `net.no_js_execution` remains, label still bot). So tell
+  #1 (superhuman speed) is trivially defeated by pacing — it is a COST floor, not a durable discriminator. The
+  DURABLE tell is #2: net.no_js_execution (a script, not a coherent browser). NEXT (R2): carry a paced solve INSIDE a
+  coherent real-browser evader so no_js_execution also clears.
