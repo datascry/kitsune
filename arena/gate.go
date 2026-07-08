@@ -134,6 +134,7 @@ func NewMux(secret []byte) http.Handler {
 	store := pow.NewNonceStore()
 	captchas := newCaptchaStore()
 	audios := newCaptchaStore()
+	spatials := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
 	issuer := NewPACTIssuer()
@@ -287,6 +288,42 @@ func NewMux(secret []byte) http.Handler {
 			resp["solve_ms"] = age.Milliseconds()
 			if floor := time.Duration(len(expected)) * 450 * time.Millisecond; age > 0 && age < floor {
 				resp["anomaly"] = "solved_faster_than_audio"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- SPATIAL gate: the Arkose/FunCaptcha 3D-object family. A grid of isometric cubes at random orientations;
+	// select every cube with the target colour on TOP. Perceive-and-click like image-select, so it shares the
+	// solved_faster_than_human floor + the arena_captcha_superhuman join. The answer stays server-side. ---
+	mux.HandleFunc("GET /arena/spatial", func(w http.ResponseWriter, r *http.Request) {
+		s, answer := MintSpatial(ParseLevel(r.URL.Query().Get("level")))
+		spatials.put(s.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(s) // the answer (matching indices) is NOT serialised
+	})
+
+	mux.HandleFunc("POST /arena/spatial/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID       string `json:"id"`
+			Selected []int  `json:"selected"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := spatials.take(body.ID) // single-use: no replay, no cross-request guessing
+		ok := known && CheckSpatial(expected, body.Selected)
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "spatial"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "spatial", body.ID)
+			// A correct grid selection faster than a human can perceive the tiles + click is automation (the same
+			// human-time floor as image-select) — the gate passes, the anomaly rides the verdict so the session
+			// convicts on coherence via bh.arena_captcha_superhuman. FP-safe: humans take seconds on a tile grid.
+			resp["solve_ms"] = age.Milliseconds()
+			if age > 0 && age < 500*time.Millisecond {
+				resp["anomaly"] = "solved_faster_than_human"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

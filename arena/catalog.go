@@ -64,6 +64,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/audio?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "spatial",
+				Prompt:   "Select every cube with the target colour on top. An isometric-cube grid at random 3D orientations — the Arkose/FunCaptcha 3D-object family; identify the TOP face of a rotated cube (spatial reasoning), not a 2D glyph. Owned procedural, zero-license.",
+				Endpoint: "GET /arena/spatial?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

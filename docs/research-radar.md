@@ -4915,3 +4915,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   PNG tiles at every level; verify passes an order-independent correct set and rejects subset/superset/empty. NEXT
   (rung 2): wire GET /arena/spatial + POST /arena/spatial/verify (single-use take + token + superhuman-speed floor),
   register the `spatial` slug + grid page widget, add to the catalog, then the detector relay + coherence join.
+- **[PRIORITY 3 / rung 2: spatial gate WIRED into the mux + catalog — mint/verify grounded LIVE]**
+  (2026-07-08). Wired arena/spatial.go into gate.go: a dedicated single-use store, GET /arena/spatial (mint -> put
+  the matching-index answer -> serve the grid, answer NOT serialised) + POST /arena/spatial/verify (single-use take
+  -> CheckSpatial set-match -> HMAC token). REUSES the existing solved_faster_than_human -> arena_captcha_superhuman
+  path (spatial is a perceive-and-click grid task like image-select, so no new detector rule): a correct selection
+  under a 500ms human-perception floor rides the verdict as the superhuman anomaly. Added the `spatial` kind to the
+  auto-catalog. GROUNDED LIVE on the running arena (:8095): mint returns 6 PNG cube tiles + a prompt ("Select every
+  cube with the orange face on top") with NO answer field; a WRONG selection -> ok:false no token; an UNKNOWN id ->
+  ok:false; a REPLAYED consumed id -> ok:false (single-use); GET /arena/catalog lists spatial. Full arena go test
+  green. NEXT (rung 3): the detector relay (/arena/spatial + /arena/spatial/verify, calling _join_arena_anomaly so
+  the superhuman anomaly convicts) + a top-face-colour-sampling reference solver to ground the positive path + the
+  arena_page.py `spatial` slug + grid page widget.
