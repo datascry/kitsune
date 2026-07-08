@@ -141,6 +141,15 @@ CHALLENGES: list[dict[str, str]] = [
         "answer faster than the clip's real-time playback is ASR automation (server-observed), so a solver passes "
         "the gate but is convicted on coherence.",
     },
+    {
+        "slug": "spatial",
+        "label": "3D spatial cube grid",
+        "family": "Arkose / FunCaptcha 3D object",
+        "mode": "spatial",
+        "blurb": "Select every cube with the target colour on top — a grid of isometric cubes rendered at random "
+        "3D orientations. Spatial reasoning (identify the TOP face of a rotated cube), not a 2D glyph; a correct "
+        "selection faster than a human can scan the grid is automation, convicted on coherence.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -358,6 +367,25 @@ ARENA_JS = r"""
     box.appendChild(submit); say("Select the matching tiles and verify.");
   }
 
+  async function runSpatial(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/spatial"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var grid=document.createElement("div"); grid.className="tiles"; var sel={};
+    c.tiles.forEach(function(tile,i){ var img=document.createElement("img"); img.src=tile.image; img.alt="cube "+(i+1);
+      img.onclick=function(){ if(sel[i]){ delete sel[i]; img.classList.remove("sel"); } else { sel[i]=1; img.classList.add("sel"); } }; grid.appendChild(img); });
+    box.appendChild(grid);
+    var submit=document.createElement("button"); submit.textContent="Verify selection";
+    submit.onclick=function(){ var idx=Object.keys(sel).map(Number).sort(function(a,b){return a-b;}); verifySpatial(c.id, idx, gv, gn, tok); };
+    box.appendChild(submit); say("Select every cube with the named colour on top, then verify.");
+  }
+  async function verifySpatial(id, selected, gv, gn, tok){
+    var v=await (await fetch("/arena/spatial/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:id,selected:selected})})).json();
+    if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Spatial grid solved — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Spatial PASSED."); }
+    else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong selection (or the challenge expired)."; say("Spatial rejected."); }
+    document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -454,6 +482,7 @@ ARENA_JS = r"""
       else if(A.mode==="pact"){ await runPACT(gv, gn, tok); }
       else if(A.mode==="slider"){ await runSlider(gv, gn, tok); }
       else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
+      else if(A.mode==="spatial"){ await runSpatial(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }
