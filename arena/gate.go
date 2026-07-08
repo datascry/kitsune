@@ -139,6 +139,7 @@ func NewMux(secret []byte) http.Handler {
 	audios := newCaptchaStore()
 	spatials := newCaptchaStore()
 	shells := newCaptchaStore()
+	timings := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
 	issuer := NewPACTIssuer()
@@ -364,6 +365,45 @@ func NewMux(secret []byte) http.Handler {
 			// ball settles, so this is FP-safe by construction; it rides the verdict and convicts on coherence.
 			if age > 0 && int(age.Milliseconds()) < shellFloorMs(expected) {
 				resp["anomaly"] = "solved_before_shuffle"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- MOTOR-TIMING PRECISION (Grillmaster): hold/release each target for its shown duration. NOVEL tell: the
+	// release-error std across targets (a target-exact OR constant-offset bot collapses to ~0; a human has a
+	// jitter floor), PLUS the claimed-vs-elapsed impossibility (total hold > the server-observed solve window). ---
+	mux.HandleFunc("GET /arena/timing", func(w http.ResponseWriter, r *http.Request) {
+		t, answer := MintTiming(ParseLevel(r.URL.Query().Get("level")))
+		timings.put(t.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(t)
+	})
+
+	mux.HandleFunc("POST /arena/timing/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID    string `json:"id"`
+			Holds []int  `json:"holds"` // the client's achieved hold durations, in ms, one per target
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := timings.take(body.ID) // single-use
+		pass, errStd, sumHold := CheckTiming(expected, body.Holds)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "timing"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "timing", body.ID)
+			resp["err_std_ms"] = errStd
+			resp["solve_ms"] = age.Milliseconds()
+			// SUPERHUMAN motor precision (release-error std below the human jitter floor — a target-exact OR a
+			// constant-offset bot both collapse to ~0), OR IMPOSSIBLE timing (more total hold claimed than the whole
+			// server-observed solve window could contain). Either is automation; FP-safe by the jitter floor + the
+			// physical fact that a human's elapsed always covers the holds it performed.
+			if errStd < timingPrecisionFloorMs || sumHold > int(age.Milliseconds()) {
+				resp["anomaly"] = "timing_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

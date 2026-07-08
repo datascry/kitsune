@@ -5122,3 +5122,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   pass+std=0, human jitter -> pass+std>floor, out-of-tolerance + wrong-count -> fail. NEXT (rung 2): wire
   GET /arena/timing + POST /arena/timing/verify — anomaly timing_superhuman when (pass AND std<floor) OR (sumHold >
   server-observed age = claimed more hold time than the solve took) + catalog.
+- **[GATE 2 / rung 2: timing gate WIRED + the timing_superhuman tell grounded THREE WAYS (two-pronged)]**
+  (2026-07-09). Wired arena/timing.go into gate.go: a single-use store, GET /arena/timing (mint -> put the targets
+  JSON -> serve) + POST /arena/timing/verify (single-use take -> CheckTiming -> HMAC token). The TWO-PRONGED
+  server-observed tell (anomaly timing_superhuman): (1) release-error std < timingPrecisionFloorMs (25ms) = superhuman
+  precision (a target-exact OR constant-offset bot collapses to ~0), OR (2) sumHold > server-observed age = IMPOSSIBLE
+  (claimed more total hold time than the whole solve window). Added the timing kind to the auto-catalog. GROUNDED
+  LIVE on the arena (:8095), THREE WAYS: a TARGET-EXACT bot (instant) -> err_std 0.0 -> convicted on precision; a
+  FAKE-JITTER bot (instant, err_std 61.9 > floor so it evades prong 1) -> convicted on prong 2 (sumHold 5557 >>
+  instant age); a HUMAN (same 61.9 jitter but ACTUALLY WAITED 4609ms) -> anomaly=None, SILENT. Wrong/unknown/replayed
+  all reject. The two prongs close the forgery: you can't fake precision (std) AND you can't fake jitter without
+  spending the real time (impossibility) -> the only silent path is genuine human jitter + real elapsed. Arena go
+  vet+test green. NEXT (rung 3): the detector relay + rule bh.arena_timing_superhuman + the hold-and-release page widget.
