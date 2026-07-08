@@ -926,6 +926,18 @@ rules:
     last_validated: "2026-07-03"
     source: "Kitsune arena challenge-solve coherence: the owned arena gate measures the SERVER-OBSERVED solve time of a CAPTCHA (issue->verify elapsed, tracked in the captchaStore — unforgeable, unlike a client-asserted proof, since the client cannot fake WHEN the gate handed it the challenge). A CORRECT answer submitted below a conservative per-kind PHYSIOLOGICAL floor (text 600ms, math 350ms, image-select/doodle 500ms — no human perceives the challenge and responds faster) is an OCR/ML solver, not a human. The gate returns anomaly:solved_faster_than_human; the detector relay joins it to ks_sid so a bot that PASSES the gate is CONVICTED on coherence instead of cleared (the arena thesis: a challenge is not a bot/human discriminator — the SOLVE-BEHAVIOUR is). HUMAN-TIME-bound (read+type), NOT compute-bound, so it is HARDWARE-INDEPENDENT (unlike a PoW hash-rate, which is not FP-safe). FP-SAFE BY CONSTRUCTION: floors sit far under real human solve times (which run seconds), so a slow/careful/error-making human is never flagged; precision 1.0 is load-bearing. GROUNDED LIVE 2026-07-03: an instant programmatic math solve (solve_ms 5-6) trips anomaly:solved_faster_than_human and the joined session convicts; a 1.3s human-timed solve (solve_ms 1306) is SILENT. Convicting (w0.85) — a sub-physiological solve is unambiguous automation. See docs/research-radar.md (arena-solve loop)."
 
+  - id: bh.arena_audio_superhuman
+    title: Audio CAPTCHA answered correctly faster than its clip plays — ASR automation, not a listener
+    layers: [behavioral]
+    reads: [behavioral.arena_audio_superhuman]
+    predicate: present
+    weight: 0.85
+    status: active
+    category: automation
+    added: "2026-07-08"
+    last_validated: "2026-07-08"
+    source: "Kitsune arena AUDIO-gate solve coherence — the ASR-benchmark twin of bh.arena_captcha_superhuman. The owned arena/audio gate mints a spoken-digit WAV and measures the SERVER-OBSERVED solve time (issue->verify, tracked in the audio store — unforgeable, unlike a client-asserted proof). A human must PLAY the clip in real time before answering; an ASR solver batch-transcribes it in milliseconds. A CORRECT transcription submitted faster than the clip's real-time listen floor (len x 450ms, under FSDD's ~600ms/digit playback) is automation, not a listener. The gate returns anomaly:solved_faster_than_audio; the detector relay (/arena/audio/verify) joins it to ks_sid so a solver that PASSES the gate is CONVICTED on coherence instead of cleared (the arena thesis: a challenge is not a bot/human discriminator — the SOLVE-BEHAVIOUR is). HUMAN-TIME-bound (listen+type), NOT compute-bound, so HARDWARE-INDEPENDENT. FP-SAFE BY CONSTRUCTION: the floor sits under the clip's real-time playback so no human answers before hearing it; precision 1.0 is load-bearing. GROUNDED LIVE 2026-07-08: the matched-filter evaders/arena-solver-audio transcribes an easy clip (solve_ms << floor) -> anomaly + the joined session convicts; a real-time listen is silent. Convicting (w0.85). See docs/research-radar.md (arena-gate-gaps loop)."
+
   - id: bh.arena_trajectory_forged
     title: Slider/rotate drag trajectory claims more drag-time than the whole server-observed solve — synthesized
     layers: [behavioral]

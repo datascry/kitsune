@@ -305,6 +305,8 @@ def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatc
     assert client.post("/arena/track/verify", json={"id": "x", "x": 1.0, "y": 2.0}).status_code in ok
     assert client.post("/arena/verify", content=b"{}").status_code in ok
     assert client.post("/arena/captcha/verify", json={"kind": "text", "id": "x", "answer": "y"}).status_code in ok
+    assert client.get("/arena/audio", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/audio/verify", json={"id": "x", "answer": "y"}).status_code in ok
 
 
 class _BenchResp:
@@ -348,6 +350,7 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
     assert client.get("/arena/captcha", params={"kind": "text"}).status_code == 200
     for anomaly in (
         "solved_faster_than_human",
+        "solved_faster_than_audio",
         "trajectory_exceeds_solve_time",
         "honeypot_filled",
         "acted_faster_than_human",
@@ -368,6 +371,15 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
         client.post(
             "/arena/track/verify", json={"id": "x", "x": 1.0, "y": 2.0}, headers={"Cookie": "ks_sid=s"}
         ).status_code
+        == 200
+    )
+    # the audio relay's 200-branch: the GET + the /verify join (solved_faster_than_audio rides the verdict)
+    monkeypatch.setattr(
+        "kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "solved_faster_than_audio"})
+    )
+    assert client.get("/arena/audio", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post("/arena/audio/verify", json={"id": "x", "answer": "y"}, headers={"Cookie": "ks_sid=s"}).status_code
         == 200
     )
 

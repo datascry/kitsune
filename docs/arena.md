@@ -51,6 +51,7 @@ pact, checkbox and managed are coherence/binary-gated and have no level dial.
 | `text` | CAPTCHA · distorted image | warped, overlapping, noise-crossed glyphs (answer in pixels) | **real OCR** (`arena-solver-ocr`, TrOCR) — the Go heuristic fails | 4 / 5 / 6 chars + noise |
 | `math` | CAPTCHA · logic | arithmetic | scripted parse+compute (`+`,`−`,`×`) | `+` / `+−×` / large `×` |
 | `honeypot` | CAPTCHA · hidden field | a trap field that must stay empty | leave it empty | — |
+| `audio` | reCAPTCHA / hCaptcha audio (accessibility) | transcribe a spoken-digit WAV (embedded CC-BY-SA FSDD corpus, pure-Go synth + noise/tone/overlap); the ASR-benchmark twin of `text`/OCR. A correct answer faster than the clip's real-time playback is ASR automation (`bh.arena_audio_superhuman`, server-observed) | real ASR (Whisper) — the matched-filter reference solver beats easy but not medium/hard | easy / medium / hard (distortion) |
 | `slider` | CAPTCHA · GeeTest drag | drop position **+ drag-trajectory** velocity check | variable-velocity trajectory synthesis | tolerance + trajectory bar |
 | `image-select` | CAPTCHA · reCAPTCHA-v2 | "select every animal" over **emoji glyph** tiles | **real CV/VLM** — the radial-shape heuristic fails | 6 / 9 tiles + noise |
 | `doodle` | CAPTCHA · reCAPTCHA-v2 | same, over **Quick, Draw! sketch** tiles | **real CV/VLM** (harder than emoji) | 6 / 9 tiles + noise |
