@@ -1,0 +1,6 @@
+Spoken-digit audio in assets/fsdd/ is a curated subset of the Free Spoken Digit Dataset (FSDD):
+  https://github.com/Jakobovski/free-spoken-digit-dataset
+Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+  https://creativecommons.org/licenses/by-sa/4.0/
+Subset: 3 speakers (jackson, nicolas, theo) x digits 0-9 x 2 indices = 60 recordings, 8 kHz mono 16-bit WAV.
+The arena/audio gate concatenates + distorts these to mint challenge clips; derived clips are likewise CC BY-SA 4.0.
