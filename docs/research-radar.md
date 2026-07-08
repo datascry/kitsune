@@ -5158,3 +5158,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   probes-a-wrong-key-then-corrects passes with backspaces>0; a single wrong key fails. NEXT (rung 2): wire
   GET /arena/keymap + POST /arena/keymap/verify — anomaly typed_without_exploration when (pass AND backspaces==0) OR
   (solve faster than a human discovery+type floor) + catalog.
+- **[GATE 3 / rung 2: keymap gate WIRED + the typed_without_exploration tell grounded BOTH WAYS]**
+  (2026-07-09). Wired arena/keymap.go into gate.go: a single-use store, GET /arena/keymap (mint -> put the
+  "target|remap" answer -> serve the remap so the page applies it) + POST /arena/keymap/verify (single-use take ->
+  CheckKeymap replays the key trace -> HMAC token). The TWO-PRONGED server-observed tell (anomaly
+  typed_without_exploration): (1) backspaces == 0 = the client never made a mistake discovering a HIDDEN mapping, so
+  it decoded the payload and typed it directly; (2) solve faster than keymapFloorMs (len(target)*600ms) = too fast to
+  have probed the mapping. Added the keymap kind to the auto-catalog. GROUNDED LIVE on the arena (:8095), BOTH
+  directions: an AUTOMATION that reads the remap and types the decoded keys instantly -> backspaces 0 -> convicted; a
+  HUMAN that probes a wrong key, backspaces, types correctly, and waits the discover+type time (solve_ms 3401 >
+  2400ms floor) -> backspaces 1, anomaly=None, SILENT. Wrong/unknown/replayed all reject. FP-safe by construction: a
+  hidden remap is undiscoverable without probing, and probing produces corrections. Arena go vet+test green. NEXT
+  (rung 3): the detector relay + rule bh.arena_keymap_no_exploration + the on-screen remapped-keyboard page widget.

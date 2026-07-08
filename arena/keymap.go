@@ -66,6 +66,14 @@ func MintKeymap(lv Level) (Keymap, string) {
 	return km, string(target) + "|" + string(rj)
 }
 
+// keymapFloorMs is a conservative lower bound on DISCOVERING the hidden remap by probing + typing the target: no
+// human finds which key produces each of the target chars and types them faster than this (the server-observed
+// second prong, complementing the zero-backspaces exploration tell).
+func keymapFloorMs(expected string) int {
+	target, _, _ := strings.Cut(expected, "|")
+	return len(target) * 600
+}
+
 // CheckKeymap replays the key trace (each element a key char or the literal "BACK") through the remap and reports
 // whether the resulting buffer equals the target, plus the keystroke + backspace counts (the exploration signal).
 func CheckKeymap(expected string, trace []string) (pass bool, keystrokes, backspaces int) {
