@@ -4769,3 +4769,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   detector's own cookie-scope enforcement, correctly NOT edge-blocked). Unit tests (isAdminPath truth table + the
   ServeHTTP 404) + full edge vet/test green. This is the pipeline-integrity vein's second real find (after the
   network-signal trust boundary) — attacking the detection SYSTEM, not the fingerprint.
+- **[RUNG 2: GROUNDED + FIXED an unbounded /ingest body DoS (memory exhaustion)]**
+  (2026-07-08). Audited DoS / resource exhaustion. The /ingest POST had NO request-body-size limit, and the edge's
+  own sanitizeClientIngest does io.ReadAll — so the edge buffered the WHOLE body into memory before the detector even
+  parsed it. GROUNDED: a ~20MB /ingest body through edge:8443 was ACCEPTED (HTTP 200, 3.2s) — a 1GB body would OOM
+  the edge (io.ReadAll) and the detector (JSON parse). FIX: sanitizeClientIngest now reads via
+  io.LimitReader(maxIngestBody+1) where maxIngestBody=1 MiB (a real collector payload is a few KB to tens of KB) and
+  returns 413 for anything larger, BEFORE buffering it all or proxying it — the read is bounded to 1 MiB regardless
+  of the declared/actual body size. GROUNDED after: a 1.1MB body -> clean 413, a 20MB flood -> connection reset after
+  the edge stops reading at 1 MiB (no unbounded buffer), a normal KB-sized collector POST -> 200. Unit test (413 on
+  oversized, pass on normal) + full edge vet/test green. SAFE-CLEAR recorded: session_id entropy (128-bit crypto/rand,
+  poisoning-by-guess out). NOTED (lower severity, lab-acceptable — not fixed): the store is unbounded in-memory
+  SQLite (no eviction/TTL), so a sustained session-mint flood grows memory; standard-DoS, mitigated by request
+  throughput + the in-memory store resets on restart; a production deployment would add an LRU/TTL cap.

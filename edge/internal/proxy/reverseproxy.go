@@ -626,7 +626,9 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	p.forward(prep.signals)
-	sanitizeClientIngest(r)
+	if sanitizeClientIngest(w, r) {
+		return
+	}
 	p.backend.ServeHTTP(w, r)
 }
 
@@ -638,19 +640,29 @@ func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // reputation signal) with a future observed_at that OVERRIDES the server-observed value in the detector's
 // latest-per-kind merge — collapsing those layers' unforgeability (research-radar PRIORITY 3). Fail-open on any
 // read/parse error — no worse than the prior pass-through behaviour.
-func sanitizeClientIngest(r *http.Request) {
+const maxIngestBody = 1 << 20 // 1 MiB — a real collector /ingest payload is a few KB to tens of KB; larger is abuse.
+
+func sanitizeClientIngest(w http.ResponseWriter, r *http.Request) bool {
 	if r.Method != http.MethodPost || r.URL.Path != "/ingest" || r.Body == nil {
-		return
+		return false
 	}
-	raw, err := io.ReadAll(r.Body)
+	// Cap the body: read at most maxIngestBody+1 so an oversized POST is DETECTED without buffering it all. Neither
+	// the edge (this ReadAll) nor the detector (its JSON parse downstream) may be forced to buffer an unbounded
+	// /ingest body — reject anything over the cap with 413 before it reaches either.
+	raw, err := io.ReadAll(io.LimitReader(r.Body, maxIngestBody+1))
 	_ = r.Body.Close()
-	r.Body = io.NopCloser(bytes.NewReader(raw))
 	if err != nil {
-		return
+		r.Body = io.NopCloser(bytes.NewReader(raw))
+		return false // read error (broken connection) — fail open, no worse than before
 	}
+	if len(raw) > maxIngestBody {
+		http.Error(w, "ingest body too large", http.StatusRequestEntityTooLarge)
+		return true
+	}
+	r.Body = io.NopCloser(bytes.NewReader(raw))
 	var sigs []signal.Signal
 	if json.Unmarshal(raw, &sigs) != nil {
-		return // not a signal list — leave the body untouched
+		return false // not a signal list — leave the body untouched
 	}
 	kept := make([]signal.Signal, 0, len(sigs))
 	dropped := false
@@ -662,15 +674,16 @@ func sanitizeClientIngest(r *http.Request) {
 		kept = append(kept, s)
 	}
 	if !dropped {
-		return
+		return false
 	}
 	out, err := signal.Marshal(kept)
 	if err != nil {
-		return // keep the original body on the unexpected marshal failure
+		return false // keep the original body on the unexpected marshal failure
 	}
 	r.Body = io.NopCloser(bytes.NewReader(out))
 	r.ContentLength = int64(len(out))
 	r.Header.Set("Content-Length", strconv.Itoa(len(out)))
+	return false
 }
 
 // isAdminPath reports whether a request path targets a detector admin/internal endpoint that must not be public.
