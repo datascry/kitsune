@@ -701,3 +701,37 @@ func TestSanitizeClientIngestLeavesOtherPathsUntouched(t *testing.T) {
 		}
 	}
 }
+
+func TestIsAdminPathBlocksInternal(t *testing.T) {
+	for _, p := range []string{"/scoreboard", "/session/abc", "/verdict/abc", "/docs", "/redoc",
+		"/openapi.json", "/Session/abc", "//scoreboard", "/session/../verdict/x", "/session", "/verdict"} {
+		if !isAdminPath(p) {
+			t.Errorf("admin path %q not blocked", p)
+		}
+	}
+	for _, p := range []string{"/", "/ingest", "/inspect/abc", "/arena/gate", "/rules.json", "/healthz", "/sessionish"} {
+		if isAdminPath(p) {
+			t.Errorf("public path %q wrongly blocked", p)
+		}
+	}
+}
+
+func TestServeHTTPBlocksAdminPaths(t *testing.T) {
+	backendHit := false
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { backendHit = true }))
+	defer backend.Close()
+	rp, err := NewReverseProxy(backend.URL, "", fingerprint.HintTable{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rp.newID = fixedID
+	rp.now = fixedNow
+	rr := httptest.NewRecorder()
+	rp.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "http://localhost/scoreboard", nil))
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("want 404 for /scoreboard, got %d", rr.Code)
+	}
+	if backendHit {
+		t.Error("admin path reached the backend")
+	}
+}

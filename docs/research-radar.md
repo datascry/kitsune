@@ -4750,3 +4750,22 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   reference; freshness form marginal since the network layer already catches whole-body replay). NET: the
   cross-layer + engine-coherence detection suite is far deeper + more grounded than the loop assumed — a
   confidence result, not a gap. The frontier stays where prior loops left it: external-data-bound or economic.
+
+## Pipeline-security-audit loop (41b8db08)
+
+- **[RUNG 1: GROUNDED + FIXED an unauthenticated cross-session data-disclosure through the edge]**
+  (2026-07-08). Audited session integrity + endpoint exposure. session_id is 16-byte crypto/rand hex (128-bit,
+  unguessable — session poisoning by guessing is out; SAFE). BUT the edge is httputil.NewSingleHostReverseProxy with
+  NO path allow-listing, so it proxied EVERY path to the internal detector — including the admin endpoints
+  (/scoreboard, /session/{id}, /verdict/{id}), which are require_admin-gated but OPEN when no KITSUNE_ADMIN_TOKEN is
+  configured (the shipped compose sets none). GROUNDED the exploit: an unauth client GETting https://edge:8443/
+  scoreboard got EVERY visitor's verdict, and /session/{id} returned any session's raw signals (JA4, IP,
+  fingerprints) — a cross-session data-disclosure + privacy leak (the page promises data is "never shared"). FIX (at
+  the edge, the public boundary — admins reach the detector directly, not via the edge): a path deny-list
+  (isAdminPath) blocks /scoreboard, /session[/*], /verdict[/*] and the FastAPI docs (/docs, /redoc, /openapi.json)
+  with a 404 before any proxying; the path is path.Clean+lowercased so /Session, //scoreboard, /session/../verdict
+  and %2e tricks can't bypass. GROUNDED after the fix: /scoreboard, /session/x, /verdict/x -> 404; the page /,
+  /healthz, POST /ingest -> 200; /inspect/{id} stays reachable (403 for a session your cookie doesn't own — the
+  detector's own cookie-scope enforcement, correctly NOT edge-blocked). Unit tests (isAdminPath truth table + the
+  ServeHTTP 404) + full edge vet/test green. This is the pipeline-integrity vein's second real find (after the
+  network-signal trust boundary) — attacking the detection SYSTEM, not the fingerprint.

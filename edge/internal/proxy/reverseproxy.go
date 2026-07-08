@@ -22,6 +22,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -541,6 +542,15 @@ func NewReverseProxy(backendURL, detectorURL string, hints fingerprint.HintTable
 }
 
 func (p *ReverseProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Admin/internal detector endpoints must never be reachable through the PUBLIC edge — block before any proxy.
+	// require_admin gates them at the detector, but that gate is OFF when no admin token is configured (a dev
+	// default), and admins reach the detector directly (internal), not via the edge. Without this, an unauth client
+	// GETs the edge's /scoreboard (EVERY visitor's verdict) or /session/{id} (any session's raw JA4/IP) — a
+	// cross-session data disclosure. 404 (not 403) so the admin surface is invisible from outside.
+	if isAdminPath(r.URL.Path) {
+		http.NotFound(w, r)
+		return
+	}
 	hello, _ := r.Context().Value(helloKey).(*fingerprint.ClientHello)
 	h2fp, _ := r.Context().Value(h2Key).(*fingerprint.H2Fingerprint)
 	prep, err := prepare(r, hello, h2fp, p.hints, p.newID, p.now(), p.crawler, p.wbaReplay)
@@ -661,6 +671,19 @@ func sanitizeClientIngest(r *http.Request) {
 	r.Body = io.NopCloser(bytes.NewReader(out))
 	r.ContentLength = int64(len(out))
 	r.Header.Set("Content-Length", strconv.Itoa(len(out)))
+}
+
+// isAdminPath reports whether a request path targets a detector admin/internal endpoint that must not be public.
+// The path is cleaned + lowercased first so /Session/, //scoreboard, /session/../verdict and %2e tricks can't
+// bypass. The public per-session view (/inspect/{id}) is cookie-scoped at the detector and stays proxied; only the
+// any-session admin views (/session, /verdict, /scoreboard) and the FastAPI docs (open when untokened) are blocked.
+func isAdminPath(reqPath string) bool {
+	c := strings.ToLower(path.Clean("/" + strings.TrimPrefix(reqPath, "/")))
+	switch c {
+	case "/scoreboard", "/session", "/verdict", "/docs", "/redoc", "/openapi.json":
+		return true
+	}
+	return strings.HasPrefix(c, "/session/") || strings.HasPrefix(c, "/verdict/")
 }
 
 func (p *ReverseProxy) forward(sigs []signal.Signal) {
