@@ -5086,3 +5086,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   answer equals the true final ball position at every level; CheckShell passes the right cup, rejects wrong/floor-ms/
   empty. Difficulty = cups + swaps + speed (easy 3/5/420ms, medium 3/8/260, hard 5/12/160). NEXT (rung 2): wire
   GET /arena/shell + POST /arena/shell/verify (single-use + token + the solved-before-shuffle anomaly) + catalog.
+- **[GATE 1 / rung 2: shell gate WIRED + the solved_before_shuffle tell grounded BOTH WAYS]**
+  (2026-07-09). Wired arena/shellgame.go into gate.go: a single-use store, GET /arena/shell (mint -> put the
+  "finalPos:shuffleMs" answer -> serve the swaps, answer NOT serialised) + POST /arena/shell/verify (single-use take
+  -> CheckShell -> HMAC token). The NOVEL server-observed tell: solve_ms = the server-observed issue->verify age; if
+  a CORRECT answer arrives faster than shellFloorMs (the shuffle runtime), the client did not WATCH the occluded
+  ball -> it read the swap payload and computed the final cup -> anomaly "solved_before_shuffle". Added the shell
+  kind to the auto-catalog. GROUNDED LIVE on the arena (:8095), BOTH directions: an AUTOMATION that replays the swaps
+  and submits in 1ms -> ok=True + anomaly=solved_before_shuffle (CONVICTED); a HUMAN that waits the 2100ms shuffle
+  then clicks -> ok=True + anomaly=None (SILENT, FP-safe by construction — no human can answer before the ball
+  settles). Wrong/unknown/replayed all reject (single-use). Arena go vet+test green. NEXT (rung 3): the detector
+  relay (/arena/shell + verify, _join_arena_anomaly) + a convicting rule bh.arena_shell_precomputed + the page widget.

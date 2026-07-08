@@ -138,6 +138,7 @@ func NewMux(secret []byte) http.Handler {
 	captchas := newCaptchaStore()
 	audios := newCaptchaStore()
 	spatials := newCaptchaStore()
+	shells := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
 	issuer := NewPACTIssuer()
@@ -327,6 +328,42 @@ func NewMux(secret []byte) http.Handler {
 			resp["solve_ms"] = age.Milliseconds()
 			if age > 0 && age < 500*time.Millisecond {
 				resp["anomaly"] = "solved_faster_than_human"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- SHELL GAME (track-under-occlusion, anti-LLM): a ball under one of N cups, shuffled by a server-defined
+	// swap sequence; click the final cup. NOVEL tell: a correct answer FASTER than the shuffle runtime was
+	// precomputed from the swap payload (not watched through the occlusion) -> solved_before_shuffle. ---
+	mux.HandleFunc("GET /arena/shell", func(w http.ResponseWriter, r *http.Request) {
+		s, answer := MintShell(ParseLevel(r.URL.Query().Get("level")))
+		shells.put(s.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(s) // the final ball position is NOT serialised
+	})
+
+	mux.HandleFunc("POST /arena/shell/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID     string `json:"id"`
+			Choice string `json:"choice"` // the clicked cup index
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := shells.take(body.ID) // single-use: no replay
+		ok := known && CheckShell(expected, body.Choice)
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "shell"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "shell", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			// A correct answer before the shuffle animation could even finish means the client did NOT watch the
+			// occluded ball — it read the swap payload and computed the final cup. No human can answer before the
+			// ball settles, so this is FP-safe by construction; it rides the verdict and convicts on coherence.
+			if age > 0 && int(age.Milliseconds()) < shellFloorMs(expected) {
+				resp["anomaly"] = "solved_before_shuffle"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

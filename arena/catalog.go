@@ -71,6 +71,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/spatial?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "shell",
+				Prompt:   "Watch the shuffle, then click the cup hiding the ball. A track-under-occlusion gate: the ball is hidden during a server-defined swap sequence, so a snapshot-then-reason agent cannot follow it. A correct answer faster than the shuffle runtime was precomputed from the swap payload (solved_before_shuffle).",
+				Endpoint: "GET /arena/shell?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }
