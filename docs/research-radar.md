@@ -5145,3 +5145,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   Page renders (/arena/gate/timing 200). Detector suite green (510 passed, coverage gate met); arena go vet+test
   green; docs/arena.md updated. GATE 2 (motor-timing precision) is LANDED — the two-pronged tell verified both ways.
   TWO of three novel gates done. NEXT: GATE 3 — broken/remapped keyboard (arena/keymap.go).
+- **[GATE 3 / rung 1: remapped-keyboard core built + unit-grounded]**
+  (2026-07-09). Built arena/keymap.go — the third original gate (broken/remapped keyboard, not a wild-captcha clone):
+  the keys silently produce OTHER characters (a bijection over remapSize keys); the client must discover the mapping
+  by probing and type the target. MintKeymap picks a permutation of a key subset (easy 4-char target/12 keys, medium
+  5/18, hard 6/26) with the target drawn from the OUTPUTS so every char is typeable; the answer is "target|remapJSON".
+  CheckKeymap REPLAYS the key trace (each element a key char or the literal "BACK") through the remap and returns
+  whether the buffer equals the target PLUS the keystroke + backspace counts — the exploration signal. NOVEL tell
+  (wired next rung): a correct answer with backspaces==0 = the client decoded the remap from the payload and typed it
+  directly, since a human discovering a HIDDEN mapping must probe (press keys, see the wrong char, correct). 2 unit
+  tests green (arena go test): the decoded bot solve has backspaces 0 + exactly len(target) keystrokes; a human that
+  probes-a-wrong-key-then-corrects passes with backspaces>0; a single wrong key fails. NEXT (rung 2): wire
+  GET /arena/keymap + POST /arena/keymap/verify — anomaly typed_without_exploration when (pass AND backspaces==0) OR
+  (solve faster than a human discovery+type floor) + catalog.
