@@ -5021,3 +5021,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   0.0 / behavioral 0.0 / reputation 0.0. Only residue: br.webgl_perf_vs_renderer + br.webrtc_unavailable (the GPU /
   WebRTC container floor). Spatial gate DEFEATED. Two of three latest gates now defeated (clock + spatial). NEXT:
   audio (the ASR gate) — the last of the three.
+- **[R3 (audio): FULL DEFEAT GROUNDED (probabilistic) — ALL THREE latest gates now DEFEATED]**
+  (2026-07-08). Wired the audio (ASR) defeat: added numpy to the camoufox image + KS_ARENA_SOLVE=audio in run.py —
+  fetch the clip IN-SESSION, matched-filter it against the mounted FSDD templates (numpy) to transcribe the digits,
+  verify IN-SESSION paced 3s past the playback floor. GROUNDED LIVE (attempt 4 of a retry loop): arena solve
+  answer=9397 ok=True token=True anomaly=None (AUDIO GATE PASSED) and label=SUSPICIOUS 0.360 (NOT bot), net.no_js_execution
+  + arena_audio_superhuman ABSENT, only br.webgl_perf_vs_renderer + br.webrtc_unavailable (the GPU/WebRTC floor).
+  CAVEAT (honest): the audio defeat is PROBABILISTIC — the known-corpus matched-filter passes `easy` ~25% (real ASR
+  is external), and the container's software-WebGL floor is flaky (~1 in 4 runs trips br.webgl_maxtexture_unallocatable
+  -> bot 0.872 even on a correct solve); a clean defeat needs the ~25% solve AND the mild 2-tell floor to align
+  (attempt 4 here). LADDER COMPLETE: clock + spatial + audio ALL DEFEATED by the coherent camoufox stack
+  (KS_HARDENED+PROVISION+HEADFUL+REAL_INPUT) + a paced in-session solve. The universal residual across all three is
+  the CONTAINER ENVIRONMENT floor (software WebGL + no WebRTC ICE), which is provisionable (a real GPU + WebRTC would
+  clear it toward human) and is NEITHER a gate tell NOR a coherence tell — the arena thesis holds exactly: a solved
+  gate is not a discriminator; only the (defeated) per-session coherence + the (provisionable) environment floor are.
+  NEXT (R4): harden into a reusable arena-defeat profile + improve the matched-filter reliability.

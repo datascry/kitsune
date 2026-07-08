@@ -6,6 +6,9 @@ FROM mcr.microsoft.com/playwright/python:v1.48.0-jammy
 # Playwright-bundled binary matching the pip-pulled Playwright version, so install it explicitly.
 RUN pip install --no-cache-dir "camoufox[geoip]" && python -m camoufox fetch \
     && python -m playwright install firefox
+# numpy: the in-session matched-filter for the arena AUDIO gate (KS_ARENA_SOLVE=audio) — correlates the mounted
+# FSDD templates over the minted clip to transcribe the spoken digits, so the coherent browser can PASS the gate.
+RUN pip install --no-cache-dir numpy
 # Camoufox's bundled macOS font list exposes 49 dot-prefixed INTERNAL system fonts (.Aqua Kana, .Apple Color
 # Emoji UI, …) that a real Mac HIDES from web content — a font-enumeration leak that trips br.font_mac_internal
 # under KS_MACOS. Strip them so the macOS profile's web-measurable font set matches a real Mac (the ~524 non-dot

@@ -284,9 +284,62 @@ async () => {
 """
 
 
+def _arena_solve_audio(page: object) -> dict[str, object]:
+    # The audio (ASR) gate: fetch the clip IN-SESSION, matched-filter it against the mounted FSDD templates
+    # (numpy) to transcribe the digits, then verify IN-SESSION paced past the real-time-playback floor. The
+    # solve is Python compute; the mint + verify stay in the browser so the session is coherent + JS-executed.
+    import base64
+    import glob
+    import io
+    import wave
+
+    import numpy as np
+
+    fsdd = os.environ.get("FSDD_DIR", "/fsdd")
+    templates: list[tuple[int, object]] = []
+    for f in sorted(glob.glob(os.path.join(fsdd, "*.wav"))):
+        w = wave.open(f)
+        s = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32)
+        templates.append((int(os.path.basename(f)[0]), s / (np.linalg.norm(s) + 1e-9)))
+    ch = page.evaluate(  # type: ignore[attr-defined]
+        '() => fetch("/arena/audio?level=easy").then(r => r.json())'
+        ".then(c => ({ id: c.id, clip: c.clip, digits: c.digits }))"
+    )
+    raw = base64.b64decode(str(ch["clip"]).split(",", 1)[1])
+    w = wave.open(io.BytesIO(raw))
+    clip = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float32)
+    n = int(ch["digits"])
+    peaks = []
+    for digit, tn in templates:
+        if len(clip) < len(tn):
+            continue
+        c = np.correlate(clip, tn, mode="valid")
+        p = int(np.argmax(c))
+        peaks.append((float(c[p]), p, digit))
+    peaks.sort(reverse=True)
+    chosen: list[tuple[float, int, int]] = []
+    for sc, pos, digit in peaks:
+        if all(abs(pos - q) > 3000 for _, q, _ in chosen):
+            chosen.append((sc, pos, digit))
+        if len(chosen) == n:
+            break
+    chosen.sort(key=lambda x: x[1])
+    answer = "".join(str(d) for _, _, d in chosen)
+    v: dict[str, object] = page.evaluate(  # type: ignore[attr-defined]
+        "async (a) => { await new Promise((r) => setTimeout(r, 3000));"  # PACE past the playback floor
+        ' const v = await (await fetch("/arena/audio/verify", { method: "POST",'
+        ' headers: {"content-type":"application/json"}, body: JSON.stringify({id:a.id, answer:a.answer}) })).json();'
+        " return { ok: v.ok, anomaly: v.anomaly ?? null, token: !!v.token }; }",
+        {"id": ch["id"], "answer": answer},
+    )
+    return {"answer": answer, "digits": n, **v}
+
+
 def _arena_solve(page: object, kind: str) -> dict[str, object]:
     # Solve an arena gate IN-SESSION (same origin as the collector), paced past the human floor. The verify rides
     # the edge->detector relay so the anomaly-join sees a HUMAN-paced correct solve (no arena_*_superhuman).
+    if kind == "audio":
+        return _arena_solve_audio(page)
     js = {"clock": _ARENA_CLOCK_JS, "spatial": _ARENA_SPATIAL_JS}.get(kind)
     if js is None:
         return {"error": f"unsupported arena kind {kind}"}
