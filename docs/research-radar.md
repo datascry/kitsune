@@ -5170,3 +5170,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   2400ms floor) -> backspaces 1, anomaly=None, SILENT. Wrong/unknown/replayed all reject. FP-safe by construction: a
   hidden remap is undiscoverable without probing, and probing produces corrections. Arena go vet+test green. NEXT
   (rung 3): the detector relay + rule bh.arena_keymap_no_exploration + the on-screen remapped-keyboard page widget.
+- **[GATE 3 / rung 3: keymap gate LANDED — coherence join grounded BOTH WAYS. ALL THREE NOVEL GATES DONE.]**
+  (2026-07-09). Finished gate 3. Shipped the convicting rule bh.arena_keymap_no_exploration (w0.85, two-pronged) +
+  the typed_without_exploration -> arena_keymap_no_exploration mapping in _join_arena_anomaly; the detector
+  /arena/keymap + verify relays; the arena_page.py `keymap` slug + a runKeymap page widget (an on-screen keyboard
+  of the remapped keys + a backspace + submit, capturing the full key trace). Regenerated catalog/readme/matrix
+  (187->188 rules); extended test_app.py (the keymap relays + the anomaly branch + a 503-loop and 413-cap test that
+  also backfilled the audio/spatial/shell/timing relay error branches, restoring coverage 94.88 -> 95.83%). GROUNDED
+  LIVE END-TO-END through the EDGE, BOTH directions: an AUTOMATION that reads the remap and types the decoded keys
+  instantly (backspaces 0) -> anomaly + session label=bot with bh.arena_keymap_no_exploration FIRED; a HUMAN that
+  probes + backspaces + types + spends the discover time (backspaces 1) -> no anomaly, tell ABSENT. Page renders
+  (/arena/gate/keymap 200). Detector suite green (512 passed, 95.83%); arena go vet+test green; docs/arena.md updated.
+  GATE 3 LANDED. THE FULL TRIO OF NOVEL GATES IS COMPLETE: shell (track-under-occlusion), timing (motor-precision),
+  keymap (input-integrity) — each an ORIGINAL mechanism with a NEW server-observed tell, grounded convict-automation
+  + silent-on-human BOTH WAYS. LOOP OBJECTIVE MET.
