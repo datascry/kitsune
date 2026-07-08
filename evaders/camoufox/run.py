@@ -256,12 +256,41 @@ async () => {
 """
 
 
+_ARENA_SPATIAL_JS = r"""
+async () => {
+  const s = await (await fetch("/arena/spatial?level=easy")).json();
+  const COLORS = {red:[220,50,50],green:[50,170,70],blue:[60,90,220],yellow:[225,195,40],orange:[235,140,40],purple:[150,70,200]};
+  const target = s.prompt.match(/with the (\w+) face/)[1];
+  const selected = [];
+  for (let i = 0; i < s.tiles.length; i++) {
+    const bytes = Uint8Array.from(atob(s.tiles[i].image.split(",")[1]), (ch) => ch.charCodeAt(0));
+    const bmp = await createImageBitmap(new Blob([bytes], { type: "image/png" }));
+    const cv = document.createElement("canvas"); cv.width = 64; cv.height = 64;
+    const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(bmp, 0, 0);
+    const px = ctx.getImageData(0, 0, 64, 64).data;
+    let acc = [0,0,0], n = 0;
+    for (let y = 22; y < 29; y++) for (let x = 29; x < 36; x++) {
+      const idx = (y*64+x)*4; acc[0]+=px[idx]; acc[1]+=px[idx+1]; acc[2]+=px[idx+2]; n++; }
+    const avg = [acc[0]/n, acc[1]/n, acc[2]/n];
+    let best = null, bd = 1e9;
+    for (const k in COLORS) { const d = COLORS[k].reduce((sm,c,j) => sm+(avg[j]-c)**2, 0); if (d<bd){bd=d;best=k;} }
+    if (best === target) selected.push(i);
+  }
+  await new Promise((r) => setTimeout(r, 2000));  // PACE past the 500ms spatial floor
+  const v = await (await fetch("/arena/spatial/verify", { method: "POST",
+    headers: {"content-type":"application/json"}, body: JSON.stringify({id:s.id, selected}) })).json();
+  return { target, selected, ok: v.ok, anomaly: v.anomaly ?? null, token: !!v.token };
+}
+"""
+
+
 def _arena_solve(page: object, kind: str) -> dict[str, object]:
     # Solve an arena gate IN-SESSION (same origin as the collector), paced past the human floor. The verify rides
     # the edge->detector relay so the anomaly-join sees a HUMAN-paced correct solve (no arena_*_superhuman).
-    if kind != "clock":
+    js = {"clock": _ARENA_CLOCK_JS, "spatial": _ARENA_SPATIAL_JS}.get(kind)
+    if js is None:
         return {"error": f"unsupported arena kind {kind}"}
-    result: dict[str, object] = page.evaluate(_ARENA_CLOCK_JS)  # type: ignore[attr-defined]
+    result: dict[str, object] = page.evaluate(js)  # type: ignore[attr-defined]
     return result
 
 

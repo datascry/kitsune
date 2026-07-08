@@ -5013,3 +5013,11 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   So the clock gate is DEFEATED in the loop's sense: gate passed AND label != bot in the same session. The residual
   is the provisionable environment floor (a real GPU + WebRTC would clear it toward human), NOT any gate or coherence
   tell. NEXT: extend KS_ARENA_SOLVE to spatial + audio and ground the same per-gate defeat.
+- **[R3 (spatial): FULL DEFEAT GROUNDED — coherent camoufox + paced cube-select passes AND escapes conviction]**
+  (2026-07-08). Extended run.py KS_ARENA_SOLVE=spatial: in-session, fetch /arena/spatial, colour-sample each cube's
+  top face (createImageBitmap + the top-diamond box), select the target-colour tiles, PACE 2s past the 500ms floor,
+  verify. Ran the maximal coherent stack. GROUNDED LIVE: arena solve target=green selected=[0,3,4] ok=True token=True
+  anomaly=None (SPATIAL GATE PASSED, no speed tell), and the session is label=SUSPICIOUS 0.36 (NOT bot) with network
+  0.0 / behavioral 0.0 / reputation 0.0. Only residue: br.webgl_perf_vs_renderer + br.webrtc_unavailable (the GPU /
+  WebRTC container floor). Spatial gate DEFEATED. Two of three latest gates now defeated (clock + spatial). NEXT:
+  audio (the ASR gate) — the last of the three.
