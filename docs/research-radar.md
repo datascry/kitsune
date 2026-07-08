@@ -4960,3 +4960,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   is REALISABLE in-sandbox (sub-resource-fetch observation, the RealmProof upgrade) — a buildable follow-up gate —
   while the human-distinguishing layer stays external. ARENA-GATE-GAPS LOOP COMPLETE: audio + 3D spatial LANDED,
   Priority 2 SCOPED (in-sandbox path + external boundary recorded).
+- **[USER REQUEST: analog-clock CAPTCHA gate — LANDED as a new captcha kind]**
+  (2026-07-08). Added a `clock` CAPTCHA (arena/clock.go): renders an analog clock face at a random time in pure Go
+  (circle + 12 ticks + hour/minute hands via drawLine/thickLine + per-level speckle), answer "H:MM" (minutes a
+  multiple of 5). Wired as a new CaptchaKind so it REUSES the entire captcha infrastructure — MintCaptcha/CheckCaptcha
+  (normClock canonicalises "03:45"/"3.45"/"3:45"), the /arena/captcha relay, the runCaptcha page widget, the 800ms
+  solved_faster_than_human floor, and the arena_captcha_superhuman coherence rule — so NO new mux/relay/rule/detector
+  code, just the render + the kind. GROUNDED LIVE: mint serves a PNG clock (answer not leaked), wrong/unknown reject,
+  the catalog lists it, /arena/gate/clock renders (200). Positive path grounded with a ray-casting reference solver
+  (evaders/arena-solver-clock — walks rays from the hub to find the two hand angles): 8/8 easy clocks read correctly
+  -> ok=True + solved_faster_than_human, which joins the session as bh.arena_captcha_superhuman (inherited from the
+  captcha family). Arena go test green; detector suite green (508 passed, 95.36%); arena.md updated. A distinct
+  visual-reasoning gate (read analog hands) beyond glyph OCR.

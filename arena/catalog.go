@@ -39,6 +39,7 @@ func arenaCatalog() Catalog {
 				Charset: captchaAlphabet + " (+ the 0O/1IL confusables at hard)",
 			},
 			{Kind: "math", Prompt: "Arithmetic — addition (easy), mixed ops (medium), multiplication (hard)."},
+			{Kind: "clock", Prompt: "Read the analog clock and type the time it shows (H:MM). A rendered clock face at a random time — owned procedural, a visual-reasoning task beyond glyph OCR; minutes are a multiple of 5."},
 			{
 				Kind: "image-select", Prompt: "Select every <category> — emoji glyph grid (Noto Emoji, OFL 1.1).",
 				Categories: emojiCatOrder,
