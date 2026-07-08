@@ -4865,3 +4865,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   test green. NEXT (rung 4): the reference solver (template-match against the embedded corpus, or Whisper) to ground
   the POSITIVE mint->solve->verify->pass path end-to-end + the coherence join (a scripted solver still detector-
   convicted); then the arena_page.py `audio` slug + <audio> page widget.
+- **[PRIORITY 1 / rung 4: audio gate POSITIVE path grounded end-to-end — reference solver beats easy at a cost]**
+  (2026-07-08). Built evaders/arena-solver-audio/solve.py — a matched-filter reference solver (slides the embedded
+  FSDD templates over the minted clip, takes the N best non-overlapping correlation peaks by position). GROUNDED the
+  mint->solve->verify->PASS path LIVE against the arena: a correct transcription (e.g. "5464") -> ok=True + an HMAC
+  token, and the SERVER-OBSERVED anomaly `solved_faster_than_audio` fires (the scripted solver answered faster than
+  the clip's real-time listen floor — the automation tell). PROVES the arena thesis on the audio modality: the naive
+  known-corpus matcher beats EASY (~2/6, correlation is noise-robust) but is DEFEATED on medium/hard (shorter gaps +
+  a background tone + bleed) — the per-level distortion is a COST dial that forces a real ASR (Whisper), exactly like
+  the text gate forces real OCR. So the gate is functionally complete + grounded (mint OK, positive PASS, negatives
+  reject, single-use, token, speed anomaly, catalog). REMAINING for full landing: the COHERENCE JOIN — the detector
+  has no /arena/audio relay yet and `solved_faster_than_audio` is not in _join_arena_anomaly's map (it handles
+  solved_faster_than_human/trajectory/honeypot/queue); rung 5 wires the detector relay + the anomaly->
+  arena_audio_superhuman mapping + a rule so a solved-but-fast session is convicted. Then the arena_page.py slug +
+  <audio> widget.
