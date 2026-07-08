@@ -5134,3 +5134,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   all reject. The two prongs close the forgery: you can't fake precision (std) AND you can't fake jitter without
   spending the real time (impossibility) -> the only silent path is genuine human jitter + real elapsed. Arena go
   vet+test green. NEXT (rung 3): the detector relay + rule bh.arena_timing_superhuman + the hold-and-release page widget.
+- **[GATE 2 / rung 3: timing gate LANDED — coherence join grounded BOTH WAYS end-to-end through the edge]**
+  (2026-07-09). Finished gate 2. Shipped the convicting rule bh.arena_timing_superhuman (w0.85, two-pronged) + the
+  timing_superhuman -> arena_timing_superhuman mapping in _join_arena_anomaly; the detector /arena/timing + verify
+  relays; the arena_page.py `timing` slug + a runTiming page widget (a Hold button: pointerdown starts the timer,
+  pointerup measures the achieved hold, N targets sequentially, then submit). Regenerated catalog/readme/matrix
+  (186->187 rules); extended test_app.py (the timing relays + the timing_superhuman anomaly branch). GROUNDED LIVE
+  END-TO-END through the EDGE, BOTH directions: a TARGET-EXACT automation -> anomaly + session label=bot with
+  bh.arena_timing_superhuman FIRED; a HUMAN (jitter + real elapsed) -> no anomaly, bh.arena_timing_superhuman ABSENT.
+  Page renders (/arena/gate/timing 200). Detector suite green (510 passed, coverage gate met); arena go vet+test
+  green; docs/arena.md updated. GATE 2 (motor-timing precision) is LANDED — the two-pronged tell verified both ways.
+  TWO of three novel gates done. NEXT: GATE 3 — broken/remapped keyboard (arena/keymap.go).

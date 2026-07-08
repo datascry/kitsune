@@ -391,6 +391,8 @@ def create_app(
             kind = "arena_audio_superhuman"
         elif anomaly == "solved_before_shuffle":
             kind = "arena_shell_precomputed"
+        elif anomaly == "timing_superhuman":
+            kind = "arena_timing_superhuman"
         elif anomaly == "trajectory_exceeds_solve_time":
             kind = "arena_trajectory_forged"
         elif anomaly == "honeypot_filled":
@@ -613,6 +615,37 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)  # solved_before_shuffle -> arena_shell_precomputed
+        _note_flow(ks_sid)
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.get("/arena/timing", include_in_schema=False)
+    async def arena_timing(level: str | None = None) -> Response:
+        # Relay the self-hosted motor-timing-precision challenge (hold/release targets); the targets ride in the
+        # JSON, the client reports its achieved holds to /verify.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/timing", params={"level": _arena_level(level)})
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/timing/verify", include_in_schema=False)
+    async def arena_timing_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 65536:
+            raise HTTPException(status_code=413, detail="answer too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/timing/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        _join_arena_anomaly(ks_sid, r)  # timing_superhuman -> arena_timing_superhuman
         _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 

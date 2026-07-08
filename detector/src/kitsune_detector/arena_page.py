@@ -168,6 +168,15 @@ CHALLENGES: list[dict[str, str]] = [
         "gate (not a wild-captcha clone). The ball is invisible during the swaps, so a snapshot-then-reason agent "
         "cannot follow it; a correct answer faster than the shuffle runtime was precomputed from the payload.",
     },
+    {
+        "slug": "timing",
+        "label": "Motor-timing precision",
+        "family": "Motor-timing (Grillmaster-style)",
+        "mode": "timing",
+        "blurb": "Press and hold each target for its shown duration, then release — an original motor-precision gate "
+        "(not a wild-captcha clone). The release-error spread across targets convicts a bot: superhuman precision "
+        "(target-exact or a flat constant offset) or claiming more total hold time than the solve took.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -439,6 +448,33 @@ ARENA_JS = r"""
     document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
   }
 
+  async function runTiming(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/timing"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var label=document.createElement("p"); label.className="note"; box.appendChild(label);
+    var btn=document.createElement("button"); btn.textContent="Hold"; btn.style.minWidth="130px"; box.appendChild(btn);
+    var status=document.createElement("p"); status.className="note"; box.appendChild(status);
+    var holds=[], idx=0, t0=0;
+    function showTarget(){
+      if(idx>=c.targets.length){ submit(); return; }
+      var t=c.targets[idx];
+      label.textContent="Target "+(idx+1)+"/"+c.targets.length+": hold for "+t.hold_ms+" ms (±"+t.tolerance_ms+")";
+    }
+    btn.addEventListener("pointerdown", function(e){ e.preventDefault(); t0=performance.now(); status.textContent="holding…"; });
+    btn.addEventListener("pointerup", function(e){ if(!t0) return; var ms=Math.round(performance.now()-t0); t0=0;
+      holds.push(ms); var t=c.targets[idx]; var err=ms-t.hold_ms;
+      status.textContent="held "+ms+" ms ("+(err>=0?"+":"")+err+" ms)"; idx++; setTimeout(showTarget, 500); });
+    async function submit(){
+      btn.disabled=true; label.textContent="Verifying…";
+      var v=await (await fetch("/arena/timing/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, holds:holds})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Timing solved — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Timing PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Some holds were out of tolerance — try again."; say("Timing rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    }
+    showTarget(); say("Press and hold the button for each shown duration, then release.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -537,6 +573,7 @@ ARENA_JS = r"""
       else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
       else if(A.mode==="spatial"){ await runSpatial(gv, gn, tok); }
       else if(A.mode==="shell"){ await runShell(gv, gn, tok); }
+      else if(A.mode==="timing"){ await runTiming(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

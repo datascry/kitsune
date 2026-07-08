@@ -312,6 +312,8 @@ def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatc
     assert client.post("/arena/spatial/verify", json={"id": "x", "selected": [0]}).status_code in ok
     assert client.get("/arena/shell", params={"level": "easy"}).status_code in ok
     assert client.post("/arena/shell/verify", json={"id": "x", "choice": "0"}).status_code in ok
+    assert client.get("/arena/timing", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/timing/verify", json={"id": "x", "holds": [1000]}).status_code in ok
 
 
 class _BenchResp:
@@ -405,6 +407,15 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
     assert client.get("/arena/shell", params={"level": "easy"}).status_code == 200
     assert (
         client.post("/arena/shell/verify", json={"id": "x", "choice": "0"}, headers={"Cookie": "ks_sid=s"}).status_code
+        == 200
+    )
+    # the timing relay's 200-branch: GET + the /verify join (timing_superhuman -> arena_timing_superhuman)
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "timing_superhuman"}))
+    assert client.get("/arena/timing", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post(
+            "/arena/timing/verify", json={"id": "x", "holds": [1000]}, headers={"Cookie": "ks_sid=s"}
+        ).status_code
         == 200
     )
 
