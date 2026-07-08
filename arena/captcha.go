@@ -34,6 +34,7 @@ const (
 	CaptchaImageSelect CaptchaKind = "image-select" // pick the tiles matching a prompt (emoji-glyph grid)
 	CaptchaImageDoodle CaptchaKind = "image-doodle" // pick the tiles matching a prompt (Quick, Draw! doodles)
 	CaptchaImageShapes CaptchaKind = "image-shapes" // pick the tiles matching a prompt (owned procedural shapes)
+	CaptchaClock       CaptchaKind = "clock"        // read an analog clock face (owned procedural — visual reasoning)
 )
 
 // readable alphabet — excludes the visually ambiguous 0/O/1/I/L so a human can actually read the image.
@@ -178,6 +179,9 @@ func MintCaptcha(kind CaptchaKind, lv Level, fontName, charset string) (Captcha,
 	case CaptchaMath:
 		prompt, ans := mintMath(lv)
 		return Captcha{Kind: CaptchaMath, ID: id, Prompt: prompt}, ans
+	case CaptchaClock:
+		img, ans := mintClock(lv)
+		return Captcha{Kind: CaptchaClock, ID: id, Prompt: "What time does the clock show? (H:MM)", Image: img}, ans
 	case CaptchaHoneypot:
 		return Captcha{Kind: CaptchaHoneypot, ID: id, Prompt: "Submit without filling the hidden field.", Field: "website_url"}, ""
 	case CaptchaImageSelect:
@@ -280,6 +284,8 @@ func CheckCaptcha(kind CaptchaKind, expected, submitted string) bool {
 		return strings.TrimSpace(submitted) == ""
 	case CaptchaImageSelect, CaptchaImageDoodle, CaptchaImageShapes:
 		return normIndexSet(expected) == normIndexSet(submitted) && normIndexSet(submitted) != ""
+	case CaptchaClock:
+		return normClock(submitted) == normClock(expected)
 	default:
 		return strings.EqualFold(strings.TrimSpace(submitted), strings.TrimSpace(expected))
 	}

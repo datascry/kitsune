@@ -80,6 +80,15 @@ CHALLENGES: list[dict[str, str]] = [
         "blurb": "Answer a small arithmetic question — the classic text Turing test.",
     },
     {
+        "slug": "clock",
+        "label": "Analog-clock CAPTCHA",
+        "family": "CAPTCHA · read-the-clock",
+        "mode": "captcha",
+        "blurb": "Read the analog clock face and type the time it shows (H:MM) — a clock rendered at a random time "
+        "(owned procedural, zero-license). A visual-reasoning task (interpret the hour + minute hands), distinct "
+        "from glyph OCR; minutes are a multiple of 5.",
+    },
+    {
         "slug": "honeypot",
         "label": "Honeypot trap",
         "family": "CAPTCHA · hidden field",

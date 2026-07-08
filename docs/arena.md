@@ -50,6 +50,7 @@ pact, checkbox and managed are coherence/binary-gated and have no level dial.
 | `memory-hard` | Proof-of-work · Argon2id | memory-hard hashcash | reference Argon2id solver (costly by design) | 4 / 8 / 16 MB |
 | `text` | CAPTCHA · distorted image | warped, overlapping, noise-crossed glyphs (answer in pixels) | **real OCR** (`arena-solver-ocr`, TrOCR) — the Go heuristic fails | 4 / 5 / 6 chars + noise |
 | `math` | CAPTCHA · logic | arithmetic | scripted parse+compute (`+`,`−`,`×`) | `+` / `+−×` / large `×` |
+| `clock` | CAPTCHA · read-the-clock | read an **analog clock face** rendered at a random time + type it (H:MM) — owned procedural, a visual-reasoning task (interpret the hour/minute hands) beyond glyph OCR | a ray-casting hand-angle reader (owned geometry); real clock CAPTCHAs need robust CV | easy / medium / hard (noise) |
 | `honeypot` | CAPTCHA · hidden field | a trap field that must stay empty | leave it empty | — |
 | `audio` | reCAPTCHA / hCaptcha audio (accessibility) | transcribe a spoken-digit WAV (embedded CC-BY-SA FSDD corpus, pure-Go synth + noise/tone/overlap); the ASR-benchmark twin of `text`/OCR. A correct answer faster than the clip's real-time playback is ASR automation (`bh.arena_audio_superhuman`, server-observed) | real ASR (Whisper) — the matched-filter reference solver beats easy but not medium/hard | easy / medium / hard (distortion) |
 | `slider` | CAPTCHA · GeeTest drag | drop position **+ drag-trajectory** velocity check | variable-velocity trajectory synthesis | tolerance + trajectory bar |

@@ -48,6 +48,7 @@ var minHumanCaptchaSolve = map[CaptchaKind]time.Duration{
 	CaptchaMath:        350 * time.Millisecond, // read + compute + type (trivial arithmetic is fast for a human)
 	CaptchaImageSelect: 500 * time.Millisecond, // perceive the grid + click the matching tiles
 	CaptchaImageDoodle: 500 * time.Millisecond,
+	CaptchaClock:       800 * time.Millisecond, // read the analog hands + type the time
 }
 
 // sliderClaimMarginMs is the clock/network slack when comparing the client's CLAIMED drag duration (trajectory
@@ -125,6 +126,8 @@ func captchaKindOf(s string) CaptchaKind {
 		return CaptchaImageDoodle
 	case "image-shapes":
 		return CaptchaImageShapes
+	case "clock":
+		return CaptchaClock
 	default:
 		return CaptchaText
 	}
