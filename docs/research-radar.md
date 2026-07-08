@@ -4984,3 +4984,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   #1 (superhuman speed) is trivially defeated by pacing — it is a COST floor, not a durable discriminator. The
   DURABLE tell is #2: net.no_js_execution (a script, not a coherent browser). NEXT (R2): carry a paced solve INSIDE a
   coherent real-browser evader so no_js_execution also clears.
+- **[R2: a real browser DEFEATS net.no_js_execution + passes the gate paced — but relocates the fight to
+  per-session coherence (10 tells). Grounded.]**
+  (2026-07-08). Drove a real headful Chromium (Playwright, xvfb, via the kitsune-playwright-extra image) THROUGH THE
+  EDGE: load the collector page (JS executes), then mint+solve the clock IN-PAGE (createImageBitmap decode — the
+  collector CSP forbids <img> data: URIs; willReadFrequently canvas), PACED 2.6s past the 800ms floor, then verify.
+  GROUNDED: solve answer=11:40 -> ok=True, token=True, anomaly=null (gate PASSED, no speed tell); and net.no_js_execution
+  is ABSENT from the verdict — a real browser trivially clears it. BUT the session is STILL label=bot on TEN other
+  tells the plain browser lights up: bh.path_too_straight, bh.power_law_violation, bh.synthetic_no_coalesced
+  (synthetic pointer), br.automation_globals, br.cdp_runtime_enabled, br.webdriver_present (automation), br.media_devices_empty,
+  br.voices_empty, br.webgl_software (headless/container env), net.tls_ext_order_static_within_session. FINDING: the
+  arena gate + no_js_execution are the EASY half; defeating them just RELOCATES conviction to the full per-session
+  coherence surface, which is SATURATED (the rest of the lab). To actually DEFEAT (escape conviction) you need the
+  coherent+provisioned morph stack — a stealth browser (nodriver/undetected: no automation_globals/webdriver/cdp) +
+  KS_PROVISION (media_devices/voices) + a real/coherent GPU (not webgl_software) + a humanizer (non-straight paths) +
+  coherent TLS. Saved evaders/arena-defeat/clock_defeat.mjs. NEXT (R3): compose the coherent stack + paced solve and
+  measure how far the label drops (the memory's provisioned-coherent floor is human 0.300).
