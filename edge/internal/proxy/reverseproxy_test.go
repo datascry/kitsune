@@ -665,7 +665,7 @@ func TestSanitizeClientIngestStripsServerLayers(t *testing.T) {
 		`{"session_id":"s","layer":"browser","kind":"user_agent","value":"UA","source":"collector","observed_at":"2026-01-01T00:00:00Z"},` +
 		`{"session_id":"s","layer":"behavioral","kind":"trace_hash","value":"abc","source":"collector","observed_at":"2026-01-01T00:00:00Z"}]`
 	r := httptest.NewRequest(http.MethodPost, "/ingest", strings.NewReader(body))
-	sanitizeClientIngest(r)
+	sanitizeClientIngest(httptest.NewRecorder(), r)
 	out, _ := io.ReadAll(r.Body)
 	var sigs []signal.Signal
 	if err := json.Unmarshal(out, &sigs); err != nil {
@@ -694,7 +694,7 @@ func TestSanitizeClientIngestLeavesOtherPathsUntouched(t *testing.T) {
 		{http.MethodPost, "/ingest", `not json`},
 	} {
 		r := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
-		sanitizeClientIngest(r)
+		sanitizeClientIngest(httptest.NewRecorder(), r)
 		out, _ := io.ReadAll(r.Body)
 		if string(out) != tc.body {
 			t.Fatalf("%s %s: body altered %q -> %q", tc.method, tc.path, tc.body, string(out))
@@ -733,5 +733,23 @@ func TestServeHTTPBlocksAdminPaths(t *testing.T) {
 	}
 	if backendHit {
 		t.Error("admin path reached the backend")
+	}
+}
+
+func TestSanitizeClientIngestRejectsOversizedBody(t *testing.T) {
+	// A body over the cap must be rejected with 413 and NOT proxied; a normal body must pass.
+	big := strings.Repeat("x", maxIngestBody+100)
+	r := httptest.NewRequest(http.MethodPost, "/ingest", strings.NewReader(`[{"blob":"`+big+`"}]`))
+	rr := httptest.NewRecorder()
+	if !sanitizeClientIngest(rr, r) {
+		t.Fatal("oversized body was not rejected")
+	}
+	if rr.Code != http.StatusRequestEntityTooLarge {
+		t.Errorf("want 413, got %d", rr.Code)
+	}
+	small := httptest.NewRequest(http.MethodPost, "/ingest",
+		strings.NewReader(`[{"session_id":"s","layer":"browser","kind":"ua","value":"U","source":"collector","observed_at":"2026-01-01T00:00:00Z"}]`))
+	if sanitizeClientIngest(httptest.NewRecorder(), small) {
+		t.Error("a normal-sized body was wrongly rejected")
 	}
 }
