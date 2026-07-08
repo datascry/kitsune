@@ -4809,3 +4809,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (5 min). No forge, no replay, no answer-bypass, no difficulty bypass. Second consecutive grounded safe-clear (after
   the input-validation + X-KS-Session clears). One fresh high-value target remains before terminus: edge
   request-smuggling / the edge's custom TLS+ClientHello-peek + QUIC handling.
+- **[RUNG 5: edge proxy — request-smuggling + IP/header trust SAFE (grounded); AUDIT TERMINUS]**
+  (2026-07-08). Audited the edge proxy / header trust — SAFE. REQUEST SMUGGLING: grounded via raw TLS sockets — a
+  CL.TE conflict (Content-Length + Transfer-Encoding: chunked with a smuggled GET /scoreboard) -> HTTP 422 (Go's
+  net/http rejects the framing; the smuggled request is NEVER processed as a second request), duplicate
+  Content-Length -> 400, a normal request -> 200. No desync (Go's strict stdlib framing). IP TRUST: the client IP for
+  IP-reputation comes from the edge's clientIP(r)=RemoteAddr (reverseproxy.go:388, connection-level, unspoofable),
+  posted as the observed_ip SIGNAL — not a client header. The detector runs plain uvicorn.run with NO proxy_headers /
+  forwarded_allow_ips, so request.client.host is the real TCP peer (the edge), NOT client-controllable via
+  X-Forwarded-For. X-KS-Session is Set-overwritten (rung 3). So no IP/session/header spoofing. NOTED (low severity,
+  NOT a client-exploitable vuln, optional demo gate — recorded not fixed): the arena /arena/rate relay buckets by
+  request.client.host = the EDGE's IP (the detector is internal), so it is a per-EDGE not per-client rate-limit (a
+  shared bucket); the real client IP IS available in the edge-appended XFF but unused. A future targeted fix would
+  read the edge-appended (rightmost, spoof-proof) X-Forwarded-For value. THIRD consecutive safe-clear -> TERMINUS.
+  AUDIT COMPLETE: 2 grounded fixes this loop (rung 1 admin data-disclosure, rung 2 /ingest body-size DoS) + 3
+  safe-clears (input-validation, arena gates, edge proxy) + the noted rate-limit observation; session_id entropy +
+  unbounded-store recorded. The pipeline-security surface is now audited end-to-end.
