@@ -5,6 +5,34 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.18.0](https://github.com/datascry/kitsune/compare/v1.17.0...v1.18.0) (2026-07-08)
+
+
+### Features
+
+* **arena:** 3d spatial gate core — isometric cube grid, mint + set-verify ([e19adda](https://github.com/datascry/kitsune/commit/e19addaf7e86d386b6d397445a1895d97cf910df))
+* **arena:** analog-clock captcha gate — render + read-the-clock verify, grounded ([95c1082](https://github.com/datascry/kitsune/commit/95c108298c467fcf95af70176331558b08b5f2f3))
+* **arena:** audio gate core — embedded fsdd corpus + pure-go wav codec + mint/verify ([841d8e0](https://github.com/datascry/kitsune/commit/841d8e083f1a7a9c54e0e0c5d2230eacdbe95567))
+* **arena:** wire the audio gate — /arena/audio mint+verify, catalog, speed floor ([664c049](https://github.com/datascry/kitsune/commit/664c0496cc3b094908bf3e3db5abace7667818c0))
+* **arena:** wire the spatial gate — /arena/spatial mint+verify, catalog, speed floor ([0339cc9](https://github.com/datascry/kitsune/commit/0339cc9c42ec57da99ac974a1829e0feae6a68cd))
+* **detector:** audio gate coherence join — relay + arena_audio_superhuman rule, grounded ([a65e753](https://github.com/datascry/kitsune/commit/a65e753c01fb98600d4f0c2d21831a523689a4cc))
+* **detector:** audio gate page widget — the audio gate is fully landed ([a90171f](https://github.com/datascry/kitsune/commit/a90171f0576ae8fafc99b24e3c8619f667d46a18))
+* **detector:** spatial gate landed — relay + page widget + solver + coherence join ([8fdc720](https://github.com/datascry/kitsune/commit/8fdc720c1df74090f59c74623adc9e331d79d191))
+* **evaders:** arena-defeat generalize — whole arena defeated in one coherent session ([ad87ea0](https://github.com/datascry/kitsune/commit/ad87ea0981b38783cfa8d1cea2d3f8c51a0162f1))
+* **evaders:** arena-defeat r2 — a real browser clears no_js_execution + passes the gate paced ([07ab7fb](https://github.com/datascry/kitsune/commit/07ab7fb297fa8db67923a3f3fb12007f4a95586f))
+* **evaders:** arena-defeat r3 — coherent camoufox + paced solve defeats the clock gate ([c2d085b](https://github.com/datascry/kitsune/commit/c2d085b13eba7638c2be3cc74f658afdec4a4bb7))
+* **evaders:** arena-defeat r3 — coherent camoufox defeats the audio gate; all three defeated ([a1dd4ac](https://github.com/datascry/kitsune/commit/a1dd4ac32632fd8237e63553b25c94d33db8bd9a))
+* **evaders:** arena-defeat r3 — coherent camoufox defeats the spatial gate too ([d809d4a](https://github.com/datascry/kitsune/commit/d809d4abdaef66cfa6b4cccb77110e26a4debeee))
+* **evaders:** arena-defeat r4 — ncc audio solve (13-&gt;100% easy) + reusable defeat profile ([a3791e1](https://github.com/datascry/kitsune/commit/a3791e13416a4d7d2acb3587811b68afb785aad7))
+* **evaders:** audio gate reference solver — matched-filter, grounds the positive path ([b0096c0](https://github.com/datascry/kitsune/commit/b0096c06c2a0f301f2c2be93ed6ed03434428d8e))
+
+
+### Bug Fixes
+
+* **arena:** add the missing FSDD CC-BY-SA attribution for the audio corpus ([238b7ed](https://github.com/datascry/kitsune/commit/238b7edc126d420be04864ed9fd18410b77fd445))
+* **detector:** allow clock through the arena captcha relay whitelist ([12bb98c](https://github.com/datascry/kitsune/commit/12bb98ca957d443be866deecb2c1aa2138d7a064))
+* **evaders:** bump os-spoof x/crypto to v0.53.0 (ghsa ssh panic + unbounded) ([037e8da](https://github.com/datascry/kitsune/commit/037e8da84e543b865cda28902532778c0580e260))
+
 ## [1.17.0](https://github.com/datascry/kitsune/compare/v1.16.0...v1.17.0) (2026-07-08)
 
 
