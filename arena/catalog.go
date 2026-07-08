@@ -77,6 +77,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/shell?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "timing",
+				Prompt:   "Press and hold each target for its shown duration, then release. A motor-timing-precision gate (not a wild-captcha clone): the release-error std across targets convicts superhuman precision — a target-exact or constant-offset bot collapses the std to ~0 while a human has a jitter floor; claiming more total hold time than the solve took is also impossible (timing_superhuman).",
+				Endpoint: "GET /arena/timing?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }
