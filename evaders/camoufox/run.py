@@ -12,6 +12,7 @@ from camoufox.sync_api import Camoufox
 
 EDGE = os.environ.get("KITSUNE_EDGE", "https://edge:8443/")
 DETECTOR = os.environ.get("KITSUNE_DETECTOR", "http://detector:8080")
+ARENA_SOLVE = os.environ.get("KS_ARENA_SOLVE")  # e.g. "clock" — solve that arena gate in-session, paced (defeat)
 # KS_FAST=1: detection-only capture — skip the mouse simulation + fixed 2s wait and instead drive the
 # collector's `?fast` path, completing the moment signals are POSTed (body[data-ks=sent]). Trades the
 # behavioral layer (not needed for the single-Camoufox fingerprint test) for ~3s less per capture.
@@ -227,8 +228,46 @@ def _run_task(page: object, steps: list[dict]) -> None:
             continue
 
 
+_ARENA_CLOCK_JS = r"""
+async () => {
+  const c = await (await fetch("/arena/captcha?kind=clock&level=easy")).json();
+  const bytes = Uint8Array.from(atob(c.image.split(",")[1]), (ch) => ch.charCodeAt(0));
+  const bmp = await createImageBitmap(new Blob([bytes], { type: "image/png" }));
+  const cv = document.createElement("canvas"); cv.width = 100; cv.height = 100;
+  const ctx = cv.getContext("2d", { willReadFrequently: true }); ctx.drawImage(bmp, 0, 0);
+  const px = ctx.getImageData(0, 0, 100, 100).data;
+  const dark = (x, y) => { const i = (y * 100 + x) * 4; return px[i] < 110 && px[i+1] < 110 && px[i+2] < 110; };
+  const reach = [];
+  for (let a = 0; a < 360; a++) {
+    const rad = a * Math.PI / 180, dx = Math.sin(rad), dy = -Math.cos(rad); let run = 0, miss = 0;
+    for (let d = 3; d < 40; d++) { const x = Math.round(50 + d*dx), y = Math.round(50 + d*dy);
+      if (x>=0&&x<100&&y>=0&&y<100&&dark(x,y)) { run=d; miss=0; } else { miss++; if (miss>2) break; } }
+    reach[a] = run;
+  }
+  let ma = 0; for (let a=0;a<360;a++) if (reach[a]>reach[ma]) ma=a;
+  let ha = 0; for (let a=0;a<360;a++) { const dd=Math.min(Math.abs(a-ma),360-Math.abs(a-ma)); if (dd>18&&reach[a]>reach[ha]) ha=a; }
+  const minute = Math.round(ma/6)%60; let hour = Math.round(ha/30 - minute/60)%12; if (hour===0) hour=12;
+  const answer = hour + ":" + String(minute).padStart(2, "0");
+  await new Promise((r) => setTimeout(r, 2600));  // PACE past the 800ms clock floor
+  const v = await (await fetch("/arena/captcha/verify", { method: "POST",
+    headers: {"content-type":"application/json"}, body: JSON.stringify({kind:"clock", id:c.id, answer}) })).json();
+  return { answer, ok: v.ok, anomaly: v.anomaly ?? null, token: !!v.token };
+}
+"""
+
+
+def _arena_solve(page: object, kind: str) -> dict[str, object]:
+    # Solve an arena gate IN-SESSION (same origin as the collector), paced past the human floor. The verify rides
+    # the edge->detector relay so the anomaly-join sees a HUMAN-paced correct solve (no arena_*_superhuman).
+    if kind != "clock":
+        return {"error": f"unsupported arena kind {kind}"}
+    result: dict[str, object] = page.evaluate(_ARENA_CLOCK_JS)  # type: ignore[attr-defined]
+    return result
+
+
 def _capture(browser: object) -> dict[str, object]:
     context = browser.new_context(ignore_https_errors=True)  # type: ignore[attr-defined]
+    arena_result: dict[str, object] | None = None
     try:
         page = context.new_page()
         if FAST:
@@ -271,6 +310,8 @@ def _capture(browser: object) -> dict[str, object]:
                 page.wait_for_selector("body[data-ks='sent']", timeout=8000)
             except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
                 page.wait_for_timeout(2000)
+        if ARENA_SOLVE:
+            arena_result = _arena_solve(page, ARENA_SOLVE)  # paced in-session gate solve
         cookie = next((c for c in context.cookies() if c["name"] == "ks_sid"), None)
     finally:
         context.close()
@@ -278,6 +319,8 @@ def _capture(browser: object) -> dict[str, object]:
         raise SystemExit("no ks_sid cookie")
     with urllib.request.urlopen(f"{DETECTOR}/verdict/{cookie['value']}") as resp:
         verdict: dict[str, object] = json.load(resp)
+    if arena_result is not None:
+        verdict["arena"] = arena_result
     return verdict
 
 

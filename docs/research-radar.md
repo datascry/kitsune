@@ -5000,3 +5000,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   KS_PROVISION (media_devices/voices) + a real/coherent GPU (not webgl_software) + a humanizer (non-straight paths) +
   coherent TLS. Saved evaders/arena-defeat/clock_defeat.mjs. NEXT (R3): compose the coherent stack + paced solve and
   measure how far the label drops (the memory's provisioned-coherent floor is human 0.300).
+- **[R3 (clock): FULL DEFEAT GROUNDED — coherent camoufox + paced solve passes the gate AND escapes conviction]**
+  (2026-07-08). Composed the full defeat: extended evaders/camoufox/run.py with KS_ARENA_SOLVE=clock — after the
+  collector POSTs, solve the clock IN-SESSION (createImageBitmap decode + ray-cast, same origin) PACED 2.6s past the
+  800ms floor, then verify. Ran the MAXIMAL coherent stack (KS_HARDENED + KS_PROVISION + KS_HEADFUL + KS_REAL_INPUT):
+  engine-level Gecko FP (no CDP, network 0), provisioned floor (native PulseAudio + speech-dispatcher -> media/voices
+  present), real XTEST input (coalesced batches -> behavioral 0). GROUNDED LIVE through the edge: arena solve
+  answer=12:45 ok=True token=True anomaly=None (CLOCK GATE PASSED, no speed tell), and the session verdict is
+  label=SUSPICIOUS score 0.36 (NOT bot) with network 0.0 / behavioral 0.0 / reputation 0.0, conviction_score 0.0,
+  net.no_js_execution ABSENT, arena_captcha_superhuman ABSENT. The ONLY residue is 2 ENVIRONMENT tells
+  (br.webgl_software, br.webrtc_unavailable = the container's no-GPU/no-ICE hardware floor), which do not convict.
+  So the clock gate is DEFEATED in the loop's sense: gate passed AND label != bot in the same session. The residual
+  is the provisionable environment floor (a real GPU + WebRTC would clear it toward human), NOT any gate or coherence
+  tell. NEXT: extend KS_ARENA_SOLVE to spatial + audio and ground the same per-gate defeat.
