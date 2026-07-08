@@ -131,6 +131,16 @@ CHALLENGES: list[dict[str, str]] = [
         "blurb": "An anonymous proof-of-personhood token that SKIPS the challenge — the frontier defense. "
         "The honest caveat: the issuer mints freely here, so it is also the documented bypass.",
     },
+    {
+        "slug": "audio",
+        "label": "Audio spoken-digit CAPTCHA",
+        "family": "reCAPTCHA / hCaptcha audio (accessibility)",
+        "mode": "audio",
+        "blurb": "Transcribe a spoken-digit clip — the ASR-benchmark twin of the distorted-text (OCR) gate. "
+        "The clip is synthesised in pure Go from an embedded spoken-digit corpus, distorted per level; a correct "
+        "answer faster than the clip's real-time playback is ASR automation (server-observed), so a solver passes "
+        "the gate but is convicted on coherence.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -289,6 +299,28 @@ ARENA_JS = r"""
     else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong answer (or the challenge expired)."; say("CAPTCHA rejected."); }
     document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
   }
+  async function runAudio(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    say("Requesting an audio CAPTCHA…");
+    var cr=await fetch(withLevel("/arena/audio"));
+    if(!cr.ok){ say("Audio gate unavailable ("+cr.status+")."); return; }
+    var c=await cr.json();
+    var wrap=document.createElement("div");
+    var au=document.createElement("audio"); au.controls=true; au.src=c.clip; wrap.appendChild(au); wrap.appendChild(document.createElement("br"));
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt+" ("+c.digits+" digits)"; wrap.appendChild(p);
+    var inp=document.createElement("input"); inp.type="text"; inp.inputMode="numeric"; inp.autocomplete="off"; inp.placeholder="The digits you hear"; wrap.appendChild(inp);
+    var submit=document.createElement("button"); submit.textContent="Submit answer";
+    submit.onclick=function(){ verifyAudio(c.id, inp.value, gv, gn, tok); };
+    inp.addEventListener("keydown", function(e){ if(e.key==="Enter"){ submit.click(); } });
+    wrap.appendChild(submit); box.appendChild(wrap);
+    say("Play the clip, type the digits you hear, and submit.");
+  }
+  async function verifyAudio(id, answer, gv, gn, tok){
+    var v=await (await fetch("/arena/audio/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:id,answer:answer})})).json();
+    if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Audio solved — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Audio PASSED."); }
+    else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong answer (or the challenge expired)."; say("Audio rejected."); }
+    document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+  }
 
   async function runSlider(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
@@ -424,6 +456,7 @@ ARENA_JS = r"""
       else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
+      else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }
       else if(A.mode==="managed"){ await runManaged(gv, gn, tok); }
       else {
         say("Requesting a "+gate+" ("+LEVEL+") challenge…");

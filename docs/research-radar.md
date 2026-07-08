@@ -4892,3 +4892,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   passed, 95.54% coverage); arena go test green. The AUDIO GATE IS LANDED (mint/verify/negatives/single-use/token/
   speed-anomaly/catalog/coherence-join all grounded). REMAINING (minor): the arena_page.py `audio` slug + <audio>
   page widget (the human-facing /arena/gate/audio page). NEXT: PRIORITY 3 — the 3D-FunCaptcha spatial gate.
+- **[PRIORITY 1 / rung 6: audio gate page widget — the AUDIO GATE IS FULLY LANDED]**
+  (2026-07-08). Registered the `audio` slug in arena_page.py CHALLENGES (label/family/mode=audio/blurb) + a runAudio
+  page widget (an <audio controls> element sourced from the minted clip + a numeric text input + submit -> verifyAudio
+  POSTs /arena/audio/verify), wired into the mode dispatch; _endpoints falls through to the correct /arena/audio +
+  /arena/audio/verify. GROUNDED LIVE through the edge: GET /arena/gate/audio -> 200 (renders runAudio + the label +
+  the endpoint disclosure), and the /arena index lists the audio card. Detector suite green (508 passed, 95.54%
+  coverage). The AUDIO GATE IS NOW COMPLETE across all layers — mint, verify (positive + negatives), single-use,
+  HMAC token, server-observed speed anomaly, coherence join (grounded label=bot), catalog, and the human-facing page.
+  A documented gap (the reCAPTCHA/hCaptcha audio-accessibility family) is now a fully-featured, coherence-joined
+  ASR-benchmark gate that mirrors every property of the existing gates. NEXT: PRIORITY 3 — the 3D-FunCaptcha spatial
+  gate (a variety extension of rotate).
