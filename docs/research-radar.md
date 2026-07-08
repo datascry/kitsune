@@ -4853,3 +4853,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   verify accepts the right/​spaced answer + rejects wrong/empty, the WAV codec roundtrips. NEXT (rung 3): wire the
   GET /arena/audio + POST /arena/audio/verify mux (single-use take + token + superhuman-speed floor), register the
   `audio` slug + page widget, add to the catalog, and ground the full mint->solve->verify + coherence join live.
+- **[PRIORITY 1 / rung 3: audio gate WIRED into the mux + catalog — mint/verify grounded LIVE]**
+  (2026-07-08). Wired arena/audio.go into gate.go: a dedicated single-use audio store, GET /arena/audio (mint ->
+  put -> serve the clip, answer NOT serialised) + POST /arena/audio/verify (single-use take -> CheckAudio -> HMAC
+  token), and a SERVER-OBSERVED speed floor — a correct answer faster than the clip's real-time listen floor (len ×
+  450ms, under FSDD's ~600ms/digit playback) rides the verdict as anomaly `solved_faster_than_audio` (a human must
+  play the clip; an ASR solver batch-transcribes in ms; FP-safe — no human answers before hearing it). Added the
+  `audio` kind to arena/catalog.go so the manifest auto-lists it. GROUNDED LIVE through the running arena (:8095):
+  mint returns a valid data:audio/wav clip with NO answer field; a WRONG answer -> ok:false no token; an UNKNOWN id
+  -> ok:false; a REPLAYED consumed id -> ok:false (single-use take); GET /arena/catalog lists audio. Full arena go
+  test green. NEXT (rung 4): the reference solver (template-match against the embedded corpus, or Whisper) to ground
+  the POSITIVE mint->solve->verify->pass path end-to-end + the coherence join (a scripted solver still detector-
+  convicted); then the arena_page.py `audio` slug + <audio> page widget.

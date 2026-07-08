@@ -58,6 +58,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/track/play?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "audio",
+				Prompt:   "Type the spoken digits you hear. A spoken-digit WAV synthesised in pure Go from an embedded CC-BY-SA FSDD corpus, distorted (noise/tone/overlap) per level — the ASR-benchmark twin of the text/OCR gate. A correct answer faster than the clip's real-time playback is ASR automation (server-observed).",
+				Endpoint: "GET /arena/audio?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

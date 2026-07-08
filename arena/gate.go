@@ -133,6 +133,7 @@ func captchaKindOf(s string) CaptchaKind {
 func NewMux(secret []byte) http.Handler {
 	store := pow.NewNonceStore()
 	captchas := newCaptchaStore()
+	audios := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
 	issuer := NewPACTIssuer()
@@ -250,6 +251,43 @@ func NewMux(secret []byte) http.Handler {
 		// synthesize the tell against a session.
 		if known && body.Kind == CaptchaHoneypot && strings.TrimSpace(body.Answer) != "" {
 			resp["anomaly"] = "honeypot_filled"
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- AUDIO gate: the ASR-benchmark twin of the text (OCR) + image (CV) gates. Same shape (issue clip →
+	// transcribe → verify → single-use token), but the challenge is a spoken-digit WAV synthesised in pure Go
+	// from an embedded CC-BY-SA FSDD corpus. The answer never leaves the server; only the distorted clip does. ---
+	mux.HandleFunc("GET /arena/audio", func(w http.ResponseWriter, r *http.Request) {
+		a, answer := MintAudio(ParseLevel(r.URL.Query().Get("level")))
+		audios.put(a.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(a) // the answer is NOT serialised — only the clip + prompt are sent
+	})
+
+	mux.HandleFunc("POST /arena/audio/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID     string `json:"id"`
+			Answer string `json:"answer"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := audios.take(body.ID) // single-use: no replay, no cross-request brute force
+		ok := known && CheckAudio(expected, body.Answer)
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "audio"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "audio", body.ID)
+			// Server-observed solve time. A human must PLAY the clip in real time before answering; an ASR solver
+			// batch-transcribes it in milliseconds. A CORRECT answer faster than the clip's real-time listen floor
+			// (len × 450ms, under FSDD's ~600ms/digit playback) is automation — the gate still passes, the anomaly
+			// rides the verdict so the session convicts. FP-safe: no human answers an N-digit clip before hearing it.
+			resp["solve_ms"] = age.Milliseconds()
+			if floor := time.Duration(len(expected)) * 450 * time.Millisecond; age > 0 && age < floor {
+				resp["anomaly"] = "solved_faster_than_audio"
+			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
 	})
