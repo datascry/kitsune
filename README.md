@@ -69,14 +69,14 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**183 live rules** (129 active · 54 experimental; 6 retired, ruleset `0.74.57`) — each a small predicate over the correlated session. **137 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**184 live rules** (129 active · 55 experimental; 6 retired, ruleset `0.74.57`) — each a small predicate over the correlated session. **137 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
 | **coherence** | 85 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
 | **automation** | 36 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 16 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
-| **environment** | 26 | — | stripped/headless capability gaps (corroborating only — see precision) |
+| **environment** | 27 | — | stripped/headless capability gaps (corroborating only — see precision) |
 | **behavioral** | 14 | — | mouse/keystroke biomechanics — path straightness, velocity CV, entropy floors |
 | **reputation** | 5 | — | datacenter ASN / known proxy exit / WebRTC-leaked origin |
 | **prevalence** | 1 | — | statistically-improbable-but-coherent fingerprints |
