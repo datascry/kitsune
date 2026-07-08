@@ -4927,3 +4927,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   green. NEXT (rung 3): the detector relay (/arena/spatial + /arena/spatial/verify, calling _join_arena_anomaly so
   the superhuman anomaly convicts) + a top-face-colour-sampling reference solver to ground the positive path + the
   arena_page.py `spatial` slug + grid page widget.
+- **[PRIORITY 3 / rung 3: spatial gate LANDED — relay + page + solver + coherence join grounded end-to-end]**
+  (2026-07-08). Finished the 3D spatial gate. DETECTOR: GET /arena/spatial + POST /arena/spatial/verify relays
+  (_join_arena_anomaly on verify — reuses the solved_faster_than_human -> arena_captcha_superhuman path, no new rule).
+  PAGE: registered the `spatial` slug + a runSpatial grid widget (renders the cube tiles as a clickable select-all
+  grid -> verifySpatial POSTs the selected indices). SOLVER: evaders/arena-solver-spatial/solve.py — samples each
+  cube's TOP-face colour (average a box in the top diamond, nearest of the 6 cube colours) and selects the tiles
+  matching the prompt's target colour. GROUNDED LIVE END-TO-END through the edge: the solver solved on the first try
+  (target=blue, selected=[3,5]) -> the detector relay joined the anomaly -> the session verdict is label=BOT with
+  bh.arena_captcha_superhuman FIRED (+ net.no_js_execution). Page grounded (/arena/gate/spatial renders runSpatial +
+  the endpoint disclosure; the /arena index lists it). Detector suite green (508 passed, 95.36%); arena go test
+  green; docs/arena.md updated. The SPATIAL GATE IS LANDED across all layers. BOTH buildable arena gaps (audio + 3D
+  spatial) are now FILLED. NEXT: PRIORITY 2 — SCOPE the server-observed browser-execution proof for sandbox feasibility.

@@ -307,6 +307,8 @@ def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatc
     assert client.post("/arena/captcha/verify", json={"kind": "text", "id": "x", "answer": "y"}).status_code in ok
     assert client.get("/arena/audio", params={"level": "easy"}).status_code in ok
     assert client.post("/arena/audio/verify", json={"id": "x", "answer": "y"}).status_code in ok
+    assert client.get("/arena/spatial", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/spatial/verify", json={"id": "x", "selected": [0]}).status_code in ok
 
 
 class _BenchResp:
@@ -380,6 +382,17 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
     assert client.get("/arena/audio", params={"level": "easy"}).status_code == 200
     assert (
         client.post("/arena/audio/verify", json={"id": "x", "answer": "y"}, headers={"Cookie": "ks_sid=s"}).status_code
+        == 200
+    )
+    # the spatial relay's 200-branch: GET + the /verify join (solved_faster_than_human -> arena_captcha_superhuman)
+    monkeypatch.setattr(
+        "kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "solved_faster_than_human"})
+    )
+    assert client.get("/arena/spatial", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post(
+            "/arena/spatial/verify", json={"id": "x", "selected": [0]}, headers={"Cookie": "ks_sid=s"}
+        ).status_code
         == 200
     )
 
