@@ -5072,3 +5072,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   grounded as INFRA-BOUND: WebGL needs a real GPU (software llvmpipe trips the perf/software tells), WebRTC needs
   real network egress. Neither is a gate tell nor a coherence tell — the arena thesis holds and the in-sandbox
   frontier is reached. No groundable in-sandbox rung remains (medium/hard audio needs real ASR = external too).
+
+## Novel-arena-gates loop (a1d6473e)
+- **[GATE 1 / rung 1: shell-game core (track-under-occlusion, anti-LLM) built + unit-grounded]**
+  (2026-07-09). Built arena/shellgame.go — a genuinely-novel gate (NOT a wild-captcha clone): a ball hidden under
+  one of N cups, shuffled by a server-defined swap sequence (each swap animated for swapMs); the client clicks the
+  final cup. MintShell picks the start cup, generates the swaps (b!=a uniform), tracks the ball through them, and
+  returns the answer as "finalPos:shuffleMs"; CheckShell compares the clicked position; shellFloorMs exposes the
+  shuffle runtime = the human WATCH floor. The NOVEL server-observed tell (wired next rung): a correct answer faster
+  than shuffleMs was PRECOMPUTED from the swap payload, not watched through the occlusion — the snapshot->reason->act
+  agent can't follow the hidden ball, so it either guesses wrong or reads the payload + answers too fast. GROUNDED
+  via 2 unit tests (arena go test): the test INDEPENDENTLY replays the swaps from Start and confirms the minted
+  answer equals the true final ball position at every level; CheckShell passes the right cup, rejects wrong/floor-ms/
+  empty. Difficulty = cups + swaps + speed (easy 3/5/420ms, medium 3/8/260, hard 5/12/160). NEXT (rung 2): wire
+  GET /arena/shell + POST /arena/shell/verify (single-use + token + the solved-before-shuffle anomaly) + catalog.
