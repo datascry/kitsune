@@ -4879,3 +4879,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   solved_faster_than_human/trajectory/honeypot/queue); rung 5 wires the detector relay + the anomaly->
   arena_audio_superhuman mapping + a rule so a solved-but-fast session is convicted. Then the arena_page.py slug +
   <audio> widget.
+- **[PRIORITY 1 / rung 5: audio gate COHERENCE JOIN wired + grounded end-to-end — the audio gate is LANDED]**
+  (2026-07-08). Wired the detector side: GET /arena/audio + POST /arena/audio/verify relays (app.py, mirroring the
+  captcha relay — level-passthrough, 64KiB cap, _join_arena_anomaly + _note_flow on verify), added the
+  solved_faster_than_audio -> arena_audio_superhuman mapping in _join_arena_anomaly, and shipped the convicting rule
+  bh.arena_audio_superhuman (w0.85, category automation, FP-safe: the floor sits under the clip's real-time playback
+  so no human answers before hearing it). Regenerated the catalog; extended test_app.py (the audio relays + the
+  solved_faster_than_audio anomaly branch). GROUNDED LIVE END-TO-END: the matched-filter solver, driven THROUGH THE
+  EDGE with a ks_sid cookie, solves an easy clip -> the detector relay joins the anomaly -> the session verdict is
+  label=BOT with bh.arena_audio_superhuman FIRED (+ net.no_js_execution). So a scripted solver that PASSES the audio
+  gate is CONVICTED on coherence — the arena thesis fully proven on the audio modality. Detector suite green (508
+  passed, 95.54% coverage); arena go test green. The AUDIO GATE IS LANDED (mint/verify/negatives/single-use/token/
+  speed-anomaly/catalog/coherence-join all grounded). REMAINING (minor): the arena_page.py `audio` slug + <audio>
+  page widget (the human-facing /arena/gate/audio page). NEXT: PRIORITY 3 — the 3D-FunCaptcha spatial gate.
