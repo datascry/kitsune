@@ -5097,3 +5097,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   then clicks -> ok=True + anomaly=None (SILENT, FP-safe by construction — no human can answer before the ball
   settles). Wrong/unknown/replayed all reject (single-use). Arena go vet+test green. NEXT (rung 3): the detector
   relay (/arena/shell + verify, _join_arena_anomaly) + a convicting rule bh.arena_shell_precomputed + the page widget.
+- **[GATE 1 / rung 3: shell gate LANDED — coherence join grounded BOTH WAYS end-to-end through the edge]**
+  (2026-07-09). Finished gate 1. Shipped the convicting rule bh.arena_shell_precomputed (w0.85, category automation,
+  reads behavioral.arena_shell_precomputed) + the solved_before_shuffle -> arena_shell_precomputed mapping in
+  _join_arena_anomaly; the detector /arena/shell + /arena/shell/verify relays; the arena_page.py `shell` slug + a
+  runShell page widget (cups + a real shuffle animation: reveal the ball, hide it, animate each swap by its ms, then
+  click a cup). Regenerated the catalog/readme/matrix (185->186 rules); extended test_app.py (the shell relays + the
+  solved_before_shuffle anomaly branch). GROUNDED LIVE END-TO-END through the EDGE, BOTH directions: an AUTOMATION
+  that computes the final cup from the swap payload and submits instantly -> anomaly + the joined session is
+  label=bot with bh.arena_shell_precomputed FIRED; a HUMAN-paced session that waits the shuffle then clicks -> no
+  anomaly, bh.arena_shell_precomputed ABSENT (only the baseline net.no_js_execution, orthogonal). Page renders
+  (/arena/gate/shell 200). Detector suite green (509 passed, 95.20%); arena go vet+test green; docs/arena.md updated.
+  GATE 1 (shell game, track-under-occlusion, anti-LLM) is LANDED — the novel tell verified both ways. NEXT: GATE 2 —
+  motor-timing precision (arena/timing.go).

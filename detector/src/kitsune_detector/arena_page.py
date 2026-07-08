@@ -159,6 +159,15 @@ CHALLENGES: list[dict[str, str]] = [
         "3D orientations. Spatial reasoning (identify the TOP face of a rotated cube), not a 2D glyph; a correct "
         "selection faster than a human can scan the grid is automation, convicted on coherence.",
     },
+    {
+        "slug": "shell",
+        "label": "Shell game",
+        "family": "Track-under-occlusion (anti-LLM)",
+        "mode": "shell",
+        "blurb": "Watch the ball, then click the cup hiding it after the shuffle — an original track-under-occlusion "
+        "gate (not a wild-captcha clone). The ball is invisible during the swaps, so a snapshot-then-reason agent "
+        "cannot follow it; a correct answer faster than the shuffle runtime was precomputed from the payload.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -395,6 +404,41 @@ ARENA_JS = r"""
     document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
   }
 
+  async function runShell(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/shell"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var arena=document.createElement("div"); arena.style.cssText="position:relative;height:92px;margin:.5rem 0"; box.appendChild(arena);
+    var N=c.cups, slotW=Math.min(96,Math.floor(360/N)), cupW=slotW-8;
+    function slotX(s){ return s*slotW+4; }
+    var cups=[], slotOfCup=[], cupInSlot=[];
+    for(var i=0;i<N;i++){ var cup=document.createElement("div");
+      cup.style.cssText="position:absolute;top:22px;width:"+cupW+"px;height:60px;background:var(--fox);border-radius:9px 9px 0 0;cursor:default;left:"+slotX(i)+"px;";
+      arena.appendChild(cup); cups.push(cup); slotOfCup.push(i); cupInSlot[i]=i; }
+    var ball=document.createElement("div");
+    ball.style.cssText="position:absolute;top:58px;width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid #333;left:"+(slotX(c.start)+cupW/2-9)+"px;";
+    arena.appendChild(ball);
+    var wait=function(ms){ return new Promise(function(r){ setTimeout(r,ms); }); };
+    say("Watch the ball…");
+    cups[c.start].style.transition="top .3s"; cups[c.start].style.top="-14px"; await wait(750);
+    cups[c.start].style.top="22px"; ball.style.display="none"; await wait(400);
+    for(var k=0;k<c.swaps.length;k++){ var sw=c.swaps[k];
+      var ci=cupInSlot[sw.a], cj=cupInSlot[sw.b];
+      cups[ci].style.transition="left "+sw.ms+"ms ease-in-out"; cups[cj].style.transition="left "+sw.ms+"ms ease-in-out";
+      cups[ci].style.left=slotX(sw.b)+"px"; cups[cj].style.left=slotX(sw.a)+"px";
+      slotOfCup[ci]=sw.b; slotOfCup[cj]=sw.a; cupInSlot[sw.a]=cj; cupInSlot[sw.b]=ci;
+      await wait(sw.ms); }
+    say("Click the cup hiding the ball.");
+    cups.forEach(function(cup,idx){ cup.style.cursor="pointer";
+      cup.onclick=function(){ verifyShell(c.id, String(slotOfCup[idx]), gv, gn, tok); }; });
+  }
+  async function verifyShell(id, choice, gv, gn, tok){
+    var v=await (await fetch("/arena/shell/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:id,choice:choice})})).json();
+    if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Shell game solved — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Shell PASSED."); }
+    else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong cup (or the challenge expired)."; say("Shell rejected."); }
+    document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -492,6 +536,7 @@ ARENA_JS = r"""
       else if(A.mode==="slider"){ await runSlider(gv, gn, tok); }
       else if(A.mode==="image-select"){ await runImageSelect(gv, gn, tok); }
       else if(A.mode==="spatial"){ await runSpatial(gv, gn, tok); }
+      else if(A.mode==="shell"){ await runShell(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }
