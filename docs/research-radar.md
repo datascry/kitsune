@@ -5110,3 +5110,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (/arena/gate/shell 200). Detector suite green (509 passed, 95.20%); arena go vet+test green; docs/arena.md updated.
   GATE 1 (shell game, track-under-occlusion, anti-LLM) is LANDED — the novel tell verified both ways. NEXT: GATE 2 —
   motor-timing precision (arena/timing.go).
+- **[GATE 2 / rung 1: motor-timing-precision core built + unit-grounded]**
+  (2026-07-09). Built arena/timing.go — a second original gate (Grillmaster-inspired, not a wild-captcha clone): N
+  hold targets, each with a shown HoldMs + tolerance; the client presses+holds+releases each as precisely as it can.
+  MintTiming picks the targets (easy 4/800-1600/+-250ms, medium 5/800-2000/+-180, hard 6/900-2400/+-120) and returns
+  them as the answer JSON; CheckTiming scores tolerance AND returns two server-side signals: the release-error STD
+  across targets (the NOVEL precision tell) + the total claimed hold time (the server-observed floor). KEY INSIGHT
+  (unit-grounded): both a target-EXACT bot and a CONSTANT-OFFSET bot collapse the error std to 0 (a fixed offset has
+  zero spread), so a single std floor (timingPrecisionFloorMs=25ms, well under human hold-jitter) catches BOTH; a
+  jittered human solve has std >> the floor and stays silent. 2 unit tests green (arena go test): exact/offset ->
+  pass+std=0, human jitter -> pass+std>floor, out-of-tolerance + wrong-count -> fail. NEXT (rung 2): wire
+  GET /arena/timing + POST /arena/timing/verify — anomaly timing_superhuman when (pass AND std<floor) OR (sumHold >
+  server-observed age = claimed more hold time than the solve took) + catalog.
