@@ -34,6 +34,12 @@ docker run --rm --network kitsune_default \
   -v "$PWD/arena/assets/fsdd:/fsdd" -e FSDD_DIR=/fsdd \
   -e KS_HARDENED=1 -e KS_PROVISION=1 -e KS_HEADFUL=1 -e KS_REAL_INPUT=1 \
   -e KS_ARENA_SOLVE=audio   kitsune-camoufox:latest
+
+# ALL THREE on ONE ks_sid — the whole latest arena defeated in a single coherent session
+docker run --rm --network kitsune_default \
+  -v "$PWD/arena/assets/fsdd:/fsdd" -e FSDD_DIR=/fsdd \
+  -e KS_HARDENED=1 -e KS_PROVISION=1 -e KS_HEADFUL=1 -e KS_REAL_INPUT=1 \
+  -e KS_ARENA_SOLVE=all   kitsune-camoufox:latest
 ```
 
 The maximal coherent stack: `KS_HARDENED` (os=linux coherent, no touch), `KS_PROVISION` (native PulseAudio +

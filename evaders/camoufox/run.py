@@ -397,7 +397,11 @@ def _capture(browser: object) -> dict[str, object]:
             except Exception:  # noqa: BLE001 — fall back to a fixed wait if the marker never lands
                 page.wait_for_timeout(2000)
         if ARENA_SOLVE:
-            arena_result = _arena_solve(page, ARENA_SOLVE)  # paced in-session gate solve
+            # one kind -> the result directly (back-compat); "all" or a comma list -> solve each on ONE ks_sid,
+            # proving a single coherent session defeats the WHOLE latest arena (clock + spatial + audio).
+            kinds = ["clock", "spatial", "audio"] if ARENA_SOLVE == "all" else [k.strip() for k in ARENA_SOLVE.split(",")]
+            solved = {k: _arena_solve(page, k) for k in kinds}
+            arena_result = solved[kinds[0]] if len(kinds) == 1 else solved
         cookie = next((c for c in context.cookies() if c["name"] == "ks_sid"), None)
     finally:
         context.close()
