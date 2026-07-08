@@ -250,6 +250,17 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
     assert client.get("/arena/challenge").status_code == 503
     assert client.post("/arena/verify", content=b"{}").status_code == 503
     assert client.get("/arena/rate").status_code == 503  # the rate gate relay is inert too when unconfigured
+    # the novel-gate relays (audio/spatial/shell/timing/keymap) are inert too, GET + POST
+    for gate in ("audio", "spatial", "shell", "timing", "keymap"):
+        assert client.get(f"/arena/{gate}").status_code == 503
+        assert client.post(f"/arena/{gate}/verify", content=b"{}").status_code == 503
+
+
+def test_arena_verify_body_cap(monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
+    # A configured /verify relay caps the body at 64 KiB (413) before forwarding — the shell/timing/keymap verifies.
+    monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
+    for gate in ("shell", "timing", "keymap"):
+        assert client.post(f"/arena/{gate}/verify", content=b"x" * 70000).status_code == 413
 
 
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -314,6 +325,8 @@ def test_arena_all_relays_forward_when_configured(client: TestClient, monkeypatc
     assert client.post("/arena/shell/verify", json={"id": "x", "choice": "0"}).status_code in ok
     assert client.get("/arena/timing", params={"level": "easy"}).status_code in ok
     assert client.post("/arena/timing/verify", json={"id": "x", "holds": [1000]}).status_code in ok
+    assert client.get("/arena/keymap", params={"level": "easy"}).status_code in ok
+    assert client.post("/arena/keymap/verify", json={"id": "x", "trace": ["A"]}).status_code in ok
 
 
 class _BenchResp:
@@ -415,6 +428,17 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
     assert (
         client.post(
             "/arena/timing/verify", json={"id": "x", "holds": [1000]}, headers={"Cookie": "ks_sid=s"}
+        ).status_code
+        == 200
+    )
+    # the keymap relay's 200-branch: GET + the /verify join (typed_without_exploration -> arena_keymap_no_exploration)
+    monkeypatch.setattr(
+        "kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "typed_without_exploration"})
+    )
+    assert client.get("/arena/keymap", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post(
+            "/arena/keymap/verify", json={"id": "x", "trace": ["A"]}, headers={"Cookie": "ks_sid=s"}
         ).status_code
         == 200
     )

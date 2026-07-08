@@ -177,6 +177,15 @@ CHALLENGES: list[dict[str, str]] = [
         "(not a wild-captcha clone). The release-error spread across targets convicts a bot: superhuman precision "
         "(target-exact or a flat constant offset) or claiming more total hold time than the solve took.",
     },
+    {
+        "slug": "keymap",
+        "label": "Broken keyboard",
+        "family": "Input-integrity (remapped keys)",
+        "mode": "keymap",
+        "blurb": "The keyboard is silently remapped — discover the mapping by trying keys, then type the target — an "
+        "original input-integrity gate (not a wild-captcha clone). A correct answer with no exploration (no "
+        "backspaces) means the client decoded the remap from the payload instead of probing it.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -475,6 +484,32 @@ ARENA_JS = r"""
     showTarget(); say("Press and hold the button for each shown duration, then release.");
   }
 
+  async function runKeymap(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/keymap"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var tgt=document.createElement("p"); tgt.className="note"; tgt.innerHTML="Target: <code>"+c.target+"</code>"; box.appendChild(tgt);
+    var out=document.createElement("div"); out.style.cssText="font:1.2rem monospace;min-height:1.4rem;letter-spacing:2px;border:1px solid var(--line-bright);border-radius:6px;padding:.4rem;margin:.4rem 0;background:var(--panel)"; box.appendChild(out);
+    var kb=document.createElement("div"); kb.style.cssText="display:flex;flex-wrap:wrap;gap:4px;margin:.4rem 0"; box.appendChild(kb);
+    var trace=[], buf="";
+    function render(){ out.textContent=buf; }
+    Object.keys(c.remap).sort().forEach(function(k){
+      var b=document.createElement("button"); b.textContent=k; b.style.cssText="min-width:34px;min-height:34px;padding:0;font:inherit";
+      b.onclick=function(){ trace.push(k); buf+=c.remap[k]; render(); }; kb.appendChild(b);
+    });
+    var back=document.createElement("button"); back.textContent="⌫"; back.style.cssText="min-width:44px;min-height:34px";
+    back.onclick=function(){ trace.push("BACK"); buf=buf.slice(0,-1); render(); }; kb.appendChild(back);
+    var submit=document.createElement("button"); submit.textContent="Submit"; submit.style.cssText="display:block;margin-top:.5rem;font-weight:600";
+    submit.onclick=async function(){
+      var v=await (await fetch("/arena/keymap/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, trace:trace})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Keyboard solved — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Keymap PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="That is not the target (or the challenge expired)."; say("Keymap rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    };
+    box.appendChild(submit);
+    render(); say("Try keys to learn the remap, type the target, then submit.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -574,6 +609,7 @@ ARENA_JS = r"""
       else if(A.mode==="spatial"){ await runSpatial(gv, gn, tok); }
       else if(A.mode==="shell"){ await runShell(gv, gn, tok); }
       else if(A.mode==="timing"){ await runTiming(gv, gn, tok); }
+      else if(A.mode==="keymap"){ await runKeymap(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }
