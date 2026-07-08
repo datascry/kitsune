@@ -4782,3 +4782,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   poisoning-by-guess out). NOTED (lower severity, lab-acceptable — not fixed): the store is unbounded in-memory
   SQLite (no eviction/TTL), so a sustained session-mint flood grows memory; standard-DoS, mitigated by request
   throughput + the in-memory store resets on restart; a production deployment would add an LRU/TTL cap.
+- **[RUNG 3: input-validation + header-spoof audit — both SAFE (grounded clears, no vuln)]**
+  (2026-07-08). Audited /ingest input validation (the signal value:Any field) + X-KS-Session header spoofing.
+  INPUT TYPE-CONFUSION: SAFE. POSTed 7 type-confused values through the edge — user_agent as a dict/number/null/list,
+  webgl_renderer as a dict, nav_platform as a bool, a deeply-nested value — every one scored to HTTP 200 with NO 500
+  or crash. Confirmed the mechanism: ingest.py type-guards throughout (isinstance(s.value, str) at lines 25/72/107/
+  140/190/311 — the within-session accumulators + the scoring only process str values, silently skipping non-str), so
+  a malformed value is ignored rather than crashing a predicate. No crash-DoS, no persistent poisoning (the full score
+  ran on each malformed value without error). X-KS-SESSION HEADER SPOOF: SAFE. The edge does r.Header.Set("X-KS-
+  Session", prep.sessionID) (reverseproxy.go:555) which REPLACES any client-supplied value (Go canonicalises the key,
+  so /x-ks-session/ case tricks collapse), and session correlation is by the signal-body session_id derived from the
+  128-bit crypto/rand ks_sid cookie — so a client cannot forge another session's attribution (poisoning needs the
+  victim's unguessable cookie). Two cleared items, no fix needed. Remaining high-value un-audited targets: the ARENA
+  gate solve-verification (forge/replay a solve, bypass difficulty) and edge request-smuggling.
