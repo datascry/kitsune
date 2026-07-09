@@ -21,7 +21,8 @@ export async function maybeClick(page) {
         const el = await target.waitForSelector(sel, { timeout: 2500, state: "visible" });
         if (el) {
           await el.click({ timeout: 3000 });
-          await page.waitForTimeout(3000); // let the triggered widget frame load + fingerprint
+          await page.waitForEvent("frameattached", { timeout: 6000 }).catch(() => {}); // wait for the challenge frame
+          await page.waitForTimeout(2500); // then let it fingerprint
           return;
         }
       } catch (_) {}
