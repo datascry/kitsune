@@ -5197,3 +5197,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   signal accesses, 15 behavioural listeners, POST /ingest captured with its payload shape — a real spec. Feeds the
   vendor-profile work: diff a widget's probe output against collector/ to find the signal/protocol delta, then encode
   it vendor-neutrally. Understanding-only tool (spec a mechanism to replicate on owned infra); NOT a solver.
+- **[Tooling: probe DIFF mode — target spec vs our collector = the vendor-profile gap, grounded]**
+  (2026-07-09). Added harness/tools/captcha_probe_diff.mjs — probes a TARGET page and a BASELINE (default our own
+  collector) with the same instrumentation, then diffs: the signals / behavioural listeners / network endpoints the
+  target uses that the baseline does NOT = precisely what a vendor-neutral profile must add to reproduce the target.
+  Plus harness/tools/probe_targets/score_engine.html, an OWNED original stand-in for the invisible-score archetype
+  (deep-fingerprints audio/webrtc/media/battery/speech + beacons a token blob) — a reachable target since the sandbox
+  has NO egress (real vendor demos need a networked runner; set TARGET_URL there, the tool is identical). GROUNDED in
+  a container (baseline our collector, target the stand-in): the diff correctly isolated a SMALL, specific gap —
+  audio.createAnalyser + battery.getBattery + deviceorientation/devicemotion listeners + POST /verify/token
+  body=[fp,bhv,ts,sitekey,v] — because the collector ALREADY covers the rest of the deep-fingerprint surface (audio
+  oscillator, webrtc, media, speech, permissions were all in the baseline, so absent from the gap). Honest delta ->
+  mechanical vendor-profile input. Understanding/spec tool; never a solver, owned targets only in-sandbox.

@@ -1,0 +1,56 @@
+<!doctype html>
+<!-- harness/tools/probe_targets/score_engine — an OWNED stand-in for the "invisible score-engine" captcha archetype.
+     It deep-fingerprints (audio/webrtc/media/battery/speech) + beacons telemetry, to exercise the probe/diff. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>score-engine stand-in</title>
+  </head>
+  <body>
+    <p>invisible verification…</p>
+    <script>
+      // A generic, vendor-neutral reproduction of what a score-based/invisible widget DOES: read a deep fingerprint
+      // surface + subscribe to behaviour, then POST a telemetry blob. Original code — not any vendor's.
+      (async () => {
+        try {
+          const ac = new (window.AudioContext || window.webkitAudioContext)();
+          ac.createOscillator();
+          ac.createDynamicsCompressor();
+          ac.createAnalyser();
+        } catch (_) {}
+        try {
+          const pc = new RTCPeerConnection({ iceServers: [] });
+          pc.createDataChannel("probe");
+          pc.createOffer().catch(() => {});
+        } catch (_) {}
+        try {
+          await navigator.mediaDevices.enumerateDevices();
+        } catch (_) {}
+        try {
+          await navigator.getBattery();
+        } catch (_) {}
+        try {
+          window.speechSynthesis.getVoices();
+        } catch (_) {}
+        try {
+          await navigator.permissions.query({ name: "notifications" });
+        } catch (_) {}
+        try {
+          new Date().getTimezoneOffset();
+        } catch (_) {}
+        // behavioural surface a score engine subscribes to that a basic collector may not
+        window.addEventListener("deviceorientation", () => {});
+        window.addEventListener("devicemotion", () => {});
+        window.addEventListener("pointermove", () => {});
+        // the telemetry beacon — the token/verify protocol shape
+        try {
+          fetch("/verify/token", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ fp: "…", bhv: "…", ts: Date.now(), sitekey: "demo", v: 3 }),
+          }).catch(() => {});
+        } catch (_) {}
+      })();
+    </script>
+  </body>
+</html>
