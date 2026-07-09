@@ -5209,3 +5209,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   body=[fp,bhv,ts,sitekey,v] — because the collector ALREADY covers the rest of the deep-fingerprint surface (audio
   oscillator, webrtc, media, speech, permissions were all in the baseline, so absent from the gap). Honest delta ->
   mechanical vendor-profile input. Understanding/spec tool; never a solver, owned targets only in-sandbox.
+- **[Vendor profiles: reCAPTCHA-v3 score profile LANDED — the detector verdict IS the score engine]**
+  (2026-07-09). Started the vendor-profile registry: detector/src/kitsune_detector/vendors.py declares each captcha
+  family's INVISIBLE-score protocol from PUBLIC docs (score scale, token TTL, pass threshold, score convention) —
+  vendor-NEUTRAL, no vendor code/assets. vendor_score maps Kitsune's coherence score (0-1, higher=bot) onto the
+  reCAPTCHA convention (1.0=human via 1-score). Wired the reCAPTCHA-v3 profile in app.py: GET /vendor/recaptcha_v3
+  (the invisible "execute" — mint a single-use score token bound to the collector ks_sid) + POST
+  /vendor/recaptcha_v3/siteverify (form or JSON) returning the documented shape {success, score, action,
+  challenge_ts, hostname, error-codes}, 120s single-use, with the SCORE = the detector's verdict for the session.
+  GROUNDED LIVE: a bot session (label=bot, kitsune 1.000) -> siteverify {success:false, score:0.0, action:login, ...}
+  in the exact v3 shape; replay -> timeout-or-duplicate; missing secret/response + unknown token -> the right error
+  codes. Detector suite green (514 passed, coverage gate met). This validates the whole architecture: the invisible
+  score-mode families (reCAPTCHA v3/Enterprise, Turnstile-managed, hCaptcha-enterprise, GeeTest-OneTap, Arkose-tier,
+  DataDome/Kasada) are all ONE endpoint pattern over the detector verdict + a per-vendor response shaper. NEXT: add
+  the challenge-ladder + more profiles (Turnstile token shape, hCaptcha score) + the probe-diff-driven signal deltas.

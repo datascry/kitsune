@@ -55,6 +55,7 @@ from .pages import (
     reverse_index,
 )
 from .store import Store
+from .vendors import PROFILES, vendor_score
 
 #: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
 DOC_PAGES: dict[str, tuple[str, str, str]] = {
@@ -681,6 +682,59 @@ def create_app(
         _join_arena_anomaly(ks_sid, r)  # typed_without_exploration -> arena_keymap_no_exploration
         _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    # --- VENDOR PROFILES: reproduce mainstream captcha token/verify protocols vendor-neutrally over the detector.
+    # The reCAPTCHA-v3 "score" profile: an invisible token bound to the collector session (ks_sid), and a siteverify
+    # shaped like the real one whose SCORE is the detector's coherence verdict mapped onto the 0-1 (1=human) scale.
+    _vendor_tokens: dict[str, tuple[str, str, datetime]] = {}  # token -> (ks_sid, action, issued)
+
+    async def _vendor_form(request: Request) -> dict[str, str]:
+        # siteverify accepts x-www-form-urlencoded (the vendor default) or JSON; parse both without a multipart dep.
+        body = await request.body()
+        if "application/json" in request.headers.get("content-type", ""):
+            try:
+                data = json.loads(body or b"{}")
+            except ValueError:
+                return {}
+            return {k: str(v) for k, v in data.items()} if isinstance(data, dict) else {}
+        from urllib.parse import parse_qs
+
+        return {k: v[0] for k, v in parse_qs(body.decode("utf-8", "ignore")).items() if v}
+
+    @app.get("/vendor/recaptcha_v3", include_in_schema=False)
+    async def vendor_recaptcha_v3(action: str = "submit", ks_sid: str | None = Cookie(default=None)) -> dict[str, str]:
+        # the invisible "execute" step — mint a single-use score token bound to this collector session
+        token = os.urandom(18).hex()
+        _vendor_tokens[token] = (ks_sid or "", action[:64], datetime.now(UTC))
+        return {"token": token, "action": action[:64]}
+
+    @app.post("/vendor/recaptcha_v3/siteverify", include_in_schema=False)
+    async def vendor_recaptcha_v3_siteverify(request: Request) -> dict[str, object]:
+        profile = PROFILES["recaptcha_v3"]
+        form = await _vendor_form(request)
+        if not form.get("secret"):
+            return {"success": False, "error-codes": ["missing-input-secret"]}
+        response = form.get("response", "")
+        if not response:
+            return {"success": False, "error-codes": ["missing-input-response"]}
+        entry = _vendor_tokens.pop(response, None)  # single-use: no replay
+        if entry is None:
+            return {"success": False, "error-codes": ["timeout-or-duplicate"]}
+        sid, action, issued = entry
+        if datetime.now(UTC) - issued > timedelta(seconds=profile.token_ttl_s):
+            return {"success": False, "error-codes": ["timeout-or-duplicate"]}
+        session = store.get_session(sid) if sid else None
+        if session is None:
+            return {"success": False, "error-codes": ["invalid-input-response"]}
+        score = vendor_score(profile, detector.score(session).score)
+        return {
+            "success": score >= profile.threshold,
+            "score": score,
+            "action": action,
+            "challenge_ts": issued.isoformat(),
+            "hostname": request.url.hostname or "",
+            "error-codes": [],
+        }
 
     @app.get("/arena/slider", include_in_schema=False)
     async def arena_slider(level: str | None = None) -> Response:
