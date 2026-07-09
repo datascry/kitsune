@@ -7,15 +7,26 @@ import playwright from "playwright";
 const ENGINE = process.env.ENGINE || "chromium";
 const PAGE = process.env.PROBE_URL || "https://edge:8443/";
 const PROBE = process.env.PROBE_PATH || "/probe/captcha_probe.js";
-const CLICK = process.env.CLICK_SELECTOR; // optional: click to spawn an interaction-gated widget (Arkose/GeeTest)
+const CLICK = process.env.CLICK_SELECTOR; // optional: comma-list of selectors to spawn an interaction-gated widget
 
-// interaction-gated widgets only load their real (challenge) frame after a click — trigger it, then let it settle
+// interaction-gated widgets only load their real (challenge) frame after a click. CLICK_SELECTOR is a comma-list of
+// selectors (Playwright text= or CSS) tried in order, in the MAIN page AND every frame (the trigger is often inside
+// the widget iframe), waiting for each to appear. Clicks the first that hits, then lets the triggered frame settle.
 export async function maybeClick(page) {
   if (!CLICK) return;
-  try {
-    await page.click(CLICK, { timeout: 5000 });
-    await page.waitForTimeout(3000);
-  } catch (_) {}
+  const selectors = CLICK.split(",").map((s) => s.trim()).filter(Boolean);
+  for (const sel of selectors) {
+    for (const target of [page, ...page.frames()]) {
+      try {
+        const el = await target.waitForSelector(sel, { timeout: 2500, state: "visible" });
+        if (el) {
+          await el.click({ timeout: 3000 });
+          await page.waitForTimeout(3000); // let the triggered widget frame load + fingerprint
+          return;
+        }
+      } catch (_) {}
+    }
+  }
 }
 
 const host = (u) => {
