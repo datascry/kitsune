@@ -4,7 +4,7 @@
 
 import playwright from "playwright";
 
-import { collectAllFrames } from "./captcha_probe_run.mjs";
+import { collectAllFrames, maybeClick } from "./captcha_probe_run.mjs";
 
 const ENGINE = process.env.ENGINE || "chromium";
 const BASELINE = process.env.BASELINE_URL || "https://edge:8443/";
@@ -29,7 +29,8 @@ async function probe(browser, url) {
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
   for (let i = 0; i < 8; i++) await page.mouse.move(80 + i * 40, 100 + i * 22, { steps: 3 });
-  await page.waitForTimeout(3500);
+  await page.waitForTimeout(4500);
+  await maybeClick(page); // CLICK_SELECTOR triggers interaction-gated widgets before we read
   const rep = await collectAllFrames(page); // merged across all frames
   await ctx.close();
   return rep;

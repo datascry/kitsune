@@ -5234,3 +5234,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   frame's audio.createAnalyser + battery.getBattery + deviceorientation + POST /cf/challenge (body [cData,token]) that
   a top-frame-only run missed. NB the one-liner must now copy BOTH mjs files (diff imports run). Owned/understanding
   tooling; real vendors are user-run on their own infra.
+- **[Tooling: probe fixes for uncaptured instrumentation — Web Workers + interaction-gated widgets]**
+  (2026-07-09). The teardown flagged two blind spots; both fixed + grounded. (1) WORKER instrumentation
+  (captcha_probe.js): hook Worker/SharedWorker/ServiceWorker creation (observability — even cross-origin vendor
+  workers are recorded with their script URL) AND, for SAME-ORIGIN classic workers, reweave a worker-safe probe
+  ahead of the real script via importScripts, reporting its reads back over postMessage; cross-origin is record-only
+  and SAFE (never breaks the real worker). (2) CLICK-to-trigger (captcha_probe_run/diff.mjs): CLICK_SELECTOR clicks
+  to spawn an interaction-gated widget's real frame before reading; wait bumped to 4.5s so worker reports land.
+  Added owned stand-ins (worker_widget.html + worker_fp.js, click_widget.html) served over HTTP (file:// blocks
+  worker importScripts). GROUNDED: the worker target surfaced worker:importScripts + network:fetch FROM INSIDE the
+  worker (proof the reweave reached in); the click target loaded the gated frame (2 frames) and captured its
+  audio/battery/POST /cf/challenge that a no-click run misses. Real vendors: workers recorded (deep only same-origin);
+  Arkose/GeeTest now characterizable with CLICK_SELECTOR. One-liner note: copy both mjs files (diff imports run).
