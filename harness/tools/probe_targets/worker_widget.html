@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- harness/tools/probe_targets/worker_widget — stand-in for a widget that fingerprints inside a Web Worker.
+     Spawns a same-origin worker; the probe should reweave it and surface the worker's reads in the merged report. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>worker widget stand-in</title>
+  </head>
+  <body>
+    <p>verifying (worker)…</p>
+    <script>
+      try {
+        new Worker("worker_fp.js");
+      } catch (_) {}
+    </script>
+  </body>
+</html>

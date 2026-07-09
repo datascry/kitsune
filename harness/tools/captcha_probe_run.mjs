@@ -7,6 +7,16 @@ import playwright from "playwright";
 const ENGINE = process.env.ENGINE || "chromium";
 const PAGE = process.env.PROBE_URL || "https://edge:8443/";
 const PROBE = process.env.PROBE_PATH || "/probe/captcha_probe.js";
+const CLICK = process.env.CLICK_SELECTOR; // optional: click to spawn an interaction-gated widget (Arkose/GeeTest)
+
+// interaction-gated widgets only load their real (challenge) frame after a click — trigger it, then let it settle
+export async function maybeClick(page) {
+  if (!CLICK) return;
+  try {
+    await page.click(CLICK, { timeout: 5000 });
+    await page.waitForTimeout(3000);
+  } catch (_) {}
+}
 
 const host = (u) => {
   try {
@@ -68,7 +78,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const page = await ctx.newPage();
   await page.goto(PAGE, { waitUntil: "domcontentloaded", timeout: 30000 });
   for (let i = 0; i < 8; i++) await page.mouse.move(80 + i * 40, 100 + i * 22, { steps: 3 });
-  await page.waitForTimeout(3500); // let every frame's collector run
+  await page.waitForTimeout(4500); // let every frame's collector + any worker report land
+  await maybeClick(page);
   console.log("__PROBE__" + JSON.stringify(await collectAllFrames(page)));
   await browser.close();
 }

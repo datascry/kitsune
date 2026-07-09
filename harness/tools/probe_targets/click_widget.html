@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- harness/tools/probe_targets/click_widget — stand-in for an interaction-gated widget (Arkose/GeeTest pattern).
+     The fingerprinting child frame is only injected after a click, so it needs CLICK_SELECTOR to be captured. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>click-gated widget stand-in</title>
+  </head>
+  <body>
+    <button id="verify">Verify you are human</button>
+    <div id="slot"></div>
+    <script>
+      document.getElementById("verify").addEventListener("click", () => {
+        const f = document.createElement("iframe");
+        f.src = "iframe_inner.html";
+        f.width = 300;
+        f.height = 65;
+        document.getElementById("slot").appendChild(f);
+      });
+    </script>
+  </body>
+</html>

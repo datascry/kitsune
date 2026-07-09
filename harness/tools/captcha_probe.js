@@ -189,6 +189,78 @@
   }
   hookCtor("WebSocket", "network");
 
+  // --- WORKER instrumentation: the probe installs per-FRAME (addInitScript) but NOT inside Web Workers, where a
+  // widget can hide fingerprinting/PoW. Record every Worker/SharedWorker/ServiceWorker creation (observability, even
+  // for cross-origin workers we can't enter), and for SAME-ORIGIN classic workers reweave a worker-safe probe ahead
+  // of the real script (importScripts) so its reads report back via postMessage. Cross-origin is record-only and
+  // SAFE — never breaks the real worker. ---
+  const WORKER_PROBE_SRC = `(function(){try{
+    var acc={}, rec=function(c,n){var k=c+':'+n; acc[k]=(acc[k]||0)+1;};
+    var WN=self.WorkerNavigator&&self.WorkerNavigator.prototype;
+    if(WN)['userAgent','hardwareConcurrency','deviceMemory','language','platform'].forEach(function(p){try{
+      var d=Object.getOwnPropertyDescriptor(WN,p); if(d&&d.get){var o=d.get;
+      Object.defineProperty(WN,p,{configurable:true,get:function(){rec('navigator',p);return o.call(this);}});}}catch(e){}});
+    var wrap=function(o,n,c){try{var f=o&&o[n]; if(typeof f==='function')o[n]=function(){rec(c,n);return f.apply(this,arguments);};}catch(e){}};
+    if(self.fetch){var of=self.fetch; self.fetch=function(){rec('network','fetch');return of.apply(this,arguments);};}
+    if(self.XMLHttpRequest)wrap(self.XMLHttpRequest.prototype,'open','network');
+    wrap(self,'importScripts','worker');
+    if(self.WebGLRenderingContext)wrap(self.WebGLRenderingContext.prototype,'getParameter','webgl');
+    wrap(Date.prototype,'getTimezoneOffset','intl');
+    self.addEventListener('message',function(e){if(e&&e.data&&e.data.__ksProbeReport){try{self.postMessage({__ksWorker:acc});}catch(x){}}});
+  }catch(e){}})();`;
+  function mergeWorkerReport(acc) {
+    for (const k in acc) {
+      const i = k.indexOf(":");
+      for (let n = 0; n < Math.min(acc[k], 3); n++) record(k.slice(0, i), k.slice(i + 1), "worker");
+    }
+  }
+  const _Worker = self.Worker;
+  if (_Worker) {
+    self.Worker = new Proxy(_Worker, {
+      construct(target, args) {
+        let abs = null;
+        try {
+          abs = new URL(String(args[0] || ""), location.href);
+        } catch (_) {}
+        record("worker", "Worker", (abs ? abs.href : String(args[0])).slice(0, 80));
+        if (abs && abs.origin === location.origin) {
+          try {
+            const body = WORKER_PROBE_SRC + "\nimportScripts(" + JSON.stringify(abs.href) + ");";
+            const w = Reflect.construct(target, [URL.createObjectURL(new Blob([body], { type: "text/javascript" })), args[1]]);
+            w.addEventListener("message", (e) => {
+              if (e && e.data && e.data.__ksWorker) mergeWorkerReport(e.data.__ksWorker);
+            });
+            setTimeout(() => {
+              try {
+                w.postMessage({ __ksProbeReport: 1 });
+              } catch (_) {}
+            }, 2500);
+            return w;
+          } catch (_) {}
+        }
+        return Reflect.construct(target, args); // cross-origin (or reweave failed): record-only, uninstrumented
+      },
+    });
+  }
+  if (self.SharedWorker) {
+    const S = self.SharedWorker;
+    self.SharedWorker = new Proxy(S, {
+      construct(t, a) {
+        record("worker", "SharedWorker", String(a[0] || "").slice(0, 80));
+        return Reflect.construct(t, a);
+      },
+    });
+  }
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.register) {
+      const reg = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+      navigator.serviceWorker.register = mark(function (u) {
+        record("worker", "serviceWorker.register", String(u).slice(0, 80));
+        return reg.apply(this, arguments);
+      });
+    }
+  } catch (_) {}
+
   // --- the functional spec: ordered signal accesses + behavioural listeners + the network protocol ---
   window.__KS_PROBE__ = {
     report() {
