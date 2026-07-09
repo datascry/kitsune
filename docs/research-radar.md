@@ -5223,3 +5223,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   score-mode families (reCAPTCHA v3/Enterprise, Turnstile-managed, hCaptcha-enterprise, GeeTest-OneTap, Arkose-tier,
   DataDome/Kasada) are all ONE endpoint pattern over the detector verdict + a per-vendor response shaper. NEXT: add
   the challenge-ladder + more profiles (Turnstile token shape, hCaptcha score) + the probe-diff-driven signal deltas.
+- **[Tooling: probe cross-frame aggregation — capture IFRAME-isolated widgets (Turnstile/Arkose)]**
+  (2026-07-09). A user's real run of the diff against the Turnstile demo returned a near-empty top-frame delta + a
+  lone `message` listener — because Turnstile isolates its widget in a cross-origin iframe, so the top-frame report
+  only saw the postMessage bridge. Fixed: collectAllFrames() in captcha_probe_run.mjs walks page.frames(), evaluates
+  each frame's window.__KS_PROBE__ report, and MERGES them (signals unioned + tagged with the frame host, listeners
+  + network concatenated); captcha_probe_diff.mjs imports it so the diff is over the full multi-frame surface. Added
+  probe_targets/iframe_widget.html + iframe_inner.html (a top bridge + a child frame that fingerprints + beacons a
+  token) as an owned stand-in for the iframe pattern. GROUNDED in a container: the merged diff now surfaces the INNER
+  frame's audio.createAnalyser + battery.getBattery + deviceorientation + POST /cf/challenge (body [cData,token]) that
+  a top-frame-only run missed. NB the one-liner must now copy BOTH mjs files (diff imports run). Owned/understanding
+  tooling; real vendors are user-run on their own infra.
