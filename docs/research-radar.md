@@ -5184,3 +5184,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   GATE 3 LANDED. THE FULL TRIO OF NOVEL GATES IS COMPLETE: shell (track-under-occlusion), timing (motor-precision),
   keymap (input-integrity) — each an ORIGINAL mechanism with a NEW server-observed tell, grounded convict-automation
   + silent-on-human BOTH WAYS. LOOP OBJECTIVE MET.
+- **[Tooling: captcha signal-probe harness — clean-room functional-spec generator]**
+  (2026-07-09). Built harness/tools/captcha_probe.js (+ captcha_probe_run.mjs runner) — an OWNED instrumentation
+  script that installs BEFORE page scripts (Playwright addInitScript) and wraps the fingerprint/behavioural/network
+  JS APIs (navigator/screen getters, canvas/webgl/audio methods, intl/permissions/media/webrtc, addEventListener,
+  fetch/XHR/sendBeacon/WebSocket) to record every access in first-touch ORDER with counts + sample args + the network
+  endpoint/payload SHAPE (never values). It emits a structured FUNCTIONAL SPEC of what a widget reads + sends —
+  clean-room understanding, without reading a byte of the target's code (analyse behaviour, then implement the
+  mechanism independently + vendor-neutrally). Stealth: wrappers are tracked in a WeakSet and Function.prototype.
+  toString reports native-code for them, so the probe does not perturb what it measures (an anti-tamper check would
+  otherwise change the widget's behaviour). GROUNDED against the arena's OWN collector (owned infra, no egress): 40
+  signal accesses, 15 behavioural listeners, POST /ingest captured with its payload shape — a real spec. Feeds the
+  vendor-profile work: diff a widget's probe output against collector/ to find the signal/protocol delta, then encode
+  it vendor-neutrally. Understanding-only tool (spec a mechanism to replicate on owned infra); NOT a solver.
