@@ -263,6 +263,52 @@ def test_arena_verify_body_cap(monkeypatch: pytest.MonkeyPatch, client: TestClie
         assert client.post(f"/arena/{gate}/verify", content=b"x" * 70000).status_code == 413
 
 
+def test_vendor_score_mapping() -> None:
+    # reCAPTCHA-style inverted: 1.0 = human (kitsune 0.0 -> v3 1.0, kitsune 1.0 -> v3 0.0); native passes through.
+    from kitsune_detector.vendors import VendorProfile, vendor_score
+
+    inv = VendorProfile(name="x", mode="score", token_ttl_s=120, threshold=0.5, inverted=True)
+    nat = VendorProfile(name="y", mode="score", token_ttl_s=120, threshold=0.5, inverted=False)
+    assert vendor_score(inv, 0.0) == 1.0 and vendor_score(inv, 1.0) == 0.0 and vendor_score(inv, 0.3) == 0.7
+    assert vendor_score(nat, 0.3) == 0.3
+
+
+def test_vendor_recaptcha_v3_score_profile(client: TestClient) -> None:
+    # The invisible-score profile: a token bound to the collector session, siteverify shaped like reCAPTCHA v3.
+    client.post("/ingest", json=_signals_from("session_bot.json"))  # gives ks_sid=bot-001 a (bot) verdict
+    minted = client.get("/vendor/recaptcha_v3", params={"action": "login"}, cookies={"ks_sid": "bot-001"}).json()
+    assert minted["action"] == "login" and minted["token"]
+    tok = minted["token"]
+
+    v = client.post("/vendor/recaptcha_v3/siteverify", data={"secret": "s", "response": tok}).json()
+    assert set(v) >= {"success", "score", "action", "challenge_ts", "hostname", "error-codes"}
+    assert v["action"] == "login" and 0.0 <= v["score"] <= 1.0
+    assert v["success"] is False and v["score"] < 0.5  # a bot session scores low on the 1=human scale
+
+    # single-use: replay is timeout-or-duplicate
+    r2 = client.post("/vendor/recaptcha_v3/siteverify", data={"secret": "s", "response": tok}).json()
+    assert r2["success"] is False and "timeout-or-duplicate" in r2["error-codes"]
+    # protocol errors
+    assert (
+        "missing-input-secret"
+        in client.post("/vendor/recaptcha_v3/siteverify", data={"response": "x"}).json()["error-codes"]
+    )
+    assert (
+        "missing-input-response"
+        in client.post("/vendor/recaptcha_v3/siteverify", data={"secret": "s"}).json()["error-codes"]
+    )
+    assert (
+        "timeout-or-duplicate"
+        in client.post("/vendor/recaptcha_v3/siteverify", data={"secret": "s", "response": "nope"}).json()[
+            "error-codes"
+        ]
+    )
+    # a token bound to a session that does not exist -> invalid-input-response (also exercises the JSON body path)
+    t2 = client.get("/vendor/recaptcha_v3", cookies={"ks_sid": "ghost"}).json()["token"]
+    j = client.post("/vendor/recaptcha_v3/siteverify", json={"secret": "s", "response": t2}).json()
+    assert "invalid-input-response" in j["error-codes"]
+
+
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     # Configured, the rate gate relays to the upstream (502 here since no real arena is up — proves the route
     # is wired and forwards, not a 404/whitelist miss).
