@@ -1,12 +1,14 @@
 // harness/tools/captcha_probe_diff — probe a TARGET page and diff its functional spec against a baseline.
-// The baseline defaults to our own collector page; the gap = signals/listeners/endpoints the target uses that we
-// don't — i.e. exactly what a vendor-profile must add to reproduce the target's mechanism vendor-neutrally.
+// Merges per-frame reports (so iframe'd widgets are captured), then the gap = the signals / listeners / endpoints
+// the target uses that the baseline (our collector) does not — i.e. what a vendor-profile must add to reproduce it.
 
 import playwright from "playwright";
 
+import { collectAllFrames } from "./captcha_probe_run.mjs";
+
 const ENGINE = process.env.ENGINE || "chromium";
-const BASELINE = process.env.BASELINE_URL || "https://edge:8443/"; // our collector = the "what we already cover" side
-const TARGET = process.env.TARGET_URL; // the widget/page to characterise (a vendor demo, or a local stand-in)
+const BASELINE = process.env.BASELINE_URL || "https://edge:8443/";
+const TARGET = process.env.TARGET_URL;
 const PROBE = process.env.PROBE_PATH || "/probe/captcha_probe.js";
 if (!TARGET) {
   console.error("set TARGET_URL (the page to probe); BASELINE_URL defaults to our collector");
@@ -27,8 +29,8 @@ async function probe(browser, url) {
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
   for (let i = 0; i < 8; i++) await page.mouse.move(80 + i * 40, 100 + i * 22, { steps: 3 });
-  await page.waitForTimeout(3000);
-  const rep = await page.evaluate(() => (window.__KS_PROBE__ ? window.__KS_PROBE__.report() : { signals: [], behavioral: [], network: [] }));
+  await page.waitForTimeout(3500);
+  const rep = await collectAllFrames(page); // merged across all frames
   await ctx.close();
   return rep;
 }
@@ -48,9 +50,10 @@ const basePath = new Set(base.network.map((n) => pathOf(n.url)));
 const gap = {
   baseline: BASELINE,
   target: TARGET,
-  signals_target_only: tgt.signals.filter((s) => !baseSig.has(s.cat + ":" + s.name)).map((s) => ({ cat: s.cat, name: s.name, samples: s.samples })),
+  target_frames: tgt.frames,
+  signals_target_only: tgt.signals.filter((s) => !baseSig.has(s.cat + ":" + s.name)).map((s) => ({ cat: s.cat, name: s.name, samples: s.samples, frames: s.frames })),
   listeners_target_only: tgt.behavioral.filter((b) => !baseLis.has(b.event)).map((b) => b.event),
-  endpoints_target_only: tgt.network.filter((n) => !basePath.has(pathOf(n.url))).map((n) => ({ method: n.method, url: n.url, body: n.body })),
+  endpoints_target_only: tgt.network.filter((n) => !basePath.has(pathOf(n.url))).map((n) => ({ method: n.method, url: n.url, body: n.body, frame: n.frame })),
   covered: { signals: [...baseSig].length, listeners: [...baseLis].length },
 };
 console.log("__DIFF__" + JSON.stringify(gap));

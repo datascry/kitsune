@@ -1,0 +1,37 @@
+<!doctype html>
+<!-- harness/tools/probe_targets/iframe_inner — the child frame that actually fingerprints + beacons a token.
+     Original code; exists only so the cross-frame merge can be grounded (its accesses live in a separate frame). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>inner</title>
+  </head>
+  <body>
+    <script>
+      (async () => {
+        try {
+          const ac = new (window.AudioContext || window.webkitAudioContext)();
+          ac.createOscillator();
+          ac.createAnalyser();
+        } catch (_) {}
+        try {
+          const pc = new RTCPeerConnection({ iceServers: [] });
+          pc.createDataChannel("x");
+        } catch (_) {}
+        try {
+          await navigator.getBattery();
+        } catch (_) {}
+        try {
+          new Date().getTimezoneOffset();
+        } catch (_) {}
+        window.addEventListener("deviceorientation", () => {});
+        try {
+          fetch("/cf/challenge", { method: "POST", body: JSON.stringify({ cData: "…", token: "…" }) }).catch(() => {});
+        } catch (_) {}
+        try {
+          parent.postMessage({ verified: true }, "*");
+        } catch (_) {}
+      })();
+    </script>
+  </body>
+</html>

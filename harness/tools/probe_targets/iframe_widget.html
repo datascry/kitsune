@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- harness/tools/probe_targets/iframe_widget — stand-in for an IFRAME-isolated widget (Turnstile/Arkose pattern).
+     The top frame is just a postMessage bridge; the real fingerprinting lives in the embedded child frame. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>iframe widget stand-in</title>
+  </head>
+  <body>
+    <p>verifying…</p>
+    <iframe src="iframe_inner.html" width="300" height="65" title="challenge"></iframe>
+    <script>
+      // top frame: only the postMessage bridge + a token read — the child does the work (like Turnstile up top)
+      window.addEventListener("message", () => {});
+      void navigator.userAgent;
+    </script>
+  </body>
+</html>
