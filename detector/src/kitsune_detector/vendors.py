@@ -12,7 +12,8 @@ class VendorProfile:
     """A vendor-neutral reproduction of one captcha family's protocol, from PUBLIC docs only (score scale, token
     TTL, pass threshold) — never a vendor's code or assets.
 
-    mode: "score" (invisible risk score) or "managed" (pass/fail challenge decision).
+    mode: "score" (invisible risk score), "managed" (pass/fail decision), or "challenge" (pre-check that
+    escalates to an interactive gate when suspicious — see challenge_gate).
     scored: emit a numeric score field. inverted: the score is 1.0 = human (reCAPTCHA) vs higher = worse (hCaptcha).
     """
 
@@ -35,7 +36,11 @@ PROFILES: dict[str, VendorProfile] = {
     # metadata.ephemeral_id}.
     "turnstile": VendorProfile("turnstile", "managed", 300, 0.5, scored=False, inverted=False),
     # hCaptcha (docs): pass/fail + an enterprise `score` (malicious likelihood, higher = worse) + score_reason.
-    "hcaptcha": VendorProfile("hcaptcha", "score", 120, 0.5, scored=True, inverted=False),
+    # It also runs a widget pre-check (POST checksiteconfig) that either passes or escalates to the image challenge
+    # behind an hsw proof token — mode stays `score` (siteverify), the gate names the checksiteconfig escalation.
+    "hcaptcha": VendorProfile(
+        "hcaptcha", "score", 120, 0.5, scored=True, inverted=False, challenge_gate="image-select"
+    ),
     # reCAPTCHA v2 (docs): invisible/checkbox pre-check that ESCALATES to a 3x3 image grid when risk is high; verify
     # returns {success, challenge_ts, hostname, error-codes}. Owned escalation gate: the image-select captcha.
     "recaptcha_v2": VendorProfile(
@@ -51,7 +56,20 @@ PROFILES: dict[str, VendorProfile] = {
     "geetest": VendorProfile(
         "geetest", "challenge", 120, 0.5, scored=False, inverted=False, challenge_gate="image-select"
     ),
+    # Proton CAPTCHA (docs): Proton's self-hosted privacy captcha — a proof-of-work challenge plus an interactive
+    # puzzle, verify is pass/fail. PoW-first, so the escalation gate is the owned PoW challenge (not an image grid).
+    "proton": VendorProfile("proton", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="pow"),
 }
+
+# challenge_gate slugs that are NOT /arena/captcha image kinds resolve to their own owned gate endpoint.
+_GATE_URLS = {"pow": "/arena/challenge", "slider": "/arena/slider"}
+
+
+def challenge_url(profile: VendorProfile) -> str:
+    """The owned escalation-gate URL for a challenge-mode family — a PoW/slider gate has its own endpoint; every
+    other slug is an /arena/captcha image kind (image-select, image-shapes, …)."""
+    g = profile.challenge_gate
+    return _GATE_URLS.get(g, f"/arena/captcha?kind={g}")
 
 
 def vendor_score(profile: VendorProfile, kitsune_score: float) -> float:
@@ -69,6 +87,20 @@ def challenge_required(profile: VendorProfile, kitsune_score: float | None) -> b
     if kitsune_score is None:
         return True
     return kitsune_score >= profile.threshold
+
+
+def shape_checksiteconfig(profile: VendorProfile, kitsune_score: float | None, sitekey: str) -> dict[str, object]:
+    """hCaptcha's widget pre-check (POST checksiteconfig?...&sc=1&swa=1&spst=1) — vendor-neutral reproduction of
+    the captured protocol. pass=True => passive pass, no visual challenge; otherwise escalate to the image
+    challenge behind an `hsw` proof token (hCaptcha's proof-of-work), and name the owned escalation gate."""
+    passed = kitsune_score is not None and kitsune_score < profile.threshold
+    out: dict[str, object] = {"pass": passed, "sitekey": sitekey}
+    if not passed:
+        # the hsw (hCaptcha Signal Work) proof descriptor + the image-label-binary challenge type
+        out["c"] = {"type": "hsw", "req": hashlib.sha256((sitekey or "hcaptcha").encode()).hexdigest()}
+        out["request_type"] = "image_label_binary"
+        out["challenge_url"] = challenge_url(profile)
+    return out
 
 
 def shape_siteverify(

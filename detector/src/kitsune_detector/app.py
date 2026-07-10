@@ -55,7 +55,7 @@ from .pages import (
     reverse_index,
 )
 from .store import Store
-from .vendors import PROFILES, challenge_required, shape_siteverify
+from .vendors import PROFILES, challenge_required, challenge_url, shape_checksiteconfig, shape_siteverify
 
 #: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
 DOC_PAGES: dict[str, tuple[str, str, str]] = {
@@ -713,17 +713,35 @@ def create_app(
         token = os.urandom(18).hex()
         _vendor_tokens[token] = (ks_sid or "", action[:64], datetime.now(UTC), name)
         out: dict[str, object] = {"token": token, "action": action[:64]}
-        if profile.challenge_gate:
+        if profile.mode == "challenge":
             # challenge-ladder: run the invisible pre-check now and, if suspicious (or no session yet), point the
-            # widget at the owned escalation gate — the reCAPTCHA-v2 / Arkose "here's an image grid" moment.
+            # widget at the owned escalation gate — the reCAPTCHA-v2 / Arkose "here's an image grid" (or Proton PoW)
+            # moment.
             session = store.get_session(ks_sid) if ks_sid else None
             score = detector.score(session).score if session is not None else None
             if challenge_required(profile, score):
                 out["challenge_required"] = True
-                out["challenge_url"] = f"/arena/captcha?kind={profile.challenge_gate}"
+                out["challenge_url"] = challenge_url(profile)
             else:
                 out["challenge_required"] = False
         return out
+
+    @app.post("/vendor/{name}/checksiteconfig", include_in_schema=False)
+    async def vendor_checksiteconfig(
+        name: str,
+        sitekey: str = "",
+        sc: int = 0,
+        swa: int = 0,
+        spst: int = 0,
+        ks_sid: str | None = Cookie(default=None),
+    ) -> dict[str, object]:
+        # hCaptcha's widget pre-check (POST checksiteconfig?...&sc=1&swa=1&spst=1): pass silently or escalate to the
+        # image challenge behind an hsw proof token. The captured protocol shape, over the detector's verdict.
+        if name not in PROFILES or PROFILES[name].name != "hcaptcha":
+            raise HTTPException(status_code=404, detail="no checksiteconfig for vendor")
+        session = store.get_session(ks_sid) if ks_sid else None
+        score = detector.score(session).score if session is not None else None
+        return shape_checksiteconfig(PROFILES[name], score, sitekey[:128])
 
     @app.post("/vendor/{name}/siteverify", include_in_schema=False)
     async def vendor_siteverify(name: str, request: Request) -> dict[str, object]:
