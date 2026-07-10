@@ -48,13 +48,38 @@ const baseSig = new Set(base.signals.map((s) => s.cat + ":" + s.name));
 const baseLis = new Set(base.behavioral.map((b) => b.event));
 const basePath = new Set(base.network.map((n) => pathOf(n.url)));
 
+// host-page framework + analytics + Playwright's own instrumentation is noise on a real site, not the widget
+const NOISE = /(doubleclick|googletagmanager|google-analytics|google\.[a-z.]+\/(ccm|pagead|ads)|gstatic|googleadservices|\/cdn-cgi\/(rum|trace)|respond\.io|chatapi|facebook\.|hotjar|segment\.|sentry|clarity\.ms|__playwright)/i;
+const targetHost = (() => {
+  try {
+    return new URL(TARGET).host;
+  } catch (_) {
+    return "";
+  }
+})();
+// a challenge frame is a third-party frame (the widget's iframe), not the host page and not analytics
+const isChallengeFrame = (h) => !!h && h !== targetHost && !/^about/.test(h) && !NOISE.test(h);
+const inChallenge = (frames) => (frames || []).some(isChallengeFrame);
+
+const sigDelta = tgt.signals.filter((s) => !baseSig.has(s.cat + ":" + s.name));
+const lisDelta = tgt.behavioral.filter((b) => !baseLis.has(b.event) && !NOISE.test(b.event));
+const epDelta = tgt.network.filter((n) => !basePath.has(pathOf(n.url)));
+
 const gap = {
   baseline: BASELINE,
   target: TARGET,
-  target_frames: tgt.frames,
-  signals_target_only: tgt.signals.filter((s) => !baseSig.has(s.cat + ":" + s.name)).map((s) => ({ cat: s.cat, name: s.name, samples: s.samples, frames: s.frames })),
-  listeners_target_only: tgt.behavioral.filter((b) => !baseLis.has(b.event)).map((b) => b.event),
-  endpoints_target_only: tgt.network.filter((n) => !basePath.has(pathOf(n.url))).map((n) => ({ method: n.method, url: n.url, body: n.body, frame: n.frame })),
+  target_frames: [...new Set(tgt.frames)],
+  challenge_frames: [...new Set(tgt.frames)].filter(isChallengeFrame),
+  // full delta (raw)
+  signals_target_only: sigDelta.map((s) => ({ cat: s.cat, name: s.name, samples: s.samples, frames: s.frames })),
+  listeners_target_only: lisDelta.map((b) => b.event),
+  endpoints_target_only: epDelta.map((n) => ({ method: n.method, url: n.url, body: n.body, frame: n.frame })),
+  // noise-filtered + scoped to the challenge frame(s) — the clean VENDOR delta on a real production page
+  challenge: {
+    signals: sigDelta.filter((s) => inChallenge(s.frames)).map((s) => ({ cat: s.cat, name: s.name, samples: s.samples })),
+    listeners: lisDelta.filter((b) => inChallenge(b.frames)).map((b) => b.event),
+    endpoints: epDelta.filter((n) => isChallengeFrame(n.frame) && !NOISE.test(n.url)).map((n) => ({ method: n.method, url: n.url, body: n.body, frame: n.frame })),
+  },
   covered: { signals: [...baseSig].length, listeners: [...baseLis].length },
 };
 console.log("__DIFF__" + JSON.stringify(gap));

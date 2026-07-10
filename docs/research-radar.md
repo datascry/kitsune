@@ -5246,3 +5246,12 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   worker (proof the reweave reached in); the click target loaded the gated frame (2 frames) and captured its
   audio/battery/POST /cf/challenge that a no-click run misses. Real vendors: workers recorded (deep only same-origin);
   Arkose/GeeTest now characterizable with CLICK_SELECTOR. One-liner note: copy both mjs files (diff imports run).
+- **[Tooling: probe noise-filter + challenge-frame scoping — clean vendor deltas on real pages]**
+  (2026-07-09). The 2captcha runs showed the diff drowns in host-page framework + analytics noise (Vite synthetic
+  events, doubleclick/google-ccm/cloudflare-rum/respond.io, Playwright's own __playwright listener). Fixed: the diff
+  now frame-tags listeners too, and emits a `challenge` view alongside the raw delta — signals/listeners/endpoints
+  scoped to the CHALLENGE frame(s) (third-party widget iframes: host != target, not about:, not analytics) with a
+  NOISE denylist dropping analytics/telemetry domains + Playwright internals. GROUNDED cross-origin (two ports): the
+  challenge view correctly isolated the :8001 widget frame's audio/battery + /cf/challenge, dropped the host :8000
+  /cdn-cgi/rum beacon, and __playwright is gone from listeners. So a future run against a real embedding page returns
+  the vendor's delta, not the site's chrome.

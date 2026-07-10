@@ -59,3 +59,4 @@ geoip/
 
 # Refreshed IP-reputation lists (regenerated at deploy from public sources) — mounted at deploy
 iprep/
+/probe.sh
