@@ -1,6 +1,6 @@
-# Kitsune detection matrix — 190 rules vs 103 evaders
+# Kitsune detection matrix — 190 rules vs 105 evaders
 
-_93/103 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.57`._
+_95/105 evaders caught (`bot`). Generated from the committed captures at ruleset `0.74.57`._
 
 ## Per-evader verdict — score and the convicting tells that caught each evader
 
@@ -31,6 +31,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `ch-ua-hardcoded` | bot | 1.00 | 6/190 | `net.tcp_os_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua` +3 |
 | `chrome-clone-1` | bot | 1.00 | 13/190 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
 | `chrome-clone-2` | bot | 1.00 | 13/190 | `br.webdriver_present`, `br.cdp_runtime_enabled`, `br.headless_ua` +2 |
+| `chromium-firefox-ua-spoof` | bot | 1.00 | 4/190 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +1 |
 | `coalesce-proxy` | bot | 1.00 | 14/190 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `coalesce-spoof` | bot | 1.00 | 14/190 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +4 |
 | `csp-bypass` | bot | 1.00 | 14/190 | `br.cdp_runtime_enabled`, `br.csp_bypassed`, `br.headless_ua` +4 |
@@ -83,6 +84,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `quic-no-grease` | bot | 1.00 | 4/190 | `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.accept_encoding_vs_ua` +1 |
 | `rebrowser` | bot | 1.00 | 10/190 | `br.webdriver_present`, `br.headless_ua`, `br.permissions_anomaly` +1 |
 | `renderer-spoof` | bot | 1.00 | 17/190 | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.ch_he_headless` +6 |
+| `screen-depth-spoof` | bot | 0.95 | 2/190 | `br.screen_depth_incoherent`, `net.ch_platform_header_vs_ua` |
 | `screen-impossible` | bot | 1.00 | 15/190 | `br.screen_impossible`, `br.cdp_runtime_enabled`, `br.headless_ua` +4 |
 | `selenium-driverless` | bot | 0.92 | 7/190 | `br.headless_ua` |
 | `spoof-ua` | bot | 1.00 | 17/190 | `net.tls_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.ch_ua_vs_ua_browser` +8 |
@@ -110,7 +112,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `zendriver-uach` | suspicious | 0.50 | 7/190 | — |
 | `zendriver` | bot | 0.80 | 8/190 | `net.h2_header_order_vs_ua` |
 
-## Per-rule coverage — 119/190 rules catch ≥1 evader (rest in Gaps)
+## Per-rule coverage — 121/190 rules catch ≥1 evader (rest in Gaps)
 
 | Detector | layer | category | catches |
 |---|---|---|---:|
@@ -154,6 +156,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `br.languages_worker_vs_main` | browser | coherence | 5 |
 | `br.worker_divergence` | browser | automation | 5 |
 | `net.ch_ua_version_vs_ua` | network,browser | coherence | 5 |
+| `net.tls_vs_ua_browser` | network,browser | coherence | 5 |
 | `br.automation_globals` | browser | automation | 4 |
 | `br.error_engine_vs_ua` | browser | coherence | 4 |
 | `br.fingerprint_improbable` | browser | prevalence | 4 |
@@ -161,14 +164,13 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `br.tostring_tampered` | browser | automation | 4 |
 | `br.webgl_getparameter_tampered` | browser | automation | 4 |
 | `br.webgl_not_angle` | browser | environment | 4 |
+| `net.ch_ua_vs_ua_browser` | network,browser | coherence | 4 |
+| `net.h2_vs_ua_browser` | network,browser | coherence | 4 |
 | `net.tls_ext_order_static_within_session` | network | coherence | 4 |
 | `net.tls_pq_keyshare_vs_ua` | network,browser | coherence | 4 |
-| `net.tls_vs_ua_browser` | network,browser | coherence | 4 |
 | `br.font_os_vs_ua` | browser | coherence | 3 |
 | `br.ua_platform_vs_ch_platform` | browser | coherence | 3 |
 | `br.vendor_vs_ua` | browser | coherence | 3 |
-| `net.ch_ua_vs_ua_browser` | network,browser | coherence | 3 |
-| `net.h2_vs_ua_browser` | network,browser | coherence | 3 |
 | `net.webrtc_ip_vs_observed` | network,browser | reputation | 3 |
 | `br.apple_ua_nonwebkit` | browser | coherence | 2 |
 | `br.brave_spoofed` | browser | artifact | 2 |
@@ -177,12 +179,14 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `br.timezone_offset_vs_intl` | browser | coherence | 2 |
 | `br.timezone_worker_vs_main` | browser | coherence | 2 |
 | `br.worker_constructor_tampered` | browser | artifact | 2 |
+| `net.ch_platform_header_vs_ua` | network,browser | coherence | 2 |
 | `net.ch_ua_mobile_vs_ua` | network,browser | coherence | 2 |
 | `net.datacenter_origin_proxied` | network,browser,reputation | coherence | 2 |
 | `rep.webrtc_origin_datacenter` | reputation | reputation | 2 |
 | `bh.trace_replay_within_session` | behavioral | coherence | 1 |
 | `bh.uniform_velocity` | behavioral | behavioral | 1 |
 | `br.audio_noise` | browser | artifact | 1 |
+| `br.battery_api_vs_gecko_ua` | browser | coherence | 1 |
 | `br.canvas_geometry_noise` | browser | artifact | 1 |
 | `br.canvas_lie` | browser | automation | 1 |
 | `br.canvas_noise` | browser | artifact | 1 |
@@ -213,13 +217,13 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `br.productsub_vs_ua` | browser | coherence | 1 |
 | `br.readback_noise` | browser | artifact | 1 |
 | `br.screen_avail_invalid` | browser | environment | 1 |
+| `br.screen_depth_incoherent` | browser | coherence | 1 |
 | `br.screen_impossible` | browser | artifact | 1 |
 | `br.webgl_caps_worker_vs_main` | browser | coherence | 1 |
 | `br.webgl_renderer_artifact` | browser | artifact | 1 |
 | `br.webgl_renderer_caps_mismatch` | browser | coherence | 1 |
 | `br.worker_source_rewritten` | browser | artifact | 1 |
 | `net.accept_lang_vs_navigator` | network,browser | coherence | 1 |
-| `net.ch_platform_header_vs_ua` | network,browser | coherence | 1 |
 | `net.ch_ua_no_grease_brand` | network | artifact | 1 |
 | `net.h2_continuation_flood` | network | automation | 1 |
 | `net.h2_control_flood` | network | automation | 1 |
@@ -263,6 +267,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `ch-ua-hardcoded` | bot | 5 | 1 | 0 | 0 | 0 | 0 |
 | `chrome-clone-1` | bot | 0 | 0 | 5 | 6 | 2 | 0 |
 | `chrome-clone-2` | bot | 0 | 0 | 5 | 6 | 2 | 0 |
+| `chromium-firefox-ua-spoof` | bot | 4 | 0 | 0 | 0 | 0 | 0 |
 | `coalesce-proxy` | bot | 0 | 1 | 6 | 6 | 1 | 0 |
 | `coalesce-spoof` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
 | `csp-bypass` | bot | 0 | 0 | 7 | 6 | 1 | 0 |
@@ -315,6 +320,7 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `quic-no-grease` | bot | 4 | 0 | 0 | 0 | 0 | 0 |
 | `rebrowser` | bot | 0 | 0 | 4 | 6 | 0 | 0 |
 | `renderer-spoof` | bot | 1 | 1 | 7 | 7 | 1 | 0 |
+| `screen-depth-spoof` | bot | 2 | 0 | 0 | 0 | 0 | 0 |
 | `screen-impossible` | bot | 0 | 1 | 6 | 7 | 1 | 0 |
 | `selenium-driverless` | bot | 0 | 0 | 1 | 4 | 2 | 0 |
 | `spoof-ua` | bot | 8 | 0 | 3 | 5 | 1 | 0 |
@@ -342,15 +348,14 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 | `zendriver-uach` | suspicious | 0 | 0 | 0 | 5 | 2 | 0 |
 | `zendriver` | bot | 1 | 0 | 0 | 5 | 2 | 0 |
 
-## Coverage gaps — 71/190 rules catch nothing yet
+## Coverage gaps — 69/190 rules catch nothing yet
 
 **Evaded** (1) — reads present in the corpus, but every sample passed:
 - `br.low_hardware_concurrency`
 
-**Unexercised** (70) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
+**Unexercised** (68) — a read signal is absent from every recording, so the corpus cannot trip them yet (e.g. signals the recordings predate); these are validated by the detector unit + precision tests, and need a corpus refresh to appear here:
 - `net.tls_os_vs_tcp_os`
 - `net.ja4_tool_vs_ua`
-- `br.screen_depth_incoherent`
 - `rep.datacenter_asn`
 - `rep.abuse_listed`
 - `net.fake_declared_crawler`
@@ -375,7 +380,6 @@ _93/103 evaders caught (`bot`). Generated from the committed captures at ruleset
 - `net.tcp_syn_anomaly`
 - `net.tcp_static_window`
 - `net.slow_http_attack`
-- `br.battery_api_vs_gecko_ua`
 - `bh.touch_uniform_velocity`
 - `bh.click_without_trajectory`
 - `bh.arena_captcha_superhuman`

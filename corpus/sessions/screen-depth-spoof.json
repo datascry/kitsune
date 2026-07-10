@@ -1,0 +1,278 @@
+{
+ "schema_version": "0.1",
+ "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+ "remote_ip": null,
+ "first_seen": "2026-07-10T04:21:00Z",
+ "last_seen": "2026-07-10T04:21:03Z",
+ "request_count": 16,
+ "signals": {
+  "network": [
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "ch_platform_header",
+    "value": "Linux",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "ch_ua_browser",
+    "value": "chrome",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "h2",
+    "value": "1:65536;2:0;4:6291456;6:262144|15663105|0|m,a,s,p",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "h2_browser_hint",
+    "value": "chrome",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "h2_settings_hint",
+    "value": "chrome",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "ja3",
+    "value": "c97da3340647da1d676ad2cf5f003f14",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "ja4",
+    "value": "t13d1516h2_8daaf6152771_d8a2da3f94cd",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "ja4_browser_hint",
+    "value": "chrome",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "observed_ip",
+    "value": "172.22.0.4",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "tcp_kernel",
+    "value": "linux",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
+    "kind": "ua_kernel",
+    "value": "linux",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   }
+  ],
+  "browser": [
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "ua_browser",
+    "value": "chrome",
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "ua_engine",
+    "value": "chromium",
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "ua_platform",
+    "value": "Windows",
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "nav_platform_os",
+    "value": "Windows",
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "screen_resolution",
+    "value": "1366x768",
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "color_depth",
+    "value": 24,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "hardware_concurrency",
+    "value": 4,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "battery_api",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "browser",
+    "kind": "screen_depth_incoherent",
+    "value": true,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   }
+  ],
+  "behavioral": [
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "keystroke_entropy",
+    "value": 0.42,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "mouse_entropy",
+    "value": 3.1,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "mouse_straightness",
+    "value": 0.58,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "mouse_velocity_cv",
+    "value": 0.73,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "pause_ratio",
+    "value": 0.31,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "pointer_event_count",
+    "value": 214,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "power_law_exponent",
+    "value": 1.9,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "submovement_count",
+    "value": 37,
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "behavioral",
+    "kind": "trace_hash",
+    "value": "a1b2c3d4",
+    "source": "collector",
+    "observed_at": "2026-07-10T04:20:00Z"
+   }
+  ],
+  "reputation": []
+ }
+}
