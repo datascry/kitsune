@@ -138,7 +138,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**93 of 103 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.57`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
+**95 of 105 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.57`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
 Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
 

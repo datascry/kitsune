@@ -8,7 +8,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 <!-- GENERATED:evasion:start -->
 ## Complete evasion registry
 
-> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **27 evader tools**, **103 exercised techniques** (93 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
+> Every evasion technique Kitsune leverages — **generated** from the `evaders/` fleet and the recorded `corpus/sessions/` runs scored against the live ruleset; regenerate with `task evasion-catalog`, do not edit by hand. **27 evader tools**, **105 exercised techniques** (95 convicted `bot`, 10 not). A technique with no convicting tell `EVADES` — the red-team's next target.
 
 ### Fleet — the evader tools (27)
 
@@ -42,7 +42,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `xtest-coalesce` | Python | pressure-test: can X11 XTEST motion injection defeat the coalesced tell? |
 | `zendriver` | Python | drive zendriver (maintained nodriver successor) through the edge. |
 
-### Techniques exercised — scored against the live ruleset (103)
+### Techniques exercised — scored against the live ruleset (105)
 
 | technique (captured session) | verdict | convicting tells that catch it |
 |---|---|---|
@@ -71,6 +71,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `ch-ua-hardcoded` | bot | `net.accept_encoding_vs_ua`, `net.ch_ua_no_grease_brand`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `chrome-clone-1` | bot | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `chrome-clone-2` | bot | `br.cdp_runtime_enabled`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
+| `chromium-firefox-ua-spoof` | bot | `br.battery_api_vs_gecko_ua`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.tls_vs_ua_browser` |
 | `coalesce-proxy` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.coalesced_untrusted`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered` |
 | `coalesce-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.tostring_tampered`, `br.webdriver_getter_tampered` |
 | `csp-bypass` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.csp_bypassed`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_spoofed` |
@@ -123,6 +124,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
 | `rebrowser` | bot | `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `renderer-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_renderer_artifact`, `br.webgl_worker_vs_main` |
+| `screen-depth-spoof` | bot | `br.screen_depth_incoherent`, `net.ch_platform_header_vs_ua` |
 | `screen-impossible` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.screen_impossible`, `br.webdriver_getter_tampered` |
 | `selenium-driverless` | bot | `br.headless_ua` |
 | `spoof-ua` | bot | `br.ch_he_headless`, `br.engine_stack_vs_ua`, `br.error_engine_vs_ua`, `br.firefox_ua_nongecko`, `br.permissions_anomaly`, `br.productsub_vs_ua`, `br.vendor_vs_ua`, `br.webdriver_spoofed`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_ua_browser`, `net.tls_vs_ua_browser` |
