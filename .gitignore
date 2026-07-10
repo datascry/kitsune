@@ -38,6 +38,7 @@ sbom*.json
 /evaders/h2-rapid-reset/h2rapidreset
 /evaders/go-tls/go-tls
 /evaders/azuretls/azuretls-evader
+/evaders/os-spoof/osspoof
 
 # pnpm content-addressable store (created when running pnpm in-tree)
 .pnpm-store/
