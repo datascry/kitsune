@@ -46,6 +46,11 @@ PROFILES: dict[str, VendorProfile] = {
     "arkose": VendorProfile(
         "arkose", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="image-shapes"
     ),
+    # GeeTest (docs): behavioural risk pre-check escalating to a slide/icon-order puzzle; verify is pass/fail. The
+    # icon-order variant maps to the owned ordered image-select gate.
+    "geetest": VendorProfile(
+        "geetest", "challenge", 120, 0.5, scored=False, inverted=False, challenge_gate="image-select"
+    ),
 }
 
 
