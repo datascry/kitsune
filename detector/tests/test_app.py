@@ -363,6 +363,46 @@ def test_vendor_challenge_ladder(client: TestClient) -> None:
     assert vh["success"] is True
 
 
+def test_vendor_hcaptcha_checksiteconfig(client: TestClient) -> None:
+    # hCaptcha's widget pre-check: pass silently when coherent, escalate to the image challenge (behind an hsw
+    # proof token) when suspicious. Reproduces the captured POST checksiteconfig?...&sc=1&swa=1&spst=1 protocol.
+    client.post("/ingest", json=_signals_from("session_bot.json"))  # bot-001
+    client.post("/ingest", json=_signals_from("session_human.json"))  # human-001
+
+    ok = client.post(
+        "/vendor/hcaptcha/checksiteconfig",
+        params={"sitekey": "k1", "sc": 1, "swa": 1, "spst": 1},
+        cookies={"ks_sid": "human-001"},
+    ).json()
+    assert ok["pass"] is True and ok["sitekey"] == "k1" and "c" not in ok
+
+    bad = client.post(
+        "/vendor/hcaptcha/checksiteconfig", params={"sitekey": "k1"}, cookies={"ks_sid": "bot-001"}
+    ).json()
+    assert bad["pass"] is False and bad["c"]["type"] == "hsw" and "kind=image-select" in bad["challenge_url"]
+
+    # checksiteconfig is hCaptcha-only; other vendors + unknown 404
+    assert client.post("/vendor/turnstile/checksiteconfig").status_code == 404
+    assert client.post("/vendor/nope/checksiteconfig").status_code == 404
+
+
+def test_vendor_proton_challenge(client: TestClient) -> None:
+    # Proton CAPTCHA: PoW-first challenge family — a suspicious session escalates to the owned PoW gate (not an
+    # image grid), verify is managed pass/fail.
+    client.post("/ingest", json=_signals_from("session_bot.json"))
+    client.post("/ingest", json=_signals_from("session_human.json"))
+
+    ok = client.get("/vendor/proton", cookies={"ks_sid": "human-001"}).json()
+    assert ok["challenge_required"] is False and "challenge_url" not in ok
+
+    bad = client.get("/vendor/proton", cookies={"ks_sid": "bot-001"}).json()
+    assert bad["challenge_required"] is True and bad["challenge_url"] == "/arena/challenge"  # the PoW gate
+
+    tok = client.get("/vendor/proton", cookies={"ks_sid": "bot-001"}).json()["token"]
+    v = client.post("/vendor/proton/siteverify", data={"secret": "s", "response": tok}).json()
+    assert v["success"] is False and set(v) >= {"success", "action", "challenge_ts", "hostname", "error-codes"}
+
+
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     # Configured, the rate gate relays to the upstream (502 here since no real arena is up — proves the route
     # is wired and forwards, not a 404/whitelist miss).
