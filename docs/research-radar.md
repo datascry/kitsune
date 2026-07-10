@@ -5281,3 +5281,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   needed is now a registry field. NEXT: collector signal-delta (the 5 reads real captchas do that Kitsune doesn't:
   battery.getBattery, storage.estimate, webgl.getShaderPrecisionFormat, audio.createAnalyser, screen.pixelDepth) to
   close the replica fingerprint gap + strengthen detection; then GeeTest (icon-order ~ image-select) as a profile.
+- **[Vendor profiles: GeeTest + collector signal-delta (reads captchas do) — 2 FP-safe coherence rules]**
+  (2026-07-10). Two rungs. (a) GeeTest vendor profile added (challenge-mode, icon-order -> the owned ordered
+  image-select gate) — completes the challenge-ladder family set (reCAPTCHA v2/v3, Turnstile, hCaptcha, Arkose,
+  GeeTest). (b) COLLECTOR SIGNAL-DELTA: the teardown found real captchas read four surfaces Kitsune's collector did
+  not; added them to the detector's authoritative inline collector (demo.py) — navigator.getBattery,
+  screen.pixelDepth/colorDepth, StorageManager.estimate presence, WebGL getShaderPrecisionFormat (fragment
+  high-float, folded into the caps vector) — and TWO new FP-safe coherence rules over them (registry 188->190 active,
+  196 total): br.battery_api_vs_gecko_ua (w0.6 — a Firefox/Gecko UA that still exposes the Chromium-only Battery API
+  is a Chromium engine wearing a Firefox UA, a UA-only spoof leak; the coherent-stack thesis on a new surface) and
+  br.screen_depth_incoherent (w0.5 — pixelDepth != colorDepth, aliases always equal on a real display). GROUNDED LIVE
+  BOTH DIRECTIONS: real Chromium via the edge reads battery_api / color_depth=24 / storage_estimate_api /
+  shader=23:127:127 and both rules stay SILENT (FP-safe); a Chromium engine forced to a Firefox UA on the secure
+  page FIRES battery_api_vs_gecko_ua (the exact UA-only anti-detect spoof); a synthetic pixelDepth!=colorDepth fires
+  screen_depth_incoherent (unit test). Detector suite 518 passed, coverage 95.77%; catalog + README + matrix
+  regenerated (the two rules sit in corpus Gaps — no corpus session is a Firefox-UA spoof, grounded live instead).
+  Also handled the working-tree dirt: applied the Dependabot batch as datascry (go x/image+x/text, action pins,
+  mypy, ts-eslint — go modules verified+built+vetted clean) and gitignored the compiled os-spoof/osspoof artifact.
