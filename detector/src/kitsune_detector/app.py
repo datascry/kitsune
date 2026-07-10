@@ -55,7 +55,7 @@ from .pages import (
     reverse_index,
 )
 from .store import Store
-from .vendors import PROFILES, shape_siteverify
+from .vendors import PROFILES, challenge_required, shape_siteverify
 
 #: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
 DOC_PAGES: dict[str, tuple[str, str, str]] = {
@@ -705,13 +705,25 @@ def create_app(
     @app.get("/vendor/{name}", include_in_schema=False)
     async def vendor_mint(
         name: str, action: str = "submit", ks_sid: str | None = Cookie(default=None)
-    ) -> dict[str, str]:
+    ) -> dict[str, object]:
         # the invisible "execute" step — mint a single-use token bound to this collector session
         if name not in PROFILES:
             raise HTTPException(status_code=404, detail="unknown vendor")
+        profile = PROFILES[name]
         token = os.urandom(18).hex()
         _vendor_tokens[token] = (ks_sid or "", action[:64], datetime.now(UTC), name)
-        return {"token": token, "action": action[:64]}
+        out: dict[str, object] = {"token": token, "action": action[:64]}
+        if profile.challenge_gate:
+            # challenge-ladder: run the invisible pre-check now and, if suspicious (or no session yet), point the
+            # widget at the owned escalation gate — the reCAPTCHA-v2 / Arkose "here's an image grid" moment.
+            session = store.get_session(ks_sid) if ks_sid else None
+            score = detector.score(session).score if session is not None else None
+            if challenge_required(profile, score):
+                out["challenge_required"] = True
+                out["challenge_url"] = f"/arena/captcha?kind={profile.challenge_gate}"
+            else:
+                out["challenge_required"] = False
+        return out
 
     @app.post("/vendor/{name}/siteverify", include_in_schema=False)
     async def vendor_siteverify(name: str, request: Request) -> dict[str, object]:
