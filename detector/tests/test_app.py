@@ -330,6 +330,37 @@ def test_vendor_turnstile_and_hcaptcha_profiles(client: TestClient) -> None:
     assert hc["success"] is False and hc["score"] > 0.5 and hc["score_reason"]
 
 
+def test_vendor_challenge_ladder(client: TestClient) -> None:
+    # A challenge-mode family (reCAPTCHA v2 / Arkose): the invisible pre-check ESCALATES to an owned gate when the
+    # verdict is suspicious, and passes silently when it is coherent.
+    client.post("/ingest", json=_signals_from("session_bot.json"))  # bot-001
+    client.post("/ingest", json=_signals_from("session_human.json"))  # human-001
+
+    # coherent session -> no escalation
+    ok = client.get("/vendor/recaptcha_v2", cookies={"ks_sid": "human-001"}).json()
+    assert ok["challenge_required"] is False and "challenge_url" not in ok
+
+    # suspicious session -> escalate to the image-select gate
+    bad = client.get("/vendor/recaptcha_v2", cookies={"ks_sid": "bot-001"}).json()
+    assert bad["challenge_required"] is True and "kind=image-select" in bad["challenge_url"]
+
+    # no session yet -> can't prove coherence, so escalate (a checkbox always runs its check)
+    ghost = client.get("/vendor/recaptcha_v2").json()
+    assert ghost["challenge_required"] is True
+
+    # Arkose escalates to its own game gate
+    ark = client.get("/vendor/arkose", cookies={"ks_sid": "bot-001"}).json()
+    assert ark["challenge_required"] is True and "kind=image-shapes" in ark["challenge_url"]
+
+    # verify shape is managed pass/fail; the bot fails, the coherent human passes
+    tb = client.get("/vendor/recaptcha_v2", cookies={"ks_sid": "bot-001"}).json()["token"]
+    vb = client.post("/vendor/recaptcha_v2/siteverify", data={"secret": "s", "response": tb}).json()
+    assert vb["success"] is False and set(vb) >= {"success", "action", "challenge_ts", "hostname", "error-codes"}
+    th = client.get("/vendor/recaptcha_v2", cookies={"ks_sid": "human-001"}).json()["token"]
+    vh = client.post("/vendor/recaptcha_v2/siteverify", data={"secret": "s", "response": th}).json()
+    assert vh["success"] is True
+
+
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     # Configured, the rate gate relays to the upstream (502 here since no real arena is up — proves the route
     # is wired and forwards, not a 404/whitelist miss).
