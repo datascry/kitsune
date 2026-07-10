@@ -67,16 +67,19 @@ export async function collectAllFrames(page) {
     }
     for (const b of r.behavioral || []) {
       let e = lis.get(b.event);
-      if (!e) e = lis.set(b.event, { count: 0, firstMs: b.ms }).get(b.event);
+      if (!e) e = lis.set(b.event, { count: 0, firstMs: b.ms, frames: new Set() }).get(b.event);
       e.count += b.count;
       e.firstMs = Math.min(e.firstMs, b.ms);
+      e.frames.add(host(r.frame));
     }
     for (const n of r.network || []) net.push({ ...n, frame: host(r.frame) });
   }
   const signals = [...sig.values()]
     .sort((a, b) => a.firstMs - b.firstMs)
     .map((e) => ({ ms: e.firstMs, cat: e.cat, name: e.name, count: e.count, samples: e.samples, frames: [...e.frames] }));
-  const behavioral = [...lis.entries()].map(([event, e]) => ({ event, count: e.count, ms: e.firstMs })).sort((a, b) => a.ms - b.ms);
+  const behavioral = [...lis.entries()]
+    .map(([event, e]) => ({ event, count: e.count, ms: e.firstMs, frames: [...e.frames] }))
+    .sort((a, b) => a.ms - b.ms);
   return { frames: frames.map(host), counts: { signals: signals.length, listeners: behavioral.length, requests: net.length }, signals, behavioral, network: net };
 }
 
