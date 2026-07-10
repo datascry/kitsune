@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **194 rules**: 133 active · 55 experimental · 6 retired; 141 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **196 rules**: 133 active · 57 experimental · 6 retired; 143 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -56,7 +56,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (137)
+### browser layer (139)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -69,6 +69,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.android_no_contacts_api` | coherence✦ | present | 0.6 | experimental | Android Chrome Mobile UA lacking navigator.contacts (a mobile-only web API) |
 | `br.android_phone_screen_oversized` | coherence✦ | present | 0.7 | active | Android phone UA reports a screen larger than any real Android phone |
 | `br.apple_ua_nonwebkit` | coherence✦ | present | 0.75 | active | A UA claiming Apple WebKit (Safari / any iOS browser) exposes a Blink-only structural API |
+| `br.battery_api_vs_gecko_ua` | coherence✦ | present | 0.6 | experimental | Firefox/Gecko UA that still exposes the Chromium-only Battery API (navigator.getBattery) |
 | `br.canvas_worker_vs_main` | coherence✦ | present | 0.6 | experimental | Canvas pixel hash differs between the main thread and a Worker OffscreenCanvas |
 | `br.ch_he_version_vs_ua` | coherence✦ | present | 0.6 | experimental | UA-CH high-entropy Chrome version contradicts the UA-string version |
 | `br.devicememory_vs_engine` | coherence✦ | present | 0.6 | active | Firefox/Safari UA but navigator.deviceMemory (a Blink-only API) is present |
@@ -100,6 +101,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.pointer_touch_incoherent` | coherence✦ | present | 0.7 | active | CSS coarse-pointer and navigator.maxTouchPoints disagree on touch |
 | `br.productsub_vs_ua` | coherence✦ | not_equal | 0.7 | active | navigator.productSub render engine contradicts the UA |
 | `br.safari_ua_no_webkit_api` | coherence✦ | present | 0.7 | active | A UA claiming Safari lacks window.GestureEvent — a WebKit-only surface, so it is not WebKit |
+| `br.screen_depth_incoherent` | coherence✦ | present | 0.5 | experimental | screen.pixelDepth and screen.colorDepth disagree (aliases that are always equal on a real display) |
 | `br.timezone_inconsistent` | coherence✦ | present | 0.6 | active | IANA timeZone and getTimezoneOffset() disagree (a real browser derives both from the OS) |
 | `br.timezone_offset_vs_intl` | coherence✦ | present | 0.65 | active | getTimezoneOffset disagrees with the Intl IANA timezone's actual offset |
 | `br.timezone_worker_vs_main` | coherence✦ | present | 0.7 | active | Timezone differs between the main thread and a Web Worker |

@@ -120,6 +120,18 @@ rules:
     last_validated: "2026-06-20"
     source: "CreepJS / bot.sannysoft.com: screen.availWidth/Height can never exceed screen.width/height on a real device; avail > total is a spoofed/sloppily-randomised screen lie (both logical px, no zoom/dpr confound)"
 
+  - id: br.screen_depth_incoherent
+    title: screen.pixelDepth and screen.colorDepth disagree (aliases that are always equal on a real display)
+    layers: [browser]
+    reads: [browser.screen_depth_incoherent]
+    predicate: present
+    weight: 0.5
+    status: experimental
+    category: coherence
+    added: "2026-07-10"
+    last_validated: "2026-07-10"
+    source: "screen.pixelDepth and screen.colorDepth are two names for the SAME quantity — the display's bits-per-pixel — and return an identical value on every real browser (both 24 on a typical panel, 30 on a 10-bit/HDR one; MDN notes pixelDepth is kept equal to colorDepth for compatibility). A session where they DISAGREE has a spoof that patched one dimension of the screen object but not its alias — a naive screen-randomiser tell of the same family as br.screen_impossible (avail > total), read from a surface real captchas probe (the teardown delta). FP-SAFE by construction: a genuine browser never mismatches the two; a coherent screen spoof that sets both stays silent (the point). EXPERIMENTAL (w0.5, corroborating): low base-rate (only a clumsy spoof trips it), zero-FP. GROUNDED: the detector's own collector reads both; a real Chromium/Gecko session reports pixelDepth == colorDepth and does NOT fire; a synthetic session with pixelDepth != colorDepth FIRES screen_depth_incoherent."
+
   - id: net.quic_grease_vs_ua
     title: GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE
     layers: [network, browser]
@@ -875,6 +887,18 @@ rules:
     added: "2026-06-18"
     last_validated: "2026-06-18"
     source: "getHighEntropyValues uaFullVersion/fullVersionList major vs UA Chrome major — UA-spoofers often miss the high-entropy CH surface"
+
+  - id: br.battery_api_vs_gecko_ua
+    title: Firefox/Gecko UA that still exposes the Chromium-only Battery API (navigator.getBattery)
+    layers: [browser]
+    reads: [browser.battery_api_vs_gecko_ua]
+    predicate: present
+    weight: 0.6
+    status: experimental
+    category: coherence
+    added: "2026-07-10"
+    last_validated: "2026-07-10"
+    source: "ENGINE-vs-UA leak on a surface real captchas read (the teardown delta). The Battery Status API (navigator.getBattery) is a CHROMIUM-only method: Firefox removed it entirely in 2022 (bug 1313580; Gecko exposes no getBattery) and WebKit/Safari never shipped it. So a session whose UA claims Firefox/Gecko while navigator.getBattery is still a function is a Chromium engine wearing a Firefox UA — the exact incoherence a UA-only anti-detect spoof leaks (it changed the UA string but not the JS engine surface). CONVICTING (w0.6): method PRESENCE is a synchronous read (no getBattery() call, no permission prompt). FP-SAFE by construction — a real Firefox never exposes the method, so a genuine Gecko session is silent; the check is scoped to /Firefox/ UAs (excluding SeaMonkey) so a Chromium UA (which legitimately has the API) is out of scope. The RED counter is deleting navigator.getBattery under a Firefox UA — which then must also satisfy every other Gecko engine tell (the coherent-stack point). GROUNDED: the detector's collector emits battery_api on Chromium and battery_api_vs_gecko_ua only when a Firefox UA co-occurs with the method; a real Firefox reports neither the leak nor fires."
 
   - id: bh.keystroke_entropy_floor
     title: Keystroke timing entropy below the human floor

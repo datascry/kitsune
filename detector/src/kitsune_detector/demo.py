@@ -1577,6 +1577,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
         aliasedLineRange: p("ALIASED_LINE_WIDTH_RANGE"),
         aliasedPointRange: p("ALIASED_POINT_SIZE_RANGE"),
         extCount: (gl.getSupportedExtensions() || []).length,
+        // Shader FLOAT precision (getShaderPrecisionFormat) — the fragment high-float precision/range the real
+        // silicon exposes. A capabilities read real captchas do; part of the unspoofable-by-string caps vector (a
+        // software backend claiming a hardware renderer reports a different precision than the GPU it names).
+        fragHiFloat: (function () { try { var f = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT); return f ? f.precision + ":" + f.rangeMin + ":" + f.rangeMax : ""; } catch (e) { return ""; } })(),
       };
     } catch (e) { return null; }
   }
@@ -1901,11 +1905,26 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     // A genuine navigator.webdriver is inherited from Navigator.prototype; an own property means
     // it was patched via Object.defineProperty(navigator, ...).
     if (Object.getOwnPropertyDescriptor(navigator, "webdriver")) sigs.push(S("browser", "webdriver_spoofed", true));
+    // Reads real captchas do that Kitsune did not — captured here as coherence surface (teardown deltas).
+    // (1) Battery API: only Chromium exposes navigator.getBattery; Firefox removed it entirely and WebKit never
+    // had it. So a GECKO/Firefox UA that still exposes getBattery is a Chromium engine wearing a Firefox UA — an
+    // engine-vs-UA leak. FP-safe: a real Firefox never has the method. (Method presence is a sync read; no call.)
+    var _hasBattery = typeof navigator.getBattery === "function";
+    if (_hasBattery) sigs.push(S("browser", "battery_api", true));
+    if (_hasBattery && /Firefox\\//.test(ua) && !/Seamonkey\\//.test(ua)) sigs.push(S("browser", "battery_api_vs_gecko_ua", true));
+    // (2) Screen colour depth: screen.pixelDepth and screen.colorDepth are equal in every real browser (both the
+    // display's bits-per-pixel). A mismatch is a spoof that patched one dimension but not its alias. FP-safe.
+    if (typeof screen.colorDepth === "number") sigs.push(S("browser", "color_depth", screen.colorDepth));
+    if (typeof screen.pixelDepth === "number" && typeof screen.colorDepth === "number"
+        && screen.pixelDepth !== screen.colorDepth) sigs.push(S("browser", "screen_depth_incoherent", true));
+    // (3) StorageManager.estimate presence — a quota read captchas use; captured as fidelity surface (a future
+    // quota-coherence rule can build on it). Presence is sync; the async quota value is intentionally not awaited.
+    if (navigator.storage && typeof navigator.storage.estimate === "function") sigs.push(S("browser", "storage_estimate_api", true));
     var wg = webglInfo();
     if (wg.renderer) sigs.push(S("browser", "webgl_renderer", wg.renderer));
     if (wg.vendor) sigs.push(S("browser", "webgl_vendor", wg.vendor));
     // GPU capability fingerprint (G18) — the renderer string's hardware reality, unspoofable by a string patch.
-    if (wg.caps) { sigs.push(S("browser", "webgl_caps", capsSummary(wg.caps))); if (wg.caps.maxTexture) sigs.push(S("browser", "webgl_max_texture", wg.caps.maxTexture)); }
+    if (wg.caps) { sigs.push(S("browser", "webgl_caps", capsSummary(wg.caps))); if (wg.caps.maxTexture) sigs.push(S("browser", "webgl_max_texture", wg.caps.maxTexture)); if (wg.caps.fragHiFloat) sigs.push(S("browser", "webgl_shader_precision", wg.caps.fragHiFloat)); }
     // G18 conviction: a renderer string naming a recent HIGH-END discrete GPU (RTX / Radeon RX 6000+ / Apple
     // M-series / Intel Arc) that reports a MAX_TEXTURE_SIZE below the 16384 floor EVERY such GPU exposes — the
     // string is spoofed over a lesser/software backend (headless Chrome's SwiftShader reports 8192). A
