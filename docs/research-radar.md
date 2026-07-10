@@ -5298,3 +5298,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   regenerated (the two rules sit in corpus Gaps — no corpus session is a Firefox-UA spoof, grounded live instead).
   Also handled the working-tree dirt: applied the Dependabot batch as datascry (go x/image+x/text, action pins,
   mypy, ts-eslint — go modules verified+built+vetted clean) and gitignored the compiled os-spoof/osspoof artifact.
+- **[Vendor profiles: hCaptcha checksiteconfig + Proton (PoW) — the replica set is COMPLETE]**
+  (2026-07-10). Closed the two deferred vendor-fidelity pieces. hCaptcha gained its widget pre-check
+  (POST /vendor/hcaptcha/checksiteconfig — the captured ...&sc=1&swa=1&spst=1 shape): {pass:true} when coherent,
+  else {pass:false, c:{type:hsw,req}, request_type:image_label_binary, challenge_url} — escalate to the image
+  challenge behind an hsw proof token. Proton CAPTCHA added as a PoW-first challenge family whose escalation gate is
+  the owned PoW challenge (/arena/challenge), not an image grid — via a challenge_url() resolver mapping non-image
+  gate slugs (pow, slider) to their own arena endpoints; the generic mint ladder now keys on mode==challenge.
+  GROUNDED LIVE: human passes both silently; a bot escalates Proton to /arena/challenge and hCaptcha csc to
+  image-select; Proton verify success=false. Suite 520 passed, coverage 95.80%. The mainstream-replica set now
+  spans reCAPTCHA v2/v3, Turnstile, hCaptcha (+ checksiteconfig), Arkose, GeeTest, Proton — invisible-score,
+  managed, challenge-ladder (image + PoW), each a faithful protocol over the coherence verdict. Vendor track DONE;
+  the remaining captcha frontier is external (real third-party probe runs, which stay off-sandbox by policy).
