@@ -5266,3 +5266,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   token reuse rejected (timeout-or-duplicate); unknown vendor -> 404. Suite green (515 passed, coverage met). The
   invisible-score/managed families are now a registry entry each. NEXT: the challenge-ladder (score<thr -> escalate
   to a gate) for the challenge-mode families (reCAPTCHA v2 image, Arkose games, Proton).
+- **[Vendor profiles: challenge-ladder landed — reCAPTCHA v2 / Arkose escalate to owned gates]**
+  (2026-07-10). Added a "challenge" vendor mode: the invisible risk pre-check now ESCALATES to an owned interactive
+  gate instead of only passing/failing silently. VendorProfile gains challenge_gate (an owned arena captcha slug);
+  challenge_required(profile, score) escalates when suspicious (score >= threshold) OR when there is no session yet
+  (can't prove coherence -> escalate, matching a checkbox that always runs its check). GET /vendor/{name} now returns
+  challenge_required + a challenge_url (/arena/captcha?kind=<gate>); siteverify stays managed pass/fail, which already
+  folds in the server-observed solve tell (a superhuman gate solve raises the session's bot score via the joined
+  anomaly, so it fails verify too). reCAPTCHA v2 -> image-select, Arkose -> image-shapes. GROUNDED LIVE (rebuilt
+  detector image, bot + human ingested): human-001 {challenge_required:false} (silent pass); bot-001
+  {challenge_required:true, challenge_url:/arena/captcha?kind=image-select}; arkose bot -> kind=image-shapes;
+  no-session -> escalate; bot siteverify {success:false}. Suite green (516 passed, coverage 95.77%). The invisible ->
+  visible escalation is the reCAPTCHA-v2 / Arkose / Proton pattern; the one new-logic piece the challenge families
+  needed is now a registry field. NEXT: collector signal-delta (the 5 reads real captchas do that Kitsune doesn't:
+  battery.getBattery, storage.estimate, webgl.getShaderPrecisionFormat, audio.createAnalyser, screen.pixelDepth) to
+  close the replica fingerprint gap + strengthen detection; then GeeTest (icon-order ~ image-select) as a profile.
