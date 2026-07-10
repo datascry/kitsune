@@ -5255,3 +5255,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   challenge view correctly isolated the :8001 widget frame's audio/battery + /cf/challenge, dropped the host :8000
   /cdn-cgi/rum beacon, and __playwright is gone from listeners. So a future run against a real embedding page returns
   the vendor's delta, not the site's chrome.
+- **[Vendor profiles: generalized + Turnstile + hCaptcha landed — one endpoint family, three faithful shapes]**
+  (2026-07-09). Generalized the vendor endpoints to GET /vendor/{name} + POST /vendor/{name}/siteverify over the
+  PROFILES registry (token bound to vendor + ks_sid, single-use, per-vendor TTL); shape_siteverify emits each
+  family's documented response. Added Turnstile (managed pass/fail: {success, action, cdata, metadata.ephemeral_id},
+  300s) and hCaptcha (pass/fail + enterprise score higher=worse + score_reason, 120s) alongside reCAPTCHA v3 (score
+  1=human, success=valid-token — corrected to the faithful semantics: the site gates on the SCORE, not success).
+  GROUNDED LIVE, all three from one bot session (kitsune 1.0): recaptcha_v3 {success:true, score:0.0}; turnstile
+  {success:false, cdata, ephemeral_id}; hcaptcha {success:false, score:1.0, score_reason:[coherence]}. Cross-vendor
+  token reuse rejected (timeout-or-duplicate); unknown vendor -> 404. Suite green (515 passed, coverage met). The
+  invisible-score/managed families are now a registry entry each. NEXT: the challenge-ladder (score<thr -> escalate
+  to a gate) for the challenge-mode families (reCAPTCHA v2 image, Arkose games, Proton).

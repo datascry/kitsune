@@ -267,8 +267,8 @@ def test_vendor_score_mapping() -> None:
     # reCAPTCHA-style inverted: 1.0 = human (kitsune 0.0 -> v3 1.0, kitsune 1.0 -> v3 0.0); native passes through.
     from kitsune_detector.vendors import VendorProfile, vendor_score
 
-    inv = VendorProfile(name="x", mode="score", token_ttl_s=120, threshold=0.5, inverted=True)
-    nat = VendorProfile(name="y", mode="score", token_ttl_s=120, threshold=0.5, inverted=False)
+    inv = VendorProfile(name="x", mode="score", token_ttl_s=120, threshold=0.5, scored=True, inverted=True)
+    nat = VendorProfile(name="y", mode="score", token_ttl_s=120, threshold=0.5, scored=True, inverted=False)
     assert vendor_score(inv, 0.0) == 1.0 and vendor_score(inv, 1.0) == 0.0 and vendor_score(inv, 0.3) == 0.7
     assert vendor_score(nat, 0.3) == 0.3
 
@@ -283,7 +283,8 @@ def test_vendor_recaptcha_v3_score_profile(client: TestClient) -> None:
     v = client.post("/vendor/recaptcha_v3/siteverify", data={"secret": "s", "response": tok}).json()
     assert set(v) >= {"success", "score", "action", "challenge_ts", "hostname", "error-codes"}
     assert v["action"] == "login" and 0.0 <= v["score"] <= 1.0
-    assert v["success"] is False and v["score"] < 0.5  # a bot session scores low on the 1=human scale
+    # v3: success = valid token (the site gates on the score); a bot scores low on the 1=human scale
+    assert v["success"] is True and v["score"] < 0.5
 
     # single-use: replay is timeout-or-duplicate
     r2 = client.post("/vendor/recaptcha_v3/siteverify", data={"secret": "s", "response": tok}).json()
@@ -307,6 +308,26 @@ def test_vendor_recaptcha_v3_score_profile(client: TestClient) -> None:
     t2 = client.get("/vendor/recaptcha_v3", cookies={"ks_sid": "ghost"}).json()["token"]
     j = client.post("/vendor/recaptcha_v3/siteverify", json={"secret": "s", "response": t2}).json()
     assert "invalid-input-response" in j["error-codes"]
+    # unknown vendor -> 404 on both mint + siteverify
+    assert client.get("/vendor/nope").status_code == 404
+    assert client.post("/vendor/nope/siteverify", data={"secret": "s", "response": "x"}).status_code == 404
+
+
+def test_vendor_turnstile_and_hcaptcha_profiles(client: TestClient) -> None:
+    # One endpoint family, per-vendor response shapes. A bot session (bot-001) fails the managed/pass-fail checks.
+    client.post("/ingest", json=_signals_from("session_bot.json"))
+    # Turnstile: managed pass/fail + {action, cdata, metadata.ephemeral_id}
+    tok = client.get("/vendor/turnstile", cookies={"ks_sid": "bot-001"}).json()["token"]
+    ts = client.post("/vendor/turnstile/siteverify", data={"secret": "s", "response": tok}).json()
+    assert ts["success"] is False and "cdata" in ts and ts["metadata"]["ephemeral_id"]
+    # a token minted for one vendor cannot be verified at another
+    tok2 = client.get("/vendor/turnstile", cookies={"ks_sid": "bot-001"}).json()["token"]
+    cross = client.post("/vendor/hcaptcha/siteverify", data={"secret": "s", "response": tok2}).json()
+    assert "timeout-or-duplicate" in cross["error-codes"]
+    # hCaptcha: pass/fail + enterprise score (higher = worse) + score_reason
+    tok3 = client.get("/vendor/hcaptcha", cookies={"ks_sid": "bot-001"}).json()["token"]
+    hc = client.post("/vendor/hcaptcha/siteverify", data={"secret": "s", "response": tok3}).json()
+    assert hc["success"] is False and hc["score"] > 0.5 and hc["score_reason"]
 
 
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
