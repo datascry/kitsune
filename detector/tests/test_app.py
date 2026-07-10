@@ -348,9 +348,11 @@ def test_vendor_challenge_ladder(client: TestClient) -> None:
     ghost = client.get("/vendor/recaptcha_v2").json()
     assert ghost["challenge_required"] is True
 
-    # Arkose escalates to its own game gate
+    # Arkose escalates to its own game gate; GeeTest (icon-order) to the ordered image-select gate
     ark = client.get("/vendor/arkose", cookies={"ks_sid": "bot-001"}).json()
     assert ark["challenge_required"] is True and "kind=image-shapes" in ark["challenge_url"]
+    gt = client.get("/vendor/geetest", cookies={"ks_sid": "bot-001"}).json()
+    assert gt["challenge_required"] is True and "kind=image-select" in gt["challenge_url"]
 
     # verify shape is managed pass/fail; the bot fails, the coherent human passes
     tb = client.get("/vendor/recaptcha_v2", cookies={"ks_sid": "bot-001"}).json()["token"]
