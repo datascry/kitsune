@@ -329,6 +329,45 @@ def slide(mode: str) -> dict:
     return post("/arena/slide/verify", {"id": c["id"], "moves": moves})
 
 
+# --- (9) ORIENTATION MATCH — tell bh.arena_match_superhuman (age < (N+1)*250ms). Evasion: estimate each arrow's
+# direction from its dark-pixel centroid (the filled triangle's base is wider, so centroid->centre points toward the
+# apex), pick the candidate whose angle is closest to the reference, but spend > (N+1)*250ms. Naive: same solve,
+# submitted instantly.
+def _orient(datauri: str) -> float:
+    w, h, bpp, px = _decode_png(datauri)
+
+    def dark(x: int, y: int) -> bool:
+        i = (y * w + x) * bpp
+        return px[i] < 120 and px[i + 1] < 120 and px[i + 2] < 120
+
+    # keep only pixels in the SOLID triangle (>= 3 dark 8-neighbours) — drops the scattered single noise pixels
+    pts = []
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            if dark(x, y) and sum(dark(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)) - 1 >= 3:
+                pts.append((x, y))
+    if not pts:
+        return 0.0
+    cx = sum(p[0] for p in pts) / len(pts)
+    cy = sum(p[1] for p in pts) / len(pts)
+    # the apex (triangle tip) is the farthest solid pixel from the centroid; centroid -> apex is the arrow direction
+    ax, ay = max(pts, key=lambda p: (p[0] - cx) ** 2 + (p[1] - cy) ** 2)
+    return math.atan2(-(ay - cy), ax - cx)
+
+
+def match(mode: str) -> dict:
+    c = get(f"/arena/match?level={LEVEL}")
+    ra = _orient(c["reference"])
+    best, bd = 0, 9.0
+    for t in c["tiles"]:
+        d = abs(((_orient(t["image"]) - ra) + math.pi) % (2 * math.pi) - math.pi)  # circular angle diff
+        if d < bd:
+            bd, best = d, t["index"]
+    if mode == "human":
+        time.sleep((len(c["tiles"]) + 1) * 0.28)  # human reference+candidate scan (> (N+1)*250ms)
+    return post("/arena/match/verify", {"id": c["id"], "clicked": best})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
@@ -338,6 +377,7 @@ GATES = {
     "locate": locate,
     "spotdiff": spotdiff,
     "slide": slide,
+    "match": match,
 }
 
 

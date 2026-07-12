@@ -5539,3 +5539,11 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   optimal-plan prong), and spend > nMoves*350ms (defeats the speed prong). GROUNDED LIVE BOTH DIRECTIONS: the NAIVE
   optimal path submitted instantly trips anomaly:slide_superhuman (session label=bot); the HUMANIZED evader (optimal
   + 2 wasted moves, paced) passes with anomaly=null (evaded). NEXT: match (orientation solve, paced > (N+1)*250ms).
+- **[Red-team arena-gate EVASIONS loop — 9/10: match defeats bh.arena_match_superhuman]**
+  (2026-07-12). Gate 9 evasion (arena-solver-behave match mode): estimate each arrow's orientation robustly — density-
+  filter the dark pixels (>= 3 dark 8-neighbours drops the scattered noise), take the APEX (farthest solid pixel from
+  the centroid), direction = centroid->apex — pick the candidate whose angle is closest to the reference, then spend
+  > (N+1)*250ms. The first (dark-centroid-vs-image-centre) estimate was only ~50% reliable (jittered centre + noise);
+  the density-filtered apex is 100% (6/6 across easy/medium/hard). GROUNDED LIVE BOTH DIRECTIONS: the NAIVE correct
+  instant answer trips anomaly:match_superhuman (session label=bot); the HUMANIZED evader (same correct answer, paced)
+  passes with anomaly=null (evaded). NEXT: count (blob-count + paced) — the last gate.
