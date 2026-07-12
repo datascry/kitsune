@@ -429,6 +429,38 @@ def test_vendor_pow_widgets(client: TestClient) -> None:
     assert cross.get("error-codes") == ["timeout-or-duplicate"]
 
 
+def test_vendor_challenge_mode_vendors(client: TestClient) -> None:
+    # The challenge-mode vendors escalate a suspicious session to the owned arena gate that matches their real
+    # challenge, and return each family's documented verify shape.
+    client.post("/ingest", json=_signals_from("session_bot.json"))  # bot-001
+
+    # each vendor escalates to its mapped gate (the vendor protocol + the arena gates integrate end to end)
+    gates = {
+        "perimeterx": "/arena/presshold",
+        "netease": "/arena/sequence",
+        "datadome": "/arena/slider",
+        "tencent": "/arena/slider",
+        "capy": "/arena/slider",
+        "aws_waf": "/arena/captcha?kind=image-select",
+        "prosopo": "/arena/captcha?kind=image-select",
+    }
+    for name, url in gates.items():
+        mint = client.get(f"/vendor/{name}", cookies={"ks_sid": "bot-001"}).json()
+        assert mint["challenge_required"] is True and mint["challenge_url"] == url, name
+
+    def verify(name: str) -> dict:
+        tok = client.get(f"/vendor/{name}", cookies={"ks_sid": "bot-001"}).json()["token"]
+        return client.post(f"/vendor/{name}/siteverify", data={"secret": "s", "response": tok}).json()
+
+    # distinct documented shapes, all reflecting the bot verdict (fail)
+    assert verify("prosopo") == {"verified": False}
+    assert verify("netease") == {"result": False}
+    tc = verify("tencent")
+    assert tc["ret"] == 1 and tc["ticket"]
+    # the generic challenge families are managed pass/fail
+    assert verify("datadome")["success"] is False and verify("aws_waf")["success"] is False
+
+
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     # Configured, the rate gate relays to the upstream (502 here since no real arena is up — proves the route
     # is wired and forwards, not a 404/whitelist miss).
