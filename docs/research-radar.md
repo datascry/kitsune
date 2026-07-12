@@ -5479,3 +5479,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   = touch hardware; working-memory-span = not human-passable). The captcha-STYLE axis is exhausted in-sandbox; the
   durable frontier is (and remains) fingerprint + coordination coherence. Next loop firings that only yield
   reused-tell style variants are the wind-down signal.
+- **[Red-team arena-gate EVASIONS loop — 1/10: press-and-hold defeats bh.arena_hold_robotic]**
+  (2026-07-12). New loop (cron be739120, 1m): build RED evasions that DEFEAT the FP-safe tells of the 10 new arena
+  gates by solving each coherently + humanizing the solve so the server-observed anomaly stays SILENT (the arena
+  thesis from the red side — an FP-safe tell means a human-paced solver evades; the gate is a cost/Turing test).
+  New evader evaders/arena-solver-behave/behave.py (stdlib, allow-list-scoped to the owned arena), one mode per gate.
+  Gate 1 press-and-hold: the evasion holds for the REAL duration (age >= held, no impossible claim) with a DRIFTING
+  held pointer (tremor std ~1.6px > the 0.5px floor). GROUNDED LIVE BOTH DIRECTIONS: the NAIVE solve (instant + pinned
+  coordinate) trips anomaly:hold_robotic (session label=bot, arena_hold_robotic present); the HUMANIZED evader passes
+  the gate with anomaly=null -> no signal joined -> the ks_sid session is never even created (the /verdict 404 IS the
+  evasion signature). Confirms the gate-behaviour layer is evadable by a coherent human-paced solver (as designed);
+  the session still convicts on fingerprint coherence unless run in a coherent browser. NEXT: pursuit (defeat
+  bh.arena_pursuit_superhuman with human-like tracking error 15-40px).
