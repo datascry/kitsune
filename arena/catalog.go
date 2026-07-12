@@ -89,6 +89,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/keymap?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "presshold",
+				Prompt:   "Press and hold the button for the shown duration, then release. A press-and-hold gate (Cloudflare Press & Hold / DataDome / HUMAN family): the held-pointer tremor convicts a scripted hold — a real hand drifts continuously while an injected hold pins its samples to one coordinate (variance ~ 0), and claiming a longer hold than the whole solve window is impossible (hold_robotic).",
+				Endpoint: "GET /arena/presshold?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

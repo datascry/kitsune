@@ -186,6 +186,15 @@ CHALLENGES: list[dict[str, str]] = [
         "original input-integrity gate (not a wild-captcha clone). A correct answer with no exploration (no "
         "backspaces) means the client decoded the remap from the payload instead of probing it.",
     },
+    {
+        "slug": "presshold",
+        "label": "Press and hold",
+        "family": "Press-and-hold (Cloudflare / DataDome / HUMAN)",
+        "mode": "presshold",
+        "blurb": "Press and hold the button for the shown duration, then release. The held-pointer tremor convicts a "
+        "scripted hold — a real hand drifts continuously while an injected hold pins its samples to one coordinate "
+        "(no jitter); claiming a longer hold than the whole solve window is also impossible.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -510,6 +519,29 @@ ARENA_JS = r"""
     render(); say("Try keys to learn the remap, type the target, then submit.");
   }
 
+  async function runPresshold(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/presshold"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var label=document.createElement("p"); label.className="note"; label.textContent="Hold for "+c.hold_ms+" ms (±"+c.tolerance_ms+")"; box.appendChild(label);
+    var btn=document.createElement("button"); btn.textContent="Press & Hold"; btn.style.minWidth="150px"; btn.style.minHeight="46px"; box.appendChild(btn);
+    var status=document.createElement("p"); status.className="note"; box.appendChild(status);
+    var t0=0, samples=[], holding=false;
+    btn.addEventListener("pointerdown", function(e){ e.preventDefault(); try{ btn.setPointerCapture(e.pointerId); }catch(_){}
+      t0=performance.now(); holding=true; samples=[]; status.textContent="holding…"; });
+    btn.addEventListener("pointermove", function(e){ if(holding) samples.push([e.clientX, e.clientY]); });
+    async function release(){
+      if(!holding) return; holding=false; var ms=Math.round(performance.now()-t0); t0=0;
+      status.textContent="held "+ms+" ms"; btn.disabled=true; label.textContent="Verifying…";
+      var v=await (await fetch("/arena/presshold/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, held_ms:ms, samples:samples})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Held — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Press-and-hold PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Hold was out of tolerance — try again."; say("Press-and-hold rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    }
+    btn.addEventListener("pointerup", release); btn.addEventListener("pointercancel", release);
+    say("Press and hold the button for the shown duration, then release.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -610,6 +642,7 @@ ARENA_JS = r"""
       else if(A.mode==="shell"){ await runShell(gv, gn, tok); }
       else if(A.mode==="timing"){ await runTiming(gv, gn, tok); }
       else if(A.mode==="keymap"){ await runKeymap(gv, gn, tok); }
+      else if(A.mode==="presshold"){ await runPresshold(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

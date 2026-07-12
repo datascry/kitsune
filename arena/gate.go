@@ -140,6 +140,7 @@ func NewMux(secret []byte) http.Handler {
 	spatials := newCaptchaStore()
 	shells := newCaptchaStore()
 	timings := newCaptchaStore()
+	pressholds := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -405,6 +406,47 @@ func NewMux(secret []byte) http.Handler {
 			// physical fact that a human's elapsed always covers the holds it performed.
 			if errStd < timingPrecisionFloorMs || sumHold > int(age.Milliseconds()) {
 				resp["anomaly"] = "timing_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- PRESS-AND-HOLD: hold one button for the shown duration, then release. NOVEL tell: the held-pointer TREMOR
+	// — a real hand drifts (non-zero jitter) while a scripted hold that injects samples pins them to one coordinate
+	// (variance ~ 0); plus the claimed-hold-vs-elapsed impossibility. The single-button hold-dynamics twin of the
+	// multi-target `timing` gate. ---
+	mux.HandleFunc("GET /arena/presshold", func(w http.ResponseWriter, r *http.Request) {
+		p, answer := MintPressHold(ParseLevel(r.URL.Query().Get("level")))
+		pressholds.put(p.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(p)
+	})
+
+	mux.HandleFunc("POST /arena/presshold/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID      string       `json:"id"`
+			HeldMs  int          `json:"held_ms"`  // the client's achieved hold duration, ms
+			Samples [][2]float64 `json:"samples"`  // held-pointer [x,y] positions sampled during the hold
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := pressholds.take(body.ID) // single-use
+		pass, tremor, n := CheckPressHold(expected, body.HeldMs, body.Samples)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "presshold"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "presshold", body.ID)
+			resp["tremor_px"] = tremor
+			resp["solve_ms"] = age.Milliseconds()
+			// ROBOTIC hold: IMPOSSIBLE (claimed hold longer than the whole server-observed solve window), OR a STATIC
+			// hold (the client reported enough samples to judge, yet their spatial std is below the human jitter floor
+			// — an injected hold pinned to one coordinate). FP-safe: a motionless human touch-hold reports too few
+			// samples to be judged on tremor (only the impossible prong applies), and a real hand always drifts.
+			if body.HeldMs > int(age.Milliseconds()) || (n >= holdMinSamples && tremor < holdTremorFloor) {
+				resp["anomaly"] = "hold_robotic"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
