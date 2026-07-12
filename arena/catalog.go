@@ -125,6 +125,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/pattern?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "reaction",
+				Prompt:   "Click as soon as the box turns green (a 'click when ready' reaction check): a reaction latency below the human physiological floor (~150ms), or negative — a click reaching the server before the go (anticipation) — convicts on coherence (reaction_superhuman). Server-observed, unforgeable in the too-fast direction.",
+				Endpoint: "GET /arena/reaction?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

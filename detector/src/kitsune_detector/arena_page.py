@@ -240,6 +240,16 @@ CHALLENGES: list[dict[str, str]] = [
         "with almost no deviation (too straight for a human hand, which wobbles), or draws through the waypoints "
         "faster than a human can move the pointer — either convicts. The path fidelity + timing are the tell.",
     },
+    {
+        "slug": "reaction",
+        "label": "Click when green",
+        "family": "Reaction-time (click when ready)",
+        "mode": "reaction",
+        "blurb": "Wait for the box to turn green, then click it as fast as you can. A reaction latency below the "
+        "human physiological floor (~150ms), or a click that reaches the server before the go (anticipation), "
+        "convicts — a bot reacts faster than any human hand-eye loop. Server-observed, unforgeable in the too-fast "
+        "direction.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -720,6 +730,24 @@ ARENA_JS = r"""
     say("Draw one line through the dots in order without lifting.");
   }
 
+  async function runReaction(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/reaction"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var pad=document.createElement("button"); pad.textContent="Wait…"; pad.disabled=true;
+    pad.style.cssText="display:block;width:220px;height:90px;font:1.2rem sans-serif;background:#a33;color:#fff;border:none;border-radius:8px;margin:.5rem 0;cursor:default"; box.appendChild(pad);
+    var done=false, armed=false;
+    setTimeout(function(){ pad.textContent="CLICK!"; pad.style.background="#2a7d2a"; pad.style.cursor="pointer"; pad.disabled=false; armed=true; }, c.delay_ms);
+    pad.onclick=async function(){
+      if(done || !armed) return; done=true; pad.disabled=true; pad.textContent="…";
+      var v=await (await fetch("/arena/reaction/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Reacted in "+v.reaction_ms+" ms — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Reaction PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Reaction too fast to be human (or the challenge expired)."; say("Reaction rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    };
+    say("Wait for the box to turn green, then click it as fast as you can.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -826,6 +854,7 @@ ARENA_JS = r"""
       else if(A.mode==="match"){ await runMatch(gv, gn, tok); }
       else if(A.mode==="slide"){ await runSlide(gv, gn, tok); }
       else if(A.mode==="pattern"){ await runPattern(gv, gn, tok); }
+      else if(A.mode==="reaction"){ await runReaction(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

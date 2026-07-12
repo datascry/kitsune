@@ -263,6 +263,7 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
         "match",
         "slide",
         "pattern",
+        "reaction",
     ):
         assert client.get(f"/arena/{gate}").status_code == 503
         assert client.post(f"/arena/{gate}/verify", content=b"{}").status_code == 503
@@ -271,7 +272,18 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
 def test_arena_verify_body_cap(monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
     # A configured /verify relay caps the body at 64 KiB (413) before forwarding — the shell/timing/keymap verifies.
     monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
-    for gate in ("shell", "timing", "keymap", "presshold", "sequence", "locate", "match", "slide", "pattern"):
+    for gate in (
+        "shell",
+        "timing",
+        "keymap",
+        "presshold",
+        "sequence",
+        "locate",
+        "match",
+        "slide",
+        "pattern",
+        "reaction",
+    ):
         assert client.post(f"/arena/{gate}/verify", content=b"x" * 70000).status_code == 413
 
 
@@ -718,6 +730,12 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
         ).status_code
         == 200
     )
+    # the reaction relay's 200-branch: GET + the /verify join (reaction_superhuman -> arena_reaction_superhuman)
+    monkeypatch.setattr(
+        "kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "reaction_superhuman"})
+    )
+    assert client.get("/arena/reaction", params={"level": "easy"}).status_code == 200
+    assert client.post("/arena/reaction/verify", json={"id": "x"}, headers={"Cookie": "ks_sid=s"}).status_code == 200
 
 
 def test_arena_queue_hoarding_counts_tickets(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
