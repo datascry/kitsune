@@ -5513,3 +5513,9 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   human drawing time (> N*300ms) — defeating BOTH prongs of the tell. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE
   dead-straight instant stroke trips anomaly:pattern_superhuman (session label=bot); the HUMANIZED evader passes with
   anomaly=null (session never created -> evaded). NEXT: sequence (human-paced ordered clicks, varied cadence).
+- **[Red-team arena-gate EVASIONS loop — 5/10: sequence defeats bh.arena_seqclick_superhuman]**
+  (2026-07-12). Gate 5 evasion (arena-solver-behave sequence mode): click the tiles in numeric order but spend human
+  locate+click time (sleep so age > N*250ms) with VARIED inter-click gaps (~400-700ms -> cadence std well above
+  15ms) — defeating both the speed and metronomic-cadence prongs. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE instant
+  fixed-cadence clicks trip anomaly:seqclick_superhuman (session label=bot); the HUMANIZED evader passes with
+  anomaly=null (evaded). NEXT: locate (click off-centroid > 2.5px, spending > 500ms).

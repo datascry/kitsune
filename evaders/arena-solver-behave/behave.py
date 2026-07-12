@@ -120,11 +120,30 @@ def pattern(mode: str) -> dict:
     return post("/arena/pattern/verify", {"id": c["id"], "stroke": stroke})
 
 
+# --- (5) ORDERED CLICK-IN-SEQUENCE — tell bh.arena_seqclick_superhuman (age < N*250ms OR metronomic inter-click
+# cadence std < 15ms). Evasion: click the tiles in numeric order but spend human locate+click time (age > N*250ms)
+# with VARIED inter-click gaps (~400-700ms -> std well above 15ms). Naive: click all instantly at a fixed cadence.
+def sequence(mode: str) -> dict:
+    c = get(f"/arena/sequence?level={LEVEL}")
+    n = len(c["tiles"])
+    clicks = list(range(1, n + 1))  # the numeric order the gate asks for
+    if mode == "naive":
+        times = [i * 100 for i in range(n)]  # metronomic, submitted instantly
+    else:
+        times, t = [], 0
+        for _ in range(n):
+            times.append(t)
+            t += random.randint(400, 700)  # varied human inter-click gaps (std >> 15ms)
+        time.sleep(n * 0.5)  # spend real locate+click time (age > N * 250ms)
+    return post("/arena/sequence/verify", {"id": c["id"], "clicks": clicks, "times": times})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
     "reaction": reaction,
     "pattern": pattern,
+    "sequence": sequence,
 }
 
 
