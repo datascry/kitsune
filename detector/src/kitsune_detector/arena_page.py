@@ -364,6 +364,36 @@ ARENA_CSS = """<style>
 @media (max-width:900px){.gate-grid{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:640px){.gate-grid{grid-template-columns:1fr}.arena-hero .arena-h1{font-size:1.7rem}.arena-hero::before{width:16rem;height:16rem}}
 @media (prefers-reduced-motion:reduce){.arena-hero::before{opacity:.08}}
+/* --- redesign 2b: dual-verdict gate page (equal heroes + client simulator) --- */
+.gate-sim{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.6rem 0 1rem}
+.gate-sim .gs-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-right:.2rem}
+.gate-sim .gs-btn{font:inherit;font-size:.78rem;padding:.5rem .9rem;border:1px solid var(--line-bright);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer;min-height:40px}
+.gate-sim .gs-btn.active{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.gate-body{display:grid;grid-template-columns:1fr 1.15fr;gap:0;border-top:1px solid var(--line);margin-top:.2rem}
+.gate-left{padding:1.4rem 1.4rem 1.4rem 0;border-right:1px solid var(--line);min-width:0}
+.gate-right{padding:1.4rem 0 1.4rem 1.6rem;display:flex;flex-direction:column;min-width:0}
+.gl-eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.2em;color:var(--muted);margin-bottom:.8rem}
+.dual-head .vh{font-family:"Space Grotesk",var(--mono);font-size:1.35rem;font-weight:600;margin-bottom:.3rem;color:var(--ink);line-height:1.2}
+.dual-head .vline{font-size:.82rem;line-height:1.6;color:var(--muted);margin:0 0 1.1rem;max-width:36rem}
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.dual .vcard{border:1.5px solid var(--line);border-radius:10px;padding:1.1rem;background:var(--panel-2);position:relative;overflow:hidden;transition:border-color .2s}
+.dual .vcard h3{margin:0 0 .5rem;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.dual .vcard .big{font-family:"Space Grotesk",var(--mono);font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.01em;color:var(--ink)}
+.dual .vcard .big.pass{color:var(--jade)}.dual .vcard .big.fail{color:var(--fox)}.dual .vcard .big.evades{color:var(--amber)}
+.dual .vcard .gloss{font-size:.72rem;color:var(--muted);margin:.6rem 0 0}
+.dual .vcard code{font-size:.72rem;word-break:break-all;color:var(--fox)}
+.dual .vcard:has(.big.pass){border-color:var(--jade)}
+.dual .vcard:has(.big.fail){border-color:var(--fox)}
+.dual .vcard:has(.big.evades){border-color:var(--amber)}
+.dual .vcard.det{box-shadow:0 0 26px -8px rgba(232,72,43,.28)}
+.dual .vcard.det .vscan{position:absolute;top:0;left:0;right:0;height:2px;background:currentColor;opacity:.45;color:var(--fox);animation:ksScan 2.8s linear infinite}
+.dual .vcard.det:has(.big.pass) .vscan{color:var(--jade)}
+.dual .vcard.det:has(.big.evades) .vscan{color:var(--amber)}
+@keyframes ksScan{0%{transform:translateY(-3px)}100%{transform:translateY(260px)}}
+.arena-foot{margin-top:1.3rem;font-size:.78rem}
+.gate-right .arena-endpoints{margin-top:1.1rem}
+@media (max-width:760px){.gate-body{grid-template-columns:1fr}.gate-left{border-right:0;border-bottom:1px solid var(--line);padding:1.2rem 0}.gate-right{padding:1.2rem 0}.dual{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.dual .vcard.det .vscan{display:none}.dual .vcard.det{box-shadow:none}}
 </style>"""
 
 # The shared client. window.__ARENA__ = {slug, mode} is injected per page (see _gate_script); this script
@@ -1015,20 +1045,53 @@ ARENA_JS = r"""
 """
 
 # Reused HTML fragments (trusted markup; inserted raw into the doc-shell <main>).
+# The dual verdict, rebuilt as two EQUAL heroes (redesign 2b). The element ids are preserved so ARENA_JS keeps
+# driving them: fetchDetectorVerdict() sets #ks-det-verdict (+ .big pass/fail); each gate handler sets
+# #ks-gate-verdict / #ks-gate-note / #ks-token. The card border follows the inner verdict class via :has().
 _VERDICTS_HTML = """
-<div class="verdicts">
+<div class="dual-head">
+  <div class="vh" id="ks-headline">Solve the puzzle &mdash; then meet the detector.</div>
+  <p class="vline" id="ks-vline">Pass the gate on the left. Kitsune&rsquo;s coherence engine independently scores your client over the edge &mdash; a solved gate is a <b>cost</b> or <b>Turing</b> test, not a bot/human discriminator.</p>
+</div>
+<div class="dual">
   <div class="vcard">
     <h3>Gate verdict</h3>
     <div class="big" id="ks-gate-verdict">&mdash;</div>
-    <p class="note" id="ks-gate-note">Did your solution satisfy the challenge?</p>
+    <p class="gloss" id="ks-gate-note">did you solve the puzzle?</p>
     <div id="ks-token"></div>
   </div>
-  <div class="vcard">
+  <div class="vcard det">
+    <span class="vscan" aria-hidden="true"></span>
     <h3>Detector verdict</h3>
     <div class="big" id="ks-det-verdict">&mdash;</div>
-    <p class="note" id="ks-det-note">What Kitsune&rsquo;s coherence engine independently makes of your client over the edge. For your full fingerprint, run the <a href="/">detector</a>.</p>
+    <p class="gloss" id="ks-det-note">does your client cohere over the edge?</p>
   </div>
 </div>
+"""
+
+# Client simulator (redesign 2b): a demo overlay that tells the "solved-but-convicted" story on the two verdict
+# cards. It is NOT the source of truth — a real solve runs the gate handler + fetchDetectorVerdict(), which
+# overwrite the cards with the live verdict. Default (ocr) is applied after setup so the narrative shows on load.
+_SIM_SCRIPT = """
+<script>(function(){
+var P={
+ human:{gl:"PASSED",gc:"pass",dl:"HUMAN",dc:"pass",h:"Solved it \\u2014 and coherent.",hc:"var(--jade)",line:"A person read the glyphs and typed them. The edge independently agrees: engine, realm, GPU and network fingerprint all describe one real browser. Gate and detector both clear."},
+ ocr:{gl:"PASSED",gc:"pass",dl:"BOT",dc:"fail",h:"Solved the puzzle. Still not coherent.",hc:"var(--fox)",line:"An OCR script read the pixels and passed the gate in milliseconds \\u2014 but the JA4 TLS fingerprint contradicts the User-Agent and the headless tells fire. The puzzle was a cost, not a discriminator; the network layer convicts."},
+ llm:{gl:"PASSED",gc:"pass",dl:"EVADES",dc:"evades",h:"Walks through \\u2014 this gate can't hold it.",hc:"var(--amber)",line:"A real, coherent browser paced like a human solves the puzzle and evades every fingerprint and behavioral tell. Only the track gate catches it \\u2014 by the physics of its snapshot\\u2192reason\\u2192act loop, not its cognition."}
+};
+function el(id){return document.getElementById(id);}
+function apply(k){var p=P[k];if(!p)return;
+ var hd=el('ks-headline');if(hd){hd.textContent=p.h;hd.style.color=p.hc;}
+ var ln=el('ks-vline');if(ln)ln.textContent=p.line;
+ var gv=el('ks-gate-verdict');if(gv){gv.textContent=p.gl;gv.className='big '+p.gc;}
+ var dv=el('ks-det-verdict');if(dv){dv.textContent=p.dl;dv.className='big '+p.dc;}
+ var gn=el('ks-gate-note');if(gn)gn.textContent='did you solve the puzzle?';
+}
+var btns=document.querySelectorAll('.gate-sim .gs-btn');
+btns.forEach(function(b){b.addEventListener('click',function(){
+ btns.forEach(function(x){x.classList.toggle('active',x===b);});apply(b.getAttribute('data-sim'));});});
+setTimeout(function(){apply('ocr');},60);
+})();</script>
 """
 
 _ETHICS_HTML = """
@@ -1104,8 +1167,8 @@ def _endpoints_html(c: dict[str, str]) -> str:
 # (beaten by OCR/CV/VLM); behavioral = a biomechanics/motor-timing gate (beaten by a humanized solver); anti = an
 # anti-LLM structural gate; defense = a defensive protocol (token / rate / queue). ---
 _GATE_CAT: dict[str, str] = {
-    "checkbox": "cost",
-    "managed": "cost",
+    "checkbox": "defense",
+    "managed": "defense",
     "hashcash": "cost",
     "many-small": "cost",
     "memory-hard": "cost",
@@ -1212,22 +1275,34 @@ def arena_gate_html(slug: str) -> str | None:
         )
     body = f"""
 <p class="crumb-back"><a href="/arena">&larr; All challenges</a></p>
-<h1>{c["label"]}</h1>
+<h1 class="display">{c["label"]}</h1>
 <p class="arena-family">{c["family"]}</p>
-<p class="lead">{c["blurb"]}</p>
-<p class="note">This gate <b>auto-serves on load</b> &mdash; bring a browser, a bot, or your own solver and try to
-<b>bypass it</b>. You get two verdicts: did you pass the gate &mdash; and does Kitsune&rsquo;s detector independently
-convict your client over the edge?</p>
-{levels_html}
-<section class="arena-stage" aria-label="challenge">
-  <div class="arena-log" id="ks-log">Loading the challenge&hellip;</div>
-  <div id="ks-captcha"></div>
-  <p class="arena-again-wrap"><a href="#" id="ks-again" class="arena-again">&#8635; New challenge</a></p>
-</section>
-{_VERDICTS_HTML}
-{_endpoints_html(c)}
+<div class="gate-sim" role="group" aria-label="Simulate the client">
+  <span class="gs-label">Simulate the client &rarr;</span>
+  <button type="button" class="gs-btn" data-sim="human">Real human</button>
+  <button type="button" class="gs-btn active" data-sim="ocr">OCR script</button>
+  <button type="button" class="gs-btn" data-sim="llm">LLM agent</button>
+</div>
+<div class="gate-body">
+  <div class="gate-left">
+    <div class="gl-eyebrow">The gate</div>
+    {levels_html}
+    <section class="arena-stage" aria-label="challenge">
+      <div class="arena-log" id="ks-log">Loading the challenge&hellip;</div>
+      <div id="ks-captcha"></div>
+      <p class="arena-again-wrap">The challenge auto-serves on load &middot; <a href="#" id="ks-again" class="arena-again">&#8635; new challenge</a></p>
+    </section>
+  </div>
+  <div class="gate-right">
+    {_VERDICTS_HTML}
+    {_endpoints_html(c)}
+  </div>
+</div>
+<p class="note arena-foot">{c["blurb"]} A self-hosted reproduction of the documented mechanism &mdash; never a
+third-party widget. The detector reads the same coherence engine that scores the home page.</p>
 {_ETHICS_HTML}
 {_gate_script(c)}
+{_SIM_SCRIPT}
 """
     return render_doc_page(
         title=c["label"],
