@@ -5,6 +5,61 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.19.0](https://github.com/datascry/kitsune/compare/v1.18.0...v1.19.0) (2026-07-12)
+
+
+### Features
+
+* **arena:** counting gate + reconcile wild-captcha axis as earned-closed ([bea4ff6](https://github.com/datascry/kitsune/commit/bea4ff62b8a2998939efb6ccfa240d7eb08ed92e))
+* **arena:** motor-timing-precision gate core — hold/release targets, mint + std scoring ([cef8a6e](https://github.com/datascry/kitsune/commit/cef8a6e5ef2d70d21e898b9b1803eaf37d2fc033))
+* **arena:** ordered click-in-sequence gate (GeeTest / NetEase Yidun) with a cadence + speed tell ([5938801](https://github.com/datascry/kitsune/commit/593880136e48713e737f43a4db4f86ff8982959f))
+* **arena:** orientation-match gate (Arkose / hCaptcha) — a relational reasoning style ([d166fa6](https://github.com/datascry/kitsune/commit/d166fa67078d82ec7984182561b9452b055b00c3))
+* **arena:** point-localization gate (hCaptcha / AWS WAF) with a pixel-perfect centroid tell ([8077f2a](https://github.com/datascry/kitsune/commit/8077f2a72d0c4f01a5a64b26609062a5c8c78792))
+* **arena:** press-and-hold gate (Cloudflare/DataDome/HUMAN) with a held-pointer tremor tell ([bd4c464](https://github.com/datascry/kitsune/commit/bd4c4645ff5ccd4fcc1988d7501925c804f5443f))
+* **arena:** reaction-time gate (click when green) with a physiological-floor latency tell ([641f477](https://github.com/datascry/kitsune/commit/641f477cba5b23b0bb07a1c0df3b77001ff97b0e))
+* **arena:** remapped-keyboard gate core — hidden key remap, trace replay + exploration count ([7d4e6fc](https://github.com/datascry/kitsune/commit/7d4e6fc0f4ec78b5f1b945803379afe6907eb73a))
+* **arena:** shell-game gate core — track-under-occlusion shuffle, mint + verify ([c4c4d9c](https://github.com/datascry/kitsune/commit/c4c4d9c06c0cb9bf585414a5190f41b6735a235f))
+* **arena:** sliding-tile puzzle gate (KeyCAPTCHA / 15-puzzle) with an optimal-plan tell ([ad8c9e2](https://github.com/datascry/kitsune/commit/ad8c9e2bfa1e4e8ee9df285c1d9b08d7df33d2bc))
+* **arena:** smooth-pursuit tracking gate with a continuous-tracking-accuracy tell ([9f7695d](https://github.com/datascry/kitsune/commit/9f7695d78165b0d09f55fef703df8c46d3ca8dec))
+* **arena:** spot-the-difference gate (prevalent wild style, image-diff pixel-perfect tell) ([d2193c7](https://github.com/datascry/kitsune/commit/d2193c7acd1e538adce13ba2272bf45fe10df865))
+* **arena:** trace-the-pattern gate (connect-the-dots / pattern-lock) with a path-fidelity tell ([4032fef](https://github.com/datascry/kitsune/commit/4032fefc8b5c19da3a9dbe5c0084992cf464225a))
+* **arena:** wire the keymap gate — two-pronged typed_without_exploration tell, grounded ([fe89fdf](https://github.com/datascry/kitsune/commit/fe89fdfacd7b57e128ab02e3102ceb28baae355b))
+* **arena:** wire the shell gate — mint/verify + solved_before_shuffle tell, grounded ([1e3f23d](https://github.com/datascry/kitsune/commit/1e3f23d80969e7219bad304d151fa49d821843f1))
+* **arena:** wire the timing gate — two-pronged timing_superhuman tell, grounded 3 ways ([6de1cb4](https://github.com/datascry/kitsune/commit/6de1cb423c238dd49b83a96d1b2f10e9a21ccff9))
+* **detector:** add GeeTest vendor profile (icon-order escalates to ordered image-select) ([930c2ae](https://github.com/datascry/kitsune/commit/930c2aef0eedb30b842c899ee30efee5e9af453e))
+* **detector:** challenge-ladder escalation for reCAPTCHA v2 / Arkose vendor profiles ([3d5a004](https://github.com/datascry/kitsune/commit/3d5a004d265a8d086d4e39767d1eed04cc671114))
+* **detector:** challenge-mode vendor replicas (aws-waf, datadome, perimeterx, prosopo, +3) ([4791d07](https://github.com/datascry/kitsune/commit/4791d07f2ebd53e98ea4c80a6c9d8fd6c06257d0))
+* **detector:** collector reads captchas do (battery/storage/shader/screen-depth) + 2 rules ([44b300e](https://github.com/datascry/kitsune/commit/44b300e103b7fc80079e6f2e80c6e9d40ab3ed4b))
+* **detector:** generalize vendor endpoints + land turnstile & hcaptcha profiles ([0ca51da](https://github.com/datascry/kitsune/commit/0ca51daccc35abdbd07166bf759d816b350e6c9f))
+* **detector:** hCaptcha checksiteconfig pre-check + Proton (PoW) vendor profile ([3158087](https://github.com/datascry/kitsune/commit/31580876be937c39148a4c5394094744d9acb9fd))
+* **detector:** keymap gate landed — relay + rule + page; the novel-gate trio is complete ([39bf2b6](https://github.com/datascry/kitsune/commit/39bf2b6204de1f39e3a440ab5f2ffbffdfc1bd58))
+* **detector:** pow-widget vendor replicas (friendly-captcha, mcaptcha, altcha) ([aea9af1](https://github.com/datascry/kitsune/commit/aea9af1070d8aace71184e341566435019178530))
+* **detector:** recaptcha-v3 score profile — vendor-neutral siteverify over the detector verdict ([2882dbd](https://github.com/datascry/kitsune/commit/2882dbdf99b0fa92228fe84e8501ab85b1e7f7d9))
+* **detector:** shell gate landed — relay + arena_shell_precomputed rule + page, grounded ([b5347e9](https://github.com/datascry/kitsune/commit/b5347e9d94373a31851a769b5f2d3b02aff3809d))
+* **detector:** timing gate landed — relay + arena_timing_superhuman rule + page, grounded ([28d5586](https://github.com/datascry/kitsune/commit/28d558695eda6370e58c135e965f785e4b515fc0))
+* **evaders:** compose the arena-behaviour evasions into one runner + document the morph ([06d9d67](https://github.com/datascry/kitsune/commit/06d9d67f3aeae61f003245ab20ece745805c56aa))
+* **evaders:** red-team count evasion defeats bh.arena_count_superhuman ([67cdfec](https://github.com/datascry/kitsune/commit/67cdfec1bd4283cf0972b9cddc5d40ca7547f613))
+* **evaders:** red-team locate evasion defeats bh.arena_localize_superhuman ([87d36d9](https://github.com/datascry/kitsune/commit/87d36d95abd98a9545747728296f42fc6bc24c2e))
+* **evaders:** red-team match evasion defeats bh.arena_match_superhuman ([09bfa43](https://github.com/datascry/kitsune/commit/09bfa43bef7d349e8e34d8a464d535850b3029e2))
+* **evaders:** red-team pattern evasion defeats bh.arena_pattern_superhuman ([ed408de](https://github.com/datascry/kitsune/commit/ed408dead5267bd6c3d4ae13aa4dc9034b22c2b1))
+* **evaders:** red-team press-and-hold evasion defeats bh.arena_hold_robotic ([c5bddd8](https://github.com/datascry/kitsune/commit/c5bddd813b62dd3e7c5bd987e0eebc6b33f90ce8))
+* **evaders:** red-team pursuit evasion defeats bh.arena_pursuit_superhuman ([9b54b57](https://github.com/datascry/kitsune/commit/9b54b57ca95ee94eb81f8c39ea82f85bb0c7a7c9))
+* **evaders:** red-team reaction evasion defeats bh.arena_reaction_superhuman ([97a8619](https://github.com/datascry/kitsune/commit/97a8619bfce83d3ad23afbb193e7ad0b9d48614f))
+* **evaders:** red-team sequence evasion defeats bh.arena_seqclick_superhuman ([ae3cb99](https://github.com/datascry/kitsune/commit/ae3cb997b1f9e19105c6e047f1b706992df07252))
+* **evaders:** red-team slide evasion defeats bh.arena_slide_superhuman ([df0bab0](https://github.com/datascry/kitsune/commit/df0bab0136cb6dc1d83be4a48724caf66b7ff681))
+* **evaders:** red-team spotdiff evasion defeats bh.arena_spotdiff_superhuman ([38fc098](https://github.com/datascry/kitsune/commit/38fc098b7cb4cab5aea5f8deaca64ab69c6425df))
+* **harness:** captcha signal-probe — clean-room instrumentation to spec a widget's function ([976a7aa](https://github.com/datascry/kitsune/commit/976a7aadb24fa48759560fd32cc1917fcb44578d))
+* **harness:** probe cross-frame aggregation — capture iframe-isolated widgets ([27bea5c](https://github.com/datascry/kitsune/commit/27bea5cdb69f259d0095bc201aad100c6faaa80c))
+* **harness:** probe diff mode — target spec vs collector = the vendor-profile gap ([82e6ec9](https://github.com/datascry/kitsune/commit/82e6ec93839c4bdff13b1775e13babf68d843c08))
+* **harness:** probe fixes for uncaptured instrumentation — workers + click-to-trigger ([e03c896](https://github.com/datascry/kitsune/commit/e03c896aa13ff7a13cf2dff1bd18ba9e61f9f8ad))
+* **harness:** probe noise-filter + challenge-frame scoping — clean vendor deltas ([4c7f7ff](https://github.com/datascry/kitsune/commit/4c7f7fff2f486745fe685fab212b71b82f46f85d))
+
+
+### Bug Fixes
+
+* **harness:** robust click-to-trigger — selector list, frame-aware, wait-for-visible ([21867e2](https://github.com/datascry/kitsune/commit/21867e273af6d960c76fc038d60d7fba5fd1ef9a))
+* **harness:** wait for the challenge frame to attach after the click-trigger ([cf628c7](https://github.com/datascry/kitsune/commit/cf628c7c341f4b36b142ebe7f55c28b65b77e321))
+
 ## [1.18.0](https://github.com/datascry/kitsune/compare/v1.17.0...v1.18.0) (2026-07-08)
 
 
