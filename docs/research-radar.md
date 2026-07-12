@@ -5387,3 +5387,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   cross-vendor token reuse rejected. Detector suite green (521 passed, 95.54%). NEXT: the challenge-mode vendors that
   compose with the new gates — PerimeterX/HUMAN -> presshold, NetEase Yidun -> sequence, DataDome/Tencent/Capy ->
   slider, AWS WAF -> image-select, Prosopo -> image-select.
+- **[Wild-captcha styles loop — vendor replicas 2/2: challenge-mode vendors — BUILD LIST COMPLETE]**
+  (2026-07-12). Final vendor group: the challenge-mode vendors that ESCALATE a suspicious session to an interactive
+  gate. Generalized challenge_url() to resolve every gate slug (image kinds -> /arena/captcha?kind=; pow ->
+  /arena/challenge; everything else -> /arena/<slug>), then added 7 profiles each mapped to the owned arena gate
+  matching its real challenge: PerimeterX/HUMAN -> presshold, NetEase Yidun -> sequence, DataDome/Tencent/Capy ->
+  slider, AWS WAF/Prosopo -> image-select. Distinct documented verify shapes: prosopo {verified}, netease {result},
+  tencent {ret(0=ok),ticket}; the rest managed pass/fail. GROUNDED LIVE (bot session): each escalates to its mapped
+  gate (real endpoints built earlier this loop — presshold/sequence/slider/image-select) and returns its shape
+  (perimeterx {success:false}, netease {result:false}, tencent {ret:1,ticket}, prosopo {verified:false}, ...). The
+  vendor protocol + arena gates now integrate end to end. Detector suite green (522 passed, 95.57%).
+  ** WILD-CAPTCHA BUILD LIST COMPLETE ** — 5 arena gates (press-and-hold, sequence, locate, match, slide) + 16 vendor
+  wire-replicas (reCAPTCHA v2/v3, Turnstile, hCaptcha+checksiteconfig, Arkose, GeeTest, Proton, Friendly, mCaptcha,
+  ALTCHA, AWS WAF, DataDome, PerimeterX/HUMAN, Prosopo, NetEase, Tencent, Capy). Every prevalent wild style from the
+  2026-07-12 gap analysis is now reproduced on owned infra, each grounded live. The captcha-style axis is SATURATED
+  in-sandbox; further wild styles would be variations on these mechanics (the tells + protocols generalize).

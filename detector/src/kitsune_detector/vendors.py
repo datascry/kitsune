@@ -68,17 +68,46 @@ PROFILES: dict[str, VendorProfile] = {
     "mcaptcha": VendorProfile("mcaptcha", "managed", 300, 0.5, scored=False, inverted=False),
     # ALTCHA (docs): self-hosted GDPR-friendly PoW; verify returns {success, verified}.
     "altcha": VendorProfile("altcha", "managed", 300, 0.5, scored=False, inverted=False),
+    # --- CHALLENGE-MODE vendors: an invisible risk pre-check that ESCALATES to an interactive challenge when
+    # suspicious. Each names the owned arena gate that best matches its real challenge, so the vendor protocol and the
+    # arena gates integrate end to end.
+    # AWS WAF Captcha (docs): silent JS/PoW check escalating to a visual grid; token verified server-side.
+    "aws_waf": VendorProfile(
+        "aws_waf", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="image-select"
+    ),
+    # DataDome (docs): device + behavioural check escalating to a slide/geometric challenge.
+    "datadome": VendorProfile("datadome", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="slider"),
+    # PerimeterX / HUMAN (docs): behavioural check escalating to the PRESS-AND-HOLD challenge.
+    "perimeterx": VendorProfile(
+        "perimeterx", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="presshold"
+    ),
+    # Prosopo Procaptcha (docs): open-source image-select + PoW; verify returns {verified}.
+    "prosopo": VendorProfile(
+        "prosopo", "challenge", 120, 0.5, scored=False, inverted=False, challenge_gate="image-select"
+    ),
+    # NetEase Yidun (docs): behavioural risk pre-check escalating to a click-in-order / slide challenge; the
+    # click-in-order variant maps to the owned ordered click-in-sequence gate. Verify returns {result}.
+    "netease": VendorProfile("netease", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="sequence"),
+    # Tencent Captcha (docs): slide-puzzle challenge; verify returns {ret (0=ok), ticket}.
+    "tencent": VendorProfile("tencent", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="slider"),
+    # Capy Puzzle (docs): drag-the-piece slide challenge; pass/fail.
+    "capy": VendorProfile("capy", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="slider"),
 }
 
-# challenge_gate slugs that are NOT /arena/captcha image kinds resolve to their own owned gate endpoint.
-_GATE_URLS = {"pow": "/arena/challenge", "slider": "/arena/slider"}
+# The /arena/captcha image kinds (a shared endpoint keyed by ?kind=); every other gate slug has its OWN endpoint.
+_IMAGE_KINDS = {"image-select", "image-shapes", "image-doodle", "text", "math", "clock", "honeypot"}
 
 
 def challenge_url(profile: VendorProfile) -> str:
-    """The owned escalation-gate URL for a challenge-mode family — a PoW/slider gate has its own endpoint; every
-    other slug is an /arena/captcha image kind (image-select, image-shapes, …)."""
+    """The owned escalation-gate URL for a challenge-mode family. Image kinds share /arena/captcha?kind=<kind>; the
+    PoW challenge is /arena/challenge; every other gate (slider, presshold, sequence, slide, locate, match, …) has
+    its own /arena/<slug> endpoint."""
     g = profile.challenge_gate
-    return _GATE_URLS.get(g, f"/arena/captcha?kind={g}")
+    if g in _IMAGE_KINDS:
+        return f"/arena/captcha?kind={g}"
+    if g == "pow":
+        return "/arena/challenge"
+    return f"/arena/{g}"
 
 
 def vendor_score(profile: VendorProfile, kitsune_score: float) -> float:
@@ -125,6 +154,13 @@ def shape_siteverify(
         return {"valid": passed}
     if profile.name == "altcha":
         return {"success": passed, "verified": passed}
+    # Challenge-mode vendors with a distinct documented verify field.
+    if profile.name == "prosopo":
+        return {"verified": passed}
+    if profile.name == "netease":
+        return {"result": passed}
+    if profile.name == "tencent":
+        return {"ret": 0 if passed else 1, "ticket": hashlib.sha256(sid.encode()).hexdigest()[:24]}
     out: dict[str, object] = {"success": True, "challenge_ts": challenge_ts, "hostname": hostname, "error-codes": []}
     if profile.name == "recaptcha_v3":
         # v3: success = valid token (the site gates on the SCORE, not on success). score 1.0 = human.
