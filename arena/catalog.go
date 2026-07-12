@@ -113,6 +113,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/match?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "slide",
+				Prompt:   "Slide the 8-puzzle (3x3) into order (KeyCAPTCHA / 15-puzzle family): an OPTIMAL plan — the exact BFS-minimum move count on a non-trivial scramble, which a human wandering never hits — or solving faster than a human can slide the tiles convicts on coherence (slide_superhuman).",
+				Endpoint: "GET /arena/slide?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

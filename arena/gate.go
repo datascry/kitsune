@@ -144,6 +144,7 @@ func NewMux(secret []byte) http.Handler {
 	sequences := newCaptchaStore()
 	locates := newCaptchaStore()
 	matches := newCaptchaStore()
+	slides := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -565,6 +566,45 @@ func NewMux(secret []byte) http.Handler {
 			// instantly. FP-safe: the floor bounds human relational-scan time (hardware-independent).
 			if f := matchFloorFor(expected); f > 0 && int(age.Milliseconds()) < f {
 				resp["anomaly"] = "match_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- SLIDING-TILE PUZZLE: slide the 8-puzzle into order (KeyCAPTCHA / 15-puzzle). NOVEL tell: an OPTIMAL plan
+	// (nMoves == the BFS minimum on a non-trivial scramble — a human wanders), OR superhuman speed (solved faster
+	// than a human can slide the tiles). ---
+	mux.HandleFunc("GET /arena/slide", func(w http.ResponseWriter, r *http.Request) {
+		s, answer := MintSlide(ParseLevel(r.URL.Query().Get("level")))
+		slides.put(s.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(s)
+	})
+
+	mux.HandleFunc("POST /arena/slide/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID    string `json:"id"`
+			Moves []int  `json:"moves"` // clicked tile indices, each adjacent to the blank when played
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := slides.take(body.ID) // single-use
+		pass, nMoves, optimal := CheckSlide(expected, body.Moves)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "slide"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "slide", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			resp["moves"] = nMoves
+			resp["optimal"] = optimal
+			// SUPERHUMAN: solved faster than a human can physically slide the tiles (age < nMoves * slidePerMoveMs),
+			// OR an OPTIMAL plan on a non-trivial scramble (nMoves == the BFS minimum, optimal >= slideOptimalFloor)
+			// — a human wanders / backtracks and effectively never hits the exact minimum on a deep scramble.
+			if int(age.Milliseconds()) < nMoves*slidePerMoveMs || (optimal >= slideOptimalFloor && nMoves == optimal) {
+				resp["anomaly"] = "slide_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
