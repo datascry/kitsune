@@ -5347,3 +5347,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   detector join convicts the session (label=bot, score 0.85 via arena_localize_superhuman). Arena go test + detector
   suite green (520 passed, 95.68%); matrix 193 rules. NEXT: gate 4 = semantic match / odd-one-out (Arkose 'faces same
   way' / hCaptcha 'which go together' — relational/AI-hard reasoning, a VLM benchmark).
+- **[Wild-captcha styles loop — gate 4/5: ORIENTATION MATCH / odd-one-out (Arkose / hCaptcha)]**
+  (2026-07-12). Gate 4: click the candidate arrow FACING THE SAME WAY as the reference (arena/match.go) — the
+  Arkose "faces the same way" / hCaptcha "which go together" family. A RELATIONAL task: compare the reference vs
+  each candidate (not classify one tile). N candidate arrows rendered at DISTINCT orientations (rotated triangles),
+  exactly one matching; per-tile centre/tone jitter + noise defeats a pixel-hash shortcut so real orientation
+  reasoning is required; the answer index is server-side. NOVEL tell bh.arena_match_superhuman (w0.85, experimental):
+  SUPERHUMAN SPEED — the server-observed age faster than (N+1) * matchPerTileMs (250ms), the human relational-scan
+  floor (look at the reference + each candidate). The relational-reasoning twin of the classification superhuman
+  floor. Full stack wired (gate + mux + catalog -> relay + join + runMatch widget -> rule + catalog/docs). GROUNDED
+  LIVE with a REAL orientation solver (in-sandbox: decoded each arrow PNG, estimated its direction from the dark-
+  pixel centroid, matched to the reference): a correct instant match (solve 54ms) convicts; the same correct answer
+  at a human scan pace (solve 1716ms > 1500 floor) is silent (FP-safe); the detector join convicts the session
+  (label=bot, score 0.85 via arena_match_superhuman). Arena go test + detector suite green (520 passed, 95.60%);
+  matrix 194 rules. NEXT: gate 5 = drag-into-silhouette / sliding-tile (KeyCAPTCHA / 15-puzzle — multi-segment
+  trajectory / plan-length tell), then the vendor wire-replicas.
