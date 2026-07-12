@@ -226,6 +226,46 @@ def locate(mode: str) -> dict:
     return post("/arena/locate/verify", {"id": c["id"], "x": round(x), "y": round(y)})
 
 
+# --- (7) SPOT-THE-DIFFERENCE — tell bh.arena_spotdiff_superhuman (every diff click within 3px of the centroid, OR
+# age < K*1200ms). Evasion: image-diff the two panels (right offset 164 = panelW 140 + gap 24), cluster the changed
+# pixels into centroids, then click each OFF-centroid by ~7-14px (> 3px, within the 24px hit radius) over > K*1200ms.
+def spotdiff(mode: str) -> dict:
+    c = get(f"/arena/spotdiff?level={LEVEL}")
+    w, h, bpp, px = _decode_png(c["image"])
+    off = 164
+
+    def rgb(x: int, y: int) -> tuple[int, int, int]:
+        i = (y * w + x) * bpp
+        return px[i], px[i + 1], px[i + 2]
+
+    # cluster changed pixels by EUCLIDEAN proximity (< 20px — below the gate's ~36px min disk separation, above a
+    # single disk's ~14px radius) so two nearby recoloured disks are never merged into one.
+    clusters: list[list[float]] = []
+    for y in range(h):
+        for x in range(140):
+            lft, rgt = rgb(x, y), rgb(x + off, y)
+            if abs(lft[0] - rgt[0]) + abs(lft[1] - rgt[1]) + abs(lft[2] - rgt[2]) > 40:
+                gx, gy = x + off, y
+                for cl in clusters:
+                    if math.hypot(cl[0] / cl[2] - gx, cl[1] / cl[2] - gy) < 20:
+                        cl[0] += gx
+                        cl[1] += gy
+                        cl[2] += 1
+                        break
+                else:
+                    clusters.append([float(gx), float(gy), 1.0])
+    centres = [(cl[0] / cl[2], cl[1] / cl[2]) for cl in clusters]
+    if mode == "naive":
+        clicks = [[round(cx), round(cy)] for cx, cy in centres]  # pixel-perfect, instant
+    else:
+        clicks = []
+        for cx, cy in centres:
+            ang, r = random.uniform(0, 2 * math.pi), random.uniform(7, 14)  # human aim scatter off the centroid
+            clicks.append([round(cx + r * math.cos(ang)), round(cy + r * math.sin(ang))])
+        time.sleep(len(centres) * 1.3)  # human per-difference scan time (> K * 1200ms)
+    return post("/arena/spotdiff/verify", {"id": c["id"], "clicks": clicks})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
@@ -233,6 +273,7 @@ GATES = {
     "pattern": pattern,
     "sequence": sequence,
     "locate": locate,
+    "spotdiff": spotdiff,
 }
 
 
