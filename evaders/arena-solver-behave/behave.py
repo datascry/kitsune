@@ -428,17 +428,26 @@ GATES = {
 }
 
 
+def _run(gate: str, mode: str) -> dict:
+    v = GATES[gate](mode)
+    ok = bool(v.get("ok"))
+    anomaly = v.get("anomaly")
+    return {"gate": gate, "mode": mode, "ok": ok, "anomaly": anomaly, "evaded": ok and anomaly is None}
+
+
 def main() -> None:
     gate = os.environ.get("KS_GATE", "presshold")
     mode = os.environ.get("KS_MODE", "human")
-    fn = GATES.get(gate)
-    if fn is None:
-        raise SystemExit(f"unknown gate {gate}; have {sorted(GATES)}")
-    v = fn(mode)
-    ok = bool(v.get("ok"))
-    anomaly = v.get("anomaly")
-    evaded = ok and anomaly is None
-    print(json.dumps({"gate": gate, "mode": mode, "ok": ok, "anomaly": anomaly, "evaded": evaded}))
+    if gate == "all":
+        # the composed run: humanize (or naive) every gate and summarize. In human mode a full sweep should show
+        # evaded=true on all 10 — the whole behavioural gate layer defeated by one coherent human-paced solver.
+        results = [_run(g, mode) for g in GATES]
+        summary = {"mode": mode, "evaded": sum(r["evaded"] for r in results), "of": len(results), "results": results}
+        print(json.dumps(summary))
+        return
+    if gate not in GATES:
+        raise SystemExit(f"unknown gate {gate}; have {sorted(GATES) + ['all']}")
+    print(json.dumps(_run(gate, mode)))
 
 
 if __name__ == "__main__":
