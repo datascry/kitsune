@@ -71,7 +71,7 @@ def test_doc_page_renders(client: TestClient, slug: str) -> None:
 
 def test_doc_pages_are_curated_not_raw_dumps(client: TestClient) -> None:
     matrix = client.get("/matrix").text
-    assert 'class="cards"' in matrix and "Per-rule coverage" not in matrix  # cards, not the 5-section dump
+    assert 'class="mtx"' in matrix and "Per-rule coverage" not in matrix  # curated table, not the 5-section dump
     detections = client.get("/detections").text
     assert 'class="lgrp"' in detections and "predicate" not in detections.lower()  # per-layer, no noise cols
     assert 'class="cards"' in client.get("/evasions").text

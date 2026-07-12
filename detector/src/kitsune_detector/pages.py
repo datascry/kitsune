@@ -118,6 +118,28 @@ main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywh
   main.doc h2{font-size:.9rem}
   main.doc table{font-size:.74rem}
 }
+/* --- redesign: display face for heroes/verdicts. Space Grotesk if the visitor has it, else the mono at heavy
+   weight — NO external font fetch (the footer promises no visitor data leaves the page). --- */
+.display{font-family:"Space Grotesk",var(--mono);font-weight:700;letter-spacing:-.015em;color:var(--ink)}
+main.doc h1.display{font-size:2.15rem;line-height:1.08;margin:.5rem 0 1rem}
+main.doc h1.display .fox{color:var(--fox)}
+/* --- redesign: detection matrix — a scannable table (suspicious-first), verdict pills + score bars --- */
+table.mtx{width:100%;border-collapse:collapse;margin:.3rem 0 1.6rem;font-size:.82rem;display:table}
+table.mtx thead th{text-align:left;color:var(--muted);text-transform:uppercase;font-size:.64rem;letter-spacing:.11em;font-weight:400;padding:.35rem .6rem;border-bottom:1px solid var(--line-bright);white-space:nowrap}
+table.mtx td{padding:.5rem .6rem;border-bottom:1px solid var(--line);vertical-align:middle;overflow-wrap:anywhere}
+table.mtx tbody tr:hover td{background:var(--panel)}
+table.mtx a.ev{color:var(--ink);text-decoration:none;font-weight:600}
+table.mtx tbody tr:hover a.ev{color:var(--fox)}
+table.mtx .tells{color:var(--muted);font-size:.76rem}
+.sbar{display:flex;align-items:center;gap:.55rem;min-width:9rem}
+.sbar .trk{position:relative;flex:1;height:4px;min-width:3rem;background:var(--line);border-radius:2px;overflow:hidden}
+.sbar .trk i{position:absolute;top:0;bottom:0;left:0;border-radius:2px}
+.sbar .num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.74rem;min-width:2.4rem;text-align:right}
+@media (max-width:720px){table.mtx,table.mtx thead,table.mtx tbody,table.mtx tr,table.mtx td{display:block}table.mtx thead{display:none}table.mtx tbody tr{border-bottom:1px solid var(--line-bright);padding:.55rem 0}table.mtx td{border:0;padding:.15rem .2rem}}
+/* --- redesign: § filling-hairline layer headers (re-enable the § the lgrp-h base rule strips) --- */
+.lgrp>h2.lgrp-h{border-bottom:0;padding-bottom:.15rem}
+.lgrp>h2.lgrp-h::before{content:"§";color:var(--fox);display:inline;font-weight:400}
+.lgrp>h2.lgrp-h .fill{flex:1;height:1px;min-width:1.5rem;background:var(--line);align-self:center}
 """
 )
 
@@ -137,7 +159,7 @@ def _filter_ui(placeholder: str) -> str:
         '<input class="filter-box" type="search" id="ks-filter" autocomplete="off" '
         f'aria-label="Filter this list" placeholder="{html.escape(placeholder)}">'
         "<script>(function(){var f=document.getElementById('ks-filter');if(!f)return;"
-        "var items=document.querySelectorAll('main .card,main .rrow');"
+        "var items=document.querySelectorAll('main .card,main .rrow,main table.mtx tbody tr');"
         "f.addEventListener('input',function(){var q=f.value.toLowerCase(),i,it;"
         "for(i=0;i<items.length;i++){it=items[i];"
         "it.style.display=(!q||it.textContent.toLowerCase().indexOf(q)>=0)?'':'none';}"
@@ -369,10 +391,10 @@ def render_detections_page(rules: list[dict[str, Any]]) -> str:
         groups.setdefault(key, []).append(r)
     convicting = sum(1 for r in rules if r.get("convicting"))
     body = [
-        "<h1>Detection catalog</h1>",
+        '<h1 class="display">Detection catalog</h1>',
         '<p class="lead">Every check Kitsune runs, grouped by signal layer. '
-        "<strong>Convicting</strong> rules (coherence · automation · artifact) can label a session a bot; "
-        "the rest corroborate.</p>",
+        '<strong style="color:var(--fox)">Convicting</strong> rules (coherence · automation · artifact) can label '
+        "a session a bot; the rest corroborate.</p>",
         '<div class="stat-row">'
         f'<div class="stat"><strong>{len(rules)}</strong><span>checks</span></div>'
         f'<div class="stat"><strong>{convicting}</strong><span>convicting</span></div>'
@@ -388,45 +410,69 @@ def render_detections_page(rules: list[dict[str, Any]]) -> str:
             f'<div class="rrow"><span class="rid">'
             f'<a href="/detections/{html.escape(r["id"])}"><code>{html.escape(r["id"])}</code></a> '
             f'<span class="badge {"convicting" if r.get("convicting") else "corroborating"}">'
-            f"{'convicts' if r.get('convicting') else 'corroborates'}</span></span>"
+            f"{'convicts' if r.get('convicting') else 'corrob.'}</span></span>"
             f'<span class="rt">{html.escape(r.get("title", ""))}</span></div>'
             for r in sorted(grp, key=lambda r: (not r.get("convicting"), r["id"]))
         )
         body.append(
-            f'<div class="lgrp"><h2 class="lgrp-h">{html.escape(key)} <span class="c">{len(grp)}</span></h2>{rows}</div>'
+            f'<div class="lgrp"><h2 class="lgrp-h">{html.escape(key)} '
+            f'<span class="c">{len(grp)}</span><span class="fill"></span></h2>{rows}</div>'
         )
     return "".join(body)
 
 
+#: verdict -> the CSS colour var (used for pills + score-bar fill; bot=fox, suspicious=amber, human=jade).
+_VERDICT_VAR = {"bot": "var(--fox)", "suspicious": "var(--amber)", "human": "var(--jade)"}
+
+
+def _score_frac(score: str) -> float:
+    """Parse a matrix score cell (e.g. '0.49', '1.00', 'n/a') to a 0..1 fraction; 0.0 if unparseable."""
+    try:
+        return max(0.0, min(1.0, float(score)))
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def render_matrix_page(md: str) -> str:
-    """Responsive per-evader cards from the matrix's verdict table (drops the rule/coverage sections)."""
+    """A scannable per-evader matrix from the verdict table — verdict pills + score bars, the near-miss
+    (suspicious) rows sorted FIRST since the tools that almost evade are the story."""
     _, rows = _md_table(md, "Per-evader verdict")
-    caught = sum(1 for r in rows if len(r) > 1 and r[1] == "bot")
-    susp = sum(1 for r in rows if len(r) > 1 and r[1] == "suspicious")
-    cards = []
-    for r in rows:
-        if len(r) < 5:
-            continue
-        name, verdict, score, _fired, tells = r[0], r[1], r[2], r[3], r[4]
-        cards.append(
-            f'<a class="card" href="/evasions/{html.escape(_slug(name))}"><div class="ct">'
-            f'<span class="cn">{_cellhtml(name)}</span>'
-            f'<span class="badge {html.escape(verdict)}">{html.escape(verdict)}</span></div>'
-            f'<div class="cd">score {html.escape(score)}</div>'
-            f'<div class="cm">{_cellhtml(tells)}</div></a>'
+    verdict_rows = [r for r in rows if len(r) >= 5]
+    caught = sum(1 for r in verdict_rows if r[1] == "bot")
+    susp = sum(1 for r in verdict_rows if r[1] == "suspicious")
+    # suspicious first (by ascending score within), then everything else by ascending score
+    verdict_rows.sort(key=lambda r: (r[1] != "suspicious", _score_frac(r[2])))
+    body = []
+    for name, verdict, score, _fired, tells in ((r[0], r[1], r[2], r[3], r[4]) for r in verdict_rows):
+        col = _VERDICT_VAR.get(verdict, "var(--muted)")
+        pct = round(_score_frac(score) * 100)
+        bar = (
+            f'<span class="sbar"><span class="trk"><i style="width:{pct}%;background:{col}"></i></span>'
+            f'<span class="num">{pct}%</span></span>'
         )
+        body.append(
+            f'<tr><td><a class="ev" href="/evasions/{html.escape(_slug(name))}">{_cellhtml(name)}</a></td>'
+            f'<td><span class="badge {html.escape(verdict)}">{html.escape(verdict)}</span></td>'
+            f"<td>{bar}</td>"
+            f'<td class="tells">{_cellhtml(tells)}</td></tr>'
+        )
+    table = (
+        '<table class="mtx"><thead><tr><th>Evader</th><th>Verdict</th><th>Score</th>'
+        f"<th>Convicting tells</th></tr></thead><tbody>{''.join(body)}</tbody></table>"
+    )
     return (
-        "<h1>Detection matrix</h1>"
+        '<h1 class="display">Detection matrix</h1>'
         '<p class="lead">Kitsune\'s red-team fleet — real anti-detect tools and browsers — run against the '
-        "detector. Each card is one evader: its verdict and the convicting <em>tells</em> that caught it. "
-        'For what each tool actually is, see the annotated <a href="/evasions">evasion catalog</a>.</p>'
+        "detector. Each row is one evader: its verdict, coherence score and the convicting <em>tells</em> that "
+        'caught it. The <span style="color:var(--amber)">suspicious</span> near-misses sort first. For what each '
+        'tool actually is, see the annotated <a href="/evasions">evasion catalog</a>.</p>'
         '<div class="stat-row">'
-        f'<div class="stat"><strong>{len(rows)}</strong><span>evaders</span></div>'
+        f'<div class="stat"><strong>{len(verdict_rows)}</strong><span>evaders</span></div>'
         f'<div class="stat"><strong>{caught}</strong><span>caught (bot)</span></div>'
-        f'<div class="stat"><strong>{susp}</strong><span>suspicious</span></div>'
+        f'<div class="stat"><strong style="color:var(--amber)">{susp}</strong><span>suspicious</span></div>'
         "</div>"
         f"{_filter_ui('Filter evaders by name or tell…')}"
-        f'<div class="cards">{"".join(cards)}</div>'
+        f"{table}"
     )
 
 
@@ -449,7 +495,7 @@ def render_evasions_page(evaders: dict[str, dict[str, Any]]) -> str:
             f'<div class="cd">{html.escape(evader_description(slug))}</div></a>'
         )
     return (
-        "<h1>Evasion catalog</h1>"
+        '<h1 class="display">Evasion catalog</h1>'
         '<p class="lead">Every red-team configuration Kitsune tests itself against — real anti-detect '
         "tools, stealth browsers, TLS/HTTP forgers and single-surface technique probes — each with a plain "
         "description. For the exact tells that caught each, see the "
