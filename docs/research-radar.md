@@ -5526,3 +5526,10 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   500ms. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE exact-centroid instant click trips anomaly:localize_superhuman
   (session label=bot); the HUMANIZED evader passes with anomaly=null (evaded). NEXT: spotdiff (off-centroid diff
   clicks over > K*1200ms).
+- **[Red-team arena-gate EVASIONS loop — 7/10: spotdiff defeats bh.arena_spotdiff_superhuman]**
+  (2026-07-12). Gate 7 evasion (arena-solver-behave spotdiff mode): image-diff the two panels (right offset 164),
+  cluster the changed pixels into centroids (EUCLIDEAN proximity < 20px — below the gate's ~36px min disk separation,
+  above a disk's ~14px radius, so nearby diffs never merge), then click each OFF-centroid by ~7-14px (> the 3px
+  pixel-perfect floor, within the 24px hit radius) over > K*1200ms. GROUNDED LIVE BOTH DIRECTIONS (repeated x3/x2 for
+  robustness): the NAIVE exact-centroid instant clicks reliably trip anomaly:spotdiff_superhuman (session label=bot);
+  the HUMANIZED evader reliably passes with anomaly=null (evaded). NEXT: slide (BFS-solve + extra non-optimal moves).
