@@ -119,6 +119,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/slide?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "pattern",
+				Prompt:   "Draw one line through the dots in order (connect-the-dots / Android-pattern-lock family): a synthetic stroke that hugs the ideal polyline too closely (mean deviation below the human hand-tremor floor), or a draw faster than a human can move through N waypoints, convicts on coherence (pattern_superhuman).",
+				Endpoint: "GET /arena/pattern?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

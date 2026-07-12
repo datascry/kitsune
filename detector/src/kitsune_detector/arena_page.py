@@ -231,6 +231,15 @@ CHALLENGES: list[dict[str, str]] = [
         "minimum number of moves (which a human wandering never hits on a deep scramble), or faster than a human can "
         "slide the tiles, convicts. The plan optimality + timing are the tell.",
     },
+    {
+        "slug": "pattern",
+        "label": "Trace the pattern",
+        "family": "Connect-the-dots / pattern-lock",
+        "mode": "pattern",
+        "blurb": "Draw one line through the dots in order without lifting. A synthetic stroke hugs the ideal path "
+        "with almost no deviation (too straight for a human hand, which wobbles), or draws through the waypoints "
+        "faster than a human can move the pointer — either convicts. The path fidelity + timing are the tell.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -684,6 +693,33 @@ ARENA_JS = r"""
     render(); say("Slide the tiles into order — click a tile next to the blank.");
   }
 
+  async function runPattern(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/pattern"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var field=document.createElement("div"); field.style.cssText="position:relative;width:300px;height:200px;border:1px solid var(--line-bright);border-radius:6px;background:var(--panel);margin:.4rem 0;touch-action:none;cursor:crosshair"; box.appendChild(field);
+    var status=document.createElement("p"); status.className="note"; status.textContent="Press and drag through the dots in order."; box.appendChild(status);
+    c.dots.forEach(function(d){
+      var el=document.createElement("div"); el.textContent=String(d.index+1);
+      el.style.cssText="position:absolute;left:"+(d.x-11)+"px;top:"+(d.y-11)+"px;width:22px;height:22px;border-radius:50%;background:var(--line-bright);color:#000;font:12px/22px monospace;text-align:center;pointer-events:none";
+      field.appendChild(el);
+    });
+    var stroke=[], drawing=false, done=false;
+    function pt(e){ var r=field.getBoundingClientRect(); return [Math.round(e.clientX-r.left), Math.round(e.clientY-r.top)]; }
+    field.addEventListener("pointerdown", function(e){ e.preventDefault(); try{ field.setPointerCapture(e.pointerId); }catch(_){}
+      drawing=true; stroke=[pt(e)]; status.textContent="drawing…"; });
+    field.addEventListener("pointermove", function(e){ if(drawing) stroke.push(pt(e)); });
+    async function end(){
+      if(!drawing || done) return; drawing=false; done=true; status.textContent="Verifying…";
+      var v=await (await fetch("/arena/pattern/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, stroke:stroke})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Traced — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Pattern PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="The stroke did not pass through the dots in order (or the challenge expired)."; say("Pattern rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    }
+    field.addEventListener("pointerup", end); field.addEventListener("pointercancel", end);
+    say("Draw one line through the dots in order without lifting.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -789,6 +825,7 @@ ARENA_JS = r"""
       else if(A.mode==="locate"){ await runLocate(gv, gn, tok); }
       else if(A.mode==="match"){ await runMatch(gv, gn, tok); }
       else if(A.mode==="slide"){ await runSlide(gv, gn, tok); }
+      else if(A.mode==="pattern"){ await runPattern(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }
