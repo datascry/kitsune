@@ -8,12 +8,15 @@
 # browser; this evader isolates the gate-behaviour layer. Env: KS_BASE (arena or detector relay), KS_SID (cookie),
 # KS_GATE, KS_MODE (human|naive), KS_LEVEL. Stdlib only.
 
+import base64
 import json
 import math
 import os
 import random
+import struct
 import time
 import urllib.request
+import zlib
 
 BASE = os.environ.get("KS_BASE", "http://arena:8095")
 SID = os.environ.get("KS_SID", "")
@@ -35,6 +38,75 @@ def get(path: str) -> dict:
 
 def post(path: str, body: dict) -> dict:
     return _req("POST", path, body)
+
+
+# --- Image helpers (stdlib-only PNG decode; the CV the image gates need). Go's encoder emits RGB (3B) for opaque
+# images, RGBA (4B) otherwise — read the colour type from IHDR. ---
+def _decode_png(datauri: str) -> tuple[int, int, int, bytes]:
+    raw = base64.b64decode(datauri.split(",", 1)[1])
+    off, w, h, ct, idat = 8, 0, 0, 0, b""
+    while off < len(raw):
+        ln = struct.unpack(">I", raw[off : off + 4])[0]
+        typ, data = raw[off + 4 : off + 8], raw[off + 8 : off + 8 + ln]
+        off += 12 + ln
+        if typ == b"IHDR":
+            w, h, _bd, ct = struct.unpack(">IIBB", data[:10])
+        elif typ == b"IDAT":
+            idat += data
+        elif typ == b"IEND":
+            break
+    buf = zlib.decompress(idat)
+    bpp = 3 if ct == 2 else 4
+    stride = w * bpp
+    out, prev, p = bytearray(), bytearray(stride), 0
+
+    def paeth(a: int, b: int, c: int) -> int:
+        pp = a + b - c
+        pa, pb, pc = abs(pp - a), abs(pp - b), abs(pp - c)
+        return a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+
+    for _ in range(h):
+        f = buf[p]
+        p += 1
+        line = bytearray(buf[p : p + stride])
+        p += stride
+        for i in range(stride):
+            a = line[i - bpp] if i >= bpp else 0
+            b = prev[i]
+            c = prev[i - bpp] if i >= bpp else 0
+            if f == 1:
+                line[i] = (line[i] + a) & 255
+            elif f == 2:
+                line[i] = (line[i] + b) & 255
+            elif f == 3:
+                line[i] = (line[i] + ((a + b) >> 1)) & 255
+            elif f == 4:
+                line[i] = (line[i] + paeth(a, b, c)) & 255
+        out += line
+        prev = line
+    return w, h, bpp, bytes(out)
+
+
+def _centroid_of(datauri: str, rgb: tuple[int, int, int]) -> tuple[float, float]:
+    w, h, bpp, px = _decode_png(datauri)
+    sx = sy = n = 0
+    for y in range(h):
+        for x in range(w):
+            i = (y * w + x) * bpp
+            if abs(px[i] - rgb[0]) < 30 and abs(px[i + 1] - rgb[1]) < 30 and abs(px[i + 2] - rgb[2]) < 30:
+                sx += x
+                sy += y
+                n += 1
+    return (sx / n, sy / n) if n else (w / 2, h / 2)
+
+
+LOCATE_COLORS = {
+    "red": (200, 40, 40),
+    "green": (40, 160, 60),
+    "blue": (50, 90, 210),
+    "orange": (230, 140, 30),
+    "purple": (150, 60, 190),
+}
 
 
 # --- (1) PRESS-AND-HOLD — tell bh.arena_hold_robotic (static-hold tremor OR impossible claimed hold). ---
@@ -138,12 +210,29 @@ def sequence(mode: str) -> dict:
     return post("/arena/sequence/verify", {"id": c["id"], "clicks": clicks, "times": times})
 
 
+# --- (6) POINT LOCALIZATION — tell bh.arena_localize_superhuman (click within 2.5px of the exact centroid, OR
+# age < 500ms). Evasion: CV-find the target centroid, then click NEAR it but off by ~6-14px (dist > 2.5, within the
+# 34px acceptance radius) and spend > 500ms. Naive: click the exact computed centroid instantly.
+def locate(mode: str) -> dict:
+    c = get(f"/arena/locate?level={LEVEL}")
+    color = c["prompt"].split(" circle")[0].split()[-1]
+    cx, cy = _centroid_of(c["image"], LOCATE_COLORS[color])
+    if mode == "naive":
+        x, y = cx, cy  # pixel-perfect, instant
+    else:
+        ang, r = random.uniform(0, 2 * math.pi), random.uniform(6, 14)  # human aim scatter (off-centroid)
+        x, y = cx + r * math.cos(ang), cy + r * math.sin(ang)
+        time.sleep(0.7)  # > 500ms visual-locate + aim
+    return post("/arena/locate/verify", {"id": c["id"], "x": round(x), "y": round(y)})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
     "reaction": reaction,
     "pattern": pattern,
     "sequence": sequence,
+    "locate": locate,
 }
 
 
