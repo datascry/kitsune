@@ -14,4 +14,7 @@ description = "TLS key_share / key-share group names in de-identified captures a
 regexTarget = "match"
 regexes = [
   '''key[_-]share:[A-Za-z0-9+_-]+''',
+  # arena/keymap.go's `keymapCharset` is a Crockford-base32 alphabet (the remapped-keyboard gate's key set); its
+  # name contains "key" and its value is high-entropy, so generic-api-key false-fires. A charset, not a credential.
+  '''ABCDEFGHJKLMNPQRSTUVWXYZ23456789''',
 ]
