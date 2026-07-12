@@ -120,14 +120,19 @@ function rawFingerprint(): Record<string, string> {
 }
 
 async function main(): Promise<void> {
+  const heroRoot = document.getElementById("app-hero");
   const appRoot = document.getElementById("app");
   const panelMount = document.getElementById("behavioral-panel");
-  if (appRoot === null) return;
+  if (appRoot === null || heroRoot === null) return;
 
   // Arm behavioural listeners immediately so early mouse/key movement is captured while the page loads.
   const collector = armCollector();
   const registry = (await (await fetch("./rules.json")).json()) as RegistryJSON;
   const clientRules = registry.rules.filter((r) => r.clientEvaluable);
+
+  // Masthead status: stamp the live ruleset version into the "ruleset vX.Y.Z" tag (derived, not hardcoded).
+  const rulesetTag = document.getElementById("ruleset-tag");
+  if (rulesetTag !== null) rulesetTag.textContent = `ruleset ${registry.ruleset_version}`;
 
   // L5: spoofed-browser demos — overlay a preset's signals onto the visitor's real ones so the corresponding
   // convicting tell fires, making the detection tangible. Each preset reads a single clear boolean signal.
@@ -163,7 +168,7 @@ async function main(): Promise<void> {
     });
     const fingerprint = rawFingerprint();
     const verdict = verdictFor(applicable);
-    render(appRoot, {
+    render(heroRoot, appRoot, {
       prediction,
       coherence: coherence(prediction),
       fingerprint,
@@ -186,9 +191,9 @@ async function main(): Promise<void> {
     }
   };
 
-  // L5/L7: delegated clicks on the persistent #app survive every re-render. Demo presets overlay + re-render;
-  // reset returns to the real browser; the share button copies the last real summary.
-  appRoot.addEventListener("click", (e) => {
+  // L5/L7: delegated clicks on the persistent hero root survive every re-render (the spoof/reset/share buttons
+  // live in the hero). Demo presets overlay + re-render; reset returns to the real browser; share copies the summary.
+  heroRoot.addEventListener("click", (e) => {
     const t = e.target as HTMLElement | null;
     if (t === null) return;
     const preset = t.dataset["preset"];

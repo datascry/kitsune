@@ -18,49 +18,50 @@ function esc(s: string): string {
 
 function rowHtml(r: BehavioralRow): string {
   const cls = !r.ready ? "pending" : r.fires ? "bot" : "human";
-  const verdict = !r.ready ? "gathering…" : r.fires ? "● bot-like" : "○ human-like";
+  const verdict = !r.ready ? "gathering…" : r.fires ? "bot-like" : "human-like";
   const shown = r.ready ? r.value.toFixed(3) : "—";
-  return `<tr class="${cls}">
-    <td><code>${esc(r.ruleId)}</code><div class="bp-title">${esc(r.label)}</div></td>
-    <td class="bp-val">${shown}</td>
-    <td class="bp-floor">${esc(r.floorText)}</td>
-    <td class="bp-verdict">${verdict}</td></tr>`;
+  return `<div class="bp-row ${cls}">
+    <div class="bp-row-l"><div class="bp-label">${esc(r.label)}</div><code class="bp-rid">${esc(r.ruleId)}</code></div>
+    <div class="bp-row-r"><span class="bp-value">${shown}</span>
+      <div class="bp-floor">floor ${esc(r.floorText)} · ${verdict}</div></div>
+  </div>`;
 }
 
-/** The live, repainting region: status line + metrics table + summary. */
-function metricsHtml(snapshot: BehavioralSnapshot, rows: BehavioralRow[], note: string): string {
+/** The live, repainting region: a mode note (live vs frozen bot demo), the biomech rows, and a one-line summary. */
+function metricsHtml(rows: BehavioralRow[], note: string): string {
   const fired = rows.filter((r) => r.fires).length;
-  const ptr = `${snapshot.pointerSamples} pointer samples`;
-  const motion = snapshot.enoughMotion
-    ? '<span class="ok">motion floor met</span>'
-    : `<span class="wait">need ${BEHAVIOR_MIN_POINTERS}+ to judge mouse</span>`;
-  const keyState = snapshot.enoughKeys
-    ? '<span class="ok">keys floor met</span>'
-    : `<span class="wait">type ${BEHAVIOR_MIN_KEYS}+ keys to judge cadence</span>`;
-  return `<p class="bp-status">${esc(ptr)} · ${snapshot.keystrokes} keystrokes — ${motion} · ${keyState}</p>
-    <p class="note">${esc(note)}</p>
-    <table class="bp-table"><thead><tr><th>metric</th><th>measured</th><th>bot floor</th><th>verdict</th></tr></thead>
-      <tbody>${rows.map(rowHtml).join("")}</tbody></table>
+  return `<p class="note bp-mode">${esc(note)}</p>
+    <div class="bp-rows">${rows.map(rowHtml).join("")}</div>
     <p class="bp-summary">${fired}/${rows.length} biomech floors currently tripped.</p>`;
+}
+
+/** The masthead counts line (updated each draw without rebuilding the controls, so the text input keeps focus). */
+function countsText(snapshot: BehavioralSnapshot): string {
+  const motion = snapshot.enoughMotion
+    ? "motion floor met"
+    : `need ${BEHAVIOR_MIN_POINTERS}+ to judge mouse`;
+  const keyState = snapshot.enoughKeys
+    ? "keys floor met"
+    : `type ${BEHAVIOR_MIN_KEYS}+ keys to judge cadence`;
+  return `${snapshot.pointerSamples} pointer samples · ${snapshot.keystrokes} keystrokes — ${motion} · ${keyState}`;
 }
 
 /** The interactive controls — buttons (elicit pointer travel) + a text input (keystroke timing). Built ONCE
  * and never repainted, so typing keeps focus while the metrics slot refreshes underneath. Touch-aware copy
  * (the biomech floors are mouse-calibrated, so on a touch device they read as advisory, not convicting). */
-function controlsHtml(isTouch: boolean): string {
-  const help = isTouch
-    ? `Tap the buttons and swipe across them, then type a sentence — your touch/pointer dynamics and
-       keystroke timing are measured live. <em>Note: the biomech floors are mouse-calibrated, so they are
-       advisory on a touch device.</em>`
-    : `Move your mouse to the buttons and click them, then type a sentence — your mouse dynamics and
-       keystroke timing are measured live against the registry floors.`;
-  const placeholder = "Type a sentence here to measure keystroke timing…";
-  return `<p class="note bp-help">${help}</p>
+function controlsHtml(isTouch: boolean, hasReeval: boolean): string {
+  const placeholder = "Type a sentence to measure keystroke cadence…";
+  const targets = isTouch ? "Tap and swipe across the targets" : "Click the targets";
+  return `<input type="text" class="bp-text" autocomplete="off" autocapitalize="off" spellcheck="false"
+      aria-label="type to measure keystroke timing" placeholder="${placeholder}" />
+    <p class="note bp-pad-help">${targets} to feed real pointer travel:</p>
     <div class="bp-pad">${[1, 2, 3, 4, 5]
       .map((n) => `<button type="button" class="bp-dot" data-n="${n}">${n}</button>`)
       .join("")}</div>
-    <input type="text" class="bp-text" autocomplete="off" autocapitalize="off" spellcheck="false"
-      aria-label="type to measure keystroke timing" placeholder="${placeholder}" />`;
+    <div class="bp-actions">
+      <button type="button" class="bp-demo">Demo a synthetic bot path ↻</button>
+      ${hasReeval ? '<button type="button" class="bp-reeval">Re-evaluate my detections ↻</button>' : ""}
+    </div>`;
 }
 
 /**
@@ -69,8 +70,8 @@ function controlsHtml(isTouch: boolean): string {
  * metrics slot that polls the collector as the visitor moves/types, and a button that runs the SAME metric
  * code over a scripted bot path so the floors visibly fire — making the behavioural layer tangible.
  *
- * The control shell is built once; only the `.bp-live` slot repaints, so the text input keeps focus/value
- * across refreshes.
+ * The control shell is built once; only the `.bp-live` slot (and the header counts) repaint, so the text
+ * input keeps focus/value across refreshes.
  */
 export function mountBehavioralPanel(
   container: HTMLElement,
@@ -78,23 +79,30 @@ export function mountBehavioralPanel(
   rules: RuleJSON[],
   opts: { isTouch?: boolean; onReevaluate?: () => void } = {},
 ): void {
-  const liveNote = "Real human motion stays clear of every floor; a scripted path does not.";
+  const isTouch = opts.isTouch === true;
+  const liveNote = isTouch
+    ? "Touch/pointer dynamics measured live. The biomech floors are mouse-calibrated, so they read as advisory on a touch device."
+    : "Real human motion stays clear of every floor; a scripted path does not.";
   const demoNote =
     "Scripted constant-velocity straight path — every biomech floor trips. Move your mouse to return to live mode.";
   let demoing = false;
 
-  container.innerHTML = `<h2>Behavioral layer — live biomechanics
-      <span class="note">— measured in your browser against the same registry floors the detector uses</span></h2>
-    ${controlsHtml(opts.isTouch === true)}
-    <div class="bp-live"></div>
-    <div class="bp-actions">
-      <button type="button" class="bp-demo">Demo a synthetic bot path ↻</button>
-      ${opts.onReevaluate ? '<button type="button" class="bp-reeval">Re-evaluate my detections ↻</button>' : ""}
+  container.innerHTML = `<div class="bp-head">
+      <h2 class="bp-h">Behavioral layer &mdash; live</h2>
+      <span class="bp-counts note"></span>
+    </div>
+    <p class="note bp-lede">Interact below — the biomechanics are measured in your browser against the same
+      registry floors the detector uses.</p>
+    <div class="bp-grid">
+      <div class="bp-controls">${controlsHtml(isTouch, opts.onReevaluate !== undefined)}</div>
+      <div class="bp-live"></div>
     </div>`;
   const live = container.querySelector(".bp-live") as HTMLElement;
+  const counts = container.querySelector(".bp-counts") as HTMLElement;
 
   const draw = (snapshot: BehavioralSnapshot, note: string): void => {
-    live.innerHTML = metricsHtml(snapshot, evaluateBehavioral(snapshot, rules), note);
+    counts.textContent = countsText(snapshot);
+    live.innerHTML = metricsHtml(evaluateBehavioral(snapshot, rules), note);
   };
 
   draw(collector.snapshotBehavioral(), liveNote);

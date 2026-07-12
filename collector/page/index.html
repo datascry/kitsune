@@ -15,11 +15,17 @@
   </head>
   <body>
     <header>
-      <div class="mark">
-        <h1>Kitsune</h1>
-        <span class="tag">live browser inspector</span>
+      <div class="masthead">
+        <div class="mark">
+          <h1>Kitsune</h1>
+          <span class="tag">live browser inspector</span>
+        </div>
+        <div class="mast-status">
+          <span id="ruleset-tag">ruleset —</span>
+          <span class="engine-live">● engine live</span>
+        </div>
       </div>
-      <p>
+      <p class="mast-lede">
         Kitsune flags <strong>incoherence across layers</strong>, not just bad signals. This page
         predicts your real browser from feature detection, enumerates your fingerprint, and runs the
         browser- and behavioral-layer detections against <strong>your current browser</strong> —
@@ -34,9 +40,12 @@
         Collecting signals from your browser — <strong>move your mouse around and type</strong> for
         a few seconds so the behavioral layer can be assessed…
       </p>
-      <!-- Persistent interactive biometrics panel: mounted immediately (outside #app, so the verdict
-           re-render never wipes it) and kept at the top, so visitors interact DURING collection. -->
+      <!-- The verdict hero + coherence spine + spoof bar (re-rendered on demo). -->
+      <div id="app-hero"></div>
+      <!-- Persistent interactive biometrics panel: mounted immediately (its own root, so the verdict
+           re-render never wipes it or the visitor's typing), sitting between the verdict and the detail. -->
       <section class="behavioral-panel" id="behavioral-panel"></section>
+      <!-- The fired-detections spotlight + deep forensic reference. -->
       <div id="app"></div>
     </main>
 
@@ -49,13 +58,13 @@
     </footer>
 
     <script type="module">
-      // Hide the status line once the app has rendered a verdict.
+      // Hide the status line once the verdict hero has rendered.
       const obs = new MutationObserver(() => {
-        const app = document.getElementById("app");
+        const hero = document.getElementById("app-hero");
         const status = document.getElementById("status");
-        if (app && app.children.length > 0 && status) status.style.display = "none";
+        if (hero && hero.children.length > 0 && status) status.style.display = "none";
       });
-      obs.observe(document.getElementById("app"), { childList: true });
+      obs.observe(document.getElementById("app-hero"), { childList: true });
     </script>
     <script type="module" src="./livepage.js"></script>
   </body>
