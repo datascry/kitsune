@@ -146,6 +146,7 @@ func NewMux(secret []byte) http.Handler {
 	matches := newCaptchaStore()
 	slides := newCaptchaStore()
 	patterns := newCaptchaStore()
+	reactions := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -644,6 +645,44 @@ func NewMux(secret []byte) http.Handler {
 			// pointer through N waypoints (age < N * patternPerWaypoint). A real hand always wobbles + spends time.
 			if meanDev < patternStraightPx || int(age.Milliseconds()) < n*patternPerWaypoint {
 				resp["anomaly"] = "pattern_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- REACTION-TIME: click as soon as the box turns green. NOVEL tell: the SERVER-OBSERVED reaction latency
+	// (mint->verify age minus the shown pre-cue delay) below the human physiological floor (~150ms), or NEGATIVE (a
+	// click that reaches the server before the go — anticipation). Impossible for a human hand-eye loop. ---
+	mux.HandleFunc("GET /arena/reaction", func(w http.ResponseWriter, r *http.Request) {
+		rx, answer := MintReaction(ParseLevel(r.URL.Query().Get("level")))
+		reactions.put(rx.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(rx)
+	})
+
+	mux.HandleFunc("POST /arena/reaction/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID string `json:"id"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := reactions.take(body.ID) // single-use
+		human, reaction := CheckReaction(expected, int(age.Milliseconds()))
+		ok := known && human
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "reaction"}
+		if known {
+			resp["reaction_ms"] = reaction
+			// SUPERHUMAN: a reaction below the physiological floor, OR negative (clicked before the go — anticipation).
+			// The gate fails for a bot (ok=false), but the anomaly rides the verdict so the SESSION convicts (like
+			// honeypot). A real hand-eye reaction always exceeds the floor, so a genuine human passes silently.
+			if reaction < reactionFloorMs {
+				resp["anomaly"] = "reaction_superhuman"
+			}
+			if ok {
+				resp["token"] = SignCaptchaToken(secret, "reaction", body.ID)
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

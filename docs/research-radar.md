@@ -5416,3 +5416,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (label=bot, score 0.85 via arena_pattern_superhuman). Arena go test + detector suite green (522 passed, 95.49%);
   matrix 196 rules; arena now 27 gates. The dig-deeper produced a real new rung — the captcha-style axis has room for
   novel INPUT MODALITIES (continuous stroke here), each with its own server-observed behavioural tell.
+- **[Wild-captcha styles loop — DIG DEEPER 2: reaction-time gate (click when green)]**
+  (2026-07-12). Second dig-deeper rung (the first, pattern, found a real new tell — so the loop continued). A new
+  modality with a new tell family: arena/reaction.go — "click as soon as the box turns green". The server derives the
+  reaction latency = SERVER-OBSERVED age (mint->verify) MINUS the shown pre-cue delay (both server-clocked, so the
+  client clock is untrusted). NOVEL tell bh.arena_reaction_superhuman (w0.85, experimental): a reaction below
+  reactionFloorMs (120ms) — under the human simple-visual-reaction physiological floor (~150ms) with network margin —
+  or NEGATIVE (a click reaching the server before the go = anticipation). No human hand-eye loop responds to an
+  unpredictable visual change that fast. A NEW tell family — REACTION LATENCY vs a physiological floor — distinct
+  from every solve-speed / precision / plan / path-fidelity tell. Full stack wired. GROUNDED LIVE THREE WAYS
+  (in-sandbox): an instant click (reaction 1ms) AND an anticipatory pre-go click (reaction -399ms) both convict; a
+  human-plausible ~260ms reaction (reaction 261ms) passes silently (FP-safe); detector join convicts the session
+  (label=bot, score 0.85 via arena_reaction_superhuman). Arena go test + detector suite green (522 passed, 95.41%);
+  matrix 197 rules; arena now 28 gates. The dig-deeper thesis holds: novel INPUT MODALITIES + TIMING SURFACES (stroke
+  fidelity, reaction latency) each yield a fresh server-observed behavioural tell; the axis has more depth than the
+  original 5-style list.
