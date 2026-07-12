@@ -7,6 +7,14 @@ import type { Coherence, Prediction } from "./predict.js";
 import type { RuleJSON } from "./registry.js";
 
 const LAYER_ORDER: Layer[] = ["network", "browser", "behavioral", "reputation"];
+// The coherence-spine order (mockup 1A): the two in-browser layers lead, the two edge-only layers follow.
+const SPINE_ORDER: Layer[] = ["browser", "behavioral", "network", "reputation"];
+// L1-redesign: verdict label -> its one semantic colour token (fox=bot, amber=suspicious, jade=human).
+const VERDICT_VAR: Record<string, string> = {
+  bot: "var(--fox)",
+  suspicious: "var(--amber)",
+  human: "var(--jade)",
+};
 
 /** One fingerprint surface: its value/hash and whether any tamper tell fired against it. */
 export interface Surface {
@@ -92,17 +100,6 @@ function fingerprintTable(fp: Record<string, string>): string {
     <table class="fp-table"><tbody>${rows}</tbody></table></section>`;
 }
 
-function coherenceBanner(c: Coherence, p: Prediction): string {
-  const cls = c.match ? "match" : "mismatch";
-  const verdict = c.match ? "✓ coherent" : "✗ mismatch";
-  return `<section class="coherence ${cls}">
-    <div class="side"><span class="cap">Feature prediction</span><span class="val">${esc(p.engine)} · ${esc(p.os)}</span></div>
-    <div class="verdict-cell">${verdict}</div>
-    <div class="side"><span class="cap">Claimed (User-Agent)</span><span class="val">${esc(c.claimedEngine)} · ${esc(c.claimedOs)}</span></div>
-  </section>
-  <p class="note">${esc(c.reason)} — a real browser's features and UA always agree; a spoofer's do not.</p>`;
-}
-
 function surfacesSection(surfaces: Surface[]): string {
   const cards = surfaces
     .map((s) => {
@@ -131,7 +128,103 @@ function ruleRow(rule: RuleJSON, fired: boolean): string {
     <td title="${esc(why)}">${esc(rule.category)}</td><td class="weight">${rule.weight.toFixed(2)}</td></tr>`;
 }
 
-export function render(root: HTMLElement, opts: RenderOpts): void {
+/** A derived one-line plain-language reason for the verdict (no reason is stored on the verdict itself). */
+function verdictReason(verdict: Verdict, fired: Contradiction[]): string {
+  const n = fired.length;
+  const tell = n === 1 ? "tell" : "tells";
+  if (verdict.label === "human")
+    return "No convicting tell fired — this browser's features, navigator surface, Worker realm and behavioral biomechanics all describe one coherent, real browser.";
+  if (verdict.label === "suspicious")
+    return `${n} ${tell} fired — a coherent but statistically improbable fingerprint; not enough to convict on its own.`;
+  return `${n} convicting ${tell} fired — values that cannot co-occur on one real browser. The instrumentation a spoofer needs is visible to the page.`;
+}
+
+/** The coherence spine (mockup 1A): per-layer dot + track + state. Browser/behavioral are judged in-browser;
+ *  network/reputation are edge-only here (a browser cannot observe its own TLS/TCP/IP-reputation). */
+function spineRows(verdict: Verdict): string {
+  return SPINE_ORDER.map((l) => {
+    const score = verdict.layers[l];
+    const edgeOnly = l === "network" || l === "reputation";
+    const dot = edgeOnly ? "var(--muted)" : score > 0 ? "var(--fox)" : "var(--jade)";
+    const state = edgeOnly
+      ? "edge only"
+      : score > 0
+        ? "flagged"
+        : l === "behavioral"
+          ? "human"
+          : "clean";
+    return `<div class="spine-row">
+      <span class="spine-layer">${esc(l)}</span>
+      <span class="spine-meter">
+        <span class="spine-dot" style="background:${dot}"></span>
+        <span class="spine-trk"><i style="width:${pct(score)};background:${dot}"></i></span>
+        <span class="spine-state" style="color:${dot}">${esc(state)}</span>
+      </span></div>`;
+  }).join("");
+}
+
+/** The verdict hero: a giant label + score, a derived reason, three at-a-glance stats, and the coherence spine. */
+function verdictHero(
+  verdict: Verdict,
+  coherence: Coherence,
+  prediction: Prediction,
+  fired: Contradiction[],
+  rulesLen: number,
+): string {
+  const col = VERDICT_VAR[verdict.label] ?? "var(--ink)";
+  const predEngOs = `${esc(prediction.engine)} · ${esc(prediction.os)}`;
+  const claimEngOs = `${esc(coherence.claimedEngine)} · ${esc(coherence.claimedOs)}`;
+  const border = coherence.match ? "var(--jade)" : "var(--fox)";
+  const mtext = coherence.match ? "✓ coherent" : "✗ mismatch";
+  return `<section class="vhero">
+    <div class="vh-main" style="--vcol:${col}">
+      <div class="eyebrow">Verdict · this browser</div>
+      <div class="vh-big">
+        <span class="vh-label display">${esc(verdict.label.toUpperCase())}</span>
+        <span class="vh-score display">${pct(verdict.score)}</span>
+      </div>
+      <p class="vh-reason">${esc(verdictReason(verdict, fired))}</p>
+      <div class="vh-stats">
+        <span class="vstat"><span class="vk">bot-likelihood</span><span class="vv" style="color:${col}">${pct(verdict.score)}</span></span>
+        <span class="vstat"><span class="vk">incoherence</span><span class="vv">${pct(verdict.incoherence)}</span></span>
+        <span class="vstat"><span class="vk">detections fired</span><span class="vv">${fired.length} / ${rulesLen}</span></span>
+      </div>
+    </div>
+    <div class="vh-spine">
+      <div class="eyebrow">Coherence spine</div>
+      ${spineRows(verdict)}
+      <div class="coh-strip" style="border-color:${border}">
+        <span class="coh-line"><span class="k">predicts</span> ${predEngOs} <span class="k">· ua claims</span> ${claimEngOs}</span>
+        <span class="coh-verdict" style="color:${border}">${mtext}</span>
+      </div>
+      <p class="note coh-why">${esc(coherence.reason)} — a real browser's features and UA always agree; a spoofer's do not.</p>
+    </div>
+  </section>`;
+}
+
+/** The fired-detections list (mockup 1A) — only the convicting session tells, pulsing, id · title · category · weight. */
+function firedList(fired: Contradiction[], edgeLen: number): string {
+  const rows = fired
+    .map((c) => {
+      const why = CATEGORY_WHY[c.category] ?? "";
+      const idLink = `<a class="rule-src" href="${REGISTRY_URL}" target="_blank" rel="noopener" title="view rule source in registry.yaml"><code>${esc(c.id)}</code></a>`;
+      return `<div class="fdet-row">
+        <span class="fdet-dot"></span>
+        <div class="fdet-body">${idLink}<div class="fdet-title">${esc(c.title)}</div></div>
+        <span class="fdet-cat" title="${esc(why)}">${esc(c.category)}</span>
+        <span class="fdet-weight">${c.weight.toFixed(2)}</span>
+      </div>`;
+    })
+    .join("");
+  const body = fired.length
+    ? rows
+    : `<p class="note fdet-none">No convicting tell fired in your browser — nothing contradicts a coherent, real client.</p>`;
+  return `<section class="fired-detections"><h2>Fired detections <span class="note">— what convicts this session</span></h2>
+    <div class="fdet-list">${body}</div>
+    <p class="note fdet-edge">+ ${edgeLen} edge detections (TLS · HTTP/2 · QUIC · TCP · IP-reputation) not evaluated in-browser.</p></section>`;
+}
+
+export function render(heroRoot: HTMLElement, detailRoot: HTMLElement, opts: RenderOpts): void {
   const {
     prediction,
     coherence,
@@ -185,40 +278,34 @@ export function render(root: HTMLElement, opts: RenderOpts): void {
     )
     .join("");
 
-  root.innerHTML = `
-    <section class="hero">
-      <div class="hero-stat"><strong>${rules.length}</strong><span>detection rules</span></div>
-      <div class="hero-stat"><strong>${layerCount}</strong><span>coherence layers</span></div>
-      <div class="hero-stat"><strong>${client.length}</strong><span>ran in your browser</span></div>
-      <div class="hero-stat"><strong>${edge.length}</strong><span>need the edge</span></div>
-      <p class="hero-note">Every rule is cross-layer coherence-as-data — the same registry the server-side
-        detector evaluates, ruleset ${esc(rulesetVersion)}.</p>
-    </section>
+  // HERO ROOT (mockup 1A): the giant verdict + coherence spine, then the spoof-simulation bar. Re-rendered on
+  // every demo overlay; the persistent behavioural panel and the JS click hooks (delegated on <main>) survive.
+  heroRoot.innerHTML = `
     ${
       demo
         ? `<section class="demo-banner">▶ DEMO — showing how a <strong>${esc(demo.label)}</strong> would score, overlaid on your real signals. <button type="button" class="demo-reset">← back to my browser</button></section>`
         : ""
     }
-    <section class="verdict verdict-${verdict.label}">
-      <div class="label">${esc(verdict.label.toUpperCase())}</div>
-      <div class="score">bot-likelihood ${pct(verdict.score)}</div>
-      <div class="sub">incoherence ${pct(verdict.incoherence)} · ruleset ${esc(rulesetVersion)}</div>
-      <button type="button" class="share-btn" title="copy a text summary of this result">⧉ Copy result</button>
-    </section>
-    <section class="demo-controls">
-      <span class="dc-label">See how a spoofed browser scores:</span>
+    ${verdictHero(verdict, coherence, prediction, fired, rules.length)}
+    <section class="spoofbar">
+      <span class="sb-label">Simulate a spoof →</span>
       <button type="button" class="demo-spoof" data-preset="automation">Automation (webdriver)</button>
       <button type="button" class="demo-spoof" data-preset="canvas">Canvas spoof</button>
       <button type="button" class="demo-spoof" data-preset="worker">Worker divergence</button>
-    </section>
-    ${coherenceBanner(coherence, prediction)}
+      <button type="button" class="share-btn" title="copy a text summary of this result">⧉ Copy result</button>
+    </section>`;
+
+  // DETAIL ROOT: the fired-detections spotlight, then the deep forensic reference (prediction, surfaces,
+  // fingerprint, per-layer scores, full detection tables, not-applicable adjustments, and the edge-only list).
+  detailRoot.innerHTML = `
+    ${firedList(fired, edge.length)}
     ${predictionCard(prediction)}
     ${surfacesSection(surfaces)}
     ${fingerprintTable(fingerprint)}
     <section class="scores"><h2>Per-layer score</h2>${layerScoreHtml}
       <p class="note">Network &amp; reputation are 0 here by design: a browser cannot observe its own TLS/HTTP-2/QUIC/TCP
       fingerprint or its IP reputation — those need Kitsune's edge. ${client.length} of ${rules.length} detections ran in your browser,
-      scored on a per-browser basis (${naRules.length} excluded as not-applicable).</p>
+      scored on a per-browser basis (${naRules.length} excluded as not-applicable). Ruleset ${esc(rulesetVersion)} · ${layerCount} coherence layers.</p>
     </section>
     <section class="results"><h2>Detections evaluated in your browser</h2>${byLayer}</section>
     ${naHtml}
