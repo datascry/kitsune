@@ -5310,3 +5310,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   spans reCAPTCHA v2/v3, Turnstile, hCaptcha (+ checksiteconfig), Arkose, GeeTest, Proton — invisible-score,
   managed, challenge-ladder (image + PoW), each a faithful protocol over the coherence verdict. Vendor track DONE;
   the remaining captcha frontier is external (real third-party probe runs, which stay off-sandbox by policy).
+- **[Wild-captcha styles loop — gate 1/5: PRESS-AND-HOLD (Cloudflare/DataDome/HUMAN)]**
+  (2026-07-12). Kicked off the "build the missing wild-captcha STYLES" loop (cron 16625dba, 1m) from the 2026-07-12
+  gap analysis. Gate 1: press-and-hold (arena/presshold.go) — hold one button for the shown duration, then release,
+  reporting the held-pointer samples. NOVEL server-observed tell bh.arena_hold_robotic (w0.85, experimental,
+  two-pronged): STATIC hold (held-pointer spatial std < 0.5px human-jitter floor when >=4 samples were reported — an
+  injected hold pinned to one coordinate) OR IMPOSSIBLE (claimed hold > the whole server-observed solve window). The
+  single-button hold-DYNAMICS twin of bh.arena_timing_superhuman (multi-target release-precision). Full stack: Go
+  gate + mux + catalog -> detector relay + _join_arena_anomaly + arena_page widget -> registry rule + catalog/docs.
+  GROUNDED LIVE BOTH DIRECTIONS: static hold (tremor 0.000) + instant-long-claim both convict (session label=bot,
+  score 0.85 via bh.arena_hold_robotic); a real drifting hold (tremor 3.26px) that spends the time is silent
+  (FP-safe). Arena go test + detector suite green (520 passed, 95.85%); matrix 191 rules. NEXT: gate 2 = ordered
+  click-in-sequence (GeeTest/NetEase — inter-click cadence tell).
