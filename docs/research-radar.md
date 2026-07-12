@@ -5402,3 +5402,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   ALTCHA, AWS WAF, DataDome, PerimeterX/HUMAN, Prosopo, NetEase, Tencent, Capy). Every prevalent wild style from the
   2026-07-12 gap analysis is now reproduced on owned infra, each grounded live. The captcha-style axis is SATURATED
   in-sandbox; further wild styles would be variations on these mechanics (the tells + protocols generalize).
+- **[Wild-captcha styles loop — DIG DEEPER: trace-the-pattern gate (connect-the-dots / pattern-lock)]**
+  (2026-07-12). The build list was complete, so per the loop's dig-deeper directive: a genuinely-NEW style with a
+  NEW tell family. arena/pattern.go — draw ONE stroke through N waypoints in order (Android-pattern-lock /
+  connect-the-dots), reporting the sampled stroke. NOVEL tell bh.arena_pattern_superhuman (w0.85, experimental,
+  two-pronged): (1) PATH FIDELITY (the new tell) — the mean deviation of the stroke from the ideal polyline; a
+  synthetic interpolated stroke hugs the segments with ~0 deviation (too straight for a human hand), a real hand
+  wobbles (several px). Deviation < patternStraightPx (1.5px) is a machine path. (2) SUPERHUMAN SPEED — age < N *
+  patternPerWaypoint (300ms). This is a DISTINCT tell family (stroke path-fidelity) from the click-precision /
+  hold-tremor / plan-length / relational-speed gates. Full stack wired. GROUNDED LIVE BOTH DIRECTIONS (in-sandbox
+  solver drawing a perfectly-straight interpolated stroke vs a wobbly one): a straight stroke (dev 0.00, 3ms)
+  convicts; a wobbly human stroke (dev 4.76px, 1752ms) is silent (FP-safe); detector join convicts the session
+  (label=bot, score 0.85 via arena_pattern_superhuman). Arena go test + detector suite green (522 passed, 95.49%);
+  matrix 196 rules; arena now 27 gates. The dig-deeper produced a real new rung — the captcha-style axis has room for
+  novel INPUT MODALITIES (continuous stroke here), each with its own server-observed behavioural tell.

@@ -145,6 +145,7 @@ func NewMux(secret []byte) http.Handler {
 	locates := newCaptchaStore()
 	matches := newCaptchaStore()
 	slides := newCaptchaStore()
+	patterns := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -605,6 +606,44 @@ func NewMux(secret []byte) http.Handler {
 			// — a human wanders / backtracks and effectively never hits the exact minimum on a deep scramble.
 			if int(age.Milliseconds()) < nMoves*slidePerMoveMs || (optimal >= slideOptimalFloor && nMoves == optimal) {
 				resp["anomaly"] = "slide_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- TRACE-THE-PATTERN: draw one stroke through N waypoints in order (connect-the-dots / Android-pattern-lock).
+	// NOVEL tell: PATH FIDELITY — a synthetic stroke hugs the ideal polyline with ~0 mean deviation (too straight for
+	// a human hand), plus superhuman speed (through N waypoints faster than a human can move the pointer). ---
+	mux.HandleFunc("GET /arena/pattern", func(w http.ResponseWriter, r *http.Request) {
+		p, answer := MintPattern(ParseLevel(r.URL.Query().Get("level")))
+		patterns.put(p.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(p)
+	})
+
+	mux.HandleFunc("POST /arena/pattern/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID     string       `json:"id"`
+			Stroke [][2]float64 `json:"stroke"` // the drawn stroke: [x,y] points sampled during the drag
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := patterns.take(body.ID) // single-use
+		pass, meanDev, n := CheckPattern(expected, body.Stroke)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "pattern"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "pattern", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			resp["mean_dev_px"] = meanDev
+			// SUPERHUMAN: the stroke hugs the ideal polyline TOO closely (mean deviation below the human hand-tremor
+			// floor — a synthetic straight-segment path), OR the whole draw is faster than a human can move the
+			// pointer through N waypoints (age < N * patternPerWaypoint). A real hand always wobbles + spends time.
+			if meanDev < patternStraightPx || int(age.Milliseconds()) < n*patternPerWaypoint {
+				resp["anomaly"] = "pattern_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
