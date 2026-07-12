@@ -5499,3 +5499,11 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   created -> evaded). Note: the pursuit tell is purely spatial (tracking error), no age check, so the evader needs
   only jittered samples across the t-range. Confirms the continuous-tracking tell is evadable by a coherent solver
   that mimics human pursuit trailing. NEXT: reaction (wait a >120ms human reaction after the go).
+- **[Red-team arena-gate EVASIONS loop — 3/10: reaction defeats bh.arena_reaction_superhuman]**
+  (2026-07-12). Gate 3 evasion (arena-solver-behave reaction mode): wait for the go (the shown pre-cue delay) THEN a
+  ~250ms human hand-eye reaction before clicking, so the server-observed reaction (age - delay) lands above the 120ms
+  physiological floor. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE click (the instant the cue fires -> reaction ~network)
+  trips anomaly:reaction_superhuman (gate ok=false + session label=bot); the HUMANIZED evader passes (ok=true,
+  anomaly=null, session never created -> evaded). Confirms the reaction-latency tell is evadable simply by paying the
+  human reaction cost — but a bot that WAITS the reaction is slower, which is the arena point (the tell taxes speed).
+  NEXT: pattern (wobbly stroke, mean deviation > 1.5px).
