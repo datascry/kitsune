@@ -5507,3 +5507,9 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   anomaly=null, session never created -> evaded). Confirms the reaction-latency tell is evadable simply by paying the
   human reaction cost — but a bot that WAITS the reaction is slower, which is the arena point (the tell taxes speed).
   NEXT: pattern (wobbly stroke, mean deviation > 1.5px).
+- **[Red-team arena-gate EVASIONS loop — 4/10: pattern defeats bh.arena_pattern_superhuman]**
+  (2026-07-12). Gate 4 evasion (arena-solver-behave pattern mode): draw through the dots in order with a WOBBLY
+  stroke (~5px alternating perpendicular offset -> mean deviation well above the 1.5px too-straight floor) AND spend
+  human drawing time (> N*300ms) — defeating BOTH prongs of the tell. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE
+  dead-straight instant stroke trips anomaly:pattern_superhuman (session label=bot); the HUMANIZED evader passes with
+  anomaly=null (session never created -> evaded). NEXT: sequence (human-paced ordered clicks, varied cadence).
