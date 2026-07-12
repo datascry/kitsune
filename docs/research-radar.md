@@ -5322,3 +5322,16 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   score 0.85 via bh.arena_hold_robotic); a real drifting hold (tremor 3.26px) that spends the time is silent
   (FP-safe). Arena go test + detector suite green (520 passed, 95.85%); matrix 191 rules. NEXT: gate 2 = ordered
   click-in-sequence (GeeTest/NetEase — inter-click cadence tell).
+- **[Wild-captcha styles loop — gate 2/5: ORDERED CLICK-IN-SEQUENCE (GeeTest / NetEase Yidun)]**
+  (2026-07-12). Gate 2: click N numbered tiles at shuffled positions in numeric order (arena/sequence.go). The
+  order is PUBLIC (numeric) — the task is the ordered CLICKING (visual-search + motor sequence), so the solve-
+  BEHAVIOUR discriminates, not secrecy. NOVEL tell bh.arena_seqclick_superhuman (w0.85, experimental, two-pronged):
+  (1) SUPERHUMAN SPEED — the SERVER-OBSERVED age (issue->verify) faster than N * seqPerTargetMs (250ms), the human
+  visual-locate+click floor per ordered target (the FP-safe, hardware-independent anchor — it bounds VISUAL-SEARCH
+  time, not device speed); (2) METRONOMIC CADENCE — inter-click interval std < 15ms when per-click times are
+  reported (a fixed-delay clicker). Full stack wired (gate + mux + catalog -> relay + join + widget -> rule +
+  catalog/docs). GROUNDED LIVE BOTH DIRECTIONS: a bot clicking all N at their known coords instantly (solve_ms 0,
+  cadence 0.0) convicts; a human visual-searching at a varied pace (solve_ms 2001 > 1250 floor, cadence 30.6) is
+  silent (FP-safe); the detector join convicts the session (label=bot, score 0.85 via arena_seqclick_superhuman).
+  Arena go test + detector suite green (520 passed, 95.77%); matrix 192 rules. NEXT: gate 3 = point/bounding-box
+  localization (hCaptcha "click the center of X" / AWS WAF — a CV detection/segmentation benchmark).

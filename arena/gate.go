@@ -141,6 +141,7 @@ func NewMux(secret []byte) http.Handler {
 	shells := newCaptchaStore()
 	timings := newCaptchaStore()
 	pressholds := newCaptchaStore()
+	sequences := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -447,6 +448,45 @@ func NewMux(secret []byte) http.Handler {
 			// samples to be judged on tremor (only the impossible prong applies), and a real hand always drifts.
 			if body.HeldMs > int(age.Milliseconds()) || (n >= holdMinSamples && tremor < holdTremorFloor) {
 				resp["anomaly"] = "hold_robotic"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- ORDERED CLICK-IN-SEQUENCE: click N numbered tiles in order (GeeTest icon-order / NetEase Yidun). NOVEL
+	// tell: solving faster than a human can visually locate + click N ordered targets (age < N * a per-target
+	// floor), OR a metronomic inter-click cadence (a fixed-delay clicker collapses the interval std to ~ 0). ---
+	mux.HandleFunc("GET /arena/sequence", func(w http.ResponseWriter, r *http.Request) {
+		s, answer := MintSequence(ParseLevel(r.URL.Query().Get("level")))
+		sequences.put(s.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(s)
+	})
+
+	mux.HandleFunc("POST /arena/sequence/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID     string `json:"id"`
+			Clicks []int  `json:"clicks"` // tile IDs in the order the client clicked them
+			Times  []int  `json:"times"`  // click timestamps (ms from start), one per click
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := sequences.take(body.ID) // single-use
+		pass, n, cadenceStd := CheckSequence(expected, body.Clicks, body.Times)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "sequence"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "sequence", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			resp["cadence_std_ms"] = cadenceStd
+			// SUPERHUMAN: the whole solve is faster than a human can locate+click N ordered targets (age < N *
+			// seqPerTargetMs), OR the inter-click cadence is metronomic (a fixed-delay clicker, std ~ 0). The age
+			// prong is the FP-safe anchor; the cadence prong is judged only when per-click times were reported.
+			if int(age.Milliseconds()) < n*seqPerTargetMs || (len(body.Times) == n && n >= 3 && cadenceStd < seqCadenceFloorMs) {
+				resp["anomaly"] = "seqclick_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

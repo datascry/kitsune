@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **197 rules**: 133 active · 58 experimental · 6 retired; 144 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **198 rules**: 133 active · 59 experimental · 6 retired; 145 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -200,7 +200,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (29)
+### behavioral layer (30)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -213,6 +213,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.arena_queue_bypass` | automation✦ | present | 0.85 | active | Took a virtual-queue protected action BEFORE admission — skipped the wait, a queue-bypass bot |
 | `bh.arena_queue_hoarding` | automation✦ | present | 0.5 | experimental | One session holding many concurrent virtual-queue positions — a position-hoarding scalper |
 | `bh.arena_queue_superhuman` | automation✦ | present | 0.85 | active | Acted on a virtual-queue admission faster than a human can perceive it — position-holding bot |
+| `bh.arena_seqclick_superhuman` | automation✦ | present | 0.85 | experimental | Ordered click-in-sequence gate solved faster than human target-location or at a metronomic cadence |
 | `bh.arena_shell_precomputed` | automation✦ | present | 0.85 | active | Shell-game answered correctly before the shuffle could finish — swap payload precomputed, not watched |
 | `bh.arena_stale_snapshot` | automation✦ | present | 0.85 | active | Acted on a moving target's SECONDS-OLD position — a snapshot-then-slowly-reason LLM agent |
 | `bh.arena_timing_superhuman` | automation✦ | present | 0.85 | active | Motor-timing gate solved with superhuman release precision or impossible claimed hold time |

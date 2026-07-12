@@ -251,7 +251,7 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
     assert client.post("/arena/verify", content=b"{}").status_code == 503
     assert client.get("/arena/rate").status_code == 503  # the rate gate relay is inert too when unconfigured
     # the novel-gate relays (audio/spatial/shell/timing/keymap/presshold) are inert too, GET + POST
-    for gate in ("audio", "spatial", "shell", "timing", "keymap", "presshold"):
+    for gate in ("audio", "spatial", "shell", "timing", "keymap", "presshold", "sequence"):
         assert client.get(f"/arena/{gate}").status_code == 503
         assert client.post(f"/arena/{gate}/verify", content=b"{}").status_code == 503
 
@@ -259,7 +259,7 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
 def test_arena_verify_body_cap(monkeypatch: pytest.MonkeyPatch, client: TestClient) -> None:
     # A configured /verify relay caps the body at 64 KiB (413) before forwarding — the shell/timing/keymap verifies.
     monkeypatch.setattr("kitsune_detector.app.ARENA_URL", "http://arena:8095")
-    for gate in ("shell", "timing", "keymap", "presshold"):
+    for gate in ("shell", "timing", "keymap", "presshold", "sequence"):
         assert client.post(f"/arena/{gate}/verify", content=b"x" * 70000).status_code == 413
 
 
@@ -591,6 +591,19 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
         client.post(
             "/arena/presshold/verify",
             json={"id": "x", "held_ms": 2000, "samples": []},
+            headers={"Cookie": "ks_sid=s"},
+        ).status_code
+        == 200
+    )
+    # the sequence relay's 200-branch: GET + the /verify join (seqclick_superhuman -> arena_seqclick_superhuman)
+    monkeypatch.setattr(
+        "kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "seqclick_superhuman"})
+    )
+    assert client.get("/arena/sequence", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post(
+            "/arena/sequence/verify",
+            json={"id": "x", "clicks": [1, 2, 3], "times": [0, 100, 200]},
             headers={"Cookie": "ks_sid=s"},
         ).status_code
         == 200
