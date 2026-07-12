@@ -149,6 +149,7 @@ func NewMux(secret []byte) http.Handler {
 	reactions := newCaptchaStore()
 	spotdiffs := newCaptchaStore()
 	pursuits := newCaptchaStore()
+	counts := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -760,6 +761,43 @@ func NewMux(secret []byte) http.Handler {
 			// bot that computed the (public) path follows it near-exactly. FP-safe: no human tracks that accurately.
 			if meanErr < pursuitErrorFloor {
 				resp["anomaly"] = "pursuit_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- COUNTING: "how many <colour> circles?" A REUSED tell (solve-speed): a bot CV-counts the shapes instantly,
+	// while a human must scan every shape to count the target colour. A correct answer faster than a human can scan
+	// the whole scene (age < totalShapes * countPerShapeMs) is automation. ---
+	mux.HandleFunc("GET /arena/count", func(w http.ResponseWriter, r *http.Request) {
+		c, answer := MintCount(ParseLevel(r.URL.Query().Get("level")))
+		counts.put(c.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(c)
+	})
+
+	mux.HandleFunc("POST /arena/count/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID    string `json:"id"`
+			Guess int    `json:"guess"` // the client's counted number
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := counts.take(body.ID) // single-use
+		pass, total := CheckCount(expected, body.Guess)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "count"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "count", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			// SUPERHUMAN SCAN: a correct count faster than a human can look at every shape (age < total *
+			// countPerShapeMs). A human counts sequentially; a bot CV-counts instantly. FP-safe: the floor bounds
+			// human visual-scan time (hardware-independent).
+			if int(age.Milliseconds()) < total*countPerShapeMs {
+				resp["anomaly"] = "count_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

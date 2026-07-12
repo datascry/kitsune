@@ -998,6 +998,18 @@ rules:
     last_validated: "2026-07-09"
     source: "Kitsune arena BROKEN/REMAPPED-KEYBOARD gate (arena/keymap.go) — an original input-integrity tell, not a wild-captcha clone. The keys silently produce OTHER characters (a bijection over the key set); the client must discover the hidden mapping by probing and type the target. TWO SERVER-OBSERVED prongs: (1) ZERO EXPLORATION — the client's key trace has NO backspaces. A human discovering a HIDDEN remap must press keys, see the wrong character, and correct (backspace), so any human solve has corrections; a bot that READS the remap from the client payload types the decoded key sequence directly with zero backspaces. (2) TOO FAST — a solve faster than keymapFloorMs (len(target)*600ms), a conservative lower bound on discover-by-probing + type. Either prong -> anomaly:typed_without_exploration; the detector relay (/arena/keymap/verify) joins it to ks_sid so a PASS is CONVICTED on coherence (the arena thesis: the solve-BEHAVIOUR discriminates, not the puzzle). FP-SAFE BY CONSTRUCTION: a hidden remap is undiscoverable without probing and probing produces corrections -> a zero-backspace correct solve means the client knew the mapping in advance (precision 1.0 is load-bearing); the floor sits well under human discover+type time. GROUNDED LIVE 2026-07-09 BOTH DIRECTIONS: an automation that reads the remap and types the decoded keys instantly (backspaces 0) convicts; a human that probes a wrong key, backspaces, types correctly, and spends the discover+type time (solve_ms 3401 > 2400ms floor, backspaces 1) is silent. Convicting (w0.85). See docs/research-radar.md (novel-arena-gates loop)."
 
+  - id: bh.arena_count_superhuman
+    title: Counting gate answered correctly faster than a human can scan the scene
+    layers: [behavioral]
+    reads: [behavioral.arena_count_superhuman]
+    predicate: present
+    weight: 0.85
+    status: experimental
+    category: automation
+    added: "2026-07-12"
+    last_validated: "2026-07-12"
+    source: "Kitsune arena COUNTING gate (arena/count.go) — 'how many <colour> circles?', a prevalent wild captcha style, reproduced as owned infra. M coloured disks are rendered; the client counts the target colour and types the number (the true count is server-side). TELL (a REUSED family — solve-speed, not a new tell): a correct answer faster than a human can visually scan every shape to count the target (SERVER-OBSERVED age < totalShapes * countPerShapeMs, 220ms/shape). A human counts sequentially over the scene; a bot CV-counts (segment by colour, count blobs) instantly. anomaly:count_superhuman -> the detector relay (/arena/count/verify) joins it to ks_sid so a PASS is CONVICTED on coherence. This gate adds a prevalent STYLE, not a new tell family — its tell is the same solve-speed floor as the OCR/image-select gates, applied to a counting task. FP-SAFE BY CONSTRUCTION: the floor bounds human visual-scan time (hardware-independent), well under real human counting; a careful human counting over a couple of seconds passes silently. EXPERIMENTAL (w0.85). GROUNDED LIVE BOTH DIRECTIONS: a CV solver (segment the target colour, count blobs, answer instantly) convicts; a human submitting the correct count after a few seconds is silent."
+
   - id: bh.arena_pursuit_superhuman
     title: Smooth-pursuit tracking held within a few px of the moving target (superhuman tracking accuracy)
     layers: [behavioral]

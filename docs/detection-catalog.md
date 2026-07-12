@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **205 rules**: 133 active · 66 experimental · 6 retired; 152 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **206 rules**: 133 active · 67 experimental · 6 retired; 153 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -200,13 +200,14 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (37)
+### behavioral layer (38)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `bh.trace_replay_within_session` | coherence✦ | present | 0.65 | active | One session replayed an identical pointer trajectory across page loads (record-and-replay bot) |
 | `bh.arena_audio_superhuman` | automation✦ | present | 0.85 | active | Audio CAPTCHA answered correctly faster than its clip plays — ASR automation, not a listener |
 | `bh.arena_captcha_superhuman` | automation✦ | present | 0.85 | active | CAPTCHA answered correctly faster than a human can read and respond — automated solver |
+| `bh.arena_count_superhuman` | automation✦ | present | 0.85 | experimental | Counting gate answered correctly faster than a human can scan the scene |
 | `bh.arena_hold_robotic` | automation✦ | present | 0.85 | experimental | Press-and-hold gate solved with a static (no-tremor) hold or an impossible claimed hold time |
 | `bh.arena_honeypot_filled` | automation✦ | present | 0.9 | active | Filled a hidden honeypot form field — a naive form-filling bot, never a human |
 | `bh.arena_keymap_no_exploration` | automation✦ | present | 0.85 | active | Remapped-keyboard target typed correctly with zero exploration — the mapping was decoded, not discovered |

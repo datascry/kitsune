@@ -266,6 +266,7 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
         "reaction",
         "spotdiff",
         "pursuit",
+        "count",
     ):
         assert client.get(f"/arena/{gate}").status_code == 503
         assert client.post(f"/arena/{gate}/verify", content=b"{}").status_code == 503
@@ -287,6 +288,7 @@ def test_arena_verify_body_cap(monkeypatch: pytest.MonkeyPatch, client: TestClie
         "reaction",
         "spotdiff",
         "pursuit",
+        "count",
     ):
         assert client.post(f"/arena/{gate}/verify", content=b"x" * 70000).status_code == 413
 
@@ -762,6 +764,13 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
             json={"id": "x", "samples": [{"t": 0, "x": 1, "y": 1}]},
             headers={"Cookie": "ks_sid=s"},
         ).status_code
+        == 200
+    )
+    # the count relay's 200-branch: GET + the /verify join (count_superhuman -> arena_count_superhuman)
+    monkeypatch.setattr("kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "count_superhuman"}))
+    assert client.get("/arena/count", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post("/arena/count/verify", json={"id": "x", "guess": 3}, headers={"Cookie": "ks_sid=s"}).status_code
         == 200
     )
 
