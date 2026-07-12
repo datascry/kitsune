@@ -396,6 +396,8 @@ def create_app(
             kind = "arena_timing_superhuman"
         elif anomaly == "typed_without_exploration":
             kind = "arena_keymap_no_exploration"
+        elif anomaly == "hold_robotic":
+            kind = "arena_hold_robotic"
         elif anomaly == "trajectory_exceeds_solve_time":
             kind = "arena_trajectory_forged"
         elif anomaly == "honeypot_filled":
@@ -680,6 +682,37 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)  # typed_without_exploration -> arena_keymap_no_exploration
+        _note_flow(ks_sid)
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.get("/arena/presshold", include_in_schema=False)
+    async def arena_presshold(level: str | None = None) -> Response:
+        # Relay the self-hosted press-and-hold challenge (hold one button for the shown duration); the target rides
+        # in the JSON, the client reports its achieved hold + held-pointer samples to /verify.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/presshold", params={"level": _arena_level(level)})
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/presshold/verify", include_in_schema=False)
+    async def arena_presshold_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 65536:
+            raise HTTPException(status_code=413, detail="answer too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/presshold/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        _join_arena_anomaly(ks_sid, r)  # hold_robotic -> arena_hold_robotic
         _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
