@@ -222,6 +222,15 @@ CHALLENGES: list[dict[str, str]] = [
         "reference against each candidate (not classifying one tile). Solving faster than a human can scan a "
         "reference plus N candidates convicts a bot or VLM.",
     },
+    {
+        "slug": "slide",
+        "label": "Sliding puzzle",
+        "family": "Sliding-tile (KeyCAPTCHA / 15-puzzle)",
+        "mode": "slide",
+        "blurb": "Slide the 8-puzzle into order — click a tile next to the blank to slide it. Solving in the exact "
+        "minimum number of moves (which a human wandering never hits on a deep scramble), or faster than a human can "
+        "slide the tiles, convicts. The plan optimality + timing are the tell.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -643,6 +652,38 @@ ARENA_JS = r"""
     say("Click the arrow that faces the same way as the reference.");
   }
 
+  async function runSlide(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/slide"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var grid=document.createElement("div"); grid.style.cssText="display:grid;grid-template-columns:repeat(3,54px);gap:4px;margin:.4rem 0"; box.appendChild(grid);
+    var status=document.createElement("p"); status.className="note"; box.appendChild(status);
+    var board=c.board.slice(), moves=[], done=false, GOAL=[1,2,3,4,5,6,7,8,0];
+    function blank(){ return board.indexOf(0); }
+    function adj(i,j){ return Math.abs(Math.floor(i/3)-Math.floor(j/3))+Math.abs((i%3)-(j%3))===1; }
+    function solved(){ for(var i=0;i<9;i++){ if(board[i]!==GOAL[i]) return false; } return true; }
+    function render(){
+      grid.innerHTML="";
+      board.forEach(function(v, idx){
+        var b=document.createElement("button"); b.textContent=v===0?"":String(v);
+        b.style.cssText="width:54px;height:54px;font:1.2rem/1 monospace;padding:0"+(v===0?";visibility:hidden":"");
+        b.onclick=function(){ move(idx); }; grid.appendChild(b);
+      });
+    }
+    async function move(idx){
+      if(done || !adj(idx, blank())) return;
+      var bl=blank(); board[bl]=board[idx]; board[idx]=0; moves.push(idx); render();
+      if(solved()){
+        done=true; status.textContent="Verifying…";
+        var v=await (await fetch("/arena/slide/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, moves:moves})})).json();
+        if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Solved in "+v.moves+" moves (optimal "+v.optimal+") — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Slide PASSED."); }
+        else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Not solved (or the challenge expired)."; say("Slide rejected."); }
+        document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+      }
+    }
+    render(); say("Slide the tiles into order — click a tile next to the blank.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -747,6 +788,7 @@ ARENA_JS = r"""
       else if(A.mode==="sequence"){ await runSequence(gv, gn, tok); }
       else if(A.mode==="locate"){ await runLocate(gv, gn, tok); }
       else if(A.mode==="match"){ await runMatch(gv, gn, tok); }
+      else if(A.mode==="slide"){ await runSlide(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

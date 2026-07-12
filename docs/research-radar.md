@@ -5362,3 +5362,17 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   (label=bot, score 0.85 via arena_match_superhuman). Arena go test + detector suite green (520 passed, 95.60%);
   matrix 194 rules. NEXT: gate 5 = drag-into-silhouette / sliding-tile (KeyCAPTCHA / 15-puzzle — multi-segment
   trajectory / plan-length tell), then the vendor wire-replicas.
+- **[Wild-captcha styles loop — gate 5/5: SLIDING-TILE PUZZLE (KeyCAPTCHA / 15-puzzle) — ARENA GATES COMPLETE]**
+  (2026-07-12). Gate 5 (last arena gate): slide the 8-puzzle (3x3) into order (arena/slide.go). Distinct tell
+  bh.arena_slide_superhuman (w0.85, experimental, two-pronged): (1) OPTIMAL PLAN — the move count equals the
+  BFS-computed MINIMUM on a non-trivial scramble (optimal >= 8), which a human wandering/backtracking never hits by
+  hand; (2) SUPERHUMAN SPEED — age < nMoves * 350ms (an instant computed submission). The server solves each scramble
+  optimally via BFS to know the minimum. Full stack wired (gate + mux + catalog -> relay + join + runSlide widget ->
+  rule + catalog/docs). GROUNDED LIVE with a REAL BFS solver (in-sandbox): an optimal plan (16 moves == optimal 16,
+  10ms) convicts; a human wandering (18 moves > 16 optimal, 7213ms) is silent (FP-safe); the detector join convicts
+  the session (label=bot, score 0.85 via arena_slide_superhuman). Arena go test + detector suite green (520 passed,
+  95.52%); matrix 195 rules.
+  ** ALL 5 wild-captcha ARENA GATES built + grounded ** (press-and-hold, ordered click-in-sequence, point
+  localization, orientation match, sliding-tile) — each an owned procedural gate with a server-observed FP-safe tell,
+  grounded both directions with a real solver. NEXT: the vendor wire-replicas (AWS WAF, DataDome, PerimeterX/HUMAN,
+  Friendly Captcha / mCaptcha / ALTCHA, Prosopo Procaptcha, NetEase Yidun / Tencent / Capy) in detector/vendors.py.
