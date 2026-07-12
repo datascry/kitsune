@@ -147,6 +147,7 @@ func NewMux(secret []byte) http.Handler {
 	slides := newCaptchaStore()
 	patterns := newCaptchaStore()
 	reactions := newCaptchaStore()
+	spotdiffs := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -431,8 +432,8 @@ func NewMux(secret []byte) http.Handler {
 	mux.HandleFunc("POST /arena/presshold/verify", func(w http.ResponseWriter, r *http.Request) {
 		var body struct {
 			ID      string       `json:"id"`
-			HeldMs  int          `json:"held_ms"`  // the client's achieved hold duration, ms
-			Samples [][2]float64 `json:"samples"`  // held-pointer [x,y] positions sampled during the hold
+			HeldMs  int          `json:"held_ms"` // the client's achieved hold duration, ms
+			Samples [][2]float64 `json:"samples"` // held-pointer [x,y] positions sampled during the hold
 		}
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
 			http.Error(w, "bad json", http.StatusBadRequest)
@@ -683,6 +684,43 @@ func NewMux(secret []byte) http.Handler {
 			}
 			if ok {
 				resp["token"] = SignCaptchaToken(secret, "reaction", body.ID)
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- SPOT-THE-DIFFERENCE: two near-identical panels differ in K spots; click each difference. NOVEL angle: a bot
+	// PIXEL-DIFFS the panels -> clicks the EXACT centroid of each change (dist ~ 0) and finds all K instantly; a human
+	// eyeballs (approximate) and needs seconds per difference. Tells: pixel-perfect diff clicks OR superhuman scan. ---
+	mux.HandleFunc("GET /arena/spotdiff", func(w http.ResponseWriter, r *http.Request) {
+		s, answer := MintSpotDiff(ParseLevel(r.URL.Query().Get("level")))
+		spotdiffs.put(s.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(s)
+	})
+
+	mux.HandleFunc("POST /arena/spotdiff/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID     string       `json:"id"`
+			Clicks [][2]float64 `json:"clicks"` // the client's difference clicks, in full-image coords
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := spotdiffs.take(body.ID) // single-use
+		pass, allExact, n := CheckSpotDiff(expected, body.Clicks)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "spotdiff"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "spotdiff", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			// PIXEL-PERFECT: every diff click landed on the exact centroid — an image-diff, not a human eyeball. OR
+			// SUPERHUMAN SCAN: found all K differences faster than a human can compare the two panels (age < K *
+			// spotPerDiffMs). FP-safe: a human's clicks scatter and comparing two panels for K diffs takes seconds each.
+			if allExact || int(age.Milliseconds()) < n*spotPerDiffMs {
+				resp["anomaly"] = "spotdiff_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

@@ -264,6 +264,7 @@ def test_arena_unconfigured_returns_503(client: TestClient) -> None:
         "slide",
         "pattern",
         "reaction",
+        "spotdiff",
     ):
         assert client.get(f"/arena/{gate}").status_code == 503
         assert client.post(f"/arena/{gate}/verify", content=b"{}").status_code == 503
@@ -283,6 +284,7 @@ def test_arena_verify_body_cap(monkeypatch: pytest.MonkeyPatch, client: TestClie
         "slide",
         "pattern",
         "reaction",
+        "spotdiff",
     ):
         assert client.post(f"/arena/{gate}/verify", content=b"x" * 70000).status_code == 413
 
@@ -736,6 +738,17 @@ def test_arena_relay_200_forwards_and_anomaly_join(client: TestClient, monkeypat
     )
     assert client.get("/arena/reaction", params={"level": "easy"}).status_code == 200
     assert client.post("/arena/reaction/verify", json={"id": "x"}, headers={"Cookie": "ks_sid=s"}).status_code == 200
+    # the spotdiff relay's 200-branch: GET + the /verify join (spotdiff_superhuman -> arena_spotdiff_superhuman)
+    monkeypatch.setattr(
+        "kitsune_detector.app.httpx.AsyncClient", _bench_async_client({"anomaly": "spotdiff_superhuman"})
+    )
+    assert client.get("/arena/spotdiff", params={"level": "easy"}).status_code == 200
+    assert (
+        client.post(
+            "/arena/spotdiff/verify", json={"id": "x", "clicks": [[1, 1]]}, headers={"Cookie": "ks_sid=s"}
+        ).status_code
+        == 200
+    )
 
 
 def test_arena_queue_hoarding_counts_tickets(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
