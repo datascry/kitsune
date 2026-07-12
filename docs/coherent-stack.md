@@ -187,3 +187,17 @@ So the true terminus has **no in-sandbox hardware wall left.** The GPU caps wall
 the mobile core count is host-bound; and the fleet frontier stays external-data-bound (the buy list in
 `frontier.md`). Minor follow-ups: `navigator.platform` on the iOS morph; a codec-enabled real Chrome for
 `codec_os_incoherent` on non-Linux UAs.
+
+## Arena challenge-behaviour layer — the humanized-solve morph
+
+Beyond fingerprint coherence, the composed stack now also carries the **challenge-behaviour** layer: the
+`arena-solver-behave` evader (`evaders/arena-solver-behave/`) defeats the FP-safe server-observed solve-behaviour
+tells of all 10 behavioural/CV arena gates (`bh.arena_hold_robotic`, `arena_pursuit_superhuman`,
+`arena_reaction_superhuman`, `arena_pattern_superhuman`, `arena_seqclick_superhuman`, `arena_localize_superhuman`,
+`arena_spotdiff_superhuman`, `arena_slide_superhuman`, `arena_match_superhuman`, `arena_count_superhuman`) by solving
+each coherently **and** humanizing the solve (real elapsed + biomechanical jitter/error/wobble/cadence/reaction, and
+non-optimal plans) so the anomaly stays silent — grounded both directions (naive trips, human evades; `KS_GATE=all
+KS_MODE=human` -> 10/10 evaded). This is the arena thesis realized: an FP-safe tell is a **cost/Turing gate**, not a
+bot/human discriminator. The **complete** morph is these humanized solves driven **inside the coherent browser** —
+the gate stays silent AND the session fingerprint coheres, so the session lands at `suspicious` (held off `human`
+only by the container GPU/WebRTC environment floor, the same provisionable in-sandbox wall as the base morph).
