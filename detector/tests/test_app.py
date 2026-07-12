@@ -403,6 +403,32 @@ def test_vendor_proton_challenge(client: TestClient) -> None:
     assert v["success"] is False and set(v) >= {"success", "action", "challenge_ts", "hostname", "error-codes"}
 
 
+def test_vendor_pow_widgets(client: TestClient) -> None:
+    # Non-interactive PoW widgets (Friendly Captcha / mCaptcha / ALTCHA): each returns its own minimal documented
+    # shape, with the pass/fail field mapping the coherence verdict. A bot session fails on coherence.
+    client.post("/ingest", json=_signals_from("session_bot.json"))  # bot-001
+
+    # Friendly Captcha: {success, errors[]}
+    tok = client.get("/vendor/friendly_captcha", cookies={"ks_sid": "bot-001"}).json()["token"]
+    fc = client.post("/vendor/friendly_captcha/siteverify", data={"secret": "s", "response": tok}).json()
+    assert fc["success"] is False and fc["errors"] == ["solution_invalid"] and "challenge_ts" not in fc
+
+    # mCaptcha: {valid}
+    tok = client.get("/vendor/mcaptcha", cookies={"ks_sid": "bot-001"}).json()["token"]
+    mc = client.post("/vendor/mcaptcha/siteverify", data={"secret": "s", "response": tok}).json()
+    assert mc == {"valid": False}
+
+    # ALTCHA: {success, verified}
+    tok = client.get("/vendor/altcha", cookies={"ks_sid": "bot-001"}).json()["token"]
+    al = client.post("/vendor/altcha/siteverify", data={"secret": "s", "response": tok}).json()
+    assert al["success"] is False and al["verified"] is False
+
+    # cross-vendor token reuse is still rejected
+    t2 = client.get("/vendor/mcaptcha", cookies={"ks_sid": "bot-001"}).json()["token"]
+    cross = client.post("/vendor/altcha/siteverify", data={"secret": "s", "response": t2}).json()
+    assert cross.get("error-codes") == ["timeout-or-duplicate"]
+
+
 def test_arena_rate_relay_reaches_upstream(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     # Configured, the rate gate relays to the upstream (502 here since no real arena is up — proves the route
     # is wired and forwards, not a 404/whitelist miss).
