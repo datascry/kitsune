@@ -5335,3 +5335,15 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   silent (FP-safe); the detector join convicts the session (label=bot, score 0.85 via arena_seqclick_superhuman).
   Arena go test + detector suite green (520 passed, 95.77%); matrix 192 rules. NEXT: gate 3 = point/bounding-box
   localization (hCaptcha "click the center of X" / AWS WAF — a CV detection/segmentation benchmark).
+- **[Wild-captcha styles loop — gate 3/5: POINT LOCALIZATION (hCaptcha / AWS WAF)]**
+  (2026-07-12). Gate 3: click the CENTER of the named target among distractors on a free canvas (arena/locate.go).
+  The target centre is rendered into the PNG and kept SERVER-SIDE (not in the payload), so passing needs real
+  visual/CV location — free-canvas localization, not tile-select. NOVEL tell bh.arena_localize_superhuman (w0.85,
+  experimental, two-pronged): (1) PIXEL-PERFECT — a CV solver segments the target and clicks its computed centroid
+  EXACTLY (dist < 2.5px, below human aim variance on a ~20px disk); (2) SUPERHUMAN SPEED — server-observed age <
+  500ms. Full stack (gate + mux + catalog -> relay + join + runLocate widget -> rule + catalog/docs). GROUNDED LIVE
+  with a REAL CV solver (in-sandbox: decoded the PNG, computed the target-colour centroid, clicked it): pixel-perfect
+  centroid click (dist 0.00, solve 53ms) convicts; a human-ish 14.87px offset at 747ms is silent (FP-safe); the
+  detector join convicts the session (label=bot, score 0.85 via arena_localize_superhuman). Arena go test + detector
+  suite green (520 passed, 95.68%); matrix 193 rules. NEXT: gate 4 = semantic match / odd-one-out (Arkose 'faces same
+  way' / hCaptcha 'which go together' — relational/AI-hard reasoning, a VLM benchmark).

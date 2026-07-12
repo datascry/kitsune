@@ -204,6 +204,15 @@ CHALLENGES: list[dict[str, str]] = [
         "ordered targets, or with a metronomic fixed-delay cadence, convicts a bot — the ordering + timing are the "
         "tell, not the puzzle.",
     },
+    {
+        "slug": "locate",
+        "label": "Click the center",
+        "family": "Point localization (hCaptcha / AWS WAF)",
+        "mode": "locate",
+        "blurb": "Click the center of the named target among distractors on a free canvas. A CV solver computes the "
+        "centroid and clicks it pixel-perfect (distance ~0, below human aim variance), or solves faster than a human "
+        "can locate and aim — either convicts. Free-canvas localization, not tile-select.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -579,6 +588,27 @@ ARENA_JS = r"""
     say("Click the numbered tiles in order.");
   }
 
+  async function runLocate(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/locate"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var img=document.createElement("img"); img.src=c.image; img.alt="localization target"; img.draggable=false;
+    img.style.cssText="display:block;border:1px solid var(--line-bright);border-radius:6px;cursor:crosshair;touch-action:none";
+    img.width=c.width; img.height=c.height; box.appendChild(img);
+    var status=document.createElement("p"); status.className="note"; status.textContent="Click the target's center."; box.appendChild(status);
+    var done=false;
+    img.addEventListener("click", async function(e){
+      if(done) return; done=true;
+      var rect=img.getBoundingClientRect();
+      var x=Math.round(e.clientX-rect.left), y=Math.round(e.clientY-rect.top);
+      var v=await (await fetch("/arena/locate/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, x:x, y:y})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Located — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Locate PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Not close enough to the target center — try again."; say("Locate rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    });
+    say("Click the center of the named target.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -681,6 +711,7 @@ ARENA_JS = r"""
       else if(A.mode==="keymap"){ await runKeymap(gv, gn, tok); }
       else if(A.mode==="presshold"){ await runPresshold(gv, gn, tok); }
       else if(A.mode==="sequence"){ await runSequence(gv, gn, tok); }
+      else if(A.mode==="locate"){ await runLocate(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

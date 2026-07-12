@@ -101,6 +101,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/sequence?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "locate",
+				Prompt:   "Click the center of the named target among distractors on a free canvas (hCaptcha 'click the center of X' / AWS WAF family): a CV solver computes the centroid and clicks it pixel-perfect (distance ~ 0, below human aim variance), or solves faster than a human can locate+aim — either convicts on coherence (localize_superhuman).",
+				Endpoint: "GET /arena/locate?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

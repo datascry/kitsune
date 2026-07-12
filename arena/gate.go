@@ -142,6 +142,7 @@ func NewMux(secret []byte) http.Handler {
 	timings := newCaptchaStore()
 	pressholds := newCaptchaStore()
 	sequences := newCaptchaStore()
+	locates := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -487,6 +488,46 @@ func NewMux(secret []byte) http.Handler {
 			// prong is the FP-safe anchor; the cadence prong is judged only when per-click times were reported.
 			if int(age.Milliseconds()) < n*seqPerTargetMs || (len(body.Times) == n && n >= 3 && cadenceStd < seqCadenceFloorMs) {
 				resp["anomaly"] = "seqclick_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- POINT LOCALIZATION: click the CENTER of the named target on a free canvas (hCaptcha "click the center of
+	// X" / AWS WAF). NOVEL tell: a CV solver computes the target centroid and clicks it PIXEL-PERFECT (distance ~ 0,
+	// below any human aim variance), plus superhuman speed. The centre is server-side (a real CV task). ---
+	mux.HandleFunc("GET /arena/locate", func(w http.ResponseWriter, r *http.Request) {
+		l, answer := MintLocate(ParseLevel(r.URL.Query().Get("level")))
+		locates.put(l.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(l)
+	})
+
+	mux.HandleFunc("POST /arena/locate/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID string `json:"id"`
+			X  int    `json:"x"` // click position on the canvas
+			Y  int    `json:"y"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := locates.take(body.ID) // single-use
+		pass, dist := CheckLocate(expected, body.X, body.Y)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "locate"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "locate", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			resp["dist_px"] = dist
+			// SUPERHUMAN: the whole solve faster than a human can locate+aim (age < localizeFloorMs), OR a
+			// PIXEL-PERFECT click on the exact centroid (dist < localizePixelFloor) — a computed CV click, not a
+			// human aim (which spreads tens of px). FP-safe: the acceptance radius (34px) admits human aim while
+			// the pixel floor (2.5px) sits far below it.
+			if int(age.Milliseconds()) < localizeFloorMs || dist < localizePixelFloor {
+				resp["anomaly"] = "localize_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)
