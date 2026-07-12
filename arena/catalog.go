@@ -143,6 +143,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/pursuit?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "count",
+				Prompt:   "How many circles of the named colour are there? (a counting captcha). A bot CV-counts the shapes instantly while a human scans each one — a correct answer faster than a human can scan the whole scene (age < totalShapes * a per-shape floor) convicts on coherence (count_superhuman). Reuses the solve-speed tell.",
+				Endpoint: "GET /arena/count?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

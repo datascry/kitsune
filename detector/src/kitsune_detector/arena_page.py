@@ -268,6 +268,15 @@ CHALLENGES: list[dict[str, str]] = [
         "target with tens of pixels of error, while a bot that computes the dot's path holds the cursor within a few "
         "pixels — superhuman tracking accuracy convicts. A continuous-tracking tell, distinct from a click.",
     },
+    {
+        "slug": "count",
+        "label": "Count the circles",
+        "family": "Counting",
+        "mode": "count",
+        "blurb": "How many circles of the named colour are there? A bot CV-counts the shapes instantly, while a "
+        "human scans each one — a correct answer faster than a human can scan the whole scene convicts. Reuses the "
+        "solve-speed tell.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -821,6 +830,27 @@ ARENA_JS = r"""
     say("Keep your cursor on the moving dot until it stops.");
   }
 
+  async function runCount(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/count"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var img=document.createElement("img"); img.src=c.image; img.alt="count the circles"; img.draggable=false;
+    img.style.cssText="display:block;border:1px solid var(--line-bright);border-radius:6px"; img.width=c.width; img.height=c.height; box.appendChild(img);
+    var row=document.createElement("div"); row.style.cssText="display:flex;gap:.5rem;margin:.4rem 0;align-items:center";
+    var inp=document.createElement("input"); inp.type="number"; inp.min="0"; inp.style.cssText="width:80px;font:1rem monospace;padding:.3rem"; row.appendChild(inp);
+    var sub=document.createElement("button"); sub.textContent="Submit"; sub.style.fontWeight="600"; row.appendChild(sub);
+    box.appendChild(row); inp.focus();
+    var done=false;
+    sub.onclick=async function(){
+      if(done) return; var g=parseInt(inp.value,10); if(isNaN(g)) return; done=true; sub.disabled=true;
+      var v=await (await fetch("/arena/count/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, guess:g})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Counted right — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Count PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong count (or the challenge expired) — try again."; say("Count rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    };
+    say("Count the circles of the named colour and type the number.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -930,6 +960,7 @@ ARENA_JS = r"""
       else if(A.mode==="reaction"){ await runReaction(gv, gn, tok); }
       else if(A.mode==="spotdiff"){ await runSpotdiff(gv, gn, tok); }
       else if(A.mode==="pursuit"){ await runPursuit(gv, gn, tok); }
+      else if(A.mode==="count"){ await runCount(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

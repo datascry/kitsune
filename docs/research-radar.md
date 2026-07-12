@@ -5462,3 +5462,20 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   go test + detector suite green (522 passed, 95.26%); matrix 199 rules; arena now 30 gates. The dig-deeper keeps
   finding new tells at the CONTINUOUS-MOTION surface (pattern=stroke-fidelity, pursuit=tracking-accuracy) — the axis
   is deeper than the discrete-interaction list suggested.
+- **[Wild-captcha styles loop — counting gate + AXIS EARNED-CLOSED]**
+  (2026-07-12). Built the counting gate (arena/count.go — "how many <colour> circles?"), a prevalent wild style,
+  honestly flagged as a REUSED tell (solve-speed): bh.arena_count_superhuman fires when a correct count arrives
+  faster than a human can scan every shape (age < totalShapes * 220ms). GROUNDED LIVE BOTH DIRECTIONS with a real CV
+  counter (in-sandbox: decoded the PNG, connected-component-counted the target colour): the CV counter (correct,
+  43ms) convicts; a human counting over 3s is silent (FP-safe); detector join convicts (label=bot, score 0.85).
+  Detector suite green (522 passed, 95.19%); matrix 200 rules; arena now 31 gates.
+  ** WILD-CAPTCHA-STYLE AXIS EARNED-CLOSED ** (reconciled into docs/frontier.md). Over this loop: 9 new arena gates
+  (press-and-hold, sequence, locate, match, slide, pattern, reaction, spotdiff, pursuit, count — plus the 3 novel
+  gates from the prior loop: shell, timing, keymap) and 16 vendor wire-replicas. Every prevalent wild STYLE is
+  reproduced on owned infra, and every distinct server-observed TELL FAMILY is shipped + grounded: solve-speed,
+  temporal-precision-std, click/point-precision, spatial-fidelity/tremor, plan-length, reaction-latency,
+  continuous-tracking-accuracy, structural. FINDING: remaining styles (maze, drag-sort, counting-variants) REUSE the
+  solve-speed/plan/precision families — no new tell family; new families are external/infra-bound (force+multi-touch
+  = touch hardware; working-memory-span = not human-passable). The captcha-STYLE axis is exhausted in-sandbox; the
+  durable frontier is (and remains) fingerprint + coordination coherence. Next loop firings that only yield
+  reused-tell style variants are the wind-down signal.
