@@ -5491,3 +5491,11 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   evasion signature). Confirms the gate-behaviour layer is evadable by a coherent human-paced solver (as designed);
   the session still convicts on fingerprint coherence unless run in a coherent browser. NEXT: pursuit (defeat
   bh.arena_pursuit_superhuman with human-like tracking error 15-40px).
+- **[Red-team arena-gate EVASIONS loop — 2/10: pursuit defeats bh.arena_pursuit_superhuman]**
+  (2026-07-12). Gate 2 evasion (arena-solver-behave pursuit mode): follow the public deterministic Lissajous path
+  but add human-like tracking ERROR (~14px gaussian std -> mean ~18px, above the 8px superhuman floor, below the
+  55px pass-max). GROUNDED LIVE BOTH DIRECTIONS: the NAIVE follow (cursor = computed target exactly, mean error ~0)
+  trips anomaly:pursuit_superhuman (session label=bot); the HUMANIZED evader passes with anomaly=null (session never
+  created -> evaded). Note: the pursuit tell is purely spatial (tracking error), no age check, so the evader needs
+  only jittered samples across the t-range. Confirms the continuous-tracking tell is evadable by a coherent solver
+  that mimics human pursuit trailing. NEXT: reaction (wait a >120ms human reaction after the go).
