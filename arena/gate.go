@@ -148,6 +148,7 @@ func NewMux(secret []byte) http.Handler {
 	patterns := newCaptchaStore()
 	reactions := newCaptchaStore()
 	spotdiffs := newCaptchaStore()
+	pursuits := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -721,6 +722,44 @@ func NewMux(secret []byte) http.Handler {
 			// spotPerDiffMs). FP-safe: a human's clicks scatter and comparing two panels for K diffs takes seconds each.
 			if allExact || int(age.Milliseconds()) < n*spotPerDiffMs {
 				resp["anomaly"] = "spotdiff_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- SMOOTH-PURSUIT TRACKING: keep the cursor on a continuously moving dot. NOVEL tell: the mean tracking error
+	// against the deterministic path — human smooth pursuit trails with tens of px (visuomotor lag + jitter), a bot
+	// that computes the path holds within a few px (superhuman accuracy). Distinct from `track` (stale-snapshot). ---
+	mux.HandleFunc("GET /arena/pursuit", func(w http.ResponseWriter, r *http.Request) {
+		p, answer := MintPursuit(ParseLevel(r.URL.Query().Get("level")))
+		pursuits.put(p.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(p)
+	})
+
+	mux.HandleFunc("POST /arena/pursuit/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID      string          `json:"id"`
+			Samples []PursuitSample `json:"samples"` // cursor readings: {t ms since start, x, y}
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, _, known := pursuits.take(body.ID) // single-use
+		pass, meanErr, n := CheckPursuit(expected, body.Samples)
+		ok := known && pass
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "pursuit"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "pursuit", body.ID)
+			resp["mean_err_px"] = meanErr
+			resp["samples"] = n
+			// SUPERHUMAN: the cursor held within a few px of the moving dot for the whole run (mean error below the
+			// human smooth-pursuit floor). A human's eye-hand pursuit trails the target with tens of px of error; a
+			// bot that computed the (public) path follows it near-exactly. FP-safe: no human tracks that accurately.
+			if meanErr < pursuitErrorFloor {
+				resp["anomaly"] = "pursuit_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

@@ -137,6 +137,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/spotdiff?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "pursuit",
+				Prompt:   "Keep the cursor on the moving dot for a few seconds (smooth-pursuit tracking): human pursuit trails a moving target with tens of px of error (visuomotor lag + jitter), while a bot that computes the deterministic path holds the cursor within a few px — superhuman tracking accuracy convicts on coherence (pursuit_superhuman).",
+				Endpoint: "GET /arena/pursuit?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

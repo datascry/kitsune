@@ -412,6 +412,8 @@ def create_app(
             kind = "arena_reaction_superhuman"
         elif anomaly == "spotdiff_superhuman":
             kind = "arena_spotdiff_superhuman"
+        elif anomaly == "pursuit_superhuman":
+            kind = "arena_pursuit_superhuman"
         elif anomaly == "trajectory_exceeds_solve_time":
             kind = "arena_trajectory_forged"
         elif anomaly == "honeypot_filled":
@@ -944,6 +946,37 @@ def create_app(
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
         _join_arena_anomaly(ks_sid, r)  # spotdiff_superhuman -> arena_spotdiff_superhuman
+        _note_flow(ks_sid)
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.get("/arena/pursuit", include_in_schema=False)
+    async def arena_pursuit(level: str | None = None) -> Response:
+        # Relay the self-hosted smooth-pursuit challenge (keep the cursor on the moving dot); the deterministic path
+        # rides in the JSON (the client animates the dot from it), the client reports its cursor samples to /verify.
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.get(f"{ARENA_URL}/arena/pursuit", params={"level": _arena_level(level)})
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        return Response(content=r.content, media_type="application/json", status_code=r.status_code)
+
+    @app.post("/arena/pursuit/verify", include_in_schema=False)
+    async def arena_pursuit_verify(request: Request, ks_sid: str | None = Cookie(default=None)) -> Response:
+        if not ARENA_URL:
+            raise HTTPException(status_code=503, detail="arena gate not configured")
+        body = await request.body()
+        if len(body) > 65536:
+            raise HTTPException(status_code=413, detail="answer too large")
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                r = await client.post(
+                    f"{ARENA_URL}/arena/pursuit/verify", content=body, headers={"content-type": "application/json"}
+                )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail="arena gate unreachable") from exc
+        _join_arena_anomaly(ks_sid, r)  # pursuit_superhuman -> arena_pursuit_superhuman
         _note_flow(ks_sid)
         return Response(content=r.content, media_type="application/json", status_code=r.status_code)
 
