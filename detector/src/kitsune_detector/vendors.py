@@ -59,6 +59,15 @@ PROFILES: dict[str, VendorProfile] = {
     # Proton CAPTCHA (docs): Proton's self-hosted privacy captcha — a proof-of-work challenge plus an interactive
     # puzzle, verify is pass/fail. PoW-first, so the escalation gate is the owned PoW challenge (not an image grid).
     "proton": VendorProfile("proton", "challenge", 300, 0.5, scored=False, inverted=False, challenge_gate="pow"),
+    # --- Non-interactive PROOF-OF-WORK widgets: every visitor solves a PoW puzzle client-side; siteverify validates
+    # the solution. Pure cost gates (no bot/human discrimination in the protocol itself) — the lab maps the coherence
+    # verdict onto each family's documented response shape, which is the thesis: PoW is a cost gate, coherence convicts.
+    # Friendly Captcha (docs): {success, errors[]} solution verify, non-interactive PoW.
+    "friendly_captcha": VendorProfile("friendly_captcha", "managed", 300, 0.5, scored=False, inverted=False),
+    # mCaptcha (docs): self-hosted PoW; verify returns {valid}.
+    "mcaptcha": VendorProfile("mcaptcha", "managed", 300, 0.5, scored=False, inverted=False),
+    # ALTCHA (docs): self-hosted GDPR-friendly PoW; verify returns {success, verified}.
+    "altcha": VendorProfile("altcha", "managed", 300, 0.5, scored=False, inverted=False),
 }
 
 # challenge_gate slugs that are NOT /arena/captcha image kinds resolve to their own owned gate endpoint.
@@ -108,6 +117,14 @@ def shape_siteverify(
 ) -> dict[str, object]:
     """Build the family-specific siteverify JSON from a verdict — the documented field shape, vendor-neutral."""
     passed = kitsune_score < profile.threshold  # coherent (not a bot) on Kitsune's scale
+    # Non-interactive PoW widgets return their own minimal shapes (no challenge_ts/hostname) — the verdict maps onto
+    # the family's documented pass/fail field. (The RED point stands: a PoW-solving bot still fails on coherence.)
+    if profile.name == "friendly_captcha":
+        return {"success": passed, "errors": [] if passed else ["solution_invalid"]}
+    if profile.name == "mcaptcha":
+        return {"valid": passed}
+    if profile.name == "altcha":
+        return {"success": passed, "verified": passed}
     out: dict[str, object] = {"success": True, "challenge_ts": challenge_ts, "hostname": hostname, "error-codes": []}
     if profile.name == "recaptcha_v3":
         # v3: success = valid token (the site gates on the SCORE, not on success). score 1.0 = human.

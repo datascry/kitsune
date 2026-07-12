@@ -5376,3 +5376,14 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   localization, orientation match, sliding-tile) — each an owned procedural gate with a server-observed FP-safe tell,
   grounded both directions with a real solver. NEXT: the vendor wire-replicas (AWS WAF, DataDome, PerimeterX/HUMAN,
   Friendly Captcha / mCaptcha / ALTCHA, Prosopo Procaptcha, NetEase Yidun / Tencent / Capy) in detector/vendors.py.
+- **[Wild-captcha styles loop — vendor replicas 1/3: PoW widgets (Friendly Captcha / mCaptcha / ALTCHA)]**
+  (2026-07-12). With all 5 arena gates done, the loop moved to the vendor wire-replicas. First group: the
+  non-interactive PROOF-OF-WORK widgets — Friendly Captcha, mCaptcha, ALTCHA — added to detector/vendors.py as
+  managed profiles, each returning its own MINIMAL documented siteverify shape (no reCAPTCHA-style challenge_ts/
+  hostname): friendly_captcha {success, errors[]}; mcaptcha {valid}; altcha {success, verified}. These are pure cost
+  gates (the protocol does no bot/human discrimination) — the lab maps the coherence verdict onto the pass/fail
+  field, which IS the thesis: PoW is a cost gate, coherence convicts. GROUNDED LIVE (bot session): friendly_captcha
+  {success:false, errors:[solution_invalid]}; mcaptcha {valid:false}; altcha {success:false, verified:false};
+  cross-vendor token reuse rejected. Detector suite green (521 passed, 95.54%). NEXT: the challenge-mode vendors that
+  compose with the new gates — PerimeterX/HUMAN -> presshold, NetEase Yidun -> sequence, DataDome/Tencent/Capy ->
+  slider, AWS WAF -> image-select, Prosopo -> image-select.
