@@ -91,10 +91,40 @@ def reaction(mode: str) -> dict:
     return post("/arena/reaction/verify", {"id": c["id"]})
 
 
+# --- (4) TRACE-THE-PATTERN — tell bh.arena_pattern_superhuman (mean stroke deviation < 1.5px OR draw faster than
+# N*300ms). Evasion: draw through the dots in order with a WOBBLY stroke (perpendicular offset ~5px -> mean deviation
+# well above 1.5px) AND spend human drawing time (> N*300ms). Naive: a dead-straight stroke drawn instantly.
+def pattern(mode: str) -> dict:
+    c = get(f"/arena/pattern?level={LEVEL}")
+    dots = c["dots"]
+    n = len(dots)
+    wob = 0.0 if mode == "naive" else 5.0
+    stroke: list[list[float]] = []
+    sign = 1.0
+    for i in range(n - 1):
+        ax, ay = dots[i]["x"], dots[i]["y"]
+        bx, by = dots[i + 1]["x"], dots[i + 1]["y"]
+        dx, dy = bx - ax, by - ay
+        length = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / length, dx / length  # unit normal
+        d = 0.0
+        while d < length:
+            t = d / length
+            w = wob * sign
+            sign = -sign  # alternate the wobble so a real hand's tremor spreads off the ideal line
+            stroke.append([ax + t * dx + w * nx, ay + t * dy + w * ny])
+            d += 4
+    stroke.append([float(dots[-1]["x"]), float(dots[-1]["y"])])
+    if mode == "human":
+        time.sleep(n * 0.35)  # human drawing pace (> N * 300ms)
+    return post("/arena/pattern/verify", {"id": c["id"], "stroke": stroke})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
     "reaction": reaction,
+    "pattern": pattern,
 }
 
 
