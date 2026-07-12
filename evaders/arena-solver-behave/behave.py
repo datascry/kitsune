@@ -17,6 +17,7 @@ import struct
 import time
 import urllib.request
 import zlib
+from collections import deque
 
 BASE = os.environ.get("KS_BASE", "http://arena:8095")
 SID = os.environ.get("KS_SID", "")
@@ -266,6 +267,68 @@ def spotdiff(mode: str) -> dict:
     return post("/arena/spotdiff/verify", {"id": c["id"], "clicks": clicks})
 
 
+# --- (8) SLIDING-TILE (8-puzzle) — tell bh.arena_slide_superhuman (move count == the BFS minimum on a >=8-move
+# scramble, OR age < nMoves*350ms). Evasion: BFS-solve for the optimal path, then PREPEND a wasted round-trip (slide
+# a neighbour out and back) so the move count exceeds the minimum, and spend > nMoves*350ms. Naive: the optimal path
+# submitted instantly.
+_SLIDE_GOAL = (1, 2, 3, 4, 5, 6, 7, 8, 0)
+
+
+def _slide_nbrs(p: int) -> list[int]:
+    r, c = divmod(p, 3)
+    out = []
+    if r > 0:
+        out.append(p - 3)
+    if r < 2:
+        out.append(p + 3)
+    if c > 0:
+        out.append(p - 1)
+    if c < 2:
+        out.append(p + 1)
+    return out
+
+
+def _slide_bfs(start: list[int]) -> list[int]:
+    s = tuple(start)
+    if s == _SLIDE_GOAL:
+        return []
+    seen: dict = {s: None}
+    q = deque([s])
+    while q:
+        cur = q.popleft()
+        bl = cur.index(0)
+        for n in _slide_nbrs(bl):
+            nx = list(cur)
+            nx[bl], nx[n] = nx[n], nx[bl]
+            t = tuple(nx)
+            if t in seen:
+                continue
+            seen[t] = (cur, n)
+            if t == _SLIDE_GOAL:
+                path, node = [], t
+                while seen[node] is not None:
+                    prev, mv = seen[node]
+                    path.append(mv)
+                    node = prev
+                return path[::-1]
+            q.append(t)
+    return []
+
+
+def slide(mode: str) -> dict:
+    c = get(f"/arena/slide?level={LEVEL}")
+    board = c["board"]
+    opt = _slide_bfs(board)
+    if mode == "naive":
+        moves = opt  # the exact minimum, submitted instantly
+    else:
+        bl = board.index(0)
+        n = _slide_nbrs(bl)[0]
+        moves = [n, bl] + opt  # a wasted round-trip -> move count exceeds the optimum
+        time.sleep(len(moves) * 0.4)  # human sliding pace (> nMoves * 350ms)
+    return post("/arena/slide/verify", {"id": c["id"], "moves": moves})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
@@ -274,6 +337,7 @@ GATES = {
     "sequence": sequence,
     "locate": locate,
     "spotdiff": spotdiff,
+    "slide": slide,
 }
 
 

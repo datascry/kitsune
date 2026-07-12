@@ -5533,3 +5533,9 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   pixel-perfect floor, within the 24px hit radius) over > K*1200ms. GROUNDED LIVE BOTH DIRECTIONS (repeated x3/x2 for
   robustness): the NAIVE exact-centroid instant clicks reliably trip anomaly:spotdiff_superhuman (session label=bot);
   the HUMANIZED evader reliably passes with anomaly=null (evaded). NEXT: slide (BFS-solve + extra non-optimal moves).
+- **[Red-team arena-gate EVASIONS loop — 8/10: slide defeats bh.arena_slide_superhuman]**
+  (2026-07-12). Gate 8 evasion (arena-solver-behave slide mode): BFS-solve the 8-puzzle for the optimal path, then
+  PREPEND a wasted round-trip (slide a neighbour out and back) so the move count EXCEEDS the minimum (defeats the
+  optimal-plan prong), and spend > nMoves*350ms (defeats the speed prong). GROUNDED LIVE BOTH DIRECTIONS: the NAIVE
+  optimal path submitted instantly trips anomaly:slide_superhuman (session label=bot); the HUMANIZED evader (optimal
+  + 2 wasted moves, paced) passes with anomaly=null (evaded). NEXT: match (orientation solve, paced > (N+1)*250ms).
