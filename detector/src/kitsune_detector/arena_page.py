@@ -250,6 +250,15 @@ CHALLENGES: list[dict[str, str]] = [
         "convicts — a bot reacts faster than any human hand-eye loop. Server-observed, unforgeable in the too-fast "
         "direction.",
     },
+    {
+        "slug": "spotdiff",
+        "label": "Spot the difference",
+        "family": "Spot-the-difference",
+        "mode": "spotdiff",
+        "blurb": "The two panels differ in a few spots — click each difference on the right panel. A bot pixel-diffs "
+        "the panels and clicks the exact centroid of each change (pixel-perfect) and finds them all instantly, while "
+        "a human eyeballs and needs seconds per difference — either convicts.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -748,6 +757,32 @@ ARENA_JS = r"""
     say("Wait for the box to turn green, then click it as fast as you can.");
   }
 
+  async function runSpotdiff(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/spotdiff"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt+" ("+c.count+" to find)"; box.appendChild(p);
+    var img=document.createElement("img"); img.src=c.image; img.alt="spot the difference"; img.draggable=false;
+    img.style.cssText="display:block;border:1px solid var(--line-bright);border-radius:6px;cursor:crosshair;touch-action:none";
+    img.width=c.width; img.height=c.height; box.appendChild(img);
+    var status=document.createElement("p"); status.className="note"; box.appendChild(status);
+    var clicks=[], done=false;
+    function upd(){ status.textContent="found "+clicks.length+"/"+c.count; }
+    upd();
+    img.addEventListener("click", async function(e){
+      if(done) return;
+      var rect=img.getBoundingClientRect();
+      clicks.push([Math.round(e.clientX-rect.left), Math.round(e.clientY-rect.top)]); upd();
+      if(clicks.length>=c.count){
+        done=true; status.textContent="Verifying…";
+        var v=await (await fetch("/arena/spotdiff/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, clicks:clicks})})).json();
+        if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Found the differences — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Spot-the-difference PASSED."); }
+        else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Those are not all the differences (or the challenge expired)."; say("Spot-the-difference rejected."); }
+        document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+      }
+    });
+    say("Click each difference between the two panels.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -855,6 +890,7 @@ ARENA_JS = r"""
       else if(A.mode==="slide"){ await runSlide(gv, gn, tok); }
       else if(A.mode==="pattern"){ await runPattern(gv, gn, tok); }
       else if(A.mode==="reaction"){ await runReaction(gv, gn, tok); }
+      else if(A.mode==="spotdiff"){ await runSpotdiff(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

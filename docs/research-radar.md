@@ -5431,3 +5431,19 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   matrix 197 rules; arena now 28 gates. The dig-deeper thesis holds: novel INPUT MODALITIES + TIMING SURFACES (stroke
   fidelity, reaction latency) each yield a fresh server-observed behavioural tell; the axis has more depth than the
   original 5-style list.
+- **[Wild-captcha styles loop — DIG DEEPER 3: spot-the-difference gate (prevalent style, reused tell)]**
+  (2026-07-12). Third dig-deeper rung. Honest framing: the distinct server-observed TELL FAMILIES are now saturated
+  (solve-speed, temporal-precision-std, click-precision, spatial-jitter/fidelity, plan-length, reaction-latency,
+  structural). spot-the-difference is a genuinely PREVALENT wild STYLE not yet built, so it's a valid rung — but its
+  tell REUSES the click-precision + solve-speed families (applied to a comparison task), not a new family.
+  arena/spotdiff.go — two near-identical panels of coloured disks, K recoloured on the right; click each difference.
+  The K centres are server-side. Tell bh.arena_spotdiff_superhuman (w0.85): PIXEL-PERFECT — a bot pixel-diffs the
+  panels and clicks the exact centroid of each change (dist < 3px) — OR SUPERHUMAN SCAN (age < K * 1200ms). GROUNDED
+  LIVE BOTH DIRECTIONS with a REAL image-diff solver (in-sandbox: decoded the PNG, diffed left vs right panel,
+  clustered the changed pixels into centroids, clicked them): the image-diff solver (pixel-perfect, 43ms, found all
+  3) convicts; a human clicking approximately over ~4s is silent (FP-safe); detector join convicts (label=bot, score
+  0.85 via arena_spotdiff_superhuman). Arena go test + detector suite green (522 passed, 95.34%); matrix 198 rules;
+  arena now 29 gates. ASSESSMENT: the STYLE axis still has entries (spot-diff, and further ones like drag-sort, maze,
+  physics-drop would reuse plan/trajectory/precision tells) but the TELL axis is saturated. One or two more prevalent
+  styles remain groundable; after that the wild-captcha axis is exhausted in-sandbox and the frontier returns to
+  fingerprint/coordination coherence (the durable signal).

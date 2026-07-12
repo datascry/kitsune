@@ -131,6 +131,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/reaction?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "spotdiff",
+				Prompt:   "Two near-identical panels differ in K spots — click each difference (a prevalent wild style): a bot pixel-diffs the panels and clicks the exact centroid of each change (pixel-perfect) and finds all K instantly, while a human eyeballs and needs seconds per difference — either convicts on coherence (spotdiff_superhuman).",
+				Endpoint: "GET /arena/spotdiff?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }
