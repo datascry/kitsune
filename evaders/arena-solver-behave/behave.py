@@ -79,9 +79,22 @@ def pursuit(mode: str) -> dict:
     return post("/arena/pursuit/verify", {"id": c["id"], "samples": samples})
 
 
+# --- (3) REACTION-TIME — tell bh.arena_reaction_superhuman (reaction = age - delay below the 120ms floor, or
+# negative/anticipation). Evasion: wait for the go (the shown delay) THEN a ~250ms human reaction before clicking,
+# so the server-observed reaction lands above the physiological floor. Naive: click the instant the cue fires
+# (reaction ~ network, superhuman).
+def reaction(mode: str) -> dict:
+    c = get(f"/arena/reaction?level={LEVEL}")
+    delay = c["delay_ms"]
+    extra = 0.0 if mode == "naive" else 0.25  # a real hand-eye reaction (~250ms) after the box turns green
+    time.sleep(delay / 1000.0 + extra)
+    return post("/arena/reaction/verify", {"id": c["id"]})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
+    "reaction": reaction,
 }
 
 
