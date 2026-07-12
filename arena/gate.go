@@ -143,6 +143,7 @@ func NewMux(secret []byte) http.Handler {
 	pressholds := newCaptchaStore()
 	sequences := newCaptchaStore()
 	locates := newCaptchaStore()
+	matches := newCaptchaStore()
 	keymaps := newCaptchaStore()
 	queues := newQueueStore()
 	tracks := newTrackStore()
@@ -528,6 +529,42 @@ func NewMux(secret []byte) http.Handler {
 			// the pixel floor (2.5px) sits far below it.
 			if int(age.Milliseconds()) < localizeFloorMs || dist < localizePixelFloor {
 				resp["anomaly"] = "localize_superhuman"
+			}
+		}
+		_ = json.NewEncoder(w).Encode(resp)
+	})
+
+	// --- ORIENTATION MATCH: click the candidate arrow FACING THE SAME WAY as the reference (Arkose "faces the same
+	// way" / hCaptcha "which go together"). A RELATIONAL task — compare the reference against each candidate. NOVEL
+	// tell: solving faster than a human can scan a reference + N candidates (age < (N+1) * a per-tile floor). ---
+	mux.HandleFunc("GET /arena/match", func(w http.ResponseWriter, r *http.Request) {
+		m, answer := MintMatch(ParseLevel(r.URL.Query().Get("level")))
+		matches.put(m.ID, answer)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(m)
+	})
+
+	mux.HandleFunc("POST /arena/match/verify", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID      string `json:"id"`
+			Clicked int    `json:"clicked"` // the candidate index the client clicked
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&body); err != nil {
+			http.Error(w, "bad json", http.StatusBadRequest)
+			return
+		}
+		expected, age, known := matches.take(body.ID) // single-use
+		ok := known && CheckMatch(expected, body.Clicked)
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{"ok": ok, "kind": "match"}
+		if ok {
+			resp["token"] = SignCaptchaToken(secret, "match", body.ID)
+			resp["solve_ms"] = age.Milliseconds()
+			// SUPERHUMAN: the whole solve (SERVER-OBSERVED age) faster than a human can scan the reference + N
+			// candidates to compare orientation ((N+1) * matchPerTileMs). A bot/VLM classifies all tiles and answers
+			// instantly. FP-safe: the floor bounds human relational-scan time (hardware-independent).
+			if f := matchFloorFor(expected); f > 0 && int(age.Milliseconds()) < f {
+				resp["anomaly"] = "match_superhuman"
 			}
 		}
 		_ = json.NewEncoder(w).Encode(resp)

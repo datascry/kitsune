@@ -213,6 +213,15 @@ CHALLENGES: list[dict[str, str]] = [
         "centroid and clicks it pixel-perfect (distance ~0, below human aim variance), or solves faster than a human "
         "can locate and aim — either convicts. Free-canvas localization, not tile-select.",
     },
+    {
+        "slug": "match",
+        "label": "Faces the same way",
+        "family": "Orientation match / odd-one-out (Arkose / hCaptcha)",
+        "mode": "match",
+        "blurb": "Click the arrow that points the same way as the reference — a relational task, comparing the "
+        "reference against each candidate (not classifying one tile). Solving faster than a human can scan a "
+        "reference plus N candidates convicts a bot or VLM.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -609,6 +618,31 @@ ARENA_JS = r"""
     say("Click the center of the named target.");
   }
 
+  async function runMatch(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/match"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var refWrap=document.createElement("div"); refWrap.className="note"; refWrap.style.cssText="display:flex;align-items:center;gap:.5rem;margin:.3rem 0";
+    var refLbl=document.createElement("span"); refLbl.textContent="Reference:"; refWrap.appendChild(refLbl);
+    var refImg=document.createElement("img"); refImg.src=c.reference; refImg.alt="reference"; refImg.width=48; refImg.height=48; refImg.style.cssText="border:2px solid var(--line-bright);border-radius:6px"; refWrap.appendChild(refImg);
+    box.appendChild(refWrap);
+    var grid=document.createElement("div"); grid.style.cssText="display:flex;flex-wrap:wrap;gap:6px;margin:.4rem 0;max-width:340px"; box.appendChild(grid);
+    var done=false;
+    c.tiles.forEach(function(t){
+      var b=document.createElement("button"); b.style.cssText="padding:2px;border:1px solid var(--line-bright);border-radius:6px;background:var(--panel);cursor:pointer";
+      var im=document.createElement("img"); im.src=t.image; im.alt="candidate"; im.width=56; im.height=56; im.draggable=false; b.appendChild(im);
+      b.onclick=async function(){
+        if(done) return; done=true;
+        var v=await (await fetch("/arena/match/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, clicked:t.index})})).json();
+        if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Matched — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Match PASSED."); }
+        else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="That one faces a different way (or the challenge expired) — try again."; say("Match rejected."); }
+        document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+      };
+      grid.appendChild(b);
+    });
+    say("Click the arrow that faces the same way as the reference.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -712,6 +746,7 @@ ARENA_JS = r"""
       else if(A.mode==="presshold"){ await runPresshold(gv, gn, tok); }
       else if(A.mode==="sequence"){ await runSequence(gv, gn, tok); }
       else if(A.mode==="locate"){ await runLocate(gv, gn, tok); }
+      else if(A.mode==="match"){ await runMatch(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

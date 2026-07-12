@@ -107,6 +107,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/locate?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "match",
+				Prompt:   "Click the arrow that points the same way as the reference (Arkose 'faces the same way' / hCaptcha 'which go together' family): a relational task — compare the reference against each candidate. Solving faster than a human can scan a reference + N candidates convicts on coherence (match_superhuman).",
+				Endpoint: "GET /arena/match?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }
