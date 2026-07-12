@@ -5519,3 +5519,10 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   15ms) — defeating both the speed and metronomic-cadence prongs. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE instant
   fixed-cadence clicks trip anomaly:seqclick_superhuman (session label=bot); the HUMANIZED evader passes with
   anomaly=null (evaded). NEXT: locate (click off-centroid > 2.5px, spending > 500ms).
+- **[Red-team arena-gate EVASIONS loop — 6/10: locate defeats bh.arena_localize_superhuman]**
+  (2026-07-12). Gate 6 evasion (arena-solver-behave locate mode): CV-find the target-colour centroid (added a
+  stdlib PNG decoder + connected-region centroid — the shared image helpers the remaining CV gates reuse), then click
+  NEAR it but off by ~6-14px (dist > the 2.5px pixel-perfect floor, within the 34px acceptance radius) and spend >
+  500ms. GROUNDED LIVE BOTH DIRECTIONS: the NAIVE exact-centroid instant click trips anomaly:localize_superhuman
+  (session label=bot); the HUMANIZED evader passes with anomaly=null (evaded). NEXT: spotdiff (off-centroid diff
+  clicks over > K*1200ms).
