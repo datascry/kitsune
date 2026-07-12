@@ -5547,3 +5547,11 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   the density-filtered apex is 100% (6/6 across easy/medium/hard). GROUNDED LIVE BOTH DIRECTIONS: the NAIVE correct
   instant answer trips anomaly:match_superhuman (session label=bot); the HUMANIZED evader (same correct answer, paced)
   passes with anomaly=null (evaded). NEXT: count (blob-count + paced) — the last gate.
+- **[Red-team arena-gate EVASIONS loop — 10/10: count defeats bh.arena_count_superhuman]**
+  (2026-07-12). Gate 10 (last) evasion (arena-solver-behave count mode): connected-component-count the target-colour
+  disks (BFS flood-fill), submit the correct count, but spend > totalShapes*220ms (~3s). GROUNDED LIVE BOTH
+  DIRECTIONS: the NAIVE correct instant count trips anomaly:count_superhuman (session label=bot); the HUMANIZED evader
+  (same count, paced) passes with anomaly=null (evaded). ** ALL 10 arena-gate EVASIONS built + grounded ** in one
+  stdlib evader (arena-solver-behave/behave.py, mode per gate). Each gate's FP-safe tell is defeated by a coherent
+  human-paced solve — confirming the arena thesis from the red side: the gate is a cost/Turing test, not a bot/human
+  discriminator; the SESSION still convicts on fingerprint coherence unless run in a coherent browser.

@@ -368,6 +368,52 @@ def match(mode: str) -> dict:
     return post("/arena/match/verify", {"id": c["id"], "clicked": best})
 
 
+# --- (10) COUNTING — tell bh.arena_count_superhuman (a correct count faster than totalShapes*220ms). Evasion:
+# connected-component-count the target-colour disks, submit the correct count, but spend > totalShapes*220ms (max
+# ~2.6s on the 12-shape hard level). Naive: the same correct count submitted instantly.
+COUNT_COLORS = {
+    "red": (200, 50, 50),
+    "green": (50, 160, 70),
+    "blue": (55, 95, 210),
+    "orange": (225, 145, 35),
+    "purple": (150, 65, 190),
+}
+
+
+def _count_blobs(datauri: str, rgb: tuple[int, int, int]) -> int:
+    w, h, bpp, px = _decode_png(datauri)
+    seen = bytearray(w * h)
+
+    def near(x: int, y: int) -> bool:
+        i = (y * w + x) * bpp
+        return abs(px[i] - rgb[0]) < 30 and abs(px[i + 1] - rgb[1]) < 30 and abs(px[i + 2] - rgb[2]) < 30
+
+    blobs = 0
+    for y in range(h):
+        for x in range(w):
+            if near(x, y) and not seen[y * w + x]:
+                blobs += 1
+                seen[y * w + x] = 1
+                q = deque([(x, y)])
+                while q:
+                    cx, cy = q.popleft()
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        nx, ny = cx + dx, cy + dy
+                        if 0 <= nx < w and 0 <= ny < h and not seen[ny * w + nx] and near(nx, ny):
+                            seen[ny * w + nx] = 1
+                            q.append((nx, ny))
+    return blobs
+
+
+def count(mode: str) -> dict:
+    c = get(f"/arena/count?level={LEVEL}")
+    color = c["prompt"].split(" circles")[0].split()[-1]
+    guess = _count_blobs(c["image"], COUNT_COLORS[color])
+    if mode == "human":
+        time.sleep(3.0)  # > totalShapes * 220ms (max 12*220 = 2.64s) — human sequential counting time
+    return post("/arena/count/verify", {"id": c["id"], "guess": guess})
+
+
 GATES = {
     "presshold": presshold,
     "pursuit": pursuit,
@@ -378,6 +424,7 @@ GATES = {
     "spotdiff": spotdiff,
     "slide": slide,
     "match": match,
+    "count": count,
 }
 
 
