@@ -5447,3 +5447,18 @@ LLM-agent-catching CAPTCHA + closes the LLM-agent axis's one gap: real-agent val
   physics-drop would reuse plan/trajectory/precision tells) but the TELL axis is saturated. One or two more prevalent
   styles remain groundable; after that the wild-captcha axis is exhausted in-sandbox and the frontier returns to
   fingerprint/coordination coherence (the durable signal).
+- **[Wild-captcha styles loop — DIG DEEPER 4: smooth-pursuit tracking gate (NEW tell family)]**
+  (2026-07-12). Fourth dig-deeper — and, unlike spotdiff (reused tell), a genuinely NEW tell family. arena/pursuit.go
+  — "keep the cursor on the moving dot for a few seconds". A dot moves along a deterministic Lissajous path (public);
+  the client follows, reporting {t,x,y} samples; the server recomputes the target at each sample time and scores the
+  MEAN TRACKING ERROR. NOVEL tell bh.arena_pursuit_superhuman (w0.85, experimental): mean error < pursuitErrorFloor
+  (8px) is superhuman. Human eye-hand smooth pursuit trails a moving target with tens of px of error (intrinsic
+  visuomotor lag ~100-150ms + jitter — pursuit is not pixel-accurate); a bot that computes the public path holds the
+  cursor within a few px. A NEW behavioural family — CONTINUOUS TRACKING ACCURACY — distinct from the click/hold/
+  reaction/plan tells, and distinct from `track` (which catches a snapshot-reason-act LLM clicking a stale position;
+  this measures how accurately a continuous follow hugs the target). GROUNDED LIVE BOTH DIRECTIONS (in-sandbox): a bot
+  setting cursor = computed target(t) (mean error 0.00, 251 samples) convicts; a human-like ~19px-error follow passes
+  silently (FP-safe); detector join convicts the session (label=bot, score 0.85 via arena_pursuit_superhuman). Arena
+  go test + detector suite green (522 passed, 95.26%); matrix 199 rules; arena now 30 gates. The dig-deeper keeps
+  finding new tells at the CONTINUOUS-MOTION surface (pattern=stroke-fidelity, pursuit=tracking-accuracy) — the axis
+  is deeper than the discrete-interaction list suggested.

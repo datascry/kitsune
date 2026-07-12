@@ -259,6 +259,15 @@ CHALLENGES: list[dict[str, str]] = [
         "the panels and clicks the exact centroid of each change (pixel-perfect) and finds them all instantly, while "
         "a human eyeballs and needs seconds per difference — either convicts.",
     },
+    {
+        "slug": "pursuit",
+        "label": "Follow the dot",
+        "family": "Smooth-pursuit tracking",
+        "mode": "pursuit",
+        "blurb": "Keep your cursor on the moving dot for a few seconds. Human eye-hand pursuit trails a moving "
+        "target with tens of pixels of error, while a bot that computes the dot's path holds the cursor within a few "
+        "pixels — superhuman tracking accuracy convicts. A continuous-tracking tell, distinct from a click.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -783,6 +792,35 @@ ARENA_JS = r"""
     say("Click each difference between the two panels.");
   }
 
+  async function runPursuit(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/pursuit"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var field=document.createElement("div"); field.style.cssText="position:relative;width:"+c.width+"px;height:"+c.height+"px;border:1px solid var(--line-bright);border-radius:6px;background:var(--panel);margin:.4rem 0;touch-action:none;cursor:crosshair"; box.appendChild(field);
+    var dot=document.createElement("div"); dot.style.cssText="position:absolute;width:20px;height:20px;border-radius:50%;background:#2a7d2a;pointer-events:none;margin:-10px 0 0 -10px;left:"+(c.width/2)+"px;top:"+(c.height/2)+"px"; field.appendChild(dot);
+    var status=document.createElement("p"); status.className="note"; box.appendChild(status);
+    var pathf=c.path, samples=[], start=null, cur={x:c.width/2, y:c.height/2}, done=false;
+    function target(t){ var s=t/1000; return {x:pathf.cx+pathf.a*Math.sin(pathf.w1*s+pathf.p1), y:pathf.cy+pathf.b*Math.sin(pathf.w2*s+pathf.p2)}; }
+    field.addEventListener("pointermove", function(e){ var r=field.getBoundingClientRect(); cur={x:e.clientX-r.left, y:e.clientY-r.top}; });
+    async function submit(){
+      if(done) return; done=true; status.textContent="Verifying…";
+      var v=await (await fetch("/arena/pursuit/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, samples:samples})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Tracked (mean error "+Math.round(v.mean_err_px)+"px) — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Pursuit PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Did not stay on the dot (or the challenge expired) — try again."; say("Pursuit rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    }
+    function frame(ts){
+      if(start===null) start=ts;
+      var t=ts-start, tg=target(t);
+      dot.style.left=tg.x+"px"; dot.style.top=tg.y+"px";
+      samples.push({t:t, x:cur.x, y:cur.y});
+      status.textContent="follow the dot… "+Math.round(t/1000)+"s";
+      if(t<c.duration_ms) requestAnimationFrame(frame); else submit();
+    }
+    requestAnimationFrame(frame);
+    say("Keep your cursor on the moving dot until it stops.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -891,6 +929,7 @@ ARENA_JS = r"""
       else if(A.mode==="pattern"){ await runPattern(gv, gn, tok); }
       else if(A.mode==="reaction"){ await runReaction(gv, gn, tok); }
       else if(A.mode==="spotdiff"){ await runSpotdiff(gv, gn, tok); }
+      else if(A.mode==="pursuit"){ await runPursuit(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }

@@ -8,7 +8,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **204 rules**: 133 active · 65 experimental · 6 retired; 151 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **205 rules**: 133 active · 66 experimental · 6 retired; 152 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
 ### network layer (41)
 
@@ -200,7 +200,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 | `br.maxtouch_desktop` | — | present | 0.5 | retired | maxTouchPoints > 0 on a desktop User-Agent |
 
-### behavioral layer (36)
+### behavioral layer (37)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -213,6 +213,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `bh.arena_localize_superhuman` | automation✦ | present | 0.85 | experimental | Point-localization gate solved with a pixel-perfect centroid click or impossibly fast |
 | `bh.arena_match_superhuman` | automation✦ | present | 0.85 | experimental | Orientation-match gate solved faster than a human can scan a reference plus N candidates |
 | `bh.arena_pattern_superhuman` | automation✦ | present | 0.85 | experimental | Trace-the-pattern stroke hugs the ideal path too closely (no hand tremor) or is impossibly fast |
+| `bh.arena_pursuit_superhuman` | automation✦ | present | 0.85 | experimental | Smooth-pursuit tracking held within a few px of the moving target (superhuman tracking accuracy) |
 | `bh.arena_queue_bypass` | automation✦ | present | 0.85 | active | Took a virtual-queue protected action BEFORE admission — skipped the wait, a queue-bypass bot |
 | `bh.arena_queue_hoarding` | automation✦ | present | 0.5 | experimental | One session holding many concurrent virtual-queue positions — a position-hoarding scalper |
 | `bh.arena_queue_superhuman` | automation✦ | present | 0.85 | active | Acted on a virtual-queue admission faster than a human can perceive it — position-holding bot |
