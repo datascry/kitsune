@@ -9,6 +9,7 @@
 # KS_GATE, KS_MODE (human|naive), KS_LEVEL. Stdlib only.
 
 import json
+import math
 import os
 import random
 import time
@@ -54,8 +55,33 @@ def presshold(mode: str) -> dict:
     return post("/arena/presshold/verify", {"id": c["id"], "held_ms": held, "samples": samples})
 
 
+# --- (2) SMOOTH-PURSUIT — tell bh.arena_pursuit_superhuman (mean tracking error below the 8px human-pursuit floor).
+# Evasion: follow the (public, deterministic) path but add human-like tracking ERROR (~14px std -> mean ~18px,
+# above the 8px floor, below the 55px pass-max). Naive: cursor = the computed target exactly (mean error ~0).
+def _pursuit_target(p: dict, t_ms: float) -> tuple[float, float]:
+    s = t_ms / 1000.0
+    return (p["cx"] + p["a"] * math.sin(p["w1"] * s + p["p1"]), p["cy"] + p["b"] * math.sin(p["w2"] * s + p["p2"]))
+
+
+def pursuit(mode: str) -> dict:
+    c = get(f"/arena/pursuit?level={LEVEL}")
+    p, dur = c["path"], c["duration_ms"]
+    sigma = 0.0 if mode == "naive" else 14.0  # human eye-hand pursuit trails the target by tens of px
+    samples = []
+    t = 0
+    while t <= dur:
+        x, y = _pursuit_target(p, t)
+        if sigma:
+            x += random.gauss(0, sigma)
+            y += random.gauss(0, sigma)
+        samples.append({"t": t, "x": x, "y": y})
+        t += 16
+    return post("/arena/pursuit/verify", {"id": c["id"], "samples": samples})
+
+
 GATES = {
     "presshold": presshold,
+    "pursuit": pursuit,
 }
 
 
