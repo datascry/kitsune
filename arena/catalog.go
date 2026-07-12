@@ -95,6 +95,12 @@ func arenaCatalog() Catalog {
 				Endpoint: "GET /arena/presshold?level=<level>",
 				Params:   []string{"level"},
 			},
+			{
+				Kind:     "sequence",
+				Prompt:   "Click the numbered tiles in order (GeeTest icon-order / NetEase Yidun family): solving faster than a human can visually locate + click N ordered targets (age < N * a per-target floor), or a metronomic inter-click cadence (a fixed-delay clicker, std ~ 0), convicts on coherence (seqclick_superhuman).",
+				Endpoint: "GET /arena/sequence?level=<level>",
+				Params:   []string{"level"},
+			},
 		},
 	}
 }

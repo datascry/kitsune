@@ -195,6 +195,15 @@ CHALLENGES: list[dict[str, str]] = [
         "scripted hold — a real hand drifts continuously while an injected hold pins its samples to one coordinate "
         "(no jitter); claiming a longer hold than the whole solve window is also impossible.",
     },
+    {
+        "slug": "sequence",
+        "label": "Click in order",
+        "family": "Ordered click-in-sequence (GeeTest / NetEase Yidun)",
+        "mode": "sequence",
+        "blurb": "Click the numbered tiles in order. Solving faster than a human can visually locate and click N "
+        "ordered targets, or with a metronomic fixed-delay cadence, convicts a bot — the ordering + timing are the "
+        "tell, not the puzzle.",
+    },
 ]
 
 _BY_SLUG: dict[str, dict[str, str]] = {c["slug"]: c for c in CHALLENGES}
@@ -542,6 +551,34 @@ ARENA_JS = r"""
     say("Press and hold the button for the shown duration, then release.");
   }
 
+  async function runSequence(gv, gn, tok){
+    var box=document.getElementById("ks-captcha"); box.innerHTML="";
+    var c=await (await fetch(withLevel("/arena/sequence"))).json();
+    var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
+    var field=document.createElement("div"); field.style.cssText="position:relative;width:320px;height:240px;border:1px solid var(--line-bright);border-radius:6px;background:var(--panel);margin:.4rem 0"; box.appendChild(field);
+    var status=document.createElement("p"); status.className="note"; box.appendChild(status);
+    var t0=performance.now(), clicks=[], times=[], next=1, done=false;
+    async function submit(){
+      if(done) return; done=true;
+      var v=await (await fetch("/arena/sequence/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, clicks:clicks, times:times})})).json();
+      if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Clicked in order — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Sequence PASSED."); }
+      else { gv.textContent="REJECTED"; gv.className="big fail"; gn.textContent="Wrong order (or the challenge expired) — try again."; say("Sequence rejected."); }
+      document.getElementById("ks-captcha").innerHTML=""; fetchDetectorVerdict();
+    }
+    c.tiles.forEach(function(t){
+      var b=document.createElement("button"); b.textContent=t.id;
+      b.style.cssText="position:absolute;left:"+t.x+"px;top:"+t.y+"px;min-width:34px;min-height:34px;padding:0;font:inherit";
+      b.onclick=function(){
+        clicks.push(t.id); times.push(Math.round(performance.now()-t0));
+        if(t.id===next){ b.disabled=true; b.style.opacity=".4"; next++; }
+        status.textContent="clicked "+clicks.length+"/"+c.tiles.length;
+        if(clicks.length>=c.tiles.length) submit();
+      };
+      field.appendChild(b);
+    });
+    say("Click the numbered tiles in order.");
+  }
+
   async function runRotate(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/rotate"))).json();
@@ -643,6 +680,7 @@ ARENA_JS = r"""
       else if(A.mode==="timing"){ await runTiming(gv, gn, tok); }
       else if(A.mode==="keymap"){ await runKeymap(gv, gn, tok); }
       else if(A.mode==="presshold"){ await runPresshold(gv, gn, tok); }
+      else if(A.mode==="sequence"){ await runSequence(gv, gn, tok); }
       else if(A.mode==="rotate"){ await runRotate(gv, gn, tok); }
       else if(A.mode==="captcha"){ await runCaptcha(gate, gv, gn, tok); }
       else if(A.mode==="audio"){ await runAudio(gv, gn, tok); }
