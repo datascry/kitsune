@@ -340,6 +340,30 @@ ARENA_CSS = """<style>
 .arena-endpoints li code{color:var(--fox);font-size:.82rem}
 .arena-endpoints .m{display:inline-block;min-width:3rem;color:var(--muted)}
 @media (max-width:640px){.verdicts{grid-template-columns:1fr}}
+/* --- redesign 2a: arena index hero + category chips + category-accented gate grid --- */
+.arena-hero{position:relative;margin:.4rem 0 1.4rem}
+.arena-hero::before{content:"";position:absolute;top:-3rem;right:-2rem;width:26rem;height:26rem;pointer-events:none;background:radial-gradient(circle,var(--fox),transparent 62%);opacity:.12;z-index:0}
+.arena-hero>*{position:relative;z-index:1}
+.arena-hero .eyebrow{font-size:.68rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);margin:.2rem 0 .5rem}
+.arena-hero .arena-h1{font-size:2.35rem;line-height:1.08;margin:.1rem 0 .8rem}
+.arena-hero .arena-h1 .fox{color:var(--fox)}
+.arena-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 1.2rem}
+.arena-chips .chip{font:inherit;font-size:.74rem;letter-spacing:.04em;padding:.35rem .8rem;border:1px solid var(--line-bright);background:var(--panel);color:var(--muted);border-radius:999px;cursor:pointer;min-height:36px}
+.arena-chips .chip:hover{color:var(--ink)}
+.arena-chips .chip.active{background:var(--fox);border-color:var(--fox);color:#fff;font-weight:600}
+.gate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:.2rem 0 1.6rem}
+.gate-card{display:block;background:var(--panel);padding:.8rem .9rem;text-decoration:none;color:inherit;border-top:2px solid var(--cat,var(--line-bright));min-width:0}
+.gate-card:hover{background:var(--panel-2)}
+.gate-card .gc-top{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
+.gate-card .gc-label{font-family:"Space Grotesk",var(--mono);font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.gate-card:hover .gc-label{color:var(--fox)}
+.gate-card .gc-tag{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--cat,var(--muted));border:1px solid var(--cat,var(--line-bright));border-radius:999px;padding:.05rem .4rem;white-space:nowrap;flex:none}
+.gate-card .gc-fam{color:var(--muted);font-size:.74rem;margin-top:.35rem;overflow-wrap:anywhere}
+.gate-card .gc-beat{color:var(--muted);font-size:.7rem;margin-top:.55rem}
+.gate-card .gc-beat b{color:var(--ink);font-weight:600}
+@media (max-width:900px){.gate-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.gate-grid{grid-template-columns:1fr}.arena-hero .arena-h1{font-size:1.7rem}.arena-hero::before{width:16rem;height:16rem}}
+@media (prefers-reduced-motion:reduce){.arena-hero::before{opacity:.08}}
 </style>"""
 
 # The shared client. window.__ARENA__ = {slug, mode} is injected per page (see _gate_script); this script
@@ -1075,27 +1099,89 @@ def _endpoints_html(c: dict[str, str]) -> str:
     )
 
 
+# --- Redesign IA: each gate's category (chip filter + card accent). Keyed by slug; the category is the gate's
+# PRIMARY discriminator. cost = a proof-of-work / silent cost gate; turing = an AI-hard perception/reasoning puzzle
+# (beaten by OCR/CV/VLM); behavioral = a biomechanics/motor-timing gate (beaten by a humanized solver); anti = an
+# anti-LLM structural gate; defense = a defensive protocol (token / rate / queue). ---
+_GATE_CAT: dict[str, str] = {
+    "checkbox": "cost",
+    "managed": "cost",
+    "hashcash": "cost",
+    "many-small": "cost",
+    "memory-hard": "cost",
+    "text": "turing",
+    "math": "turing",
+    "clock": "turing",
+    "honeypot": "turing",
+    "image-select": "turing",
+    "doodle": "turing",
+    "spatial": "turing",
+    "count": "turing",
+    "audio": "turing",
+    "spotdiff": "turing",
+    "match": "turing",
+    "slider": "behavioral",
+    "rotate": "behavioral",
+    "timing": "behavioral",
+    "keymap": "behavioral",
+    "presshold": "behavioral",
+    "sequence": "behavioral",
+    "pattern": "behavioral",
+    "reaction": "behavioral",
+    "pursuit": "behavioral",
+    "locate": "behavioral",
+    "slide": "behavioral",
+    "shell": "anti",
+    "pact": "defense",
+}
+#: category -> (chip label, CSS colour, "beaten by" gloss). The gloss is category-derived (the per-gate
+#: strings in docs/arena.md are finer, but the registry doesn't carry them).
+_CAT_META: dict[str, tuple[str, str, str]] = {
+    "cost": ("Cost", "var(--amber)", "any solver — it's a cost gate"),
+    "turing": ("Turing", "var(--muted)", "real OCR / CV / VLM"),
+    "behavioral": ("Biomechanics", "var(--jade)", "a humanized solver"),
+    "anti": ("Anti-LLM", "var(--fox)", "— built to catch, not cost"),
+    "defense": ("Defense", "#7f8fa6", "a valid attestation / staying in budget"),
+}
+_CAT_ORDER: list[str] = ["cost", "turing", "behavioral", "anti", "defense"]
+
+
 def arena_index_html() -> str:
-    """The ``/arena`` index: the thesis intro + a card grid linking to every challenge's own page."""
-    cards = "".join(
-        f'<a class="card" href="/arena/gate/{c["slug"]}">'
-        f'<div class="cn">{c["label"]}</div>'
-        f'<div class="cm">{c["family"]}</div>'
-        f'<div class="cd">{c["blurb"]}</div></a>'
-        for c in CHALLENGES
+    """The ``/arena`` index: the thesis hero + category chips + a category-accented card grid linking to every
+    challenge's own page."""
+    cards = []
+    for c in CHALLENGES:
+        cat = _GATE_CAT.get(c["slug"], "turing")
+        label, col, beaten = _CAT_META[cat]
+        cards.append(
+            f'<a class="gate-card" data-cat="{cat}" href="/arena/gate/{c["slug"]}" style="--cat:{col}">'
+            f'<div class="gc-top"><span class="gc-label">{c["label"]}</span>'
+            f'<span class="gc-tag">{label}</span></div>'
+            f'<div class="gc-fam">{c["family"]}</div>'
+            f'<div class="gc-beat">beaten by <b>{beaten}</b></div></a>'
+        )
+    chips = '<button class="chip active" data-filter="all">All</button>' + "".join(
+        f'<button class="chip" data-filter="{cat}">{_CAT_META[cat][0]}</button>' for cat in _CAT_ORDER
     )
     body = f"""
-<h1>The Arena</h1>
-<p class="lead">Faithful, self-hosted reproductions of <b>documented, open</b> web challenge mechanisms. Each
-gate has its <b>own page that auto-serves the challenge</b> &mdash; go there with a browser, a bot, or your own
-solver and <b>test the bypass</b>. You get <b>two verdicts at once</b>: did you pass the gate &mdash; and what does
+<div class="arena-hero">
+<div class="eyebrow">Challenge the gates · meet the detector</div>
+<h1 class="display arena-h1">Every gate falls to the right bot.<br><span class="fox">The detector convicts it anyway.</span></h1>
+<p class="lead">Faithful, self-hosted reproductions of <b>documented, open</b> web challenge mechanisms. Each gate
+has its <b>own page that auto-serves the challenge</b> &mdash; go there with a browser, a bot, or your own solver
+and <b>test the bypass</b>. You get <b>two verdicts at once</b>: did you pass the gate &mdash; and what does
 Kitsune&rsquo;s detector independently make of your client over the edge?</p>
-<p class="note">The punchline the arena makes live: a solved challenge is a <b>cost</b> or <b>Turing</b> test, not a
-bot/human discriminator. A script can bypass any gate here and still be convicted on the network layer &mdash;
-<b>coherence + attestation</b> is the durable signal, not the puzzle.</p>
-<h2>Pick a gate to bypass</h2>
-<div class="cards">{cards}</div>
+<p class="note">A solved challenge is a <b>cost</b> or <b>Turing</b> test, not a bot/human discriminator. A script
+can bypass any gate here and still be convicted on the network layer &mdash; <b>coherence + attestation</b> is the
+durable signal, not the puzzle.</p>
+</div>
+<div class="arena-chips" role="group" aria-label="Filter gates by category">{chips}</div>
+<div class="gate-grid">{"".join(cards)}</div>
 {_ETHICS_HTML}
+<script>(function(){{var chips=document.querySelectorAll('.arena-chips .chip'),cards=document.querySelectorAll('.gate-card');
+chips.forEach(function(ch){{ch.addEventListener('click',function(){{var f=ch.getAttribute('data-filter');
+chips.forEach(function(c){{c.classList.toggle('active',c===ch);}});
+cards.forEach(function(cd){{cd.style.display=(f==='all'||cd.getAttribute('data-cat')===f)?'':'none';}});}});}});}})();</script>
 """
     return render_doc_page(
         title="The Arena — challenge the gates, meet the detector",
