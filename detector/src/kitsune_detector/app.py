@@ -40,7 +40,7 @@ from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
 from .geo import lookup as geo_lookup
-from .models import MISSING, Layer, RuleCategory, Session, Signal, Source, Verdict
+from .models import MISSING, Layer, Session, Signal, Source, Verdict
 from .pages import (
     bypass_index,
     parse_fleet,
@@ -59,6 +59,7 @@ from .pages import (
     render_research_page,
     reverse_index,
 )
+from .scoring import CONVICTING_CATEGORIES
 from .store import Store
 from .vendors import PROFILES, challenge_required, challenge_url, shape_checksiteconfig, shape_siteverify
 
@@ -107,10 +108,6 @@ DOC_PAGES: dict[str, tuple[str, str, str]] = {
 def _docs_dir() -> Path:
     env = os.environ.get("KITSUNE_DOCS_DIR")
     return Path(env) if env else Path(__file__).resolve().parents[3] / "docs"
-
-
-#: Categories that can convict a session as a bot (the rest only corroborate).
-CONVICTING_CATEGORIES = {RuleCategory.coherence, RuleCategory.automation, RuleCategory.artifact}
 
 
 def _fnv1a(s: str) -> str:
