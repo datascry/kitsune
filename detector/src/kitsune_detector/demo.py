@@ -152,6 +152,43 @@ h3 .count {
   align-self: center;
 }
 
+/* === Terminal Forensics verdict hero (the main-page redesign) === */
+.display{font-family:"Space Grotesk",var(--mono);font-weight:700;letter-spacing:-.01em}
+.eyebrow{color:var(--muted);font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;margin-bottom:1rem}
+.vhero{display:grid;grid-template-columns:1.35fr 1fr;border:1.5px solid var(--line-bright);background:var(--panel);margin:1.25rem 0 0}
+.vh-main{padding:2.2rem 1.9rem;border-right:1px solid var(--line);position:relative;overflow:hidden}
+.vh-main::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(80% 120% at 12% 0%,rgba(232,72,43,.1),transparent 60%)}
+.vh-main>*{position:relative}
+.vh-big{display:flex;align-items:baseline;gap:1.1rem;flex-wrap:wrap;min-height:3.2rem}
+.vh-label{font-size:clamp(3.2rem,7.5vw,5.4rem);line-height:.86;text-transform:uppercase;color:var(--vcol,var(--muted))}
+.vh-score{font-size:clamp(1rem,2.4vw,1.6rem);line-height:1;color:var(--muted);font-variant-numeric:tabular-nums}
+.vh-reason{margin:1.2rem 0 0;color:var(--ink);font-size:.86rem;line-height:1.6;max-width:34rem}
+.vh-stats{display:flex;gap:1.6rem;margin-top:1.3rem;flex-wrap:wrap}
+.vstat{display:flex;flex-direction:column;gap:.2rem}
+.vstat .vk{color:var(--muted);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase}
+.vstat .vv{font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums}
+.vh-spine{padding:1.9rem 1.7rem}
+.spine-row{display:grid;grid-template-columns:6.5rem 1fr;align-items:center;gap:.8rem;padding:.65rem 0;border-bottom:1px solid var(--line)}
+.spine-layer{color:var(--ink);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase}
+.spine-meter{display:flex;align-items:center;gap:.7rem}
+.spine-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.spine-trk{flex:1;height:1px;background:var(--line);position:relative}
+.spine-trk i{position:absolute;left:0;top:0;height:1px}
+.spine-state{width:4.4rem;text-align:right;font-size:.7rem}
+.coh-strip{display:flex;justify-content:space-between;align-items:center;gap:.7rem;margin-top:1rem;padding:.7rem .8rem;border:1px solid var(--line);flex-wrap:wrap}
+.coh-strip .cl{font-size:.72rem}.coh-strip .cl .k{color:var(--muted)}
+.coh-strip .cv{font-weight:700;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase}
+@media (max-width:720px){.vhero{grid-template-columns:1fr}.vh-main{border-right:0;border-bottom:1px solid var(--line)}}
+@media (prefers-reduced-motion:reduce){.fdet-dot{animation:none}}
+/* Fired-detections spotlight */
+.fired-spot{margin:1.5rem 0 0}
+.fdet-row{display:grid;grid-template-columns:16px 1fr 8rem 3.2rem;align-items:center;gap:.9rem;padding:.75rem 0;border-bottom:1px solid var(--line)}
+.fdet-dot{width:9px;height:9px;border-radius:50%;background:var(--fox);animation:ksPulse 2s infinite}
+.fdet-title{color:var(--ink);font-size:.82rem;margin-top:.15rem}
+.fdet-cat{color:var(--muted);font-size:.74rem}
+.fdet-weight{text-align:right;color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+@keyframes ksPulse{0%,100%{opacity:1}50%{opacity:.35}}
+
 .verdict {
   border: 1.5px solid var(--line-bright);
   padding: 1.25rem 1.5rem;
@@ -529,11 +566,11 @@ footer {
   display: none;
 }
 .ks-disclose > summary::before {
-  content: "\\u25b8";
+  content: "\\25b8";
   color: var(--fox);
 }
 .ks-disclose[open] > summary::before {
-  content: "\\u25be";
+  content: "\\25be";
 }
 .ks-disclose > summary:hover {
   color: var(--fox);
@@ -602,12 +639,12 @@ h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0
 .faq details{border-bottom:1px solid var(--line);padding:.65rem 0}
 .faq summary{cursor:pointer;color:var(--ink);font-size:.88rem;font-weight:600;list-style:none;display:flex;gap:.5rem;align-items:baseline}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::before{content:"\\u25b8";color:var(--fox);font-size:.8em}
-.faq details[open] summary::before{content:"\\u25be"}
+.faq summary::before{content:"\\25b8";color:var(--fox);font-size:.8em}
+.faq details[open] summary::before{content:"\\25be"}
 .passed-toggle summary{list-style:none}
 .passed-toggle summary::-webkit-details-marker{display:none}
-.passed-toggle summary::before{content:"\\u25b8 ";color:var(--jade)}
-.passed-toggle details[open] summary::before,details[open]>.passed-toggle summary::before{content:"\\u25be "}
+.passed-toggle summary::before{content:"\\25b8\\A0";color:var(--jade)}
+.passed-toggle details[open] summary::before,details[open]>.passed-toggle summary::before{content:"\\25be\\A0"}
 .faq details p{color:var(--muted);font-size:.84rem;margin:.5rem 0 0;max-width:48rem}
 /* --- composite fingerprint ID + per-layer detection groups --- */
 .fpid{border:1px solid var(--line);background:var(--panel-2);padding:.6rem .9rem;margin:.7rem 0;font-size:.82rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.4rem 1.5rem}
@@ -685,12 +722,22 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
   <p class="lead"><strong>Is this browser detectable as a bot?</strong> Kitsune reads every layer — TLS, HTTP/2, TCP/IP, GPU, JavaScript, behaviour — and checks whether they tell <strong>one consistent story</strong>. A stealth or antidetect browser can fake any single layer; making them all agree is the hard part. You get the <strong>real verdict a site would reach</strong>, live.</p>
   <!-- HEADLINE: who you are + the verdict, together -->
-  <div id="ks-fpid" class="fpid">Scanning your browser…</div>
-  <h2>Detector verdict</h2>
-  <div id="ks-scan" class="ks-scan"><span class="ks-step run">browser</span><span class="ks-step">network</span><span class="ks-step">behavior</span></div>
   <p id="ks-status" role="status" aria-live="polite">Scanning your browser…</p>
-  <div id="ks-result" aria-live="polite"></div>
-  <div id="ks-cta"></div>
+  <!-- VERDICT HERO: the giant verdict + score (left) beside the coherence spine (right). showVerdict() fills
+       #ks-result (verdict label/score/reason/stats) and #ks-spine (per-layer rows); renderCoherence() fills the
+       predicts-vs-UA strip in #ks-coherence. All IDs preserved so the render/publish/lazy paths are unchanged. -->
+  <section class="vhero" aria-live="polite">
+    <div class="vh-main">
+      <div class="eyebrow">Verdict &middot; this browser</div>
+      <div id="ks-result"><div class="vh-big"><span class="vh-label display" style="color:var(--muted)">&hellip;</span><span class="vh-score display">scoring your browser&hellip;</span></div></div>
+      <div id="ks-cta"></div>
+    </div>
+    <div class="vh-spine">
+      <div class="eyebrow">Coherence spine</div>
+      <div id="ks-spine"></div>
+      <div id="ks-coherence"></div>
+    </div>
+  </section>
   <div class="ks-actions">
     <button type="button" id="ks-rerun" class="ks-btn primary">↻ Re-run scan</button>
   </div>
@@ -700,7 +747,9 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
        completes — status becomes "complete". Also exposed as window.ksResult and a "kitsune:result"
        event. Poll this element's textContent, or: addEventListener("kitsune:result", e => e.detail). -->
   <script type="application/json" id="ks-verdict">{"status":"collecting"}</script>
-  <div id="ks-coherence"></div>
+  <div id="ks-fpid" class="fpid">Scanning your browser…</div>
+  <!-- Fired-detections spotlight — what convicts this session (the full breakdown is in Detections below). -->
+  <section class="fired-spot" id="ks-fired"></section>
   <!-- EVIDENCE: your fingerprint, layer by layer. All three evidence panels (wire, surfaces, detections) start
        OPEN so the evidence is visible without a click. (Lazy render is preserved: an open panel paints when its
        data arrives via ksLazyTouch, not on page load, so the load-time work is unchanged.) -->
@@ -844,11 +893,51 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   }
   function renderCoherence(p) {
     var el = document.getElementById("ks-coherence"); if (!el) return; var c = coherence(p);
-    el.innerHTML = '<div class="coherence ' + (c.match ? "match" : "mismatch") + '">'
-      + '<div class="side"><span class="cap">Feature prediction</span><span class="val">' + esc(p.engine) + ' \\u00b7 ' + esc(p.os) + '</span></div>'
-      + '<div class="verdict-cell">' + (c.match ? "COHERENT" : "MISMATCH") + '</div>'
-      + '<div class="side"><span class="cap">User-Agent claims</span><span class="val">' + esc(c.claimedEngine) + ' \\u00b7 ' + esc(c.claimedOs) + '</span></div>'
-      + '</div><p class="note">' + esc(c.reason) + '</p>';
+    var col = c.match ? "var(--jade)" : "var(--fox)";
+    el.innerHTML = '<div class="coh-strip" style="border-color:' + col + '">'
+      + '<span class="cl"><span class="k">predicts</span> ' + esc(p.engine) + ' \\u00b7 ' + esc(p.os)
+      + ' <span class="k">\\u00b7 ua claims</span> ' + esc(c.claimedEngine) + ' \\u00b7 ' + esc(c.claimedOs) + '</span>'
+      + '<span class="cv" style="color:' + col + '">' + (c.match ? "\\u2713 coherent" : "\\u2717 mismatch") + '</span></div>'
+      + '<p class="note" style="margin:.6rem 0 0">' + esc(c.reason) + ' \\u2014 a real browser\\u2019s layers agree; a spoofer\\u2019s do not.</p>';
+  }
+  // Verdict label -> its one semantic colour (fox=bot, amber=suspicious, jade=human/verified, muted=unknown).
+  function verdictColor(label) {
+    return label === "bot" ? "var(--fox)" : (label === "suspicious" ? "var(--amber)"
+      : (label === "human" || label === "verified" ? "var(--jade)" : "var(--muted)"));
+  }
+  // The coherence spine: per-layer dot + track + state, from the REAL server layer_scores.
+  function renderSpine(ls) {
+    var el = document.getElementById("ks-spine"); if (!el) return; ls = ls || {};
+    var layers = ["browser", "behavioral", "network", "reputation"], out = "";
+    for (var i = 0; i < layers.length; i++) {
+      var L = layers[i], v = Math.round((ls[L] || 0) * 100);
+      var dot = v > 0 ? "var(--fox)" : "var(--jade)", state = v > 0 ? "flagged" : (L === "behavioral" ? "human" : "clean");
+      out += '<div class="spine-row"><span class="spine-layer">' + L + '</span>'
+        + '<span class="spine-meter"><span class="spine-dot" style="background:' + dot + '"></span>'
+        + '<span class="spine-trk"><i style="width:' + v + '%;background:' + dot + '"></i></span>'
+        + '<span class="spine-state" style="color:' + dot + '">' + state + '</span></span></div>';
+    }
+    el.innerHTML = out;
+  }
+  // Fired-detections spotlight: the CONVICTING tells (what convicts this session), corroboration noted below.
+  function renderFiredSpot(cs) {
+    var el = document.getElementById("ks-fired"); if (!el) return; cs = cs || [];
+    var conv = [], corr = [], i;
+    for (i = 0; i < cs.length; i++) { (KS_CONVICTING[cs[i].category] ? conv : corr).push(cs[i]); }
+    var rows = "";
+    for (i = 0; i < conv.length; i++) {
+      var c = conv[i], wt = (typeof c.weight === "number") ? c.weight.toFixed(2) : "";
+      rows += '<div class="fdet-row"><span class="fdet-dot"></span>'
+        + '<div>' + ruleLink(c.rule_id) + '<div class="fdet-title">' + esc(c.detail) + '</div></div>'
+        + '<span class="fdet-cat">' + esc(c.category) + '</span>'
+        + '<span class="fdet-weight">' + wt + '</span></div>';
+    }
+    var body = conv.length ? rows
+      : '<p class="note" style="margin:.5rem 0">No convicting tell fired \\u2014 nothing contradicts a coherent, real browser.</p>';
+    var corrNote = corr.length ? '<p class="note" style="margin:1rem 0 0">+ ' + corr.length + ' corroborating flag'
+      + (corr.length === 1 ? "" : "s") + ' (context only, never convicts) \\u2014 see Detections below.</p>' : '';
+    el.innerHTML = '<h2>Fired detections <span class="note">\\u2014 what convicts this session</span></h2>'
+      + '<div>' + body + '</div>' + corrNote;
   }
   function renderPredict(p) {
     var el = document.getElementById("ks-predict"); if (!el) return;
@@ -1089,32 +1178,23 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       scoreLine = "no conviction \\u00b7 " + corrFlags.length + " corroborating flag" + (corrFlags.length === 1 ? "" : "s");
       explain = "Nothing convicting fired, but several corroborating signals don\\u2019t fit a coherent real browser.";
     }
-    var html = '<div class="verdict verdict-' + esc(label) + '">'
-      + '<span class="label">' + esc(label.toUpperCase()) + '</span>'
-      + '<span class="score">' + esc(scoreLine) + '</span></div>'
-      + '<p class="note">' + esc(explain) + '</p>';
-    // What actually decides the verdict: the convicting-checks tally, then corroboration shown as context.
-    html += '<p class="note"><b>Convicting checks:</b> ' + convN + ' fired'
-      + (convTotal ? ' / ' + convTotal : '') + ' — only coherence / automation / artifact can convict.</p>';
-    if (corrFlags.length) {
-      var names = [];
-      for (var fi = 0; fi < corrFlags.length && fi < 6; fi++) names.push(esc(corrFlags[fi].rule_id));
-      html += '<p class="note"><b>Corroboration:</b> ' + corrFlags.length + ' flag' + (corrFlags.length === 1 ? "" : "s")
-        + ' (context only, never convicts): ' + names.join(", ") + (corrFlags.length > 6 ? ", \\u2026" : "") + '</p>';
-    }
-    // Per-layer detail bars (context, not a bot-likelihood %).
+    // Verdict hero: the giant label + a smaller score line, the reason, and three at-a-glance stats.
+    var col = verdictColor(label);
+    var vmain = document.querySelector(".vh-main"); if (vmain) vmain.style.setProperty("--vcol", col);
+    var totalFired = (v.contradictions || []).length;
+    var html = '<div class="vh-big"><span class="vh-label display">' + esc(label.toUpperCase()) + '</span>'
+      + '<span class="vh-score display">' + esc(scoreLine) + '</span></div>'
+      + '<p class="vh-reason">' + esc(explain) + '</p>'
+      + '<div class="vh-stats">'
+      + '<span class="vstat"><span class="vk">convicting checks</span><span class="vv" style="color:' + col + '">' + convN + (convTotal ? " / " + convTotal : "") + '</span></span>'
+      + '<span class="vstat"><span class="vk">incoherence</span><span class="vv">' + inc + '%</span></span>'
+      + '<span class="vstat"><span class="vk">detections fired</span><span class="vv">' + totalFired + '</span></span>'
+      + '</div>';
+    if (out) out.innerHTML = html;  // #ks-result = the left hero pane
+    // The coherence spine (right pane) from the REAL server layer scores, and the fired-detections spotlight.
     var ls = v.layer_scores || {};
-    var layers = ["network", "browser", "behavioral", "reputation"], bars = "";
-    for (var li = 0; li < layers.length; li++) {
-      var lp = Math.round((ls[layers[li]] || 0) * 100);
-      bars += '<div class="bar' + (lp ? "" : " bar-clean") + '"><span class="bar-label">' + layers[li] + '</span>'
-        + '<span class="bar-track"><span class="bar-fill" style="width:' + lp + '%"></span></span>'
-        + '<span class="bar-val">' + lp + '</span></div>';
-    }
-    html += '<p class="note">Per-layer detail (context) — <b>0 is clean</b>'
-      + (inc > 0 ? '; cross-layer incoherence <b>' + inc + '</b>' : '') + '.</p>';
-    html += '<div class="layer-bars">' + bars + '</div>';
-    if (out) out.innerHTML = html;  // #ks-result = the headline summary (verdict stamp + layer bars)
+    renderSpine(ls);
+    renderFiredSpot(v.contradictions || []);
     // Post-verdict next step — the visitor's CTA, conditioned on the result.
     var cta = document.getElementById("ks-cta");
     if (cta) {
