@@ -394,9 +394,9 @@ def render_detections_page(rules: list[dict[str, Any]]) -> str:
     convicting = sum(1 for r in rules if r.get("convicting"))
     body = [
         '<h1 class="display">Detection catalog</h1>',
-        '<p class="lead">Every check Kitsune runs, grouped by signal layer. '
-        '<strong style="color:var(--fox)">Convicting</strong> rules (coherence · automation · artifact) can label '
-        "a session a bot; the rest corroborate.</p>",
+        '<p class="lead">Every check Kitsune runs, by layer. A '
+        '<strong style="color:var(--fox)">convicting</strong> check — a cross-layer contradiction, an automation '
+        "artifact, a forged native — can call a session a bot on its own. The rest only add weight.</p>",
         '<div class="stat-row">'
         f'<div class="stat"><strong>{len(rules)}</strong><span>checks</span></div>'
         f'<div class="stat"><strong>{convicting}</strong><span>convicting</span></div>'
@@ -464,10 +464,10 @@ def render_matrix_page(md: str) -> str:
     )
     return (
         '<h1 class="display">Detection matrix</h1>'
-        '<p class="lead">Kitsune\'s red-team fleet — real anti-detect tools and browsers — run against the '
-        "detector. Each row is one evader: its verdict, coherence score and the convicting <em>tells</em> that "
-        'caught it. The <span style="color:var(--amber)">suspicious</span> near-misses sort first. For what each '
-        'tool actually is, see the annotated <a href="/evasions">evasion catalog</a>.</p>'
+        '<p class="lead">Real anti-detect tools and stealth browsers, run against the detector — one row '
+        "each. You get its verdict, its coherence score, and exactly which <em>tells</em> gave it away. The "
+        '<span style="color:var(--amber)">suspicious</span> near-misses sort to the top. For what each tool '
+        'actually is, see the annotated <a href="/evasions">evasion catalog</a>.</p>'
         '<div class="stat-row">'
         f'<div class="stat"><strong>{len(verdict_rows)}</strong><span>evaders</span></div>'
         f'<div class="stat"><strong>{caught}</strong><span>caught (bot)</span></div>'

@@ -91,8 +91,8 @@ export function mountBehavioralPanel(
       <h2 class="bp-h">Behavioral layer &mdash; live</h2>
       <span class="bp-counts note"></span>
     </div>
-    <p class="note bp-lede">Interact below — the biomechanics are measured in your browser against the same
-      registry floors the detector uses.</p>
+    <p class="note bp-lede">Interact below. Your biomechanics are measured live against the same floors
+      the detector uses — real motion clears them; a scripted path does not.</p>
     <div class="bp-grid">
       <div class="bp-controls">${controlsHtml(isTouch, opts.onReevaluate !== undefined)}</div>
       <div class="bp-live"></div>

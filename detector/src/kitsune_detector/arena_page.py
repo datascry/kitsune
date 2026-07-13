@@ -1051,7 +1051,7 @@ ARENA_JS = r"""
 _VERDICTS_HTML = """
 <div class="dual-head">
   <div class="vh" id="ks-headline">Solve the puzzle &mdash; then meet the detector.</div>
-  <p class="vline" id="ks-vline">Pass the gate on the left. Kitsune&rsquo;s coherence engine independently scores your client over the edge &mdash; a solved gate is a <b>cost</b> or <b>Turing</b> test, not a bot/human discriminator.</p>
+  <p class="vline" id="ks-vline">Pass the gate on the left. Kitsune&rsquo;s coherence engine scores your client from the edge at the same time &mdash; because solving a gate is a <b>cost</b> or <b>Turing</b> test, not proof you&rsquo;re human.</p>
 </div>
 <div class="dual">
   <div class="vcard">
@@ -1064,7 +1064,7 @@ _VERDICTS_HTML = """
     <span class="vscan" aria-hidden="true"></span>
     <h2>Detector verdict</h2>
     <div class="big" id="ks-det-verdict">&mdash;</div>
-    <p class="gloss" id="ks-det-note">does your client cohere over the edge?</p>
+    <p class="gloss" id="ks-det-note">does your client hold together?</p>
   </div>
 </div>
 """
@@ -1103,9 +1103,9 @@ verdict comes from the same coherence engine that scores the home page, reading 
 """
 
 _DESC = (
-    "Faithful reproductions of documented open web challenge mechanisms — proof-of-work, CAPTCHA, "
-    "slider, rotate, and a PACT personhood token. Solve a gate in your browser and see what Kitsune's "
-    "bot detector independently makes of your client."
+    "Every bot-blocking gate on the web — proof-of-work, CAPTCHA, sliders, rotate, personhood tokens — "
+    "rebuilt on our own infrastructure. Beat a gate in your browser and see whether Kitsune's detector "
+    "still knows what you are."
 )
 
 
@@ -1203,8 +1203,8 @@ _CAT_META: dict[str, tuple[str, str, str]] = {
     "cost": ("Cost", "var(--amber)", "any solver — it's a cost gate"),
     "turing": ("Turing", "var(--muted)", "real OCR / CV / VLM"),
     "behavioral": ("Biomechanics", "var(--jade)", "a humanized solver"),
-    "anti": ("Anti-LLM", "var(--fox)", "— built to catch, not cost"),
-    "defense": ("Defense", "#7f8fa6", "a valid attestation / staying in budget"),
+    "anti": ("Anti-LLM", "var(--fox)", "nothing clean — it's built to catch"),
+    "defense": ("Defense", "#7f8fa6", "a real credential, or just staying in budget"),
 }
 _CAT_ORDER: list[str] = ["cost", "turing", "behavioral", "anti", "defense"]
 
@@ -1230,13 +1230,11 @@ def arena_index_html() -> str:
 <div class="arena-hero">
 <div class="eyebrow">Challenge the gates · meet the detector</div>
 <h1 class="display arena-h1">Every gate falls to the right bot.<br><span class="fox">The detector convicts it anyway.</span></h1>
-<p class="lead">Faithful, self-hosted reproductions of <b>documented, open</b> web challenge mechanisms. Each gate
-has its <b>own page that auto-serves the challenge</b> &mdash; go there with a browser, a bot, or your own solver
-and <b>test the bypass</b>. You get <b>two verdicts at once</b>: did you pass the gate &mdash; and what does
-Kitsune&rsquo;s detector independently make of your client over the edge?</p>
-<p class="note">A solved challenge is a <b>cost</b> or <b>Turing</b> test, not a bot/human discriminator. A script
-can bypass any gate here and still be convicted on the network layer &mdash; <b>coherence + attestation</b> is the
-durable signal, not the puzzle.</p>
+<p class="lead">Every bot-blocking gate on the web &mdash; proof-of-work, CAPTCHA, sliders, personhood tokens &mdash;
+rebuilt here on our own infrastructure. Bring a browser, a bot, or your own solver and <b>beat one</b>. You get
+<b>two verdicts</b>: whether you passed the gate, and whether Kitsune still knows what you are.</p>
+<p class="note">Solving a gate proves you paid the cost or passed the puzzle &mdash; not that you&rsquo;re human. A
+script can beat every gate here and still get caught. <b>The puzzle is theatre; the fingerprint is the tell.</b></p>
 </div>
 <div class="arena-chips" role="group" aria-label="Filter gates by category">{chips}</div>
 <div class="gate-grid">{"".join(cards)}</div>
