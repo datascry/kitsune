@@ -119,6 +119,12 @@ def test_static_and_crawl_routes(client: TestClient) -> None:
     assert client.get("/favicon.ico").status_code == 200
     assert client.get("/apple-touch-icon.png").status_code == 200
     assert client.get("/og.png").status_code == 200
+    # Self-hosted display/body fonts (no third-party CDN): served as woff2, unknown/traversal names 404.
+    sg = client.get("/fonts/space-grotesk-700.woff2")
+    assert sg.status_code == 200 and sg.headers["content-type"] == "font/woff2"
+    assert client.get("/fonts/jetbrains-mono-400.woff2").status_code == 200
+    assert client.get("/fonts/nope.woff2").status_code == 404
+    assert client.get("/fonts/..%2f..%2fapp.py").status_code == 404
     assert client.get("/site.webmanifest").status_code == 200
     robots = client.get("/robots.txt")
     assert robots.status_code == 200 and "Sitemap:" in robots.text and "/sitemap.xml" in robots.text
