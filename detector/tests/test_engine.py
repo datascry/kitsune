@@ -31,6 +31,8 @@ def test_active_rules_are_live_producible() -> None:
         text = py.read_text()
         emitted.update(re.findall(r'kind\s*=\s*["\'](\w+)["\']', text))  # detector/reputation/derived
         emitted.update(k for _, k in re.findall(r'S\(\s*"(\w+)"\s*,\s*"(\w+)"', text))  # inline demo collector
+    for js in (root / "detector" / "src").rglob("*.js"):  # the served demo collector, extracted from demo.py
+        emitted.update(k for _, k in re.findall(r'S\(\s*"(\w+)"\s*,\s*"(\w+)"', js.read_text()))
     for ts in (root / "collector" / "src").rglob("*.ts"):
         emitted.update(k for _, k in re.findall(r'sig\(\s*"(\w+)"\s*,\s*"(\w+)"', ts.read_text()))
     for go in (root / "edge").rglob("*.go"):
