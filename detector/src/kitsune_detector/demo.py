@@ -637,7 +637,7 @@ nav.top a.brand{display:flex;align-items:center;gap:.5rem;color:var(--ink);font-
 nav.top a.brand::before{content:"";width:.5rem;height:1.1rem;background:var(--fox)}
 nav.top .spacer{flex:1}
 /* --- landing prose + faq --- */
-h1.page{font-size:1.85rem;font-weight:700;letter-spacing:.005em;margin:.4rem 0 0;color:var(--ink)}
+h1.page{font-family:var(--display);font-size:2.15rem;font-weight:700;letter-spacing:-.015em;line-height:1.08;margin:.4rem 0 0;color:var(--ink)}
 .lead{font-size:1.05rem;color:var(--ink);max-width:46rem;margin:.6rem 0 .25rem}
 .prose{color:var(--muted);font-size:.88rem;max-width:48rem}
 .prose p{margin:.7rem 0}.prose strong{color:var(--ink)}
@@ -677,7 +677,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   nav.top{gap:.5rem .9rem}
   nav.top a{font-size:.72rem;min-height:44px;display:inline-flex;align-items:center}
   nav.top a.brand{font-size:.85rem;letter-spacing:.16em}
-  h1.page{font-size:1.4rem;letter-spacing:0}
+  h1.page{font-size:1.6rem;letter-spacing:-.01em}
   .lead{font-size:.95rem}
   .hero{gap:.9rem 1.5rem;padding:1rem}
   .hero-stat strong{font-size:1.8rem}

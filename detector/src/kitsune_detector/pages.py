@@ -75,7 +75,7 @@ nav.top a.brand{display:flex;align-items:center;gap:.5rem;color:var(--ink);font-
 nav.top a.brand::before{content:"";width:.5rem;height:1.1rem;background:var(--fox)}
 nav.top .spacer{flex:1}
 main.doc{max-width:64rem;margin:0 auto;padding:1.5rem 1.5rem 3rem}
-main.doc h1{font-size:1.7rem;font-weight:700;margin:.6rem 0 1rem}
+main.doc h1{font-family:var(--display);font-size:2.15rem;font-weight:700;line-height:1.08;letter-spacing:-.015em;margin:.5rem 0 1rem}
 main.doc h2{font-size:1rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink);margin:2rem 0 .6rem;display:flex;align-items:center;gap:.6rem}
 main.doc h2::before{content:"§";color:var(--fox)}
 main.doc h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:1.3rem 0 .4rem}
@@ -100,7 +100,7 @@ footer a{color:var(--fox);text-decoration:underline;text-underline-offset:2px}
 .lead{font-size:1.02rem;color:var(--ink);max-width:48rem;margin:.4rem 0 1rem}
 .stat-row{display:flex;flex-wrap:wrap;gap:.8rem 2rem;margin:.4rem 0 1.4rem}
 .stat{display:flex;flex-direction:column;line-height:1.1}
-.stat strong{font-size:2rem;color:var(--fox)}
+.stat strong{font-family:var(--display);font-size:2rem;color:var(--fox);letter-spacing:-.01em}
 .stat span{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(19rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:.8rem 0 1.6rem}
 .card{background:var(--panel);padding:.7rem .9rem;min-width:0}
@@ -133,7 +133,7 @@ main.doc code,main.doc td,main.doc th,main.doc li,main.doc p{overflow-wrap:anywh
   nav.top{gap:.5rem .9rem}
   nav.top a{font-size:.72rem;min-height:44px;display:inline-flex;align-items:center}
   nav.top a.brand{font-size:.85rem;letter-spacing:.16em}
-  main.doc h1{font-size:1.35rem}
+  main.doc h1{font-size:1.6rem}
   main.doc h2{font-size:.9rem}
   main.doc table{font-size:.74rem}
 }
