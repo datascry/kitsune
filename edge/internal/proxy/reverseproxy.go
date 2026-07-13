@@ -688,12 +688,14 @@ func sanitizeClientIngest(w http.ResponseWriter, r *http.Request) bool {
 
 // isAdminPath reports whether a request path targets a detector admin/internal endpoint that must not be public.
 // The path is cleaned + lowercased first so /Session/, //scoreboard, /session/../verdict and %2e tricks can't
-// bypass. The public per-session view (/inspect/{id}) is cookie-scoped at the detector and stays proxied; only the
-// any-session admin views (/session, /verdict, /scoreboard) and the FastAPI docs (open when untokened) are blocked.
+// bypass. The public per-session view (/inspect/{id}) is cookie-scoped at the detector and stays proxied; only
+// the any-session admin views (/session, /verdict, /scoreboard) are blocked. The API docs are PUBLIC by design
+// (the /docs hub, the /api Swagger UI and /openapi.json), so they proxy through — the detector's OpenAPI schema
+// already excludes the admin endpoints, and the admin routes stay token-guarded at the detector regardless.
 func isAdminPath(reqPath string) bool {
 	c := strings.ToLower(path.Clean("/" + strings.TrimPrefix(reqPath, "/")))
 	switch c {
-	case "/scoreboard", "/session", "/verdict", "/docs", "/redoc", "/openapi.json":
+	case "/scoreboard", "/session", "/verdict":
 		return true
 	}
 	return strings.HasPrefix(c, "/session/") || strings.HasPrefix(c, "/verdict/")

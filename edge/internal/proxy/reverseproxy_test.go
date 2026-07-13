@@ -703,13 +703,17 @@ func TestSanitizeClientIngestLeavesOtherPathsUntouched(t *testing.T) {
 }
 
 func TestIsAdminPathBlocksInternal(t *testing.T) {
-	for _, p := range []string{"/scoreboard", "/session/abc", "/verdict/abc", "/docs", "/redoc",
-		"/openapi.json", "/Session/abc", "//scoreboard", "/session/../verdict/x", "/session", "/verdict"} {
+	for _, p := range []string{"/scoreboard", "/session/abc", "/verdict/abc",
+		"/Session/abc", "//scoreboard", "/session/../verdict/x", "/session", "/verdict"} {
 		if !isAdminPath(p) {
 			t.Errorf("admin path %q not blocked", p)
 		}
 	}
-	for _, p := range []string{"/", "/ingest", "/inspect/abc", "/arena/gate", "/rules.json", "/healthz", "/sessionish"} {
+	// The API docs are public by design and must proxy through (schema already excludes admin endpoints).
+	for _, p := range []string{
+		"/", "/ingest", "/inspect/abc", "/arena/gate", "/rules.json", "/healthz", "/sessionish",
+		"/docs", "/api", "/redoc", "/openapi.json",
+	} {
 		if isAdminPath(p) {
 			t.Errorf("public path %q wrongly blocked", p)
 		}
