@@ -307,7 +307,7 @@ ARENA_CSS = """<style>
 #ks-captcha{margin-top:.8rem}
 #ks-captcha img{vertical-align:middle;border:1px solid var(--line);border-radius:6px;background:#fff;margin-bottom:.5rem}
 #ks-captcha input{font:inherit;padding:.5rem;border:1px solid var(--line-bright);border-radius:6px;min-height:44px;margin-right:.5rem;background:var(--panel);color:var(--ink)}
-#ks-captcha button{font:inherit;font-weight:600;padding:.5rem 1rem;border:0;border-radius:6px;background:var(--fox);color:#fff;cursor:pointer;min-height:44px}
+#ks-captcha button{font:inherit;font-weight:600;padding:.5rem 1rem;border:0;border-radius:6px;background:var(--fox);color:var(--bg);cursor:pointer;min-height:44px}
 #ks-captcha .slider-track{position:relative;height:44px;max-width:100%;background:var(--panel-2);border:1px solid var(--line-bright);border-radius:8px;margin:.6rem 0;touch-action:none}
 #ks-captcha .slider-gap{position:absolute;top:5px;height:34px;width:42px;border:2px dashed var(--muted);border-radius:6px;box-sizing:border-box}
 #ks-captcha .slider-handle{position:absolute;top:3px;height:38px;width:42px;background:var(--fox);border-radius:6px;cursor:grab;box-sizing:border-box;touch-action:none}
