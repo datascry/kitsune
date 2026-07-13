@@ -164,6 +164,6 @@ attack tool). See [architecture.md §13](architecture.md) — the self-contained
 
 ## Deploy
 
-The `arena` service ships in the production stack (`docker-compose.prod.yml` + the pull-based
-`docker-compose.deploy.yml`); the detector relays to it via `KITSUNE_ARENA_URL=http://arena:8095`. Without
+The `arena` service ships in the production stack (`docker-compose.prod.yml`, which runs the GHCR image and
+is Watchtower-auto-updated); the detector relays to it via `KITSUNE_ARENA_URL=http://arena:8095`. Without
 the arena container running, `/arena/*` returns 503/502. See [deploy.md](deploy.md).

@@ -9,10 +9,17 @@ services:
     # No visitor fingerprints are captured, retained, sold, shared, or used to track across visits. See
     # docs/privacy.md. (A PRIVATE research instance can opt into persistence with KITSUNE_DB=/data/kitsune.db +
     # a volume — but that DOES retain fingerprints, so it is for your own evader traffic only, never a public site.)
-    # KITSUNE_ADMIN_TOKEN (from .env, optional) gates /session,/verdict,/scoreboard + hides the API docs on this
-    # public host; empty/unset leaves them open (dev behaviour) — SET it on a public deploy.
+    # KITSUNE_ADMIN_TOKEN (from .env, optional) gates the operator endpoints /session,/verdict,/scoreboard;
+    # empty/unset leaves them open (dev behaviour) — SET it on a public deploy. (The API docs at /api and
+    # /openapi.json are public by design and stay served regardless.)
     # KITSUNE_GEOIP_DIR / KITSUNE_IPREP_DIR point at read-only dirs of public GeoIP / IP-reputation lists
     # (additive enrichment of the IP the connection already carries; no visitor data). Absent -> in-image seeds.
+    # Run the image CI published to GHCR (built + pushed by build-push.yml on every push to main), so
+    # `docker compose ... pull && up -d` ships the latest release and Watchtower (below) auto-updates it.
+    # The base file's `build:` is still there for a from-source build if you'd rather (`up -d --build`).
+    image: ghcr.io/datascry/kitsune-detector:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true" # Watchtower auto-updates this container (label-scoped)
     environment:
       KITSUNE_DB: ":memory:"
       KITSUNE_ADMIN_TOKEN: ${KITSUNE_ADMIN_TOKEN:-}
@@ -64,6 +71,9 @@ services:
     # serve on the public ports. CAP_NET_RAW (for the TCP/IP SYN sniffer) + user:root are inherited from the
     # base file. The edge MUST be the direct TLS endpoint — do NOT put a proxying CDN/LB in front (it would
     # re-terminate TLS and destroy the JA3/JA4, HTTP/2 and TCP fingerprints). DNS A/AAAA -> this host directly.
+    image: ghcr.io/datascry/kitsune-edge:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     environment:
       KITSUNE_EDGE_ADDR: "0.0.0.0:443"
       KITSUNE_TLS_CERT: "/certs/live/${KITSUNE_DOMAIN}/fullchain.pem"
@@ -73,6 +83,26 @@ services:
       - "443:443/udp"   # QUIC / HTTP-3 (Alt-Svc advertised; needs the real cert)
     volumes:
       - letsencrypt:/certs:ro
+    restart: unless-stopped
+
+  # The arena challenge-gate service (relayed by the detector at /arena/*). Same GHCR image + auto-update.
+  arena:
+    image: ghcr.io/datascry/kitsune-arena:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    restart: unless-stopped
+
+  # Pull-based continuous deploy: Watchtower polls GHCR every 5 min and, when CI publishes a new image for a
+  # LABELLED container (detector/edge/arena above), pulls it and recreates the container — so a push to main
+  # reaches the live site with no manual redeploy. Label-scoped, so it never touches certbot or itself.
+  watchtower:
+    image: containrrr/watchtower:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # NOTE: socket access is root-equivalent (single-box trade-off)
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true" # only the labelled containers, not certbot/watchtower itself
+      WATCHTOWER_POLL_INTERVAL: "300" # check GHCR every 5 min
+      WATCHTOWER_CLEANUP: "true" # remove the superseded image after a successful update
     restart: unless-stopped
 
   # Let's Encrypt via certbot (HTTP-01 standalone on :80). Initial issuance is a one-shot `run` (docs/deploy.md);
