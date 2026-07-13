@@ -63,8 +63,8 @@ def test_create_app_defaults() -> None:
 
 
 def test_admin_token_gates_inspection_endpoints(fixed_clock) -> None:
-    # With KITSUNE_ADMIN_TOKEN configured, the inspection endpoints require a bearer token and the
-    # interactive docs are hidden; the public surface (/, /healthz, /ingest) stays open.
+    # With KITSUNE_ADMIN_TOKEN configured, the inspection endpoints require a bearer token; the public
+    # surface (/, /healthz, /ingest) and the API docs stay open.
     app = create_app(detector=Detector(clock=fixed_clock), store=Store(":memory:"), admin_token="s3cret")
     client = TestClient(app)
 
@@ -83,9 +83,12 @@ def test_admin_token_gates_inspection_endpoints(fixed_clock) -> None:
     assert client.get("/session/nope", headers=h).status_code == 404
     assert client.get("/verdict/nope", headers=h).status_code == 404
 
-    # the API docs are hidden on a hardened deployment
-    assert client.get("/openapi.json").status_code == 404
-    assert client.get("/docs").status_code == 404
+    # the public API docs stay served even on a hardened deployment — but the token-gated inspection
+    # endpoints are kept out of the schema (documented endpoints are the public API only).
+    schema = client.get("/openapi.json")
+    assert schema.status_code == 200
+    assert not any(p.startswith(("/session", "/verdict")) or p == "/scoreboard" for p in schema.json()["paths"])
+    assert client.get("/docs").status_code == 200
 
 
 def test_index_serves_collector(client: TestClient) -> None:
@@ -141,6 +144,37 @@ def test_llms_txt(client: TestClient) -> None:
     assert body.startswith("# Kitsune")
     assert "\n> " in body  # the required summary blockquote
     assert "https://kitsune.id/rules.json" in body and "https://kitsune.id/evasions" in body
+    # The website map covers the fleet/Skulk showcase and the API docs.
+    assert "https://kitsune.id/fleet" in body and "https://kitsune.id/docs" in body
+
+
+def test_branded_404(client: TestClient) -> None:
+    # A browser (Accept: text/html) hitting a missing URL gets the branded, noindex 404 page.
+    r = client.get("/no-such-page", headers={"accept": "text/html"})
+    assert r.status_code == 404
+    assert "the trail went cold" in r.text and 'class="brand"' in r.text
+    assert "noindex" in r.text  # 404s must not be indexed
+    # An API client (JSON) keeps the {"detail": ...} shape, not HTML.
+    j = client.get("/no-such-page", headers={"accept": "application/json"})
+    assert j.status_code == 404 and j.json()["detail"]
+
+
+def test_public_api_docs(client: TestClient) -> None:
+    # /docs (Swagger) + the schema are public; the schema lists only the public API — the token-gated
+    # operator inspection endpoints (/session, /verdict, /scoreboard) are kept out of it.
+    assert client.get("/docs").status_code == 200
+    schema = client.get("/openapi.json")
+    assert schema.status_code == 200
+    paths = schema.json()["paths"]
+    assert "/ingest" in paths and "/rules.json" in paths
+    assert not any(p.startswith(("/session", "/verdict")) or p == "/scoreboard" for p in paths)
+
+
+def test_fleet_and_frontier_served(client: TestClient) -> None:
+    # The Skulk / coordination-fleet showcase and the frontier state are served as doc pages.
+    for slug, marker in (("fleet", "coordination"), ("frontier", "arms race")):
+        r = client.get(f"/{slug}")
+        assert r.status_code == 200 and marker in r.text.lower()
 
 
 def test_rules_json(client: TestClient) -> None:

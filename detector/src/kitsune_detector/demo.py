@@ -718,7 +718,10 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   <a href="/matrix">Matrix</a>
   <a href="/detections">Detections</a>
   <a href="/evasions">Evasions</a>
+  <a href="/fleet">Fleet</a>
+  <a href="/frontier">Frontier</a>
   <a href="/research">Research</a>
+  <a href="/docs">API</a>
   <a href="https://github.com/datascry/kitsune">GitHub</a>
   <span class="spacer"></span>
 </nav>

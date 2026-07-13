@@ -14,9 +14,23 @@ import json
 import re
 from typing import Any
 
+import markdown as _markdown
+
 from .styles import SHARED_CSS
 
 SITE_ORIGIN = "https://kitsune.id"
+
+
+def render_markdown_doc(md_text: str) -> str:
+    """Render a full markdown document to HTML for the doc shell — headings, lists, tables, fenced code,
+    links and blockquotes all inherit the shared ``main.doc`` styling. Used for the general docs (fleet,
+    frontier, …) that aren't one of the hand-curated / table-parsed pages."""
+    return _markdown.markdown(
+        md_text,
+        extensions=["extra", "sane_lists", "admonition"],
+        output_format="html",
+    )
+
 
 #: Human names for URL path segments, for breadcrumbs + page titles in structured data.
 _SECTION_NAMES: dict[str, str] = {
@@ -38,7 +52,10 @@ NAV_LINKS: list[tuple[str, str]] = [
     ("/matrix", "Matrix"),
     ("/detections", "Detections"),
     ("/evasions", "Evasions"),
+    ("/fleet", "Fleet"),
+    ("/frontier", "Frontier"),
     ("/research", "Research"),
+    ("/docs", "API"),
     ("https://github.com/datascry/kitsune", "GitHub"),
 ]
 
@@ -282,6 +299,29 @@ def _ld_json(
     graph = {"@context": "https://schema.org", "@graph": [org, website, page, breadcrumb, *(extra or [])]}
     payload = json.dumps(graph, ensure_ascii=False).replace("<", "\\u003c")
     return f'<script type="application/ld+json">{payload}</script>'
+
+
+def render_not_found(path: str = "/404") -> str:
+    """A branded 404 page on the shared shell (noindex) — the friendly dead-end for a missing URL."""
+    body = (
+        '<h1 class="display">404 &mdash; the trail went cold</h1>'
+        '<p class="lead">That page isn\'t here. A fox is good at leaving no tracks.</p>'
+        "<p>Pick up the scent again:</p>"
+        '<ul class="nf-links">'
+        '<li><a href="/">Run the live bot-detection test</a> &mdash; fingerprint this browser, get a verdict.</li>'
+        '<li><a href="/arena">Challenge the arena gates</a> &mdash; beat a gate, watch the detector convict anyway.</li>'
+        '<li><a href="/how-it-works">How Kitsune works</a> &mdash; the cross-layer incoherence thesis.</li>'
+        '<li><a href="/matrix">Detection matrix</a> &middot; <a href="/detections">detections</a> '
+        '&middot; <a href="/evasions">evasions</a> &middot; <a href="/fleet">fleet &amp; Skulk</a></li>'
+        "</ul>"
+    )
+    return render_doc_page(
+        title="404 — not found",
+        description="That page isn't here. Run the live bot-detection test, challenge the arena, or browse the catalogs.",
+        canonical_path=path or "/404",
+        body_html=body,
+        noindex=True,
+    )
 
 
 def render_doc_page(
