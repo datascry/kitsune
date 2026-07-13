@@ -284,15 +284,31 @@ def create_app(
     # The schema lists only the public API (POST /ingest, /rules.json, /inspect/{id}, the /arena relays); every
     # internal/admin/asset route sets include_in_schema=False, and the admin routes stay token-guarded.
     app = FastAPI(
-        title="Kitsune Detector",
+        title="Kitsune Detector API",
         version="0.1.0",
         docs_url="/api",
         redoc_url=None,
         description=(
-            "The Kitsune bot-detection API. POST collector signal envelopes to `/ingest` and get a "
-            "cross-layer coherence verdict; read the full rule registry at `/rules.json`. "
-            "The website: [kitsune.id](https://kitsune.id/)."
+            "The **Kitsune** bot-detection API — it flags *incoherence across layers*, not any single bad "
+            "signal.\n\n"
+            "**Core flow:** a browser-side collector gathers `Signal`s (TLS/JA4 and TCP/IP come from the edge; "
+            "canvas/WebGL/audio/fonts and mouse/keystroke behaviour from JavaScript). `POST /ingest` a list of "
+            "those signals and get back a `Verdict` per session — `human`, `suspicious`, `bot` or `verified` — "
+            "with the exact `contradictions` that fired and a per-layer score.\n\n"
+            "**Try it:** the live page at [kitsune.id](https://kitsune.id/) runs the collector and calls "
+            "`/ingest` for you; the full rule registry is at "
+            "[`/rules.json`](https://kitsune.id/rules.json).\n\n"
+            "The token-gated operator endpoints (`/session`, `/verdict`, `/scoreboard`) are intentionally "
+            "omitted from this schema."
         ),
+        openapi_tags=[
+            {
+                "name": "Detection",
+                "description": "Score collector signals and read a session's verdict/wire fingerprint.",
+            },
+            {"name": "Reference", "description": "The machine-readable detection-rule registry."},
+            {"name": "Ops", "description": "Health and liveness."},
+        ],
     )
 
     # The pages are inline-everything HTML (the homepage is ~149 KB of mostly text); gzip cuts the wire
@@ -308,7 +324,7 @@ def create_app(
             return HTMLResponse(render_not_found(request.url.path), status_code=404)
         return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=exc.headers)
 
-    @app.get("/", response_class=HTMLResponse)
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def index() -> HTMLResponse:
         # Served (via the edge) to a real browser; the inline collector posts signals to /ingest.
         # The CSP is permissive for everything the collector uses (default-src *) but restricts images to
@@ -323,7 +339,12 @@ def create_app(
         )
         return resp
 
-    @app.get("/healthz")
+    @app.get(
+        "/healthz",
+        tags=["Ops"],
+        summary="Health check",
+        description="Liveness probe. Returns `{status: ok}` and the active `ruleset_version`.",
+    )
     def healthz() -> dict[str, str]:
         return {"status": "ok", "ruleset_version": detector.ruleset_version}
 
@@ -336,7 +357,7 @@ def create_app(
         )
         return resp
 
-    @app.get("/arena", response_class=HTMLResponse)
+    @app.get("/arena", response_class=HTMLResponse, include_in_schema=False)
     def arena() -> HTMLResponse:
         # The arena index: the thesis intro + a card grid linking to every challenge's own page.
         return _arena_html(arena_index_html())
@@ -1512,7 +1533,18 @@ def create_app(
         pass
     rules_payload: dict[str, object] = {"ruleset_version": ruleset_version, "rules": rules_list}
 
-    @app.get("/rules.json")
+    @app.get(
+        "/rules.json",
+        tags=["Reference"],
+        summary="Detection-rule registry",
+        description=(
+            "The full, machine-readable registry of every detection rule: `id`, `title`, the `layers` it "
+            "spans, its `category`, `weight`, `status`, whether it is `convicting` (a coherence / automation "
+            "/ artifact rule that can label a session a bot on its own), and its `source`. This is the same "
+            "rules-as-data the detector evaluates."
+        ),
+        response_description="`{ruleset_version, rules[]}`.",
+    )
     def rules_json() -> dict[str, object]:
         return rules_payload
 
@@ -1647,7 +1679,16 @@ def create_app(
             render_doc_page(safe, desc, f"/evasions/{safe}", body, page_type="TechArticle", keywords=kw)
         )
 
-    @app.get("/inspect/{session_id}")
+    @app.get(
+        "/inspect/{session_id}",
+        tags=["Detection"],
+        summary="Session wire fingerprint",
+        description=(
+            "The public, de-identified network/wire view for a session — TLS (JA3/JA4), HTTP-2, QUIC, the "
+            "TCP/IP-OS fingerprint, and IP reputation, as read by the edge from the raw connection. "
+            "**Cookie-scoped:** you can only inspect the session your own `ks_sid` cookie is bound to."
+        ),
+    )
     def inspect(session_id: str, ks_sid: str | None = Cookie(default=None)) -> dict[str, object]:
         # The public, de-identified wire view the live page reads. Cookie-scoped: you may only inspect the
         # session your OWN ks_sid cookie names — so it can show you your own IP/JA4/TCP without exposing
@@ -1719,7 +1760,22 @@ def create_app(
             verdicts.append(verdict)
         return verdicts
 
-    @app.post("/ingest", response_model=list[Verdict])
+    @app.post(
+        "/ingest",
+        response_model=list[Verdict],
+        tags=["Detection"],
+        summary="Score signals → verdict",
+        description=(
+            "The core endpoint. POST a list of collector `Signal` envelopes (browser + behavioural signals "
+            "from JavaScript; the edge adds the network-layer signals for the session). Signals are "
+            "correlated into their session, merged with anything already stored, and re-scored.\n\n"
+            "Returns a `Verdict` per session: the `label` (`human` / `suspicious` / `bot` / `verified`), the "
+            "`score` and `incoherence_score`, the per-layer `layer_scores`, and the `contradictions` that "
+            "fired (each with its `rule_id`, `category`, `weight` and a human `detail`). A session is only "
+            "labelled `bot` when a **convicting** contradiction fires — a single odd value never convicts."
+        ),
+        response_description="One `Verdict` per session found in the posted signals.",
+    )
     def ingest(signals: list[Signal]) -> list[Verdict]:
         return _apply_signals(signals)
 
