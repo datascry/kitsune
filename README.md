@@ -15,8 +15,8 @@
 <p align="center"><strong><a href="https://kitsune.id">Try the live test → kitsune.id</a></strong></p>
 
 <p align="center">
-  <a href="https://kitsune.id"><img src="docs/img/verdict.png" alt="Kitsune's live verdict page catching a headless automation: a BOT verdict at 100% bot-likelihood, with the per-layer bars and the coherent feature-prediction" width="760" /></a>
-  <br /><sub>The live verdict, catching this capture's own headless browser — per-layer bars and the explainable tells.</sub>
+  <a href="https://kitsune.id"><img src="docs/img/verdict.png" alt="Kitsune's live verdict page catching a headless automation: a BOT verdict with 8 convicting tells, the per-layer coherence spine (browser/behavioral/network flagged, reputation clean), and the coherent feature-prediction vs the User-Agent" width="760" /></a>
+  <br /><sub>The live verdict, catching this capture's own headless browser — the coherence spine and the explainable tells.</sub>
 </p>
 
 The two sides run against each other to produce a reproducible, per-layer scoreboard, and the red team
