@@ -258,7 +258,7 @@ export function render(heroRoot: HTMLElement, detailRoot: HTMLElement, opts: Ren
       const rows = inLayer.map((r) => ruleRow(r, firedIds.has(r.id))).join("");
       const n = inLayer.filter((r) => firedIds.has(r.id)).length;
       return `<h3>${esc(layer)} <span class="count">${n}/${inLayer.length} fired</span></h3>
-        <table class="detections"><thead><tr><th></th><th>detection</th><th>category</th><th>weight</th></tr></thead>
+        <table class="detections"><thead><tr><th><span class="sr-only">status</span></th><th>detection</th><th>category</th><th>weight</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
     })
     .join("");
