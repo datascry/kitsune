@@ -45,19 +45,27 @@ _SECTION_NAMES: dict[str, str] = {
 
 #: Top-nav links shared across the doc pages (and mirrored in the live page's nav). Ordered to follow the
 #: visitor journey: test → understand → explore the evidence catalogs → research.
+#: A lean top nav: the two things a visitor DOES (test, arena), the pitch, one Docs home, and source. The
+#: catalogs/fleet/frontier/research/API all live under the /docs hub instead of each taking a nav slot.
 NAV_LINKS: list[tuple[str, str]] = [
     ("/", "Test"),
     ("/arena", "Arena"),
     ("/how-it-works", "How it works"),
-    ("/matrix", "Matrix"),
-    ("/detections", "Detections"),
-    ("/evasions", "Evasions"),
-    ("/fleet", "Fleet"),
-    ("/frontier", "Frontier"),
-    ("/research", "Research"),
-    ("/docs", "API"),
+    ("/docs", "Docs"),
     ("https://github.com/datascry/kitsune", "GitHub"),
 ]
+
+#: Everything that lives under the "Docs" nav item — so viewing any of these highlights Docs in the nav.
+_DOCS_SECTION: tuple[str, ...] = (
+    "/docs",
+    "/matrix",
+    "/detections",
+    "/evasions",
+    "/fleet",
+    "/frontier",
+    "/research",
+    "/api",
+)
 
 DOC_CSS = (
     SHARED_CSS
@@ -192,7 +200,10 @@ def _filter_ui(placeholder: str) -> str:
 def _nav(current_path: str = "") -> str:
     links = ""
     for h, label in NAV_LINKS:
-        active = h == current_path or (h != "/" and current_path.startswith(h))
+        if h == "/docs":  # the Docs hub lights up for any page that lives under it
+            active = current_path.startswith(_DOCS_SECTION)
+        else:
+            active = h == current_path or (h != "/" and current_path.startswith(h))
         attr = ' class="active" aria-current="page"' if active else ""
         links += f'<a href="{h}"{attr}>{_esc(label)}</a>'
     return (
@@ -321,6 +332,94 @@ def render_not_found(path: str = "/404") -> str:
         canonical_path=path or "/404",
         body_html=body,
         noindex=True,
+    )
+
+
+#: The /docs hub: the single home for everything that isn't the tool or the arena — grouped so the nav
+#: can stay lean. (path, name, one-line description) per card.
+_DOCS_HUB: list[tuple[str, list[tuple[str, str, str]]]] = [
+    (
+        "Understand",
+        [
+            (
+                "/how-it-works",
+                "How it works",
+                "The cross-layer incoherence thesis and the seven signal layers Kitsune scores.",
+            ),
+        ],
+    ),
+    (
+        "Catalogs",
+        [
+            (
+                "/matrix",
+                "Detection matrix",
+                "Every anti-detect tool run against the detector — verdicts and the tells that convict each.",
+            ),
+            (
+                "/detections",
+                "Detection catalog",
+                "Every detection rule Kitsune runs and the exact signal it exploits, by layer.",
+            ),
+            (
+                "/evasions",
+                "Evasion catalog",
+                "Every anti-detect tool and technique in the red-team ladder, with a plain description.",
+            ),
+        ],
+    ),
+    (
+        "Coordination",
+        [
+            (
+                "/fleet",
+                "Fleet & Skulk",
+                "The Skulk fleet adversary-emulation kit and cross-session coordination detection.",
+            ),
+            (
+                "/frontier",
+                "Frontier",
+                "The live state of the detection-vs-evasion arms race — saturated, open, external-bound.",
+            ),
+        ],
+    ),
+    (
+        "Reference",
+        [
+            ("/research", "Research", "Findings from the detection-vs-evasion arms race."),
+            (
+                "/api",
+                "API reference",
+                "Interactive OpenAPI / Swagger docs — POST to /ingest, read /rules.json.",
+            ),
+        ],
+    ),
+]
+
+
+def render_docs_hub() -> str:
+    """The /docs hub — one home for the catalogs, fleet/frontier, research and API, grouped into sections."""
+    groups = []
+    for section, items in _DOCS_HUB:
+        cards = "".join(
+            f'<a class="card" href="{h}"><div class="ct"><span class="cn">{_esc(name)}</span></div>'
+            f'<div class="cd">{_esc(desc)}</div></a>'
+            for h, name, desc in items
+        )
+        groups.append(
+            f'<div class="lgrp"><h2 class="lgrp-h">{_esc(section)}</h2><div class="cards">{cards}</div></div>'
+        )
+    body = (
+        '<h1 class="display">Documentation</h1>'
+        '<p class="lead">Everything beyond the live test and the arena — how Kitsune works, the detection and '
+        "evasion catalogs, the coordination-fleet work, research, and the API.</p>" + "".join(groups)
+    )
+    return render_doc_page(
+        title="Documentation",
+        description="Kitsune documentation: how it works, the detection/evasion catalogs, the coordination fleet, research, and the API.",
+        canonical_path="/docs",
+        body_html=body,
+        page_type="CollectionPage",
     )
 
 
