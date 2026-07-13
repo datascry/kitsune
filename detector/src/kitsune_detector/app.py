@@ -150,6 +150,21 @@ LLMS_TXT = """# Kitsune
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
 
+#: Self-hosted web fonts (display + body), pre-resolved to constant paths so the request name is only ever
+#: a dict key — no user-controlled string is ever joined into a filesystem path (defeats path traversal).
+_FONT_PATHS: dict[str, Path] = {
+    name: STATIC_DIR / "fonts" / name
+    for name in (
+        "space-grotesk-400.woff2",
+        "space-grotesk-500.woff2",
+        "space-grotesk-600.woff2",
+        "space-grotesk-700.woff2",
+        "jetbrains-mono-400.woff2",
+        "jetbrains-mono-500.woff2",
+        "jetbrains-mono-700.woff2",
+    )
+}
+
 #: The public arena challenge-gate (the owned `arena/` Go service). The detector relays /arena/challenge and
 #: /arena/verify to it so a visitor hits ONE origin (through the edge) — the gate verdict then joins the
 #: detector's coherence verdict client-side on ks_sid. Empty/unset → the arena routes return 503 (the live
@@ -1390,12 +1405,10 @@ def create_app(
     @app.get("/fonts/{name}", include_in_schema=False)
     def font_asset(name: str) -> FileResponse:
         # Self-hosted display + body fonts (Space Grotesk, JetBrains Mono) — served from our OWN origin so
-        # no third-party font CDN ever sees the visitor (the page promises no data leaves the browser).
-        # Immutable + year-long cache: the filenames are content-stable.
-        if not re.fullmatch(r"[a-z0-9-]+\.woff2", name):
-            raise HTTPException(status_code=404)
-        path = STATIC_DIR / "fonts" / name
-        if not path.is_file():
+        # no third-party font CDN ever sees the visitor (the page promises no data leaves the browser). The
+        # request name only selects a pre-built constant path (never joined into the FS path) — no traversal.
+        path = _FONT_PATHS.get(name)
+        if path is None:
             raise HTTPException(status_code=404)
         return FileResponse(
             path,
