@@ -32,17 +32,17 @@
       <p class="mast-lede">
         Kitsune flags <strong>incoherence across layers</strong>, not just bad signals. This page
         predicts your real browser from feature detection, enumerates your fingerprint, and runs the
-        browser- and behavioral-layer detections against <strong>your current browser</strong> —
-        entirely client-side, scored per-browser, the same rules-as-data the detector evaluates
-        server-side. <a href="https://github.com/datascry/kitsune">source</a> ·
+        browser- and behavioral-layer checks against <strong>your current browser</strong> — all
+        client-side, the same rules the detector uses server-side.
+        <a href="https://github.com/datascry/kitsune">source</a> ·
         <a href="./scoreboard.md">evader scoreboard</a>
       </p>
     </header>
 
     <main>
       <p id="status">
-        Collecting signals from your browser — <strong>move your mouse around and type</strong> for
-        a few seconds so the behavioral layer can be assessed…
+        Reading your browser. <strong>Move the mouse and type</strong> for a few seconds — that's the
+        behavioral layer measuring itself.
       </p>
       <!-- The verdict hero + coherence spine + spoof bar (re-rendered on demo). -->
       <div id="app-hero"></div>
@@ -55,9 +55,9 @@
 
     <footer>
       <p>
-        No data leaves your browser: collection, rule evaluation, and scoring all run locally in
-        this page. TLS / HTTP-2 / QUIC / TCP / IP-reputation detections need Kitsune's edge and are
-        listed but not evaluated here.
+        Nothing leaves your browser — every signal here is collected, scored and rendered on this
+        page. The network-layer checks (TLS, HTTP/2, QUIC, TCP, IP reputation) need Kitsune's edge, so
+        they're listed but not run.
       </p>
     </footer>
 
