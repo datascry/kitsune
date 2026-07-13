@@ -5,6 +5,35 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.20.0](https://github.com/datascry/kitsune/compare/v1.19.0...v1.20.0) (2026-07-13)
+
+
+### Features
+
+* **arena:** redesign gate page as a dual-verdict duel with client simulator ([87971e0](https://github.com/datascry/kitsune/commit/87971e0d85e6cd761ac64944ddb209e94a333a6a))
+* **collector:** redesign the live inspector as terminal forensics ([e114f25](https://github.com/datascry/kitsune/commit/e114f25763d1e4f809f5a22749992683d71b79be))
+* **detector:** build out the project website — docs, API, 404, fleet showcase ([7f0cd39](https://github.com/datascry/kitsune/commit/7f0cd396997dc2bbf014a97c463b7604a69639f1))
+* **detector:** compact the home below the hero to match the mock ([9b9fbf0](https://github.com/datascry/kitsune/commit/9b9fbf020411f6d3e393628c762820e781c5dcf6))
+* **detector:** consolidate the nav — Test/Arena/How-it-works/Docs/GitHub + a /docs hub ([4d89d5e](https://github.com/datascry/kitsune/commit/4d89d5e9bb5845e766816d5199bb2ffd59c6cc17))
+* **detector:** fix dead links in served docs + uplevel the API docs ([4e88d9d](https://github.com/datascry/kitsune/commit/4e88d9d37a1b85d35c80c87854cfb07a8e616a45))
+* **detector:** port the Terminal Forensics redesign onto demo.py; delete the livepage ([03a6320](https://github.com/datascry/kitsune/commit/03a63202f69ab3290db1705e8a63827f3f5065a9))
+* **detector:** redesign arena index (thesis hero, category chips, accented gate grid) ([1c39794](https://github.com/datascry/kitsune/commit/1c39794afa8458dc8681d9f89f5d2766fcde9317))
+* **detector:** redesign doc pages (matrix table, layer headers, display face) ([cee6e74](https://github.com/datascry/kitsune/commit/cee6e743a64a894ab1f38e4caf9bcb350cd4a0c2))
+* **detector:** self-host Space Grotesk + JetBrains Mono to match the design ([182eeed](https://github.com/datascry/kitsune/commit/182eeed797208cb9d09a1cc57d582965d07b5e29))
+
+
+### Bug Fixes
+
+* **arena:** dark-on-fox for the captcha submit button (a11y) ([9d06547](https://github.com/datascry/kitsune/commit/9d0654702c3c5981311387d2682c3ed6946be729))
+* **arena:** drop the broken client simulator; show real verdicts only ([0e081a1](https://github.com/datascry/kitsune/commit/0e081a19911bfa16467726c190fe942697670283))
+* **arena:** live timer for the hold gates + stop the memory-hard box overflow ([aed8f01](https://github.com/datascry/kitsune/commit/aed8f017df9aeddc76acda6c32b653327d82f003))
+* **collector:** resolve a11y findings from the front-end review ([2f9d3ed](https://github.com/datascry/kitsune/commit/2f9d3edfa3d50425f72e4889bb7881d44e6b24e3))
+* **detector:** cohesive panels on the main page + drop nav/detection redundancy ([4e89fc8](https://github.com/datascry/kitsune/commit/4e89fc8ddbf77231fd2d2efbd5201a1f0138d06c))
+* **detector:** honest QUIC/HTTP-3 wire message instead of a false 'next visit' promise ([3ad5a39](https://github.com/datascry/kitsune/commit/3ad5a397d07b751d47ea86e16c7899c984c6f4eb))
+* **detector:** map font names to constant paths (CodeQL path-injection) ([7b66fa6](https://github.com/datascry/kitsune/commit/7b66fa6ef8860809426c72ce8cc510c540bf3ad2))
+* **detector:** unify every doc-page H1 to the display face (on-design pass) ([4aca55c](https://github.com/datascry/kitsune/commit/4aca55cc9b9e3e61d6c7a9b3359e7399475ccf5c))
+* **edge:** stop blocking the public API docs (/docs, /api, /openapi.json) ([f40fba7](https://github.com/datascry/kitsune/commit/f40fba787b807db7720f939197cc549bb1a66c08))
+
 ## [1.19.0](https://github.com/datascry/kitsune/compare/v1.18.0...v1.19.0) (2026-07-12)
 
 
