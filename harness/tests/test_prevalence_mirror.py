@@ -1,5 +1,5 @@
 # tests/test_prevalence_mirror — lock the turnkey prevalence pipeline: harness BUILDS the prior, detector SCORES it.
-# The two prevalence modules are duplicated mirrors; if they drift, a built prior would score differently than intended.
+# The pure primitives are now the detector's, imported by the harness (one source), so these assert the wiring holds.
 
 from __future__ import annotations
 
@@ -15,9 +15,9 @@ _ENGINES = Path(__file__).resolve().parents[2] / "corpus" / "calibration" / "eng
 
 
 def test_prevalence_factors_are_mirrored() -> None:
-    # The structural invariant both the builder (harness) and the scorer (detector) iterate. If one side's
-    # _FACTORS is edited without the other, a harness-built prior would be scored against the wrong factors.
-    assert hp._FACTORS == dp._FACTORS
+    # The structural invariant both the builder (harness) and the scorer (detector) iterate. Now the harness
+    # imports the detector's FACTORS, so this asserts the shared object is the one the builder actually uses.
+    assert hp._FACTORS is dp.FACTORS
 
 
 def test_harness_built_prior_scores_identically_in_the_detector() -> None:
@@ -41,18 +41,20 @@ def test_harness_built_prior_scores_identically_in_the_detector() -> None:
 
 
 def test_cores_bucket_mirrors() -> None:
+    # The harness re-exports the detector's cores_bucket — assert it's the same callable and behaves.
+    assert hp.cores_bucket is dp.cores_bucket
     for n in [None, 0, 1, 2, 3, 4, 5, 8, 12, 16, 17, 32, 64, 128, "x"]:
-        assert hp.cores_bucket(n) == dp._cores_bucket(n), n
+        assert hp.cores_bucket(n) == dp.cores_bucket(n), n
 
 
 def test_screen_bucket_mirrors() -> None:
-    # harness takes (w, h); detector takes the "WxH" string — equivalent inputs must bucket identically.
+    # The shared (w, h) primitive and the detector's "WxH"-string parse path must bucket equivalent inputs the same.
     for w, h in [(1920, 1080), (1470, 956), (390, 844), (3840, 2160), (1280, 720), (0, 0), (2560, 1440)]:
-        assert hp.screen_bucket(w, h) == dp._screen_bucket(f"{w}x{h}"), (w, h)
+        assert hp.screen_bucket(w, h) == dp._screen_bucket_from_res(f"{w}x{h}"), (w, h)
 
 
 def test_gpu_family_mirrors() -> None:
-    # harness inlines the gpu family in features_from_fingerprint; assert it matches detector._gpu_family.
+    # features_from_fingerprint now calls the detector's gpu_family; assert the extracted family matches it.
     renderers = [
         "ANGLE (NVIDIA, GeForce RTX 3080)",
         "ANGLE (Apple, Apple M2)",
@@ -64,4 +66,4 @@ def test_gpu_family_mirrors() -> None:
     ]
     for renderer in renderers:
         harness_gpu = features_from_fingerprint({"videoCard": {"renderer": renderer}})["gpu"]
-        assert harness_gpu == dp._gpu_family(renderer), renderer
+        assert harness_gpu == dp.gpu_family(renderer), renderer
