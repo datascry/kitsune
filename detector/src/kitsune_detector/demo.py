@@ -1101,7 +1101,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
       + wireRow("TLS ext order", w.tls_ext_order, "n/a") + wireRow("TLS cipher order", w.tls_cipher_order, "n/a") + wireRow("TLS extras", w.tls_extras, "n/a")
       + wireRow("HTTP version", w.http_version, "n/a") + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("JA4T (TCP/IP)", ja4tLabel, "n/a")
-      + wireRow("QUIC / HTTP-3", w.quic, "captured on your next visit") + wireRow("QUIC transport params", w.quic_transport_params, "captured on your next visit");
+      + wireRow("QUIC / HTTP-3", w.quic, "not negotiated \\u2014 seen only if your browser uses HTTP/3") + wireRow("QUIC transport params", w.quic_transport_params, "\\u2014");
     var html = '<div class="surfaces">' + cards + '</div>';
     var nc = d.network_contradictions || [];
     if (nc.length) {
