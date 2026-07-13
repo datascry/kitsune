@@ -1387,6 +1387,22 @@ def create_app(
     def og_png() -> FileResponse:
         return _asset("og.png", "image/png")
 
+    @app.get("/fonts/{name}", include_in_schema=False)
+    def font_asset(name: str) -> FileResponse:
+        # Self-hosted display + body fonts (Space Grotesk, JetBrains Mono) — served from our OWN origin so
+        # no third-party font CDN ever sees the visitor (the page promises no data leaves the browser).
+        # Immutable + year-long cache: the filenames are content-stable.
+        if not re.fullmatch(r"[a-z0-9-]+\.woff2", name):
+            raise HTTPException(status_code=404)
+        path = STATIC_DIR / "fonts" / name
+        if not path.is_file():
+            raise HTTPException(status_code=404)
+        return FileResponse(
+            path,
+            media_type="font/woff2",
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+
     @app.get("/site.webmanifest", include_in_schema=False)
     def site_webmanifest() -> FileResponse:
         return _asset("site.webmanifest", "application/manifest+json")
