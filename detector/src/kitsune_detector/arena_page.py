@@ -299,7 +299,7 @@ ARENA_CSS = """<style>
 .arena-run:disabled{opacity:.5;cursor:default}
 .verdicts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.5rem}
 .vcard{border:1px solid var(--line);border-radius:10px;padding:1rem;background:var(--panel)}
-.vcard h3{margin:0 0 .4rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.vcard h2,.vcard h3{margin:0 0 .4rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .vcard .big{font-size:1.4rem;font-weight:700}
 .vcard .pass{color:var(--jade)}.vcard .fail{color:var(--fox)}
 .vcard code{font-size:.78rem;word-break:break-all;color:var(--fox)}
@@ -318,7 +318,7 @@ ARENA_CSS = """<style>
 .arena-levels{display:inline-flex;border:1px solid var(--line-bright);border-radius:8px;overflow:hidden;margin:.2rem 0 .4rem}
 .arena-levels button{font:inherit;font-size:.78rem;padding:.4rem .9rem;border:0;border-right:1px solid var(--line-bright);background:var(--panel);color:var(--muted);cursor:pointer;min-height:40px}
 .arena-levels button:last-child{border-right:0}
-.arena-levels button[aria-pressed=true]{background:var(--fox);color:#fff;font-weight:600}
+.arena-levels button[aria-pressed=true]{background:var(--fox);color:var(--bg);font-weight:600}
 .arena-levels-wrap{margin:.2rem 0 .8rem}
 .ks-checkbox{display:inline-flex;align-items:center;gap:.8rem;border:1px solid var(--line-bright);background:var(--panel);border-radius:6px;padding:.7rem 1rem;cursor:pointer;min-width:300px;user-select:none}
 .ks-checkbox:hover{border-color:var(--muted)}
@@ -350,7 +350,7 @@ ARENA_CSS = """<style>
 .arena-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 1.2rem}
 .arena-chips .chip{font:inherit;font-size:.74rem;letter-spacing:.04em;padding:.35rem .8rem;border:1px solid var(--line-bright);background:var(--panel);color:var(--muted);border-radius:999px;cursor:pointer;min-height:36px}
 .arena-chips .chip:hover{color:var(--ink)}
-.arena-chips .chip.active{background:var(--fox);border-color:var(--fox);color:#fff;font-weight:600}
+.arena-chips .chip.active{background:var(--fox);border-color:var(--fox);color:var(--bg);font-weight:600}
 .gate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:.2rem 0 1.6rem}
 .gate-card{display:block;background:var(--panel);padding:.8rem .9rem;text-decoration:none;color:inherit;border-top:2px solid var(--cat,var(--line-bright));min-width:0}
 .gate-card:hover{background:var(--panel-2)}
@@ -377,7 +377,7 @@ ARENA_CSS = """<style>
 .dual-head .vline{font-size:.82rem;line-height:1.6;color:var(--muted);margin:0 0 1.1rem;max-width:36rem}
 .dual{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .dual .vcard{border:1.5px solid var(--line);border-radius:10px;padding:1.1rem;background:var(--panel-2);position:relative;overflow:hidden;transition:border-color .2s}
-.dual .vcard h3{margin:0 0 .5rem;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.dual .vcard h2,.dual .vcard h3{margin:0 0 .5rem;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .dual .vcard .big{font-family:"Space Grotesk",var(--mono);font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.01em;color:var(--ink)}
 .dual .vcard .big.pass{color:var(--jade)}.dual .vcard .big.fail{color:var(--fox)}.dual .vcard .big.evades{color:var(--amber)}
 .dual .vcard .gloss{font-size:.72rem;color:var(--muted);margin:.6rem 0 0}
@@ -1055,14 +1055,14 @@ _VERDICTS_HTML = """
 </div>
 <div class="dual">
   <div class="vcard">
-    <h3>Gate verdict</h3>
+    <h2>Gate verdict</h2>
     <div class="big" id="ks-gate-verdict">&mdash;</div>
     <p class="gloss" id="ks-gate-note">did you solve the puzzle?</p>
     <div id="ks-token"></div>
   </div>
   <div class="vcard det">
     <span class="vscan" aria-hidden="true"></span>
-    <h3>Detector verdict</h3>
+    <h2>Detector verdict</h2>
     <div class="big" id="ks-det-verdict">&mdash;</div>
     <p class="gloss" id="ks-det-note">does your client cohere over the edge?</p>
   </div>

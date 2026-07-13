@@ -8,7 +8,7 @@
   --line: #20202a;
   --line-bright: #34343f;
   --ink: #eae7df; /* bone */
-  --muted: #797985;
+  --muted: #8a8a97;
   --fox: #e8482b; /* fox-fire vermilion — the one accent */
   --jade: #5fb89a; /* clear / coherent */
   --amber: #d6a44e; /* suspicious / experimental */
@@ -17,6 +17,19 @@
   /* Display face for the big verdict/headlines. Space Grotesk where present, else the mono at heavy weight —
      no web-font fetch, so no visitor IP leaks to a font CDN (the footer promises no data leaves the browser). */
   --display: "Space Grotesk", var(--mono);
+}
+
+/* Visually-hidden but screen-reader-available (e.g. an icon-only table header). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Big display type — the giant verdict + score. Heavy, tight, tabular for the numbers. */
@@ -110,15 +123,13 @@ header p {
   font-size: 0.82rem;
   margin: 0.75rem 0 0;
 }
+/* Links inside prose (mast lede + footer) carry a persistent underline, so they are
+   distinguishable without relying on colour alone (WCAG 1.4.1). */
 header a,
 footer a {
   color: var(--fox);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-}
-header a:hover,
-footer a:hover {
-  border-bottom-color: var(--fox);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 main {
@@ -506,8 +517,11 @@ tr.fired td.mark {
 tr.clear td.mark {
   color: var(--muted);
 }
-tr.clear {
-  opacity: 0.5;
+/* De-emphasize non-fired rows by muting their colour (not opacity) — keeps AA contrast while the fired
+   rows keep their fox id + bone title, so the hierarchy reads without dimming text below the 4.5:1 floor. */
+tr.clear code,
+tr.clear .title {
+  color: var(--muted);
 }
 code {
   font-family: var(--mono);
@@ -548,7 +562,7 @@ td.weight {
   column-gap: 2rem;
 }
 .layers {
-  color: var(--line-bright);
+  color: var(--muted);
 }
 
 footer {
@@ -681,8 +695,10 @@ footer {
   color: var(--amber);
   font-weight: 400;
 }
-.bp-row.pending {
-  opacity: 0.6;
+/* Pending rows read as muted (label + id), not opacity-dimmed, so they stay above the contrast floor. */
+.bp-row.pending .bp-label,
+.bp-row.pending .bp-rid {
+  color: var(--muted);
 }
 .bp-summary {
   font-size: 0.8rem;

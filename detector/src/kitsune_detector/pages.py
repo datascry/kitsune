@@ -49,7 +49,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--mono);font
 nav.top a.active,nav.top a[aria-current]{color:var(--fox)}
 .crumbs{max-width:64rem;margin:0 auto;padding:.7rem 1.5rem 0;font-size:.74rem;color:var(--muted)}
 .crumbs a{color:var(--muted);text-decoration:none}.crumbs a:hover{color:var(--fox)}
-.crumbs .sep{color:var(--line-bright);margin:0 .4rem}
+.crumbs .sep{color:var(--muted);margin:0 .4rem}
 .filter-box{width:100%;max-width:24rem;box-sizing:border-box;padding:.5rem .7rem;margin:.4rem 0 1rem;border:1px solid var(--line-bright);background:var(--panel);color:var(--ink);font:inherit;border-radius:3px}
 nav.top{display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;max-width:64rem;margin:0 auto;padding:.9rem 1.5rem;border-bottom:1px solid var(--line)}
 nav.top a{color:var(--muted);text-decoration:none;font-size:.78rem;letter-spacing:.06em}
@@ -67,6 +67,8 @@ main.doc strong{color:var(--ink)}
 main.doc em{color:var(--ink);font-style:italic}
 main.doc a{color:var(--fox);text-decoration:none}
 main.doc a:hover{text-decoration:underline}
+/* Links inside prose carry a persistent underline — distinguishable without colour alone (WCAG 1.4.1). */
+main.doc p a,main.doc li a,.lead a{text-decoration:underline;text-underline-offset:2px}
 main.doc code{font-family:var(--mono);color:var(--fox);font-size:.92em;word-break:break-word}
 main.doc pre{background:var(--panel-2);border:1px solid var(--line);padding:.8rem 1rem;overflow:auto}
 main.doc pre code{color:var(--ink)}
@@ -76,7 +78,7 @@ main.doc th{color:var(--muted);text-transform:uppercase;font-size:.7rem;letter-s
 main.doc blockquote{border-left:2px solid var(--fox);margin:1rem 0;padding:.2rem 0 .2rem 1rem}
 main.doc hr{border:0;border-top:1px solid var(--line);margin:2rem 0}
 footer{max-width:64rem;margin:0 auto;color:var(--muted);font-size:.78rem;border-top:1px solid var(--line);padding:1rem 1.5rem 2.5rem}
-footer a{color:var(--fox);text-decoration:none}
+footer a{color:var(--fox);text-decoration:underline;text-underline-offset:2px}
 /* --- customer-facing cards / badges / stats --- */
 .lead{font-size:1.02rem;color:var(--ink);max-width:48rem;margin:.4rem 0 1rem}
 .stat-row{display:flex;flex-wrap:wrap;gap:.8rem 2rem;margin:.4rem 0 1.4rem}
