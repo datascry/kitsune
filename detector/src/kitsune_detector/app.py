@@ -1480,6 +1480,12 @@ def create_app(
         # <script> at the end of DEMO_PAGE into static/home.js — a real, cacheable file out of the HTML string.
         return _asset("home.js", "text/javascript")
 
+    @app.get("/arena.js", include_in_schema=False)
+    def arena_js() -> FileResponse:
+        # The shared arena challenge-gate client, extracted from arena_page.py's inline ARENA_JS into
+        # static/arena.js. Loaded per gate after an inline <script> pins window.__ARENA__ = {slug, mode}.
+        return _asset("arena.js", "text/javascript")
+
     @app.get("/docs", response_class=HTMLResponse, include_in_schema=False)
     def docs_hub() -> HTMLResponse:
         # The human documentation hub (the Swagger UI lives at /api). One home for the catalogs, the

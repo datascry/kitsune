@@ -925,13 +925,14 @@ def test_arena_index_renders_with_shell(client: TestClient) -> None:
 
 def test_arena_gate_pages_auto_serve(client: TestClient) -> None:
     # Each challenge is its own page that AUTO-SERVES on load (no run button) + the dual verdict, on the shell.
+    assert "start();" in client.get("/arena.js").text  # the shared client runs the gate on load
     for slug in ("checkbox", "managed", "hashcash", "text", "slider", "rotate", "image-select", "pact"):
         resp = client.get(f"/arena/gate/{slug}")
         assert resp.status_code == 200, slug
         body = resp.text
         assert 'id="ks-run"' not in body  # no button — the challenge serves itself
         assert 'id="ks-log"' in body and 'id="ks-captcha"' in body and 'id="ks-det-verdict"' in body
-        assert "start();" in body and "auto-serves on load" in body  # the page runs the gate on load
+        assert "auto-serves on load" in body and "/arena.js" in body  # the page loads the client that runs it
         assert f'"slug": "{slug}"' in body  # the per-page __ARENA__ config pins this gate
         assert 'class="brand"' in body  # the shared nav/shell is present
 
@@ -972,8 +973,10 @@ def test_arena_checkbox_gate(client: TestClient) -> None:
     idx = client.get("/arena").text
     assert 'href="/arena/gate/checkbox"' in idx
     body = client.get("/arena/gate/checkbox").text
-    assert body.count("ks-checkbox") and "Verify you are human" in body
     assert '"mode": "checkbox"' in body and 'id="ks-levels"' not in body  # coherence-gated, no level dial
+    # The checkbox widget itself is rendered by the shared client (now served from /arena.js).
+    arena_js = client.get("/arena.js").text
+    assert "ks-checkbox" in arena_js and "Verify you are human" in arena_js
 
 
 def test_arena_gate_difficulty_selector(client: TestClient) -> None:
