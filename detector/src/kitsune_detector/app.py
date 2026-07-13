@@ -49,6 +49,7 @@ from .pages import (
     render_detection_detail,
     render_detections_page,
     render_doc_page,
+    render_docs_hub,
     render_evasion_detail,
     render_evasions_page,
     render_how_it_works_page,
@@ -151,8 +152,8 @@ LLMS_TXT = """# Kitsune
 - `POST https://kitsune.id/ingest`: send collector signal envelopes; the response is the same verdict JSON.
 - [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry
   (rule id, title, layers, category, and whether each rule can convict).
-- [API docs](https://kitsune.id/docs): interactive OpenAPI/Swagger UI; the schema is at
-  [/openapi.json](https://kitsune.id/openapi.json).
+- [API docs](https://kitsune.id/api): interactive OpenAPI/Swagger UI; the schema is at
+  [/openapi.json](https://kitsune.id/openapi.json). All docs are indexed at [/docs](https://kitsune.id/docs).
 
 ## Documentation
 - [How it works](https://kitsune.id/how-it-works): the cross-layer incoherence thesis and the signal layers.
@@ -279,12 +280,14 @@ def create_app(
         if authorization is None or not hmac.compare_digest(authorization, expected):
             raise HTTPException(status_code=401, detail="admin token required")
 
-    # Public API docs: Swagger UI at /docs, ReDoc at /redoc, schema at /openapi.json. The schema lists only
-    # the public API (POST /ingest, /rules.json, /inspect/{id}, the /arena relays); every internal/admin/asset
-    # route sets include_in_schema=False, and the admin routes stay token-guarded regardless of being documented.
+    # Public API docs: Swagger UI at /api (so /docs is the human documentation hub), schema at /openapi.json.
+    # The schema lists only the public API (POST /ingest, /rules.json, /inspect/{id}, the /arena relays); every
+    # internal/admin/asset route sets include_in_schema=False, and the admin routes stay token-guarded.
     app = FastAPI(
         title="Kitsune Detector",
         version="0.1.0",
+        docs_url="/api",
+        redoc_url=None,
         description=(
             "The Kitsune bot-detection API. POST collector signal envelopes to `/ingest` and get a "
             "cross-layer coherence verdict; read the full rule registry at `/rules.json`. "
@@ -1433,6 +1436,12 @@ def create_app(
     def og_png() -> FileResponse:
         return _asset("og.png", "image/png")
 
+    @app.get("/docs", response_class=HTMLResponse, include_in_schema=False)
+    def docs_hub() -> HTMLResponse:
+        # The human documentation hub (the Swagger UI lives at /api). One home for the catalogs, the
+        # fleet/coordination work, research and the API reference — so the top nav can stay lean.
+        return HTMLResponse(render_docs_hub())
+
     @app.get("/fonts/{name}", include_in_schema=False)
     def font_asset(name: str) -> FileResponse:
         # Self-hosted display + body fonts (Space Grotesk, JetBrains Mono) — served from our OWN origin so
@@ -1462,7 +1471,7 @@ def create_app(
 
     @app.get("/sitemap.xml", include_in_schema=False)
     def sitemap() -> Response:
-        urls = ["/"] + [f"/{slug}" for slug in DOC_PAGES]
+        urls = ["/", "/docs"] + [f"/{slug}" for slug in DOC_PAGES]
         urls += ["/arena"] + [f"/arena/gate/{c['slug']}" for c in ARENA_CHALLENGES]
         urls += [f"/detections/{rid}" for rid in rules_by_id]
         urls += [f"/evasions/{s}" for s in dict.fromkeys([*evaders, *fleet])]

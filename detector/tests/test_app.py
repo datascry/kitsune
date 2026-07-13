@@ -88,7 +88,7 @@ def test_admin_token_gates_inspection_endpoints(fixed_clock) -> None:
     schema = client.get("/openapi.json")
     assert schema.status_code == 200
     assert not any(p.startswith(("/session", "/verdict")) or p == "/scoreboard" for p in schema.json()["paths"])
-    assert client.get("/docs").status_code == 200
+    assert client.get("/api").status_code == 200  # Swagger UI stays public
 
 
 def test_index_serves_collector(client: TestClient) -> None:
@@ -160,14 +160,27 @@ def test_branded_404(client: TestClient) -> None:
 
 
 def test_public_api_docs(client: TestClient) -> None:
-    # /docs (Swagger) + the schema are public; the schema lists only the public API — the token-gated
-    # operator inspection endpoints (/session, /verdict, /scoreboard) are kept out of it.
-    assert client.get("/docs").status_code == 200
+    # Swagger UI lives at /api (so /docs is the human hub); the schema is public and lists only the public
+    # API — the token-gated operator endpoints (/session, /verdict, /scoreboard) are kept out of it.
+    assert client.get("/api").status_code == 200  # Swagger UI
     schema = client.get("/openapi.json")
     assert schema.status_code == 200
     paths = schema.json()["paths"]
     assert "/ingest" in paths and "/rules.json" in paths
     assert not any(p.startswith(("/session", "/verdict")) or p == "/scoreboard" for p in paths)
+
+
+def test_docs_hub(client: TestClient) -> None:
+    # /docs is the documentation hub: one page that links to every reference section, so the nav stays lean.
+    r = client.get("/docs")
+    assert r.status_code == 200
+    html = r.text
+    assert "Documentation" in html
+    for href in ("/matrix", "/detections", "/evasions", "/fleet", "/frontier", "/research", "/api"):
+        assert f'href="{href}"' in html
+    # The top nav itself is lean — the catalogs are NOT individual nav items anymore.
+    nav = html.split("</nav>")[0]
+    assert ">Docs<" in nav and ">Matrix<" not in nav and ">Evasions<" not in nav
 
 
 def test_fleet_and_frontier_served(client: TestClient) -> None:
