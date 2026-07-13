@@ -271,7 +271,7 @@ both the red team flagged:
 | [`detector/`](detector) | Python | Session correlation, the coherence engine, the conviction-gated scorer, the prevalence model, keyless (DB-IP Lite) City+ASN geo / IP-reputation enrichment | ~100% |
 | [`harness/`](harness) | Python | The scoreboard, the calibration precision gate, the coordination scorer, biomech calibration (ethics enforced in code) | ~97% |
 | [`edge/`](edge) | Go | TLS→JA3/JA4 (+ GREASE, post-quantum), HTTP/2 (Akamai + JA4H + unknown-engine), TCP/IP-OS, QUIC/HTTP-3 (RFC 9001 decrypt), HTTP/2 DoS attribution | ~97% (fp) |
-| [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection + a CreepJS-style live self-test page running the full probe suite | 100% (logic) |
+| [`collector/`](collector) | TypeScript | In-browser fingerprint + behavioral collection — the production page script that ships `browser.*`/`behavioral.*` signals to the detector (the full CreepJS-style self-test suite is the detector's own served page) | 100% (logic) |
 | [`evaders/`](evaders) | Py/TS/Go | The red-team ladder of real anti-detect tools (above) | all `bot` |
 | [`fleet/`](fleet) | Python | **Skulk** — the fleet adversary-emulation kit (coordination-shaped sessions; authorization-scoped in code) | ~97% |
 | [`arena/`](arena) | Go | Public self-hosted challenge gates (PoW · CAPTCHA · slider · image-select · PACT), each easy/medium/hard | ~95% |
@@ -307,10 +307,13 @@ Go and Node aren't required locally — use Docker (`golang:1.26-alpine`, `node:
 - [Decision records](docs/adr) — MADR ADRs for the load-bearing decisions.
 - [Contributing](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 
-**Explore it live** (the same data, rendered + cross-linked at [kitsune.id](https://kitsune.id)):
-[Detections](https://kitsune.id/detections) · [Evasions](https://kitsune.id/evasions) ·
-[Matrix](https://kitsune.id/matrix) · [Arena](https://kitsune.id/arena) ·
-[How it works](https://kitsune.id/how-it-works) · [Research](https://kitsune.id/research)
+**Explore it live** — the same data, rendered + cross-linked at [kitsune.id](https://kitsune.id), all under
+the [**docs hub**](https://kitsune.id/docs):
+[How it works](https://kitsune.id/how-it-works) · [Detections](https://kitsune.id/detections) ·
+[Evasions](https://kitsune.id/evasions) · [Matrix](https://kitsune.id/matrix) ·
+[Fleet & Skulk](https://kitsune.id/fleet) · [Frontier](https://kitsune.id/frontier) ·
+[Research](https://kitsune.id/research) · [Arena](https://kitsune.id/arena) ·
+[**API**](https://kitsune.id/api) (OpenAPI/Swagger — `POST /ingest` → verdict, `/rules.json`)
 
 ## Ethics
 
