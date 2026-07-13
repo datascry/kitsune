@@ -17,6 +17,7 @@ from kitsune_detector.coherence import load_registry
 from kitsune_detector.coherence.rules import CoherenceRule
 from kitsune_detector.detector import Detector
 from kitsune_detector.models import Layer, Session, Verdict
+from kitsune_detector.scoring import CONVICTING_CATEGORIES
 
 
 def evaluable_detectors() -> list[CoherenceRule]:
@@ -102,11 +103,6 @@ def render_gaps(
     return "\n".join(lines) + "\n"
 
 
-# Convicting categories (mirror detector/scoring.py): a `bot` label needs one of these; the rest only
-# corroborate. Surfacing the convicting tells per evader is what makes the per-evader view actionable.
-_CONVICTING = frozenset({"coherence", "automation", "artifact"})
-
-
 def render_evaders(
     detectors: list[CoherenceRule],
     fired: dict[str, set[str]],
@@ -126,7 +122,7 @@ def render_evaders(
     ]
     for name in fired:
         v = verdicts[name]
-        conv = [c.rule_id for c in v.contradictions if c.category.value in _CONVICTING]
+        conv = [c.rule_id for c in v.contradictions if c.category in CONVICTING_CATEGORIES]
         shown = ", ".join(f"`{r}`" for r in conv[:3]) + (f" +{len(conv) - 3}" if len(conv) > 3 else "")
         rows.append(f"| `{name}` | {v.label.value} | {v.score:.2f} | {len(fired[name])}/{n} | {shown or '—'} |")
     return "\n".join(rows) + "\n"
