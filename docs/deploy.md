@@ -168,12 +168,14 @@ a **one-time `up -d`** — Watchtower auto-updates *existing* labelled container
 service, so the first time you must `pull` + `up -d` to start the arena container; subsequent releases update it
 automatically. Without the arena service running, `/arena` returns 503.
 
-One-time, on the VPS, switch to the pull-based stack (adds the deploy overlay):
+The prod overlay (`docker-compose.prod.yml`) already runs the GHCR images and ships the Watchtower service —
+so the CD stack is just the base file + the prod overlay. One-time, on the VPS, fetch the images so `up` runs
+them instead of building:
 
 ```sh
-C="docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.deploy.yml"
-$C pull        # fetch the GHCR images (so up uses them instead of building)
-$C up -d       # detector/edge now run the GHCR images; watchtower auto-updates them on every release
+C="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
+$C pull        # fetch the GHCR images (so up uses them instead of building from source)
+$C up -d       # detector/edge/arena run the GHCR images; watchtower auto-updates them on every release
 ```
 
 - **Image visibility:** make the two GHCR packages **public** (simplest — no pull auth), or keep them private
