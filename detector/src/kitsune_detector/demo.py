@@ -615,8 +615,13 @@ body.ks-done .ks-scan {
 #ks-detections{overflow-x:auto}/* keep all columns on mobile; scroll rather than hide data */
 .layer-bars{margin:1rem 0 1.25rem}
 .bar-clean .bar-val{color:var(--jade)}.bar-clean .bar-label{color:var(--muted)}
-#ks-bio{border:1.5px solid var(--line-bright);background:var(--panel);padding:1.4rem 1.5rem;margin:1.5rem 0}
-#ks-bio>h2{margin-top:0}
+/* The shared evidence-panel language: same bordered box as the verdict hero + behavioral layer, so the
+   whole page reads as one cohesive stack of panels (no dropdown affordances). */
+#ks-bio,.panel{border:1.5px solid var(--line-bright);background:var(--panel);padding:1.4rem 1.5rem;margin:1.5rem 0}
+#ks-bio>h2,.panel>h2{margin-top:0}
+.panel .predict-grid,.panel .surfaces{margin-bottom:0}
+.fired-spot{margin-top:1.5rem}
+.panel:empty{display:none}  /* the fired-detections panel stays hidden until the verdict fills it */
 .bio-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:1.6rem;align-items:start}
 .bio-controls .bio-note{color:var(--muted);font-size:.72rem;margin:.6rem 0 0}
 .bio-grid .bio-metrics{grid-template-columns:1fr;margin:0}
@@ -711,8 +716,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
 <body>
 <a class="skip-link" href="#test">Skip to the detection test</a>
 <nav class="top" aria-label="Primary">
-  <a class="brand" href="/">Kitsune</a>
-  <a href="/" class="active" aria-current="page">Test</a>
+  <a class="brand" href="/" aria-current="page">Kitsune</a>
   <a href="/arena">Arena</a>
   <a href="/how-it-works">How it works</a>
   <a href="/docs">Docs</a>
@@ -763,14 +767,14 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
       <div id="ks-bio-metrics" class="bio-metrics">move your mouse, swipe, and type below to measure&hellip;</div>
     </div>
   </section>
-  <!-- Fired-detections spotlight — what convicts this session (full breakdown in the Detections disclosure). -->
-  <section class="fired-spot" id="ks-fired"></section>
-  <!-- EVIDENCE (collapsed): the deep forensic panels open on click. Lazy render is preserved — a panel
-       paints when its data arrives via ksLazyTouch on first open, so load-time work is unchanged. -->
-  <details class="ks-disclose" id="ks-predict-d"><summary>Predicted browser <span class="note">&mdash; from feature detection, independent of the User-Agent</span></summary><div id="ks-predict"></div></details>
-  <details class="ks-disclose" id="ks-wire-d"><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
-  <details class="ks-disclose" id="ks-surfaces-d"><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
-  <details class="ks-disclose" id="ks-detections-d"><summary>Detections <span class="note">&mdash; every check Kitsune ran, grouped by layer</span></summary><div id="ks-detections"></div></details>
+  <!-- Fired-detections spotlight — what convicts this session. -->
+  <section class="panel fired-spot" id="ks-fired"></section>
+  <!-- EVIDENCE panels: the same bordered-panel language as the verdict + behavioral layer, always visible, so
+       the page reads as one cohesive stack rather than a row of dropdowns. Each still paints when its data
+       arrives (ksLazyTouch renders eagerly for a non-collapsible panel). -->
+  <section class="panel" id="ks-predict-d"><h2>Predicted browser <span class="note">&mdash; from feature detection, independent of the User-Agent</span></h2><div id="ks-predict"></div></section>
+  <section class="panel" id="ks-wire-d"><h2>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></h2><div id="ks-wire"></div></section>
+  <section class="panel" id="ks-surfaces-d"><h2>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></h2><div id="ks-surfaces"></div></section>
 </section>
 <section id="how-it-works">
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
@@ -1128,7 +1132,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   }
   function ksLazyTouch(detId) {
     var L = __ksLazy[detId]; if (!L) return;
-    if (L.d.open) { L.paint(); L.dirty = false; } else { L.dirty = true; }
+    // A <section> panel has no .open (undefined) — always paint it now; a <details> paints only when open.
+    if (L.d.open == null || L.d.open) { L.paint(); L.dirty = false; } else { L.dirty = true; }
   }
   function paintSurfaces() { renderSurfaces(window.__ksFpFull || window.__ksFp || rawFingerprint(), window.__ksFiredSet || {}); }
   function paintDetections() { var det = document.getElementById("ks-detections"); if (det && window.__ksFiredMap) det.innerHTML = renderDetections(window.__ksFiredMap, window.__ksFiredCount || 0); }
@@ -1218,10 +1223,8 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var cs = v.contradictions || [], firedMap = {}, firedSet = {};
     for (var i = 0; i < cs.length; i++) { firedMap[cs[i].rule_id] = cs[i]; firedSet[cs[i].rule_id] = 1; }
     window.__ksFiredSet = firedSet; window.__ksFiredMap = firedMap; window.__ksFiredCount = cs.length;
-    // The dense detections + surfaces panels are collapsed; set the at-a-glance tamper count eagerly, then
-    // render their DOM only if open (else on first open) — presentation deferred, the verdict already shown.
+    // Set the at-a-glance surfaces tamper count, then (re)paint the surfaces panel with the fired set.
     var sc = document.getElementById("ks-surf-count"); if (sc) sc.textContent = " (" + surfTamperCount(firedSet) + " tampered)";
-    ksLazyTouch("ks-detections-d");
     ksLazyTouch("ks-surfaces-d");
     // Pull the edge wire layer (JA3/JA4/TCP-OS/QUIC + IP), publish it + the full-stack ID eagerly (the wire
     // PANEL render is deferred to first open).
@@ -1235,7 +1238,6 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
   // is the bulk of the post-verdict main-thread task). Data + machine-readable result stay eager above.
   ksLazyInit("ks-wire-d", paintWire);
   ksLazyInit("ks-surfaces-d", paintSurfaces);
-  ksLazyInit("ks-detections-d", paintDetections);
   renderClientImmediate();
   var id = sid();
   if (!id) { return; }

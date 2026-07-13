@@ -206,7 +206,6 @@ def test_index_has_live_render_containers(client: TestClient) -> None:
         'id="ks-surfaces"',
         'id="ks-fpid"',
         'id="ks-wire"',
-        'id="ks-detections"',
     ):
         assert marker in html
 

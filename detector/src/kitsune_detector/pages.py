@@ -48,7 +48,6 @@ _SECTION_NAMES: dict[str, str] = {
 #: A lean top nav: the two things a visitor DOES (test, arena), the pitch, one Docs home, and source. The
 #: catalogs/fleet/frontier/research/API all live under the /docs hub instead of each taking a nav slot.
 NAV_LINKS: list[tuple[str, str]] = [
-    ("/", "Test"),
     ("/arena", "Arena"),
     ("/how-it-works", "How it works"),
     ("/docs", "Docs"),
