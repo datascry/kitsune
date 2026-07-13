@@ -365,10 +365,6 @@ ARENA_CSS = """<style>
 @media (max-width:640px){.gate-grid{grid-template-columns:1fr}.arena-hero .arena-h1{font-size:1.7rem}.arena-hero::before{width:16rem;height:16rem}}
 @media (prefers-reduced-motion:reduce){.arena-hero::before{opacity:.08}}
 /* --- redesign 2b: dual-verdict gate page (equal heroes + client simulator) --- */
-.gate-sim{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.6rem 0 1rem}
-.gate-sim .gs-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-right:.2rem}
-.gate-sim .gs-btn{font:inherit;font-size:.78rem;padding:.5rem .9rem;border:1px solid var(--line-bright);background:var(--panel);color:var(--ink);border-radius:6px;cursor:pointer;min-height:40px}
-.gate-sim .gs-btn.active{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
 .gate-body{display:grid;grid-template-columns:1fr 1.15fr;gap:0;border-top:1px solid var(--line);margin-top:.2rem}
 .gate-left{padding:1.4rem 1.4rem 1.4rem 0;border-right:1px solid var(--line);min-width:0}
 .gate-right{padding:1.4rem 0 1.4rem 1.6rem;display:flex;flex-direction:column;min-width:0}
@@ -379,7 +375,7 @@ ARENA_CSS = """<style>
 .dual .vcard{border:1.5px solid var(--line);border-radius:10px;padding:1.1rem;background:var(--panel-2);position:relative;overflow:hidden;transition:border-color .2s}
 .dual .vcard h2,.dual .vcard h3{margin:0 0 .5rem;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .dual .vcard .big{font-family:"Space Grotesk",var(--mono);font-size:2rem;font-weight:700;line-height:1;letter-spacing:-.01em;color:var(--ink)}
-.dual .vcard .big.pass{color:var(--jade)}.dual .vcard .big.fail{color:var(--fox)}.dual .vcard .big.evades{color:var(--amber)}
+.dual .vcard .big.pass{color:var(--jade)}.dual .vcard .big.fail{color:var(--fox)}.dual .vcard .big.evades{color:var(--amber)}.dual .vcard .big.unknown{color:var(--muted)}
 .dual .vcard .gloss{font-size:.72rem;color:var(--muted);margin:.6rem 0 0}
 .dual .vcard code{font-size:.72rem;word-break:break-all;color:var(--fox)}
 .dual .vcard:has(.big.pass){border-color:var(--jade)}
@@ -437,7 +433,8 @@ ARENA_JS = r"""
       var v=await r.json();
       var label=String(v.label||"?");
       out.textContent=label.toUpperCase();
-      out.className="big "+(label==="human"||label==="verified"?"pass":"fail");
+      var cls=(label==="human"||label==="verified")?"pass":(label==="unknown"||label==="?")?"unknown":"fail";
+      out.className="big "+cls;
     }catch(_){ out.textContent="—"; }
   }
 
@@ -1069,31 +1066,6 @@ _VERDICTS_HTML = """
 </div>
 """
 
-# Client simulator (redesign 2b): a demo overlay that tells the "solved-but-convicted" story on the two verdict
-# cards. It is NOT the source of truth — a real solve runs the gate handler + fetchDetectorVerdict(), which
-# overwrite the cards with the live verdict. Default (ocr) is applied after setup so the narrative shows on load.
-_SIM_SCRIPT = """
-<script>(function(){
-var P={
- human:{gl:"PASSED",gc:"pass",dl:"HUMAN",dc:"pass",h:"Solved it \\u2014 and coherent.",hc:"var(--jade)",line:"A person read the glyphs and typed them. The edge independently agrees: engine, realm, GPU and network fingerprint all describe one real browser. Gate and detector both clear."},
- ocr:{gl:"PASSED",gc:"pass",dl:"BOT",dc:"fail",h:"Solved the puzzle. Still not coherent.",hc:"var(--fox)",line:"An OCR script read the pixels and passed the gate in milliseconds \\u2014 but the JA4 TLS fingerprint contradicts the User-Agent and the headless tells fire. The puzzle was a cost, not a discriminator; the network layer convicts."},
- llm:{gl:"PASSED",gc:"pass",dl:"EVADES",dc:"evades",h:"Walks through \\u2014 this gate can't hold it.",hc:"var(--amber)",line:"A real, coherent browser paced like a human solves the puzzle and evades every fingerprint and behavioral tell. Only the track gate catches it \\u2014 by the physics of its snapshot\\u2192reason\\u2192act loop, not its cognition."}
-};
-function el(id){return document.getElementById(id);}
-function apply(k){var p=P[k];if(!p)return;
- var hd=el('ks-headline');if(hd){hd.textContent=p.h;hd.style.color=p.hc;}
- var ln=el('ks-vline');if(ln)ln.textContent=p.line;
- var gv=el('ks-gate-verdict');if(gv){gv.textContent=p.gl;gv.className='big '+p.gc;}
- var dv=el('ks-det-verdict');if(dv){dv.textContent=p.dl;dv.className='big '+p.dc;}
- var gn=el('ks-gate-note');if(gn)gn.textContent='did you solve the puzzle?';
-}
-var btns=document.querySelectorAll('.gate-sim .gs-btn');
-btns.forEach(function(b){b.addEventListener('click',function(){
- btns.forEach(function(x){x.classList.toggle('active',x===b);});apply(b.getAttribute('data-sim'));});});
-setTimeout(function(){apply('ocr');},60);
-})();</script>
-"""
-
 _ETHICS_HTML = """
 <details class="ks-disclose" style="margin-top:1.5rem"><summary>How this works &amp; the ethics</summary>
 <p class="note">The gate is a self-hosted service Kitsune runs (the owned <code>arena</code> service). It reproduces the
@@ -1275,12 +1247,6 @@ def arena_gate_html(slug: str) -> str | None:
 <p class="crumb-back"><a href="/arena">&larr; All challenges</a></p>
 <h1 class="display">{c["label"]}</h1>
 <p class="arena-family">{c["family"]}</p>
-<div class="gate-sim" role="group" aria-label="Simulate the client">
-  <span class="gs-label">Simulate the client &rarr;</span>
-  <button type="button" class="gs-btn" data-sim="human">Real human</button>
-  <button type="button" class="gs-btn active" data-sim="ocr">OCR script</button>
-  <button type="button" class="gs-btn" data-sim="llm">LLM agent</button>
-</div>
 <div class="gate-body">
   <div class="gate-left">
     <div class="gl-eyebrow">The gate</div>
@@ -1300,7 +1266,6 @@ def arena_gate_html(slug: str) -> str | None:
 third-party widget. The detector reads the same coherence engine that scores the home page.</p>
 {_ETHICS_HTML}
 {_gate_script(c)}
-{_SIM_SCRIPT}
 """
     return render_doc_page(
         title=c["label"],
