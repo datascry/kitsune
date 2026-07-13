@@ -11,8 +11,8 @@ prior (``data/prevalence_prior.json``), and (below the prior's conservative p1 t
 experimental + low weight. The SCREEN factor is cross-validated against the Intoli real-traffic source —
 exact ``WxH`` missed 13-46% of real desktop resolutions (a circular single-source FP), so screen is scored
 as a coarse (size-class, orientation) bucket whose real-traffic miss is ~0%; gpu/colour/cores remain
-single-source pending Tier-3 (docs/prevalence-model.md). Field extraction (incl. the screen bucket) is kept
-in sync with ``kitsune_harness.prevalence``.
+single-source pending Tier-3 (docs/prevalence-model.md). The pure feature primitives live here (the
+canonical source) and ``kitsune_harness.prevalence`` imports them, so they can no longer hand-drift.
 """
 
 from __future__ import annotations
@@ -33,10 +33,14 @@ _DATA = Path(__file__).parent / "data"
 # penalty the calibration could never see (browserforge scores its own 32s against a 32-heavy prior).
 # Conditioning a display property on the OS is unsound and the prior is uncorroborable (Intoli lacks
 # color_depth), so the factor is removed rather than trusted single-source. gpu/screen/cores remain.
-_FACTORS: tuple[tuple[str, str | None], ...] = (("gpu", "plat"), ("screen", "plat"), ("cores", None))
+#
+# This module is the CANONICAL home of the pure prevalence primitives (FACTORS, gpu_family, screen_bucket,
+# cores_bucket, log_prevalence); ``kitsune_harness.prevalence`` imports them (harness→detector is the
+# sanctioned direction) rather than keeping a hand-synced copy — so they can no longer drift.
+FACTORS: tuple[tuple[str, str | None], ...] = (("gpu", "plat"), ("screen", "plat"), ("cores", None))
 
 
-def _gpu_family(renderer: str) -> str | None:
+def gpu_family(renderer: str) -> str | None:
     """Classify a WebGL renderer into a known GPU family, or None when it does not match one.
 
     None means "GPU family UNKNOWN" → the prevalence joint abstains (unknown never fires), NOT a deep-tail
@@ -65,17 +69,13 @@ def _gpu_family(renderer: str) -> str | None:
     return None
 
 
-def _screen_bucket(res: str) -> str | None:
-    """Coarse, cross-source-robust screen feature: (size-class, orientation) from a "WxH" resolution.
+def screen_bucket(w: int, h: int) -> str | None:
+    """Coarse, cross-source-robust screen feature: (size-class, orientation) from a width/height.
 
-    Kept in sync with ``kitsune_harness.prevalence.screen_bucket``. The exact resolution is a single-source
-    FP landmine — the browserforge prior misses 13-46% of REAL desktop resolutions (verified vs the Intoli
-    real-traffic source; see docs/prevalence-model.md) — so prevalence scores the coarse bucket instead.
+    The exact resolution is a single-source FP landmine — the browserforge prior misses 13-46% of REAL
+    desktop resolutions (verified vs the Intoli real-traffic source; see docs/prevalence-model.md) — so
+    prevalence scores the coarse bucket instead. Returns None for an unknown/zero screen (unscored).
     """
-    m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", res)
-    if not m:
-        return None
-    w, h = int(m.group(1)), int(m.group(2))
     if w <= 0 or h <= 0:
         return None
     hi = max(w, h)
@@ -94,7 +94,15 @@ def _screen_bucket(res: str) -> str | None:
     return f"{cls}-{orient}"
 
 
-def _cores_bucket(n: Any) -> str | None:
+def _screen_bucket_from_res(res: str) -> str | None:
+    """Parse a ``"WxH"`` resolution string (what the collector emits) and bucket it via ``screen_bucket``."""
+    m = re.match(r"^\s*(\d+)\s*x\s*(\d+)\s*$", res)
+    if not m:
+        return None
+    return screen_bucket(int(m.group(1)), int(m.group(2)))
+
+
+def cores_bucket(n: Any) -> str | None:
     """Coarse, cross-source-robust cores feature: a hardware_concurrency size class.
 
     Kept in sync with ``kitsune_harness.prevalence.cores_bucket``. The EXACT core count is a single-source FP
@@ -125,15 +133,15 @@ def features_from_session(session: Session) -> dict[str, Any]:
     res = _v(session, "screen_resolution")
     return {
         "plat": _v(session, "ua_platform"),
-        "gpu": _gpu_family(str(renderer)) if renderer else None,
-        "screen": _screen_bucket(str(res)) if res else None,
-        "cores": _cores_bucket(_v(session, "hardware_concurrency")),
+        "gpu": gpu_family(str(renderer)) if renderer else None,
+        "screen": _screen_bucket_from_res(str(res)) if res else None,
+        "cores": cores_bucket(_v(session, "hardware_concurrency")),
     }
 
 
 def log_prevalence(features: dict[str, Any], prior: dict[str, Any], *, eps: float = 1e-4) -> float:
     total = 0.0
-    for field, given in _FACTORS:
+    for field, given in FACTORS:
         key = str(features.get(given)) if given else "_"
         table = prior.get(field, {}).get(key, {})
         total += math.log(table.get(str(features.get(field)), 0.0) + eps)

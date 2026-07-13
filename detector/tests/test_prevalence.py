@@ -33,7 +33,7 @@ def _fp(plat: str | None, renderer: str, screen: str, color: int, cores: int) ->
 
 
 def test_gpu_family_branches() -> None:
-    f = prevalence._gpu_family
+    f = prevalence.gpu_family
     assert f("ANGLE (NVIDIA, GeForce RTX 3080)") == "nvidia"
     assert f("ANGLE (Apple, Apple M2)") == "apple"
     assert f("ANGLE (Intel, Intel UHD Graphics)") == "intel"
@@ -48,12 +48,14 @@ def test_gpu_family_branches() -> None:
 
 
 def test_screen_bucket() -> None:
-    # Kept in sync with kitsune_harness.prevalence.screen_bucket.
-    assert prevalence._screen_bucket("1920x1080") == "desktop-land"
-    assert prevalence._screen_bucket("1470x956") == "laptop-land"
-    assert prevalence._screen_bucket("390x844") == "mobile-port"
-    assert prevalence._screen_bucket("3840x2160") == "large-land"
-    assert prevalence._screen_bucket("garbage") is None and prevalence._screen_bucket("0x0") is None
+    # The "WxH"-string parse path (detector's session path) delegates to the shared screen_bucket(w, h).
+    assert prevalence._screen_bucket_from_res("1920x1080") == "desktop-land"
+    assert prevalence._screen_bucket_from_res("1470x956") == "laptop-land"
+    assert prevalence._screen_bucket_from_res("390x844") == "mobile-port"
+    assert prevalence._screen_bucket_from_res("3840x2160") == "large-land"
+    assert prevalence._screen_bucket_from_res("garbage") is None and prevalence._screen_bucket_from_res("0x0") is None
+    # The shared (w, h) primitive that the harness imports.
+    assert prevalence.screen_bucket(1920, 1080) == "desktop-land" and prevalence.screen_bucket(0, 0) is None
 
 
 def test_features_from_session() -> None:
