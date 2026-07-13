@@ -42,6 +42,9 @@ from .flow_cadence import _FLOW_TTL, _flow_robotic, _flow_superhuman
 from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, Session, Signal, Source, Verdict
 from .pages import (
+    LLMS_TXT,
+    SEO_KEYWORDS,
+    SITE_ORIGIN,
     bypass_index,
     parse_fleet,
     parse_matrix,
@@ -117,54 +120,6 @@ def _fnv1a(s: str) -> str:
         h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
     return format(h, "x")
 
-
-#: Canonical public origin — used for robots/sitemap absolute URLs and the page's canonical/OG tags.
-SITE_ORIGIN = "https://kitsune.id"
-#: Base keyword set woven into every doc page's structured data (each page appends its own specifics).
-SEO_KEYWORDS = (
-    "bot detection, browser fingerprinting, antidetect browser, TLS JA3 JA4, HTTP/2 fingerprint, "
-    "QUIC fingerprint, TCP/IP fingerprint, automation detection, headless browser detection"
-)
-#: /llms.txt — the llmstxt.org convention: a concise, link-first map of the site for LLM agents (H1 +
-#: blockquote summary + curated sections). Mirrors the SEO head's structured data in a plain-text form.
-LLMS_TXT = """# Kitsune
-
-> Kitsune is a bot detection ⇄ evasion lab: a blue-team detector and a red-team anti-detect evader
-> fleet, run against each other to produce a per-layer scoreboard. The live page fingerprints a
-> visitor's browser across every layer — TLS/JA4, HTTP/2, QUIC, TCP/IP, the JavaScript runtime and
-> behavior — correlated at the edge, and returns a real bot-detection verdict. Its thesis: catch the
-> incoherence across layers, not any single signal.
-
-## Live tool
-- [Bot-detection & fingerprint test](https://kitsune.id/): fingerprints this browser and returns a live
-  verdict (human / suspicious / bot) across every layer.
-
-## Get the result as JSON (programmatic access)
-- In the live page: after scoring, the full verdict is embedded as JSON in the
-  `<script type="application/json" id="ks-verdict">` tag and mirrored on `window.ksResult` (a
-  `kitsune:result` DOM event also fires). It starts as `{"status":"collecting"}`; poll until `status`
-  is `"complete"`. Fields: `status`, `label`, `score`, `incoherence_score`, `layer_scores`,
-  `contradictions[]` (rule_id, category, weight, detail), `session_id`, and a `wire` block
-  (`ja3`, `ja4`, `h2`, `tcp_os`, `quic`, `ip`, `geo`, `reputation`).
-- `POST https://kitsune.id/ingest`: send collector signal envelopes; the response is the same verdict JSON.
-- [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry
-  (rule id, title, layers, category, and whether each rule can convict).
-- [API docs](https://kitsune.id/api): interactive OpenAPI/Swagger UI; the schema is at
-  [/openapi.json](https://kitsune.id/openapi.json). All docs are indexed at [/docs](https://kitsune.id/docs).
-
-## Documentation
-- [How it works](https://kitsune.id/how-it-works): the cross-layer incoherence thesis and the signal layers.
-- [Detection catalog](https://kitsune.id/detections): every detection rule and the exact signal it exploits.
-- [Evasion catalog](https://kitsune.id/evasions): every anti-detect tool and technique tested, with verdicts.
-- [Coverage matrix](https://kitsune.id/matrix): every detection rule x every evader.
-- [Fleet & Skulk](https://kitsune.id/fleet): Skulk — the fleet adversary-emulation kit — and how the
-  detector catches coordinated bot fleets by cross-session coherence (the axis per-session spoofing can't beat).
-- [Frontier](https://kitsune.id/frontier): the live state of the detection-vs-evasion arms race.
-- [Research](https://kitsune.id/research): findings from the detection-vs-evasion arms race.
-
-## Source
-- [Source on GitHub](https://github.com/datascry/kitsune): MIT — detector, edge, collector, evader fleet.
-"""
 
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
