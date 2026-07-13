@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import html
 import json
+import posixpath
 import re
 from typing import Any
 
@@ -20,16 +21,35 @@ from .styles import SHARED_CSS
 
 SITE_ORIGIN = "https://kitsune.id"
 
+#: docs/*.md link to other repo files by relative path (../fleet/README.md, research-radar.md, a source
+#: file). Those aren't served routes, so on the site they 404 — rewrite them to the file on GitHub instead.
+_GH_BLOB = "https://github.com/datascry/kitsune/blob/main/"
+
+
+def _rewrite_doc_link(match: re.Match[str]) -> str:
+    href = match.group(1)
+    if href.startswith(("http://", "https://", "#", "mailto:", "/")):
+        return match.group(0)  # absolute, anchor, or already a site path — leave it
+    frag = ""
+    if "#" in href:
+        href, frag = href.split("#", 1)
+        frag = "#" + frag
+    # The doc lives in docs/, so resolve the relative path against it, then point at the GitHub source.
+    repo_path = posixpath.normpath(posixpath.join("docs", href)).lstrip("/")
+    return f'href="{_GH_BLOB}{repo_path}{frag}"'
+
 
 def render_markdown_doc(md_text: str) -> str:
     """Render a full markdown document to HTML for the doc shell — headings, lists, tables, fenced code,
     links and blockquotes all inherit the shared ``main.doc`` styling. Used for the general docs (fleet,
-    frontier, …) that aren't one of the hand-curated / table-parsed pages."""
-    return _markdown.markdown(
+    frontier, …) that aren't one of the hand-curated / table-parsed pages. Relative links (to other docs or
+    to source files, which aren't served routes) are rewritten to the file on GitHub so nothing dead-ends."""
+    html_out = _markdown.markdown(
         md_text,
         extensions=["extra", "sane_lists", "admonition"],
         output_format="html",
     )
+    return re.sub(r'href="([^"]+)"', _rewrite_doc_link, html_out)
 
 
 #: Human names for URL path segments, for breadcrumbs + page titles in structured data.
