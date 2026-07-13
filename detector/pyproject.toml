@@ -10,6 +10,7 @@ dependencies = [
   "fastapi>=0.110",
   "uvicorn>=0.29",
   "maxminddb>=2.5",
+  "markdown>=3.10.2",
 ]
 
 [dependency-groups]
@@ -21,6 +22,7 @@ dev = [
   "httpx>=0.27",
   "types-pyyaml",
   "types-jsonschema",
+  "types-markdown>=3.10.2.20260712",
 ]
 
 [build-system]

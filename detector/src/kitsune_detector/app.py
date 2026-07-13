@@ -26,10 +26,12 @@ from fastapi import Cookie, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
+    JSONResponse,
     PlainTextResponse,
     RedirectResponse,
     Response,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
 
 from .arena_page import CHALLENGES as ARENA_CHALLENGES
@@ -50,7 +52,9 @@ from .pages import (
     render_evasion_detail,
     render_evasions_page,
     render_how_it_works_page,
+    render_markdown_doc,
     render_matrix_page,
+    render_not_found,
     render_research_page,
     reverse_index,
 )
@@ -83,6 +87,18 @@ DOC_PAGES: dict[str, tuple[str, str, str]] = {
         "findings.md",
         "Research",
         "Findings from the Kitsune detection-vs-evasion arms race.",
+    ),
+    "fleet": (
+        "fleet.md",
+        "Fleet & Skulk",
+        "Skulk — Kitsune's fleet adversary-emulation kit — and how the detector catches coordinated bot "
+        "fleets by cross-session coherence, the axis per-session spoofing can't cheaply beat.",
+    ),
+    "frontier": (
+        "frontier.md",
+        "Frontier",
+        "The live state of Kitsune's detection-vs-evasion arms race — what's saturated, what's an open "
+        "vein, and what's blocked on external data.",
     ),
 }
 
@@ -135,12 +151,17 @@ LLMS_TXT = """# Kitsune
 - `POST https://kitsune.id/ingest`: send collector signal envelopes; the response is the same verdict JSON.
 - [Rule registry (JSON)](https://kitsune.id/rules.json): the full machine-readable detection-rule registry
   (rule id, title, layers, category, and whether each rule can convict).
+- [API docs](https://kitsune.id/docs): interactive OpenAPI/Swagger UI; the schema is at
+  [/openapi.json](https://kitsune.id/openapi.json).
 
 ## Documentation
 - [How it works](https://kitsune.id/how-it-works): the cross-layer incoherence thesis and the signal layers.
 - [Detection catalog](https://kitsune.id/detections): every detection rule and the exact signal it exploits.
 - [Evasion catalog](https://kitsune.id/evasions): every anti-detect tool and technique tested, with verdicts.
 - [Coverage matrix](https://kitsune.id/matrix): every detection rule x every evader.
+- [Fleet & Skulk](https://kitsune.id/fleet): Skulk — the fleet adversary-emulation kit — and how the
+  detector catches coordinated bot fleets by cross-session coherence (the axis per-session spoofing can't beat).
+- [Frontier](https://kitsune.id/frontier): the live state of the detection-vs-evasion arms race.
 - [Research](https://kitsune.id/research): findings from the detection-vs-evasion arms race.
 
 ## Source
@@ -246,9 +267,9 @@ def create_app(
     store = store or Store(":memory:")
     # The inspection endpoints (/session, /verdict, /scoreboard) expose raw signals — including the
     # client IP — and the full verdict store. On a public host that is operator-data exposure, so when
-    # KITSUNE_ADMIN_TOKEN is set they require an `Authorization: Bearer <token>` header and the
-    # interactive API docs are hidden. Unset (dev/tests) leaves them open. An explicit admin_token
-    # argument overrides the env (used in tests). An empty value counts as unset.
+    # KITSUNE_ADMIN_TOKEN is set they require an `Authorization: Bearer <token>` header. Unset
+    # (dev/tests) leaves them open. An explicit admin_token argument overrides the env (used in tests).
+    # An empty value counts as unset. (The public API docs at /docs are always served either way.)
     admin_token = admin_token if admin_token is not None else os.environ.get("KITSUNE_ADMIN_TOKEN")
 
     def require_admin(authorization: str | None = Header(default=None)) -> None:
@@ -258,21 +279,31 @@ def create_app(
         if authorization is None or not hmac.compare_digest(authorization, expected):
             raise HTTPException(status_code=401, detail="admin token required")
 
-    # Hide /docs + /redoc + /openapi.json on a token-hardened (public) deployment.
-    if admin_token:
-        app = FastAPI(
-            title="Kitsune Detector",
-            version="0.1.0",
-            docs_url=None,
-            redoc_url=None,
-            openapi_url=None,
-        )
-    else:
-        app = FastAPI(title="Kitsune Detector", version="0.1.0")
+    # Public API docs: Swagger UI at /docs, ReDoc at /redoc, schema at /openapi.json. The schema lists only
+    # the public API (POST /ingest, /rules.json, /inspect/{id}, the /arena relays); every internal/admin/asset
+    # route sets include_in_schema=False, and the admin routes stay token-guarded regardless of being documented.
+    app = FastAPI(
+        title="Kitsune Detector",
+        version="0.1.0",
+        description=(
+            "The Kitsune bot-detection API. POST collector signal envelopes to `/ingest` and get a "
+            "cross-layer coherence verdict; read the full rule registry at `/rules.json`. "
+            "The website: [kitsune.id](https://kitsune.id/)."
+        ),
+    )
 
     # The pages are inline-everything HTML (the homepage is ~149 KB of mostly text); gzip cuts the wire
     # transfer ~70-87% and makes the per-page repeated CSS nearly free. minimum_size skips tiny JSON bodies.
     app.add_middleware(GZipMiddleware, minimum_size=700)
+
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_exception(request: Request, exc: StarletteHTTPException) -> Response:
+        # A browser hitting a missing URL gets the branded 404 page; API clients (or any non-404 error)
+        # keep the JSON {"detail": ...} shape FastAPI returns by default, headers preserved.
+        wants_html = "text/html" in request.headers.get("accept", "")
+        if exc.status_code == 404 and wants_html:
+            return HTMLResponse(render_not_found(request.url.path), status_code=404)
+        return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=exc.headers)
 
     @app.get("/", response_class=HTMLResponse)
     def index() -> HTMLResponse:
@@ -1537,7 +1568,7 @@ def create_app(
                     page_type = "CollectionPage"
                     keywords = f"{SEO_KEYWORDS}, anti-detect tools, stealth browsers"
                     extra_ld = _item_list(sorted(evaders), "/evasions/", "Kitsune evasion catalog")
-                else:
+                elif slug == "matrix":
                     try:
                         text = (docs_dir / filename).read_text(encoding="utf-8")
                     except OSError as exc:
@@ -1546,6 +1577,15 @@ def create_app(
                     page_type = "CollectionPage"
                     keywords = f"{SEO_KEYWORDS}, coverage matrix"
                     extra_ld = _item_list(sorted(evaders), "/evasions/", "Kitsune detection matrix")
+                else:
+                    # General docs (fleet/Skulk, frontier, …): render the committed markdown as-is.
+                    try:
+                        text = (docs_dir / filename).read_text(encoding="utf-8")
+                    except OSError as exc:
+                        raise HTTPException(status_code=404, detail="doc unavailable") from exc
+                    body = render_markdown_doc(text)
+                    page_type = "TechArticle"
+                    keywords = f"{SEO_KEYWORDS}, {title.lower()}"
                 _doc_cache[slug] = render_doc_page(
                     title, desc, f"/{slug}", body, page_type=page_type, keywords=keywords, extra_ld=extra_ld
                 )
@@ -1678,6 +1718,7 @@ def create_app(
         "/session/{session_id}",
         response_model=Session,
         dependencies=[Depends(require_admin)],
+        include_in_schema=False,  # operator inspection endpoint — token-gated, kept off the public API docs
     )
     def get_session(session_id: str) -> Session:
         # Inspect a correlated session's raw signals (e.g. to read the captured JA4).
@@ -1690,6 +1731,7 @@ def create_app(
         "/verdict/{session_id}",
         response_model=Verdict,
         dependencies=[Depends(require_admin)],
+        include_in_schema=False,  # operator inspection endpoint — token-gated, kept off the public API docs
     )
     def get_verdict(session_id: str) -> Verdict:
         verdict = store.get_verdict(session_id)
@@ -1701,6 +1743,7 @@ def create_app(
         "/scoreboard",
         response_model=list[Verdict],
         dependencies=[Depends(require_admin)],
+        include_in_schema=False,  # operator inspection endpoint — token-gated, kept off the public API docs
     )
     def scoreboard() -> list[Verdict]:
         return store.list_verdicts()
