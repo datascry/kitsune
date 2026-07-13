@@ -1474,6 +1474,12 @@ def create_app(
         # design tokens ship with the page's DOC_CSS already, so this file is just the component rules.
         return _asset("arena.css", "text/css")
 
+    @app.get("/home.js", include_in_schema=False)
+    def home_js() -> FileResponse:
+        # The home page's client script (signal collection + verdict render), extracted from the inline
+        # <script> at the end of DEMO_PAGE into static/home.js — a real, cacheable file out of the HTML string.
+        return _asset("home.js", "text/javascript")
+
     @app.get("/docs", response_class=HTMLResponse, include_in_schema=False)
     def docs_hub() -> HTMLResponse:
         # The human documentation hub (the Swagger UI lives at /api). One home for the catalogs, the

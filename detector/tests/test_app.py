@@ -92,10 +92,15 @@ def test_admin_token_gates_inspection_endpoints(fixed_clock) -> None:
 
 
 def test_index_serves_collector(client: TestClient) -> None:
+    # The page loads the collector from /home.js (extracted out of the inline <script>); the collector
+    # itself probes navigator.webdriver and POSTs the signals back to /ingest.
     resp = client.get("/")
     assert resp.status_code == 200
-    assert "navigator.webdriver" in resp.text
-    assert "/ingest" in resp.text
+    assert '<script src="/home.js"></script>' in resp.text
+    js = client.get("/home.js")
+    assert js.status_code == 200 and js.headers["content-type"].startswith("text/javascript")
+    assert "navigator.webdriver" in js.text
+    assert "/ingest" in js.text
 
 
 def test_index_ships_csp_probe(client: TestClient) -> None:
@@ -106,7 +111,8 @@ def test_index_ships_csp_probe(client: TestClient) -> None:
     # img-src 'self' (not 'none') so the favicon loads while the probe's data: image is still blocked.
     assert "img-src 'self'" in csp
     assert "default-src *" in csp
-    assert "securitypolicyviolation" in resp.text
+    # The violation listener that reads the CSP-bypass lives in the collector script.
+    assert "securitypolicyviolation" in client.get("/home.js").text
 
 
 def test_index_has_seo_head(client: TestClient) -> None:
@@ -213,10 +219,11 @@ def test_index_has_live_render_containers(client: TestClient) -> None:
 def test_index_enumerates_all_profiled_surfaces(client: TestClient) -> None:
     # The consolidated "Fingerprint surfaces" panel must enumerate every value-bearing surface the collector
     # profiles — not just the sync rawFingerprint() subset. Assert the async-enriched surfaces are wired in.
-    html = client.get("/").text
+    # The panel labels and the enricher live in the served collector payload (index shell + /home.js).
+    payload = client.get("/").text + client.get("/home.js").text
     for surface in ("Client Hints", "WebGPU", "Fonts", "Speech / media"):
-        assert surface in html, surface
-    assert "enumerateSurfaces" in html  # the async enricher that fills the extra surfaces
+        assert surface in payload, surface
+    assert "enumerateSurfaces" in payload  # the async enricher that fills the extra surfaces
 
 
 def test_index_exposes_machine_readable_result(client: TestClient) -> None:
