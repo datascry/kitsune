@@ -683,7 +683,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
 <main>
 <section id="test">
   <h1 class="page">Antidetect &amp; browser fingerprint test</h1>
-  <p class="lead"><strong>Is this browser detectable as a bot?</strong> Kitsune reads every layer — from the TLS handshake to the JavaScript — correlates them at the edge, and returns the <strong>real bot-detection verdict</strong>, live. Testing a stealth or antidetect browser? This is the verdict it would actually get.</p>
+  <p class="lead"><strong>Is this browser detectable as a bot?</strong> Kitsune reads every layer — TLS, HTTP/2, TCP/IP, GPU, JavaScript, behaviour — and checks whether they tell <strong>one consistent story</strong>. A stealth or antidetect browser can fake any single layer; making them all agree is the hard part. You get the <strong>real verdict a site would reach</strong>, live.</p>
   <!-- HEADLINE: who you are + the verdict, together -->
   <div id="ks-fpid" class="fpid">Scanning your browser…</div>
   <h2>Detector verdict</h2>
