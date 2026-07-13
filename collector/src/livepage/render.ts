@@ -303,14 +303,14 @@ export function render(heroRoot: HTMLElement, detailRoot: HTMLElement, opts: Ren
     ${surfacesSection(surfaces)}
     ${fingerprintTable(fingerprint)}
     <section class="scores"><h2>Per-layer score</h2>${layerScoreHtml}
-      <p class="note">Network &amp; reputation are 0 here by design: a browser cannot observe its own TLS/HTTP-2/QUIC/TCP
-      fingerprint or its IP reputation — those need Kitsune's edge. ${client.length} of ${rules.length} detections ran in your browser,
-      scored on a per-browser basis (${naRules.length} excluded as not-applicable). Ruleset ${esc(rulesetVersion)} · ${layerCount} coherence layers.</p>
+      <p class="note">Network and reputation read 0 here by design — a browser can't see its own TLS/HTTP-2/QUIC/TCP
+      fingerprint or its IP reputation; those need Kitsune's edge. ${client.length} of ${rules.length} checks ran in this browser
+      (${naRules.length} excluded as not applicable to it). Ruleset ${esc(rulesetVersion)} · ${layerCount} layers.</p>
     </section>
     <section class="results"><h2>Detections evaluated in your browser</h2>${byLayer}</section>
     ${naHtml}
     <section class="edge"><h2>Requires the Kitsune edge (${edge.length} not evaluated here)</h2>
-      <p class="note">These read TLS/HTTP-2/QUIC/TCP or IP-reputation signals only the edge captures from the raw connection.</p>
+      <p class="note">These read TLS, HTTP/2, QUIC, TCP and IP-reputation signals — only Kitsune's edge sees them, from the raw connection.</p>
       <ul class="edge-list">${edgeList}</ul>
     </section>`;
 }
