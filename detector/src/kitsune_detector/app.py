@@ -1457,6 +1457,17 @@ def create_app(
     def og_png() -> FileResponse:
         return _asset("og.png", "image/png")
 
+    @app.get("/home.css", include_in_schema=False)
+    def home_css() -> Response:
+        # The home page's stylesheet, extracted from the inline HTML into static/home.css + the shared tokens.
+        from .demo import HOME_CSS
+
+        return Response(
+            HOME_CSS,
+            media_type="text/css",
+            headers={"Cache-Control": "public, max-age=3600"},
+        )
+
     @app.get("/docs", response_class=HTMLResponse, include_in_schema=False)
     def docs_hub() -> HTMLResponse:
         # The human documentation hub (the Swagger UI lives at /api). One home for the catalogs, the
