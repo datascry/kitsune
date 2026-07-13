@@ -615,7 +615,12 @@ body.ks-done .ks-scan {
 #ks-detections{overflow-x:auto}/* keep all columns on mobile; scroll rather than hide data */
 .layer-bars{margin:1rem 0 1.25rem}
 .bar-clean .bar-val{color:var(--jade)}.bar-clean .bar-label{color:var(--muted)}
-#ks-bio{border:1.5px solid var(--line-bright);background:var(--panel-2);padding:1rem 1.1rem;margin:1.5rem 0}
+#ks-bio{border:1.5px solid var(--line-bright);background:var(--panel);padding:1.4rem 1.5rem;margin:1.5rem 0}
+#ks-bio>h2{margin-top:0}
+.bio-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:1.6rem;align-items:start}
+.bio-controls .bio-note{color:var(--muted);font-size:.72rem;margin:.6rem 0 0}
+.bio-grid .bio-metrics{grid-template-columns:1fr;margin:0}
+@media(max-width:720px){.bio-grid{grid-template-columns:1fr}}
 .bio-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:.6rem 0}
 .bio-row{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;background:var(--panel);padding:.5rem .7rem;font-size:.8rem}
 .bio-row span{color:var(--muted)}.bio-row b{font-variant-numeric:tabular-nums;font-weight:700}
@@ -748,23 +753,27 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
        event. Poll this element's textContent, or: addEventListener("kitsune:result", e => e.detail). -->
   <script type="application/json" id="ks-verdict">{"status":"collecting"}</script>
   <div id="ks-fpid" class="fpid">Scanning your browser…</div>
-  <!-- Fired-detections spotlight — what convicts this session (the full breakdown is in Detections below). -->
-  <section class="fired-spot" id="ks-fired"></section>
-  <!-- EVIDENCE: your fingerprint, layer by layer. All three evidence panels (wire, surfaces, detections) start
-       OPEN so the evidence is visible without a click. (Lazy render is preserved: an open panel paints when its
-       data arrives via ksLazyTouch, not on page load, so the load-time work is unchanged.) -->
-  <div id="ks-predict"></div>
-  <details class="ks-disclose" id="ks-wire-d" open><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
-  <details class="ks-disclose" id="ks-surfaces-d" open><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
-  <!-- INTERACT: behavioral panel AFTER the fingerprint surfaces (listeners arm on load regardless of order). -->
-  <section id="ks-bio" aria-label="behavioral biometrics">
-    <h2>Your behavioral biometrics</h2>
-    <div id="ks-bio-metrics" class="bio-metrics">move your mouse, swipe, and type below to measure…</div>
-    <p class="bio-help">Type a sentence below and move your mouse — or <b>swipe</b> on a touch screen — the detector measures your mouse/touch dynamics and keystroke timing live and re-scores automatically once it has enough input.</p>
-    <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
+  <!-- Below the verdict hero, the mock's compact rhythm: the live behavioral spotlight, then the fired
+       detections. The deep forensic evidence (predicted browser, wire layer, surfaces, full detections)
+       follows as click-to-open disclosures — present, but not a wall of data under the verdict. -->
+  <section id="ks-bio" aria-label="behavioral biometrics" class="bio-spot">
+    <h2>Behavioral layer &mdash; live</h2>
+    <p class="bio-help">Type a sentence and move your mouse &mdash; or <b>swipe</b> on a touch screen. Your mouse/touch dynamics and keystroke timing are measured live and re-score the verdict automatically once there's enough input.</p>
+    <div class="bio-grid">
+      <div class="bio-controls">
+        <input id="ks-bio-text" type="text" autocomplete="off" spellcheck="false" placeholder="Type a sentence here to measure keystroke timing…">
+      </div>
+      <div id="ks-bio-metrics" class="bio-metrics">move your mouse, swipe, and type below to measure&hellip;</div>
+    </div>
   </section>
-  <!-- THE WHY: the full rule breakdown, open by default so the detections are visible without a click -->
-  <details class="ks-disclose" id="ks-detections-d" open><summary>Detections <span class="note">&mdash; every check Kitsune ran, grouped by layer</span></summary><div id="ks-detections"></div></details>
+  <!-- Fired-detections spotlight — what convicts this session (full breakdown in the Detections disclosure). -->
+  <section class="fired-spot" id="ks-fired"></section>
+  <!-- EVIDENCE (collapsed): the deep forensic panels open on click. Lazy render is preserved — a panel
+       paints when its data arrives via ksLazyTouch on first open, so load-time work is unchanged. -->
+  <details class="ks-disclose" id="ks-predict-d"><summary>Predicted browser <span class="note">&mdash; from feature detection, independent of the User-Agent</span></summary><div id="ks-predict"></div></details>
+  <details class="ks-disclose" id="ks-wire-d"><summary>Network / wire layer <span class="note">&mdash; TLS/JA4, HTTP-2, QUIC, TCP/IP, read from your raw connection by Kitsune&rsquo;s edge</span></summary><div id="ks-wire"></div></details>
+  <details class="ks-disclose" id="ks-surfaces-d"><summary>Fingerprint surfaces <span class="note">&mdash; every enumerated value &middot; tamper status<span id="ks-surf-count"></span></span></summary><div id="ks-surfaces"></div></details>
+  <details class="ks-disclose" id="ks-detections-d"><summary>Detections <span class="note">&mdash; every check Kitsune ran, grouped by layer</span></summary><div id="ks-detections"></div></details>
 </section>
 <section id="how-it-works">
   <h2>How Kitsune detects bots &amp; antidetect browsers</h2>
@@ -943,8 +952,7 @@ code,.sval,.shash,.title,.kv .v,.bar-label,.coherence .val,.fpid b{overflow-wrap
     var el = document.getElementById("ks-predict"); if (!el) return;
     var kv = function (k, v) { return '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v">' + esc(v) + '</span></div>'; };
     var ev = (p.evidence || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("");
-    el.innerHTML = '<h2>Predicted browser <span class="note">\\u2014 from feature detection, independent of the User-Agent</span></h2>'
-      + '<div class="predict-grid">' + kv("engine", p.engine) + kv("browser", p.browser) + kv("OS", p.os) + kv("form factor", p.formFactor) + kv("confidence", Math.round(p.confidence * 100) + "%") + '</div>'
+    el.innerHTML = '<div class="predict-grid">' + kv("engine", p.engine) + kv("browser", p.browser) + kv("OS", p.os) + kv("form factor", p.formFactor) + kv("confidence", Math.round(p.confidence * 100) + "%") + '</div>'
       + '<details class="ev"><summary>feature evidence</summary><ul>' + ev + '</ul></details>';
   }
   // One panel = every fingerprint surface, each with its ENUMERATED values inline + its tamper status. This
