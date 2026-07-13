@@ -73,6 +73,7 @@ from .pages import (
 from .scoring import CONVICTING_CATEGORIES
 from .store import Store
 from .vendors import PROFILES, challenge_required, challenge_url, shape_checksiteconfig, shape_siteverify
+from .webutil import _SAFE_SLUG, _fnv1a
 
 #: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
 DOC_PAGES: dict[str, tuple[str, str, str]] = {
@@ -121,14 +122,6 @@ def _docs_dir() -> Path:
     return Path(env) if env else Path(__file__).resolve().parents[3] / "docs"
 
 
-def _fnv1a(s: str) -> str:
-    """FNV-1a (32-bit) hex — the same hash the client uses, so IDs are comparable across layers."""
-    h = 2166136261
-    for ch in s:
-        h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
-    return format(h, "x")
-
-
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -146,10 +139,6 @@ _FONT_PATHS: dict[str, Path] = {
         "jetbrains-mono-700.woff2",
     )
 }
-
-#: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
-#: it reaches any HTML/SEO sink both 404s junk URLs and removes the reflected-XSS taint (no <, ", etc.).
-_SAFE_SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,80}")
 
 
 def create_app(
