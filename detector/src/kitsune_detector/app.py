@@ -50,9 +50,11 @@ from .flow_cadence import _FLOW_TTL, _flow_robotic, _flow_superhuman
 from .geo import lookup as geo_lookup
 from .models import MISSING, Layer, Session, Signal, Source, Verdict
 from .pages import (
+    DOC_PAGES,
     LLMS_TXT,
     SEO_KEYWORDS,
     SITE_ORIGIN,
+    _docs_dir,
     bypass_index,
     parse_fleet,
     parse_matrix,
@@ -74,53 +76,6 @@ from .scoring import CONVICTING_CATEGORIES
 from .store import Store
 from .vendors import PROFILES, challenge_required, challenge_url, shape_checksiteconfig, shape_siteverify
 from .webutil import _SAFE_SLUG, _fnv1a
-
-#: Published doc pages: slug -> (markdown file, title, meta description). Internal docs are NOT listed.
-DOC_PAGES: dict[str, tuple[str, str, str]] = {
-    "matrix": (
-        "matrix.md",
-        "Detection matrix",
-        "Which antidetect tools and bots Kitsune catches — per-evader verdicts and the tells that convict each.",
-    ),
-    "evasions": (
-        "evasion-catalog.md",
-        "Evasion catalog",
-        "Every evasion technique in the red-team ladder and the anti-detect tools that implement it.",
-    ),
-    "detections": (
-        "detection-catalog.md",
-        "Detection catalog",
-        "Every detection rule Kitsune runs and the exact signal it exploits, across all layers.",
-    ),
-    "how-it-works": (
-        "architecture.md",
-        "How it works",
-        "Kitsune's architecture and the cross-layer incoherence thesis behind its bot detection.",
-    ),
-    "research": (
-        "findings.md",
-        "Research",
-        "Findings from the Kitsune detection-vs-evasion arms race.",
-    ),
-    "fleet": (
-        "fleet.md",
-        "Fleet & Skulk",
-        "Skulk — Kitsune's fleet adversary-emulation kit — and how the detector catches coordinated bot "
-        "fleets by cross-session coherence, the axis per-session spoofing can't cheaply beat.",
-    ),
-    "frontier": (
-        "frontier.md",
-        "Frontier",
-        "The live state of Kitsune's detection-vs-evasion arms race — what's saturated, what's an open "
-        "vein, and what's blocked on external data.",
-    ),
-}
-
-
-def _docs_dir() -> Path:
-    env = os.environ.get("KITSUNE_DOCS_DIR")
-    return Path(env) if env else Path(__file__).resolve().parents[3] / "docs"
-
 
 #: Static brand assets (favicon set, OG card, web manifest), served at the URL root.
 STATIC_DIR = Path(__file__).parent / "static"
