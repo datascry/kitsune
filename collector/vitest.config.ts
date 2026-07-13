@@ -8,18 +8,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      exclude: [
-        "src/index.ts",
-        "src/types.ts",
-        "src/livepage/registry.ts", // types-only — no runtime code to cover
-
-        // Live-page browser glue (DOM/navigator IO, like index.ts) — verified via the build + e2e, not unit.
-        "src/livepage/probes.ts",
-        "src/livepage/render.ts",
-        "src/livepage/main.ts",
-        "src/livepage/behavioral_panel.ts", // DOM glue (innerHTML/listeners/interval); pure logic → behavioral_metrics.ts
-        "src/livepage/predict.ts", // feature-detection reads window/navigator/CSS/screen — DOM glue
-      ],
+      exclude: ["src/index.ts", "src/types.ts"],
       thresholds: { lines: 95, functions: 95, branches: 95, statements: 95 },
     },
   },

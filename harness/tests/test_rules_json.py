@@ -1,4 +1,4 @@
-# tests/test_rules_json — the browser-consumable rule registry the livepage fetches.
+# tests/test_rules_json — the browser-consumable rule registry the collector + demo page fetch.
 # Pins _client_evaluable (incl. the empty-reads vacuous-true guard) and build()'s shape.
 
 from __future__ import annotations
