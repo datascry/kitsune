@@ -35,6 +35,14 @@ from starlette.middleware.gzip import GZipMiddleware
 
 from .arena_page import CHALLENGES as ARENA_CHALLENGES
 from .arena_page import arena_gate_html, arena_index_html
+from .arena_relay import (
+    _ARENA_CAPTCHAS,
+    _ARENA_GATES,
+    _QUEUE_HOARD_THRESHOLD,
+    _QUEUE_TICKET_TTL,
+    ARENA_URL,
+    _arena_level,
+)
 from .coherence.rules import load_registry
 from .demo import DEMO_PAGE
 from .detector import Detector
@@ -138,29 +146,6 @@ _FONT_PATHS: dict[str, Path] = {
         "jetbrains-mono-700.woff2",
     )
 }
-
-#: The public arena challenge-gate (the owned `arena/` Go service). The detector relays /arena/challenge and
-#: /arena/verify to it so a visitor hits ONE origin (through the edge) — the gate verdict then joins the
-#: detector's coherence verdict client-side on ks_sid. Empty/unset → the arena routes return 503 (the live
-#: spine runs fine without it). Gate names are whitelisted; the gate itself only ever talks to itself.
-ARENA_URL = os.environ.get("KITSUNE_ARENA_URL", "").rstrip("/")
-_ARENA_GATES = frozenset({"hashcash", "many-small", "memory-hard", "cap"})
-_ARENA_CAPTCHAS = frozenset({"text", "math", "clock", "honeypot", "image-select", "image-doodle", "image-shapes"})
-#: Difficulty level (a cost dial — see arena/levels.go). Anything else falls back to medium, mirroring the
-#: gate's own ParseLevel, so a junk ?level= never errors — it just gets the default.
-_ARENA_LEVELS = frozenset({"easy", "medium", "hard"})
-#: Virtual-queue position hoarding: the max concurrent tickets ONE ks_sid may hold before it looks like a scalper
-#: maximising admission odds rather than a person. Threshold-CALIBRATED (even a multi-tab human does not hold this
-#: many queue positions at once), so bh.arena_queue_hoarding is EXPERIMENTAL/corroborating, not FP-safe-by-
-#: construction like the timing tells. Tickets older than the TTL are pruned so abandoned positions do not inflate
-#: the count. The SMART hoarder spreads across ks_sids (the sybil-farmer coordination frontier, external-data-bound).
-_QUEUE_HOARD_THRESHOLD = 8
-_QUEUE_TICKET_TTL = timedelta(minutes=2)
-
-
-def _arena_level(level: str | None) -> str:
-    return level if level in _ARENA_LEVELS else "medium"
-
 
 #: Evader slugs are lowercase-alphanumeric-with-dashes. Validating the path param to this charset before
 #: it reaches any HTML/SEO sink both 404s junk URLs and removes the reflected-XSS taint (no <, ", etc.).
