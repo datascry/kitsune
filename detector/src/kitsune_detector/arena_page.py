@@ -303,7 +303,7 @@ ARENA_CSS = """<style>
 .vcard .big{font-size:1.4rem;font-weight:700}
 .vcard .pass{color:var(--jade)}.vcard .fail{color:var(--fox)}
 .vcard code{font-size:.78rem;word-break:break-all;color:var(--fox)}
-.arena-log{font-family:var(--mono);font-size:.78rem;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;margin-top:.6rem;white-space:pre-wrap;min-height:1.4rem;color:var(--ink)}
+.arena-log{font-family:var(--mono);font-size:.78rem;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:.6rem .8rem;margin-top:.6rem;white-space:pre-wrap;overflow-wrap:anywhere;min-height:1.4rem;color:var(--ink)}
 #ks-captcha{margin-top:.8rem}
 #ks-captcha img{vertical-align:middle;border:1px solid var(--line);border-radius:6px;background:#fff;margin-bottom:.5rem}
 #ks-captcha input{font:inherit;padding:.5rem;border:1px solid var(--line-bright);border-radius:6px;min-height:44px;margin-right:.5rem;background:var(--panel);color:var(--ink)}
@@ -443,7 +443,7 @@ ARENA_JS = r"""
       say("In-browser proof-of-work needs the Web Crypto API (a secure HTTPS context). Solve it with the reference evaders/pow solver against the endpoints below."); return false;
     }
     if(c.class==="memory-hard"){
-      say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small.\nChallenge: "+JSON.stringify(c));
+      say("memory-hard (Argon2id) resists cheap solving — that's the point. Bring your own solver (the reference evaders/pow solver), or try hashcash / many-small.");
       gn.textContent="Not solved in-browser — memory-hard is the GPU/ASIC-resistant family."; return false;
     }
     var nb=hexToBytes(c.nonce), subs=subNonces(c), counters=[];
@@ -605,17 +605,28 @@ ARENA_JS = r"""
     var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
     var label=document.createElement("p"); label.className="note"; box.appendChild(label);
     var btn=document.createElement("button"); btn.textContent="Hold"; btn.style.minWidth="130px"; box.appendChild(btn);
+    var track=document.createElement("div"); track.style.cssText="position:relative;height:16px;max-width:320px;margin:.7rem 0;background:var(--panel-2);border:1px solid var(--line-bright);border-radius:8px;overflow:hidden";
+    var win=document.createElement("div"); win.style.cssText="position:absolute;top:0;bottom:0;background:rgba(95,184,154,.28);border-left:1.5px solid var(--jade);border-right:1.5px solid var(--jade)"; track.appendChild(win);
+    var fill=document.createElement("div"); fill.style.cssText="position:absolute;left:0;top:0;bottom:0;width:0;background:var(--fox);opacity:.85"; track.appendChild(fill);
+    box.appendChild(track);
     var status=document.createElement("p"); status.className="note"; box.appendChild(status);
-    var holds=[], idx=0, t0=0;
+    var holds=[], idx=0, t0=0, raf=0, curT=0, curTol=0, curMax=1000;
     function showTarget(){
       if(idx>=c.targets.length){ submit(); return; }
-      var t=c.targets[idx];
-      label.textContent="Target "+(idx+1)+"/"+c.targets.length+": hold for "+t.hold_ms+" ms (±"+t.tolerance_ms+")";
+      var t=c.targets[idx]; curT=t.hold_ms; curTol=t.tolerance_ms;
+      curMax=curT+curTol+Math.max(Math.round(curT*0.4), 300);
+      win.style.left=((curT-curTol)/curMax*100)+"%"; win.style.width=((2*curTol)/curMax*100)+"%"; fill.style.width="0";
+      label.textContent="Target "+(idx+1)+"/"+c.targets.length+": hold for "+curT+" ms (±"+curTol+") — release in the green window";
     }
-    btn.addEventListener("pointerdown", function(e){ e.preventDefault(); t0=performance.now(); status.textContent="holding…"; });
-    btn.addEventListener("pointerup", function(e){ if(!t0) return; var ms=Math.round(performance.now()-t0); t0=0;
+    function tick(){ if(!t0) return; var ms=performance.now()-t0;
+      fill.style.width=Math.min(100, ms/curMax*100)+"%";
+      var inWin=ms>=curT-curTol && ms<=curT+curTol; fill.style.background=inWin?"var(--jade)":"var(--fox)";
+      status.textContent=(inWin?"release now — ":"holding… ")+Math.round(ms)+" / "+curT+" ms"; raf=requestAnimationFrame(tick);
+    }
+    btn.addEventListener("pointerdown", function(e){ e.preventDefault(); t0=performance.now(); raf=requestAnimationFrame(tick); });
+    btn.addEventListener("pointerup", function(e){ if(!t0) return; if(raf) cancelAnimationFrame(raf); var ms=Math.round(performance.now()-t0); t0=0;
       holds.push(ms); var t=c.targets[idx]; var err=ms-t.hold_ms;
-      status.textContent="held "+ms+" ms ("+(err>=0?"+":"")+err+" ms)"; idx++; setTimeout(showTarget, 500); });
+      status.textContent="held "+ms+" ms ("+(err>=0?"+":"")+err+" ms)"; idx++; setTimeout(showTarget, 600); });
     async function submit(){
       btn.disabled=true; label.textContent="Verifying…";
       var v=await (await fetch("/arena/timing/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, holds:holds})})).json();
@@ -655,16 +666,32 @@ ARENA_JS = r"""
   async function runPresshold(gv, gn, tok){
     var box=document.getElementById("ks-captcha"); box.innerHTML="";
     var c=await (await fetch(withLevel("/arena/presshold"))).json();
+    var target=c.hold_ms, tol=c.tolerance_ms;
     var p=document.createElement("p"); p.className="note"; p.textContent=c.prompt; box.appendChild(p);
-    var label=document.createElement("p"); label.className="note"; label.textContent="Hold for "+c.hold_ms+" ms (±"+c.tolerance_ms+")"; box.appendChild(label);
+    var label=document.createElement("p"); label.className="note"; label.textContent="Hold for "+target+" ms (±"+tol+") — release when the bar reaches the green window."; box.appendChild(label);
     var btn=document.createElement("button"); btn.textContent="Press & Hold"; btn.style.minWidth="150px"; btn.style.minHeight="46px"; box.appendChild(btn);
+    // Live timer: a progress bar whose fill tracks the elapsed hold, with a green window marking the target
+    // release band (target ± tolerance) — so the user aims for a visible zone instead of guessing.
+    var track=document.createElement("div"); track.style.cssText="position:relative;height:16px;max-width:320px;margin:.7rem 0;background:var(--panel-2);border:1px solid var(--line-bright);border-radius:8px;overflow:hidden";
+    var win=document.createElement("div"); win.style.cssText="position:absolute;top:0;bottom:0;background:rgba(95,184,154,.28);border-left:1.5px solid var(--jade);border-right:1.5px solid var(--jade)"; track.appendChild(win);
+    var fill=document.createElement("div"); fill.style.cssText="position:absolute;left:0;top:0;bottom:0;width:0;background:var(--fox);opacity:.85"; track.appendChild(fill);
+    box.appendChild(track);
     var status=document.createElement("p"); status.className="note"; box.appendChild(status);
-    var t0=0, samples=[], holding=false;
+    var maxMs=target+tol+Math.max(Math.round(target*0.4), 300);  // scale so the target window sits well inside the bar
+    win.style.left=((target-tol)/maxMs*100)+"%"; win.style.width=((2*tol)/maxMs*100)+"%";
+    var t0=0, samples=[], holding=false, raf=0;
+    function tick(){ if(!holding) return; var ms=performance.now()-t0;
+      fill.style.width=Math.min(100, ms/maxMs*100)+"%";
+      var inWin=ms>=target-tol && ms<=target+tol;
+      fill.style.background=inWin?"var(--jade)":"var(--fox)";
+      status.textContent=(inWin?"release now — ":"holding… ")+Math.round(ms)+" / "+target+" ms";
+      raf=requestAnimationFrame(tick);
+    }
     btn.addEventListener("pointerdown", function(e){ e.preventDefault(); try{ btn.setPointerCapture(e.pointerId); }catch(_){}
-      t0=performance.now(); holding=true; samples=[]; status.textContent="holding…"; });
+      t0=performance.now(); holding=true; samples=[]; raf=requestAnimationFrame(tick); });
     btn.addEventListener("pointermove", function(e){ if(holding) samples.push([e.clientX, e.clientY]); });
     async function release(){
-      if(!holding) return; holding=false; var ms=Math.round(performance.now()-t0); t0=0;
+      if(!holding) return; holding=false; if(raf) cancelAnimationFrame(raf); var ms=Math.round(performance.now()-t0); t0=0;
       status.textContent="held "+ms+" ms"; btn.disabled=true; label.textContent="Verifying…";
       var v=await (await fetch("/arena/presshold/verify",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:c.id, held_ms:ms, samples:samples})})).json();
       if(v.ok){ gv.textContent="PASSED"; gv.className="big pass"; gn.textContent="Held — a Turing test, not a coherence test. See the detector verdict."; tok.innerHTML='<p class="note">token <code>'+String(v.token||"").slice(0,24)+'…</code></p>'; say("Press-and-hold PASSED."); }
