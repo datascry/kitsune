@@ -35,28 +35,62 @@ KITSUNE_DETECTOR=http://localhost:8099 task coordination-live
 
 `--dry-run` generates and prints a fleet without emitting anything — the safe default for teaching.
 
-## Strategy catalog (the red⇄blue ladder)
+## The strategy ladder (red⇄blue)
 
-Each strategy models a real attacker class and grounds a specific blue coordination signal:
+**How a fleet is graded** — not per-session human/bot, but at the *coordination* axis. The detector clusters
+sessions by their **JA4 TLS-engine prefix** (the layer below JS spoofing), then looks for coordination two ways:
 
-| `strategy` | Attacker class | Blue signal it grounds | Convicted today? |
+- **Axis B — a per-cluster binding:** does one *thing* repeat across distinct IPs inside a cluster — a
+  fingerprint, a mouse-trace, a TLS ticket, a WebRTC origin? Some bindings **convict alone** (a replayed trace,
+  a shared origin); others are **ambiguous** — a shared fingerprint or a tight trace-descriptor cluster also
+  describes a corporate cohort — so they convict only when **corroborated** by an independent bot signal (an
+  automation tell, a datacenter/proxy IP, a non-browser JA4).
+- **Axis A — population correlation:** when no single binding repeats, does a community correlate across **≥3
+  independent soft dimensions** (shared JA4 + one descriptor family + a scheduled cadence + a shared proxy
+  egress …)? Three independent coincidences is a `campaign`; two is a `candidate`.
+
+So a fleet's verdict is `benign → candidate → fleet` (Axis B) / `campaign` (Axis A). The ladder below is the
+red⇄blue menu — each strategy is the *evolved* adversary that defeats the rung above it, paired with the blue
+binding that catches it (or the frontier where conviction becomes external-data-bound). The `fleet`-tier rows
+are locked to the code by Skulk's own collision self-check; the `campaign` rows are grounded end-to-end live
+(`task coordination-live`).
+
+<!-- GENERATED:coordination:start -->
+### Every fleet shape, and the blue binding that catches it
+
+> **Generated** from the Skulk strategy registry (`uv run python -m skulk.catalog`) — do not edit by hand. **18 strategies**: 9 convicted at the cluster axis (`fleet`), 4 at the population axis (`campaign`), 4 `candidate` at the external-data-bound frontier, 1 shed even that in-sandbox. A fleet is a *shape* across N sessions, graded at the COORDINATION axis — not a per-session human/bot verdict.
+
+**Verdict tiers** (weakest→strongest conviction):
+
+- **⬜ below-candidate** — sheds even the 2-dim candidate binding in-sandbox — no in-box coordination tell
+- **🔶 candidate** — flagged, not convicted — conviction is external-data-bound (IP-rep / prevalence): the frontier
+- **✅ campaign** — convicted at the POPULATION axis (Axis A) — ≥3 independent correlated dimensions
+- **✅ fleet** — convicted at the per-CLUSTER axis (Axis B) — a binding catches the JA4-prefix cluster
+
+| strategy | attacker class it models | blue binding that catches it | verdict |
 |---|---|---|---|
-| `cloned` | BotBrowser-class — one pinned profile cloned fleet-wide | `fp_collision` (identical high-entropy fp across distinct IPs) | ✅ `fleet` |
-| `trace-replay` | engagement / review farms — one canned "humanised" mouse path replayed | `trace_collision` (unambiguous) | ✅ `fleet` |
-| `randomizer` | Multilogin/GoLogin multi-accounting — coherent per-instance fingerprints, one JA4 | the TLS/JS paradox (corroborating; needs an automation tell or IP-rep flag to convict) | 🔶 `candidate` unless corroborated |
-| `fuzzy` | **the evolved adversary** — jitter the fingerprint *and* the trace per instance | **none yet** — defeats exact-hash matching | ❌ `candidate` — **the frontier** |
-| `similarity` | the same evolved adversary, **profiled** — its jittered traces all come from one humanizer model | `template_similarity` (descriptors cluster below the human floor; corroboration-gated like `fp_collision`) | ✅ `fleet` (with corroboration) |
-| `fuzzy-rotate` | the hardest shape — **rotate JA4 per node** AND fuzz fp/trace; defeats prefix clustering *and* exact collision | `shared_real_ip` (one WebRTC origin survives rotation; recovered by collision-clustering) + `template_similarity` corroborates | ✅ `fleet` *iff a binding leaks*; otherwise **uncatchable in-sandbox** (see note) |
-| `ticket-reuse` | rotated JA4 + fuzzed, bound by a **reused TLS-resumption ticket** (one TLS session across the nodes) | `shared_ticket` (one `tls_ticket_id` across distinct IPs; the edge captures it from pre_shared_key / session_ticket; corroboration-gated — a roaming user resumes too) | ✅ `fleet` (with corroboration) |
-| `staggered` | a cloned fleet that **spreads arrivals over time** (beyond the lockstep window) to look organic | demonstrates the timing axis: lockstep is *corroborating-only*, so it sheds the bonus but the `fp_collision` binding still convicts | ✅ `fleet` (timing-stagger is a weak evasion) |
-| `diffuse-scheduled` | a **diffuse fleet** (no pairwise binding, like `diffuse-campaign`) that staggers on a **fixed SCHEDULE** past the lockstep window | the **arrival-regularity** dim (`_arrival_regularity`): independent users arrive Poisson (inter-arrival CV~1), a schedule is CV~0, so axis A restores the timing layer as a 3rd independent dim; baseline-free. A *Poisson-random* stagger evades — its timing IS that of N independent users (the external wall) | ✅ `campaign` (axis A; a *scheduled* stagger is a weak evasion) |
-| `diffuse-automated` | the **sloppy-but-diversified bot** — a diffuse fleet **Poisson-staggered** (only 2 soft dims: ja4 + descriptor) that **leaks a per-session automation tell** (webdriver) | **axis-A corroboration**: a 2-dim community lifts to `campaign` on an independent per-session bot signal (`_has_automation_tell` / `_has_known_automation_ja4`) — the axis-A analog of the score_cluster conviction gate; baseline-free (in-sandbox bot tells, not IP rep). Grounded **end-to-end live** (skulk → detector → `score_campaigns_live` → `campaign`). A fully-clean diffuse fleet (no tell) stays a candidate — the real-browser frontier | ✅ `campaign` (axis A; the automation slip converts it) |
-| `diffuse` | **the maximal in-sandbox evader** — diffuse-campaign's shape (one build + humanizer descriptors, distinct fp/trace/IP) **Poisson-staggered** and **fully clean** (no tell): only 2 soft dims, no timing tell, no bot signal | **nothing in-sandbox** — a 2-dim `candidate` on BOTH axes. Grounded **live** (skulk → detector → `score_campaigns_live` → `candidate [ja4_prefix, descriptor]`, axis B `candidate`). Conviction is EXTERNAL-DATA-bound (IP reputation / prevalence). The economic bind: shedding the last correlation (distinct builds + real-hardware fps + clean residential egress) = being N independent real users | ❌ `candidate` — **the frontier the ladder converges on** |
-| `morph-diffuse` | the **distinct-COHERENT-build** diffuse fleet — `diffuse`'s clean shape but each node runs one of the sandbox's few real coherent engine builds (Firefox/Chromium/WebKit), so its JA4 prefix is that engine's | with ~3 distinct engines only ~1/3 of pairs share a prefix (< the 0.5 density threshold), so `ja4_prefix` is **not dense** → the fleet drops **below** the 2-dim candidate. **Sheds the last in-sandbox-reducible binding** (the shared build). Grounded (`score_campaigns`, holds at scale); the shared-build fleet keeps `ja4_prefix` dense — the contrast. Residual (all external-bound): one-humanizer `descriptor` + IP-rep + proxy-egress. Finite-builds ceiling: distinct coherent engines are few (the "distinct builds" economic wall made concrete) | ❌ **below `candidate`** — the last in-sandbox coordination binding shed |
-| `residential-proxy` | the `diffuse` fleet on **clean residential IPs** (no datacenter/proxy IP-rep flag) but routed through **one tunnel pool** — every node shares a reduced tunnel MSS (1380, WireGuard-class) | the **`proxy_egress`** dim (a shared reduced tunnel MSS from the JA4T), **gated on the descriptor dim** so a legit VPN/mobile cohort's human traces stay clean — the residential analog of `origin_reputation`. Grounded **end-to-end live** (skulk → detector → `score_campaigns_live` → `campaign [ja4_prefix, descriptor, proxy_egress]`), no paid data | ✅ `campaign` (axis A; the shared tunnel signature converts the humanizer fleet) |
-| `socks-proxy` | the SOCKS residential proxy the MSS tell **misses** — a `diffuse` humanizer fleet on clean residential IPs with a **native MSS** (no tunnel) but routed through a pool that **re-originates TCP**, so every node's SYN reveals the proxy's Linux kernel while the UA claims Windows | the same **`proxy_egress`** dim, broadened to the shared **SYN-stack-vs-UA-OS divergence** (`tcp_kernel` != `ua_kernel`), gated on descriptor. Grounded **end-to-end live** (skulk → detector → `campaign [ja4_prefix, descriptor, proxy_egress]`). Limitation: needs an OS-**mismatched** proxy; an OS-matched or os-spoofed stack evades | ✅ `campaign` (axis A; the shared re-originated stack converts the humanizer fleet) |
-| `ipv6-rotate` | a cloned fleet **spraying IPv6 /128s inside a few /64s** to fake IP spread / bypass per-IP limits for free | the **/64 origin fold** — `_ip_origin` counts distinct /64 origins, so the spray collapses to its true origin count; a cloned fp across distinct /64s still convicts | ✅ `fleet` (the IPv6 evasion buys nothing) |
-| `httpflood` | **L7 HTTP flood** (MHDDoS class) — many no-JS tool sources hammering in lockstep, no per-node binding | the **aggregate flood shape** (large + lockstep + many origins) corroborated by the non-browser tool JA4 — the coordination scorer *is* the L7-flood attributor (the bot⇄DDoS convergence). Emits a coordination-shaped fleet, **not** request volume — not a DoS tool | ✅ `fleet` (a flood can't hide its aggregate) |
+| `cloned` | BotBrowser — one pinned profile cloned fleet-wide | `fp_collision` — identical high-entropy fp across distinct IPs | ✅ fleet |
+| `fuzzy-rotate` | the hardest shape — rotate JA4 per node AND fuzz fp/trace | `shared_real_ip` — one WebRTC origin survives rotation (+ template_similarity) | ✅ fleet |
+| `httpflood` | L7 HTTP flood (MHDDoS class) — many no-JS tool sources in lockstep | the aggregate flood shape (large + lockstep + many origins) + tool JA4 | ✅ fleet |
+| `ipv6-rotate` | cloned fleet spraying IPv6 /128s inside a few /64s to fake IP spread | the /64 origin-fold collapses the spray; `fp_collision` still convicts | ✅ fleet |
+| `similarity` | the evolved adversary, profiled — jittered traces from one humanizer model | `template_similarity` — descriptors cluster below the human floor (corroboration-gated) | ✅ fleet |
+| `staggered` | a cloned fleet spreading arrivals over time to look organic | `fp_collision` still convicts — lockstep is corroborating-only | ✅ fleet |
+| `ticket-reuse` | rotated JA4 + fuzzed, bound by a reused TLS-resumption ticket | `shared_ticket` — one `tls_ticket_id` across distinct IPs (corroboration-gated) | ✅ fleet |
+| `tool-fleet` | no-JS automation-tool fleet (curl / Go / Python), one tool JA4 | `shared_ticket` + the non-browser JA4 (`ja4_client_hint`) corroborates | ✅ fleet |
+| `trace-replay` | engagement / review farm — one canned mouse path replayed | `trace_collision` — identical trace across distinct IPs (unambiguous) | ✅ fleet |
+| `diffuse-automated` | a diffuse fleet that leaks a per-session automation tell (webdriver) | the automation tell lifts a 2-dim community to campaign (Axis-A corroboration) | ✅ campaign |
+| `diffuse-scheduled` | a diffuse fleet that staggers on a fixed SCHEDULE | `arrival_regularity` — scheduled CV≈0 vs independent-user Poisson CV≈1 | ✅ campaign |
+| `residential-proxy` | a diffuse fleet on clean residential IPs behind one tunnel pool | `proxy_egress` — a shared reduced tunnel MSS (WireGuard-class), gated on descriptor | ✅ campaign |
+| `socks-proxy` | a diffuse fleet on a SOCKS pool that re-originates TCP | `proxy_egress` — shared SYN-stack-vs-UA-OS divergence, gated on descriptor | ✅ campaign |
+| `diffuse` | the maximal in-sandbox evader — diffuse, Poisson-staggered, fully clean | none in-sandbox — conviction is external-data-bound (the frontier the ladder converges on) | 🔶 candidate |
+| `diffuse-campaign` | the maximal evader base — shared build + lockstep + one humanizer | none in-sandbox — a 2-dim (ja4_prefix + descriptor) candidate | 🔶 candidate |
+| `fuzzy` | the evolved adversary — jitter the fp *and* the trace per instance | none yet — defeats exact-hash matching | 🔶 candidate |
+| `randomizer` | Multilogin / GoLogin multi-accounting — coherent per-instance fps, one JA4 | the TLS/JS paradox — shared JA4 + divergent JS (needs corroboration) | 🔶 candidate |
+| `morph-diffuse` | the distinct-coherent-build diffuse fleet — one real engine per node | sheds the shared build → `ja4_prefix` no longer dense (drops below candidate) | ⬜ below-candidate |
+
+> The `candidate` frontier (`fuzzy`, `randomizer`, `diffuse*`) is where conviction becomes external-data-bound: a fleet that sheds every in-sandbox binding — distinct builds, real-hardware fps, clean residential egress, Poisson-random timing — is, by construction, indistinguishable from N independent real users without IP-reputation or real-traffic prevalence data. That is the economic wall, not a missing rule. Grade any fleet on the live detector view with `task coordination-live`.
+
+<!-- GENERATED:coordination:end -->
 
 `fuzzy` was the point of the tool: once an attacker knows we hash, they perturb just enough to dodge
 *exact-match* collision. It exposed the next blue rung — **template-similarity clustering** (N near-identical

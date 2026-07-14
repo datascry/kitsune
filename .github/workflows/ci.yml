@@ -60,6 +60,7 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
       - run: uv run pytest
+      - run: uv run python -m skulk.catalog --check # the coordination ladder in fleet/README.md is generated
 
   contracts:
     runs-on: ubuntu-latest

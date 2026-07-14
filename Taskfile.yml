@@ -168,6 +168,7 @@ tasks:
       - uv run python -m kitsune_harness.readme_redteam
       - uv run python -m kitsune_harness.rule_catalog
       - uv run python -m kitsune_harness.evasion_catalog
+      - task: coordination-catalog
       - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
       - uv run python -m kitsune_harness > ../docs/scoreboard.md
 
@@ -182,6 +183,7 @@ tasks:
       - uv run python -m kitsune_harness.readme_redteam --check
       - uv run python -m kitsune_harness.rule_catalog --check
       - uv run python -m kitsune_harness.evasion_catalog --check
+      - (cd ../fleet && uv run python -m skulk.catalog --check)
       - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
       - git -C .. diff --exit-code -- docs/matrix.md || (echo "docs/matrix.md is STALE — run 'task docs'" >&2; exit 1)
 
@@ -194,6 +196,11 @@ tasks:
     desc: "Regenerate the evasion-technique registry in docs/evasion-catalog.md from the evaders + scored corpus"
     dir: harness
     cmds: ["uv run python -m kitsune_harness.evasion_catalog"]
+
+  coordination-catalog:
+    desc: "Regenerate the coordination-strategy ladder in fleet/README.md from the Skulk strategy registry"
+    dir: fleet
+    cmds: ["uv run python -m skulk.catalog"]
 
   matrix:
     desc: "Refresh docs/matrix.md from the committed real captures against the current ruleset (no live run)"
