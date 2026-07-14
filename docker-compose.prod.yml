@@ -14,8 +14,9 @@ services:
     # /openapi.json are public by design and stay served regardless.)
     # KITSUNE_GEOIP_DIR / KITSUNE_IPREP_DIR point at read-only dirs of public GeoIP / IP-reputation lists
     # (additive enrichment of the IP the connection already carries; no visitor data). Absent -> in-image seeds.
-    # Run the image CI published to GHCR (built + pushed by build-push.yml on every push to main), so
-    # `docker compose ... pull && up -d` ships the latest release and Watchtower (below) auto-updates it.
+    # Run the image CI published to GHCR (built + pushed by build-push.yml when a GitHub Release is published
+    # — release-please cuts the release when its release PR merges), so `docker compose ... pull && up -d`
+    # ships the latest release and Watchtower (below) auto-updates it.
     # The base file's `build:` is still there for a from-source build if you'd rather (`up -d --build`).
     image: ghcr.io/datascry/kitsune-detector:latest
     labels:
@@ -93,8 +94,8 @@ services:
     restart: unless-stopped
 
   # Pull-based continuous deploy: Watchtower polls GHCR every 5 min and, when CI publishes a new image for a
-  # LABELLED container (detector/edge/arena above), pulls it and recreates the container — so a push to main
-  # reaches the live site with no manual redeploy. Label-scoped, so it never touches certbot or itself.
+  # LABELLED container (detector/edge/arena above), pulls it and recreates the container — so a published
+  # release reaches the live site with no manual redeploy. Label-scoped, so it never touches certbot or itself.
   watchtower:
     image: containrrr/watchtower:latest
     volumes:
