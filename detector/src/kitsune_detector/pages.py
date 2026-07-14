@@ -62,6 +62,8 @@ LLMS_TXT = """# Kitsune
 - [Coverage matrix](https://kitsune.id/matrix): every detection rule x every evader.
 - [Fleet & Skulk](https://kitsune.id/fleet): Skulk — the fleet adversary-emulation kit — and how the
   detector catches coordinated bot fleets by cross-session coherence (the axis per-session spoofing can't beat).
+- [Coordination catalog](https://kitsune.id/coordination): every coordinated-fleet strategy and the
+  cross-session binding that convicts it, with the blue-signal glossary each links to.
 - [Frontier](https://kitsune.id/frontier): the live state of the detection-vs-evasion arms race.
 - [Research](https://kitsune.id/research): findings from the detection-vs-evasion arms race.
 
@@ -102,6 +104,12 @@ DOC_PAGES: dict[str, tuple[str, str, str]] = {
         "Skulk — Kitsune's fleet adversary-emulation kit — and how the detector catches coordinated bot "
         "fleets by cross-session coherence, the axis per-session spoofing can't cheaply beat.",
     ),
+    "coordination": (
+        "coordination-catalog.md",
+        "Coordination catalog",
+        "Every coordinated-fleet strategy and the cross-session binding that convicts it — from fingerprint "
+        "collision to campaign-level correlation, with the blue-signal glossary each links to.",
+    ),
     "frontier": (
         "frontier.md",
         "Frontier",
@@ -141,7 +149,9 @@ def render_markdown_doc(md_text: str) -> str:
     to source files, which aren't served routes) are rewritten to the file on GitHub so nothing dead-ends."""
     html_out = _markdown.markdown(
         md_text,
-        extensions=["extra", "sane_lists", "admonition"],
+        # `toc` gives every heading a stable id (GitHub's slug scheme) so in-page `#anchor` links resolve —
+        # e.g. the coordination catalog's binding→blue-signal links into its glossary.
+        extensions=["extra", "sane_lists", "admonition", "toc"],
         output_format="html",
     )
     return re.sub(r'href="([^"]+)"', _rewrite_doc_link, html_out)
@@ -175,6 +185,7 @@ _DOCS_SECTION: tuple[str, ...] = (
     "/matrix",
     "/detections",
     "/evasions",
+    "/coordination",
     "/fleet",
     "/frontier",
     "/research",
@@ -485,6 +496,11 @@ _DOCS_HUB: list[tuple[str, list[tuple[str, str, str]]]] = [
     (
         "Coordination",
         [
+            (
+                "/coordination",
+                "Coordination catalog",
+                "Every fleet strategy and the cross-session binding that catches it, plus the blue-signal glossary.",
+            ),
             (
                 "/fleet",
                 "Fleet & Skulk",
