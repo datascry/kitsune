@@ -69,6 +69,19 @@ def test_doc_page_renders(client: TestClient, slug: str) -> None:
     assert "<h1" in html  # the doc's title rendered from markdown
 
 
+def test_coordination_catalog_links_bindings_to_the_signal_glossary(client: TestClient) -> None:
+    # The red⇄blue pair: the generated ladder + a blue-signal glossary, with each binding linking to the signal
+    # that catches it. Assert the anchor round-trips end-to-end — a binding's `href="#fp_collision"` resolves to
+    # a glossary heading `id="fp_collision"` (the `toc` extension gives the heading that id).
+    html = client.get("/coordination").text
+    assert "cloned" in html and "campaign" in html  # the ladder rendered
+    assert 'href="#fp_collision"' in html  # a strategy binding links to its blue signal
+    assert 'id="fp_collision"' in html  # …and the glossary heading is that anchor target
+    # It's discoverable: listed in the docs hub and the sitemap.
+    assert "/coordination" in client.get("/docs").text
+    assert "<loc>https://kitsune.id/coordination</loc>" in client.get("/sitemap.xml").text
+
+
 def test_doc_pages_are_curated_not_raw_dumps(client: TestClient) -> None:
     matrix = client.get("/matrix").text
     assert 'class="mtx"' in matrix and "Per-rule coverage" not in matrix  # curated table, not the 5-section dump
