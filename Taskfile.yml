@@ -170,6 +170,7 @@ tasks:
       - uv run python -m kitsune_harness.evasion_catalog
       - task: coordination-catalog
       - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
+      - uv run python -m kitsune_harness.request1_audit --write
       - uv run python -m kitsune_harness > ../docs/scoreboard.md
 
   docs:check:
@@ -186,6 +187,8 @@ tasks:
       - (cd ../fleet && uv run python -m skulk.catalog --check)
       - uv run python -m kitsune_harness.report ../corpus/sessions > ../docs/matrix.md
       - git -C .. diff --exit-code -- docs/matrix.md || (echo "docs/matrix.md is STALE — run 'task docs'" >&2; exit 1)
+      - uv run python -m kitsune_harness.request1_audit --write
+      - git -C .. diff --exit-code -- docs/request1-audit.md || (echo "docs/request1-audit.md is STALE — run 'task docs'" >&2; exit 1)
 
   catalog:
     desc: "Regenerate the complete rule registry in docs/detection-catalog.md from contracts/rules/registry.yaml"
@@ -196,6 +199,11 @@ tasks:
     desc: "Regenerate the evasion-technique registry in docs/evasion-catalog.md from the evaders + scored corpus"
     dir: harness
     cmds: ["uv run python -m kitsune_harness.evasion_catalog"]
+
+  request1-audit:
+    desc: "The request-1 / no-JS separation number: request-1 convicting rule set + real-browser FP rate + evader recall (botwall's core pitch), scored network-only over the committed captures"
+    dir: harness
+    cmds: ["uv run python -m kitsune_harness.request1_audit --write"]
 
   coordination-catalog:
     desc: "Regenerate the coordination-strategy ladder in fleet/README.md from the Skulk strategy registry"
