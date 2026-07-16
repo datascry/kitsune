@@ -69,7 +69,7 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**203 live rules** (136 active · 67 experimental; 6 retired, ruleset `0.74.59`) — each a small predicate over the correlated session. **156 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**203 live rules** (137 active · 66 experimental; 6 retired, ruleset `0.74.60`) — each a small predicate over the correlated session. **156 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
@@ -138,7 +138,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**95 of 105 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.59`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
+**95 of 105 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.60`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
 Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
 

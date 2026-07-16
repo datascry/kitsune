@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.59"
+ruleset_version: "0.74.60"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -489,11 +489,11 @@ rules:
     reads: [network.fake_declared_crawler]
     predicate: present
     weight: 0.8
-    status: experimental
+    status: active
     category: coherence
     added: "2026-06-23"
-    last_validated: "2026-06-23"
-    source: "Forward-confirmed reverse DNS (FCrDNS) is the crawlers' OWN documented verification method: a real Googlebot/Bingbot/Applebot/etc. connects from an IP whose PTR record resolves under the crawler's official domain (e.g. *.googlebot.com) AND that host's forward A/AAAA records include the connecting IP. The edge runs this check (uaHasKnownH2Order sibling — fingerprint.VerifyCrawler) only for a UA that DECLARES a known crawler, and emits network.fake_declared_crawler ONLY on a DEFINITIVE failure: no PTR record, a PTR under no official crawler suffix (an impersonator), or a matching host that does not forward-confirm the IP. A transient resolver error (SERVFAIL/timeout) ABSTAINS — a real crawler is never convicted on a flaky lookup. FP-safe by construction: a genuine crawler always confirms (that is what FCrDNS is for), so the only thing that fires is a non-crawler IP wearing a crawler UA — a clear impersonation. CONVICTING (coherence): the network identity contradicts the declared UA. EXPERIMENTAL until grounded against a live resolver in deployment (the edge ships with net.DefaultResolver; tests inject a stub). Complements the existing UA-vs-wire coherence family for the DECLARED-crawler abuse case (fake-Googlebot scrapers, a common allow-list bypass) rather than the real-browser-faking case the rest of the ruleset targets. Capability sourced from the GreyNoise GNQL gap analysis (actor + rdns_validated facets); see docs/research-radar.md."
+    last_validated: "2026-07-16"
+    source: "Forward-confirmed reverse DNS (FCrDNS) is the crawlers' OWN documented verification method: a real Googlebot/Bingbot/Applebot/etc. connects from an IP whose PTR record resolves under the crawler's official domain (e.g. *.googlebot.com) AND that host's forward A/AAAA records include the connecting IP. The edge runs this check (uaHasKnownH2Order sibling — fingerprint.VerifyCrawler) only for a UA that DECLARES a known crawler, and emits network.fake_declared_crawler ONLY on a DEFINITIVE failure: no PTR record, a PTR under no official crawler suffix (an impersonator), or a matching host that does not forward-confirm the IP. A transient resolver error (SERVFAIL/timeout) ABSTAINS — a real crawler is never convicted on a flaky lookup. FP-safe by construction: a genuine crawler always confirms (that is what FCrDNS is for), so the only thing that fires is a non-crawler IP wearing a crawler UA — a clear impersonation. CONVICTING (coherence): the network identity contradicts the declared UA. EXPERIMENTAL until grounded against a live resolver in deployment (the edge ships with net.DefaultResolver; tests inject a stub). Complements the existing UA-vs-wire coherence family for the DECLARED-crawler abuse case (fake-Googlebot scrapers, a common allow-list bypass) rather than the real-browser-faking case the rest of the ruleset targets. Capability sourced from the GreyNoise GNQL gap analysis (actor + rdns_validated facets); see docs/research-radar.md. v0.74.60 PROMOTED experimental -> active (botwall good-bot lane): the emission path is integration-tested end-to-end (edge TestPrepareEmitsFakeDeclaredCrawler — a Googlebot UA from a non-crawler IP with no PTR emits the signal; a plain browser UA does not), the FCrDNS + CIDR verification is unit-tested incl. the transient-error ABSTAIN, and the detector conviction is tested (test_fake_declared_crawler_convicts). FP-safe by construction (a real crawler always FCrDNS-confirms; a real browser sends no crawler UA; a flaky lookup abstains), and it never touches the browserforge FP gate (no crawler UA in that corpus). The only residual is OPERATIONAL — confirming the live resolver resolves in a given deployment — not a correctness or FP gate, so it no longer blocks activation. This is botwall's fake-Googlebot/allow-list-bypass catch, the convicting counterpart to the Web Bot Auth verified-agent lane."
 
   # --- v0.2.0: deepened coverage ---
 
@@ -2531,7 +2531,7 @@ rules:
     category: coherence
     added: "2026-06-18"
     last_validated: "2026-06-18"
-    source: "Chrome 131+ sends X25519MLKEM768 (124-130 the Kyber768 draft) in supported_groups by default; a TLS template pinned to a pre-2025 Chrome profile (older curl-impersonate/utls/BoringSSL, Go <=1.23) lags it. Catches template lag only — modern OpenSSL 3.5+/Go 1.24+ also ship the group (validated live), so it is silent on a current generic stack. Experimental: a corporate TLS-inspection proxy or PostQuantumKeyAgreementEnabled=false also strips it."
+    source: "Chrome 131+ sends X25519MLKEM768 (124-130 the Kyber768 draft) in supported_groups by default; a TLS template pinned to a pre-2025 Chrome profile (older curl-impersonate/utls/BoringSSL, Go <=1.23) lags it. Catches template lag only — modern OpenSSL 3.5+/Go 1.24+ also ship the group (validated live), so it is silent on a current generic stack. STAYS experimental (NOT promoted with net.fake_declared_crawler in v0.74.60): unlike the FCrDNS rule this has a documented REAL-BROWSER FP vector — a corporate TLS-inspection proxy that re-signs handshakes, or an enterprise PostQuantumKeyAgreementEnabled=false policy, strips the PQ key share from a genuine current Chrome. Promoting it to convicting would flag those legitimate enterprise users, and the in-sandbox FP gate carries no network layer to measure how common PQ-stripped-real-Chrome is. Promotion is EXTERNAL-DATA-BOUND on real-traffic prevalence of that population (P1d/grounding), same posture as net.tls_os_vs_tcp_os. It still fires as experimental to corroborate a template-lag verdict; it just must not be trusted to convict alone until grounded."
 
   - id: net.ch_ua_mobile_vs_ua
     title: Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness
