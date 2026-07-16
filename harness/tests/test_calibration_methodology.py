@@ -219,19 +219,30 @@ def test_real_privacy_browsers_no_coherence_or_artifact_fp() -> None:
 
 def test_real_edge_chromium_family_not_a_tls_or_h2_browser_contradiction() -> None:
     # corpus/calibration/headful/msedge.json: REAL Microsoft Edge 149. Edge is Chromium, so its TLS/HTTP-2
-    # stack hints 'chrome' while ua_browser is 'edge'. v0.74.30 (not_equal_browser predicate): a literal
+    # stack hints 'chrome' while the UA family is 'edge'. v0.74.30 (not_equal_browser predicate): a literal
     # not_equal convicted every real Edge on net.tls_vs_ua_browser + net.h2_vs_ua_browser; the family-aware
-    # predicate collapses the Chromium family so those do NOT fire. Non-vacuous: the fixture carries the
-    # ja4/h2 hint 'chrome' vs ua_browser 'edge' mismatch inputs.
+    # predicate collapses the Chromium family so those do NOT fire. v0.74.58: both rules re-grounded to read
+    # the EDGE-parsed network.ua_header_browser (request-1 / no-JS) — the edge parses "Edg/" to 'edge', so the
+    # family collapse must still hold on the pure network signal. Non-vacuous: the fixture carries the ja4/h2
+    # hint 'chrome' vs ua_header_browser 'edge' mismatch inputs (the exact request-1 comparison).
     capture = json.loads((_HEADFUL / "msedge.json").read_text())
-    browser = {s["kind"]: s["value"] for s in capture["signals"]["browser"]}
     network = {s["kind"]: s["value"] for s in capture["signals"]["network"]}
-    assert browser.get("ua_browser") == "edge"
+    assert network.get("ua_header_browser") == "edge"
     assert network.get("ja4_browser_hint") == "chrome" and network.get("h2_browser_hint") == "chrome"
 
     signals = [Signal.model_validate(s) for group in capture["signals"].values() for s in group]
     fired = {c.rule_id for c in Detector().ingest_and_score(signals)[0].contradictions}
-    assert fired.isdisjoint({"net.tls_vs_ua_browser", "net.h2_vs_ua_browser"}), fired
+    # Both the re-grounded header rules AND the cross-layer JS companions must stay silent on real Edge:
+    # the capture carries ua_header_browser 'edge' (header rules) AND ua_browser 'edge' (JS companions),
+    # and not_equal_browser must collapse the Chromium family on every one of them.
+    assert fired.isdisjoint(
+        {
+            "net.tls_vs_ua_browser",
+            "net.h2_vs_ua_browser",
+            "net.tls_vs_js_ua_browser",
+            "net.h2_vs_js_ua_browser",
+        }
+    ), fired
 
 
 def test_real_stock_firefox_152_no_browser_coherence_or_artifact_fp() -> None:

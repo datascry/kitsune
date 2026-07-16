@@ -8,9 +8,9 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.57`); regenerate with `task catalog`, do not edit by hand. **206 rules**: 133 active · 67 experimental · 6 retired; 153 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.58`); regenerate with `task catalog`, do not edit by hand. **208 rules**: 135 active · 67 experimental · 6 retired; 155 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (41)
+### network layer (43)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -21,13 +21,14 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_on_non_chromium_ua` | coherence✦ | present | 0.7 | active | Non-Chromium UA (Safari/Firefox) sends Sec-CH-UA (a Blink-only header) — Chromium faking it |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
-| `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
+| `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the User-Agent browser |
 | `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
 | `net.fake_declared_crawler` | coherence✦ | present | 0.8 | experimental | A UA declaring a known crawler (Googlebot/Bingbot/…) whose IP fails forward-confirmed reverse DNS |
 | `net.h2_header_order_vs_ua` | coherence✦ | present | 0.6 | active | Chromium UA but the HTTP/2 regular-header order is not chromium-shaped (JA4H) |
 | `net.h2_settings_vs_order` | coherence✦ | not_equal | 0.6 | active | HTTP/2 SETTINGS-profile engine contradicts the pseudo-header-order engine |
 | `net.h2_unknown_vs_ua` | coherence✦ | present | 0.6 | active | Modern-browser UA but the HTTP/2 stack matches no known browser engine |
 | `net.h2_unstable_within_session` | coherence✦ | present | 0.7 | active | HTTP/2 fingerprint (SETTINGS preface) changed within one session |
+| `net.h2_vs_js_ua_browser` | coherence✦ | not_equal_browser | 0.4 | active | HTTP/2 (Akamai) fingerprint contradicts the JS-reported User-Agent browser |
 | `net.h2_vs_tls_browser` | coherence✦ | not_equal | 0.55 | active | HTTP/2 fingerprint browser contradicts the TLS (JA4) browser |
 | `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
 | `net.ip_rotation_within_session` | coherence✦ | present | 0.7 | active | One session egressed from many distinct IPs (rotating proxy pool) |
@@ -43,6 +44,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_os_vs_tcp_os` | coherence✦ | not_equal | 0.6 | experimental | JA4-implied OS contradicts TCP/IP-implied OS |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
+| `net.tls_vs_js_ua_browser` | coherence✦ | not_equal_browser | 0.5 | active | JA4 browser family contradicts the JS-reported User-Agent browser |
 | `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
 | `net.ua_rotation_within_session` | coherence✦ | present | 0.7 | active | One session sent multiple distinct User-Agent strings (mid-session UA rotation) |
 | `net.web_bot_auth_invalid` | coherence✦ | present | 0.85 | active | A request presents a Web Bot Auth (RFC 9421) signature that fails Ed25519 verification |
@@ -56,7 +58,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_ua_no_grease_brand` | artifact✦ | present | 0.6 | active | Chromium Sec-CH-UA brand list omits the GREASE brand (hardcoded header) |
 | `net.webrtc_ip_vs_observed` | reputation | not_equal | 0.85 | experimental | WebRTC-revealed public IP contradicts the observed connection IP (proxied bot) |
 
-### browser layer (139)
+### browser layer (138)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
@@ -121,16 +123,15 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
-| `net.ch_ua_vs_ua_browser` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA brand contradicts the JS UA browser |
 | `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |
-| `net.h2_vs_ua_browser` | coherence✦ | not_equal_browser | 0.6 | active | HTTP/2 (Akamai) fingerprint contradicts User-Agent browser |
+| `net.h2_vs_js_ua_browser` | coherence✦ | not_equal_browser | 0.4 | active | HTTP/2 (Akamai) fingerprint contradicts the JS-reported User-Agent browser |
 | `net.no_js_execution` | coherence✦ | present | 0.6 | active | Page request with a TLS fingerprint but no browser layer (no JS ran — scripted client) |
 | `net.quic_grease_vs_ua` | coherence | present | 0.6 | retired | GREASEing-engine UA (Chromium/Safari) but the QUIC ClientHello has no GREASE |
 | `net.quic_pq_keyshare_vs_ua` | coherence | present | 0.5 | retired | Current-Chrome UA but the QUIC ClientHello offers no post-quantum key share |
 | `net.sec_fetch_vs_ua` | coherence✦ | present | 0.7 | active | UA claims a modern browser but the request omits Sec-Fetch metadata headers |
 | `net.tls_grease_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a GREASEing-engine browser (Chromium/Safari) but the TLS ClientHello has no GREASE |
 | `net.tls_pq_keyshare_vs_ua` | coherence✦ | present | 0.5 | experimental | UA claims current Chrome but the TLS handshake offers no post-quantum key share |
-| `net.tls_vs_ua_browser` | coherence✦ | not_equal_browser | 0.7 | active | JA4 browser family contradicts User-Agent browser |
+| `net.tls_vs_js_ua_browser` | coherence✦ | not_equal_browser | 0.5 | active | JA4 browser family contradicts the JS-reported User-Agent browser |
 | `br.automation_globals` | automation✦ | present | 0.6 | active | Automation-framework global or webdriver DOM attribute present |
 | `br.canvas_lie` | automation✦ | present | 0.7 | active | Canvas/WebGL API tampering detected (getter override) |
 | `br.cdc_artifacts` | automation✦ | present | 0.85 | active | Selenium / chromedriver automation artifacts in window/document |

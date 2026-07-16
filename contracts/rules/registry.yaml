@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.57"
+ruleset_version: "0.74.58"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -38,27 +38,51 @@ rules:
 
   - id: net.tls_vs_ua_browser
     title: JA4 browser family contradicts User-Agent browser
-    layers: [network, browser]
-    reads: [network.ja4_browser_hint, browser.ua_browser]
+    layers: [network]
+    reads: [network.ja4_browser_hint, network.ua_header_browser]
     predicate: not_equal_browser
     category: coherence
     weight: 0.7
     status: active
     added: "2026-06-17"
-    last_validated: "2026-06-19"
-    source: "The core cross-layer thesis tell: the TLS engine (JA4) below the JS spoofing layer must agree with the browser the UA claims. A Chromium-TLS client wearing a Firefox/Safari UA disagrees. v0.74.15 FIRST LIVE POSITIVES + a robustness fix: previously 'evaded' because the edge JA4→browser hint table keyed on a FULL JA4 (incl. JA4_c, the extension/sig-alg hash) — and the real headful Chromium's JA4_c (d8a2da3f94cd) differs from the seeded one (02713d6af862), so REAL Chrome itself got ja4_browser_hint=None (unhinted → rule unevaluable). Fixed by adding the Chromium cipher-suite PREFIX (t13d1516h2_8daaf6152771 → chrome) to edge/internal/fingerprint/ja4_hints.json; the Lookup already falls back to the JA4_a+JA4_b prefix (cipher-level identity is the stable per-engine key, robust to JA4_c randomization — itself an anti-detect technique Camoufox uses). Now: real headful Chromium → prefix=chrome, ua_browser=chrome → MATCH, no fire (GROUNDED, FP-safe); spoof-ua (chrome TLS + Firefox UA) and ios-ua-spoof (chrome TLS + Safari UA) → prefix=chrome, ua_browser=firefox/safari → fire (two live positives). Chrome-impersonators with no JS (primp/curl-impersonate, ua_browser absent) don't fire — the not_equal predicate needs both reads. Browserforge calibration has no JA4, so promotion cannot raise the legit flag rate. v0.74.19: extended the hint table to the WebKit engine — the real WebKit TLS prefix (t13d2914h2_723694b0fccc -> safari) was unhinted, so a WebKit-engine bot faking a non-Safari UA evaded this rule. GROUNDED + FP-SAFE: a real WebKit + Safari UA (the headful capture) now hints safari == ua_browser safari -> MATCH, no fire; the new webkit-ua-spoof evader (Playwright WebKit under a Chrome UA) -> safari != chrome -> fires (live positive). FP-safe even though Playwright WebKit's TLS may differ from Apple Secure Transport's real-Safari JA4: no real USER produces this JA4 (it is the WebKit-engine handshake), so hinting it safari can only ever match a WebKit+Safari session (no fire) or catch a WebKit-engine UA-spoof. Caveat: real macOS/iOS Safari has its own (unverified-in-sandbox) JA4 and stays unhinted until a real-Safari capture is available — a coverage gap, not an FP. The hint table now identifies all three engines (chromium/firefox/webkit). v0.74.30 FP FIX (GROUNDED on real Microsoft Edge 149): predicate not_equal -> not_equal_browser. Edge/Brave/Opera/Vivaldi ship the SAME Chromium TLS engine, so a real Edge's JA4 hints 'chrome' while ua_browser is 'edge' — a literal not_equal convicted every real Edge (the 2nd-most-common desktop browser) on net.tls_vs_ua_browser. not_equal_browser collapses the Chromium family to its engine before comparing (edge/brave/opera/vivaldi/samsung -> chrome), so a Chromium-engine UA matches a 'chrome' hint (no fire) while a CROSS-ENGINE pairing still fires. Re-validated LIVE: real Edge 149 no longer fires; spoof-ua (chrome TLS + Firefox UA), ios-ua-spoof (chrome TLS + Safari UA) and webkit-ua-spoof (WebKit TLS + Chrome UA) still fire — no detection loss."
+    last_validated: "2026-07-15"
+    source: "The core cross-layer thesis tell: the TLS engine (JA4) below the JS spoofing layer must agree with the browser the UA claims. A Chromium-TLS client wearing a Firefox/Safari UA disagrees. v0.74.15 FIRST LIVE POSITIVES + a robustness fix: previously 'evaded' because the edge JA4→browser hint table keyed on a FULL JA4 (incl. JA4_c, the extension/sig-alg hash) — and the real headful Chromium's JA4_c (d8a2da3f94cd) differs from the seeded one (02713d6af862), so REAL Chrome itself got ja4_browser_hint=None (unhinted → rule unevaluable). Fixed by adding the Chromium cipher-suite PREFIX (t13d1516h2_8daaf6152771 → chrome) to edge/internal/fingerprint/ja4_hints.json; the Lookup already falls back to the JA4_a+JA4_b prefix (cipher-level identity is the stable per-engine key, robust to JA4_c randomization — itself an anti-detect technique Camoufox uses). Now: real headful Chromium → prefix=chrome, ua_browser=chrome → MATCH, no fire (GROUNDED, FP-safe); spoof-ua (chrome TLS + Firefox UA) and ios-ua-spoof (chrome TLS + Safari UA) → prefix=chrome, ua_browser=firefox/safari → fire (two live positives). Chrome-impersonators with no JS (primp/curl-impersonate, ua_browser absent) don't fire — the not_equal predicate needs both reads. Browserforge calibration has no JA4, so promotion cannot raise the legit flag rate. v0.74.19: extended the hint table to the WebKit engine — the real WebKit TLS prefix (t13d2914h2_723694b0fccc -> safari) was unhinted, so a WebKit-engine bot faking a non-Safari UA evaded this rule. GROUNDED + FP-SAFE: a real WebKit + Safari UA (the headful capture) now hints safari == ua_browser safari -> MATCH, no fire; the new webkit-ua-spoof evader (Playwright WebKit under a Chrome UA) -> safari != chrome -> fires (live positive). FP-safe even though Playwright WebKit's TLS may differ from Apple Secure Transport's real-Safari JA4: no real USER produces this JA4 (it is the WebKit-engine handshake), so hinting it safari can only ever match a WebKit+Safari session (no fire) or catch a WebKit-engine UA-spoof. Caveat: real macOS/iOS Safari has its own (unverified-in-sandbox) JA4 and stays unhinted until a real-Safari capture is available — a coverage gap, not an FP. The hint table now identifies all three engines (chromium/firefox/webkit). v0.74.30 FP FIX (GROUNDED on real Microsoft Edge 149): predicate not_equal -> not_equal_browser. Edge/Brave/Opera/Vivaldi ship the SAME Chromium TLS engine, so a real Edge's JA4 hints 'chrome' while ua_browser is 'edge' — a literal not_equal convicted every real Edge (the 2nd-most-common desktop browser) on net.tls_vs_ua_browser. not_equal_browser collapses the Chromium family to its engine before comparing (edge/brave/opera/vivaldi/samsung -> chrome), so a Chromium-engine UA matches a 'chrome' hint (no fire) while a CROSS-ENGINE pairing still fires. Re-validated LIVE: real Edge 149 no longer fires; spoof-ua (chrome TLS + Firefox UA), ios-ua-spoof (chrome TLS + Safari UA) and webkit-ua-spoof (WebKit TLS + Chrome UA) still fire — no detection loss. v0.74.58 RE-GROUND to request-1 / no-JS (botwall): reads network.ua_header_browser (the UA browser family parsed EDGE-side from the request header, emitted for EVERY request incl. no-JS clients) instead of the collector's browser.ua_browser. Same coarse vocabulary (chrome/firefox/safari/edge — edge uaHeaderBrowser mirrors the collector uaBrowser), so FP-NEUTRAL by construction: ua_header_browser == ua_browser for every real UA, and the corpus is backfilled with the edge signal so the matrix is unchanged. Effect: JA4-vs-UA coherence now convicts on request 1 with no JS (spoof-ua / ios-ua-spoof / webkit-ua-spoof) rather than waiting for the collector to POST. now layers=[network]."
 
   - id: net.h2_vs_ua_browser
     title: HTTP/2 (Akamai) fingerprint contradicts User-Agent browser
-    layers: [network, browser]
-    reads: [network.h2_browser_hint, browser.ua_browser]
+    layers: [network]
+    reads: [network.h2_browser_hint, network.ua_header_browser]
     predicate: not_equal_browser
     category: coherence
     weight: 0.6
     status: active
     added: "2026-06-17"
-    last_validated: "2026-06-19"
-    source: "Akamai h2 fingerprint (Black Hat EU 2017). v0.74.30 FP FIX (GROUNDED on real Microsoft Edge 149): predicate not_equal -> not_equal_browser, same Chromium-family fix as net.tls_vs_ua_browser — Edge's h2 stack is Chromium's (h2_browser_hint 'chrome') under an 'edge' UA, which a literal not_equal convicted. The family-aware predicate collapses edge/brave/opera/vivaldi -> chrome so a Chromium-engine UA matches the 'chrome' h2 hint; a non-Chrome h2 stack under a Chrome-family UA (httpx/curl faking Chrome) still fires."
+    last_validated: "2026-07-15"
+    source: "Akamai h2 fingerprint (Black Hat EU 2017). v0.74.30 FP FIX (GROUNDED on real Microsoft Edge 149): predicate not_equal -> not_equal_browser, same Chromium-family fix as net.tls_vs_ua_browser — Edge's h2 stack is Chromium's (h2_browser_hint 'chrome') under an 'edge' UA, which a literal not_equal convicted. The family-aware predicate collapses edge/brave/opera/vivaldi -> chrome so a Chromium-engine UA matches the 'chrome' h2 hint; a non-Chrome h2 stack under a Chrome-family UA (httpx/curl faking Chrome) still fires. v0.74.58 RE-GROUND to request-1 / no-JS (botwall): reads network.ua_header_browser (edge-parsed UA family, every request incl. no-JS) instead of browser.ua_browser — FP-neutral (same vocabulary, ua_header_browser == ua_browser for every real UA; corpus backfilled so the matrix is unchanged). h2-vs-UA coherence now convicts on request 1. now layers=[network]."
+
+  - id: net.tls_vs_js_ua_browser
+    title: JA4 browser family contradicts the JS-reported User-Agent browser
+    layers: [network, browser]
+    reads: [network.ja4_browser_hint, browser.ua_browser]
+    predicate: not_equal_browser
+    category: coherence
+    weight: 0.5
+    status: active
+    added: "2026-07-15"
+    last_validated: "2026-07-15"
+    source: "v0.74.58: the cross-CAPTURE-layer companion to net.tls_vs_ua_browser (which re-grounded to the edge UA HEADER so it convicts on request 1 / no-JS). This rule keeps the ORIGINAL network<->JS tell: the TLS engine (JA4, network) vs the browser navigator.userAgent claims (browser layer). Two reasons it must stay: (1) it earns the cross-layer INCOHERENCE amplification the thesis rewards — a chrome-TLS session reporting a firefox JS UA is genuine cross-layer incoherence the header-only rule cannot express; (2) it catches the UA-SPLIT evasion — a client that matches its HTTP User-Agent header to its TLS engine (defeating net.tls_vs_ua_browser) but leaks a different browser in the JS layer. FP-neutral: same not_equal_browser (Chromium family collapse) + vocabulary as net.tls_vs_ua_browser, so no real browser (incl. Edge/Brave) fires. Weight 0.5 (< the 0.7 header rule) so the header rule is the primary conviction and this adds the cross-layer signal; when both fire (the common header-UA == JS-UA case) a real bot is simply more strongly convicted — never an FP, since a coherent browser fires neither."
+
+  - id: net.h2_vs_js_ua_browser
+    title: HTTP/2 (Akamai) fingerprint contradicts the JS-reported User-Agent browser
+    layers: [network, browser]
+    reads: [network.h2_browser_hint, browser.ua_browser]
+    predicate: not_equal_browser
+    category: coherence
+    weight: 0.4
+    status: active
+    added: "2026-07-15"
+    last_validated: "2026-07-15"
+    source: "v0.74.58: the cross-CAPTURE-layer companion to net.h2_vs_ua_browser (re-grounded to the edge UA header for request-1/no-JS). Keeps the network<->JS tell: the HTTP/2 (Akamai) engine (network) vs the browser navigator.userAgent claims (browser) — cross-layer incoherence for the JS-running bot, and the h2 half of the UA-SPLIT evasion. FP-neutral (same not_equal_browser + vocabulary as net.h2_vs_ua_browser). Weight 0.4, below the 0.6 header rule and the 0.5 TLS companion — h2 is the secondary engine tell; it corroborates the cross-layer verdict rather than driving it."
 
   - id: net.ja4_tool_vs_ua
     title: JA4 is a non-browser HTTP client but the User-Agent claims a browser
@@ -505,16 +529,16 @@ rules:
     source: "Cross-layer OS coherence; JS-only UA spoof leaves Chrome's network client hint intact"
 
   - id: net.ch_ua_vs_ua_browser
-    title: HTTP Sec-CH-UA brand contradicts the JS UA browser
-    layers: [network, browser]
-    reads: [network.ch_ua_browser, browser.ua_browser]
+    title: HTTP Sec-CH-UA brand contradicts the User-Agent browser
+    layers: [network]
+    reads: [network.ch_ua_browser, network.ua_header_browser]
     predicate: not_equal
     weight: 0.6
     status: active
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Cross-layer browser coherence; Chromium sends Sec-CH-UA from its real brand under any UA"
+    last_validated: "2026-07-15"
+    source: "Cross-layer browser coherence; Chromium sends Sec-CH-UA from its real brand under any UA. v0.74.58 RE-GROUND to request-1 / no-JS (botwall): reads network.ua_header_browser (edge-parsed UA family) instead of the collector's browser.ua_browser, so the Sec-CH-UA brand vs UA check runs on request 1 with no JS. FP-neutral: secCHUABrowser emits only edge/chrome/'' (Sec-CH-UA is Chromium-only), and ua_header_browser == ua_browser for every real UA, so real Chrome (chrome==chrome) and real Edge (edge==edge) stay silent while a Chromium engine wearing a Firefox/Safari UA (Sec-CH-UA 'chrome' vs ua_header_browser firefox/safari) fires. Corpus backfilled with the edge signal so the matrix is unchanged. now layers=[network]."
 
   - id: br.uadata_model_worker_divergence
     title: getHighEntropyValues().model differs between the main thread and a Worker

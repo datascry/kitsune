@@ -8,6 +8,7 @@
   "signals": {
     "network": [
       { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "ja4_os_hint", "value": "windows", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
+      { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "ua_header_browser", "value": "firefox", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
       { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "tcp_os_hint", "value": "linux", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
       { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "ja4_browser_hint", "value": "chrome", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" },
       { "schema_version": "0.1", "session_id": "bot-001", "layer": "network", "kind": "h2_browser_hint", "value": "chrome", "source": "edge", "observed_at": "2026-06-17T13:00:00Z" }

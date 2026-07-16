@@ -190,15 +190,35 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "net.ch_platform_header_vs_ua",
         ),
         (
+            # Sec-CH-UA brand vs the EDGE-parsed UA family — both network signals, so it convicts on
+            # request 1 with no JS (a Chromium engine sending "Google Chrome" under a spoofed Firefox UA).
             [
                 (Layer.network, "ch_ua_browser", "chrome", Source.edge),
-                (Layer.browser, "ua_browser", "firefox", Source.collector),
+                (Layer.network, "ua_header_browser", "firefox", Source.edge),
             ],
             "net.ch_ua_vs_ua_browser",
         ),
         (
-            # A non-browser HTTP-client JA4 (curl) wearing a browser UA header — the no-JS lazy-scraper that
-            # net.tls_vs_ua_browser misses (it reads the absent JS ua_browser). Both reads are edge-derived.
+            # Request-1 / no-JS: JA4 browser-ENGINE hint vs the edge-parsed UA family (both network), so
+            # JA4-vs-UA coherence convicts on the first request without waiting for the collector to POST.
+            [
+                (Layer.network, "ja4_browser_hint", "chrome", Source.edge),
+                (Layer.network, "ua_header_browser", "firefox", Source.edge),
+            ],
+            "net.tls_vs_ua_browser",
+        ),
+        (
+            # Request-1 / no-JS: HTTP/2 (Akamai) engine hint vs the edge-parsed UA family.
+            [
+                (Layer.network, "h2_browser_hint", "chrome", Source.edge),
+                (Layer.network, "ua_header_browser", "firefox", Source.edge),
+            ],
+            "net.h2_vs_ua_browser",
+        ),
+        (
+            # A non-browser HTTP-client JA4 (curl) wearing a browser UA header — the lazy-scraper caught by
+            # comparing two edge-derived signals (a KNOWN-tool JA4 vs a browser UA claim), complementing
+            # net.tls_vs_ua_browser (which keys on a browser-ENGINE JA4 hint). Both reads are edge-derived.
             [
                 (Layer.network, "ja4_client_hint", "curl", Source.edge),
                 (Layer.network, "ua_header_browser", "chrome", Source.edge),
@@ -519,7 +539,7 @@ def test_matching_h2_engine_does_not_fire() -> None:
         make_signal("s", Layer.network, "h2_browser_hint", "chrome", source=Source.edge),
         make_signal("s", Layer.network, "h2_settings_hint", "chrome", source=Source.edge),
         make_signal("s", Layer.network, "ja4_browser_hint", "chrome", source=Source.edge),
-        make_signal("s", Layer.browser, "ua_browser", "chrome", source=Source.collector),
+        make_signal("s", Layer.network, "ua_header_browser", "chrome", source=Source.edge),
     ]
     session = group_signals(sigs)[0]
     fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}

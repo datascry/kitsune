@@ -36,6 +36,10 @@ def _human(session_id: str, browser: dict[str, object]) -> Session:
         make_signal(session_id, Layer.network, "accept_language_primary", locale, source=Source.edge),
         make_signal(session_id, Layer.browser, "nav_language_primary", locale),
         make_signal(session_id, Layer.network, "h2_browser_hint", ua_browser, source=Source.edge),
+        # The edge parses the same browser family from the UA HEADER for every request; a coherent human's
+        # ja4/h2 engine agrees with it, so the request-1 net.tls_vs_ua_browser / h2_vs_ua_browser / ch_ua_*
+        # rules (re-grounded to this edge signal) exercise their no-fire path here, not just go MISSING.
+        make_signal(session_id, Layer.network, "ua_header_browser", ua_browser, source=Source.edge),
     ]
     # h2_settings_hint is only emitted for engines with a distinctive SETTINGS profile (Chrome/Firefox);
     # Safari's is "unknown" and not emitted, so a realistic Safari profile carries no settings hint.
