@@ -183,11 +183,21 @@ def test_committed_retired_rules_stay_skipped_with_their_read_signal_present() -
             "net.accept_lang_vs_navigator",
         ),
         (
+            # Sec-CH-UA-Platform vs the EDGE-parsed UA platform — both network signals, so it convicts on
+            # request 1 with no JS (a real-OS client hint disagreeing with a spoofed UA-string platform).
+            [
+                (Layer.network, "ch_platform_header", "Linux", Source.edge),
+                (Layer.network, "ua_header_platform", "Windows", Source.edge),
+            ],
+            "net.ch_platform_header_vs_ua",
+        ),
+        (
+            # The cross-layer companion: Sec-CH-UA-Platform (network) vs the JS UA platform (browser).
             [
                 (Layer.network, "ch_platform_header", "Linux", Source.edge),
                 (Layer.browser, "ua_platform", "Windows", Source.collector),
             ],
-            "net.ch_platform_header_vs_ua",
+            "net.ch_platform_vs_js_ua_platform",
         ),
         (
             # Sec-CH-UA brand vs the EDGE-parsed UA family — both network signals, so it convicts on
@@ -523,14 +533,16 @@ def test_v2_rules_fire(signals_spec, rule_id: str) -> None:
 
 
 def test_matching_ch_platform_does_not_fire() -> None:
-    # The HTTP client hint and the JS UA platform agree → no cross-layer OS contradiction.
+    # The Sec-CH-UA-Platform agrees with BOTH the edge-parsed UA platform (header rule) and the JS UA
+    # platform (companion) → no OS contradiction on either the request-1 or the cross-layer path.
     sigs = [
         make_signal("s", Layer.network, "ch_platform_header", "Windows", source=Source.edge),
+        make_signal("s", Layer.network, "ua_header_platform", "Windows", source=Source.edge),
         make_signal("s", Layer.browser, "ua_platform", "Windows", source=Source.collector),
     ]
     session = group_signals(sigs)[0]
     fired = {c.rule_id for c in CoherenceEngine(load_registry()).evaluate(session)}
-    assert "net.ch_platform_header_vs_ua" not in fired
+    assert fired.isdisjoint({"net.ch_platform_header_vs_ua", "net.ch_platform_vs_js_ua_platform"})
 
 
 def test_matching_h2_engine_does_not_fire() -> None:

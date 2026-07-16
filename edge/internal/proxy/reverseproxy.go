@@ -150,6 +150,12 @@ func prepare(
 		if b := uaHeaderBrowser(ua); b != "" {
 			out.signals = append(out.signals, signal.Network(out.sessionID, "ua_header_browser", b, now))
 		}
+		// The OS family the User-Agent HEADER claims — derived edge-side, the network-layer counterpart to
+		// the JS browser.ua_platform. It lets net.ch_platform_header_vs_ua (Sec-CH-UA-Platform vs the UA's
+		// platform) convict on request 1 with no JS, instead of waiting for the collector's browser.ua_platform.
+		if plat := uaHeaderPlatform(ua); plat != "" {
+			out.signals = append(out.signals, signal.Network(out.sessionID, "ua_header_platform", plat, now))
+		}
 		// Declared-crawler verification: a UA claiming Googlebot/Bingbot/etc. is verified against the crawler's
 		// OWN published proof. The DNS-free CIDR feed (Google/Bing official IP ranges) is checked first; if no
 		// feed covers the crawler it falls back to FCrDNS. An IP the crawler's own method does not confirm is an
@@ -417,6 +423,27 @@ func uaHeaderBrowser(ua string) string {
 		return "chrome"
 	case strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"):
 		return "safari"
+	default:
+		return ""
+	}
+}
+
+// uaHeaderPlatform classifies a User-Agent HEADER string into the same OS vocabulary the collector reports
+// for browser.ua_platform and secCHUAPlatform normalises Sec-CH-UA-Platform to (Windows/macOS/Android/Linux),
+// or "" for an unclassifiable UA. It mirrors the collector's uaPlatform EXACTLY — same tokens, same order
+// (Mac before Android, though no real UA needs the tie-break) — so ua_header_platform == browser.ua_platform
+// for every real UA, keeping the re-grounded net.ch_platform_header_vs_ua FP-neutral. Emitted only when
+// non-empty, so an unclassifiable UA leaves it MISSING rather than a spurious mismatch.
+func uaHeaderPlatform(ua string) string {
+	switch {
+	case strings.Contains(ua, "Windows"):
+		return "Windows"
+	case strings.Contains(ua, "Macintosh") || strings.Contains(ua, "Mac OS X"):
+		return "macOS"
+	case strings.Contains(ua, "Android"):
+		return "Android"
+	case strings.Contains(ua, "Linux"):
+		return "Linux"
 	default:
 		return ""
 	}

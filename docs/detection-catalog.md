@@ -8,15 +8,16 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 <!-- GENERATED:rules:start -->
 ## Complete rule registry
 
-> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.58`); regenerate with `task catalog`, do not edit by hand. **208 rules**: 135 active · 67 experimental · 6 retired; 155 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
+> Every detection rule Kitsune leverages — **generated** from `contracts/rules/registry.yaml` (ruleset `0.74.59`); regenerate with `task catalog`, do not edit by hand. **209 rules**: 136 active · 67 experimental · 6 retired; 156 convicting (coherence/automation/artifact — only these can convict a `bot`; environment/behavioral/reputation/prevalence corroborate only).
 
-### network layer (43)
+### network layer (44)
 
 | rule | category | predicate | wt | status | what it catches |
 |---|---|---|---|---|---|
 | `net.accept_encoding_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but Accept-Encoding omits Brotli (scripted client) |
 | `net.accept_lang_vs_navigator` | coherence✦ | not_equal | 0.55 | active | HTTP Accept-Language contradicts the JS navigator.languages locale |
-| `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
+| `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the User-Agent platform |
+| `net.ch_platform_vs_js_ua_platform` | coherence✦ | not_equal | 0.5 | active | HTTP Sec-CH-UA-Platform contradicts the JS-reported UA platform |
 | `net.ch_ua_mobile_no_model` | coherence✦ | present | 0.6 | active | Mobile Sec-CH-UA-Mobile ?1 but Sec-CH-UA-Model is empty — desktop faking Android |
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_on_non_chromium_ua` | coherence✦ | present | 0.7 | active | Non-Chromium UA (Safari/Firefox) sends Sec-CH-UA (a Blink-only header) — Chromium faking it |
@@ -120,7 +121,7 @@ data. Start with the registry for "what does Kitsune detect today"; read the pro
 | `br.webgpu_vendor_vs_webgl` | coherence✦ | present | 0.75 | active | WebGPU adapter GPU family contradicts the WebGL renderer (spoofed renderer on real hardware) |
 | `net.accept_encoding_vs_ua` | coherence✦ | present | 0.6 | active | UA claims a modern browser but Accept-Encoding omits Brotli (scripted client) |
 | `net.accept_lang_vs_navigator` | coherence✦ | not_equal | 0.55 | active | HTTP Accept-Language contradicts the JS navigator.languages locale |
-| `net.ch_platform_header_vs_ua` | coherence✦ | not_equal | 0.6 | active | HTTP Sec-CH-UA-Platform contradicts the JS UA platform |
+| `net.ch_platform_vs_js_ua_platform` | coherence✦ | not_equal | 0.5 | active | HTTP Sec-CH-UA-Platform contradicts the JS-reported UA platform |
 | `net.ch_ua_mobile_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA-Mobile form factor contradicts the UA's mobile-ness |
 | `net.ch_ua_version_vs_ua` | coherence✦ | present | 0.6 | active | Sec-CH-UA brand version disagrees with the UA-string Chrome version |
 | `net.datacenter_origin_proxied` | coherence✦ | present | 0.8 | active | WebRTC reveals a datacenter machine hidden behind a non-datacenter connection |

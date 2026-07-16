@@ -14,7 +14,7 @@
 # When a signal decays (e.g. a browser change kills a CDP tell), set status: retired and bump
 # last_validated — do not delete history. Composite/cross-conditional rules are future work.
 
-ruleset_version: "0.74.58"
+ruleset_version: "0.74.59"
 
 rules:
   - id: net.tls_os_vs_tcp_os
@@ -24,13 +24,18 @@ rules:
     predicate: not_equal
     category: coherence
     weight: 0.6
-    # experimental: no live producer for tcp_os_hint yet — TCP/IP-stack fingerprinting needs raw-packet
-    # capture (CAP_NET_RAW / AF_PACKET) the userspace edge does not have. The rule + logic are validated;
-    # it activates once a packet-capture sidecar emits tcp_os_hint. CONFIRMED the ONLY active rule with no
-    # producer (producer-vs-reader audit 2026-06-20) — so it is currently INERT (never fires, no FP). BEFORE
-    # trusting it when the sidecar lands: GROUND tcp_os_hint's reliability on a real browser first — this is a
-    # CONVICTING coherence rule, and a convicting rule armed on an UNVALIDATED capture FPs (cf. the v0.74.32/34
-    # net.quic_*_vs_ua retirements, where a broken QUIC ClientHello capture mis-fired on real Chromium).
+    # experimental + INERT BY DESIGN: reads network.tcp_os_hint, which nothing emits. The producer this
+    # comment once awaited now EXISTS — the edge's AF_PACKET SYN sniffer (internal/tcpfp, CAP_NET_RAW, wired
+    # in reverseproxy.ListenAndServe) classifies the client's SYN kernel — but it emits that OS as
+    # `tcp_kernel`, consumed by the ACTIVE, reliable net.tcp_os_vs_ua (tcp_kernel vs ua_kernel). This rule is
+    # the weaker, redundant TLS-side variant, and arming it (reads -> network.tcp_kernel) stays EXTERNAL-DATA-
+    # BOUND: ja4_os_hint derives OS from the TLS ClientHello, but Chrome's ClientHello is OS-INDEPENDENT, so
+    # the seeded full-JA4 OS label (windows) would FP a real Linux Chrome that happens to match that JA4_c
+    # permutation. In-sandbox it looks clean (0 real-browser disagreements; modern Chrome permutes its
+    # extension order so real captures rarely match the seeded full JA4 — only pinned-template replays like
+    # chrome-clone/go-tls/os-spoof do), but that is exactly the UNVALIDATED-capture trap that retired the QUIC
+    # rules (v0.74.32/34). Promotion is gated on real Linux-DESKTOP-Chrome traffic (P1d grounding), not the
+    # in-sandbox gate. Until then it stays inert — net.tcp_os_vs_ua already delivers live TCP-OS coherence.
     status: experimental
     added: "2026-06-17"
     last_validated: "2026-06-17"
@@ -517,16 +522,28 @@ rules:
     source: "Cross-layer locale coherence: a real browser's HTTP Accept-Language always matches its JS navigator.languages[0] (same browser config drives both). A bot that geo-spoofs the JS locale (to a proxy's country) but forgets the HTTP stack disagrees across layers. v0.74.14 FIRST LIVE POSITIVE: the accept-lang-spoof evader (stealth ACCEPT_LANG_SPOOF=1 — context locale en-US so the real Accept-Language=en is sent, while navigator.language/languages are JS-patched to fr) fires it (accept_language_primary=en vs nav_language_primary=fr) — previously 'evaded' (read signals present in the corpus but no evader created the mismatch). GROUNDED FP-safe across the real-browser second source: the headful Chromium/Firefox/WebKit captures all have accept_lang==nav_lang (match → no fire). Browserforge calibration carries no HTTP Accept-Language, so it cannot raise the legit flag rate."
 
   - id: net.ch_platform_header_vs_ua
-    title: HTTP Sec-CH-UA-Platform contradicts the JS UA platform
-    layers: [network, browser]
-    reads: [network.ch_platform_header, browser.ua_platform]
+    title: HTTP Sec-CH-UA-Platform contradicts the User-Agent platform
+    layers: [network]
+    reads: [network.ch_platform_header, network.ua_header_platform]
     predicate: not_equal
     weight: 0.6
     status: active
     category: coherence
     added: "2026-06-18"
-    last_validated: "2026-06-18"
-    source: "Cross-layer OS coherence; JS-only UA spoof leaves Chrome's network client hint intact"
+    last_validated: "2026-07-16"
+    source: "Cross-layer OS coherence; a Chromium client sets Sec-CH-UA-Platform from its REAL OS at the network layer, so a UA-string platform spoof leaves it disagreeing with the OS the UA claims. v0.74.59 RE-GROUND to request-1 / no-JS (botwall): reads network.ua_header_platform (the OS the edge parses from the UA HEADER, emitted for every request) instead of the collector's browser.ua_platform. FP-neutral: uaHeaderPlatform mirrors the collector's uaPlatform EXACTLY (Windows/macOS/Android/Linux, same order), so ua_header_platform == ua_platform for every real UA; a real Chromium's Sec-CH-UA-Platform matches its UA OS (no fire) while a JS/UA platform spoof that leaves the real Sec-CH-UA-Platform intact fires — now on request 1 with no JS. Corpus backfilled with the edge signal so the matrix is unchanged. now layers=[network]."
+
+  - id: net.ch_platform_vs_js_ua_platform
+    title: HTTP Sec-CH-UA-Platform contradicts the JS-reported UA platform
+    layers: [network, browser]
+    reads: [network.ch_platform_header, browser.ua_platform]
+    predicate: not_equal
+    weight: 0.5
+    status: active
+    category: coherence
+    added: "2026-07-16"
+    last_validated: "2026-07-16"
+    source: "v0.74.59: the cross-CAPTURE-layer companion to net.ch_platform_header_vs_ua (which re-grounded to the edge UA header for request-1/no-JS). Keeps the original network<->JS tell: the network Sec-CH-UA-Platform (the real OS) vs the OS the JS navigator.userAgent claims (browser layer). Two reasons to keep it: (1) it earns the cross-layer INCOHERENCE amplification (a real-OS client hint disagreeing with a spoofed JS UA platform is genuine network<->JS incoherence); (2) it catches the platform UA-SPLIT — a client that spoofs its HTTP UA-string platform to match Sec-CH-UA-Platform (defeating the header rule) but leaks a different platform in the JS UA. FP-neutral: same not_equal + vocabulary; a real Chromium's Sec-CH-UA-Platform matches its UA platform in both header and JS. Weight 0.5 (< the 0.6 header rule) so the header rule drives the request-1 conviction and this adds the cross-layer signal."
 
   - id: net.ch_ua_vs_ua_browser
     title: HTTP Sec-CH-UA brand contradicts the User-Agent browser

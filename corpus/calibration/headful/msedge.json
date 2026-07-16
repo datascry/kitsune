@@ -282,6 +282,15 @@
         "value": "en"
       },
       {
+        "kind": "ua_header_platform",
+        "layer": "network",
+        "observed_at": "2026-06-19T22:16:14Z",
+        "schema_version": "0.1",
+        "session_id": "2dcbd4100657774afaa56f079440f2be",
+        "source": "edge",
+        "value": "Linux"
+      },
+      {
         "kind": "ua_header_browser",
         "layer": "network",
         "observed_at": "2026-06-19T22:16:14Z",

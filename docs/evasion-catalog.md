@@ -100,7 +100,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `honeypot` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.honeypot_interaction`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `http2-naive` | bot | `net.accept_encoding_vs_ua`, `net.h2_header_order_vs_ua`, `net.h2_vs_tls_browser`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tcp_os_vs_ua`, `net.tls_grease_vs_ua` |
 | `human-mouse` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
-| `iframe-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.iframe_divergence`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.ua_platform_vs_ch_platform`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.worker_divergence`, `net.ch_platform_header_vs_ua` |
+| `iframe-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.ch_he_version_vs_ua`, `br.iframe_divergence`, `br.navplatform_vs_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.ua_platform_vs_ch_platform`, `br.webdriver_getter_tampered`, `br.webgl_os_vs_ua`, `br.worker_divergence`, `net.ch_platform_header_vs_ua`, `net.ch_platform_vs_js_ua_platform` |
 | `ios-ua-spoof` | bot | `br.apple_ua_nonwebkit`, `br.ch_he_headless`, `br.error_engine_vs_ua`, `br.navplatform_vs_ua`, `br.permissions_anomaly`, `br.safari_ua_no_webkit_api`, `br.ua_platform_vs_ch_platform`, `br.vendor_vs_ua`, `br.webdriver_spoofed`, `net.ch_ua_mobile_vs_ua`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_js_ua_browser`, `net.h2_vs_ua_browser`, `net.tcp_os_vs_ua`, `net.tls_vs_js_ua_browser`, `net.tls_vs_ua_browser` |
 | `ip-rotation` | bot | `net.accept_encoding_vs_ua`, `net.ip_rotation_within_session`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
 | `keystroke-human` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_spoofed` |
@@ -124,7 +124,7 @@ For the lab's own red-team ladder (allow-list only), never third-party use.
 | `quic-no-grease` | bot | `net.accept_encoding_vs_ua`, `net.no_js_execution`, `net.sec_fetch_vs_ua`, `net.tls_grease_vs_ua` |
 | `rebrowser` | bot | `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_present` |
 | `renderer-spoof` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.webdriver_getter_tampered`, `br.webgl_getparameter_tampered`, `br.webgl_renderer_artifact`, `br.webgl_worker_vs_main` |
-| `screen-depth-spoof` | bot | `br.screen_depth_incoherent`, `net.ch_platform_header_vs_ua` |
+| `screen-depth-spoof` | bot | `br.screen_depth_incoherent`, `net.ch_platform_header_vs_ua`, `net.ch_platform_vs_js_ua_platform` |
 | `screen-impossible` | bot | `br.cdp_runtime_enabled`, `br.ch_he_headless`, `br.headless_ua`, `br.no_chrome_object`, `br.permissions_anomaly`, `br.screen_impossible`, `br.webdriver_getter_tampered` |
 | `selenium-driverless` | bot | `br.headless_ua` |
 | `spoof-ua` | bot | `br.ch_he_headless`, `br.engine_stack_vs_ua`, `br.error_engine_vs_ua`, `br.firefox_ua_nongecko`, `br.permissions_anomaly`, `br.productsub_vs_ua`, `br.vendor_vs_ua`, `br.webdriver_spoofed`, `net.ch_ua_vs_ua_browser`, `net.h2_vs_js_ua_browser`, `net.h2_vs_ua_browser`, `net.tls_vs_js_ua_browser`, `net.tls_vs_ua_browser` |

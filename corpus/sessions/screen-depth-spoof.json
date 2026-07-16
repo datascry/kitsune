@@ -20,6 +20,15 @@
     "schema_version": "0.1",
     "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
     "layer": "network",
+    "kind": "ua_header_platform",
+    "value": "Windows",
+    "source": "edge",
+    "observed_at": "2026-06-19T17:32:27Z"
+   },
+   {
+    "schema_version": "0.1",
+    "session_id": "c1f8d22a8e5b3c4f7a6d9b0e1c2f4a58",
+    "layer": "network",
     "kind": "ch_ua_browser",
     "value": "chrome",
     "source": "edge",

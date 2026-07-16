@@ -415,14 +415,20 @@ func TestPrepareEmitsUAHeaderBrowser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	found := false
+	found, foundPlat := false, false
 	for _, s := range prep.signals {
 		if s.Kind == "ua_header_browser" && s.Value == "chrome" {
 			found = true
 		}
+		if s.Kind == "ua_header_platform" && s.Value == "Windows" {
+			foundPlat = true
+		}
 	}
 	if !found {
 		t.Errorf("expected ua_header_browser=chrome signal, got %+v", prep.signals)
+	}
+	if !foundPlat {
+		t.Errorf("expected ua_header_platform=Windows signal, got %+v", prep.signals)
 	}
 	// A non-browser UA makes no browser claim → the signal must be withheld (nothing to contradict).
 	r2 := req(t, "abc")
@@ -633,6 +639,28 @@ func TestUAHeaderBrowser(t *testing.T) {
 	for _, c := range cases {
 		if got := uaHeaderBrowser(c.ua); got != c.want {
 			t.Errorf("%s: uaHeaderBrowser=%q want %q", c.name, got, c.want)
+		}
+	}
+}
+
+func TestUAHeaderPlatform(t *testing.T) {
+	// Classify the UA HEADER into the OS vocabulary the collector's ua_platform and secCHUAPlatform share
+	// (Windows/macOS/Android/Linux), or "" when unclassifiable. Mirrors the collector's uaPlatform exactly so
+	// ua_header_platform == browser.ua_platform for every real UA (Android before bare Linux; iOS, which
+	// carries the "Mac OS X" token, classifies as macOS just as the collector does).
+	cases := []struct {
+		name, ua, want string
+	}{
+		{"windows", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "Windows"},
+		{"macos", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15", "macOS"},
+		{"android", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36", "Android"},
+		{"linux desktop", "Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0", "Linux"},
+		{"ios reports macOS (like Mac OS X token), matching the collector", "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", "macOS"},
+		{"non-browser tool (no OS claim)", "curl/8.7.1", ""},
+	}
+	for _, c := range cases {
+		if got := uaHeaderPlatform(c.ua); got != c.want {
+			t.Errorf("%s: uaHeaderPlatform=%q want %q", c.name, got, c.want)
 		}
 	}
 }

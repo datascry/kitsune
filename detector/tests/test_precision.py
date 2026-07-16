@@ -40,6 +40,9 @@ def _human(session_id: str, browser: dict[str, object]) -> Session:
         # ja4/h2 engine agrees with it, so the request-1 net.tls_vs_ua_browser / h2_vs_ua_browser / ch_ua_*
         # rules (re-grounded to this edge signal) exercise their no-fire path here, not just go MISSING.
         make_signal(session_id, Layer.network, "ua_header_browser", ua_browser, source=Source.edge),
+        # The edge also parses the OS from the UA header; a coherent human's matches its Sec-CH-UA-Platform,
+        # so the re-grounded net.ch_platform_header_vs_ua exercises its no-fire path here rather than MISSING.
+        make_signal(session_id, Layer.network, "ua_header_platform", browser["ua_platform"], source=Source.edge),
     ]
     # h2_settings_hint is only emitted for engines with a distinctive SETTINGS profile (Chrome/Firefox);
     # Safari's is "unknown" and not emitted, so a realistic Safari profile carries no settings hint.

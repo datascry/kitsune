@@ -69,11 +69,11 @@ verdict where every point of bot-likelihood traces back to its evidence. Compone
 ## What it detects
 
 <!-- GENERATED:readme-stats:start -->
-**202 live rules** (135 active · 67 experimental; 6 retired, ruleset `0.74.58`) — each a small predicate over the correlated session. **155 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
+**203 live rules** (136 active · 67 experimental; 6 retired, ruleset `0.74.59`) — each a small predicate over the correlated session. **156 can convict** (coherence/automation/artifact); the rest only corroborate. Grouped by detection class:
 
 | Class | Rules | Convicts? | What it catches |
 |---|---:|:--:|---|
-| **coherence** | 89 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
+| **coherence** | 90 | ✦ | cross-vector contradictions (TLS↔TCP↔UA↔JS↔h2↔QUIC) — the thesis core |
 | **automation** | 50 | ✦ | the framework surface: `webdriver`, CDP runtime, Electron, isolated-world leaks |
 | **artifact** | 16 | ✦ | anti-detect *implementation* flaws: tampered natives, spoof placeholders |
 | **environment** | 27 | — | stripped/headless capability gaps (corroborating only — see precision) |
@@ -138,7 +138,7 @@ farbling (`Brave`), HTTP/2 DoS, and an LLM agent — plus a multi-mode stealth h
 each realm-coherence evasion.
 
 <!-- GENERATED:readme-redteam:start -->
-**95 of 105 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.58`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
+**95 of 105 evaders score `bot`** ([full matrix](docs/matrix.md), ruleset `0.74.59`). The remaining 10 reach only `suspicious` — the conviction-gate frontier (top evaders, below): they defeat every *convicting* rule and trip only corroborating tells, which can never reach `bot` alone.
 
 Each evader is a real anti-detect tool/technique; **Caught by** is the top convicting tell:
 
