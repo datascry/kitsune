@@ -857,17 +857,10 @@ _NATIVE_MSS = 1452  # >= this is a native ethernet path; below is a tunnel/VPN/m
 
 
 def _session_mss(session: Session) -> int | None:
-    """The TCP MSS from the session's JA4T fingerprint (``window_options_MSS_scale``). None if absent/unparseable."""
-    v = session.value(Layer.network, "ja4t")
-    if v is MISSING:
-        return None
-    parts = str(v).split("_")
-    if len(parts) < 3:
-        return None
-    try:
-        return int(parts[2])
-    except ValueError:
-        return None
+    """The raw TCP MSS the session's SYN advertised (edge ``network.tcp_mss``). Below a native-ethernet MSS it
+    betrays a tunnel/VPN/SOCKS hop — the proxy-egress tell. None if the edge observed no SYN for the session."""
+    v = session.value(Layer.network, "tcp_mss")
+    return v if isinstance(v, int) else None
 
 
 def _proxy_stack(session: Session) -> str | None:

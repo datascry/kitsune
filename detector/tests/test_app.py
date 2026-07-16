@@ -248,7 +248,7 @@ def test_inspect_is_cookie_scoped(client: TestClient) -> None:
     assert set(d["wire"].keys()) == {
         "ja3",
         "ja4",
-        "ja4t",
+        "tcp_mss",
         "tls_ext_order",
         "tls_cipher_order",
         "quic_transport_params",

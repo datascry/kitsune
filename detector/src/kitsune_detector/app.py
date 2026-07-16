@@ -1572,7 +1572,7 @@ def create_app(
         wire: dict[str, object | None] = {
             "ja3": netval("ja3"),
             "ja4": netval("ja4"),
-            "ja4t": netval("ja4t"),
+            "tcp_mss": netval("tcp_mss"),
             "tls_ext_order": netval("tls_ext_order"),
             "tls_cipher_order": netval("tls_cipher_order"),
             "quic_transport_params": netval("quic_transport_params"),

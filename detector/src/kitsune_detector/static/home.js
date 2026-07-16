@@ -26,7 +26,7 @@
     if (!d) return;
     var w = d.wire || {};
     publishResult({
-      wire: { ip: d.ip || null, geo: d.geo || null, reputation: d.reputation || null, ja4: w.ja4 || null, ja3: w.ja3 || null, ja4t: w.ja4t || null, tls_ext_order: w.tls_ext_order || null, tls_cipher_order: w.tls_cipher_order || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, quic_transport_params: w.quic_transport_params || null, http_version: w.http_version || null, tls_extras: w.tls_extras || null, wire_fp: d.wire_fp || null },
+      wire: { ip: d.ip || null, geo: d.geo || null, reputation: d.reputation || null, ja4: w.ja4 || null, ja3: w.ja3 || null, tcp_mss: w.tcp_mss || null, tls_ext_order: w.tls_ext_order || null, tls_cipher_order: w.tls_cipher_order || null, h2: w.h2 || null, tcp_os: w.tcp_os || null, quic: w.quic || null, quic_transport_params: w.quic_transport_params || null, http_version: w.http_version || null, tls_extras: w.tls_extras || null, wire_fp: d.wire_fp || null },
       network_contradictions: d.network_contradictions || []
     });
   }
@@ -294,18 +294,18 @@
     // same producer the rep.* rules use). A clean residential IP is shown as such, not left blank.
     var repLabel = "";
     if (rep) { var flags = []; if (rep.datacenter) flags.push("datacenter / hosting"); if (rep.proxy_exit) flags.push("proxy / VPN / Tor exit"); repLabel = flags.length ? flags.join(" \u00b7 ") : "clean \u2014 residential / unlisted"; }
-    // JA4T (TCP/IP stack fingerprint: window_options_mss_scale). Derive a coarse link/tunnel hint from the MSS
-    // (the 3rd field) — informational: a low MSS means a VPN/tunnel/mobile path, which a real user can have too.
-    var ja4tLabel = w.ja4t || "";
-    if (w.ja4t) {
-      var mss = parseInt(w.ja4t.split("_")[2], 10) || 0;
-      var link = mss <= 0 ? "" : (mss >= 1452 ? "ethernet" : mss >= 1400 ? "tunnel / VPN" : mss >= 1300 ? "VPN / mobile" : "heavy tunnel / mobile");
-      ja4tLabel = w.ja4t + (link ? " \u00b7 MSS " + mss + " (" + link + ")" : "");
+    // TCP MSS (raw SYN field). Derive a coarse link/tunnel hint from it — informational: a low MSS means a
+    // VPN/tunnel/mobile path, which a real user can have too. (Clean-room network field, not the FoxIO JA4T.)
+    var mssLabel = "";
+    var mss = w.tcp_mss || 0;
+    if (mss > 0) {
+      var link = mss >= 1452 ? "ethernet" : mss >= 1400 ? "tunnel / VPN" : mss >= 1300 ? "VPN / mobile" : "heavy tunnel / mobile";
+      mssLabel = mss + " \u00b7 " + link;
     }
     var cards = wireRow("IP / geo", ipLabel, "n/a") + wireRow("IP reputation", repLabel, d.ip ? "clean \u2014 residential / unlisted" : "n/a")
       + wireRow("JA4 (TLS)", w.ja4, "n/a") + wireRow("JA3 (TLS)", w.ja3, "n/a")
       + wireRow("TLS ext order", w.tls_ext_order, "n/a") + wireRow("TLS cipher order", w.tls_cipher_order, "n/a") + wireRow("TLS extras", w.tls_extras, "n/a")
-      + wireRow("HTTP version", w.http_version, "n/a") + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("JA4T (TCP/IP)", ja4tLabel, "n/a")
+      + wireRow("HTTP version", w.http_version, "n/a") + wireRow("HTTP/2", w.h2, "n/a") + wireRow("TCP/IP OS", w.tcp_os, "n/a") + wireRow("TCP MSS", mssLabel, "n/a")
       + wireRow("QUIC / HTTP-3", w.quic, "not negotiated \u2014 seen only if your browser uses HTTP/3") + wireRow("QUIC transport params", w.quic_transport_params, "\u2014");
     var html = '<div class="surfaces">' + cards + '</div>';
     var nc = d.network_contradictions || [];

@@ -38,8 +38,8 @@ func Sniff(store *Store, win *WindowTracker, stop <-chan struct{}) error {
 		}
 		srcIP := net.IP(buf[12:16]).String() // IPv4 source (bytes 12-16); validated by the parsers below
 		if syn, ok := fingerprint.ParseSYN(buf[:n]); ok {
-			// Store the JA4T fingerprint for every parsed SYN (always meaningful) + the OS family when classified.
-			store.Put(srcIP, fingerprint.ClassifyTCPOS(syn), syn.JA4T())
+			// Store the raw SYN value fields (MSS + window scale) for every parsed SYN + the OS family when classified.
+			store.Put(srcIP, fingerprint.ClassifyTCPOS(syn), syn.MSS, syn.WindowScale, syn.WindowScalePresent)
 			continue
 		}
 		// Non-SYN (established) segment: track the client's advertised receive window. A real kernel auto-tunes

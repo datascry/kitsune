@@ -110,8 +110,8 @@
     "schema_version": "0.1",
     "session_id": "eab04c8eb52f5b9233de3dce32032534",
     "layer": "network",
-    "kind": "ja4t",
-    "value": "64240_2-4-8-1-3_1460_7",
+    "kind": "tcp_mss",
+    "value": 1460,
     "source": "edge",
     "observed_at": "2026-06-27T01:28:06Z"
    },

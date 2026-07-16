@@ -5,8 +5,6 @@ package fingerprint
 
 import (
 	"encoding/binary"
-	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -65,9 +63,9 @@ func ParseTCPWindow(ip []byte) (srcPort, window uint16, ok bool) {
 	return binary.BigEndian.Uint16(tcp[0:2]), binary.BigEndian.Uint16(tcp[14:16]), true
 }
 
-// parseOptions walks the TCP option bytes, filling the OS-token order (legacy classifier) plus the raw
-// option kinds and the value-carrying options (MSS, window scale, SACK-permitted, timestamps) that JA4T and
-// MTU/tunnel detection need. Best-effort: a malformed length stops the walk rather than looping.
+// parseOptions walks the TCP option bytes, filling the OS-token order (the classifier) plus the raw option
+// kinds and the value-carrying options (MSS, window scale, SACK-permitted, timestamps) that the SYN
+// value-anomaly check and MTU/tunnel detection need. Best-effort: a malformed length stops the walk.
 func (s *TCPSyn) parseOptions(opts []byte) {
 	order := make([]string, 0, 8)
 	kinds := make([]uint8, 0, 8)
@@ -112,7 +110,7 @@ type TCPSyn struct {
 	TTL                uint8   // observed IP TTL (the initial value minus router hops)
 	WindowSize         uint16  // advertised TCP receive window
 	OptionOrder        string  // comma-joined TCP option kinds in order, e.g. "mss,sack,ts,nop,ws"
-	OptionKinds        []uint8 // raw TCP option kinds in order (for JA4T)
+	OptionKinds        []uint8 // raw TCP option kinds in order (parsed; available for a clean-room SYN key)
 	MSS                uint16  // maximum segment size (option kind 2); 0 if absent
 	WindowScale        uint8   // window-scale shift count (option kind 3); valid only if WindowScalePresent
 	WindowScalePresent bool
@@ -120,21 +118,6 @@ type TCPSyn struct {
 	Timestamps         bool // TCP timestamps option (kind 8) present
 	DF                 bool // IPv4 Don't-Fragment flag set
 	ECN                bool // TCP ECN setup (ECE/CWR) or IP ECN bits present
-}
-
-// JA4T returns the FoxIO JA4T fingerprint: window_size "_" option-kinds(hyphen-joined) "_" MSS "_"
-// window-scale ("00" when absent). A stack/tunnel fingerprint below the TLS layer, complementary to the
-// OS-family classifier — usable as a within-session/coordination key and cross-referenceable against ja4db.
-func (s TCPSyn) JA4T() string {
-	kinds := make([]string, 0, len(s.OptionKinds))
-	for _, k := range s.OptionKinds {
-		kinds = append(kinds, strconv.Itoa(int(k)))
-	}
-	scale := "00"
-	if s.WindowScalePresent {
-		scale = strconv.Itoa(int(s.WindowScale))
-	}
-	return fmt.Sprintf("%d_%s_%d_%s", s.WindowSize, strings.Join(kinds, "-"), s.MSS, scale)
 }
 
 // initialTTL rounds an observed TTL up to the nearest standard initial value. Routers decrement TTL per

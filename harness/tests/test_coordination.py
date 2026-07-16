@@ -216,8 +216,8 @@ def _sess(
         sigs.append(mk(Layer.network, "tls_ticket_id", tls_ticket_id, Source.edge))
     if ja4_client is not None:  # edge JA4→client hint: a non-browser HTTP stack (curl/go-http/python-urllib)
         sigs.append(mk(Layer.network, "ja4_client_hint", ja4_client, Source.edge))
-    if mss is not None:  # TCP MSS via the JA4T fingerprint (window_options_MSS_scale); a tunnel/VPN reduces it
-        sigs.append(mk(Layer.network, "ja4t", f"64240_2-4-8-1-3_{mss}_7", Source.edge))
+    if mss is not None:  # raw TCP MSS from the edge SYN sniffer (network.tcp_mss); a tunnel/VPN reduces it
+        sigs.append(mk(Layer.network, "tcp_mss", mss, Source.edge))
     if tcp_kernel is not None:  # SYN-derived kernel OS (edge sniffer); a re-originating proxy reveals ITS stack
         sigs.append(mk(Layer.network, "tcp_kernel", tcp_kernel, Source.edge))
     if ua_kernel is not None:  # kernel the UA claims (edge); tcp_kernel != ua_kernel = a re-originating proxy

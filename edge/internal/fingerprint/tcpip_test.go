@@ -51,7 +51,7 @@ func TestParseSYNWindows(t *testing.T) {
 	}
 }
 
-func TestParseSYNExtractsValuesAndJA4T(t *testing.T) {
+func TestParseSYNExtractsValues(t *testing.T) {
 	// linuxOpts = mss(1460), sack-permitted, timestamps, nop, window-scale(7).
 	syn, ok := ParseSYN(buildSYN(64, 64240, linuxOpts))
 	if !ok {
@@ -68,10 +68,6 @@ func TestParseSYNExtractsValuesAndJA4T(t *testing.T) {
 	}
 	if !syn.Timestamps {
 		t.Error("timestamps should be detected")
-	}
-	want := "64240_2-4-8-1-3_1460_7"
-	if got := syn.JA4T(); got != want {
-		t.Errorf("JA4T=%q want %q", got, want)
 	}
 }
 
