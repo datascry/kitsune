@@ -51,7 +51,7 @@ func TestStoreSweepsExpiredOnPut(t *testing.T) {
 	for i := range 1000 {
 		s.Put(fmt.Sprintf("10.0.%d.%d", i/256, i%256), "linux", 1460, 7, true)
 	}
-	now = now.Add(2 * time.Minute) // every entry above is now past its TTL
+	now = now.Add(2 * time.Minute)           // every entry above is now past its TTL
 	s.Put("1.2.3.4", "linux", 1460, 7, true) // triggers the amortised sweep
 	s.mu.Lock()
 	n := len(s.m)
