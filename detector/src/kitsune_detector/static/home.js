@@ -16,9 +16,9 @@
       if (patch) { for (var k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) KS_RESULT[k] = patch[k]; } }
       window.ksResult = KS_RESULT;
       var el = document.getElementById("ks-verdict");
-      // textContent (not innerHTML) on an existing element isn't re-parsed; the \u003c escape is belt-and-
-      // braces so a serialize-then-reparse (outerHTML) of a contradiction detail can't close the tag.
-      if (el) el.textContent = JSON.stringify(KS_RESULT).replace(/</g, "\u003c");
+      // textContent (not innerHTML) is never HTML-parsed, so the JSON is inert as written and the browser
+      // re-escapes it on any outerHTML serialize — no manual escaping needed.
+      if (el) el.textContent = JSON.stringify(KS_RESULT);
       try { dispatchEvent(new CustomEvent("kitsune:result", { detail: KS_RESULT })); } catch (e) {}
     } catch (e) {}
   }
