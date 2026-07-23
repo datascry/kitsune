@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with: { python-version: "3.12" }
       - run: python3 scripts/check_headers.py
       # Enforce the "contracts are the only coupling" hard rule: the permissive core must not import
@@ -132,7 +132,7 @@ jobs:
     defaults: { run: { working-directory: evaders/arena-solver-ocr } }
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with: { python-version: "3.12" }
       # Unit deps only — the TrOCR recognizer (transformers/torch) is tier-2 IO, off the unit gate.
       - run: pip install ruff mypy pytest pytest-cov httpx
