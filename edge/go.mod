@@ -3,7 +3,7 @@ module github.com/datascry/kitsune/edge
 go 1.26
 
 require (
-	github.com/quic-go/quic-go v0.60.0
+	github.com/quic-go/quic-go v0.61.0
 	github.com/refraction-networking/uquic v0.0.6
 	github.com/refraction-networking/utls v1.8.2
 	golang.org/x/net v0.57.0
