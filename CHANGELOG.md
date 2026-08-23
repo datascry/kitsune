@@ -5,6 +5,26 @@ All notable changes to Kitsune are documented here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Releases are cut automatically from
 [Conventional Commits](https://www.conventionalcommits.org/) via release-please.
 
+## [1.21.0](https://github.com/datascry/kitsune/compare/v1.20.0...v1.21.0) (2026-08-23)
+
+
+### Features
+
+* **detector:** fire JA4/h2/CH-vs-UA coherence on request 1 with no JS ([3a5bbee](https://github.com/datascry/kitsune/commit/3a5bbee86d59c657abf0529731126b512c2c4542))
+* **detector:** promote fake_declared_crawler to active (botwall good-bot lane) ([62b8746](https://github.com/datascry/kitsune/commit/62b87465b050cefe07413bb0938d594cf090ae4c))
+* **detector:** surface the coordination catalog at /coordination with binding→signal links ([6316999](https://github.com/datascry/kitsune/commit/63169994cc41f8b6b7153dca6e3e89b965296935))
+* **edge:** emit ua_header_platform so CH-platform coherence convicts request-1 ([7f94e4f](https://github.com/datascry/kitsune/commit/7f94e4f51ca49c77b5052e5274f7ce230dfe5e45))
+* **fleet:** generate the coordination-strategy ladder as a drift-checked catalog ([e979eca](https://github.com/datascry/kitsune/commit/e979ecaeacfaf3d70eeb39661efb642087bebbcc))
+* **harness:** request-1 no-JS separation audit (edge-only FP + evader recall) ([bfc6762](https://github.com/datascry/kitsune/commit/bfc6762cb71fc393ca5050930eeaa5274a0d0bee))
+
+
+### Bug Fixes
+
+* **ci:** pin the arena-solver-ocr tool versions so a floating lint release can't redden every pr ([59f23dd](https://github.com/datascry/kitsune/commit/59f23dd12db4fba3d18c0e044b897746327d9855))
+* **detector:** drop no-op &lt; escape on home.js verdict render ([b85b8f6](https://github.com/datascry/kitsune/commit/b85b8f637a39fadad26cb095adb48ea6617feebb))
+* **edge:** gofmt store_test.go to unblock the edge ci gate ([92ce32f](https://github.com/datascry/kitsune/commit/92ce32f8f7bb0839fbe57648f1698772e97e69a2))
+* **evaders:** align arena-solver-ocr ruff config with the repo and clear its 2 lint errors ([704e9e7](https://github.com/datascry/kitsune/commit/704e9e7e473a124130bb889bfd20220f34aa8970))
+
 ## [1.20.0](https://github.com/datascry/kitsune/compare/v1.19.0...v1.20.0) (2026-07-13)
 
 
