@@ -8,6 +8,7 @@ import json
 
 import httpx
 import pytest
+
 from kitsune_arena_ocr import EthicsError, decode_png_data_uri, is_own_target, solve_text
 
 
@@ -101,6 +102,5 @@ def test_solve_text_passes_font_and_charset_through() -> None:
 
 
 def test_solve_text_refuses_foreign_target() -> None:
-    with httpx.Client(transport=_fake_gate("X")) as client:
-        with pytest.raises(EthicsError, match="own gates"):
-            solve_text("https://challenges.cloudflare.com", _StubRecognizer("x"), client)
+    with httpx.Client(transport=_fake_gate("X")) as client, pytest.raises(EthicsError, match="own gates"):
+        solve_text("https://challenges.cloudflare.com", _StubRecognizer("x"), client)

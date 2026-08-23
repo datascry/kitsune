@@ -20,6 +20,11 @@ packages = ["src/kitsune_arena_ocr"]
 
 [tool.ruff]
 line-length = 120
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.mypy]
 strict = true
