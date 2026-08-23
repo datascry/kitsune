@@ -135,7 +135,9 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with: { python-version: "3.12" }
       # Unit deps only — the TrOCR recognizer (transformers/torch) is tier-2 IO, off the unit gate.
-      - run: pip install ruff mypy pytest pytest-cov httpx
+      # Pinned to uv.lock — an unpinned install floats to the newest release, so a lint tool that
+      # changes its defaults reddens every open PR at once. Bump in step with the lockfile.
+      - run: pip install ruff==0.15.20 mypy==2.1.0 pytest==9.1.1 pytest-cov==7.1.0 httpx==0.28.1
       - run: ruff check .
       - run: PYTHONPATH=src mypy --strict src/kitsune_arena_ocr/solver.py src/kitsune_arena_ocr/__init__.py
       - run: PYTHONPATH=src python -m pytest tests/ -q
