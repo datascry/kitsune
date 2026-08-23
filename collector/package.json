@@ -28,6 +28,7 @@
   "pnpm": {
     "overrides": {
       "esbuild": ">=0.28.1",
+      "postcss": ">=8.5.23",
       "vite": "^6.4.3"
     }
   },
