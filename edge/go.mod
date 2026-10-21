@@ -16,7 +16,7 @@ require (
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20240430035430-e4905b036c4e // indirect
-	github.com/klauspost/compress v1.17.8 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/onsi/ginkgo/v2 v2.17.2 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	go.uber.org/mock v0.5.2 // indirect
